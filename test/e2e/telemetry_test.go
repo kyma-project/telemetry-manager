@@ -15,6 +15,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var (
@@ -26,7 +27,7 @@ var (
 	}
 )
 
-var _ = Describe("Telemetry Module", Label("telemetry"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 	Context("After creating Telemetry resources", Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {

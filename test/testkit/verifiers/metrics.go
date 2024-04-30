@@ -52,9 +52,9 @@ func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient 
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func MetricsShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL string, metrics []pmetric.Metric) {
+func MetricsShouldBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, metrics []pmetric.Metric) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(WithMetrics(BeEquivalentTo(metrics)))))
@@ -63,9 +63,9 @@ func MetricsShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExpor
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string, metricNames []string) {
+func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string, metricNames []string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
@@ -79,9 +79,9 @@ func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, t
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string) {
+func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
 	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(

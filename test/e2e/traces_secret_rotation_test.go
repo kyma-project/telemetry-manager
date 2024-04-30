@@ -16,13 +16,16 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	Context("When tracepipeline with missing secret reference exists", Ordered, func() {
+		var pipelineName = suite.ID()
+
 		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", kitkyma.DefaultNamespaceName, kitk8s.WithStringData("trace-host", "http://localhost:4317"))
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("trace-host"))
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("trace-host"))
 
 		BeforeAll(func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipeline.K8sObject())).Should(Succeed())
@@ -35,7 +38,7 @@ var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
 			Eventually(func(g Gomega) {
 				var fetched telemetryv1alpha1.TracePipeline
-				key := types.NamespacedName{Name: tracePipeline.Name()}
+				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
 
 				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
@@ -66,7 +69,7 @@ var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
 			})
 
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipeline.Name())
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 	})
 

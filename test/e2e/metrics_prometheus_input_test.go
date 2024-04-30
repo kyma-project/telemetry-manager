@@ -17,39 +17,33 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
-	const (
-		mockNs          = "metric-prometheus-input"
-		mockBackendName = "metric-agent-receiver"
-	)
-
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		// Mocks namespace objects.
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
-		mockMetricProducer := prommetricgen.New(mockNs)
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		metricProducer := prommetricgen.New(mockNs)
+		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, []client.Object{
-			mockMetricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-			mockMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		// Default namespace objects.
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-prometheus-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs))
-		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
 		return objs
@@ -71,7 +65,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Ensures the metrics backend is ready", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric agent daemonset is ready", func() {
@@ -84,7 +78,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		It("Ensures custom metric scraped via annotated pods are sent to backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
@@ -113,7 +107,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		It("Ensures custom metric scraped via annotated services are sent to backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -144,7 +138,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		It("Ensures no kubeletstats metrics are sent to backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -154,12 +148,12 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, kitkyma.SystemNamespaceName)
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backendExportURL, kitkyma.SystemNamespaceName)
 		})
 
 		It("Ensures no diagnostic metrics are sent to backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

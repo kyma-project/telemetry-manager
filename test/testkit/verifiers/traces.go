@@ -52,9 +52,9 @@ func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string) {
+func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
@@ -65,9 +65,9 @@ func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, te
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TracesFromNamespacesShouldNotBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL string, namespaces []string) {
+func TracesFromNamespacesShouldNotBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, namespaces []string) {
 	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(

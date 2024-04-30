@@ -12,20 +12,25 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	const (
-		backendNs            = "istio-metric-otlp-input"
-		backendName          = "backend"
-		istiofiedBackendNs   = "istio-metric-otlp-input-with-sidecar"
-		istiofiedBackendName = "backend-istiofied"
-
-		pushMetricsDepName          = "push-metrics"
-		pushMetricsIstiofiedDepName = "push-metrics-istiofied"
+		metricProducer1Name = "metric-producer-1"
+		metricProducer2Name = "metric-producer-2"
 	)
-	var telemetryExportURL, telemetryIstiofiedExportURL string
+
+	var (
+		backendNs          = suite.ID()
+		istiofiedBackendNs = suite.IDWithSuffix("istiofied")
+
+		pipeline1Name             = suite.IDWithSuffix("1")
+		pipeline2Name             = suite.IDWithSuffix("2")
+		backendExportURL          string
+		istiofiedBackendExportURL string
+	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -34,34 +39,34 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
 
 		// Mocks namespace objects
-		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend1 := backend.New(backendNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend1.K8sObjects()...)
+		backendExportURL = backend1.ExportURL(proxyClient)
 
-		mockIstiofiedBackend := backend.New(istiofiedBackendName, istiofiedBackendNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
-		telemetryIstiofiedExportURL = mockIstiofiedBackend.TelemetryExportURL(proxyClient)
+		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend2.K8sObjects()...)
+		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-otlp-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipeline1Name).
+			WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1()).
 			OtlpInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
-		metricPipelineIstiofiedBackend := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-otlp-input-enabled-with-istiofied-backend").
-			WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefV1Alpha1()).
+		metricPipelineIstiofiedBackend := kitk8s.NewMetricPipelineV1Alpha1(pipeline2Name).
+			WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1()).
 			OtlpInput(true)
 
 		objs = append(objs, metricPipelineIstiofiedBackend.K8sObject())
 
 		// set peerauthentication to strict explicitly
-		peerAuth := kitk8s.NewPeerAuthentication(istiofiedBackendName, istiofiedBackendNs)
-		objs = append(objs, peerAuth.K8sObject(kitk8s.WithLabel("app", istiofiedBackendName)))
+		peerAuth := kitk8s.NewPeerAuthentication(backend.DefaultName, istiofiedBackendNs)
+		objs = append(objs, peerAuth.K8sObject(kitk8s.WithLabel("app", backend.DefaultName)))
 
 		// Create 2 deployments (with and without side-car) which would push the metrics to the metrics gateway.
 		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 		objs = append(objs,
-			kitk8s.NewDeployment(pushMetricsDepName, backendNs).WithPodSpec(podSpec).K8sObject(),
-			kitk8s.NewDeployment(pushMetricsIstiofiedDepName, istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
+			kitk8s.NewDeployment(metricProducer1Name, backendNs).WithPodSpec(podSpec).K8sObject(),
+			kitk8s.NewDeployment(metricProducer2Name, istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
 		)
 
 		return objs
@@ -84,16 +89,16 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: istiofiedBackendName, Namespace: istiofiedBackendNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, backendNs, telemetrygen.MetricNames)
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryIstiofiedExportURL, backendNs, telemetrygen.MetricNames)
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryIstiofiedExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
 		})
 	})

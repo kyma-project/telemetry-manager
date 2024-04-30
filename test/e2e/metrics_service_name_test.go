@@ -17,17 +17,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Service Name", Label("metrics"), func() {
-	const (
-		mockNs          = "metric-mocks-service-name"
-		mockBackendName = "metric-receiver"
-	)
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		runtimeInputPipelineName string
-		telemetryExportURL       string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -35,16 +33,15 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
 
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		runtimeInputPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-service-name-test").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(kitkyma.SystemNamespaceName))
-		runtimeInputPipelineName = runtimeInputPipeline.Name()
-		objs = append(objs, runtimeInputPipeline.K8sObject())
+		objs = append(objs, metricPipeline.K8sObject())
 
 		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeMetrics)...)
 
@@ -67,16 +64,16 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, runtimeInputPipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -132,7 +129,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		It("Should have no kyma resource attributes", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -145,7 +142,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		It("Should have metrics with service.name set to telemetry-metric-gateway", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -158,7 +155,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		It("Should have metrics with service.name set to telemetry-metric-agent", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
