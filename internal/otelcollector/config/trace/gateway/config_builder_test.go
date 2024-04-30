@@ -104,7 +104,6 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "otlp")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
 
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
@@ -130,7 +129,6 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Exporters, "otlp/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "otlp")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "opencensus")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter/drop-noisy-spans")
@@ -142,7 +140,6 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "otlp/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "otlp")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "opencensus")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter/drop-noisy-spans")
