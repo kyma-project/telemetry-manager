@@ -18,7 +18,7 @@ For more information, see [Dynamic Logging Backend Configuration](https://github
 
 ### Traces
 
-The trace controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) deployment and related Kubernetes objects from a `TracePipeline` custom resource. The collector is configured to receive traces using the OTLP and OpenCensus protocols, and forwards the received traces to a configurable OTLP backend.
+The trace controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) deployment and related Kubernetes objects from a `TracePipeline` custom resource. The collector is configured to receive traces using the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), and forwards the received traces to a configurable OTLP backend.
 
 For more information, see [Dynamic Trace Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-tracing).
 
@@ -47,16 +47,19 @@ For details, see:
 - [Governance checks like linting](docs/contributor/governance.md)
 
 ## Contributing
+
 <!--- mandatory section - do not change this! --->
 
 See the [CONTRIBUTING](CONTRIBUTING.md) file.
 
 ## Code of Conduct
+
 <!--- mandatory section - do not change this! --->
 
 See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ## Licensing
+
 <!--- mandatory section - do not change this! --->
 
 See the [LICENSE](LICENSE) file.

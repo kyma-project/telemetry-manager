@@ -15,12 +15,11 @@ type Config struct {
 type GatewayConfig struct {
 	Config
 
-	Deployment           DeploymentConfig
-	Scaling              GatewayScalingConfig
-	Istio                IstioConfig
-	OTLPServiceName      string
-	allowedPorts         []int32
-	CanReceiveOpenCensus bool
+	Deployment      DeploymentConfig
+	Scaling         GatewayScalingConfig
+	Istio           IstioConfig
+	OTLPServiceName string
+	allowedPorts    []int32
 }
 
 type IstioConfig struct {

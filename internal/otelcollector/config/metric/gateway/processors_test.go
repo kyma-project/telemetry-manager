@@ -72,7 +72,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("drop by input source filter", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().OtlpInput(false).Build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithOTLPInput(false).Build()})
 		require.NoError(t, err)
 
 		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceRuntime)
@@ -95,10 +95,10 @@ func TestProcessors(t *testing.T) {
 	t.Run("namespace filter processor using include", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test").
-				RuntimeInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
-				PrometheusInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
-				IstioInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
-				OtlpInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+				WithRuntimeInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+				WithPrometheusInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+				WithIstioInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+				WithOTLPInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
 				Build()},
 		)
 		require.NoError(t, err)
@@ -130,10 +130,10 @@ func TestProcessors(t *testing.T) {
 	t.Run("namespace filter processor using exclude", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test").
-				RuntimeInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
-				PrometheusInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
-				IstioInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
-				OtlpInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+				WithRuntimeInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+				WithPrometheusInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+				WithIstioInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+				WithOTLPInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
 				Build()},
 		)
 		require.NoError(t, err)
@@ -165,8 +165,8 @@ func TestProcessors(t *testing.T) {
 	t.Run("diagnostic metric filter processor prometheus input using exclude", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test").
-				PrometheusInput(true).
-				PrometheusInputDiagnosticMetrics(false).
+				WithPrometheusInput(true).
+				WithPrometheusInputDiagnosticMetrics(false).
 				Build()},
 		)
 		require.NoError(t, err)
@@ -182,8 +182,8 @@ func TestProcessors(t *testing.T) {
 	t.Run("diagnostic metric filter processor prometheus input using exclude", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test").
-				IstioInput(true).
-				IstioInputDiagnosticMetrics(false).
+				WithIstioInput(true).
+				WithIstioInputDiagnosticMetrics(false).
 				Build()},
 		)
 		require.NoError(t, err)

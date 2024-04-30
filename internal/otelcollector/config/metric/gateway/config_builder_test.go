@@ -31,7 +31,8 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("secure", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().
+			WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build()})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -41,7 +42,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithEndpoint("http://localhost").Build()},
+			testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
 		)
 		require.NoError(t, err)
 
@@ -52,7 +53,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("basic auth", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithBasicAuth("user", "password").Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		})
 		require.NoError(t, err)
 
@@ -105,7 +106,7 @@ func TestMakeConfig(t *testing.T) {
 	t.Run("single pipeline topology", func(t *testing.T) {
 		t.Run("with no inputs enabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").OtlpInput(false).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(false).Build()},
 			)
 			require.NoError(t, err)
 
@@ -129,7 +130,7 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with prometheus input enabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").PrometheusInput(true).PrometheusInputDiagnosticMetrics(true).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithPrometheusInput(true).WithPrometheusInputDiagnosticMetrics(true).Build()},
 			)
 			require.NoError(t, err)
 
@@ -151,7 +152,7 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with prometheus input enabled and diagnostic metrics disabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").PrometheusInput(true).PrometheusInputDiagnosticMetrics(false).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithPrometheusInput(true).WithPrometheusInputDiagnosticMetrics(false).Build()},
 			)
 			require.NoError(t, err)
 
@@ -174,7 +175,7 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with prometheus input enabled and diagnostic metrics implicitly disabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").PrometheusInput(true).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithPrometheusInput(true).Build()},
 			)
 			require.NoError(t, err)
 
@@ -197,7 +198,7 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with runtime input enabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").RuntimeInput(true).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).Build()},
 			)
 			require.NoError(t, err)
 
@@ -219,7 +220,7 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with istio input enabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").IstioInput(true).IstioInputDiagnosticMetrics(true).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithIstioInput(true).WithIstioInputDiagnosticMetrics(true).Build()},
 			)
 			require.NoError(t, err)
 
@@ -241,7 +242,7 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with istio input enabled and diagnostic metrics disabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").IstioInput(true).IstioInputDiagnosticMetrics(false).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithIstioInput(true).WithIstioInputDiagnosticMetrics(false).Build()},
 			)
 			require.NoError(t, err)
 
@@ -264,7 +265,7 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with istio input enabled and diagnostic metrics implicitly disabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").IstioInput(true).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithIstioInput(true).Build()},
 			)
 			require.NoError(t, err)
 
@@ -310,7 +311,7 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with otlp input explicitly enabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").OtlpInput(true).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(true).Build()},
 			)
 			require.NoError(t, err)
 
@@ -334,9 +335,9 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-1").RuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test-2").PrometheusInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test-3").IstioInput(true).Build()},
+			testutils.NewMetricPipelineBuilder().WithName("test-1").WithRuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-2").WithPrometheusInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-3").WithIstioInput(true).Build()},
 		)
 		require.NoError(t, err)
 
@@ -390,7 +391,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("marshaling", func(t *testing.T) {
 		config, _, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 		})
 		require.NoError(t, err)
 

@@ -1,24 +1,28 @@
 package loggen
 
 import (
+	"maps"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+)
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+const (
+	DefaultName = "log-producer"
 )
 
 type LogProducer struct {
 	name        string
 	namespace   string
 	annotations map[string]string
+	labels      map[string]string
 }
 
-func New(name, namespace string) *LogProducer {
+func New(namespace string) *LogProducer {
 	return &LogProducer{
-		name:      name,
+		name:      DefaultName,
 		namespace: namespace,
 	}
 }
@@ -26,11 +30,18 @@ func New(name, namespace string) *LogProducer {
 func (lp *LogProducer) WithAnnotations(annotations map[string]string) *LogProducer {
 	lp.annotations = annotations
 	return lp
-
 }
 
-func (lp *LogProducer) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
-	labels := kitk8s.ProcessLabelOptions(labelOpts...)
+func (lp *LogProducer) WithLabels(labels map[string]string) *LogProducer {
+	lp.labels = labels
+	return lp
+}
+
+func (lp *LogProducer) K8sObject() *appsv1.Deployment {
+	labels := map[string]string{"app": lp.name}
+	if lp.labels != nil {
+		maps.Copy(labels, lp.labels)
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
