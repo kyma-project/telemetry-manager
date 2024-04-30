@@ -38,7 +38,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-insecure").OtlpOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
+			testutils.NewTracePipelineBuilder().WithName("test-insecure").OTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
 		)
 		require.NoError(t, err)
 
@@ -49,7 +49,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("basic auth", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-basic-auth").OtlpOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
+			testutils.NewTracePipelineBuilder().WithName("test-basic-auth").OTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")

@@ -206,7 +206,7 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("loki output is defined", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithLoki().LokiOutput(testutils.LokiHost("http://logging-loki:3100/loki/api/v1/push")).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithLoki().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}

@@ -28,7 +28,7 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 	}{
 		{
 			name:                     "should reject LogPipelines which are being deleted",
-			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-in-deletion").WithDeletionTimeStamp(timestamp).CustomOutput(testutils.CustomHost("Name	stdout\n")).Build()},
+			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-in-deletion").WithDeletionTimeStamp(timestamp).CustomOutput("Name	stdout\n").Build()},
 			reconcilableLogPipelines: false,
 		},
 		{
@@ -38,14 +38,14 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 		},
 		{
 			name:                     "should reject LogPipelines with Loki Output",
-			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-with-loki-output").WithLoki().LokiOutput(testutils.LokiHost("http://logging-loki:3100/loki/api/v1/push")).Build()},
+			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-with-loki-output").WithLoki().Build()},
 			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should accept healthy LogPipelines",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-1").CustomOutput(testutils.CustomHost("Name	stdout\n")).Build(),
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-2").CustomOutput(testutils.CustomHost("Name	stdout\n")).Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-1").CustomOutput("Name	stdout\n").Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-2").CustomOutput("Name	stdout\n").Build(),
 			},
 			reconcilableLogPipelines: true,
 		},

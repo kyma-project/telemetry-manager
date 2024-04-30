@@ -37,7 +37,7 @@ func (b *TracePipelineBuilder) WithStatusCondition(cond metav1.Condition) *Trace
 	return b
 }
 
-func (b *TracePipelineBuilder) OtlpOutput(opts ...OTLPOutputOption) *TracePipelineBuilder {
+func (b *TracePipelineBuilder) OTLPOutput(opts ...OTLPOutputOption) *TracePipelineBuilder {
 	for _, opt := range opts {
 		opt(b.outOTLP)
 	}

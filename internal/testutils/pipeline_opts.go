@@ -86,18 +86,10 @@ func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOptio
 	}
 }
 
-type LokiOutputOption func(output *telemetryv1alpha1.LokiOutput)
-
-func LokiHost(lokiURL string) LokiOutputOption {
-	return func(output *telemetryv1alpha1.LokiOutput) {
-		output.URL = telemetryv1alpha1.ValueType{Value: lokiURL}
-	}
-}
-
-type CustomHostOption func() string
-
-func CustomHost(host string) CustomHostOption {
-	return func() string {
-		return host
-	}
-}
+//type LokiOutputOption func(output *telemetryv1alpha1.LokiOutput)
+//
+//func LokiHost(lokiURL string) LokiOutputOption {
+//	return func(output *telemetryv1alpha1.LokiOutput) {
+//		output.URL = telemetryv1alpha1.ValueType{Value: lokiURL}
+//	}
+//}
