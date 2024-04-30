@@ -12,9 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
