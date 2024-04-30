@@ -27,7 +27,7 @@ Due to the restrictions of available telemetry resources for Kubernetes resource
 
 ### Extended MetricPipeline API
 
-To activate module status metrics as a new input, the MetricPipeline CRD needs a _module list_. If the module list is empty, metrics of all active modules are collected. As in the following example, users can select the Kyma modules of interest:
+To activate module status metrics as a new input, the MetricPipeline CRD needs a _module list_. If the module list is empty, metrics of all active modules are collected. Users can select the Kyma modules of interest. In the following example, only the `telemetry` module is selected:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -54,7 +54,7 @@ spec:
 
 Enabling the Kyma input will enable a custom metrics receiver, called `kymastats`, in the Telemetry metric gateway that produces metrics for the module state and status conditions.
 
-The receiver configuration will follow the shown example:
+See the following example for the receiver configuration:
 
 ```yaml
 receivers:
