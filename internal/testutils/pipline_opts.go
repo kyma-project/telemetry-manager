@@ -94,10 +94,10 @@ func LokiHost(lokiURL string) LokiOutputOption {
 	}
 }
 
-type CustomHostOption func(output string)
+type CustomHostOption func() string
 
 func CustomHost(host string) CustomHostOption {
-	return func(output string) {
-		output = host
+	return func() string {
+		return host
 	}
 }

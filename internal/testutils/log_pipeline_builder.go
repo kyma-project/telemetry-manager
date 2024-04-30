@@ -61,10 +61,8 @@ func (b *LogPipelineBuilder) LokiOutput(opts ...LokiOutputOption) *LogPipelineBu
 	return b
 }
 
-func (b *LogPipelineBuilder) CustomOutput(opts ...CustomHostOption) *LogPipelineBuilder {
-	for _, opt := range opts {
-		opt(b.customOutput)
-	}
+func (b *LogPipelineBuilder) CustomOutput(opt CustomHostOption) *LogPipelineBuilder {
+	b.customOutput = opt()
 	return b
 }
 
