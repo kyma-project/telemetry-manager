@@ -108,10 +108,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.cleanUpOpenCensusService(ctx); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to clean up OpenCensus service: %w", err)
-	}
-
 	var tracePipeline telemetryv1alpha1.TracePipeline
 	if err := r.Get(ctx, req.NamespacedName, &tracePipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -163,6 +159,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if err = r.reconcileTraceGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
+	}
+
+	if err := r.cleanUpOpenCensusService(ctx); err != nil {
+		return fmt.Errorf("failed to clean up OpenCensus service: %w", err)
 	}
 
 	return nil
@@ -308,6 +308,7 @@ func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines 
 	return nil
 }
 
+// TODO: Remove this logic after the next release
 func (r *Reconciler) cleanUpOpenCensusService(ctx context.Context) error {
 	openCensusServiceName := "telemetry-trace-collector-internal"
 	openCensusService := &corev1.Service{
