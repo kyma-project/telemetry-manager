@@ -15,10 +15,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Basic v1beta1", Label("logs", "v1beta1"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
-		logProducerName  = suite.ID()
 		pipelineName     = suite.ID()
 		backendExportURL string
 	)
@@ -28,9 +27,9 @@ var _ = Describe("Logs Basic v1beta1", Label("logs", "v1beta1"), Ordered, func()
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		backend := backend.New(mockNs, backend.SignalTypeLogs)
-		logProducer := loggen.New(logProducerName, mockNs)
+		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, logProducer.K8sObject(kitk8s.WithLabel("app", logProducerName)))
+		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Beta1(pipelineName).
@@ -69,11 +68,11 @@ var _ = Describe("Logs Basic v1beta1", Label("logs", "v1beta1"), Ordered, func()
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have produced logs in the backend", func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, backendExportURL)
+			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })

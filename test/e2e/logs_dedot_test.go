@@ -22,7 +22,6 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
-		logProducerName  = suite.ID()
 		pipelineName     = suite.ID()
 		backendExportURL string
 	)
@@ -32,15 +31,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		backend := backend.New(mockNs, backend.SignalTypeLogs)
-		logProducer := loggen.New(logProducerName, mockNs)
+		logProducer := loggen.New(mockNs).WithLabels(map[string]string{"dedot.label": "logging-dedot-value"})
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, logProducer.K8sObject(kitk8s.WithLabel("dedot.label", "logging-dedot-value")))
+		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
-			WithIncludeContainers([]string{logProducerName})
+			WithIncludeContainers([]string{loggen.DefaultName})
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs
@@ -70,7 +69,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		// label foo.bar: value should be represented as foo_bar:value

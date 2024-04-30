@@ -18,9 +18,8 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
-		mockNs          = suite.ID()
-		logProducerName = suite.ID()
-		pipelineName    = suite.ID()
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
@@ -41,8 +40,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithTLS(*clientCerts)
 		pipelineName = logPipeline.Name()
 
-		logProducer := loggen.New(logProducerName, mockNs)
-		objs = append(objs, logProducer.K8sObject(kitk8s.WithLabel("app", logProducerName)))
+		logProducer := loggen.New(mockNs)
+		objs = append(objs, logProducer.K8sObject())
 		objs = append(objs,
 			logPipeline.K8sObject(),
 		)

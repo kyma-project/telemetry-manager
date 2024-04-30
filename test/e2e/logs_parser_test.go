@@ -23,7 +23,6 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
-		logProducerName  = suite.ID()
 		pipelineName     = suite.ID()
 		backendExportURL string
 	)
@@ -33,10 +32,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		backend := backend.New(mockNs, backend.SignalTypeLogs)
-		logProducer := loggen.New(logProducerName, mockNs).
+		logProducer := loggen.New(mockNs).
 			WithAnnotations(map[string]string{"fluentbit.io/parser": "my-regex-parser"})
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, logProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")))
+		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
 		logHTTPPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
@@ -79,7 +78,7 @@ Types user:string pass:string`
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have parsed logs in the backend", func() {
