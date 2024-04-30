@@ -12,7 +12,7 @@ The epic [Advanced pipeline status based on data flow](https://github.com/kyma-p
 To ease day-two operations, the status of the Telemetry and other Kyma modules should be available as metrics. Then, users can integrate these metrics into their monitoring system; for example, by setting up alerts for a module status that differs from the expected value.
 
 The [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) exporter provides a way to [export metrics for custom resources](https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/extend/customresourcestate-metrics.md).
-This record describes a way to integrate similar functionality to the Telemetry module's OpenTelemetry Collectors. The solution should avoid the maintenance overhead of an additional third-party-image and allow a dynamic configuration, based on the active Kyma modules.
+This document describes a way to integrate similar functionality to the Telemetry module's OpenTelemetry Collectors. The solution should avoid the maintenance overhead of an additional third-party-image and allow a dynamic configuration, based on the active Kyma modules.
 
 We investigated the following existing solutions:
 
@@ -53,7 +53,8 @@ spec:
 ```
 
 Enabling the Kyma input will enable a custom metrics receiver, called `kymastats`, in the Telemetry metric gateway that produces metrics for the module state and status conditions.
-The receiver configuration will follow the shown example.
+
+The receiver configuration will follow the shown example:
 
 ```yaml
 receivers:
