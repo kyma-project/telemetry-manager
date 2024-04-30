@@ -105,10 +105,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("failed to clean up old network policies: %w", err)
 	}
 
-	if err := r.cleanUpOpenCensus(ctx); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to clean up OpenCensus: %w", err)
-	}
-
 	var telemetry operatorv1alpha1.Telemetry
 	if err := r.Client.Get(ctx, req.NamespacedName, &telemetry); err != nil {
 		logf.FromContext(ctx).Info(req.NamespacedName.String() + " got deleted!")
@@ -306,23 +302,6 @@ func (r *Reconciler) cleanUpOldNetworkPolicies(ctx context.Context) error {
 			}
 			return fmt.Errorf("failed to delete old network policy %s in namespace %s: %w", networkPolicyName, r.config.OverridesConfigMapName.Namespace, err)
 		}
-	}
-	return nil
-}
-
-func (r *Reconciler) cleanUpOpenCensus(ctx context.Context) error {
-	openCensusServiceName := "telemetry-trace-collector-internal"
-	openCensusService := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      openCensusServiceName,
-			Namespace: r.config.Traces.Namespace,
-		},
-	}
-	if err := r.Delete(ctx, openCensusService); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return fmt.Errorf("failed to delete OpenCensus service: %s in namespace %s: %w", openCensusServiceName, r.config.Traces.Namespace, err)
 	}
 	return nil
 }

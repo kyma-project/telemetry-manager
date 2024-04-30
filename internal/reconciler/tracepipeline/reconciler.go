@@ -21,6 +21,8 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -104,6 +106,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if overrideConfig.Tracing.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
+	}
+
+	if err := r.cleanUpOpenCensusService(ctx); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to clean up OpenCensus service: %w", err)
 	}
 
 	var tracePipeline telemetryv1alpha1.TracePipeline
@@ -299,5 +305,22 @@ func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines 
 	}
 	r.pipelinesConditionsCleared = true
 
+	return nil
+}
+
+func (r *Reconciler) cleanUpOpenCensusService(ctx context.Context) error {
+	openCensusServiceName := "telemetry-trace-collector-internal"
+	openCensusService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openCensusServiceName,
+			Namespace: r.config.Gateway.Namespace,
+		},
+	}
+	if err := r.Delete(ctx, openCensusService); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to delete OpenCensus service: %s in namespace %s: %w", openCensusServiceName, r.config.Gateway.Namespace, err)
+	}
 	return nil
 }
