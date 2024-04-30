@@ -27,9 +27,6 @@ func NewLogPipelineBuilder() *LogPipelineBuilder {
 		httpOutput: &telemetryv1alpha1.HTTPOutput{
 			Host: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
 		},
-		//lokiOutput: &telemetryv1alpha1.LokiOutput{
-		//	URL: telemetryv1alpha1.ValueType{Value: "https://localhost:3100"},
-		//},
 	}
 }
 
@@ -50,21 +47,14 @@ func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipe
 	return b
 }
 
-func (b *LogPipelineBuilder) HTTPOutput(opts ...HTTPOutputOption) *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithHTTPOutput(opts ...HTTPOutputOption) *LogPipelineBuilder {
 	for _, opt := range opts {
 		opt(b.httpOutput)
 	}
 	return b
 }
 
-//func (b *LogPipelineBuilder) LokiOutput(opts ...LokiOutputOption) *LogPipelineBuilder {
-//	for _, opt := range opts {
-//		opt(b.lokiOutput)
-//	}
-//	return b
-//}
-
-func (b *LogPipelineBuilder) CustomOutput(custom string) *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithCustomOutput(custom string) *LogPipelineBuilder {
 	b.customOutput = custom
 	return b
 }

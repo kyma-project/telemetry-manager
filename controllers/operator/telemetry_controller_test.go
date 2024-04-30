@@ -68,7 +68,7 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 					Namespace: telemetryNamespace,
 				},
 			}
-			tracePipeline := testutils.NewTracePipelineBuilder().WithName("trace-pipe").OtlpOutput(testutils.OTLPBasicAuth("user", "password")).Build()
+			tracePipeline := testutils.NewTracePipelineBuilder().WithName("trace-pipe").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build()
 
 			DeferCleanup(func() {
 				Expect(k8sClient.Delete(ctx, &tracePipeline)).Should(Succeed())

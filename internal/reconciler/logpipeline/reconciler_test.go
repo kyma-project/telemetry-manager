@@ -28,12 +28,12 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 	}{
 		{
 			name:                     "should reject LogPipelines which are being deleted",
-			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-in-deletion").WithDeletionTimeStamp(timestamp).CustomOutput("Name	stdout\n").Build()},
+			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-in-deletion").WithDeletionTimeStamp(timestamp).WithCustomOutput("Name	stdout\n").Build()},
 			reconcilableLogPipelines: false,
 		},
 		{
 			name:                     "should reject LogPipelines with missing Secrets",
-			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-with-missing-secret").HTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()},
+			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-with-missing-secret").WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()},
 			reconcilableLogPipelines: false,
 		},
 		{
@@ -44,15 +44,15 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 		{
 			name: "should accept healthy LogPipelines",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-1").CustomOutput("Name	stdout\n").Build(),
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-2").CustomOutput("Name	stdout\n").Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-1").WithCustomOutput("Name	stdout\n").Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-2").WithCustomOutput("Name	stdout\n").Build(),
 			},
 			reconcilableLogPipelines: true,
 		},
 		{
 			name: "should reject LogPipelines with invalid certificate",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-invalid-cert").HTTPOutput(testutils.HTTPHost("http://somehost"),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-invalid-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
 					testutils.HTTPClientTLS("invalidcert", "somekey")).Build(),
 			},
 			reconcilableLogPipelines: false,
@@ -60,7 +60,7 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 		{
 			name: "should reject LogPipelines with invalid certificate key",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-invalid-cert-key").HTTPOutput(testutils.HTTPHost("http://somehost"),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-invalid-cert-key").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
 					testutils.HTTPClientTLS("somecert", "invalidkey")).Build(),
 			},
 			reconcilableLogPipelines: false,
@@ -68,7 +68,7 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 		{
 			name: "should reject LogPipelines with expired certificate",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-expired-cert").HTTPOutput(testutils.HTTPHost("http://somehost"),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-expired-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
 					testutils.HTTPClientTLS("expired", "expired")).Build(),
 			},
 			reconcilableLogPipelines: false,
@@ -76,7 +76,7 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 		{
 			name: "should accept LogPipelines with valid certificate",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-valid-cert").HTTPOutput(testutils.HTTPHost("http://somehost"), testutils.HTTPClientTLS("valid", "valid")).Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-valid-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"), testutils.HTTPClientTLS("valid", "valid")).Build(),
 			},
 			reconcilableLogPipelines: true,
 		},

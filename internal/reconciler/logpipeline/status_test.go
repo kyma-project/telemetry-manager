@@ -119,7 +119,7 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").HTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
@@ -168,7 +168,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"host": nil},
 		}
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").HTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
@@ -808,7 +808,7 @@ func TestUpdateStatus(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().HTTPOutput(testutils.HTTPClientTLS("fooCert", "fooKey")).Build()
+				pipeline := testutils.NewLogPipelineBuilder().WithHTTPOutput(testutils.HTTPClientTLS("fooCert", "fooKey")).Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				proberStub := &mocks.DaemonSetProber{}
