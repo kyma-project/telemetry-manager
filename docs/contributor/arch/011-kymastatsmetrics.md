@@ -54,6 +54,12 @@ spec:
 
 Enabling the Kyma input will enable a custom metrics receiver, called `kymastats`, in the Telemetry metric gateway that produces metrics for the module state and status conditions.
 
+The receiver needs the following properties:
+
+- **auth_type**: The way to authenticate with the Kubernetes API. Possible values are `serviceAccount` (default) or `kubeConfig`.
+- **collection_interval**: The interval that is used to emit metrics.
+- **api_groups**: List of API groups to scrape. Most of the Kyma modules should use the `operator.kyma-project.io` API group. The list can be extended to support monitoring custom modules. Every CRD in the listed groups is assumed to represent a module.
+
 See the following example for the receiver configuration:
 
 ```yaml
@@ -65,12 +71,6 @@ receivers:
     api_groups:
     - operator.kyma-project.io
 ```
-
-The receiver needs the following properties:
-
-- **auth_type**: The way to authenticate with the Kubernetes API. Possible values are `serviceAccount` (default) or `kubeConfig`.
-- **collection_interval**: The interval that is used to emit metrics.
-- **api_groups**: List of API groups to scrape. Most of the Kyma modules should use the `operator.kyma-project.io` API group. The list can be extended to support monitoring custom modules. Every CRD in the listed groups is assumed to represent a module.
 
 ### Custom Metrics Receiver for OpenTelemetry Collector
 
