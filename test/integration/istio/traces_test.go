@@ -96,12 +96,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
-			verifyAppIsRunning(appNs, map[string]string{"app": "sample-metrics"})
-			verifySidecarPresent(appNs, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
+			verifySidecarPresent(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
 		})
 
 		It("Should have sample app without istio sidecar", func() {
-			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(appNs, map[string]string{"app": "sample-metrics"})
 		})
 
 		It("Should have a running trace collector deployment", func() {
