@@ -138,16 +138,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have istio traces from istiofied app namespace", func() {
-			verifyIstioSpans(backendExportURL)
-			verifyIstioSpans(istiofiedBackendExportURL)
+			verifyIstioSpans(backendExportURL, istiofiedAppNs)
+			verifyIstioSpans(istiofiedBackendExportURL, istiofiedAppNs)
 		})
 		It("Should have custom spans in the backend from istiofied workload", func() {
-			verifyCustomIstiofiedAppSpans(backendExportURL)
-			verifyCustomIstiofiedAppSpans(istiofiedBackendExportURL)
+			verifyCustomIstiofiedAppSpans(backendExportURL, istiofiedAppName, istiofiedAppNs)
+			verifyCustomIstiofiedAppSpans(istiofiedBackendExportURL, istiofiedAppName, istiofiedAppNs)
 		})
 		It("Should have custom spans in the backend from app-namespace", func() {
-			verifyCustomAppSpans(backendExportURL)
-			verifyCustomAppSpans(istiofiedBackendExportURL)
+			verifyCustomAppSpans(backendExportURL, appName, appNs)
+			verifyCustomAppSpans(istiofiedBackendExportURL, appName, appNs)
 		})
 	})
 })
@@ -179,7 +179,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 }
 
-func verifyIstioSpans(backendURL string) {
+func verifyIstioSpans(backendURL, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -188,12 +188,12 @@ func verifyIstioSpans(backendURL string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
 			ContainSpan(WithSpanAttrs(HaveKeyWithValue("component", "proxy"))),
-			ContainSpan(WithSpanAttrs(HaveKeyWithValue("istio.namespace", "istio-permissive-mtls"))),
+			ContainSpan(WithSpanAttrs(HaveKeyWithValue("istio.namespace", namespace))),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func verifyCustomIstiofiedAppSpans(backendURL string) {
+func verifyCustomIstiofiedAppSpans(backendURL, name, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -202,13 +202,13 @@ func verifyCustomIstiofiedAppSpans(backendURL string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify sample app by serviceName attribute
 			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", "istiofied-trace-emitter")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", "istio-permissive-mtls")),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", name)),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func verifyCustomAppSpans(backendURL string) {
+func verifyCustomAppSpans(backendURL, name, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -216,8 +216,8 @@ func verifyCustomAppSpans(backendURL string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify sample app by serviceName attribute
 			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", "trace-emitter")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", "app-namespace")),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", name)),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
