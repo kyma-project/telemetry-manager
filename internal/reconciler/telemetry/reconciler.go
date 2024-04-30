@@ -7,7 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -99,10 +98,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if overrideConfig.Telemetry.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
-	}
-
-	if err := r.cleanUpOldNetworkPolicies(ctx); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to clean up old network policies: %w", err)
 	}
 
 	var telemetry operatorv1alpha1.Telemetry
@@ -279,29 +274,5 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return fmt.Errorf("failed to update webhook: %w", err)
 	}
 
-	return nil
-}
-
-func (r *Reconciler) cleanUpOldNetworkPolicies(ctx context.Context) error {
-	oldNetworkPoliciesNames := []string{
-		"telemetry-manager-pprof-deny-ingress",
-		"telemetry-metric-gateway-pprof-deny-ingress",
-		"telemetry-metric-agent-pprof-deny-ingress",
-		"telemetry-trace-collector-pprof-deny-ingress",
-	}
-	for _, networkPolicyName := range oldNetworkPoliciesNames {
-		networkPolicy := &networkingv1.NetworkPolicy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      networkPolicyName,
-				Namespace: r.config.OverridesConfigMapName.Namespace,
-			},
-		}
-		if err := r.Delete(ctx, networkPolicy); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return fmt.Errorf("failed to delete old network policy %s in namespace %s: %w", networkPolicyName, r.config.OverridesConfigMapName.Namespace, err)
-		}
-	}
 	return nil
 }
