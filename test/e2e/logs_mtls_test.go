@@ -19,7 +19,6 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
-		logProducerName  = suite.ID()
 		pipelineName     = suite.ID()
 		backendExportURL string
 	)
@@ -32,9 +31,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
-		logProducer := loggen.New(logProducerName, mockNs)
+		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, logProducer.K8sObject(kitk8s.WithLabel("app", logProducerName)))
+		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
 		pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
@@ -71,11 +70,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have log-producer logs in the backend", func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, backendExportURL)
+			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })
