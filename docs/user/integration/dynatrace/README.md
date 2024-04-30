@@ -62,8 +62,8 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
 
     ```yaml
     namespaceSelector:
-        matchExpressions:
-        - key: kubernetes.io/metadata.name
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
         operator: NotIn
         values:
         - kyma-system
