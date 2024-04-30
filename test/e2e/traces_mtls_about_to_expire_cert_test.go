@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,43 +12,37 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces mTLS with certificates expiring within 2 weeks", Label("traces"), func() {
-	const (
-		mockBackendName = "traces-tls-receiver"
-		mockNs          = "traces-mocks-2week-tls-pipeline"
-		telemetrygenNs  = "traces-mtls-2weeks-to-expire"
-	)
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
-			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
-		)
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).
+		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(backend.DefaultName, mockNs).
 			WithAboutToExpireClientCert().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithTLS(*serverCerts))
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithTLS(*serverCerts))
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			WithTLS(*clientCerts)
-		pipelineName = tracePipeline.Name()
 
 		objs = append(objs,
-			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
+			telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
 			tracePipeline.K8sObject(),
 		)
 
@@ -80,11 +72,11 @@ var _ = Describe("Traces mTLS with certificates expiring within 2 weeks", Label(
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs)
 		})
 	})
 })

@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,41 +11,35 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics mTLS with invalid certificate", Label("metrics"), func() {
-	const (
-		mockBackendName = "metrics-tls-receiver"
-		mockNs          = "metrics-mocks-invalid-tls"
-		telemetrygenNs  = "metrics-invalid-mtls-cert"
-	)
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		pipelineName string
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
-			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
-		)
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).
+		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(backend.DefaultName, mockNs).
 			WithInvalidClientCert().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		objs = append(objs, backend.K8sObjects()...)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			WithTLS(*clientCerts)
-		pipelineName = metricPipeline.Name()
 
 		objs = append(objs,
-			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 			metricPipeline.K8sObject(),
 		)
 

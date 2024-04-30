@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -22,18 +21,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Self Monitor", Label("self-mon-traces"), Ordered, func() {
-	const (
-		mockBackendName = "traces-receiver-selfmon"
-		mockNs          = "traces-basic-selfmon-test"
-	)
-
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -41,13 +37,12 @@ var _ = Describe("Traces Self Monitor", Label("self-mon-traces"), Ordered, func(
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeTraces)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
-		pipelineName = pipeline.Name()
+		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
 		objs = append(objs,
 			pipeline.K8sObject(),
 			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeTraces).K8sObject(),
@@ -98,7 +93,7 @@ var _ = Describe("Traces Self Monitor", Label("self-mon-traces"), Ordered, func(
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {
