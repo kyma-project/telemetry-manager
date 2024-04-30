@@ -139,7 +139,7 @@ var (
 
 const (
 	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.97.0-cccde9ac"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/dev/tpi/fluent-bit:PR-428"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.3-c8214d63"
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240404-fd3588ce"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.45.4-6627fb45"
 
