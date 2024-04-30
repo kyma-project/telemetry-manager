@@ -8,16 +8,18 @@ Proposed
 
 ## Context
 
-The [Advanced pipeline status based on data flow](https://github.com/kyma-project/telemetry-manager/issues/425) epic describes efforts to make problems of the Telemetry module more transparent to users by utilizing CRD status conditions.
-To ease day-two operations, the status of the Telemetry and other Kyma modules should by available as metrics to enable users to integrate them into their monitoring system. For instance, by setting up alerts for a module status that differs from the expected value.
+The epic [Advanced pipeline status based on data flow](https://github.com/kyma-project/telemetry-manager/issues/425) describes efforts to make problems of the Telemetry module more transparent to users by utilizing CRD status conditions.
+To ease day-two operations, the status of the Telemetry and other Kyma modules should be available as metrics. Then, users can integrate these metrics into their monitoring system; for example, by setting up alerts for a module status that differs from the expected value.
 
 The [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) exporter provides a way to [export metrics for custom resources](https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/extend/customresourcestate-metrics.md).
 This record describes a way to integrate similar functionality to the Telemetry module's OpenTelemetry Collectors. The solution should avoid the maintenance overhead of an additional third-party-image and allow a dynamic configuration, based on the active Kyma modules.
 
-An OpenTelemetry Collector receiver with similar scope as kube-state-metrics is the [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver). However, this receiver does not support monitoring custom resources.
-Another available source to monitor changes of arbitrary Kubernetes objects is the [Kubernetes Objects Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sobjectsreceiver). This receiver produces only logs and no metrics.
+We investigated the following existing solutions:
 
-The OpenTelemetry Collector provides interfaces for enhancements by implementing custom receiver plugins. The OpenTelemetry project provides [documentation](https://opentelemetry.io/docs/collector/building/receiver/) on implementing a custom receiver and adding it to a custom distribution of the Collector.
+- The [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver) is an OpenTelemetry Collector receiver with similar scope as kube-state-metrics . However, this receiver does not support monitoring custom resources.
+- Another available source to monitor changes of arbitrary Kubernetes objects is the [Kubernetes Objects Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sobjectsreceiver). This receiver produces only logs and no metrics.
+
+- The OpenTelemetry Collector provides interfaces for enhancements by implementing custom receiver plugins. The OpenTelemetry project provides [documentation](https://opentelemetry.io/docs/collector/building/receiver/) on implementing a custom receiver and adding it to a custom distribution of the Collector.
 
 ## Decision
 
@@ -25,7 +27,7 @@ Due to the restrictions of available telemetry resources for Kubernetes resource
 
 ### Extended MetricPipeline API
 
-Module status metrics can be activated as a new input in the MetricPipeline CRD. Users can select the Kyma modules of interest by giving a module list. An empty list will include metrics of all active modules.
+To activate module status metrics as a new input, the MetricPipeline CRD needs a _module list_. If the module list is empty, metrics of all active modules are collected. As in the following example, users can select the Kyma modules of interest:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -50,7 +52,7 @@ spec:
         value: http://example.com:4317
 ```
 
-Enabling the Kyma input will enable a custom metrics receiver, called `kymastats`, in the telemetry-metric-gateway that produces metrics for the module state and status conditions.
+Enabling the Kyma input will enable a custom metrics receiver, called `kymastats`, in the Telemetry metric gateway that produces metrics for the module state and status conditions.
 The receiver configuration will follow the shown example.
 
 ```yaml
@@ -71,9 +73,9 @@ The receiver needs the following properties:
 
 ### Custom Metrics Receiver for OpenTelemetry Collector
 
-We assume the status subresource of a module CRD to contain a `conditions` list that uses the [meta/v1/Condition](https://pkg.go.dev/k8s.io/apimachinery@v0.30.0/pkg/apis/meta/v1#Condition) type and an overarching state attribute. We assume positive polarity for all conditions.
+We assume that the status subresource of a module CRD contains a `conditions` list that uses the type [meta/v1/Condition](https://pkg.go.dev/k8s.io/apimachinery@v0.30.0/pkg/apis/meta/v1#Condition), and an overarching state attribute. We assume positive polarity for all conditions.
 
-An example for this structure is the status subresource of the Telemetry module:
+As an example for this structure, see the **status** subresource of the Telemetry module:
 
 ```yaml
 status:
