@@ -119,3 +119,5 @@ Status and conditions should result in the following metrics:
 | kyma.module.status.condition | reason, status, name, type | Exports condition status of all conditions under .status.conditions. Value is 1 if the condition status is 1, else 0. |
 
 Collecting the module specific metrics should continue working in the case of a Node or Pod failure (high availability) without emitting metrics multiple times. To ensure this behavior, Kubernetes API server [leases](https://kubernetes.io/docs/concepts/architecture/leases/) can be used while only the lease holder should emit metrics. We will investigate for a generic solution in the OpenTelemetry Collector.
+
+The status of the Kyma CR should not be exported as a metric by the described approach. The receiver should also work with individually installed modules that are not managed by the lifecycle manager. The synchronization of the Kyma CR to module CRs is considered to be out of scope for this end-user facing metrics.
