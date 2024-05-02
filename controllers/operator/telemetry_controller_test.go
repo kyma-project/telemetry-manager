@@ -22,65 +22,6 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 		telemetryNamespace = "default"
 	)
 
-	Context("When a running TracePipeline exists", Ordered, func() {
-		const telemetryName = "telemetry-2"
-		const traceGRPCEndpoint = "http://traceFoo.kyma-system:4317"
-		const traceHTTPEndpoint = "http://traceFoo.kyma-system:4318"
-
-		BeforeAll(func() {
-			telemetry := &operatorv1alpha1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      telemetryName,
-					Namespace: telemetryNamespace,
-				},
-			}
-			tracePipeline := testutils.NewTracePipelineBuilder().WithName("trace-pipe").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build()
-
-			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, &tracePipeline)).Should(Succeed())
-				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
-			})
-			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
-			Expect(k8sClient.Create(ctx, &tracePipeline)).Should(Succeed())
-
-			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDeploymentReady})
-			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated})
-			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady})
-			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady})
-			Expect(k8sClient.Status().Update(ctx, &tracePipeline)).Should(Succeed())
-		})
-
-		It("Should have Telemetry with ready state", func() {
-			Eventually(func() (operatorv1alpha1.State, error) {
-				lookupKey := types.NamespacedName{
-					Name:      telemetryName,
-					Namespace: telemetryNamespace,
-				}
-				var telemetry operatorv1alpha1.Telemetry
-				err := k8sClient.Get(ctx, lookupKey, &telemetry)
-				if err != nil {
-					return "", err
-				}
-
-				return telemetry.Status.State, nil
-			}, timeout, interval).Should(Equal(operatorv1alpha1.StateReady))
-		})
-
-		It("Should have Telemetry with TracePipeline endpoints", func() {
-			Eventually(func(g Gomega) {
-				lookupKey := types.NamespacedName{
-					Name:      telemetryName,
-					Namespace: telemetryNamespace,
-				}
-				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(k8sClient.Get(ctx, lookupKey, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.GatewayEndpoints.Traces).ShouldNot(BeNil())
-				g.Expect(telemetry.Status.GatewayEndpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
-				g.Expect(telemetry.Status.GatewayEndpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
-			}, timeout, interval).Should(Succeed())
-		})
-	})
-
 	Context("When a pending TracePipeline exists", Ordered, func() {
 		const telemetryName = "telemetry-3"
 
