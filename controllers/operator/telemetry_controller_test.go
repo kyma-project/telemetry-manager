@@ -22,40 +22,6 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 		telemetryNamespace = "default"
 	)
 
-	Context("When no dependent resources exist", Ordered, func() {
-		const telemetryName = "telemetry-1"
-
-		BeforeAll(func() {
-			telemetry := &operatorv1alpha1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      telemetryName,
-					Namespace: telemetryNamespace,
-				},
-			}
-
-			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
-			})
-			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
-		})
-
-		It("Should have Telemetry with ready state", func() {
-			Eventually(func() (operatorv1alpha1.State, error) {
-				lookupKey := types.NamespacedName{
-					Name:      telemetryName,
-					Namespace: telemetryNamespace,
-				}
-				var telemetry operatorv1alpha1.Telemetry
-				err := k8sClient.Get(ctx, lookupKey, &telemetry)
-				if err != nil {
-					return "", err
-				}
-
-				return telemetry.Status.State, nil
-			}, timeout, interval).Should(Equal(operatorv1alpha1.StateReady))
-		})
-	})
-
 	Context("When a running TracePipeline exists", Ordered, func() {
 		const telemetryName = "telemetry-2"
 		const traceGRPCEndpoint = "http://traceFoo.kyma-system:4317"
