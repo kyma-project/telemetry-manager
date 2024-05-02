@@ -28,6 +28,34 @@ var (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
+
+	Context("When a running TracePipeline exists", Ordered, func() {
+		var (
+			tracePipelineName = suite.ID()
+			traceGRPCEndpoint = "http://telemetry-otlp-traces.kyma-system:4317"
+			traceHTTPEndpoint = "http://telemetry-otlp-traces.kyma-system:4318"
+		)
+
+		BeforeAll(func() {
+			tracePipeline := kitk8s.NewTracePipelineV1Alpha1(tracePipelineName).K8sObject()
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, tracePipeline)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipeline)).Should(Succeed())
+		})
+
+		It("Should have Telemetry with TracePipeline endpoints", func() {
+			Eventually(func(g Gomega) {
+				var telemetry operatorv1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.GatewayEndpoints.Traces).ShouldNot(BeNil())
+				g.Expect(telemetry.Status.GatewayEndpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
+				g.Expect(telemetry.Status.GatewayEndpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+	})
+
 	Context("After creating Telemetry resources", Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {
