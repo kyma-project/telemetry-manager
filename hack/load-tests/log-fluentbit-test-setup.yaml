@@ -44,7 +44,7 @@ data:
       @type http
       port 9880
       bind 0.0.0.0
-      body_size_limit 100m
+      body_size_limit 150m
       add_http_headers true
       <parse>
         @type json
@@ -86,7 +86,7 @@ spec:
       containers:
         - args:
             - --config=/etc/collector/config.yaml
-          image: OTEL_IMAGE
+          image: europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.93.0-fdc9e6c4
           imagePullPolicy: IfNotPresent
           name: otel-collector
           securityContext:
@@ -110,6 +110,10 @@ spec:
           volumeMounts:
             - mountPath: /fluentd/etc/
               name: fluentd-config
+          resources:
+            limits:
+              cpu: 350m
+              memory: 1250Mi
       volumes:
         - configMap:
             defaultMode: 420
