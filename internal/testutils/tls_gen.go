@@ -16,6 +16,7 @@ type CertBuilder struct {
 	clientNotBefore time.Time
 	clientNotAfter  time.Time
 	clientInvalid   bool
+	commonName      string
 }
 
 func NewCertBuilder(serverName, serverNamespace string) *CertBuilder {
@@ -23,6 +24,7 @@ func NewCertBuilder(serverName, serverNamespace string) *CertBuilder {
 		serverDNSName:   serverName + "." + serverNamespace + ".svc.cluster.local",
 		clientNotBefore: time.Now(),
 		clientNotAfter:  time.Now().AddDate(0, 0, 30),
+		commonName:      "ca.com",
 	}
 }
 
@@ -52,6 +54,11 @@ func (c *CertBuilder) WithAboutToExpireClientCert() *CertBuilder {
 
 func (c *CertBuilder) WithInvalidClientCert() *CertBuilder {
 	return &CertBuilder{clientInvalid: true}
+}
+
+func (c *CertBuilder) WithCommonName(commonName string) *CertBuilder {
+	c.commonName = commonName
+	return c
 }
 
 func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
@@ -150,7 +157,7 @@ func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
 func (c *CertBuilder) caCertTemplate() *x509.Certificate {
 	return &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "ca.com"},
+		Subject:               pkix.Name{CommonName: c.commonName},
 		NotBefore:             c.clientNotBefore,
 		NotAfter:              c.clientNotAfter,
 		BasicConstraintsValid: true,
@@ -160,7 +167,7 @@ func (c *CertBuilder) caCertTemplate() *x509.Certificate {
 func (c *CertBuilder) clientCertTemplate() *x509.Certificate {
 	return &x509.Certificate{
 		SerialNumber:          big.NewInt(2),
-		Subject:               pkix.Name{CommonName: "client.com"},
+		Subject:               pkix.Name{CommonName: c.commonName},
 		NotBefore:             c.clientNotBefore,
 		NotAfter:              c.clientNotAfter,
 		BasicConstraintsValid: true,
@@ -170,9 +177,17 @@ func (c *CertBuilder) clientCertTemplate() *x509.Certificate {
 func (c *CertBuilder) serverCertTemplate() *x509.Certificate {
 	return &x509.Certificate{
 		SerialNumber:          big.NewInt(3),
-		Subject:               pkix.Name{CommonName: "server.com"},
+		Subject:               pkix.Name{CommonName: c.commonName},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(time.Hour),
 		BasicConstraintsValid: true,
+	}
+}
+
+func BuildInvalidKeyPair(caCertPem, clientCertPem, clientKeyPem bytes.Buffer) *ClientCerts {
+	return &ClientCerts{
+		CaCertPem:     caCertPem,
+		ClientCertPem: clientCertPem,
+		ClientKeyPem:  clientKeyPem,
 	}
 }

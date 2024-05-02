@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,18 +26,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, _, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		_, clientCerts, err := testutils.NewCertBuilder(fmt.Sprintf("different-%s", backend.DefaultName), mockNs).Build()
+		_, clientCertsFoo, err := testutils.NewCertBuilder("foo", mockNs).WithCommonName("foo.com").Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCertsDefault))
 		objs = append(objs, backend.K8sObjects()...)
+
+		invalidClientCerts := testutils.BuildInvalidKeyPair(clientCertsDefault.CaCertPem, clientCertsDefault.ClientCertPem, clientCertsFoo.ClientKeyPem)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
 			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			WithTLS(*clientCerts)
+			WithTLS(*invalidClientCerts)
 
 		objs = append(objs,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
