@@ -64,7 +64,7 @@ var commonMessages = map[string]string{
 	ReasonTLSPrivateKeyInvalid:         "TLS private key invalid: %s",
 	ReasonTLSCertificateExpired:        "TLS certificate expired on %s",
 	ReasonTLSCertificateAboutToExpire:  "TLS certificate is about to expire, configured certificate is valid until %s",
-	ReasonTLSCertificateKeyPairInvalid: "TLS certificate and private key do not match",
+	ReasonTLSCertificateKeyPairInvalid: "TLS certificate and private key do not match: %s",
 }
 
 var metricPipelineMessages = map[string]string{
