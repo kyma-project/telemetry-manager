@@ -96,17 +96,17 @@ func (v *Validator) ValidateCertificate(ctx context.Context, cert, key *telemetr
 		return err
 	}
 
+	_, err = tls.X509KeyPair(sanitizedCert, sanitizedKey)
+	if err != nil {
+		return ErrInvalidCertificateKeyPair
+	}
+
 	if v.now().After(certExpiry) {
 		return &CertExpiredError{Expiry: certExpiry}
 	}
 
 	if certExpiry.Sub(v.now()) <= twoWeeks {
 		return &CertAboutToExpireError{Expiry: certExpiry}
-	}
-
-	_, err = tls.X509KeyPair(sanitizedCert, sanitizedKey)
-	if err != nil {
-		return ErrInvalidCertificateKeyPair
 	}
 
 	return nil

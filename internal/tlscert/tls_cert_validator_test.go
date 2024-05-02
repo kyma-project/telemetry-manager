@@ -473,5 +473,29 @@ func TestInvalidCertificateKeyPair(t *testing.T) {
 
 	err = validator.ValidateCertificate(context.Background(), &cert, &key)
 	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
+}
 
+// It should check first if the certificate key pair match before testing if cert is expired
+func TestInvalidCertPair_WithExpiredCert(t *testing.T) {
+	_, clientCertsFoo, err := testutils.NewCertBuilder("foo", "fooNs").WithExpiredClientCert().Build()
+	require.NoError(t, err)
+	_, clientCertsBar, err := testutils.NewCertBuilder("bar", "barNs").Build()
+	require.NoError(t, err)
+
+	keyData := clientCertsFoo.ClientKeyPem.String()
+	certData := clientCertsBar.ClientCertPem.String()
+
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
+
+	cert := telemetryv1alpha1.ValueType{
+		Value: certData,
+	}
+
+	key := telemetryv1alpha1.ValueType{
+		Value: keyData,
+	}
+
+	err = validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
 }
