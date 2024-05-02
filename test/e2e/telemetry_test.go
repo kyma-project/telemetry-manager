@@ -31,7 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 	Context("When a running TracePipeline exists", Ordered, func() {
 		var (
-			tracePipelineName = suite.ID()
+			tracePipelineName = suite.IDWithSuffix("traces-endpoints")
 			traceGRPCEndpoint = "http://telemetry-otlp-traces.kyma-system:4317"
 			traceHTTPEndpoint = "http://telemetry-otlp-traces.kyma-system:4318"
 		)
@@ -52,6 +52,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(telemetry.Status.GatewayEndpoints.Traces).ShouldNot(BeNil())
 				g.Expect(telemetry.Status.GatewayEndpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
 				g.Expect(telemetry.Status.GatewayEndpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+	})
+
+	Context("When a running MetricPipeline exists", Ordered, func() {
+		var (
+			metricPipelineName = suite.IDWithSuffix("metrics-endpoints")
+			metricGRPCEndpoint = "http://telemetry-otlp-metrics.kyma-system:4317"
+			metricHTTPEndpoint = "http://telemetry-otlp-metrics.kyma-system:4318"
+		)
+
+		BeforeAll(func() {
+			metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(metricPipelineName).K8sObject()
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, metricPipeline)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipeline)).Should(Succeed())
+		})
+
+		It("Should have Telemetry with MetricPipeline endpoints", func() {
+			Eventually(func(g Gomega) {
+				var telemetry operatorv1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.GatewayEndpoints.Metrics).ShouldNot(BeNil())
+				g.Expect(telemetry.Status.GatewayEndpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
+				g.Expect(telemetry.Status.GatewayEndpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
