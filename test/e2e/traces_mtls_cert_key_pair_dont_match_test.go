@@ -3,14 +3,14 @@
 package e2e
 
 import (
+	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -19,21 +19,22 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		serverCerts, _, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		Expect(err).ToNot(HaveOccurred())
+
+		_, clientCerts, err := testutils.NewCertBuilder(fmt.Sprintf("different-%s", backend.DefaultName), mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
 		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithTLS(*serverCerts))
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(proxyClient)
 
 		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
 			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
@@ -46,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		return objs
 	}
 
-	Context("When a tracepipeline with TLS activated exists", Ordered, func() {
+	Context("When a tracepipeline is configured TLS Cert that does not match the Key", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -56,20 +57,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have running pipelines", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+		It("Should not have running pipelines", func() {
+			verifiers.TracePipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a running trace gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+		It("Should have a tls certificate key pair invalid condition set in pipeline conditions", func() {
+			verifiers.TracePipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateKeyPairInvalid)
 		})
 
-		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-		})
-
-		It("Should verify traces from telemetrygen are delivered", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs)
+		It("Should have telemetryCR showing tls certificate key pair invalid condition for trace component in its status", func() {
+			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "TraceComponentsHealthy", conditions.ReasonTLSCertificateKeyPairInvalid, false)
 		})
 
 	})
