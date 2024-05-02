@@ -434,6 +434,12 @@ func TestResolveValue(t *testing.T) {
 			},
 			expectedErr: ErrCertDecodeFailed,
 		},
+		{
+			name:        "secret is not set",
+			inputCert:   telemetryv1alpha1.ValueType{ValueFrom: nil},
+			inputKey:    telemetryv1alpha1.ValueType{ValueFrom: nil},
+			expectedErr: ErrValueResolveFailed,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
