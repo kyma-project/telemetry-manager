@@ -38,6 +38,7 @@ type Option func(*Backend)
 type Backend struct {
 	name       string
 	namespace  string
+	replicas   int32
 	signalType SignalType
 
 	persistentHostSecret bool
@@ -72,6 +73,12 @@ func WithName(name string) Option {
 	}
 }
 
+func WithReplicas(replicas int32) Option {
+	return func(b *Backend) {
+		b.replicas = replicas
+	}
+}
+
 func WithTLS(certKey tlsgen.ServerCerts) Option {
 	return func(b *Backend) {
 		b.certs = &certKey
@@ -88,7 +95,7 @@ func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
 
 	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
-	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
+	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
 
 	if b.signalType == SignalTypeLogs {
 		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)

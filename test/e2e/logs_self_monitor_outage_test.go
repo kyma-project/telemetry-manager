@@ -31,7 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithReplicas(0))
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
@@ -60,7 +60,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", Label(suite.LabelOperational), func() {
+		It("Should have a running logpipeline", func() {
 			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
