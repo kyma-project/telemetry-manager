@@ -51,18 +51,7 @@ data:
       </parse>
     </source>
     <match **>
-      @type forward
-      send_timeout 60s
-      recover_wait 10s
-      hard_timeout 60s
-      flush_interval 1s
-
-      <server>
-        name otlp
-        host 127.0.0.1
-        port 8006
-        weight 60
-      </server>
+      @type null
     </match>
 
 ---
@@ -110,10 +99,6 @@ spec:
           volumeMounts:
             - mountPath: /fluentd/etc/
               name: fluentd-config
-          resources:
-            limits:
-              cpu: 350m
-              memory: 1250Mi
       volumes:
         - configMap:
             defaultMode: 420
