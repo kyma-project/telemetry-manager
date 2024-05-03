@@ -89,18 +89,18 @@ func WaitForLogFlowHealthConditionTransition(ctx context.Context, k8sClient clie
 
 	for _, expected := range expectedReasons {
 		// Wait for the current condition to match the expected condition
-		Eventually(func(g Gomega) bool {
+		Eventually(func(g Gomega) string {
 			var pipeline telemetryv1alpha1.LogPipeline
 			key := types.NamespacedName{Name: pipelineName}
 			err := k8sClient.Get(ctx, key, &pipeline)
 			g.Expect(err).To(Succeed())
 			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
 			if currCond == nil {
-				return false
+				return ""
 			}
 
-			return currCond.Reason == expected
-		}, 5*time.Minute, periodic.DefaultInterval).Should(BeTrue(), "expected condition %s not reached", expected)
+			return currCond.Reason
+		}, 5*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected condition %s not reached", expected)
 
 		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
