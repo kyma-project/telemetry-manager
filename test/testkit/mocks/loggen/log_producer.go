@@ -36,6 +36,7 @@ func New(namespace string) *LogProducer {
 	return &LogProducer{
 		name:      DefaultName,
 		namespace: namespace,
+		replicas:  1,
 		load:      LoadLow,
 	}
 }

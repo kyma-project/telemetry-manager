@@ -57,6 +57,7 @@ func New(namespace string, signalType SignalType, opts ...Option) *Backend {
 	backend := &Backend{
 		name:       DefaultName,
 		namespace:  namespace,
+		replicas:   1,
 		signalType: signalType,
 	}
 
