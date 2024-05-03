@@ -296,7 +296,7 @@ jobs:
       - name: Run tests
         run: |
           hack/deploy-istio.sh
-          bin/ginkgo run --tags istio --label-filter="self-mon-logs" test/integration/istio
+          bin/ginkgo run --tags istio --label-filter="self-mon-logs" -v test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"

@@ -2,7 +2,6 @@ package verifiers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -11,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"fmt"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
@@ -85,23 +85,23 @@ func LogPipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient c
 }
 
 func WaitForLogFlowHealthConditionTransition(ctx context.Context, k8sClient client.Client, pipelineName string, expectedReasons []string) {
-	var prevCond *metav1.Condition
+	var currCond *metav1.Condition
 
 	for _, expected := range expectedReasons {
 		// Wait for the current condition to match the expected condition
-		Eventually(func(g Gomega) {
+		Eventually(func(g Gomega) bool {
 			var pipeline telemetryv1alpha1.LogPipeline
 			key := types.NamespacedName{Name: pipelineName}
 			err := k8sClient.Get(ctx, key, &pipeline)
 			g.Expect(err).To(Succeed())
-			currCond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
-
-			if currCond != nil && currCond.Status == metav1.ConditionTrue && currCond.Reason == expected {
-				if prevCond != nil && (prevCond.Reason != currCond.Reason || prevCond.Status != currCond.Status) {
-					fmt.Fprintf(GinkgoWriter, "Transitioned from [%s] to [%s]\n", prevCond.Reason, currCond.Reason)
-				}
-				prevCond = currCond
+			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+			if currCond == nil {
+				return false
 			}
-		}, 5*time.Minute, periodic.DefaultInterval).Should(Succeed(), "expected condition %s not reached", expected)
+
+			return currCond.Reason == expected
+		}, 5*time.Minute, periodic.DefaultInterval).Should(BeTrue(), "expected condition %s not reached", expected)
+
+		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
 }
