@@ -29,13 +29,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		_, clientCertsFoo, err := testutils.NewCertBuilder("foo", mockNs).WithCommonName("foo.com").Build()
+		_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
 		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCertsDefault))
 		objs = append(objs, backend.K8sObjects()...)
 
-		invalidClientCerts := testutils.BuildInvalidKeyPair(clientCertsDefault.CaCertPem, clientCertsDefault.ClientCertPem, clientCertsFoo.ClientKeyPem)
+		invalidClientCerts := &testutils.ClientCerts{
+			CaCertPem:     clientCertsDefault.CaCertPem,
+			ClientCertPem: clientCertsDefault.ClientCertPem,
+			ClientKeyPem:  clientCertsCreatedAgain.ClientKeyPem,
+		}
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
