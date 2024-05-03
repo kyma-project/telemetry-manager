@@ -7,11 +7,13 @@ import (
 	. "github.com/onsi/gomega"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -79,6 +81,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(telemetry.Status.GatewayEndpoints.Metrics).ShouldNot(BeNil())
 				g.Expect(telemetry.Status.GatewayEndpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
 				g.Expect(telemetry.Status.GatewayEndpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+	})
+
+	Context("When a LogPipeline with Loki output exists", Ordered, func() {
+		var logPipelineName = suite.IDWithSuffix("loki-output")
+
+		BeforeAll(func() {
+			logPipeline := kitk8s.NewLogPipelineV1Alpha1(logPipelineName).WithLokiOutput().K8sObject()
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, logPipeline)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline)).Should(Succeed())
+		})
+
+		It("Should have Telemetry with warning state", func() {
+			Eventually(func(g Gomega) {
+				var telemetry operatorv1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
+
+				logComponentsHealthyCond := meta.FindStatusCondition(telemetry.Status.Conditions, "LogComponentsHealthy")
+				g.Expect(logComponentsHealthyCond).ShouldNot(BeNil())
+				g.Expect(logComponentsHealthyCond.Status).Should(Equal(metav1.ConditionFalse))
+				g.Expect(logComponentsHealthyCond.Reason).Should(Equal(conditions.ReasonUnsupportedLokiOutput))
+				g.Expect(logComponentsHealthyCond.Message).Should(Equal(conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
