@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
@@ -60,61 +59,6 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 				}
 				return telemetry.Status.State, nil
 			}, timeout, interval).Should(Equal(operatorv1alpha1.StateWarning))
-		})
-	})
-
-	Context("When a LogPipeline with Loki output exists", Ordered, func() {
-		const (
-			telemetryName = "telemetry-4"
-			pipelineName  = "pipeline-with-loki-output"
-		)
-
-		BeforeAll(func() {
-			telemetry := &operatorv1alpha1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      telemetryName,
-					Namespace: telemetryNamespace,
-				},
-			}
-			logPipelineWithLokiOutput := &telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:       pipelineName,
-					Generation: 1,
-				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.Output{
-						Loki: &telemetryv1alpha1.LokiOutput{
-							URL: telemetryv1alpha1.ValueType{
-								Value: "http://logging-loki:3100/loki/api/v1/push",
-							},
-						},
-					}},
-			}
-
-			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, logPipelineWithLokiOutput)).Should(Succeed())
-				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
-			})
-			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
-			Expect(k8sClient.Create(ctx, logPipelineWithLokiOutput)).Should(Succeed())
-
-			meta.SetStatusCondition(&logPipelineWithLokiOutput.Status.Conditions, metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady})
-			meta.SetStatusCondition(&logPipelineWithLokiOutput.Status.Conditions, metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonUnsupportedLokiOutput})
-			meta.SetStatusCondition(&logPipelineWithLokiOutput.Status.Conditions, metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonUnsupportedLokiOutput})
-			Expect(k8sClient.Status().Update(ctx, logPipelineWithLokiOutput)).Should(Succeed())
-
-		})
-
-		It("Should have Telemetry with warning state", func() {
-			Eventually(func(g Gomega) {
-				lookupKey := types.NamespacedName{
-					Name:      telemetryName,
-					Namespace: telemetryNamespace,
-				}
-				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(k8sClient.Get(ctx, lookupKey, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
-			}, timeout, interval).Should(Succeed())
 		})
 	})
 
