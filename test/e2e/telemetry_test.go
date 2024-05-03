@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -110,6 +111,41 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(logComponentsHealthyCond.Message).Should(Equal(conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
+	})
+
+	Context("When a misconfigured TracePipeline exists", Ordered, func() {
+		var (
+			tracePipelineName = suite.IDWithSuffix("missing-secret")
+			OTLPEndpointRef   = &telemetryv1alpha1.SecretKeyRef{
+				Name:      "non-existent-secret",
+				Namespace: "default",
+				Key:       "endpoint",
+			}
+		)
+
+		BeforeAll(func() {
+			tracePipeline := kitk8s.NewTracePipelineV1Alpha1(tracePipelineName).WithOutputEndpointFromSecret(OTLPEndpointRef).K8sObject()
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, tracePipeline)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipeline)).Should(Succeed())
+		})
+
+		It("Should have Telemetry with warning state", func() {
+			Eventually(func(g Gomega) {
+				var telemetry operatorv1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
+
+				traceComponentsHealthyCond := meta.FindStatusCondition(telemetry.Status.Conditions, "TraceComponentsHealthy")
+				g.Expect(traceComponentsHealthyCond).ShouldNot(BeNil())
+				g.Expect(traceComponentsHealthyCond.Status).Should(Equal(metav1.ConditionFalse))
+				g.Expect(traceComponentsHealthyCond.Reason).Should(Equal("TracePipeline" + conditions.ReasonReferencedSecretMissing))
+				g.Expect(traceComponentsHealthyCond.Message).Should(Equal(conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing)))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+
 	})
 
 	Context("After creating Telemetry resources", Ordered, func() {
