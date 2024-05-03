@@ -31,7 +31,7 @@ var (
 
 var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
-	Context("When a running TracePipeline exists", Ordered, func() {
+	Context("When a TracePipeline exists", Ordered, func() {
 		var (
 			tracePipelineName = suite.IDWithSuffix("traces-endpoints")
 			traceGRPCEndpoint = "http://telemetry-otlp-traces.kyma-system:4317"
@@ -58,7 +58,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 	})
 
-	Context("When a running MetricPipeline exists", Ordered, func() {
+	Context("When a MetricPipeline exists", Ordered, func() {
 		var (
 			metricPipelineName = suite.IDWithSuffix("metrics-endpoints")
 			metricGRPCEndpoint = "http://telemetry-otlp-metrics.kyma-system:4317"
