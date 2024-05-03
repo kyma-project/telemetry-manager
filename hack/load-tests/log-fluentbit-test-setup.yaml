@@ -3,36 +3,7 @@ kind: Namespace
 metadata:
   name: log-load-test
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: log-receiver
-  namespace: log-load-test
-data:
-  config.yaml: |-
-    receivers:
-      fluentforward:
-        endpoint: localhost:8006
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${MY_POD_IP}:4317
-          http:
-            endpoint: ${MY_POD_IP}:4318
-    exporters:
-      debug:
-    service:
-      telemetry:
-        logs:
-          level: "info"
-      pipelines:
-        logs:
-          receivers:
-            - otlp
-            - fluentforward
-          exporters:
-            - debug
----
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -73,22 +44,6 @@ spec:
         sidecar.istio.io/inject: "true"
     spec:
       containers:
-        - args:
-            - --config=/etc/collector/config.yaml
-          image: europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.93.0-fdc9e6c4
-          imagePullPolicy: IfNotPresent
-          name: otel-collector
-          securityContext:
-            runAsUser: 101
-          volumeMounts:
-            - mountPath: /etc/collector
-              name: config
-          env:
-          - name: MY_POD_IP
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: status.podIP
         - image: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1
           imagePullPolicy: IfNotPresent
           name: fluentd
@@ -100,10 +55,6 @@ spec:
             - mountPath: /fluentd/etc/
               name: fluentd-config
       volumes:
-        - configMap:
-            defaultMode: 420
-            name: log-receiver
-          name: config
         - configMap:
             defaultMode: 420
             name: log-receiver-fluentd
