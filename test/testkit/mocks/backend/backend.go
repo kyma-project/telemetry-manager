@@ -36,19 +36,21 @@ const (
 type Option func(*Backend)
 
 type Backend struct {
-	name       string
-	namespace  string
-	replicas   int32
-	signalType SignalType
-
+	name                 string
+	namespace            string
+	replicas             int32
+	signalType           SignalType
 	persistentHostSecret bool
 	certs                *tlsgen.ServerCerts
+	abortFaultPercentage float64
 
-	ConfigMap        *ConfigMap
-	FluentDConfigMap *fluentd.ConfigMap
-	Deployment       *Deployment
-	ExternalService  *ExternalService
-	HostSecret       *kitk8s.Secret
+	otelCollectorConfigMap  *ConfigMap
+	fluentDConfigMap        *fluentd.ConfigMap
+	otelCollectorDeployment *Deployment
+	hostSecret              *kitk8s.Secret
+	virtualService          *kitk8s.VirtualService
+
+	ExternalService *ExternalService
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -91,15 +93,21 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 	}
 }
 
+func WithAbortFaultInjection(abortFaultPercentage float64) Option {
+	return func(b *Backend) {
+		b.abortFaultPercentage = abortFaultPercentage
+	}
+}
+
 func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
 
-	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
-	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
+	b.otelCollectorConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
+	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
 
 	if b.signalType == SignalTypeLogs {
-		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
-		b.Deployment.WithFluentdConfigName(b.FluentDConfigMap.Name())
+		b.fluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
+		b.otelCollectorDeployment.WithFluentdConfigName(b.fluentDConfigMap.Name())
 	}
 
 	b.ExternalService = NewExternalService(b.name, b.namespace, b.signalType)
@@ -110,20 +118,28 @@ func (b *Backend) buildResources() {
 	} else {
 		endpoint = b.ExternalService.OTLPGrpcEndpointURL()
 	}
-	b.HostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
+	b.hostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
 		kitk8s.WithStringData("host", endpoint)).Persistent(b.persistentHostSecret)
+
+	if b.abortFaultPercentage > 0 {
+		b.virtualService = kitk8s.NewVirtualService("fault-injection", b.namespace, b.name).WithAbortFaultPercentage(b.abortFaultPercentage)
+	}
 }
 
 func (b *Backend) Name() string {
 	return b.name
 }
 
+func (b *Backend) Host() string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
+}
+
 func (b *Backend) HostSecretRefV1Alpha1() *telemetryv1alpha1.SecretKeyRef {
-	return b.HostSecret.SecretKeyRefV1Alpha1("host")
+	return b.hostSecret.SecretKeyRefV1Alpha1("host")
 }
 
 func (b *Backend) HostSecretRefV1Beta1() *telemetryv1beta1.SecretKeyRef {
-	return b.HostSecret.SecretKeyRefV1Beta1("host")
+	return b.hostSecret.SecretKeyRefV1Beta1("host")
 }
 
 func (b *Backend) ExportURL(proxyClient *apiserverproxy.Client) string {
@@ -133,12 +149,16 @@ func (b *Backend) ExportURL(proxyClient *apiserverproxy.Client) string {
 func (b *Backend) K8sObjects() []client.Object {
 	var objects []client.Object
 	if b.signalType == SignalTypeLogs {
-		objects = append(objects, b.FluentDConfigMap.K8sObject())
+		objects = append(objects, b.fluentDConfigMap.K8sObject())
 	}
 
-	objects = append(objects, b.ConfigMap.K8sObject())
-	objects = append(objects, b.Deployment.K8sObject(kitk8s.WithLabel("app", b.Name())))
+	if b.virtualService != nil {
+		objects = append(objects, b.virtualService.K8sObject())
+	}
+
+	objects = append(objects, b.otelCollectorConfigMap.K8sObject())
+	objects = append(objects, b.otelCollectorDeployment.K8sObject(kitk8s.WithLabel("app", b.Name())))
 	objects = append(objects, b.ExternalService.K8sObject(kitk8s.WithLabel("app", b.Name())))
-	objects = append(objects, b.HostSecret.K8sObject())
+	objects = append(objects, b.hostSecret.K8sObject())
 	return objects
 }

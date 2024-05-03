@@ -2,8 +2,10 @@ package verifiers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,6 +16,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, backendExportURL string) {
@@ -78,4 +82,26 @@ func LogPipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient c
 		runningCond := pipeline.Status.Conditions[conditionsSize-1]
 		g.Expect(runningCond.Type).To(Equal(conditions.TypeRunning))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func WaitForLogFlowHealthConditionTransition(ctx context.Context, k8sClient client.Client, pipelineName string, expectedReasons []string) {
+	var prevCond *metav1.Condition
+
+	for _, expected := range expectedReasons {
+		// Wait for the current condition to match the expected condition
+		Eventually(func(g Gomega) {
+			var pipeline telemetryv1alpha1.LogPipeline
+			key := types.NamespacedName{Name: pipelineName}
+			err := k8sClient.Get(ctx, key, &pipeline)
+			g.Expect(err).To(Succeed())
+			currCond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+
+			if currCond != nil && currCond.Status == metav1.ConditionTrue && currCond.Reason == expected {
+				if prevCond != nil && (prevCond.Reason != currCond.Reason || prevCond.Status != currCond.Status) {
+					fmt.Fprintf(GinkgoWriter, "Transitioned from [%s] to [%s]\n", prevCond.Reason, currCond.Reason)
+				}
+				prevCond = currCond
+			}
+		}, 5*time.Minute, periodic.DefaultInterval).Should(Succeed(), "expected condition %s not reached", expected)
+	}
 }

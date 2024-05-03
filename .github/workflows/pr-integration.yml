@@ -281,3 +281,25 @@ jobs:
         if: success() || failure()
         with:
           failure: failure()
+
+    e2e-self-monitor-logs-negative:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repo
+          uses: actions/checkout@v4
+
+        - name: Prepare Test
+          uses: "./.github/template/prepare-test"
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Run tests
+          run: |
+            hack/deploy-istio.sh
+            bin/ginkgo run --tags istio --label-filter="self-mon-logs" test/integration/istio
+
+        - name: Finalize Test
+          uses: "./.github/template/finalize-test"
+          if: success() || failure()
+          with:
+            failure: failure()
