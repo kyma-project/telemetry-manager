@@ -18,7 +18,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        e2e: [metrics, traces, logs, telemetry]
+        e2e:
+        - logs
+        - metrics
+        - traces
+        - telemetry
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
