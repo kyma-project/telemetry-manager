@@ -32,6 +32,9 @@ done
 function setup() {
 
     kubectl create namespace $PROMETHEUS_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+    kubectl label namespace kyma-system istio-injection=enabled --overwrite
+
     # Deploy prometheus
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update
