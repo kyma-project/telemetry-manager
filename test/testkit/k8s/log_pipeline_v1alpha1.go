@@ -139,6 +139,18 @@ func (p *logPipelineV1Alpha1) WithCustomOutput(host string) *logPipelineV1Alpha1
 	return p
 }
 
+func (p *logPipelineV1Alpha1) WithLokiOutput() *logPipelineV1Alpha1 {
+	p.output = telemetryv1alpha1.Output{
+		Loki: &telemetryv1alpha1.LokiOutput{
+			URL: telemetryv1alpha1.ValueType{
+				Value: "http://logging-loki:3100/loki/api/v1/push",
+			},
+		},
+	}
+
+	return p
+}
+
 func (p *logPipelineV1Alpha1) WithFilter(filter string) *logPipelineV1Alpha1 {
 	p.filters = append(p.filters, telemetryv1alpha1.Filter{
 		Custom: filter,
