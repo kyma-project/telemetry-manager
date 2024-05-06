@@ -12,7 +12,6 @@ service:
                 - memory_limiter
                 - filter/drop-internal-communication
                 - resource/delete-service-name
-                - resource/insert-input-source-istio
                 - transform/set-instrumentation-scope-istio
                 - batch
             exporters:
@@ -24,7 +23,6 @@ service:
             processors:
                 - memory_limiter
                 - resource/delete-service-name
-                - resource/insert-input-source-prometheus
                 - transform/set-instrumentation-scope-prometheus
                 - batch
             exporters:
@@ -35,7 +33,6 @@ service:
             processors:
                 - memory_limiter
                 - resource/delete-service-name
-                - resource/insert-input-source-runtime
                 - transform/set-instrumentation-scope-runtime
                 - batch
             exporters:
@@ -300,21 +297,6 @@ processors:
         attributes:
             - action: delete
               key: service.name
-    resource/insert-input-source-runtime:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: runtime
-    resource/insert-input-source-prometheus:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: prometheus
-    resource/insert-input-source-istio:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: istio
     filter/drop-internal-communication:
         metrics:
             metric:

@@ -91,7 +91,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = config.Pipeline{
 			Receivers:  []string{"kubeletstats"},
-			Processors: []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-runtime", "transform/set-instrumentation-scope-runtime", "batch"},
+			Processors: []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}
@@ -99,7 +99,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.prometheus {
 		pipelinesConfig["metrics/prometheus"] = config.Pipeline{
 			Receivers:  []string{"prometheus/app-pods", "prometheus/app-services"},
-			Processors: []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "transform/set-instrumentation-scope-prometheus", "batch"},
+			Processors: []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}
@@ -107,7 +107,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.istio {
 		pipelinesConfig["metrics/istio"] = config.Pipeline{
 			Receivers:  []string{"prometheus/istio"},
-			Processors: []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "resource/insert-input-source-istio", "transform/set-instrumentation-scope-istio", "batch"},
+			Processors: []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "transform/set-instrumentation-scope-istio", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}

@@ -53,8 +53,6 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.Nil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 0)
 		})
@@ -65,13 +63,14 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-runtime", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
 
@@ -81,13 +80,14 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
 			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 
@@ -97,14 +97,14 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceIstio)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
 			require.Equal(t, []string{"prometheus/istio"}, collectorConfig.Service.Pipelines["metrics/istio"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "resource/insert-input-source-istio", "transform/set-instrumentation-scope-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
+			require.Equal(t, []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "transform/set-instrumentation-scope-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/istio"].Exporters)
 		})
 
@@ -114,22 +114,22 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceIstio)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 3)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-runtime", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
 			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
 			require.Equal(t, []string{"prometheus/istio"}, collectorConfig.Service.Pipelines["metrics/istio"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "resource/insert-input-source-istio", "transform/set-instrumentation-scope-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
+			require.Equal(t, []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "transform/set-instrumentation-scope-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/istio"].Exporters)
 		})
 	})
@@ -142,8 +142,9 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.Nil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 0)
 		})
@@ -155,13 +156,14 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-runtime", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
 
@@ -172,13 +174,14 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-runtime", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
 
@@ -189,13 +192,14 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
 			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 
@@ -206,13 +210,13 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
 			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 
@@ -223,17 +227,17 @@ func TestMakeAgentConfig(t *testing.T) {
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 2)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-runtime", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
 			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 	})

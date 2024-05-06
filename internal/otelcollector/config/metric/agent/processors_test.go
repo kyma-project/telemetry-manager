@@ -55,42 +55,6 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "service.name", collectorConfig.Processors.DeleteServiceName.Attributes[0].Key)
 	})
 
-	t.Run("insert input source runtime", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, false)
-
-		require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-		require.Len(t, collectorConfig.Processors.InsertInputSourceRuntime.Attributes, 1)
-		require.Equal(t, "insert", collectorConfig.Processors.InsertInputSourceRuntime.Attributes[0].Action)
-		require.Equal(t, "kyma.source", collectorConfig.Processors.InsertInputSourceRuntime.Attributes[0].Key)
-		require.Equal(t, "runtime", collectorConfig.Processors.InsertInputSourceRuntime.Attributes[0].Value)
-	})
-
-	t.Run("insert input source prometheus", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, false)
-
-		require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
-		require.Len(t, collectorConfig.Processors.InsertInputSourcePrometheus.Attributes, 1)
-		require.Equal(t, "insert", collectorConfig.Processors.InsertInputSourcePrometheus.Attributes[0].Action)
-		require.Equal(t, "kyma.source", collectorConfig.Processors.InsertInputSourcePrometheus.Attributes[0].Key)
-		require.Equal(t, "prometheus", collectorConfig.Processors.InsertInputSourcePrometheus.Attributes[0].Value)
-	})
-
-	t.Run("insert input source istio", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithIstioInput(true).Build(),
-		}, false)
-
-		require.NotNil(t, collectorConfig.Processors.InsertInputSourceIstio)
-		require.Len(t, collectorConfig.Processors.InsertInputSourceIstio.Attributes, 1)
-		require.Equal(t, "insert", collectorConfig.Processors.InsertInputSourceIstio.Attributes[0].Action)
-		require.Equal(t, "kyma.source", collectorConfig.Processors.InsertInputSourceIstio.Attributes[0].Key)
-		require.Equal(t, "istio", collectorConfig.Processors.InsertInputSourceIstio.Attributes[0].Value)
-	})
-
 	t.Run("set instrumentation scope runtime", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),

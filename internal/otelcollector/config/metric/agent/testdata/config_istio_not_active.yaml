@@ -12,7 +12,6 @@ service:
             processors:
                 - memory_limiter
                 - resource/delete-service-name
-                - resource/insert-input-source-prometheus
                 - transform/set-instrumentation-scope-prometheus
                 - batch
             exporters:
@@ -23,7 +22,6 @@ service:
             processors:
                 - memory_limiter
                 - resource/delete-service-name
-                - resource/insert-input-source-runtime
                 - transform/set-instrumentation-scope-runtime
                 - batch
             exporters:
@@ -165,16 +163,6 @@ processors:
         attributes:
             - action: delete
               key: service.name
-    resource/insert-input-source-runtime:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: runtime
-    resource/insert-input-source-prometheus:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: prometheus
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         metric_statements:

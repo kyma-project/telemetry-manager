@@ -116,9 +116,6 @@ type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
 	DeleteServiceName                 *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
-	InsertInputSourceRuntime          *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
-	InsertInputSourcePrometheus       *config.ResourceProcessor `yaml:"resource/insert-input-source-prometheus,omitempty"`
-	InsertInputSourceIstio            *config.ResourceProcessor `yaml:"resource/insert-input-source-istio,omitempty"`
 	DropInternalCommunication         *FilterProcessor          `yaml:"filter/drop-internal-communication,omitempty"`
 	SetInstrumentationScopeRuntime    *TransformProcessor       `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 	SetInstrumentationScopePrometheus *TransformProcessor       `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
