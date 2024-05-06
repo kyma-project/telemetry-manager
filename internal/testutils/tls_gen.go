@@ -1,4 +1,4 @@
-package tlsgen
+package testutils
 
 import (
 	"bytes"
@@ -150,7 +150,7 @@ func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
 func (c *CertBuilder) caCertTemplate() *x509.Certificate {
 	return &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "ca.com"},
+		Subject:               pkix.Name{CommonName: "ca"},
 		NotBefore:             c.clientNotBefore,
 		NotAfter:              c.clientNotAfter,
 		BasicConstraintsValid: true,

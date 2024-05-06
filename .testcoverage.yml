@@ -46,6 +46,7 @@ exclude:
     - ^test                # e2e and integration tests
     - webhook/logparser    # logparser webhooks is covered by envtests and e2e tests
     - ^webhook/logpipeline # logpipeline webhooks is covered by envtests and e2e tests
+    - ^internal/testutils  # some functions in testutils are being used in e2e tests only
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by
