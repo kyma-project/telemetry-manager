@@ -115,11 +115,14 @@ const (
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	DeleteServiceName           *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
-	InsertInputSourceRuntime    *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
-	InsertInputSourcePrometheus *config.ResourceProcessor `yaml:"resource/insert-input-source-prometheus,omitempty"`
-	InsertInputSourceIstio      *config.ResourceProcessor `yaml:"resource/insert-input-source-istio,omitempty"`
-	DropInternalCommunication   *FilterProcessor          `yaml:"filter/drop-internal-communication,omitempty"`
+	DeleteServiceName                 *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
+	InsertInputSourceRuntime          *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
+	InsertInputSourcePrometheus       *config.ResourceProcessor `yaml:"resource/insert-input-source-prometheus,omitempty"`
+	InsertInputSourceIstio            *config.ResourceProcessor `yaml:"resource/insert-input-source-istio,omitempty"`
+	DropInternalCommunication         *FilterProcessor          `yaml:"filter/drop-internal-communication,omitempty"`
+	SetInstrumentationScopePrometheus *TransformProcessor       `yaml:"resource/set-instrumentation-scope-prometheus,omitempty"`
+	SetInstrumentationScopeIstio      *TransformProcessor       `yaml:"resource/set-instrumentation-scope-istio,omitempty"`
+	SetInstrumentationScopeRuntime    *TransformProcessor       `yaml:"resource/set-instrumentation-scope-runtime,omitempty"`
 }
 
 type Exporters struct {
@@ -133,4 +136,9 @@ type FilterProcessor struct {
 type FilterProcessorMetrics struct {
 	DataPoint []string `yaml:"datapoint,omitempty"`
 	Metric    []string `yaml:"metric,omitempty"`
+}
+
+type TransformProcessor struct {
+	ErrorMode        string                                `yaml:"error_mode"`
+	MetricStatements []config.TransformProcessorStatements `yaml:"metric_statements"`
 }
