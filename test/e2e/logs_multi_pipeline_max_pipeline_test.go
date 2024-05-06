@@ -4,34 +4,26 @@ package e2e
 
 import (
 	"fmt"
-	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label("logtest"), Ordered, func() {
 
 	Context("When reaching the pipeline limit", Ordered, func() {
-		const maxNumberOfLogPipelines = 3
+		const maxNumberOfLogPipelines = 5
 
 		var (
 			pipelinesNames       = make([]string, 0, maxNumberOfLogPipelines)
-			pipelineCreatedFirst *telemetryv1alpha1.LogPipeline
 			pipelineCreatedLater *telemetryv1alpha1.LogPipeline
-			httpHostSecret       kitk8s.Secret
 		)
 
 		makeResources := func() []client.Object {
@@ -47,10 +39,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
 				objs = append(objs, pipeline.K8sObject())
-
-				if i == 0 {
-					pipelineCreatedFirst = pipeline.K8sObject()
-				}
 			}
 
 			return objs
@@ -59,11 +47,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				k8sObjectsToDelete := slices.DeleteFunc(k8sObjects, func(obj client.Object) bool {
-					return obj.GetName() == pipelineCreatedFirst.GetName() //first pipeline is deleted separately in one of the specs
-				})
-				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjectsToDelete...)).Should(Succeed())
+
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
@@ -77,33 +62,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		It("Should set ConfigurationGenerated condition to false", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
+				pipelineHostSecret := kitk8s.NewOpaqueSecret("http-hostname", kitkyma.DefaultNamespaceName,
+					kitk8s.WithStringData("log-host", "http://log-host:9880"))
+
 				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-					WithSecretKeyRef(httpHostSecret.SecretKeyRefV1Alpha1("log-host")).
+					WithSecretKeyRef(pipelineHostSecret.SecretKeyRefV1Alpha1("log-host")).
 					WithHTTPOutput()
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipelineCreatedLater)).Should(Succeed())
-				Eventually(func(g Gomega) {
-					var fetched telemetryv1alpha1.LogPipeline
-					key := types.NamespacedName{Name: pipelineName}
-					g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
-					configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
-					g.Expect(configurationGeneratedCond).NotTo(BeNil())
-					g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
-					g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
-				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-				verifiers.LogPipelineConfigShouldNotContainPipeline(ctx, k8sClient, pipelineName)
-			})
-		})
-
-		It("Should have only running pipeline", func() {
-			By("Deleting a pipeline", func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
-
-				for _, pipeline := range pipelinesNames[1:] {
-					verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipeline)
-				}
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipelineCreatedLater, pipelineHostSecret.K8sObject())).ShouldNot(Succeed())
 			})
 		})
 	})

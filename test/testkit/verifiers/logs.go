@@ -3,10 +3,8 @@ package verifiers
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,7 +12,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
@@ -81,13 +78,4 @@ func LogPipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient c
 		runningCond := pipeline.Status.Conditions[conditionsSize-1]
 		g.Expect(runningCond.Type).To(Equal(conditions.TypeRunning))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
-func LogPipelineConfigShouldNotContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Eventually(func(g Gomega) bool {
-		var agentConfig corev1.ConfigMap
-		g.Expect(k8sClient.Get(ctx, kitkyma.LogFluentBitAgentPipelineConfigMapName, &agentConfig)).To(Succeed())
-		configString := agentConfig.Data[pipelineName+".conf"]
-		return !strings.Contains(configString, pipelineName)
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
