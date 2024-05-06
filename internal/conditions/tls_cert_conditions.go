@@ -29,5 +29,9 @@ func EvaluateTLSCertCondition(errValidation error) (status metav1.ConditionStatu
 		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, fmt.Sprintf(commonMessages[ReasonTLSCertificateAboutToExpire], errCertAboutToExpire.Expiry.Format(time.DateOnly))
 	}
 
+	if errors.Is(errValidation, tlscert.ErrInvalidCertificateKeyPair) {
+		return metav1.ConditionFalse, ReasonTLSCertificateKeyPairInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateKeyPairInvalid], errValidation)
+	}
+
 	return metav1.ConditionTrue, ReasonConfigurationGenerated, ""
 }

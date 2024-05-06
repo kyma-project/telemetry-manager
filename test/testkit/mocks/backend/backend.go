@@ -9,10 +9,10 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 )
 
 type SignalType string
@@ -41,7 +41,7 @@ type Backend struct {
 	signalType SignalType
 
 	persistentHostSecret bool
-	certs                *tlsgen.ServerCerts
+	certs                *testutils.ServerCerts
 
 	ConfigMap        *ConfigMap
 	FluentDConfigMap *fluentd.ConfigMap
@@ -72,7 +72,7 @@ func WithName(name string) Option {
 	}
 }
 
-func WithTLS(certKey tlsgen.ServerCerts) Option {
+func WithTLS(certKey testutils.ServerCerts) Option {
 	return func(b *Backend) {
 		b.certs = &certKey
 	}
