@@ -36,7 +36,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			var objs []client.Object
 			for i := 0; i < maxNumberOfLogPipelines; i++ {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
-				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName)
+				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithHTTPOutput()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
 				objs = append(objs, pipeline.K8sObject())
@@ -70,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		It("Should set ConfigurationGenerated condition to false", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
-				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName)
+				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithHTTPOutput()
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
