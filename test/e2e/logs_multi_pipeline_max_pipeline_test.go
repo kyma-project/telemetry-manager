@@ -4,12 +4,12 @@ package e2e
 
 import (
 	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -22,8 +22,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		const maxNumberOfLogPipelines = 5
 
 		var (
-			pipelinesNames       = make([]string, 0, maxNumberOfLogPipelines)
-			pipelineCreatedLater *telemetryv1alpha1.LogPipeline
+			pipelinesNames = make([]string, 0, maxNumberOfLogPipelines)
 		)
 
 		makeResources := func() []client.Object {
@@ -47,9 +46,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				time.Sleep(30 * time.Second)
 			})
+			time.Sleep(30 * time.Second)
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
@@ -68,10 +68,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 					WithSecretKeyRef(pipelineHostSecret.SecretKeyRefV1Alpha1("log-host")).
 					WithHTTPOutput()
-				pipelineCreatedLater = pipeline.K8sObject()
-				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipelineCreatedLater, pipelineHostSecret.K8sObject())).ShouldNot(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject(), pipelineHostSecret.K8sObject())).ShouldNot(Succeed())
 			})
 		})
 	})
