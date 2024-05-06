@@ -18,6 +18,8 @@ const (
 	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
 	WebhookName           = "validation.webhook.telemetry.kyma-project.io"
+
+	LogFluentBitAgentBaseName = "telemetry-fluent-bit"
 )
 
 var (
@@ -44,4 +46,6 @@ var (
 	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
 
 	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
+
+	LogFluentBitAgentPipelineConfigMapName = types.NamespacedName{Name: LogFluentBitAgentBaseName + "-sections", Namespace: SystemNamespaceName}
 )
