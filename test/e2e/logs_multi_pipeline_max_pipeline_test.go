@@ -30,13 +30,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			pipelinesNames       = make([]string, 0, maxNumberOfLogPipelines)
 			pipelineCreatedFirst *telemetryv1alpha1.LogPipeline
 			pipelineCreatedLater *telemetryv1alpha1.LogPipeline
+			httpHostSecret       *kitk8s.OpaqueSecret
 		)
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
+			httpHostSecret = kitk8s.NewOpaqueSecret("log-rcv-hostname", kitkyma.DefaultNamespaceName,
+				kitk8s.WithStringData("log-host", "http://log-host:9880"))
+			objs = append(objs, httpHostSecret.K8sObject())
 			for i := 0; i < maxNumberOfLogPipelines; i++ {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
-				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithHTTPOutput()
+				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithSecretKeyRef(httpHostSecret).WithHTTPOutput()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
 				objs = append(objs, pipeline.K8sObject())
@@ -70,7 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		It("Should set ConfigurationGenerated condition to false", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
-				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithHTTPOutput()
+				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithSecretKeyRef(httpHostSecret).WithHTTPOutput()
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
