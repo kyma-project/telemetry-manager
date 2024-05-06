@@ -32,6 +32,9 @@ done
 function setup() {
 
     kubectl create namespace $PROMETHEUS_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+    kubectl label namespace kyma-system istio-injection=enabled --overwrite
+
     # Deploy prometheus
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update
@@ -218,7 +221,7 @@ function get_result_and_cleanup_trace() {
         kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
     fi
 
-    cat hack/load-tests/trace-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
+    kubectl delete -f hack/load-tests/trace-load-test-setup.yaml
 
     echo "\nTrace Gateway got $restarts time restarted\n"
 
@@ -250,7 +253,7 @@ function get_result_and_cleanup_metric() {
         kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
     fi
 
-    cat hack/load-tests/metric-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
+    kubectl delete -f hack/load-tests/metric-load-test-setup.yaml
 
     echo "\nMetric Gateway got $restarts time restarted\n"
 
@@ -279,7 +282,7 @@ function get_result_and_cleanup_metricagent() {
        kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
    fi
 
-   cat hack/load-tests/metric-agent-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
+   kubectl delete -f hack/load-tests/metric-agent-test-setup.yaml
 
    echo "\nTest run for $TEST_DURATION seconds\n"
    echo "\nMetric Gateway got $restartsGateway time restarted\n"
@@ -312,7 +315,7 @@ function get_result_and_cleanup_fluentbit() {
        kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
    fi
 
-   cat hack/load-tests/log-fluentbit-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
+   kubectl delete -f hack/load-tests/log-fluentbit-test-setup.yaml
 
    echo "\nLogPipeline Pods got $restarts time restarted\n"
 
@@ -335,4 +338,3 @@ setup
 wait_for_resources
 # wait 20 minutes until test finished
 sleep $TEST_DURATION
-
