@@ -51,7 +51,7 @@ status:
   - lastTransitionTime: "2024-02-28T22:48:24Z"
     message: Fluent Bit DaemonSet is ready
     observedGeneration: 2
-    reason: DaemonSetReady
+    reason: AgentReady
     status: "True"
     type: AgentHealthy
   - lastTransitionTime: "2024-02-28T22:48:11Z"
@@ -201,13 +201,12 @@ The status of the LogPipeline is determined by the condition types `AgentHealthy
 
 | Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                                                                                                                                                                   |
 |------------------------|------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| AgentHealthy           | True             | DaemonSetReady              | Fluent Bit DaemonSet is ready                                                                                                                                                                                                       |
-| AgentHealthy           | False            | DaemonSetNotReady           | Fluent Bit DaemonSet is not ready                                                                                                                                                                                                   |
+| AgentHealthy           | True             | AgentReady              | Fluent Bit DaemonSet is ready                                                                                                                                                                                                       |
+| AgentHealthy           | False            | AgentNotReady           | Fluent Bit DaemonSet is not ready                                                                                                                                                                                                   |
 | ConfigurationGenerated | True             | ConfigurationGenerated      |                                                                                                                                                                                                                                     |
 | ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                                                                                                          |
 | ConfigurationGenerated | False            | UnsupportedLokiOutput       | grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Intergrate with Loki](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README). |
 | ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                                                                                                             |
-| ConfigurationGenerated | False            | TLSPrivateKeyInvalid        | TLS private key invalid                                                                                                                                                                                                             |
 | ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                                                                                                                                                               |
 | ConfigurationGenerated | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                                                |
 

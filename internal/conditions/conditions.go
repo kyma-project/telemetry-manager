@@ -18,10 +18,16 @@ const (
 )
 
 const (
-	ReasonNoPipelineDeployed          = "NoPipelineDeployed"
+	// Telemetry CR reasons
+	ReasonNoPipelineDeployed      = "NoPipelineDeployed"
+	ReasonResourceBlocksDeletion  = "ResourceBlocksDeletion"
+	ReasonLogComponentsRunning    = "LogComponentsRunning"
+	ReasonMetricComponentsRunning = "MetricComponentsRunning"
+	ReasonTraceComponentsRunning  = "TraceComponentsRunning"
+
+	// Common pipeline reasons
 	ReasonReferencedSecretMissing     = "ReferencedSecretMissing"
 	ReasonMaxPipelinesExceeded        = "MaxPipelinesExceeded"
-	ReasonResourceBlocksDeletion      = "ResourceBlocksDeletion"
 	ReasonConfigurationGenerated      = "ConfigurationGenerated"
 	ReasonDeploymentNotReady          = "DeploymentNotReady"
 	ReasonDeploymentReady             = "DeploymentReady"
@@ -31,20 +37,18 @@ const (
 	ReasonSomeDataDropped             = "SomeTelemetryDataDropped"
 	ReasonBufferFillingUp             = "BufferFillingUp"
 	ReasonGatewayThrottling           = "GatewayThrottling"
-	ReasonNoLogsDelivered             = "NoLogsDelivered"
 	ReasonFlowHealthy                 = "Healthy"
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
 	ReasonTLSPrivateKeyInvalid        = "TLSPrivateKeyInvalid"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
-
-	ReasonMetricAgentNotRequired  = "AgentNotRequired"
-	ReasonMetricComponentsRunning = "MetricComponentsRunning"
-
+	
+	// LogPipeline only reasons
+	ReasonNoLogsDelivered             = "NoLogsDelivered"
 	ReasonUnsupportedLokiOutput = "UnsupportedLokiOutput"
-	ReasonLogComponentsRunning  = "LogComponentsRunning"
 
-	ReasonTraceComponentsRunning = "TraceComponentsRunning"
+	// MetricPipeline only reasons
+	ReasonMetricAgentNotRequired = "AgentNotRequired"
 
 	// NOTE: The "FluentBitDaemonSetNotReady", "FluentBitDaemonSetReady", "TraceGatewayDeploymentNotReady" and "TraceGatewayDeploymentReady" reasons are deprecated.
 	// They will be removed when the "Running" and "Pending" types are removed
@@ -64,6 +68,8 @@ var commonMessages = map[string]string{
 	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
 	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
 }
+
+// TODO: telemetryMessages
 
 var metricPipelineMessages = map[string]string{
 	ReasonDeploymentNotReady:      "Metric gateway Deployment is not ready",
@@ -104,6 +110,8 @@ var logPipelineMessages = map[string]string{
 	ReasonNoLogsDelivered:       "No logs delivered to backend",
 	ReasonFlowHealthy:           "No problems detected in the log flow",
 }
+
+// TODO: MessageForTelemetry
 
 func MessageForLogPipeline(reason string) string {
 	return message(reason, logPipelineMessages)

@@ -26,7 +26,7 @@ status:
   - lastTransitionTime: "2024-02-29T01:18:28Z"
     message: Trace gateway Deployment is ready
     observedGeneration: 1
-    reason: DeploymentReady
+    reason: GatewayReady
     status: "True"
     type: GatewayHealthy
   - lastTransitionTime: "2024-02-29T01:18:27Z"
@@ -149,13 +149,12 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 
 | Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                    |
 |------------------------|------------------|-----------------------------|--------------------------------------------------------------------------------------|
-| GatewayHealthy         | True             | DeploymentReady             | Trace gateway Deployment is ready                                                    |
-| GatewayHealthy         | False            | DeploymentNotReady          | Trace gateway Deployment is not ready                                                |
+| GatewayHealthy         | True             | GatewayReady             | Trace gateway Deployment is ready                                                    |
+| GatewayHealthy         | False            | GatewayNotReady          | Trace gateway Deployment is not ready                                                |
 | ConfigurationGenerated | True             | ConfigurationGenerated      |                                                                                      |
 | ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                           |
 | ConfigurationGenerated | False            | MaxPipelinesExceeded        | Maximum pipeline count limit exceeded                                                |
 | ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                              |
-| ConfigurationGenerated | False            | TLSPrivateKeyInvalid        | TLS private key invalid                                                              |
 | ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                |
 | ConfigurationGenerated | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |
 
