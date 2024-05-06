@@ -5,17 +5,6 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/istio:
-            receivers:
-                - prometheus/istio
-            processors:
-                - memory_limiter
-                - filter/drop-internal-communication
-                - resource/delete-service-name
-                - resource/insert-input-source-istio
-                - batch
-            exporters:
-                - otlp
         metrics/prometheus:
             receivers:
                 - prometheus/app-pods
@@ -24,6 +13,7 @@ service:
                 - memory_limiter
                 - resource/delete-service-name
                 - resource/insert-input-source-prometheus
+                - transform/set-instrumentation-scope-prometheus
                 - batch
             exporters:
                 - otlp
@@ -34,6 +24,7 @@ service:
                 - memory_limiter
                 - resource/delete-service-name
                 - resource/insert-input-source-runtime
+                - transform/set-instrumentation-scope-runtime
                 - batch
             exporters:
                 - otlp
@@ -161,32 +152,6 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: endpoints
-    prometheus/istio:
-        config:
-            scrape_configs:
-                - job_name: istio-proxy
-                  sample_limit: 50000
-                  scrape_interval: 30s
-                  metrics_path: /stats/prometheus
-                  relabel_configs:
-                    - source_labels: [__meta_kubernetes_pod_node_name]
-                      regex: $MY_NODE_NAME
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_container_name]
-                      regex: istio-proxy
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_container_port_name]
-                      regex: http-envoy-prom
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_phase]
-                      regex: Pending|Succeeded|Failed
-                      action: drop
-                  metric_relabel_configs:
-                    - source_labels: [__name__]
-                      regex: istio_.*
-                      action: keep
-                  kubernetes_sd_configs:
-                    - role: pod
 processors:
     batch:
         send_batch_size: 1024
@@ -210,17 +175,18 @@ processors:
             - action: insert
               key: kyma.source
               value: prometheus
-    resource/insert-input-source-istio:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: istio
-    filter/drop-internal-communication:
-        metrics:
-            metric:
-                - IsMatch(name, "istio.*") and HasAttrOnDatapoint("source_workload", "telemetry-metric-agent")
-                - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-metric-gateway")
-                - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-trace-collector")
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(name, "io.kyma-project.telemetry/kubeletstatsreceiver") where name == "" or name == "otelcol/kubeletstatsreceiver"
+    transform/set-instrumentation-scope-prometheus:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(name, "io.kyma-project.telemetry/prometheusreceiver") where name == "" or name == "otelcol/prometheusreceiver"
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317

@@ -18,7 +18,7 @@ func Test_transformedInstrumentationScope(t *testing.T) {
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context:    "scope",
-					Statements: []string{"set name, io.kyma-project.telemetry/kubeletstatsreceiver) where name == \"\" or name == otelcol/kubeletstatsreceiver"},
+					Statements: []string{"set(name, \"io.kyma-project.telemetry/kubeletstatsreceiver\") where name == \"\" or name == \"otelcol/kubeletstatsreceiver\""},
 				}},
 			},
 			inputSource: metric.InputSourceRuntime,
@@ -28,7 +28,7 @@ func Test_transformedInstrumentationScope(t *testing.T) {
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context:    "scope",
-					Statements: []string{"set name, io.kyma-project.telemetry/prometheusreceiver) where name == \"\" or name == otelcol/prometheusreceiver"},
+					Statements: []string{"set(name, \"io.kyma-project.telemetry/prometheusreceiver\") where name == \"\" or name == \"otelcol/prometheusreceiver\""},
 				}},
 			},
 			inputSource: metric.InputSourcePrometheus,
@@ -38,7 +38,7 @@ func Test_transformedInstrumentationScope(t *testing.T) {
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context:    "scope",
-					Statements: []string{"set name, io.kyma-project.telemetry/prometheusreceiver) where name == \"\" or name == otelcol/prometheusreceiver"},
+					Statements: []string{"set(name, \"io.kyma-project.telemetry/prometheusreceiver\") where name == \"\" or name == \"otelcol/prometheusreceiver\""},
 				}},
 			},
 			inputSource: metric.InputSourceIstio,

@@ -90,4 +90,41 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "kyma.source", collectorConfig.Processors.InsertInputSourceIstio.Attributes[0].Key)
 		require.Equal(t, "istio", collectorConfig.Processors.InsertInputSourceIstio.Attributes[0].Value)
 	})
+
+	t.Run("set instrumentation scope runtime", func(t *testing.T) {
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
+		}, false)
+		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeRuntime.ErrorMode)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements, 1)
+		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Context)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements, 1)
+		require.Equal(t, "set(name, \"io.kyma-project.telemetry/kubeletstatsreceiver\") where name == \"\" or name == \"otelcol/kubeletstatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[0])
+	})
+
+	t.Run("set instrumentation scope prometheus", func(t *testing.T) {
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
+		}, false)
+		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopePrometheus.ErrorMode)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements, 1)
+		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Context)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements, 1)
+		require.Equal(t, "set(name, \"io.kyma-project.telemetry/prometheusreceiver\") where name == \"\" or name == \"otelcol/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[0])
+	})
+
+	t.Run("set instrumentation scope istio", func(t *testing.T) {
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithIstioInput(true).Build(),
+		}, true)
+		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeIstio.ErrorMode)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements, 1)
+		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Context)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements, 1)
+		require.Equal(t, "set(name, \"io.kyma-project.telemetry/prometheusreceiver\") where name == \"\" or name == \"otelcol/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[0])
+	})
+
 }

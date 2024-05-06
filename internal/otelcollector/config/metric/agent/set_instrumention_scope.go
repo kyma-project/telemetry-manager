@@ -37,5 +37,5 @@ func makeInstrumentationStatement(inputSource metric.InputSourceType) string {
 		metric.InputSourceIstio:      "io.kyma-project.telemetry/prometheusreceiver",
 	}
 
-	return fmt.Sprintf("set name, %s) where name == \"\" or name == %s", transformedInstrumentationScopeName[inputSource], instrumentationScopeName[inputSource])
+	return fmt.Sprintf("set(name, \"%s\") where name == \"\" or name == \"%s\"", transformedInstrumentationScopeName[inputSource], instrumentationScopeName[inputSource])
 }

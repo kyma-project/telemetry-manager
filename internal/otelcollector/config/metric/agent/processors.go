@@ -23,13 +23,13 @@ func makeProcessorsConfig(inputs inputSources) Processors {
 
 		if inputs.prometheus {
 			processorsConfig.InsertInputSourcePrometheus = makeEmittedByConfig(metric.InputSourcePrometheus)
-			processorsConfig.SetInstrumentationScopeRuntime = transformInstrumentationScope(metric.InputSourcePrometheus)
+			processorsConfig.SetInstrumentationScopePrometheus = transformInstrumentationScope(metric.InputSourcePrometheus)
 		}
 
 		if inputs.istio {
 			processorsConfig.InsertInputSourceIstio = makeEmittedByConfig(metric.InputSourceIstio)
-			processorsConfig.SetInstrumentationScopeRuntime = transformInstrumentationScope(metric.InputSourceIstio)
 			processorsConfig.DropInternalCommunication = makeFilterToDropMetricsForTelemetryComponents()
+			processorsConfig.SetInstrumentationScopeIstio = transformInstrumentationScope(metric.InputSourceIstio)
 		}
 	}
 

@@ -13,6 +13,7 @@ service:
                 - filter/drop-internal-communication
                 - resource/delete-service-name
                 - resource/insert-input-source-istio
+                - transform/set-instrumentation-scope-istio
                 - batch
             exporters:
                 - otlp
@@ -24,6 +25,7 @@ service:
                 - memory_limiter
                 - resource/delete-service-name
                 - resource/insert-input-source-prometheus
+                - transform/set-instrumentation-scope-prometheus
                 - batch
             exporters:
                 - otlp
@@ -34,6 +36,7 @@ service:
                 - memory_limiter
                 - resource/delete-service-name
                 - resource/insert-input-source-runtime
+                - transform/set-instrumentation-scope-runtime
                 - batch
             exporters:
                 - otlp
@@ -318,6 +321,24 @@ processors:
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("source_workload", "telemetry-metric-agent")
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-metric-gateway")
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-trace-collector")
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(name, "io.kyma-project.telemetry/kubeletstatsreceiver") where name == "" or name == "otelcol/kubeletstatsreceiver"
+    transform/set-instrumentation-scope-prometheus:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(name, "io.kyma-project.telemetry/prometheusreceiver") where name == "" or name == "otelcol/prometheusreceiver"
+    transform/set-instrumentation-scope-istio:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(name, "io.kyma-project.telemetry/prometheusreceiver") where name == "" or name == "otelcol/prometheusreceiver"
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
