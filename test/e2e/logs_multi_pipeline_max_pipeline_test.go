@@ -83,7 +83,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipelineCreatedLater)).Should(Succeed())
 				Eventually(func(g Gomega) {
 					var fetched telemetryv1alpha1.LogPipeline
 					key := types.NamespacedName{Name: pipelineName}
