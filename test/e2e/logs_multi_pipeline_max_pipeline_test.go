@@ -4,6 +4,8 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,6 +19,12 @@ import (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
 
 	Context("When reaching the pipeline limit", Ordered, func() {
 		const maxNumberOfLogPipelines = 5
@@ -44,12 +52,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		}
 
 		BeforeAll(func() {
+
+			Eventually(func(g Gomega) {
+				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-				time.Sleep(30 * time.Second)
+				time.Sleep(15 * time.Second)
 			})
-			time.Sleep(30 * time.Second)
+			time.Sleep(15 * time.Second)
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 

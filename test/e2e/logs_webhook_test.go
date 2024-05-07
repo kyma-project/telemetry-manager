@@ -23,7 +23,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	})
 
 	Context("When a validating webhook exists", Ordered, func() {
+		logPipelineUnknownFilter := kitk8s.NewLogPipelineV1Alpha1("unknown-custom-filter-pipeline").WithStdout().WithFilter("Name unknown").K8sObject()
 		BeforeAll(func() {
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, logPipelineUnknownFilter)).Should(Succeed())
+			})
+
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
@@ -31,14 +37,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
-		It("Should reject a logpipeline with unknown custom filter", func() {
-			logPipeline := kitk8s.NewLogPipelineV1Alpha1("unknown-custom-filter-pipeline").WithStdout().WithFilter("Name unknown")
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
+		It("Should accept a logpipeline with unknown custom filter", func() {
+
+			Eventually(func(g Gomega) {
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipelineUnknownFilter)).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should reject a logpipeline with denied custom filter", func() {
 			logPipeline := kitk8s.NewLogPipelineV1Alpha1("denied-custom-filter-pipeline").WithStdout().WithFilter("Name kubernetes")
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
+			Consistently(func(g Gomega) {
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 	})
