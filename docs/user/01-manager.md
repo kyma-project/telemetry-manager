@@ -10,7 +10,7 @@ If Telemetry Manager detects a configuration, it rolls out the relevant componen
 
 ## Module Configuration
 
-At the moment, you cannot configure Telemetry Manager. It is planned to support configuration in the specification of the related [Telemetry resource](resources/01-telemetry.md).
+The [Telemetry resource](resources/01-telemetry.md) allows to configure the number of replicas for the `telemetry-trace-gateway` and `telemetry-metric-gateway` deployments. The default value is 2.
 
 ## Module Status
 
