@@ -7,7 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,8 +54,10 @@ type WebhookConfig struct {
 }
 
 type SelfMonitorConfig struct {
-	Enabled bool
-	Config  selfmonitor.Config
+	Enabled       bool
+	Config        selfmonitor.Config
+	WebhookURL    string
+	WebhookScheme string
 }
 
 type healthCheckers struct {
@@ -72,15 +73,15 @@ type Reconciler struct {
 	overridesHandler *overrides.Handler
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler, flowHealthProbingEnabled bool) *Reconciler {
 	return &Reconciler{
 		Client: client,
 		Scheme: scheme,
 		config: config,
 		healthCheckers: healthCheckers{
-			logs:    &logComponentsChecker{client: client},
-			traces:  &traceComponentsChecker{client: client},
-			metrics: &metricComponentsChecker{client: client},
+			logs:    &logComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
+			traces:  &traceComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
+			metrics: &metricComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
 		},
 		overridesHandler: overridesHandler,
 	}
@@ -97,10 +98,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if overrideConfig.Telemetry.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
-	}
-
-	if err := r.cleanUpOldNetworkPolicies(ctx); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to clean up old network policies: %w", err)
 	}
 
 	var telemetry operatorv1alpha1.Telemetry
@@ -145,13 +142,24 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 		return nil
 	}
 
-	scrapeNamespace := r.config.SelfMonitor.Config.Namespace
-	selfMonConfig := config.MakeConfig(scrapeNamespace)
-	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
+	selfMonitorConfig := config.MakeConfig(config.BuilderConfig{
+		ScrapeNamespace: r.config.SelfMonitor.Config.Namespace,
+		WebhookURL:      r.config.SelfMonitor.WebhookURL,
+		WebhookScheme:   r.config.SelfMonitor.WebhookScheme,
+	})
+	selfMonitorConfigYAML, err := yaml.Marshal(selfMonitorConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
-	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYaml)
+
+	rules := config.MakeRules()
+	rulesYAML, err := yaml.Marshal(rules)
+	if err != nil {
+		return fmt.Errorf("failed to marshal rules: %w", err)
+	}
+
+	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYAML)
+	r.config.SelfMonitor.Config.AlertRules = string(rulesYAML)
 
 	if err := selfmonitor.ApplyResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
@@ -266,29 +274,5 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return fmt.Errorf("failed to update webhook: %w", err)
 	}
 
-	return nil
-}
-
-func (r *Reconciler) cleanUpOldNetworkPolicies(ctx context.Context) error {
-	oldNetworkPoliciesNames := []string{
-		"telemetry-manager-pprof-deny-ingress",
-		"telemetry-metric-gateway-pprof-deny-ingress",
-		"telemetry-metric-agent-pprof-deny-ingress",
-		"telemetry-trace-collector-pprof-deny-ingress",
-	}
-	for _, networkPolicyName := range oldNetworkPoliciesNames {
-		networkPolicy := &networkingv1.NetworkPolicy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      networkPolicyName,
-				Namespace: r.config.OverridesConfigMapName.Namespace,
-			},
-		}
-		if err := r.Delete(ctx, networkPolicy); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return fmt.Errorf("failed to delete old network policy %s in namespace %s: %w", networkPolicyName, r.config.OverridesConfigMapName.Namespace, err)
-		}
-	}
 	return nil
 }

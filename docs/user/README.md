@@ -83,6 +83,7 @@ Read the following guides for integration of different backends:
 - [Amazon CloudWatch and AWS X-Ray](integration/aws-cloudwatch/README.md)
 
 Read the following guide to learn how to collect data from applications:
+
 - [OpenTelemetry Demo App](integration/opentelemetry-demo/README.md)
 
 ## API / Custom Resource Definitions

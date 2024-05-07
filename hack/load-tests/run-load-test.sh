@@ -16,6 +16,7 @@ BACKPRESSURE_TEST="false"
 TEST_TARGET="traces"
 TEST_NAME="No Name"
 TEST_DURATION=1200
+OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.99.0-41265c69"
 
 while getopts m:b:n:t:d: flag; do
     case "$flag" in
@@ -34,7 +35,7 @@ function setup() {
     # Deploy prometheus
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update
-    helm upgrade --install -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/values.yaml --set grafana.adminPassword=myPwd
+    helm upgrade --install -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
 
     if [ "$TEST_TARGET" = "traces" ];
     then
@@ -60,47 +61,47 @@ function setup() {
 # shellcheck disable=SC2112
 function setup_trace() {
     if "$MAX_PIPELINE"; then
-        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-max-pipeline.yaml
+        kubectl apply -f hack/load-tests/trace-max-pipeline.yaml
     fi
     # Deploy test setup
-    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-load-test-setup.yaml
+    cat hack/load-tests/trace-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" | kubectl apply -f -
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-backpressure-config.yaml
+        kubectl apply -f hack/load-tests/trace-backpressure-config.yaml
     fi
 }
 
 function setup_metric() {
     if "$MAX_PIPELINE"; then
-        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-max-pipeline.yaml
+        kubectl apply -f hack/load-tests/metric-max-pipeline.yaml
     fi
 
     # Deploy test setup
-    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-load-test-setup.yaml
+   cat hack/load-tests/metric-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" | kubectl apply -f -
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-backpressure-config.yaml
+        kubectl apply -f hack/load-tests/metric-backpressure-config.yaml
     fi
 }
 
 function setup_metric_agent() {
     # Deploy test setup
-    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-test-setup.yaml
+    cat hack/load-tests/metric-agent-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" | kubectl apply -f -
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-backpressure-config.yaml
+        kubectl apply -f hack/load-tests/metric-agent-backpressure-config.yaml
     fi
 }
 
 function setup_fluentbit() {
     if "$MAX_PIPELINE"; then
-        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-max-pipeline.yaml
+        kubectl apply -f hack/load-tests/log-fluentbit-max-pipeline.yaml
     fi
     # Deploy test setup
-    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-test-setup.yaml
+    cat hack/load-tests/log-fluentbit-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-backpressure-config.yaml
+        kubectl apply -f hack/load-tests/log-fluentbit-backpressure-config.yaml
     fi
 }
 
@@ -210,14 +211,14 @@ function get_result_and_cleanup_trace() {
     restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-collector -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
 
     if "$MAX_PIPELINE"; then
-      kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-max-pipeline.yaml
+      kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
     fi
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-backpressure-config.yaml
+        kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
     fi
 
-    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-load-test-setup.yaml
+    cat hack/load-tests/trace-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
     echo "\nTrace Gateway got $restarts time restarted\n"
 
@@ -242,14 +243,14 @@ function get_result_and_cleanup_metric() {
     restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
 
     if "$MAX_PIPELINE"; then
-      kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-max-pipeline.yaml
+      kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
     fi
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-backpressure-config.yaml
+        kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
     fi
 
-    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-load-test-setup.yaml
+    cat hack/load-tests/metric-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
     echo "\nMetric Gateway got $restarts time restarted\n"
 
@@ -275,10 +276,10 @@ function get_result_and_cleanup_metricagent() {
    restartsAgent=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
 
    if "$BACKPRESSURE_TEST"; then
-       kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-backpressure-config.yaml
+       kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
    fi
 
-   kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-test-setup.yaml
+   cat hack/load-tests/metric-agent-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
    echo "\nTest run for $TEST_DURATION seconds\n"
    echo "\nMetric Gateway got $restartsGateway time restarted\n"
@@ -304,14 +305,14 @@ function get_result_and_cleanup_fluentbit() {
    restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
 
    if "$MAX_PIPELINE"; then
-       kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-max-pipeline.yaml
+       kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
    fi
 
    if "$BACKPRESSURE_TEST"; then
-       kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-backpressure-config.yaml
+       kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
    fi
 
-   kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-test-setup.yaml
+   cat hack/load-tests/log-fluentbit-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
    echo "\nLogPipeline Pods got $restarts time restarted\n"
 

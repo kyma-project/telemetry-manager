@@ -4,21 +4,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 type ConfigMap struct {
 	name      string
 	namespace string
-	withTLS   bool
-	certs     tls.Certs
+	certs     *testutils.ServerCerts
 }
 
-func NewConfigMap(name, namespace string, withTLS bool, certs tls.Certs) *ConfigMap {
+func NewConfigMap(name, namespace string, certs *testutils.ServerCerts) *ConfigMap {
 	return &ConfigMap{
 		name:      name,
 		namespace: namespace,
-		withTLS:   withTLS,
 		certs:     certs,
 	}
 }
@@ -85,7 +83,7 @@ func (cm *ConfigMap) Name() string {
 
 func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	data := make(map[string]string)
-	if cm.withTLS {
+	if cm.certs != nil {
 		data["fluent.conf"] = configTemplateFluentdTLS
 		data["server.crt"] = cm.certs.ServerCertPem.String()
 		data["server.key"] = cm.certs.ServerKeyPem.String()

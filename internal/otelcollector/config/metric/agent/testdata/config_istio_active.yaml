@@ -1,6 +1,8 @@
 extensions:
     health_check:
         endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
 service:
     pipelines:
         metrics/istio:
@@ -43,6 +45,7 @@ service:
             encoding: json
     extensions:
         - health_check
+        - pprof
 receivers:
     kubeletstats:
         collection_interval: 30s
@@ -287,9 +290,9 @@ processors:
         timeout: 10s
         send_batch_max_size: 1024
     memory_limiter:
-        check_interval: 0.1s
+        check_interval: 1s
         limit_percentage: 75
-        spike_limit_percentage: 20
+        spike_limit_percentage: 15
     resource/delete-service-name:
         attributes:
             - action: delete

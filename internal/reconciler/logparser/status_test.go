@@ -55,7 +55,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, agentHealthyCond.Status)
 		require.Equal(t, conditions.ReasonDaemonSetNotReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageFor(conditions.ReasonDaemonSetNotReady, conditions.LogsMessage), agentHealthyCond.Message)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonDaemonSetNotReady), agentHealthyCond.Message)
 		require.Equal(t, updatedParser.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
@@ -67,7 +67,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, conditions.ReasonFluentBitDSNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedParser.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -79,17 +79,6 @@ func TestUpdateStatus(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       parserName,
 				Generation: 1,
-			},
-			Status: telemetryv1alpha1.LogParserStatus{
-				Conditions: []metav1.Condition{
-					{
-						Type:               conditions.TypePending,
-						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonFluentBitDSNotReady,
-						Message:            conditions.MessageFor(conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage),
-						LastTransitionTime: metav1.Now(),
-					},
-				},
 			},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(parser).WithStatusSubresource(parser).Build()
@@ -116,16 +105,26 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, agentHealthyCond.Status)
 		require.Equal(t, conditions.ReasonDaemonSetReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageFor(conditions.ReasonDaemonSetReady, conditions.LogsMessage), agentHealthyCond.Message)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady), agentHealthyCond.Message)
 		require.Equal(t, updatedParser.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
 		conditionsSize := len(updatedParser.Status.Conditions)
+
+		pendingCond := updatedParser.Status.Conditions[conditionsSize-2]
+		require.Equal(t, conditions.TypePending, pendingCond.Type)
+		require.Equal(t, metav1.ConditionFalse, pendingCond.Status)
+		require.Equal(t, conditions.ReasonFluentBitDSNotReady, pendingCond.Reason)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady)
+		require.Equal(t, pendingCondMsg, pendingCond.Message)
+		require.Equal(t, updatedParser.Generation, pendingCond.ObservedGeneration)
+		require.NotEmpty(t, pendingCond.LastTransitionTime)
+
 		runningCond := updatedParser.Status.Conditions[conditionsSize-1]
 		require.Equal(t, conditions.TypeRunning, runningCond.Type)
 		require.Equal(t, metav1.ConditionTrue, runningCond.Status)
 		require.Equal(t, conditions.ReasonFluentBitDSReady, runningCond.Reason)
-		runningCondMsg := conditions.RunningTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonFluentBitDSReady, conditions.LogsMessage)
+		runningCondMsg := conditions.RunningTypeDeprecationMsg + conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady)
 		require.Equal(t, runningCondMsg, runningCond.Message)
 		require.Equal(t, updatedParser.Generation, runningCond.ObservedGeneration)
 		require.NotEmpty(t, runningCond.LastTransitionTime)
@@ -144,28 +143,28 @@ func TestUpdateStatus(t *testing.T) {
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
 						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageFor(conditions.ReasonDaemonSetReady, conditions.LogsMessage),
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
 						Reason:             conditions.ReasonConfigurationGenerated,
-						Message:            conditions.MessageFor(conditions.ReasonConfigurationGenerated, conditions.LogsMessage),
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypePending,
 						Status:             metav1.ConditionFalse,
 						Reason:             conditions.ReasonFluentBitDSNotReady,
-						Message:            conditions.MessageFor(conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage),
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypeRunning,
 						Status:             metav1.ConditionTrue,
 						Reason:             conditions.ReasonFluentBitDSReady,
-						Message:            conditions.MessageFor(conditions.ReasonFluentBitDSReady, conditions.LogsMessage),
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady),
 						LastTransitionTime: metav1.Now(),
 					},
 				},
@@ -199,7 +198,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, conditions.ReasonFluentBitDSNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedParser.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)

@@ -39,12 +39,18 @@ const (
 // K8sObjects generates and returns a list of Kubernetes objects
 // that are set up for testing service name enrichment.
 func K8sObjects(namespace string, signalType telemetrygen.SignalType) []client.Object {
-	podSpecWithUndefinedService := telemetrygen.PodSpec(signalType, "")
-	podSpecWithUnknownService := telemetrygen.PodSpec(signalType, "unknown_service")
-	podSpecWithUnknownServicePattern := telemetrygen.PodSpec(signalType, "unknown_service:bash")
-	podSpecWithInvalidStartForUnknownServicePattern := telemetrygen.PodSpec(signalType, AttrWithInvalidStartForUnknownServicePattern)
-	podSpecWithInvalidEndForUnknownServicePattern := telemetrygen.PodSpec(signalType, AttrWithInvalidEndForUnknownServicePattern)
-	podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(signalType, AttrWithMissingProcessForUnknownServicePattern)
+	podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+		telemetrygen.WithServiceName(""))
+	podSpecWithUnknownService := telemetrygen.PodSpec(signalType,
+		telemetrygen.WithServiceName("unknown_service"))
+	podSpecWithUnknownServicePattern := telemetrygen.PodSpec(signalType,
+		telemetrygen.WithServiceName("unknown_service:bash"))
+	podSpecWithInvalidStartForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+		telemetrygen.WithServiceName(AttrWithInvalidStartForUnknownServicePattern))
+	podSpecWithInvalidEndForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+		telemetrygen.WithServiceName(AttrWithInvalidEndForUnknownServicePattern))
+	podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+		telemetrygen.WithServiceName(AttrWithMissingProcessForUnknownServicePattern))
 	return []client.Object{
 		kitk8s.NewPod(PodWithBothLabelsName, namespace).
 			WithLabel("app.kubernetes.io/name", KubeAppLabelValue).

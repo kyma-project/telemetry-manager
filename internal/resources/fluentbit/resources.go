@@ -56,6 +56,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 	annotations := make(map[string]string)
 	annotations[checksumAnnotationKey] = checksum
 	annotations[istioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
+
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -261,12 +262,16 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func MakeMetricsService(name types.NamespacedName) *corev1.Service {
+func MakeMetricsService(name types.NamespacedName, observeBySelfMonitoring bool) *corev1.Service {
+	serviceLabels := Labels()
+	if observeBySelfMonitoring {
+		serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+	}
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-metrics", name.Name),
 			Namespace: name.Namespace,
-			Labels:    Labels(),
+			Labels:    serviceLabels,
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   strconv.Itoa(ports.HTTP),
@@ -289,12 +294,17 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 }
 
-func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
+func MakeExporterMetricsService(name types.NamespacedName, observeBySelfMonitoring bool) *corev1.Service {
+	serviceLabels := Labels()
+	if observeBySelfMonitoring {
+		serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+	}
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-exporter-metrics", name.Name),
 			Namespace: name.Namespace,
-			Labels:    Labels(),
+			Labels:    serviceLabels,
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   strconv.Itoa(ports.ExporterMetrics),
@@ -343,12 +353,12 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     Name tail
     Path /null.log
     Tag null.*
-    Alias null-tail
+    Alias null
 
 [OUTPUT]
     Name null
     Match null.*
-    Alias null-null
+    Alias null
 
 `
 	fluentBitConfig = strings.Replace(fluentBitConfig, "{{ HTTP_PORT }}", strconv.Itoa(ports.HTTP), 1)

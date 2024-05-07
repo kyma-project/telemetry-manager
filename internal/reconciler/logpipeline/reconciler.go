@@ -22,6 +22,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,20 +39,23 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 type Config struct {
-	DaemonSet             types.NamespacedName
-	SectionsConfigMap     types.NamespacedName
-	FilesConfigMap        types.NamespacedName
-	LuaConfigMap          types.NamespacedName
-	ParsersConfigMap      types.NamespacedName
-	EnvSecret             types.NamespacedName
-	OutputTLSConfigSecret types.NamespacedName
-	OverrideConfigMap     types.NamespacedName
-	PipelineDefaults      builder.PipelineDefaults
-	Overrides             overrides.Config
-	DaemonSetConfig       fluentbit.DaemonSetConfig
+	DaemonSet               types.NamespacedName
+	SectionsConfigMap       types.NamespacedName
+	FilesConfigMap          types.NamespacedName
+	LuaConfigMap            types.NamespacedName
+	ParsersConfigMap        types.NamespacedName
+	EnvSecret               types.NamespacedName
+	OutputTLSConfigSecret   types.NamespacedName
+	OverrideConfigMap       types.NamespacedName
+	PipelineDefaults        builder.PipelineDefaults
+	Overrides               overrides.Config
+	DaemonSetConfig         fluentbit.DaemonSetConfig
+	ObserveBySelfMonitoring bool
 }
 
 //go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
@@ -64,28 +68,51 @@ type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
 }
 
-type Reconciler struct {
-	client.Client
-	config                  Config
-	prober                  DaemonSetProber
-	allLogPipelines         prometheus.Gauge
-	unsupportedLogPipelines prometheus.Gauge
-	syncer                  syncer
-	overridesHandler        *overrides.Handler
-	istioStatusChecker      istiostatus.Checker
+//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
+type TLSCertValidator interface {
+	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
+//go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
+type FlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
+}
+
+type Reconciler struct {
+	client.Client
+	config                     Config
+	prober                     DaemonSetProber
+	flowHealthProbingEnabled   bool
+	flowHealthProber           FlowHealthProber
+	allLogPipelines            prometheus.Gauge
+	unsupportedLogPipelines    prometheus.Gauge
+	syncer                     syncer
+	overridesHandler           *overrides.Handler
+	istioStatusChecker         istiostatus.Checker
+	tlsCertValidator           TLSCertValidator
+	pipelinesConditionsCleared bool
+}
+
+func NewReconciler(
+	client client.Client,
+	config Config,
+	agentProber DaemonSetProber,
+	flowHealthProbingEnabled bool,
+	flowHealthProber FlowHealthProber,
+	overridesHandler *overrides.Handler) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.config = config
-	r.prober = prober
+	r.prober = agentProber
+	r.flowHealthProbingEnabled = flowHealthProbingEnabled
+	r.flowHealthProber = flowHealthProber
 	r.allLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_all_logpipelines", Help: "Number of log pipelines."})
 	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
 	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
 	r.istioStatusChecker = istiostatus.NewChecker(client)
+	r.tlsCertValidator = tlscert.New(client)
 
 	return &r
 }
@@ -120,9 +147,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	defer func() {
 		if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
 			if err != nil {
-				err = fmt.Errorf("failed while updating status: %v: %v", statusErr, err)
+				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
 			} else {
-				err = fmt.Errorf("failed to update status: %v", statusErr)
+				err = fmt.Errorf("failed to update status: %w", statusErr)
 			}
 		}
 	}()
@@ -132,16 +159,20 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
 	}
 
+	if err = r.clearPipelinesConditions(ctx, allPipelines.Items); err != nil {
+		return fmt.Errorf("failed to clear the conditions list for log pipelines: %w", err)
+	}
+
 	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
 		return err
 	}
 
-	deployableLogPipelines := getDeployableLogPipelines(ctx, allPipelines.Items, r.Client)
-	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, deployableLogPipelines); err != nil {
+	reconcilablePipelines := r.getReconcilablePipelines(ctx, allPipelines.Items)
+	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, reconcilablePipelines); err != nil {
 		return err
 	}
 
-	if err = r.reconcileFluentBit(ctx, pipeline, deployableLogPipelines); err != nil {
+	if err = r.reconcileFluentBit(ctx, pipeline, reconcilablePipelines); err != nil {
 		return err
 	}
 
@@ -170,12 +201,12 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
-	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet)
+	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet, r.config.ObserveBySelfMonitoring)
 	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
-	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet)
+	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet, r.config.ObserveBySelfMonitoring)
 	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
@@ -257,60 +288,79 @@ func isUnsupported(pipeline *telemetryv1alpha1.LogPipeline) bool {
 func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	var baseCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.DaemonSet, &baseCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.DaemonSet.Namespace, r.config.DaemonSet.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.DaemonSet.Namespace, r.config.DaemonSet.Name, err)
 	}
 
 	var parsersCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.ParsersConfigMap, &parsersCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
 	}
 
 	var luaCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.LuaConfigMap, &luaCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.LuaConfigMap.Namespace, r.config.LuaConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.LuaConfigMap.Namespace, r.config.LuaConfigMap.Name, err)
 	}
 
 	var sectionsCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.SectionsConfigMap, &sectionsCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.SectionsConfigMap.Namespace, r.config.SectionsConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.SectionsConfigMap.Namespace, r.config.SectionsConfigMap.Name, err)
 	}
 
 	var filesCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.FilesConfigMap, &filesCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.FilesConfigMap.Namespace, r.config.FilesConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.FilesConfigMap.Namespace, r.config.FilesConfigMap.Name, err)
 	}
 
 	var envSecret corev1.Secret
 	if err := r.Get(ctx, r.config.EnvSecret, &envSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %v", r.config.EnvSecret.Namespace, r.config.EnvSecret.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.EnvSecret.Namespace, r.config.EnvSecret.Name, err)
 	}
 
 	var tlsSecret corev1.Secret
 	if err := r.Get(ctx, r.config.OutputTLSConfigSecret, &tlsSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %v", r.config.OutputTLSConfigSecret.Namespace, r.config.OutputTLSConfigSecret.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.OutputTLSConfigSecret.Namespace, r.config.OutputTLSConfigSecret.Name, err)
 	}
 
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil
 }
 
-// getDeployableLogPipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
+// getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
 // A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
-func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, client client.Client) []telemetryv1alpha1.LogPipeline {
-	var deployablePipelines []telemetryv1alpha1.LogPipeline
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
+	var reconcilableLogPipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
-		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
-			continue
+		isReconcilable := r.isReconcilable(ctx, &allPipelines[i])
+		if isReconcilable {
+			reconcilableLogPipelines = append(reconcilableLogPipelines, allPipelines[i])
 		}
-		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
-			continue
-		}
-		if allPipelines[i].Spec.Output.IsLokiDefined() {
-			continue
-		}
-		deployablePipelines = append(deployablePipelines, allPipelines[i])
 	}
 
-	return deployablePipelines
+	return reconcilableLogPipelines
+}
+
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) bool {
+	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return false
+	}
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return false
+	}
+	if pipeline.Spec.Output.IsLokiDefined() {
+		return false
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		cert := pipeline.Spec.Output.HTTP.TLSConfig.Cert
+		key := pipeline.Spec.Output.HTTP.TLSConfig.Key
+
+		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+			if !tlscert.IsCertAboutToExpireError(err) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func getFluentBitPorts() []int32 {
@@ -318,4 +368,32 @@ func getFluentBitPorts() []int32 {
 		ports.ExporterMetrics,
 		ports.HTTP,
 	}
+}
+
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+	http := pipeline.Spec.Output.HTTP
+	if http == nil {
+		return false
+	}
+	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil
+}
+
+// clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation
+// This is done to allow the legacy conditions ("Running" and "Pending") to be always appended at the end of the conditions list even if new condition types are added
+// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+// TODO: Remove this logic after the end of the deprecation period of the legacy conditions ("Running" and "Pending")
+func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) error {
+	if r.pipelinesConditionsCleared {
+		return nil
+	}
+
+	for i := range allPipelines {
+		allPipelines[i].Status.Conditions = []metav1.Condition{}
+		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
+			return fmt.Errorf("failed to update LogPipeline status: %w", err)
+		}
+	}
+	r.pipelinesConditionsCleared = true
+
+	return nil
 }

@@ -10,7 +10,10 @@ import (
 )
 
 func TestMakeConfigMarshalling(t *testing.T) {
-	config := MakeConfig("kyma-system")
+	config := MakeConfig(BuilderConfig{
+		ScrapeNamespace: "kyma-system",
+		WebhookURL:      "http://webhook:9090",
+	})
 	monitorConfigYaml, err := yaml.Marshal(config)
 	require.NoError(t, err)
 
@@ -18,5 +21,4 @@ func TestMakeConfigMarshalling(t *testing.T) {
 	goldenMonitoringFile, err := os.ReadFile(goldenMonitoringConfigPath)
 	require.NoError(t, err, "failed to load golden monitoring file")
 	require.Equal(t, string(goldenMonitoringFile), string(monitorConfigYaml))
-
 }

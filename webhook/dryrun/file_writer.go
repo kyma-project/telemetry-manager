@@ -103,7 +103,10 @@ func (f *fileWriterImpl) writeSections(pipeline *telemetryv1alpha1.LogPipeline, 
 		return err
 	}
 
-	sectionsConfig, err := builder.BuildFluentBitConfig(pipeline, f.config.PipelineDefaults)
+	builderConfig := builder.BuilderConfig{
+		PipelineDefaults: f.config.PipelineDefaults,
+	}
+	sectionsConfig, err := builder.BuildFluentBitConfig(pipeline, builderConfig)
 	if err != nil {
 		return err
 	}

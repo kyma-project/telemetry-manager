@@ -161,6 +161,7 @@ For the test environment, the following setup was used:
         app.kubernetes.io/name: telemetry-metric-agent
       type: ClusterIP
     ```
+
     </details>
 
    Following configurations are changed for metric agent
@@ -178,6 +179,7 @@ For the test environment, the following setup was used:
                 limit_percentage: 85
                 spike_limit_percentage: 10
     ```
+
     </details>
 
    Final ConfigMap of the metrics agent should look like for
@@ -350,10 +352,11 @@ For the test environment, the following setup was used:
         kind: MetricPipeline
         name: metricpipeline-sample
     ```
+
    </details>
 
 4. Deploy Avalanche load generator deployment
-   <details>                   
+   <details>
      <summary>Expand</summary>
 
    ```yaml
@@ -391,6 +394,7 @@ For the test environment, the following setup was used:
              protocol: TCP
              name: metrics
    ```
+
    </details>
 
 ## Test Cases
@@ -509,34 +513,35 @@ Avalanche load generator configuration:
 Metric agent:
 
 The metric agent pipeline metrics/prometheus has been configured with an additional receiver prometheus/app-services; see the following configuration:
-<details>                    
+<details>
   <summary>Expand</summary>
 
-```yaml
-apiVersion: v1
-data:
-  relay.conf: |
-    extensions:
-        health_check:
-            endpoint: ${MY_POD_IP}:13133
-    service:
-        pipelines:
-            metrics/prometheus:
-                receivers:
-                    - prometheus/app-pods
-                    - prometheus/app-services
-                processors:
-                    - memory_limiter
-                    - resource/delete-service-name
-                    - resource/insert-input-source-prometheus
-                    - batch
-                exporters:
-                    - otlp
-```
+   ```yaml
+   apiVersion: v1
+   data:
+     relay.conf: |
+       extensions:
+           health_check:
+               endpoint: ${MY_POD_IP}:13133
+       service:
+           pipelines:
+               metrics/prometheus:
+                   receivers:
+                       - prometheus/app-pods
+                       - prometheus/app-services
+                   processors:
+                       - memory_limiter
+                       - resource/delete-service-name
+                       - resource/insert-input-source-prometheus
+                       - batch
+                   exporters:
+                       - otlp
+   ```
+
 </details>
 
 To enable metric scraping from the second receiver prometheus/app-services, the following service was created for the Avalanche load generator:
-<details>                    
+<details>
    <summary>Expand</summary>
 
 ```yaml
@@ -560,6 +565,7 @@ spec:
     app: avalanche-metric-load-generator
   type: ClusterIP
 ```
+
 </details>
 
 The purpose of this test was to determine the scraping behavior of the metric agent, and especially the memory impact with multiple receivers under high load.
@@ -595,7 +601,7 @@ Avalanche load generator was configured to generate `2000` metric points per scr
 Metric agent scrape job configuration:
 
 - prometheus/app-pods and prometheus/app-service configured with parameter `sample_limit: 1000` to limit time series for each scrape loop to max 1000 time series.
-   <details>                    
+   <details>
      <summary>Expand</summary>  
 
   ```yaml
@@ -610,20 +616,21 @@ Metric agent scrape job configuration:
                             regex: $MY_NODE_NAME
                             action: keep
   ```
+
 </details>
 
 With this limit, if the target exposes more than 1000 metrics, the target won't be scraped. Instead, log messages show `up` label being set to 0 as if the target is unhealthy.
-Example message ` "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"`:
+Example message `"target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"`:
 
-```shell
-2023-09-14T09:52:26.223Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685140337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
-2023-09-14T09:52:45.755Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685156843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
-2023-09-14T09:52:56.344Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685170337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
-2023-09-14T09:53:12.202Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685186843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
-2023-09-14T09:53:24.989Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685200337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
-2023-09-14T09:53:45.643Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685216843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
-2023-09-14T09:53:56.041Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685230337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
-```
+   ```shell
+   2023-09-14T09:52:26.223Z warn internal/transaction.go:123 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685140337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
+   2023-09-14T09:52:45.755Z warn internal/transaction.go:123 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685156843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
+   2023-09-14T09:52:56.344Z warn internal/transaction.go:123 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685170337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
+   2023-09-14T09:53:12.202Z warn internal/transaction.go:123 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685186843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
+   2023-09-14T09:53:24.989Z warn internal/transaction.go:123 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685200337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
+   2023-09-14T09:53:45.643Z warn internal/transaction.go:123 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685216843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
+   2023-09-14T09:53:56.041Z warn internal/transaction.go:123 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685230337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
+   ```
 
 ## Summary
 
@@ -670,7 +677,7 @@ By the multi-receiver test some OOM observed, after further analysis result foll
 To solve that problem, metric agent memory limit was increased from 1Gi to 1200Mi, and `memory_limiter` check intervals were decreased from 0.5 second to 0.1 second. When the test was repeated with this new configuration and 45% more load over 12 hours, no OOM issues occurred.
 
 The following ConfigMap contains all configuration adjustments for the metric agent, as well as the Prometheus receiver configuration changes. This configuration should be used as reference to implement Telemetry manager changes.
-<details>                    
+<details>
   <summary>Expand</summary>
 
 ```yaml
@@ -841,9 +848,10 @@ metadata:
     kind: MetricPipeline
     name: metricpipeline-sample
 ```
+
 </details>
 
-## Metric Gateway 
+## Metric Gateway
 
 For the metric gateway test, the same test setup as for the metric agent (see above) was used. Additionally, metric gateway was configured with a Cloud Logging Service backend for more realistic results.
 
@@ -876,7 +884,7 @@ Further analysis results in the following findings (same as for metric agent):
 - If none of the free memory blocks is big enough for incoming data, memory becomes very fragmented, even though in total there is enough memory.
 
 To solve that problem, the metric agent memory limit was increased from 1Gi to 1200Mi, and the `memory_limiter` **spike_limit_percentage** parameter was set to `20`.
-<details>                    
+<details>
   <summary>Expand</summary>
 
 ```yaml
@@ -890,6 +898,7 @@ To solve that problem, the metric agent memory limit was increased from 1Gi to 1
             limit_percentage: 75
             spike_limit_percentage: 20
 ```
+
 </details>
 
 The metric gateway with a configured CLS instance reaches max ~34K metric data points/sec in peak. Any higher load is rejected by the configured CLS instance. At the peak limit of ~34K metric data points/sec, metric gateway instance memory utilization is around 20%. Any load over this value yields the following results:

@@ -5,15 +5,53 @@ alerting:
     alertmanagers:
         - static_configs:
             - targets:
-                - localhost:9093
+                - http://webhook:9090
+          tls_config:
+            insecure_skip_verify: true
 rule_files:
-    - /etc/prometheus/prometheus.rules
+    - /etc/prometheus/alerting_rules.yml
 scrape_configs:
     - job_name: kubernetes-service-endpoints
       relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          regex: kyma-system
+          action: keep
         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
           regex: "true"
           action: keep
+        - source_labels: [__meta_kubernetes_endpoints_label_telemetry_kyma_project_io_self_monitor]
+          regex: enabled
+          action: keep
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+          regex: (.+)
+          target_label: __metrics_path__
+          action: replace
+        - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+          regex: (.+?)(?::\d+)?;(\d+)
+          target_label: __address__
+          replacement: $1:$2
+          action: replace
+        - source_labels: [__meta_kubernetes_namespace]
+          target_label: namespace
+          action: replace
+        - source_labels: [__meta_kubernetes_service_name]
+          target_label: service
+          action: replace
+        - source_labels: [__meta_kubernetes_pod_node_name]
+          target_label: node
+          action: replace
+      metric_relabel_configs:
+        - source_labels: [__name__]
+          regex: fluentbit_output_proc_bytes_total|fluentbit_output_dropped_records_total|fluentbit_input_bytes_total|telemetry_fsbuffer_usage_bytes|otelcol_exporter_sent_.*|otelcol_exporter_send_failed_.*|otelcol_exporter_queue_size_.*|otelcol_exporter_queue_capacity_.*|otelcol_exporter_enqueue_failed_.*|otelcol_receiver_refused_.*
+          action: keep
+        - source_labels: [__name__, name]
+          regex: fluentbit_.+;([a-zA-Z0-9-]+)
+          target_label: pipeline_name
+          action: replace
+        - source_labels: [__name__, exporter]
+          regex: otelcol_.+;.+/([a-zA-Z0-9-]+)
+          target_label: pipeline_name
+          action: replace
       kubernetes_sd_configs:
         - role: endpoints
           namespaces:

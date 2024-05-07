@@ -61,6 +61,8 @@ jobs:
           GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
           GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+          GARDENER_MIN_NODES: 2
+          GARDENER_MAX_NODES: 2
 
       - name: Deploy Telemetry
         run: hack/deploy-telemetry.sh

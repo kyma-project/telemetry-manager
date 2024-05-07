@@ -100,7 +100,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 [OUTPUT]
     name                     stdout
     match                    log-pipeline.*
-    alias                    log-pipeline-stdout
+    alias                    log-pipeline
     retry_limit              300
     storage.total_limit_size 1G`
 
@@ -466,7 +466,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			},
 		}
 
-		var expectedKeyNotFoundError = errors.New("did not find the key: missing-secret-ref-logpipeline.conf")
+		var errExpectedKeyNotFound = errors.New("did not find the key: missing-secret-ref-logpipeline.conf")
 
 		It("Creates a healthy LogPipeline", func() {
 			Expect(k8sClient.Create(ctx, healthyLogPipeline)).Should(Succeed())
@@ -485,7 +485,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		It("Should not include the LogPipeline with missing secret in fluent-bit-sections configmap", func() {
 			Consistently(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(Equal(expectedKeyNotFoundError))
+			}, timeout, interval).Should(Equal(errExpectedKeyNotFound))
 		})
 
 		It("Should update fluent-bit-sections configmap when secret is created", func() {
@@ -499,7 +499,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Expect(k8sClient.Delete(ctx, pipelineSecret)).Should(Succeed())
 			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(Equal(expectedKeyNotFoundError))
+			}, timeout, interval).Should(Equal(errExpectedKeyNotFound))
 		})
 
 	})
@@ -570,7 +570,7 @@ func validateKeyExistsInFluentbitSectionsConf(ctx context.Context, key string) e
 	err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
 	if err != nil {
 
-		return fmt.Errorf("could not get configmap: %s: %s", configMapLookupKey.Name, err)
+		return fmt.Errorf("could not get configmap: %s: %w", configMapLookupKey.Name, err)
 	}
 	if _, ok := fluentBitCm.Data[key]; !ok {
 		return fmt.Errorf("did not find the key: %s", key)

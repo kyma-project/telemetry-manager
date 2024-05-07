@@ -50,7 +50,7 @@ Status:
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
 
-## Custom resource parameters
+## Custom Resource Parameters
 
 For details, see the [Telemetry specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/operator/v1alpha1/telemetry_types.go).
 
@@ -68,13 +68,13 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **metric**  | object | MetricSpec defines the behavior of the metric gateway |
 | **metric.&#x200b;gateway**  | object |  |
 | **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
-| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy allowing you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of pods to run the gateway. Minimum is 1. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **trace**  | object | TraceSpec defines the behavior of the trace gateway |
 | **trace.&#x200b;gateway**  | object |  |
 | **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
-| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy allowing you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of pods to run the gateway. Minimum is 1. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 
@@ -100,7 +100,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 <!-- TABLE-END -->
 
-The `state` attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`. 
+The `state` attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`.
 
 ### Log Components State
 
@@ -115,6 +115,16 @@ The state of the log components is determined by the status condition of type `L
 | False            | ResourceBlocksDeletion             | The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (resource-1, resource-2,...), LogParsers (resource-1, resource-2,...)                                                                        |
 | False            | UnsupportedLokiOutput              | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README). |
 
+Reflecting the log data flow in the status condition is currently under development and determined by the following reasons:
+
+| Condition Status | Condition Reason | Condition Message                                                  |
+|------------------|------------------|--------------------------------------------------------------------|
+| True             | FlowHealthy      | No problems detected in the log flow                               |
+| False            | BufferFillingUp  | Buffer nearing capacity: incoming log rate exceeds the export rate |
+| False            | NoLogsDelivered  | No logs delivered to backend                                       |
+| False            | SomeDataDropped  | Some logs dropped: backend unreachable or rejecting                |
+| False            | AllDataDropped   | All logs dropped: backend unreachable or rejecting                 |
+
 ### Trace Components State
 
 The state of the trace components is determined by the status condition of type `TraceComponentsHealthy`:
@@ -128,6 +138,16 @@ The state of the trace components is determined by the status condition of type 
 | False            | ResourceBlocksDeletion               | The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (resource-1, resource-2,...) |
 | False            | MaxPipelinesExceeded                 | Maximum pipeline count exceeded                                                                                                             |
 
+Reflecting the trace data flow in the status condition is currently under development and determined by the following reasons:
+
+| Condition Status | Condition Reason  | Condition Message                                                                       |
+|------------------|-------------------|-----------------------------------------------------------------------------------------|
+| True             | FlowHealthy       | No problems detected in the trace flow                                                  |
+| False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive traces at the current rate    |
+| False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                    |
+| False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                   |
+| False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                    |
+
 ### Metric Components State
 
 The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`:
@@ -140,10 +160,20 @@ The state of the metric components is determined by the status condition of type
 | False            | MetricGatewayDeploymentNotReady       | Metric gateway Deployment is not ready                                                                                                       |
 | False            | MetricAgentDaemonSetNotReady          | Metric agent DaemonSet is not ready                                                                                                          |
 | False            | ResourceBlocksDeletion                | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
-| False            | MaxPipelinesExceeded                 | Maximum pipeline count exceeded                                                                                                             |
+| False            | MaxPipelinesExceeded                  | Maximum pipeline count exceeded                                                                                                              |
+
+Reflecting the metric data flow in the status condition is currently under development and determined by the following reasons:
+
+| Condition Status | Condition Reason  | Condition Message                                                                        |
+|------------------|-------------------|------------------------------------------------------------------------------------------|
+| True             | FlowHealthy       | No problems detected in the metric flow                                                  |
+| False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate   |
+| False            | BufferFillingUp   | Buffer nearing capacity: incoming metric rate exceeds the export rate                    |
+| False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                                   |
+| False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting                                    |
 
 ### Telemetry CR State
 
-- 'Ready': Only if all the subcomponent conditions (LogComponentsHealthy, TraceComponentsHealthy, and MetricComponentsHealthy) have a status of 'True.' 
-- 'Warning': If any of these conditions are not 'True'.
+- 'Ready': Only if all the subcomponent conditions (LogComponentsHealthy, TraceComponentsHealthy, and MetricComponentsHealthy) have a status of `True`.
+- 'Warning': If any of these conditions are not `True`.
 - 'Deleting': When a Telemetry CR is being deleted.

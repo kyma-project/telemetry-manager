@@ -43,6 +43,7 @@ func TestRemoveSelfMonitorResources(t *testing.T) {
 		verifyRoleBindingIsPresent(ctx, t, client)
 		verifyServiceAccountIsPresent(ctx, t, client)
 		verifyNetworkPolicy(ctx, t, client)
+		verifyService(ctx, t, client)
 	})
 
 	err = RemoveResources(ctx, client, selfMonConfig)
@@ -73,6 +74,11 @@ func TestRemoveSelfMonitorResources(t *testing.T) {
 		var nwPs networkingv1.NetworkPolicyList
 		require.NoError(t, client.List(ctx, &nwPs))
 		require.Len(t, nwPs.Items, 0)
+	})
+	t.Run("service should not be present", func(t *testing.T) {
+		var svcList corev1.ServiceList
+		require.NoError(t, client.List(ctx, &svcList))
+		require.Len(t, svcList.Items, 0)
 	})
 
 }
@@ -106,6 +112,10 @@ func TestApplySelfMonitorResources(t *testing.T) {
 
 	t.Run("should create network policy", func(t *testing.T) {
 		verifyNetworkPolicy(ctx, t, client)
+	})
+
+	t.Run("should create service", func(t *testing.T) {
+		verifyService(ctx, t, client)
 	})
 
 }
@@ -261,6 +271,27 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 	require.Len(t, np.Spec.Egress[0].To, 2)
 	require.Equal(t, "0.0.0.0/0", np.Spec.Egress[0].To[0].IPBlock.CIDR)
 	require.Equal(t, "::/0", np.Spec.Egress[0].To[1].IPBlock.CIDR)
+}
+
+func verifyService(ctx context.Context, t *testing.T, client client.Client) {
+	var svcList corev1.ServiceList
+	require.NoError(t, client.List(ctx, &svcList))
+	require.Len(t, svcList.Items, 1)
+
+	svc := svcList.Items[0]
+	require.NotNil(t, svc)
+	require.Equal(t, name, svc.Name)
+	require.Equal(t, namespace, svc.Namespace)
+
+	require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
+	require.Len(t, svc.Spec.Ports, 1)
+
+	require.Equal(t, corev1.ServicePort{
+		Name:       "http",
+		Protocol:   corev1.ProtocolTCP,
+		Port:       9090,
+		TargetPort: intstr.FromInt32(9090),
+	}, svc.Spec.Ports[0])
 }
 
 func makeSelfMonitorConfig() *Config {

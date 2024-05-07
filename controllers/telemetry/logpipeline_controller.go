@@ -25,36 +25,41 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 )
 
-// LogPipelineReconciler reconciles a LogPipeline object
-type LogPipelineReconciler struct {
+// LogPipelineController reconciles a LogPipeline object
+type LogPipelineController struct {
 	client.Client
-
-	reconciler *logpipeline.Reconciler
-
-	config logpipeline.Config
+	reconcileTriggerChan <-chan event.GenericEvent
+	reconciler           *logpipeline.Reconciler
 }
 
-func NewLogPipelineReconciler(client client.Client, reconciler *logpipeline.Reconciler, config logpipeline.Config) *LogPipelineReconciler {
-	return &LogPipelineReconciler{
-		Client:     client,
-		reconciler: reconciler,
-		config:     config,
+func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *logpipeline.Reconciler) *LogPipelineController {
+	return &LogPipelineController{
+		Client:               client,
+		reconcileTriggerChan: reconcileTriggerChan,
+		reconciler:           reconciler,
 	}
 }
 
-func (r *LogPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *LogPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.LogPipeline{})
+
+	b.WatchesRawSource(
+		&source.Channel{Source: r.reconcileTriggerChan},
+		&handler.EnqueueRequestForObject{},
+	)
 
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},

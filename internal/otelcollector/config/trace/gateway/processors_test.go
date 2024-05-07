@@ -30,8 +30,8 @@ func TestProcessors(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
-		require.Equal(t, 60, collectorConfig.Processors.MemoryLimiter.LimitPercentage)
-		require.Equal(t, 40, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
+		require.Equal(t, 75, collectorConfig.Processors.MemoryLimiter.LimitPercentage)
+		require.Equal(t, 15, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
 	})
 
 	t.Run("batch processors", func(t *testing.T) {

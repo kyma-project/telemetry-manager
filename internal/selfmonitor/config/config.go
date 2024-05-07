@@ -21,11 +21,18 @@ type AlertingConfig struct {
 }
 
 type AlertManagerConfig struct {
+	Scheme        string                     `yaml:"scheme,omitempty"`
+	PathPrefix    string                     `yaml:"path_prefix,omitempty"`
 	StaticConfigs []AlertManagerStaticConfig `yaml:"static_configs"`
+	TLSConfig     TLSConfig                  `yaml:"tls_config,omitempty"`
 }
 
 type AlertManagerStaticConfig struct {
 	Targets []string `yaml:"targets"`
+}
+
+type TLSConfig struct {
+	InsecureSkipVerify bool `yaml:"insecure_skip_verify,omitempty"`
 }
 
 type ScrapeConfig struct {
@@ -67,5 +74,7 @@ type RelabelConfig struct {
 type RelabelAction string
 
 const (
-	Keep RelabelAction = "keep"
+	Keep    RelabelAction = "keep"
+	Drop    RelabelAction = "drop"
+	Replace RelabelAction = "replace"
 )

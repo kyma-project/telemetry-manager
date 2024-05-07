@@ -78,13 +78,15 @@ func TestMakeClusterRole(t *testing.T) {
 
 func TestMakeMetricsService(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	service := MakeMetricsService(name)
+	service := MakeMetricsService(name, true)
 
 	require.NotNil(t, service)
 	require.Equal(t, service.Name, "telemetry-fluent-bit-metrics")
 	require.Equal(t, service.Namespace, name.Namespace)
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
 	require.Len(t, service.Spec.Ports, 1)
+
+	require.Contains(t, service.Labels, "telemetry.kyma-project.io/self-monitor")
 
 	require.Contains(t, service.Annotations, "prometheus.io/scrape")
 	require.Contains(t, service.Annotations, "prometheus.io/port")
@@ -98,13 +100,15 @@ func TestMakeMetricsService(t *testing.T) {
 
 func TestMakeExporterMetricsService(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	service := MakeExporterMetricsService(name)
+	service := MakeExporterMetricsService(name, true)
 
 	require.NotNil(t, service)
 	require.Equal(t, service.Name, "telemetry-fluent-bit-exporter-metrics")
 	require.Equal(t, service.Namespace, name.Namespace)
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
 	require.Len(t, service.Spec.Ports, 1)
+
+	require.Contains(t, service.Labels, "telemetry.kyma-project.io/self-monitor")
 
 	require.Contains(t, service.Annotations, "prometheus.io/scrape")
 	require.Contains(t, service.Annotations, "prometheus.io/port")

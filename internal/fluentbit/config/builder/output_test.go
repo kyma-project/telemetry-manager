@@ -13,7 +13,7 @@ func TestCreateOutputSectionWithCustomOutput(t *testing.T) {
 	expected := `[OUTPUT]
     name                     null
     match                    foo.*
-    alias                    foo-null
+    alias                    foo
     retry_limit              300
     storage.total_limit_size 1G
 
@@ -38,7 +38,7 @@ func TestCreateOutputSectionWithHTTPOutput(t *testing.T) {
 	expected := `[OUTPUT]
     name                     http
     match                    foo.*
-    alias                    foo-http
+    alias                    foo
     allow_duplicated_headers true
     format                   yaml
     host                     localhost
@@ -79,7 +79,7 @@ func TestCreateOutputSectionWithHTTPOutputWithSecretReference(t *testing.T) {
 	expected := `[OUTPUT]
     name                     http
     match                    foo.*
-    alias                    foo-http
+    alias                    foo
     allow_duplicated_headers true
     format                   json
     host                     localhost
@@ -126,7 +126,7 @@ func TestCreateOutputSectionWithHTTPOutputWithTLS(t *testing.T) {
 	expected := `[OUTPUT]
     name                     http
     match                    foo.*
-    alias                    foo-http
+    alias                    foo
     allow_duplicated_headers true
     format                   json
     host                     localhost

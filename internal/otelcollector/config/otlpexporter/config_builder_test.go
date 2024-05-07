@@ -11,29 +11,15 @@ import (
 )
 
 func TestExporterIDHTTP(t *testing.T) {
-	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
-		Protocol: "http",
-	}
-
-	require.Equal(t, "otlphttp/test", ExporterID(output, "test"))
+	require.Equal(t, "otlphttp/test", ExporterID("http", "test"))
 }
 
 func TestExporterIDGRPC(t *testing.T) {
-	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
-		Protocol: "grpc",
-	}
-
-	require.Equal(t, "otlp/test", ExporterID(output, "test"))
+	require.Equal(t, "otlp/test", ExporterID("grpc", "test"))
 }
 
 func TestExorterIDDefault(t *testing.T) {
-	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
-	}
-
-	require.Equal(t, "otlp/test", ExporterID(output, "test"))
+	require.Equal(t, "otlp/test", ExporterID("", "test"))
 }
 
 func TestMakeConfig(t *testing.T) {

@@ -119,7 +119,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 [OUTPUT]
     name                     http
     match                    foo.*
-    alias                    foo-http
+    alias                    foo
     allow_duplicated_headers true
     format                   json
     host                     localhost
@@ -170,7 +170,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, defaults)
+	actual, err := BuildFluentBitConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -180,7 +180,6 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     name             tail
     alias            foo
     db               /data/flb_foo.db
-    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
     mem_buf_limit    5MB
     multiline.parser docker, cri, go, python, java
     path             /var/log/containers/*_*_*-*.log
@@ -208,7 +207,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 [OUTPUT]
     name                     stdout
     match                    foo.*
-    alias                    foo-stdout
+    alias                    foo
     retry_limit              300
     storage.total_limit_size 1G
 
@@ -237,8 +236,12 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		StorageType:       "filesystem",
 		FsBufferLimit:     "1G",
 	}
+	builderConfig := BuilderConfig{
+		PipelineDefaults: defaults,
+		CollectAgentLogs: true,
+	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, defaults)
+	actual, err := BuildFluentBitConfig(logPipeline, builderConfig)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -253,7 +256,7 @@ func TestMergeSectionsConfigWithMissingOutput(t *testing.T) {
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, defaults)
+	actual, err := BuildFluentBitConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
 	require.Error(t, err)
 	require.Empty(t, actual)
 }

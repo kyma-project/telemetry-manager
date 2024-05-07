@@ -17,8 +17,8 @@ import (
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
-			Service:    makeServiceConfig(),
-			Extensions: makeExtensionsConfig(),
+			Service:    config.DefaultService(make(config.Pipelines)),
+			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
@@ -58,33 +58,6 @@ func makeReceiversConfig() Receivers {
 				},
 			},
 		},
-	}
-}
-
-func makeExtensionsConfig() config.Extensions {
-	return config.Extensions{
-		HealthCheck: config.Endpoint{
-			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
-		},
-		Pprof: config.Endpoint{
-			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
-		},
-	}
-}
-
-func makeServiceConfig() config.Service {
-	return config.Service{
-		Pipelines: make(config.Pipelines),
-		Telemetry: config.Telemetry{
-			Metrics: config.Metrics{
-				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
-			},
-			Logs: config.Logs{
-				Level:    "info",
-				Encoding: "json",
-			},
-		},
-		Extensions: []string{"health_check", "pprof"},
 	}
 }
 
@@ -156,7 +129,7 @@ func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.
 
 	maps.Copy(envVars, otlpExporterEnvVars)
 
-	exporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
+	exporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
 	cfg.Exporters[exporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
@@ -224,7 +197,7 @@ func makeNamespaceFilterID(pipelineName string, inputSourceType metric.InputSour
 }
 
 func makeOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
-	return otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
+	return otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
 }
 
 func isPrometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {

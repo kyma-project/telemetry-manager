@@ -3,6 +3,7 @@ package otelcollector
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +19,7 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []int32) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []int32, observeBySelfMonitoring bool) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
@@ -32,7 +33,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create cluster role binding: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name, observeBySelfMonitoring)); err != nil {
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
@@ -101,8 +102,14 @@ func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1
 	}
 }
 
-func makeMetricsService(name types.NamespacedName) *corev1.Service {
+func makeMetricsService(name types.NamespacedName, observeBySelfMonitoring bool) *corev1.Service {
 	labels := defaultLabels(name.Name)
+	selectorLabels := make(map[string]string)
+	maps.Copy(selectorLabels, labels)
+
+	if observeBySelfMonitoring {
+		labels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -124,7 +131,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.Metrics),
 				},
 			},
-			Selector: labels,
+			Selector: selectorLabels,
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}

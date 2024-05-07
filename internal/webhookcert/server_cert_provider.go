@@ -47,7 +47,7 @@ func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverC
 	var err error
 	var serverCertPEM, serverKeyPEM []byte
 	serverCertPEM, serverKeyPEM, err = p.storage.load()
-	shouldCreateNew := false
+	var shouldCreateNew bool
 	if err != nil || len(serverCertPEM) == 0 || len(serverKeyPEM) == 0 {
 		shouldCreateNew = true
 	} else {
@@ -71,10 +71,7 @@ func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverC
 }
 
 func (p *serverCertProviderImpl) checkServerCert(ctx context.Context, serverCertPEM, caCertPEM []byte) bool {
-	var err error
-	certValid := false
-
-	certValid, err = p.expiryChecker.checkExpiry(ctx, serverCertPEM)
+	certValid, err := p.expiryChecker.checkExpiry(ctx, serverCertPEM)
 	if err != nil || !certValid {
 		return false
 	}

@@ -62,8 +62,8 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
 
     ```yaml
     namespaceSelector:
-        matchExpressions:
-        - key: kubernetes.io/metadata.name
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
         operator: NotIn
         values:
         - kyma-system
@@ -83,6 +83,7 @@ As a result, you see data arriving in your environment, advanced Kubernetes moni
 Next, you set up the ingestion of custom span and Istio span data, and, optionally, custom metrics based on OTLP.
 
 ### Create Secret
+
 1. To push custom metrics and spans to Dynatrace, set up a [dataIngestToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
 
    Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens#create-api-token) and select the following scopes:
@@ -97,7 +98,9 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
    ```bash
    kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>" --from-literal="apiurl=<API_URL>"
    ```
+
 4. Verify the Secret you created looks similar to the [example Secret](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml).
+
 ### Ingest Traces
 
 To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a TracePipeline.

@@ -74,8 +74,10 @@ data:
     receivers:
       otlp:
         protocols:
-          grpc: {}
-          http: {}
+          grpc:
+            endpoint: ${MY_POD_IP}:4317
+          http:
+            endpoint: ${MY_POD_IP}:4318
     exporters:
       debug:
 
@@ -112,7 +114,7 @@ spec:
       securityContext:
         fsGroup: 101
       containers:
-        - image: europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.95.0-0eb4394f
+        - image: OTEL_IMAGE
           name: otel-collector
           resources:
             limits:
@@ -124,6 +126,12 @@ spec:
               mountPath: /etc/collector
           args:
             - --config=/etc/collector/config.yaml
+          env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
 
 ---
 apiVersion: v1

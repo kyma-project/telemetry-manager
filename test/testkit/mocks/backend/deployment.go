@@ -12,7 +12,7 @@ import (
 
 const (
 	replicas           int32 = 1
-	otelCollectorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.95.0-0eb4394f"
+	otelCollectorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.99.0-41265c69"
 	nginxImage               = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
 	fluentDImage             = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
 )
@@ -89,6 +89,17 @@ func (d *Deployment) containers() []corev1.Container {
 			VolumeMounts: []corev1.VolumeMount{
 				{Name: "config", MountPath: "/etc/collector"},
 				{Name: "data", MountPath: d.dataPath},
+			},
+			Env: []corev1.EnvVar{
+				{
+					Name: "MY_POD_IP",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "status.podIP",
+						},
+					},
+				},
 			},
 		},
 		{

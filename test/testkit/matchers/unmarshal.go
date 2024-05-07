@@ -19,18 +19,18 @@ func UnmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignal
 	for {
 		line, readerErr := reader.ReadBytes('\n')
 		if readerErr != nil && readerErr != io.EOF {
-			return nil, fmt.Errorf("failed to read line: %v", readerErr)
+			return nil, fmt.Errorf("failed to read line: %w", readerErr)
 		}
 
 		if len(line) > 0 {
 			signals, err := unmarshal(line)
 			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal logs: %v", readerErr)
+				return nil, fmt.Errorf("failed to unmarshal logs: %w", readerErr)
 			}
 			allSignals = append(allSignals, signals)
 		}
 
-		//check the io.EOF error after checking the line since both can be returned simultaneously
+		// check the io.EOF error after checking the line since both can be returned simultaneously
 		if readerErr == io.EOF {
 			break
 		}

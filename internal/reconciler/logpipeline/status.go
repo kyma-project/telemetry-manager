@@ -13,6 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -23,7 +24,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 			return nil
 		}
 
-		return fmt.Errorf("failed to get LogPipeline: %v", err)
+		return fmt.Errorf("failed to get LogPipeline: %w", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {
@@ -35,16 +36,14 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 		return err
 	}
 
-	// If the "AgentHealthy" type doesn't exist in the conditions,
-	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
-	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy) == nil {
-		pipeline.Status.Conditions = []metav1.Condition{}
-	}
-
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
-	r.setPendingAndRunningConditions(ctx, &pipeline)
+
+	if r.flowHealthProbingEnabled {
+		r.setFlowHealthCondition(ctx, &pipeline)
+	}
+
+	r.setLegacyConditions(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update LogPipeline status: %w", err)
@@ -58,7 +57,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 	if pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
 		pipeline.Status.UnsupportedMode = desiredUnsupportedMode
 		if err := r.Status().Update(ctx, pipeline); err != nil {
-			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %v", err)
+			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %w", err)
 		}
 	}
 
@@ -79,36 +78,111 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 		reason = conditions.ReasonDaemonSetReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeAgentHealthy, reason, status, pipeline.Generation, conditions.LogsMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeAgentHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	status := metav1.ConditionTrue
-	reason := conditions.ReasonConfigurationGenerated
+	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonReferencedSecretMissing
+	condition := metav1.Condition{
+		Type:               conditions.TypeConfigurationGenerated,
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+		ObservedGeneration: pipeline.Generation,
 	}
 
-	if pipeline.Spec.Output.IsLokiDefined() {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonUnsupportedLokiOutput
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.LogsMessage))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-
+func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
 	if pipeline.Spec.Output.IsLokiDefined() {
-		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonUnsupportedLokiOutput, pipeline.Name, conditions.LogsMessage)
+		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)
+	}
+
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(conditions.ReasonReferencedSecretMissing)
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		cert := pipeline.Spec.Output.HTTP.TLSConfig.Cert
+		key := pipeline.Spec.Output.HTTP.TLSConfig.Key
+
+		err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
+		return conditions.EvaluateTLSCertCondition(err)
+	}
+
+	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(conditions.ReasonConfigurationGenerated)
+}
+
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+	var reason string
+	var status metav1.ConditionStatus
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err == nil {
+		logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
+		reason = flowHealthReasonFor(probeResult)
+		if probeResult.Healthy {
+			status = metav1.ConditionTrue
+		} else {
+			status = metav1.ConditionFalse
+		}
+	} else {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+		reason = conditions.ReasonFlowHealthy
+		status = metav1.ConditionUnknown
+	}
+
+	condition := metav1.Condition{
+		Type:               conditions.TypeFlowHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
+	switch {
+	case probeResult.AllDataDropped:
+		return conditions.ReasonAllDataDropped
+	case probeResult.SomeDataDropped:
+		return conditions.ReasonSomeDataDropped
+	case probeResult.NoLogsDelivered:
+		return conditions.ReasonNoLogsDelivered
+	case probeResult.BufferFillingUp:
+		return conditions.ReasonBufferFillingUp
+	default:
+		return conditions.ReasonFlowHealthy
+	}
+}
+
+func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+	if pipeline.Spec.Output.IsLokiDefined() {
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonUnsupportedLokiOutput,
+			conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput))
 		return
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
 	if referencesNonExistentSecret {
-		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, pipeline.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonReferencedSecretMissing,
+			conditions.MessageForLogPipeline(conditions.ReasonReferencedSecretMissing))
 		return
 	}
 
@@ -119,9 +193,15 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	if !fluentBitReady {
-		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSNotReady, pipeline.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonFluentBitDSNotReady,
+			conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 		return
 	}
 
-	conditions.SetRunningCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSReady, pipeline.Name, conditions.LogsMessage)
+	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
+		conditions.ReasonFluentBitDSReady,
+		conditions.ReasonFluentBitDSNotReady,
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady),
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 }

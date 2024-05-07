@@ -21,10 +21,11 @@ func TestTraceComponentsCheck(t *testing.T) {
 	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady}
 
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.TracePipeline
-		telemetryInDeletion bool
-		expectedCondition   *metav1.Condition
+		name                     string
+		pipelines                []telemetryv1alpha1.TracePipeline
+		telemetryInDeletion      bool
+		flowHealthProbingEnabled bool
+		expectedCondition        *metav1.Condition
 	}{
 		{
 			name:                "should be healthy if no pipelines deployed",
@@ -130,7 +131,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should prioritize unready gateway reason over missing secret",
+			name: "should prioritize ConfigGenerated reason over GatewayHealthy reason",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady}).
@@ -147,8 +148,8 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
-				Reason:  "TraceGatewayDeploymentNotReady",
-				Message: "Trace gateway Deployment is not ready",
+				Reason:  "TracePipelineReferencedSecretMissing",
+				Message: "One or more referenced Secrets are missing",
 			},
 		},
 		{
@@ -163,6 +164,58 @@ func TestTraceComponentsCheck(t *testing.T) {
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (bar,foo)",
+			},
+		},
+		{
+			name: "should be healthy if telemetry flow probing enabled and healthy",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonFlowHealthy}).
+					Build(),
+			},
+			flowHealthProbingEnabled: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "True",
+				Reason:  "TraceComponentsRunning",
+				Message: "All trace components are running",
+			},
+		},
+		{
+			name: "should not be healthy if telemetry flow probing enabled and not healthy",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayThrottling}).
+					Build(),
+			},
+			flowHealthProbingEnabled: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "False",
+				Reason:  "GatewayThrottling",
+				Message: "Trace gateway experiencing high influx: unable to receive traces at current rate",
+			},
+		},
+		{
+			name: "should return show tlsCertInvalid if one of the pipelines has invalid tls cert",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonTLSCertificateAboutToExpire, Message: "TLS certificate is about to expire, configured certificate is valid until 22.04.2024"}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "True",
+				Reason:  "TLSCertificateAboutToExpire",
+				Message: "TLS certificate is about to expire, configured certificate is valid until 22.04.2024",
 			},
 		},
 	}
@@ -180,7 +233,8 @@ func TestTraceComponentsCheck(t *testing.T) {
 			fakeClient := b.Build()
 
 			m := &traceComponentsChecker{
-				client: fakeClient,
+				client:                   fakeClient,
+				flowHealthProbingEnabled: test.flowHealthProbingEnabled,
 			}
 
 			condition, err := m.Check(context.Background(), test.telemetryInDeletion)

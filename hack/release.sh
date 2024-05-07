@@ -23,6 +23,19 @@ function prepare_release_artefacts() {
      cp ./config/samples/operator_v1alpha1_telemetry.yaml telemetry-default-cr.yaml
 }
 
+get_previous_release_version() {
+    TAG_LIST=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$"))
+    if [[ "${TAG_LIST[0]}" =~ ^[0-9]+.[0-9]+.[1-9]$ ]]
+    then
+          TAG_LIST_WITH_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$"))
+          export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH[1]}
+    else
+          # get the list of tags in a reverse chronological order excluding patch tags
+          TAG_LIST_WITHOUT_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0]$"))
+          export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITHOUT_PATCH[1]}
+    fi
+}
+
 function create_github_release() {
     echo "Creating the Github release"
     git reset --hard
@@ -31,6 +44,7 @@ function create_github_release() {
 
 function main() {
     prepare_release_artefacts
+    get_previous_release_version
     create_github_release
 }
 

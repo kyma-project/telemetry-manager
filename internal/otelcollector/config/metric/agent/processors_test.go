@@ -13,7 +13,7 @@ import (
 func TestProcessors(t *testing.T) {
 	t.Run("delete service name", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
 		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -24,18 +24,18 @@ func TestProcessors(t *testing.T) {
 
 	t.Run("memory limiter proessor", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
 		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.MemoryLimiter)
 		require.Equal(t, collectorConfig.Processors.MemoryLimiter.LimitPercentage, 75)
-		require.Equal(t, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage, 20)
-		require.Equal(t, collectorConfig.Processors.MemoryLimiter.CheckInterval, "0.1s")
+		require.Equal(t, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage, 15)
+		require.Equal(t, collectorConfig.Processors.MemoryLimiter.CheckInterval, "1s")
 	})
 
 	t.Run("batch processor", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
 		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.Batch)
@@ -46,7 +46,7 @@ func TestProcessors(t *testing.T) {
 
 	t.Run("insert input source runtime", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
 		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -57,7 +57,7 @@ func TestProcessors(t *testing.T) {
 
 	t.Run("insert input source runtime", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
 		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -69,7 +69,7 @@ func TestProcessors(t *testing.T) {
 
 	t.Run("insert input source prometheus", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
 		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
@@ -81,7 +81,7 @@ func TestProcessors(t *testing.T) {
 
 	t.Run("insert input source istio", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().RuntimeInput(true).IstioInput(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithIstioInput(true).Build(),
 		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.InsertInputSourceIstio)

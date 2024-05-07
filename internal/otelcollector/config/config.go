@@ -1,5 +1,11 @@
 package config
 
+import (
+	"fmt"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+)
+
 type Base struct {
 	Extensions Extensions `yaml:"extensions"`
 	Service    Service    `yaml:"service"`
@@ -40,4 +46,32 @@ type Metrics struct {
 type Logs struct {
 	Level    string `yaml:"level"`
 	Encoding string `yaml:"encoding"`
+}
+
+func DefaultService(pipelines Pipelines) Service {
+	telemetry := Telemetry{
+		Metrics: Metrics{
+			Address: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.Metrics),
+		},
+		Logs: Logs{
+			Level:    "info",
+			Encoding: "json",
+		},
+	}
+	return Service{
+		Pipelines:  pipelines,
+		Telemetry:  telemetry,
+		Extensions: []string{"health_check", "pprof"},
+	}
+}
+
+func DefaultExtensions() Extensions {
+	return Extensions{
+		HealthCheck: Endpoint{
+			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),
+		},
+		Pprof: Endpoint{
+			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
+		},
+	}
 }

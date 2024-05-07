@@ -85,10 +85,13 @@ For testing, use the following commands:
   ```
 
 - Run e2e tests
-  ```bash
-  ginkgo run --tags e2e --label-filter="<e2e test suite label>" test/e2e
-  ```
+
+   ```bash
+   ginkgo run --tags e2e --label-filter="<e2e test suite label>" test/e2e
+   ```
+
   _Example:_
-  ```bash
-  ginkgo run --tags e2e --label-filter="logs" test/e2e
-  ```
+
+   ```bash
+   ginkgo run --tags e2e --label-filter="logs" test/e2e
+   ```

@@ -21,22 +21,15 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 			return nil
 		}
 
-		return fmt.Errorf("failed to get LogParser: %v", err)
+		return fmt.Errorf("failed to get LogParser: %w", err)
 	}
 
 	if parser.DeletionTimestamp != nil {
 		return nil
 	}
 
-	// If the "AgentHealthy" type doesn't exist in the conditions,
-	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
-	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	if meta.FindStatusCondition(parser.Status.Conditions, conditions.TypeAgentHealthy) == nil {
-		parser.Status.Conditions = []metav1.Condition{}
-	}
-
 	r.setAgentHealthyCondition(ctx, &parser)
-	r.setPendingAndRunningConditions(ctx, &parser)
+	r.setLegacyConditions(ctx, &parser)
 
 	if err := r.Status().Update(ctx, &parser); err != nil {
 		return fmt.Errorf("failed to update LogParser status: %w", err)
@@ -59,10 +52,18 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, parser *telem
 		reason = conditions.ReasonDaemonSetReady
 	}
 
-	meta.SetStatusCondition(&parser.Status.Conditions, conditions.New(conditions.TypeAgentHealthy, reason, status, parser.Generation, conditions.LogsMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeAgentHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: parser.Generation,
+	}
+
+	meta.SetStatusCondition(&parser.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
+func (r *Reconciler) setLegacyConditions(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
 	fluentBitReady, err := r.prober.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset")
@@ -70,10 +71,15 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, parser 
 	}
 
 	if !fluentBitReady {
-		conditions.SetPendingCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSNotReady, parser.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&parser.Status.Conditions, parser.Generation,
+			conditions.ReasonFluentBitDSNotReady,
+			conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 		return
-
 	}
 
-	conditions.SetRunningCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSReady, parser.Name, conditions.LogsMessage)
+	conditions.HandleRunningCondition(&parser.Status.Conditions, parser.Generation,
+		conditions.ReasonFluentBitDSReady,
+		conditions.ReasonFluentBitDSNotReady,
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady),
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 }

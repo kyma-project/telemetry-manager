@@ -38,11 +38,15 @@ exclude:
   paths:
     - ^apis                # apis should in general only contain Go structs and not unit tested
     - ^controllers         # controllers are covered by envtests and e2e tests
+    - main
     - mocks
     - ^internal/k8sutils   # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
+    - internal/logger
     - ^internal/reconciler # reconciler are covered by envtests and e2e tests
     - ^test                # e2e and integration tests
+    - webhook/logparser    # logparser webhooks is covered by envtests and e2e tests
     - ^webhook/logpipeline # logpipeline webhooks is covered by envtests and e2e tests
+    - ^internal/testutils  # some functions in testutils are being used in e2e tests only
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by

@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -126,14 +127,15 @@ var _ = BeforeSuite(func() {
 	}
 	Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
 
-	logpipelineController := NewLogPipelineReconciler(
+	logPipelineController := NewLogPipelineController(
 		client,
-		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
-		testLogPipelineConfig)
-	err = logpipelineController.SetupWithManager(mgr)
+		make(chan event.GenericEvent),
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
+
+	err = logPipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	logparserReconciler := NewLogParserReconciler(
+	logParserController := NewLogParserController(
 		client,
 		logparser.NewReconciler(
 			client,
@@ -144,21 +146,22 @@ var _ = BeforeSuite(func() {
 		),
 		testLogParserConfig,
 	)
-	err = logparserReconciler.SetupWithManager(mgr)
+	err = logParserController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	tracepipelineReconciler := NewTracePipelineReconciler(
+	tracePipelineController := NewTracePipelineController(
 		client,
-		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
+		make(chan event.GenericEvent),
+		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, false, nil, overridesHandler),
 	)
-	err = tracepipelineReconciler.SetupWithManager(mgr)
+	err = tracePipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	metricPipelineReconciler := NewMetricPipelineReconciler(
+	metricPipelineController := NewMetricPipelineController(
 		client,
-		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client},
-			&k8sutils.DaemonSetProber{Client: client}, overridesHandler))
-	err = metricPipelineReconciler.SetupWithManager(mgr)
+		make(chan event.GenericEvent),
+		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
+	err = metricPipelineController.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	go func() {

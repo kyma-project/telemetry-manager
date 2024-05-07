@@ -28,7 +28,7 @@ import (
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name), cfg.allowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name), cfg.allowedPorts, cfg.ObserveBySelfMonitoring); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -49,12 +49,6 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 
 	if err := k8sutils.CreateOrUpdateService(ctx, c, makeOTLPService(cfg)); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
-	}
-
-	if cfg.CanReceiveOpenCensus {
-		if err := k8sutils.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
-			return fmt.Errorf("failed to create open census service: %w", err)
-		}
 	}
 
 	if cfg.Istio.Enabled {
@@ -104,12 +98,14 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 	}
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
+
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
 		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
 		withAffinity(affinity),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
 	return &appsv1.Deployment{
@@ -184,30 +180,6 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 					},
 				},
 			},
-		},
-	}
-}
-
-func makeOpenCensusService(name types.NamespacedName) *corev1.Service {
-	labels := defaultLabels(name.Name)
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-internal",
-			Namespace: name.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "http-opencensus",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OpenCensus,
-					TargetPort: intstr.FromInt32(ports.OpenCensus),
-				},
-			},
-			Selector: labels,
-			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }

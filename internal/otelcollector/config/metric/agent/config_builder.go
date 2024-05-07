@@ -25,8 +25,8 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []telemetryv1
 
 	return &Config{
 		Base: config.Base{
-			Extensions: makeExtensionsConfig(),
-			Service:    makeServiceConfig(inputs),
+			Service:    config.DefaultService(makePipelinesConfig(inputs)),
+			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(inputs, isIstioActive),
 		Processors: makeProcessorsConfig(inputs),
@@ -82,30 +82,6 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
 				MaxElapsedTime:  "300s",
 			},
 		},
-	}
-}
-
-func makeExtensionsConfig() config.Extensions {
-	return config.Extensions{
-		HealthCheck: config.Endpoint{
-			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
-		},
-	}
-}
-
-func makeServiceConfig(inputs inputSources) config.Service {
-	return config.Service{
-		Pipelines: makePipelinesConfig(inputs),
-		Telemetry: config.Telemetry{
-			Metrics: config.Metrics{
-				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
-			},
-			Logs: config.Logs{
-				Level:    "info",
-				Encoding: "json",
-			},
-		},
-		Extensions: []string{"health_check"},
 	}
 }
 
