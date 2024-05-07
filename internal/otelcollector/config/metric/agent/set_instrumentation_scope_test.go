@@ -1,9 +1,10 @@
 package agent
 
 import (
+	"testing"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
-	"testing"
 )
 
 func Test_transformedInstrumentationScope(t *testing.T) {
