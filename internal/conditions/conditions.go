@@ -18,25 +18,26 @@ const (
 )
 
 const (
-	ReasonNoPipelineDeployed          = "NoPipelineDeployed"
-	ReasonReferencedSecretMissing     = "ReferencedSecretMissing"
-	ReasonMaxPipelinesExceeded        = "MaxPipelinesExceeded"
-	ReasonResourceBlocksDeletion      = "ResourceBlocksDeletion"
-	ReasonConfigurationGenerated      = "ConfigurationGenerated"
-	ReasonDeploymentNotReady          = "DeploymentNotReady"
-	ReasonDeploymentReady             = "DeploymentReady"
-	ReasonDaemonSetNotReady           = "DaemonSetNotReady"
-	ReasonDaemonSetReady              = "DaemonSetReady"
-	ReasonAllDataDropped              = "AllTelemetryDataDropped"
-	ReasonSomeDataDropped             = "SomeTelemetryDataDropped"
-	ReasonBufferFillingUp             = "BufferFillingUp"
-	ReasonGatewayThrottling           = "GatewayThrottling"
-	ReasonNoLogsDelivered             = "NoLogsDelivered"
-	ReasonFlowHealthy                 = "Healthy"
-	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
-	ReasonTLSPrivateKeyInvalid        = "TLSPrivateKeyInvalid"
-	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
-	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
+	ReasonNoPipelineDeployed           = "NoPipelineDeployed"
+	ReasonReferencedSecretMissing      = "ReferencedSecretMissing"
+	ReasonMaxPipelinesExceeded         = "MaxPipelinesExceeded"
+	ReasonResourceBlocksDeletion       = "ResourceBlocksDeletion"
+	ReasonConfigurationGenerated       = "ConfigurationGenerated"
+	ReasonDeploymentNotReady           = "DeploymentNotReady"
+	ReasonDeploymentReady              = "DeploymentReady"
+	ReasonDaemonSetNotReady            = "DaemonSetNotReady"
+	ReasonDaemonSetReady               = "DaemonSetReady"
+	ReasonAllDataDropped               = "AllTelemetryDataDropped"
+	ReasonSomeDataDropped              = "SomeTelemetryDataDropped"
+	ReasonBufferFillingUp              = "BufferFillingUp"
+	ReasonGatewayThrottling            = "GatewayThrottling"
+	ReasonNoLogsDelivered              = "NoLogsDelivered"
+	ReasonFlowHealthy                  = "Healthy"
+	ReasonTLSCertificateInvalid        = "TLSCertificateInvalid"
+	ReasonTLSPrivateKeyInvalid         = "TLSPrivateKeyInvalid"
+	ReasonTLSCertificateExpired        = "TLSCertificateExpired"
+	ReasonTLSCertificateAboutToExpire  = "TLSCertificateAboutToExpire"
+	ReasonTLSCertificateKeyPairInvalid = "TLSCertificateKeyPairInvalid"
 
 	ReasonMetricAgentNotRequired  = "AgentNotRequired"
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"
@@ -56,13 +57,14 @@ const (
 )
 
 var commonMessages = map[string]string{
-	ReasonNoPipelineDeployed:          "No pipelines have been deployed",
-	ReasonReferencedSecretMissing:     "One or more referenced Secrets are missing",
-	ReasonMaxPipelinesExceeded:        "Maximum pipeline count limit exceeded",
-	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
-	ReasonTLSPrivateKeyInvalid:        "TLS private key invalid: %s",
-	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
-	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
+	ReasonNoPipelineDeployed:           "No pipelines have been deployed",
+	ReasonReferencedSecretMissing:      "One or more referenced Secrets are missing",
+	ReasonMaxPipelinesExceeded:         "Maximum pipeline count limit exceeded",
+	ReasonTLSCertificateInvalid:        "TLS certificate invalid: %s",
+	ReasonTLSPrivateKeyInvalid:         "TLS private key invalid: %s",
+	ReasonTLSCertificateExpired:        "TLS certificate expired on %s",
+	ReasonTLSCertificateAboutToExpire:  "TLS certificate is about to expire, configured certificate is valid until %s",
+	ReasonTLSCertificateKeyPairInvalid: "TLS certificate and private key do not match: %s",
 }
 
 var metricPipelineMessages = map[string]string{

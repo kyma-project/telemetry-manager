@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 type logPipelineV1Beta1 struct {
@@ -104,7 +104,7 @@ func (p *logPipelineV1Beta1) WithHTTPOutput() *logPipelineV1Beta1 {
 	return p
 }
 
-func (p *logPipelineV1Beta1) WithTLS(certs tlsgen.ClientCerts) *logPipelineV1Beta1 {
+func (p *logPipelineV1Beta1) WithTLS(certs testutils.ClientCerts) *logPipelineV1Beta1 {
 	if !p.output.IsHTTPDefined() {
 		return p
 	}

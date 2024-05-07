@@ -17,6 +17,8 @@ linters:
     - scopelint
     - structcheck
     - varcheck
+    - gomnd
+    - execinquery
   # Linters to be enabled after fixing the issues
     - intrange
     - cyclop
@@ -30,9 +32,9 @@ linters:
     - gocritic
     - godot
     - godox
-    - goerr113
+    - err113
     - gofumpt
-    - gomnd
+    - mnd
     - ireturn
     - lll
     - maintidx
