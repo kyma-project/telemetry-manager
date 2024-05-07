@@ -19,7 +19,6 @@ func makeProcessorsConfig() Processors {
 		K8sAttributes:      gatewayprocs.K8sAttributesProcessorConfig(),
 		InsertClusterName:  gatewayprocs.InsertClusterNameProcessorConfig(),
 		ResolveServiceName: makeResolveServiceNameConfig(),
-		DropKymaAttributes: gatewayprocs.DropKymaAttributesProcessorConfig(),
 	}
 }
 

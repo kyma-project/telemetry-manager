@@ -123,7 +123,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-otlp",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -145,7 +144,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -168,7 +166,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -191,7 +188,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -213,7 +209,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -235,7 +230,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -258,7 +252,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -281,7 +274,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -304,7 +296,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -327,7 +318,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -355,7 +345,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/test-1-filter-by-namespace-runtime-input",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-1"].Processors)
 
@@ -370,7 +359,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-2"].Processors)
 
@@ -384,7 +372,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-diagnostic-metrics-if-input-source-istio",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-3"].Processors)
 	})
