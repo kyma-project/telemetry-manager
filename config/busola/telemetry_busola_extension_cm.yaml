@@ -14,7 +14,7 @@ data:
         widget: Badge
 
     body:
-      - name: Trace
+      - name: Tracing
         widget: Panel
         visibility: $exists(spec.trace.gateway.scaling.static.replicas)
         children:
@@ -22,6 +22,14 @@ data:
           source: spec.trace.gateway.scaling.static.replicas
         - name: Scaling Type
           source: spec.trace.gateway.scaling.type
+      - name: Metrics
+        widget: Panel
+        visibility: $exists(spec.metric.gateway.scaling.static.replicas)
+        children:
+        - name: Gateway Replicas
+          source: spec.metric.gateway.scaling.static.replicas
+        - name: Scaling Type
+          source: spec.metric.gateway.scaling.type
       - name: Status
         widget: Panel
         children:
@@ -60,7 +68,7 @@ data:
       readOnly: false
       decodable: false
       path: spec.trace
-      name: Trace
+      name: Tracing
       widget: FormGroup
       children:
         - advanced: true
@@ -88,6 +96,51 @@ data:
                   readOnly: false
                   decodable: false
                   visibility: "$item.spec.trace.gateway.scaling.type = 'Static'"
+                  path: static
+                  name: Static
+                  widget: FormGroup
+                  children:
+                    - advanced: true
+                      defaultExpanded: false
+                      readOnly: false
+                      decodable: false
+                      path: replicas
+                      name: Replicas
+                      simple: false
+                      widget: Text
+    - advanced: true
+      defaultExpanded: false
+      readOnly: false
+      decodable: false
+      path: spec.metric
+      name: Metrics
+      widget: FormGroup
+      children:
+        - advanced: true
+          defaultExpanded: false
+          readOnly: false
+          decodable: false
+          path: gateway
+          name: Gateway
+          widget: FormGroup
+          children:
+            - advanced: true
+              defaultExpanded: false
+              readOnly: false
+              decodable: false
+              path: scaling
+              name: Scaling
+              widget: FormGroup
+              children:
+                - path: type
+                  override: false
+                  enum:
+                    - None
+                - advanced: true
+                  defaultExpanded: false
+                  readOnly: false
+                  decodable: false
+                  visibility: "$item.spec.metric.gateway.scaling.type = 'Static'"
                   path: static
                   name: Static
                   widget: FormGroup
