@@ -26,17 +26,6 @@ func makeMetricStatement(inputSource metric.InputSourceType) []config.TransformP
 }
 
 func makeInstrumentationStatement(inputSource metric.InputSourceType) string {
-	var instrumentationScopeName = map[metric.InputSourceType]string{
-		metric.InputSourceRuntime:    "otelcol/kubeletstatsreceiver",
-		metric.InputSourcePrometheus: "otelcol/prometheusreceiver",
-		metric.InputSourceIstio:      "otelcol/prometheusreceiver",
-	}
 
-	var transformedInstrumentationScopeName = map[metric.InputSourceType]string{
-		metric.InputSourceRuntime:    "io.kyma-project.telemetry/runtime",
-		metric.InputSourcePrometheus: "io.kyma-project.telemetry/prometheus",
-		metric.InputSourceIstio:      "io.kyma-project.telemetry/istio",
-	}
-
-	return fmt.Sprintf("set(name, \"%s\") where name == \"\" or name == \"%s\"", transformedInstrumentationScopeName[inputSource], instrumentationScopeName[inputSource])
+	return fmt.Sprintf("set(name, \"%s\") where name == \"\" or name == \"%s\"", metric.TransformedInstrumentationScope[inputSource], metric.UpstreamInstrumentationScopeName[inputSource])
 }

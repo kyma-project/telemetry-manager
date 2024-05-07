@@ -1,9 +1,5 @@
 package metric
 
-const (
-	InputSourceAttribute = "kyma.source"
-)
-
 type InputSourceType string
 
 const (
@@ -14,13 +10,19 @@ const (
 )
 
 const (
-	InstrumentationScopeRuntime    = "io.kyma-project.telemetry/runtime"
-	InstrumentationScopePrometheus = "io.kyma-project.telemetry/prometheus"
-	InstrumentationScopeIstio      = "io.kyma-project.telemetry/istio"
+	TransformedInstrumentationScopeRuntime    = "io.kyma-project.telemetry/runtime"
+	TransformedInstrumentationScopePrometheus = "io.kyma-project.telemetry/prometheus"
+	TransformedInstrumentationScopeIstio      = "io.kyma-project.telemetry/istio"
 )
 
-var InstrumentationScope = map[InputSourceType]string{
-	InputSourceRuntime:    InstrumentationScopeRuntime,
-	InputSourcePrometheus: InstrumentationScopePrometheus,
-	InputSourceIstio:      InstrumentationScopeIstio,
+var TransformedInstrumentationScope = map[InputSourceType]string{
+	InputSourceRuntime:    TransformedInstrumentationScopeRuntime,
+	InputSourcePrometheus: TransformedInstrumentationScopePrometheus,
+	InputSourceIstio:      TransformedInstrumentationScopeIstio,
+}
+
+var UpstreamInstrumentationScopeName = map[InputSourceType]string{
+	InputSourceRuntime:    "otelcol/kubeletstatsreceiver",
+	InputSourcePrometheus: "otelcol/prometheusreceiver",
+	InputSourceIstio:      "otelcol/prometheusreceiver",
 }

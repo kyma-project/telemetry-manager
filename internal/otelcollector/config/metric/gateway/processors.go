@@ -42,7 +42,7 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
-				ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
+				ottlexpr.ScopeNameEquals(metric.TransformedInstrumentationScopeRuntime),
 			},
 		},
 	}
@@ -52,7 +52,7 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
-				ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
+				ottlexpr.ScopeNameEquals(metric.TransformedInstrumentationScopePrometheus),
 			},
 		},
 	}
@@ -62,7 +62,7 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
-				ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
+				ottlexpr.ScopeNameEquals(metric.TransformedInstrumentationScopeIstio),
 			},
 		},
 	}
@@ -132,7 +132,7 @@ func createNamespacesConditions(namespaces []string) []string {
 }
 
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
-	return ottlexpr.ScopeNameEquals(metric.InstrumentationScope[inputSourceType])
+	return ottlexpr.ScopeNameEquals(metric.TransformedInstrumentationScope[inputSourceType])
 }
 
 func otlpInputSource() string {
@@ -140,9 +140,9 @@ func otlpInputSource() string {
 	// io.kyma-project.telemetry/runtime or io.kyma-project.telemetry/prometheus or io.kyma-project.telemetry/istio
 	// we assume the metric is being pushed directly to metrics gateway.
 	return fmt.Sprintf("not(%s or %s or %s)",
-		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
-		ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
-		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
+		ottlexpr.ScopeNameEquals(metric.TransformedInstrumentationScopeRuntime),
+		ottlexpr.ScopeNameEquals(metric.TransformedInstrumentationScopePrometheus),
+		ottlexpr.ScopeNameEquals(metric.TransformedInstrumentationScopeIstio),
 	)
 }
 
