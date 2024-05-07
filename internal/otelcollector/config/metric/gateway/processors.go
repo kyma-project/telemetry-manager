@@ -41,8 +41,8 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
-			DataPoint: []string{
-				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceRuntime)),
+			Metric: []string{
+				ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
 			},
 		},
 	}
@@ -51,8 +51,8 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
-			DataPoint: []string{
-				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourcePrometheus)),
+			Metric: []string{
+				ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
 			},
 		},
 	}
@@ -61,8 +61,8 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
-			DataPoint: []string{
-				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceIstio)),
+			Metric: []string{
+				ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
 			},
 		},
 	}
@@ -132,13 +132,18 @@ func createNamespacesConditions(namespaces []string) []string {
 }
 
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
-	return ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(inputSourceType))
+	return ottlexpr.ScopeNameEquals(metric.InstrumentationScope[inputSourceType])
 }
 
 func otlpInputSource() string {
-	// The "kyma.source" attribute is only set by the metric agents for runtime, Prometheus, and Istio metrics
-	// Thus, "kyma.source" attribute will be nil for push-based OTLP metrics
-	return fmt.Sprintf("resource.attributes[\"%s\"] == nil", metric.InputSourceAttribute)
+	// When instrumentation scope is not set to
+	// io.kyma-project.telemetry/runtime or io.kyma-project.telemetry/prometheus or io.kyma-project.telemetry/istio
+	// we assume the metric is being pushed directly to metrics gateway.
+	return fmt.Sprintf("not(%s or %s or %s)",
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
+	)
 }
 
 func not(expression string) string {
