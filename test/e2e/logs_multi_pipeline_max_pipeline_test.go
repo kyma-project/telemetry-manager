@@ -6,10 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
