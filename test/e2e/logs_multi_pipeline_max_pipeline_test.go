@@ -4,16 +4,20 @@ package e2e
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"time"
+
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
