@@ -32,9 +32,9 @@ func makeInstrumentationStatement(inputSource metric.InputSourceType) string {
 	}
 
 	var transformedInstrumentationScopeName = map[metric.InputSourceType]string{
-		metric.InputSourceRuntime:    "io.kyma-project.telemetry/kubeletstatsreceiver",
-		metric.InputSourcePrometheus: "io.kyma-project.telemetry/prometheusreceiver",
-		metric.InputSourceIstio:      "io.kyma-project.telemetry/prometheusreceiver",
+		metric.InputSourceRuntime:    "io.kyma-project.telemetry/runtime",
+		metric.InputSourcePrometheus: "io.kyma-project.telemetry/prometheus",
+		metric.InputSourceIstio:      "io.kyma-project.telemetry/istio",
 	}
 
 	return fmt.Sprintf("set(name, \"%s\") where name == \"\" or name == \"%s\"", transformedInstrumentationScopeName[inputSource], instrumentationScopeName[inputSource])
