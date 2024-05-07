@@ -40,9 +40,9 @@ This release process covers the steps to release new major and minor versions fo
    ```
 
    - Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`.
-   - The release tags should point to the HEAD commit of the `telemetry-manager/{RELEASE_BRANCH}` branch (i.e. rebase the upstream branch into the local branch, before creating the tags).
+   - The release tags should point to the HEAD commit of the `telemetry-manager/{RELEASE_BRANCH}` branch (i.e. rebase the upstream branch into the local branch, before creating the tags, and after the merge from step 6 was successful).
 
-9. Push the tags to the upstream repository.
+8. Push the tags to the upstream repository.
 
    ```bash
    git push upstream {RELEASE_VERSION}
@@ -51,7 +51,7 @@ This release process covers the steps to release new major and minor versions fo
 
    The {RELEASE_VERSION} tag triggers a post-submit Prow Job (`post-telemetry-manager-build-release`) and a GitHub action (`GitHub Release`). The `post-telemetry-manager-build-release` job builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. The `GitHub Release` action creates the GitHub release.
 
-10. Verify the [status](https://status.build.kyma-project.io/) of the post-submit Prow Job (`post-telemetry-manager-build-release`) and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the GitHub action (`GitHub Release`).
+9. Verify the [status](https://status.build.kyma-project.io/) of the post-submit Prow Job (`post-telemetry-manager-build-release`) and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the GitHub action (`GitHub Release`).
    - Once the post-submit Prow Job and the GitHub action succeed, the new GitHub release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
    - If the post-submit Prow Job or the GitHub action fails, re-trigger them by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
 
@@ -60,7 +60,7 @@ This release process covers the steps to release new major and minor versions fo
      git push upstream {RELEASE_VERSION}
      ```
 
-11. If the previous release was a bugfix version (patch release) that contains cherry-picked changes, these changes might appear again in the generated change log. Edit the release description and remove redundant entries if necessary.
+10. If the previous release was a bugfix version (patch release) that contains cherry-picked changes, these changes might appear again in the generated change log. Edit the release description and remove redundant entries if necessary.
 
 ## Changelog
 
