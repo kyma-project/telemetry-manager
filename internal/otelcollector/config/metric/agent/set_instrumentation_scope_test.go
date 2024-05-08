@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
-func Test_transformedInstrumentationScope(t *testing.T) {
+func TestTransformedInstrumentationScope(t *testing.T) {
 	tests := []struct {
 		name        string
 		want        *TransformProcessor
