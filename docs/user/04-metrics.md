@@ -28,6 +28,7 @@ Optionally, the Telemetry module provides a DaemonSet of an [OTel Collector](htt
 7. The backend can run within the cluster.
 8. If authentication has been set up, the backend can also run outside the cluster.
 9. The metric data is consumed using the backend system.
+10. The self monitor observes the metrics flow to the backend and reports problems in the MetricPipeline status.
 
 ### Metric Gateway
 
