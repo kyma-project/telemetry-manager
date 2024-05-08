@@ -17,6 +17,7 @@ const (
 	TraceGatewayBaseName  = "telemetry-trace-collector"
 	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
+	WebhookName           = "validation.webhook.telemetry.kyma-project.io"
 )
 
 var (
@@ -41,4 +42,6 @@ var (
 	SelfMonitorNetworkPolicy = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
 
 	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
+
+	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
 )

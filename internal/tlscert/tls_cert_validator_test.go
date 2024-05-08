@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 var (
@@ -433,6 +434,12 @@ func TestResolveValue(t *testing.T) {
 			},
 			expectedErr: ErrCertDecodeFailed,
 		},
+		{
+			name:        "secret is not set",
+			inputCert:   telemetryv1alpha1.ValueType{ValueFrom: nil},
+			inputKey:    telemetryv1alpha1.ValueType{ValueFrom: nil},
+			expectedErr: ErrValueResolveFailed,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -442,4 +449,53 @@ func TestResolveValue(t *testing.T) {
 		})
 	}
 
+}
+
+func TestInvalidCertificateKeyPair(t *testing.T) {
+	_, clientCertsFoo, err := testutils.NewCertBuilder("foo", "fooNs").Build()
+	require.NoError(t, err)
+	_, clientCertsBar, err := testutils.NewCertBuilder("bar", "barNs").Build()
+	require.NoError(t, err)
+
+	keyData := clientCertsFoo.ClientKeyPem.String()
+	certData := clientCertsBar.ClientCertPem.String()
+
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
+
+	cert := telemetryv1alpha1.ValueType{
+		Value: certData,
+	}
+
+	key := telemetryv1alpha1.ValueType{
+		Value: keyData,
+	}
+
+	err = validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
+}
+
+// It should check first if the certificate key pair match before testing if cert is expired
+func TestInvalidCertPair_WithExpiredCert(t *testing.T) {
+	_, clientCertsFoo, err := testutils.NewCertBuilder("foo", "fooNs").WithExpiredClientCert().Build()
+	require.NoError(t, err)
+	_, clientCertsBar, err := testutils.NewCertBuilder("bar", "barNs").Build()
+	require.NoError(t, err)
+
+	keyData := clientCertsFoo.ClientKeyPem.String()
+	certData := clientCertsBar.ClientCertPem.String()
+
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
+
+	cert := telemetryv1alpha1.ValueType{
+		Value: certData,
+	}
+
+	key := telemetryv1alpha1.ValueType{
+		Value: keyData,
+	}
+
+	err = validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
 }

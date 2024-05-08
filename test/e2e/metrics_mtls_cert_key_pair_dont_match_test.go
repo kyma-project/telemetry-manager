@@ -26,17 +26,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
-			WithInvalidClientCert().
-			Build()
+		serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		Expect(err).ToNot(HaveOccurred())
+
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCertsDefault))
 		objs = append(objs, backend.K8sObjects()...)
+
+		invalidClientCerts := &testutils.ClientCerts{
+			CaCertPem:     clientCertsDefault.CaCertPem,
+			ClientCertPem: clientCertsDefault.ClientCertPem,
+			ClientKeyPem:  clientCertsCreatedAgain.ClientKeyPem,
+		}
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
 			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			WithTLS(*clientCerts)
+			WithTLS(*invalidClientCerts)
 
 		objs = append(objs,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
@@ -46,7 +53,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		return objs
 	}
 
-	Context("When a metric pipeline with invalid TLS Cert is created", Ordered, func() {
+	Context("When a metricpipeline is configured TLS Cert that does not match the Key", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -60,13 +67,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			verifiers.MetricPipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a tlsCertificateInvalid Condition set in pipeline conditions", func() {
-			verifiers.MetricPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateInvalid)
+		It("Should have a tls certificate key pair invalid condition set in pipeline conditions", func() {
+			verifiers.MetricPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateKeyPairInvalid)
 		})
 
-		It("Should have telemetryCR showing tls certificate expired for metric component in its status", func() {
-			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "MetricComponentsHealthy", conditions.ReasonTLSCertificateInvalid, false)
+		It("Should have telemetryCR showing tls certificate key pair invalid condition for metric component in its status", func() {
+			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "MetricComponentsHealthy", conditions.ReasonTLSCertificateKeyPairInvalid, false)
 		})
-
 	})
 })
