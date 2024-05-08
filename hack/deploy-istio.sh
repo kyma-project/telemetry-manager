@@ -101,8 +101,6 @@ function main() {
   ensure_istio_telemetry
   ensure_peer_authentication default istio-system STRICT
 
-  kubectl label namespace kyma-system  istio-injection=enabled --overwrite
-
   kubectl create namespace istio-permissive-mtls
   kubectl label namespace istio-permissive-mtls istio-injection=enabled --overwrite
   ensure_peer_authentication default istio-permissive-mtls PERMISSIVE
