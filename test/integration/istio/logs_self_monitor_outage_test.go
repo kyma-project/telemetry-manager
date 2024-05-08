@@ -75,7 +75,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
 			verifiers.LogPipelineConditionReasonsShouldChange(ctx, k8sClient, pipelineName, conditions.ReasonFlowHealthy, []string{
-				conditions.ReasonFlowHealthy,
 				conditions.ReasonNoLogsDelivered,
 				conditions.ReasonAllDataDropped,
 			})
