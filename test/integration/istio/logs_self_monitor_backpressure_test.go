@@ -27,7 +27,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), O
 		var objs []client.Object
 
 		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithReplicas(1), backend.WithAbortFaultInjection(90))
-		logProducer := loggen.New(mockNs).WithReplicas(2).WithLoad(loggen.LoadHigh)
+		logProducer := loggen.New(mockNs).WithReplicas(4).WithLoad(loggen.LoadHigh)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
 
