@@ -57,6 +57,9 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 	annotations[checksumAnnotationKey] = checksum
 	annotations[istioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
 
+	podLabels := Labels()
+	podLabels["sidecar.istio.io/inject"] = "true"
+
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -70,7 +73,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      Labels(),
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
