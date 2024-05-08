@@ -30,6 +30,17 @@ func getMetrics(md pmetric.Metrics) []pmetric.Metric {
 	return metrics
 }
 
+func getScope(md pmetric.Metrics) []pmetric.ScopeMetrics {
+	var scopeMetrics []pmetric.ScopeMetrics
+	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		resourceMetrics := md.ResourceMetrics().At(i)
+		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
+			scopeMetrics = append(scopeMetrics, resourceMetrics.ScopeMetrics().At(j))
+		}
+	}
+	return scopeMetrics
+}
+
 func getAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
 	var attrsPerDataPoint []pcommon.Map
 
