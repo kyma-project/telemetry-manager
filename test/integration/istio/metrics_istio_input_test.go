@@ -62,11 +62,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			"source_workload",
 			"source_workload_namespace",
 		}
-		mockNs           = suite.ID()
-		app1Ns           = suite.IDWithSuffix("app-1")
-		app2Ns           = suite.IDWithSuffix("app-2")
-		pipelineName     = suite.ID()
-		backendExportURL string
+		instrumentationScopeIstio = "io.kyma-project.telemetry/istio" // change this to metric.TransformedInstrumentationScopeIstio after PR: https://github.com/kyma-project/telemetry-manager/pull/1041
+		mockNs                    = suite.ID()
+		app1Ns                    = suite.IDWithSuffix("app-1")
+		app2Ns                    = suite.IDWithSuffix("app-2")
+		pipelineName              = suite.ID()
+		backendExportURL          string
 	)
 
 	makeResources := func() []client.Object {
@@ -152,7 +153,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 							ContainDataPointAttrs(HaveKeyWithValue("response_code", "200")),
 							ContainDataPointAttrs(HaveKeyWithValue("request_protocol", "http")),
 							ContainDataPointAttrs(HaveKeyWithValue("connection_security_policy", "mutual_tls")),
-						)))),
+						)),
+						WithScope(ContainElement(WithScopeName(ContainSubstring(instrumentationScopeIstio)))),
+					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -165,7 +168,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backendExportURL, app2Ns)
 		})
 
-		It("Should verify that istio metric with source_workload=telemetry-metric-agent does not exist", func() {
+		It("Should verify that istio metric with source_workload=telemetry-metric-gateway does not exist", func() {
 			verifyMetricIsNotPresent(backendExportURL, "source_workload", "telemetry-telemetry-gateway")
 		})
 		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {

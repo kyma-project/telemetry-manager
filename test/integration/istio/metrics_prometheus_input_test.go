@@ -120,6 +120,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 })
 
 func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
+	var instrumentationScopePrometheus = "io.kyma-project.telemetry/prometheus" // change this to metric.TransformedInstrumentationScopePrometheus after PR: https://github.com/kyma-project/telemetry-manager/pull/1041
+
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -127,6 +129,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
 			ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
+			WithScope(ContainElement(WithScopeName(ContainSubstring(instrumentationScopePrometheus)))),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

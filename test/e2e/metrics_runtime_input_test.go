@@ -25,9 +25,11 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs                      = suite.ID()
+		pipelineName                = suite.ID()
+		backendExportURL            string
+		instrumentationScopeRuntime = "io.kyma-project.telemetry/runtime" // change this to metric.TransformedInstrumentationScopePrometheus after PR: https://github.com/kyma-project/telemetry-manager/pull/1041
+
 	)
 
 	makeResources := func() []client.Object {
@@ -101,9 +103,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames)))),
-				))
+				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
+					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
+					WithScope(ContainElement(WithScopeName(ContainSubstring(instrumentationScopeRuntime)))),
+				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
