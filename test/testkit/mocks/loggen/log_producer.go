@@ -20,7 +20,6 @@ type Load int
 
 const (
 	LoadLow Load = iota
-	LoadMedium
 	LoadHigh
 )
 
@@ -111,13 +110,7 @@ done`}},
 }
 
 func flogSpec(load Load) corev1.PodSpec {
-	var bytePerSecond string
-	if load == LoadMedium {
-		bytePerSecond = "1024"
-	} else if load == LoadHigh {
-		bytePerSecond = "10485760"
-	}
-
+	const bytePerSecond = "10485760"
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
