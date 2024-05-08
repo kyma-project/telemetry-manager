@@ -19,7 +19,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	Context("When a broken logpipeline exists", Ordered, func() {
 		var (
-			mockNs              = suite.IDWithSuffix("broken-pipeline")
+			mockNs              = suite.ID()
 			healthyPipelineName = suite.IDWithSuffix("healthy")
 			brokenPipelineName  = suite.IDWithSuffix("broken")
 			backendExportURL    string
@@ -35,8 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 			healthyPipeline := kitk8s.NewLogPipelineV1Alpha1(healthyPipelineName).
 				WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-				WithHTTPOutput().
-				Persistent(suite.IsOperational())
+				WithHTTPOutput()
 			logProducer := loggen.New(mockNs)
 			objs = append(objs, logProducer.K8sObject())
 			objs = append(objs, healthyPipeline.K8sObject())
@@ -45,8 +44,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				kitk8s.WithStringData("log-host", "http://unreachable:9880"))
 			brokenPipeline := kitk8s.NewLogPipelineV1Alpha1(brokenPipelineName).
 				WithSecretKeyRef(unreachableHostSecret.SecretKeyRefV1Alpha1("log-host")).
-				WithHTTPOutput().
-				Persistent(suite.IsOperational())
+				WithHTTPOutput()
 
 			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
 

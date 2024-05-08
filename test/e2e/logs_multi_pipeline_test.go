@@ -37,8 +37,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 			logPipeline1 := kitk8s.NewLogPipelineV1Alpha1(pipeline1Name).
 				WithSecretKeyRef(backend1.HostSecretRefV1Alpha1()).
-				WithHTTPOutput().
-				Persistent(suite.IsOperational())
+				WithHTTPOutput()
 			objs = append(objs, logPipeline1.K8sObject())
 
 			backend2 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend2Name))
@@ -49,8 +48,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 			logPipeline2 := kitk8s.NewLogPipelineV1Alpha1(pipeline2Name).
 				WithSecretKeyRef(backend2.HostSecretRefV1Alpha1()).
-				WithHTTPOutput().
-				Persistent(suite.IsOperational())
+				WithHTTPOutput()
 			objs = append(objs, logPipeline2.K8sObject())
 
 			return objs
