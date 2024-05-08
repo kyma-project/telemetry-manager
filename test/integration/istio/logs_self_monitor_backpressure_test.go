@@ -1,41 +1,35 @@
-//go:build e2e
+//go:build istio
 
-package e2e
+package istio
 
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs       = "istio-permissive-mtls"
+		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs)
-		logProducer := loggen.New(mockNs)
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithAbortFaultInjection(90))
+		logProducer := loggen.New(mockNs).WithReplicas(3).WithLoad(loggen.LoadHigh)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
-		backendExportURL = backend.ExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
@@ -76,17 +70,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should have produced logs in the backend", func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
-		})
-
-		It("Should have TypeFlowHealthy condition set to True", func() {
-			Eventually(func(g Gomega) {
-				var pipeline telemetryv1alpha1.LogPipeline
-				key := types.NamespacedName{Name: pipelineName}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		It("Should wait for the log flow to gradually become unhealthy", func() {
+			verifiers.LogPipelineConditionReasonsShouldChange(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []string{
+				conditions.ReasonFlowHealthy,
+				conditions.ReasonBufferFillingUp,
+				conditions.ReasonSomeDataDropped,
+			})
 		})
 	})
 })
