@@ -14,7 +14,7 @@ data:
         widget: Badge
 
     body:
-      - name: Tracing
+      - name: Traces
         widget: Panel
         visibility: $exists(spec.trace.gateway.scaling.static.replicas)
         children:
@@ -68,7 +68,7 @@ data:
       readOnly: false
       decodable: false
       path: spec.trace
-      name: Tracing
+      name: Traces
       widget: FormGroup
       children:
         - advanced: true
