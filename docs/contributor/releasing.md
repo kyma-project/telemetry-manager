@@ -32,13 +32,13 @@ This release process covers the steps to release new major and minor versions fo
 
 6. Merge the PR.
 
-7. Make sure that the release tags will point to the HEAD commit of the `telemetry-manager/{RELEASE_BRANCH}` branch. This can be done, by rebasing the upstream branch into the local branch after the merge was successful.
+7. To make sure that the release tags will point to the HEAD commit of the `telemetry-manager/{RELEASE_BRANCH}` branch, rebase the upstream branch into the local branch after the merge was successful.
 
    ```bash
    git rebase upstream/{RELEASE_BRANCH} {RELEASE_BRANCH}
    ```
 
-8. In the `telemetry-manager/{RELEASE_BRANCH}` branch, create release tags for the head commit.
+8. In the `telemetry-manager/{RELEASE_BRANCH}` branch, create release tags for the HEAD commit.
 
    ```bash
    git tag {RELEASE_VERSION}
