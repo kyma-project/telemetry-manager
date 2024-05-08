@@ -17,16 +17,16 @@ func makeProcessorsConfig(inputs inputSources) Processors {
 		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
 
 		if inputs.runtime {
-			processorsConfig.SetInstrumentationScopeRuntime = transformInstrumentationScope(metric.InputSourceRuntime)
+			processorsConfig.SetInstrumentationScopeRuntime = makeInstrumentationScopeProcessor(metric.InputSourceRuntime)
 		}
 
 		if inputs.prometheus {
-			processorsConfig.SetInstrumentationScopePrometheus = transformInstrumentationScope(metric.InputSourcePrometheus)
+			processorsConfig.SetInstrumentationScopePrometheus = makeInstrumentationScopeProcessor(metric.InputSourcePrometheus)
 		}
 
 		if inputs.istio {
 			processorsConfig.DropInternalCommunication = makeFilterToDropMetricsForTelemetryComponents()
-			processorsConfig.SetInstrumentationScopeIstio = transformInstrumentationScope(metric.InputSourceIstio)
+			processorsConfig.SetInstrumentationScopeIstio = makeInstrumentationScopeProcessor(metric.InputSourceIstio)
 		}
 	}
 
