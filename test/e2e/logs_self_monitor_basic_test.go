@@ -60,7 +60,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", Label(suite.LabelOperational), func() {
+		It("Should have a running logpipeline", func() {
 			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
