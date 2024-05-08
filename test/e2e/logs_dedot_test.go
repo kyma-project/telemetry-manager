@@ -39,7 +39,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
-			WithIncludeContainers([]string{loggen.DefaultName})
+			WithIncludeContainers([]string{loggen.DefaultContainerName})
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs

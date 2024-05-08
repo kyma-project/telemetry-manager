@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	DefaultName = "log-producer"
+	DefaultName          = "log-producer"
+	DefaultContainerName = "log-producer"
 )
 
 type Load int
@@ -98,7 +99,7 @@ func alpineSpec() corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:  "alpine",
+				Name:  DefaultContainerName,
 				Image: "alpine:3.17.2",
 				Command: []string{"/bin/sh", "-c", `while true
 do
@@ -120,7 +121,7 @@ func flogSpec(load Load) corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:            "flog",
+				Name:            DefaultContainerName,
 				Image:           "mingrammer/flog",
 				Args:            []string{fmt.Sprintf("-b=%s", bytePerSecond), "-f=json", "-l"},
 				ImagePullPolicy: corev1.PullAlways,
