@@ -84,7 +84,7 @@ func LogPipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient c
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func WaitForLogFlowHealthConditionTransition(ctx context.Context, k8sClient client.Client, pipelineName string, expectedReasons []string) {
+func LogPipelineConditionReasonsShouldChange(ctx context.Context, k8sClient client.Client, pipelineName, condType string, expectedReasons []string) {
 	var currCond *metav1.Condition
 
 	for _, expected := range expectedReasons {
@@ -94,7 +94,7 @@ func WaitForLogFlowHealthConditionTransition(ctx context.Context, k8sClient clie
 			key := types.NamespacedName{Name: pipelineName}
 			err := k8sClient.Get(ctx, key, &pipeline)
 			g.Expect(err).To(Succeed())
-			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if currCond == nil {
 				return ""
 			}
