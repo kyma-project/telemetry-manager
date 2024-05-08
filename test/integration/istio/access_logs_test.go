@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	const (
 		//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 		sampleAppNs = "istio-permissive-mtls"

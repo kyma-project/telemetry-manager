@@ -100,7 +100,7 @@ func LogPipelineConditionReasonsShouldChange(ctx context.Context, k8sClient clie
 			}
 
 			return currCond.Reason
-		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected condition %s not reached", expected)
+		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s of type %s not reached", expected, condType)
 
 		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}

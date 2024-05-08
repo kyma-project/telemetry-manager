@@ -75,13 +75,14 @@ jobs:
         with:
           failure: failure()
 
-  integration-istio:
+  e2e-istio:
     strategy:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs && metrics && traces
-          - self-mon-logs
+          - integration
+          - self-mon-logs-backpressure
+          - self-mon-logs-outage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
