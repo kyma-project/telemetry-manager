@@ -11,7 +11,7 @@
 Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](../../02-logs.md) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
 
 > [!WARNING]
-> This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
+> This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only. Usage of components having this license might affect the license of your project and need to be verified with care.
 
 ![setup](./../assets/loki.drawio.svg)
 
