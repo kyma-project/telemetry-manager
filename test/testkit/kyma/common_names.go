@@ -12,11 +12,12 @@ const (
 
 	TelemetryManagerMetricsPort = 8080
 
-	MetricGatewayBaseName = "telemetry-metric-gateway"
-	MetricAgentBaseName   = "telemetry-metric-agent"
-	TraceGatewayBaseName  = "telemetry-trace-collector"
-	SelfMonitorBaseName   = "telemetry-self-monitor"
-	DefaultTelemetryName  = "default"
+	MetricGatewayBaseName   = "telemetry-metric-gateway"
+	MetricAgentBaseName     = "telemetry-metric-agent"
+	TraceGatewayBaseName    = "telemetry-trace-collector"
+	SelfMonitorBaseName     = "telemetry-self-monitor"
+	DefaultTelemetryName    = "default"
+	TraceGatewayServiceName = "telemetry-otlp-traces"
 )
 
 var (
@@ -32,10 +33,15 @@ var (
 	MetricAgentMetrics       = types.NamespacedName{Name: MetricAgentBaseName + "-metrics", Namespace: SystemNamespaceName}
 	MetricAgentNetworkPolicy = types.NamespacedName{Name: MetricAgentBaseName, Namespace: SystemNamespaceName}
 
-	TraceGatewayName          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
-	TraceGatewayMetrics       = types.NamespacedName{Name: TraceGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}
-	TraceGatewayNetworkPolicy = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
-	TraceGatewaySecretName    = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewayName               = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewayMetrics            = types.NamespacedName{Name: TraceGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}
+	TraceGatewayService            = types.NamespacedName{Name: TraceGatewayServiceName, Namespace: SystemNamespaceName}
+	TraceGatewayNetworkPolicy      = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewaySecretName         = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewayServiceAccount     = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewayClusterRole        = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewayConfigMap          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 
 	SelfMonitorName          = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
 	SelfMonitorNetworkPolicy = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
