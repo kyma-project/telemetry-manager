@@ -67,3 +67,7 @@ func (s *Secret) Persistent(p bool) *Secret {
 
 	return s
 }
+
+func (s *Secret) Name() string {
+	return s.name
+}
