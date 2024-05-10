@@ -27,8 +27,8 @@ func TelemetryHasCondition(ctx context.Context, k8sClient client.Client, expecte
 		var telemetryCR operatorv1alpha1.Telemetry
 		res := types.NamespacedName{Name: "default", Namespace: kitkyma.SystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, res, &telemetryCR)).To(Succeed())
-		g.Expect(telemetryCR.Status.State).To(Equal(operatorv1alpha1.StateWarning))
 		condition := meta.FindStatusCondition(telemetryCR.Status.Conditions, expectedCond.Type)
+		g.Expect(condition).NotTo(BeNil())
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
 		g.Expect(condition.Status).To(Equal(expectedCond.Status))
 

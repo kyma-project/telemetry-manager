@@ -75,6 +75,7 @@ func MetricPipelineHasCondition(ctx context.Context, k8sClient client.Client, pi
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
+		g.Expect(condition).NotTo(BeNil())
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
 		g.Expect(condition.Status).To(Equal(expectedCond.Status))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
