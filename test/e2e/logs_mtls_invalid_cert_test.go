@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
@@ -64,12 +65,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have a tls certificate with invalid Condition set in pipeline conditions", func() {
-			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, conditions.TypeConfigurationGenerated, conditions.ReasonTLSCertificateInvalid)
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateInvalid,
+			})
 		})
 
 		It("Should have telemetryCR showing tls certificate expired for log component in its status", func() {
 			assert.TelemetryHasWarningState(ctx, k8sClient)
-			assert.TelemetryHasCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateInvalid, false)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   "LogComponentsHealthy",
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateInvalid,
+			})
 		})
 	})
 })

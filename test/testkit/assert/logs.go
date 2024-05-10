@@ -58,13 +58,14 @@ func LogPipelineNotHealthy(ctx context.Context, k8sClient client.Client, pipelin
 }
 
 //nolint:dupl // This provides a better readability for the test as we can test the TLS condition in a clear way
-func LogPipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName, condType, expectedReason string) {
+func LogPipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName string, expectedCond metav1.Condition) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		condition := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-		g.Expect(condition.Reason).To(Equal(expectedReason))
+		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
+		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
+		g.Expect(condition.Status).To(Equal(expectedCond.Status))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TracesFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
@@ -64,13 +65,14 @@ func TracePipelineNotHealthy(ctx context.Context, k8sClient client.Client, pipel
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TracePipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
+func TracePipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName string, expectedCond metav1.Condition) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		g.Expect(condition.Reason).To(Equal(tlsCondition))
+		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
+		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
+		g.Expect(condition.Status).To(Equal(expectedCond.Status))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

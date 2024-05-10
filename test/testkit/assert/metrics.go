@@ -4,6 +4,7 @@ import (
 	"context"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,12 +68,13 @@ func MetricPipelineNotHealthy(ctx context.Context, k8sClient client.Client, pipe
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func MetricPipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName string, condType string, expectedReason string) {
+func MetricPipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName string, expectedCond metav1.Condition) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		condition := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-		g.Expect(condition.Reason).To(Equal(expectedReason))
+		condition := meta.FindStatusCondition(pipeline.Status.Conditions, expectedCond.Type)
+		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
+		g.Expect(condition.Status).To(Equal(expectedCond.Status))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

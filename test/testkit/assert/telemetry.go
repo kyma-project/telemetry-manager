@@ -11,6 +11,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TelemetryHasWarningState(ctx context.Context, k8sClient client.Client) {
@@ -21,15 +22,15 @@ func TelemetryHasWarningState(ctx context.Context, k8sClient client.Client) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TelemetryHasCondition(ctx context.Context, k8sClient client.Client, conditionType, tlsReason string, status bool) {
+func TelemetryHasCondition(ctx context.Context, k8sClient client.Client, expectedCond metav1.Condition) {
 	Eventually(func(g Gomega) {
 		var telemetryCR operatorv1alpha1.Telemetry
 		res := types.NamespacedName{Name: "default", Namespace: kitkyma.SystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, res, &telemetryCR)).To(Succeed())
 		g.Expect(telemetryCR.Status.State).To(Equal(operatorv1alpha1.StateWarning))
-		g.Expect(meta.IsStatusConditionTrue(telemetryCR.Status.Conditions, conditionType)).To(Equal(status))
-		condition := meta.FindStatusCondition(telemetryCR.Status.Conditions, conditionType)
-		g.Expect(condition.Reason).To(Equal(tlsReason))
+		condition := meta.FindStatusCondition(telemetryCR.Status.Conditions, expectedCond.Type)
+		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
+		g.Expect(condition.Status).To(Equal(expectedCond.Status))
 
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

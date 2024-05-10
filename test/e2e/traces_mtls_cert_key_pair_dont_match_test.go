@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
@@ -67,13 +68,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a tls certificate key pair invalid condition set in pipeline conditions", func() {
-			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateKeyPairInvalid)
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateKeyPairInvalid,
+			})
 		})
 
 		It("Should have telemetryCR showing tls certificate key pair invalid condition for trace component in its status", func() {
 			assert.TelemetryHasWarningState(ctx, k8sClient)
-			assert.TelemetryHasCondition(ctx, k8sClient, "TraceComponentsHealthy", conditions.ReasonTLSCertificateKeyPairInvalid, false)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   "TraceComponentsHealthy",
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateKeyPairInvalid,
+			})
 		})
-
 	})
 })
