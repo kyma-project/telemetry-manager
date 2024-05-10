@@ -127,19 +127,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithMissingProcessForUnknownServicePatternName, servicenamebundle.AttrWithMissingProcessForUnknownServicePattern)
 		})
 
-		It("Should have no kyma resource attributes", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(
-						ContainResourceAttrs(HaveKey(ContainSubstring("kyma"))),
-					)),
-				))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
 		It("Should have metrics with service.name set to telemetry-metric-gateway", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendExportURL)

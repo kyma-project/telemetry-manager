@@ -5,7 +5,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 type tracePipelineV1Alpha1 struct {
@@ -40,7 +40,7 @@ func (p *tracePipelineV1Alpha1) WithOutputEndpointFromSecret(otlpEndpointRef *te
 	return p
 }
 
-func (p *tracePipelineV1Alpha1) WithTLS(certs tlsgen.ClientCerts) *tracePipelineV1Alpha1 {
+func (p *tracePipelineV1Alpha1) WithTLS(certs testutils.ClientCerts) *tracePipelineV1Alpha1 {
 	p.tls = &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,

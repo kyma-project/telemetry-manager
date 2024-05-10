@@ -34,8 +34,15 @@ func TestMakeDaemonSet(t *testing.T) {
 	require.NotNil(t, daemonSet)
 	require.Equal(t, daemonSet.Name, name.Name)
 	require.Equal(t, daemonSet.Namespace, name.Namespace)
-	require.Equal(t, daemonSet.Spec.Selector.MatchLabels, Labels())
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels, Labels())
+	require.Equal(t, map[string]string{
+		"app.kubernetes.io/name":     "fluent-bit",
+		"app.kubernetes.io/instance": "telemetry",
+	}, daemonSet.Spec.Selector.MatchLabels)
+	require.Equal(t, map[string]string{
+		"app.kubernetes.io/name":     "fluent-bit",
+		"app.kubernetes.io/instance": "telemetry",
+		"sidecar.istio.io/inject":    "true",
+	}, daemonSet.Spec.Template.ObjectMeta.Labels)
 	require.NotEmpty(t, daemonSet.Spec.Template.Spec.Containers[0].EnvFrom)
 	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")
 	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].ReadinessProbe, "readiness probe must be defined")

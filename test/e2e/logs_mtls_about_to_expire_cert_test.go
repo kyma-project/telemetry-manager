@@ -9,11 +9,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -28,7 +28,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(backend.DefaultName, mockNs).
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
 			WithAboutToExpireClientCert().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
@@ -74,15 +74,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
 		})
 
-		It("Should have a log backend running", Label(suite.LabelOperational), func() {
+		It("Should have a log backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have a log producer running", Label(suite.LabelOperational), func() {
+		It("Should have a log producer running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should have produced logs in the backend", Label(suite.LabelOperational), func() {
+		It("Should have produced logs in the backend", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})

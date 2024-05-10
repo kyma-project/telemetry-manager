@@ -26,18 +26,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
-			WithExpiredClientCert().
-			Build()
+		serverCertsDefault, clientCertsDefault, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
+		_, clientCertsCreatedAgain, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		Expect(err).ToNot(HaveOccurred())
+
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCertsDefault))
 		objs = append(objs, backend.K8sObjects()...)
+
+		invalidClientCerts := &testutils.ClientCerts{
+			CaCertPem:     clientCertsDefault.CaCertPem,
+			ClientCertPem: clientCertsDefault.ClientCertPem,
+			ClientKeyPem:  clientCertsCreatedAgain.ClientKeyPem,
+		}
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
-			WithTLS(*clientCerts)
+			WithTLS(*invalidClientCerts)
 		pipelineName = logPipeline.Name()
 
 		logProducer := loggen.New(mockNs)
@@ -50,7 +57,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		return objs
 	}
 
-	Context("When a log pipeline with TLS Cert is expired", Ordered, func() {
+	Context("When a log pipeline is configured TLS Cert that does not match the Key", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -64,12 +71,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			verifiers.LogPipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a tls certificate expired Condition set in pipeline conditions", func() {
-			verifiers.LogPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateExpired)
+		It("Should have a tls certificate key pair invalid condition set in pipeline conditions", func() {
+			verifiers.LogPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateKeyPairInvalid)
 		})
 
-		It("Should have telemetryCR showing tls certificate expired for log component in its status", func() {
-			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateExpired, false)
+		It("Should have telemetryCR showing tls certificate key pair invalid condition for log component in its status", func() {
+			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateKeyPairInvalid, false)
 		})
 
 	})
