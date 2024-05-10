@@ -22,15 +22,15 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	Context("When multiple log pipelines with namespace filter exist", Ordered, func() {
 		var (
-			mock1Ns           = suite.IDWithSuffix("1")
-			pipeline1Name     = suite.IDWithSuffix("1")
-			backend1ExportURL string
-			backend1Name      = suite.IDWithSuffix("backend-1")
+			mock1Ns                          = suite.IDWithSuffix("1")
+			pipelineIncludeNamespaceName     = suite.IDWithSuffix("1")
+			backendIncludeNamespaceExportURL string
+			backendIncludeNamespaceName      = suite.IDWithSuffix("backend-1")
 
-			mock2Ns           = suite.IDWithSuffix("2")
-			pipeline2Name     = suite.IDWithSuffix("2")
-			backend2ExportURL string
-			backend2Name      = suite.IDWithSuffix("backend-2")
+			mock2Ns                      = suite.IDWithSuffix("2")
+			pipelineExcludeNamespaceName = suite.IDWithSuffix("2")
+			backend2ExportURL            string
+			backendExcludeNamespaceName  = suite.IDWithSuffix("backend-2")
 		)
 
 		makeResources := func() []client.Object {
@@ -38,30 +38,30 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			objs = append(objs, kitk8s.NewNamespace(mock1Ns).K8sObject(),
 				kitk8s.NewNamespace(mock2Ns).K8sObject())
 
-			backend1 := backend.New(mock1Ns, backend.SignalTypeLogs, backend.WithName(backend1Name))
+			backend1 := backend.New(mock1Ns, backend.SignalTypeLogs, backend.WithName(backendIncludeNamespaceName))
 
 			logProducer1 := loggen.New(mock1Ns)
-			backend1ExportURL = backend1.ExportURL(proxyClient)
+			backendIncludeNamespaceExportURL = backend1.ExportURL(proxyClient)
 			objs = append(objs, backend1.K8sObjects()...)
 			objs = append(objs, logProducer1.K8sObject())
 
-			logPipeline1 := kitk8s.NewLogPipelineV1Alpha1(pipeline1Name).
+			logPipeline1 := kitk8s.NewLogPipelineV1Alpha1(pipelineIncludeNamespaceName).
 				WithSecretKeyRef(backend1.HostSecretRefV1Alpha1()).
 				WithHTTPOutput().
 				WithIncludeNamespaces([]string{mock1Ns})
 			objs = append(objs, logPipeline1.K8sObject())
 
-			backend2 := backend.New(mock2Ns, backend.SignalTypeLogs, backend.WithName(backend2Name))
+			backend2 := backend.New(mock2Ns, backend.SignalTypeLogs, backend.WithName(backendExcludeNamespaceName))
 
 			logProducer2 := loggen.New(mock2Ns)
 			backend2ExportURL = backend2.ExportURL(proxyClient)
 			objs = append(objs, backend2.K8sObjects()...)
 			objs = append(objs, logProducer2.K8sObject())
 
-			logPipeline2 := kitk8s.NewLogPipelineV1Alpha1(pipeline2Name).
+			logPipeline2 := kitk8s.NewLogPipelineV1Alpha1(pipelineExcludeNamespaceName).
 				WithSecretKeyRef(backend2.HostSecretRefV1Alpha1()).
 				WithHTTPOutput().
-				WithIncludeNamespaces([]string{mock2Ns})
+				WithExcludeNamespaces([]string{mock1Ns})
 			objs = append(objs, logPipeline2.K8sObject())
 
 			return objs
@@ -77,18 +77,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have a running logpipelines", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipeline1Name)
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipeline2Name)
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineIncludeNamespaceName)
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineExcludeNamespaceName)
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mock1Ns, Name: backend1Name})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mock2Ns, Name: backend2Name})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mock1Ns, Name: backendIncludeNamespaceName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mock2Ns, Name: backendExcludeNamespaceName})
 		})
 
-		It("Log pipeline 1 should have logs from expected namespaces", func() {
+		It("Log pipeline include namespace should have logs from expected namespaces", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backend1ExportURL)
+				resp, err := proxyClient.Get(backendIncludeNamespaceExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -100,9 +100,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Log pipeline 1 should have no logs from namespace 2 in the backend", func() {
+		It("Log pipeline include namespace should have no logs from other namespace in the backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(backend1ExportURL)
+				resp, err := proxyClient.Get(backendIncludeNamespaceExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
@@ -111,7 +111,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Log pipeline 2 should have logs from expected namespaces", func() {
+		It("Log pipeline exclude namespace should have logs from other namespaces", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -125,7 +125,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Log pipeline 2 should have no logs from namespace 1 in the backend", func() {
+		It("Log pipeline exclude namespace should have no logs from namespace 1 in the backend", func() {
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
