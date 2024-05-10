@@ -18,7 +18,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		var (
-			mockNs            = suite.IDWithSuffix("multi-pipeline")
+			mockNs            = suite.ID()
 			backend1Name      = suite.IDWithSuffix("backend-1")
 			pipeline1Name     = suite.IDWithSuffix("1")
 			backend1ExportURL string

@@ -19,7 +19,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a broken metricpipeline exists", Ordered, func() {
 		var (
-			mockNs              = suite.IDWithSuffix("broken-pipeline")
+			mockNs              = suite.ID()
 			healthyPipelineName = suite.IDWithSuffix("healthy")
 			brokenPipelineName  = suite.IDWithSuffix("broken")
 			backendExportURL    string
