@@ -8,9 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -74,22 +72,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
 
-				var fetched telemetryv1alpha1.TracePipeline
-				key := types.NamespacedName{Name: pipelineName}
-				Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
+				assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+					Type:   conditions.TypeConfigurationGenerated,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonMaxPipelinesExceeded,
+				})
 
-				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
-				Expect(configurationGeneratedCond).NotTo(BeNil())
-				Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
-				Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
-
-				pendingCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypePending)
-				Expect(pendingCond).NotTo(BeNil())
-				Expect(pendingCond.Status).Should(Equal(metav1.ConditionTrue))
-				Expect(pendingCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
-
-				runningCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeRunning)
-				Expect(runningCond).To(BeNil())
+				assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+					Type:   conditions.TypePending,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonMaxPipelinesExceeded,
+				})
 			})
 		})
 
