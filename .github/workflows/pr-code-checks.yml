@@ -40,7 +40,6 @@ jobs:
         with:
           install-mode: binary
           version: latest
-          skip-go-installation: true
           args: --timeout=5m --config=./.golangci.yaml
 
   coverage:
