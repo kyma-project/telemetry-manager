@@ -14,6 +14,8 @@ type LogPipelineBuilder struct {
 	randSource rand.Source
 
 	name              string
+	keepAnnotations   bool
+	dropLabels        bool
 	deletionTimeStamp metav1.Time
 	statusConditions  []metav1.Condition
 	httpOutput        *telemetryv1alpha1.HTTPOutput
@@ -30,15 +32,18 @@ func NewLogPipelineBuilder() *LogPipelineBuilder {
 	}
 }
 
-func (b *LogPipelineBuilder) WithLoki() *LogPipelineBuilder {
-	b.lokiOutput = &telemetryv1alpha1.LokiOutput{
-		URL: telemetryv1alpha1.ValueType{Value: "https://localhost:3100"},
-	}
+func (b *LogPipelineBuilder) WithName(name string) *LogPipelineBuilder {
+	b.name = name
 	return b
 }
 
-func (b *LogPipelineBuilder) WithName(name string) *LogPipelineBuilder {
-	b.name = name
+func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder {
+	b.keepAnnotations = keep
+	return b
+}
+
+func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
+	b.dropLabels = drop
 	return b
 }
 
@@ -50,6 +55,13 @@ func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipe
 func (b *LogPipelineBuilder) WithHTTPOutput(opts ...HTTPOutputOption) *LogPipelineBuilder {
 	for _, opt := range opts {
 		opt(b.httpOutput)
+	}
+	return b
+}
+
+func (b *LogPipelineBuilder) WithLokiOutput() *LogPipelineBuilder {
+	b.lokiOutput = &telemetryv1alpha1.LokiOutput{
+		URL: telemetryv1alpha1.ValueType{Value: "https://localhost:3100"},
 	}
 	return b
 }
@@ -74,6 +86,12 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Name: name,
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Input: telemetryv1alpha1.Input{
+				Application: telemetryv1alpha1.ApplicationInput{
+					KeepAnnotations: b.keepAnnotations,
+					DropLabels:      b.dropLabels,
+				},
+			},
 			Output: telemetryv1alpha1.Output{
 				HTTP:   b.httpOutput,
 				Loki:   b.lokiOutput,
