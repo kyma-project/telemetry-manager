@@ -71,6 +71,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
 				assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 					Type:   conditions.TypeConfigurationGenerated,
 					Status: metav1.ConditionFalse,
