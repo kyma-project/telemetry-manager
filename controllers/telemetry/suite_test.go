@@ -45,7 +45,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -147,13 +146,6 @@ var _ = BeforeSuite(func() {
 	)
 	err = logParserController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
-
-	metricPipelineController := NewMetricPipelineController(
-		client,
-		make(chan event.GenericEvent),
-		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
-	err = metricPipelineController.SetupWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()
