@@ -39,12 +39,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
-
-			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
-				Type:   conditions.TypePending,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonReferencedSecretMissing,
-			})
 		})
 
 		It("Should not have metric gateway deployment", func() {

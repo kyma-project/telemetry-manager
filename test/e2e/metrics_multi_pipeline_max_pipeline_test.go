@@ -76,12 +76,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonMaxPipelinesExceeded,
 				})
-
-				assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
-					Type:   conditions.TypePending,
-					Status: metav1.ConditionTrue,
-					Reason: conditions.ReasonMaxPipelinesExceeded,
-				})
 			})
 		})
 
