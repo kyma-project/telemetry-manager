@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, func() {
@@ -62,7 +62,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, fu
 		})
 
 		It("Should have a running self-monitor", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a network policy deployed", func() {
@@ -89,11 +89,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, fu
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
+			assert.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {
@@ -108,7 +108,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, fu
 
 		It("Should ensure that the self-monitor webhook has been called", func() {
 			// Pushing traces to the trace gateway triggers an alert, which in turn makes the self-monitor call the webhook
-			verifiers.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
+			assert.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
 		})
 	})
 })

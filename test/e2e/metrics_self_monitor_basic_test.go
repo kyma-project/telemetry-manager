@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, func() {
@@ -62,7 +62,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, f
 		})
 
 		It("Should have a running self-monitor", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a network policy deployed", func() {
@@ -89,15 +89,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, f
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
@@ -112,7 +112,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, f
 
 		It("Should ensure that the self-monitor webhook has been called", func() {
 			// Pushing metrics to the metric gateway triggers an alert, which in turn makes the self-monitor call the webhook
-			verifiers.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
+			assert.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
 		})
 	})
 })

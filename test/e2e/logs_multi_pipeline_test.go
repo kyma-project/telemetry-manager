@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
@@ -64,18 +64,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipeline1Name)
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipeline2Name)
+			assert.LogPipelineShouldBeHealthy(ctx, k8sClient, pipeline1Name)
+			assert.LogPipelineShouldBeHealthy(ctx, k8sClient, pipeline2Name)
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should have produced logs in the backend", func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backend1ExportURL)
-			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backend2ExportURL)
+			assert.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backend1ExportURL)
+			assert.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backend2ExportURL)
 		})
 	})
 

@@ -1,4 +1,4 @@
-package verifiers
+package assert
 
 import (
 	"context"
