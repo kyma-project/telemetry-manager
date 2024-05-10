@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -26,15 +25,9 @@ func ShouldHaveOwnerReference(ctx context.Context, k8sClient client.Client, reso
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.Get(ctx, key, resource)).To(Succeed())
 		ownerReferences := resource.GetOwnerReferences()
-		g.Expect(ownerReferenceExists(ownerReferences, expectedOwnerReferenceKind, expectedOwnerReferenceName)).To(BeTrue())
+		g.Expect(ownerReferences).Should(ContainElement(SatisfyAll(
+			HaveField("Kind", expectedOwnerReferenceKind),
+			HaveField("Name", expectedOwnerReferenceName),
+		)))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
-func ownerReferenceExists(ownerReferences []metav1.OwnerReference, expectedOwnerReferenceKind, expectedOwnerReferenceName string) bool {
-	for _, ownerReference := range ownerReferences {
-		if ownerReference.Kind == expectedOwnerReferenceKind && ownerReference.Name == expectedOwnerReferenceName {
-			return true
-		}
-	}
-	return false
 }
