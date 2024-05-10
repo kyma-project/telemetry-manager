@@ -71,6 +71,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have telemetryCR showing correct condition in its status", func() {
+			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
 		})
 

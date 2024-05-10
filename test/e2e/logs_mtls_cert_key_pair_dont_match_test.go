@@ -76,6 +76,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have telemetryCR showing tls certificate key pair invalid condition for log component in its status", func() {
+			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateKeyPairInvalid, false)
 		})
 

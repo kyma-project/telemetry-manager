@@ -65,6 +65,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have telemetryCR showing tls certificate expired for trace component in its status", func() {
+			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, "TraceComponentsHealthy", conditions.ReasonTLSCertificateExpired, false)
 		})
 	})

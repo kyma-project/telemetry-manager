@@ -68,10 +68,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should have a tls certificate key pair invalid condition set in pipeline conditions", func() {
-			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateKeyPairInvalid)
+			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, conditions.TypeConfigurationGenerated, conditions.ReasonTLSCertificateKeyPairInvalid)
 		})
 
 		It("Should have telemetryCR showing tls certificate key pair invalid condition for metric component in its status", func() {
+			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, "MetricComponentsHealthy", conditions.ReasonTLSCertificateKeyPairInvalid, false)
 		})
 	})
