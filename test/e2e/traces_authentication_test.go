@@ -25,7 +25,7 @@ var _ = Describe(suite.ID(), Ordered, Label(suite.LabelTraces), func() {
 	)
 
 	const (
-		basicAuthSecretName                 = "traces-basic-auth-credentials"
+		basicAuthSecretName                 = "traces-basic-auth-credentials" // #nosec G101
 		basicAuthSecretUsernameKey          = "user"
 		basicAuthSecretUsernameValue        = "secret-username"
 		basicAuthSecretUpdatedUsernameValue = "new-secret-username"
