@@ -56,6 +56,7 @@ jobs:
         - self-mon-traces
         - telemetry
         - telemetry-log-analysis
+        - telemetry-max-pipeline
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
