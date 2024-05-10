@@ -39,7 +39,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	name   http
 	port   9880
 	host   %s
-	format json`, backend.ExternalService.Host())
+	format json`, backend.Host())
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithCustomOutput(customOutputTemplate).
