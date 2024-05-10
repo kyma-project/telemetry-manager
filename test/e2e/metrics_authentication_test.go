@@ -37,7 +37,7 @@ var _ = Describe(suite.ID(), Ordered, Label(suite.LabelMetrics), func() {
 		customHeaderPrefix     = "Api-Token"
 		customHeaderPlainValue = "foo_token"
 
-		customHeaderSecretName         = "metrics-custom-header"
+		customHeaderSecretName         = "metrics-custom-header" // #nosec G101
 		customHeaderSecretKey          = "headerKey"
 		customHeaderSecretValue        = "bar_token"
 		customHeaderNameForSecretRef   = "Authorization"
