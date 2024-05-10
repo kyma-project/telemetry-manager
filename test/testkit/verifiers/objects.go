@@ -5,11 +5,11 @@ import (
 
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ShouldNotExist(ctx context.Context, k8sClient client.Client, resources ...client.Object) {
@@ -30,7 +30,7 @@ func ShouldHaveOwnerReference(ctx context.Context, k8sClient client.Client, reso
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func ownerReferenceExists(ownerReferences []v1.OwnerReference, expectedOwnerReferenceKind, expectedOwnerReferenceName string) bool {
+func ownerReferenceExists(ownerReferences []metav1.OwnerReference, expectedOwnerReferenceKind, expectedOwnerReferenceName string) bool {
 	for _, ownerReference := range ownerReferences {
 		if ownerReference.Kind == expectedOwnerReferenceKind && ownerReference.Name == expectedOwnerReferenceName {
 			return true
