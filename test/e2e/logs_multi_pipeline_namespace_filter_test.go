@@ -25,12 +25,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			mock1Ns           = suite.IDWithSuffix("1")
 			pipeline1Name     = suite.IDWithSuffix("1")
 			backend1ExportURL string
-			backend1Name      string
+			backend1Name      = suite.IDWithSuffix("backend-1")
 
 			mock2Ns           = suite.IDWithSuffix("2")
 			pipeline2Name     = suite.IDWithSuffix("2")
 			backend2ExportURL string
-			backend2Name      string
+			backend2Name      = suite.IDWithSuffix("backend-2")
 		)
 
 		makeResources := func() []client.Object {
@@ -38,8 +38,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			objs = append(objs, kitk8s.NewNamespace(mock1Ns).K8sObject(),
 				kitk8s.NewNamespace(mock2Ns).K8sObject())
 
-			backend1 := backend.New(mock1Ns, backend.SignalTypeLogs, backend.WithName(mock1Ns))
-			backend1Name = backend1.Name()
+			backend1 := backend.New(mock1Ns, backend.SignalTypeLogs, backend.WithName(backend1Name))
+
 			logProducer1 := loggen.New(mock1Ns)
 			backend1ExportURL = backend1.ExportURL(proxyClient)
 			objs = append(objs, backend1.K8sObjects()...)
@@ -51,8 +51,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				WithIncludeNamespaces([]string{mock1Ns})
 			objs = append(objs, logPipeline1.K8sObject())
 
-			backend2 := backend.New(mock2Ns, backend.SignalTypeLogs, backend.WithName(mock2Ns))
-			backend2Name = backend2.Name()
+			backend2 := backend.New(mock2Ns, backend.SignalTypeLogs, backend.WithName(backend2Name))
+
 			logProducer2 := loggen.New(mock2Ns)
 			backend2ExportURL = backend2.ExportURL(proxyClient)
 			objs = append(objs, backend2.K8sObjects()...)
