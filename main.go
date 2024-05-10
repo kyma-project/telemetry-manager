@@ -156,7 +156,7 @@ const (
 	selfMonitorName = "telemetry-self-monitor"
 )
 
-//nolint:init // Runtime's scheme addition is required.
+//nolint:gochecknoinits // Runtime's scheme addition is required.
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))

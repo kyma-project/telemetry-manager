@@ -91,7 +91,7 @@ func podSpec(load Load) corev1.PodSpec {
 	if load == LoadLow {
 		return alpineSpec()
 	}
-	return flogSpec(load)
+	return flogSpec()
 }
 
 func alpineSpec() corev1.PodSpec {
@@ -109,7 +109,7 @@ done`}},
 	}
 }
 
-func flogSpec(load Load) corev1.PodSpec {
+func flogSpec() corev1.PodSpec {
 	const bytePerSecond = "10485760"
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
