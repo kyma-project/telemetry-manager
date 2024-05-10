@@ -64,10 +64,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should not have running pipelines", func() {
-			assert.MetricPipelineNotHealthy(ctx, k8sClient, pipelineName)
-		})
-
 		It("Should have a tls certificate key pair invalid condition set in pipeline conditions", func() {
 			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,

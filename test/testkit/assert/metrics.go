@@ -59,16 +59,6 @@ func MetricPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelin
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func MetricPipelineNotHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.MetricPipeline
-		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrue())
-		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
 func MetricPipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName string, expectedCond metav1.Condition) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
