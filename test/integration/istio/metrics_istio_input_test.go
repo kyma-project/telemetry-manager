@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"fmt"
+	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
@@ -154,7 +155,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 							ContainDataPointAttrs(HaveKeyWithValue("request_protocol", "http")),
 							ContainDataPointAttrs(HaveKeyWithValue("connection_security_policy", "mutual_tls")),
 						)),
-						WithScope(ContainElement(WithScopeName(ContainSubstring(instrumentationScopeIstio)))),
+						WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopeIstio)))),
 					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

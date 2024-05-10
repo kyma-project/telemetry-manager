@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
@@ -83,19 +84,55 @@ var _ = Describe(suite.ID(), Label("mmtest"), Ordered, func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backendAppName, Namespace: mockNs})
 		})
 
-		It("Ensures kubeletstats metrics are sent to backend", func() {
+		It("Ensures kubeletstats metrics are sent to runtime backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
-					WithScope(ContainElement(WithScopeName(ContainSubstring(instrumentationScopeRuntime)))),
+					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopeRuntime)))),
 				))))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Ensures kubeletstats metrics are not sent to app backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendAppExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(ContainMd(Not(SatisfyAll(
+					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
+					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopeRuntime)))),
+				)))))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Ensures prometheus metrics are sent to app backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendAppExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
+					ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
+					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopePrometheus)))),
+				))))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Ensures prometheus metrics are not sent to runtime backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendRuntimeExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(ContainMd(Not(SatisfyAll(
+					ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
+					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopePrometheus)))),
+				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 

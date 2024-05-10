@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -25,11 +26,9 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		mockNs                      = suite.ID()
-		pipelineName                = suite.ID()
-		backendExportURL            string
-		instrumentationScopeRuntime = "io.kyma-project.telemetry/runtime" // change this to metric.TransformedInstrumentationScopePrometheus after PR: https://github.com/kyma-project/telemetry-manager/pull/1041
-
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -105,7 +104,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
-					WithScope(ContainElement(WithScopeName(ContainSubstring(instrumentationScopeRuntime)))),
+					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopeRuntime)))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
