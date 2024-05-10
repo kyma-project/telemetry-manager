@@ -97,7 +97,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, fu
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {
-			//TODO: add the conditions.TypeFlowHealthy check to verifiers.TracePipelineHealthy after self monitor is released
+			//TODO: add the conditions.TypeFlowHealthy check to assert.TracePipelineHealthy after self monitor is released
 			Eventually(func(g Gomega) {
 				var pipeline telemetryv1alpha1.TracePipeline
 				key := types.NamespacedName{Name: pipelineName}
