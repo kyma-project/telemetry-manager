@@ -74,15 +74,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
 		})
 
-		It("Should have a log backend running", Label(suite.LabelOperational), func() {
+		It("Should have a log backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have a log producer running", Label(suite.LabelOperational), func() {
+		It("Should have a log producer running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should have produced logs in the backend", Label(suite.LabelOperational), func() {
+		It("Should have produced logs in the backend", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})

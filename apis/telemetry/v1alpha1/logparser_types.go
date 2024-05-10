@@ -61,7 +61,7 @@ type LogParserStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-//nolint:init // SchemeBuilder's registration is required.
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
 	SchemeBuilder.Register(&LogParser{}, &LogParserList{})
 }

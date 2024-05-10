@@ -31,6 +31,7 @@ The Telemetry module provides an in-cluster central deployment of an [OTel Colle
 5. The backend can run in-cluster.
 6. The backend can also run out-cluster, if authentication has been set up.
 7. The trace data can be consumed using the backend system.
+8. The self monitor observes the trace flow to the backend and reports problems in the TracePipeline status.
 
 ### Trace Gateway
 
