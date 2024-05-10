@@ -16,6 +16,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -83,12 +84,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		var logPipelineName = suite.IDWithSuffix("loki-output")
 
 		BeforeAll(func() {
-			logPipeline := kitk8s.NewLogPipelineV1Alpha1(logPipelineName).WithLokiOutput().K8sObject()
+			logPipeline := testutils.NewLogPipelineBuilder().
+				WithName(logPipelineName).
+				WithLokiOutput().
+				Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, logPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &logPipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &logPipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with warning state", func() {
@@ -201,12 +205,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 	Context("Deleting Telemetry resources", Ordered, func() {
 		var (
 			logPipelineName = suite.IDWithSuffix("orphaned")
-			logPipeline     = kitk8s.NewLogPipelineV1Alpha1(logPipelineName).WithStdout().K8sObject()
+			logPipeline     = testutils.NewLogPipelineBuilder().
+					WithName(logPipelineName).
+					WithCustomOutput("Name stdout").
+					Build()
 		)
 
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
-				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline)).Should(Succeed())
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &logPipeline)).Should(Succeed())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
@@ -278,7 +285,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 		It("Should delete Telemetry", func() {
 			By("Deleting the orphaned LogPipeline", func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, logPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &logPipeline)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {

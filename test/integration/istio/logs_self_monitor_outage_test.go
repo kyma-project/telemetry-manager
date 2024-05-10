@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -31,13 +32,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 
 		logProducer := loggen.New(mockNs).WithReplicas(2).WithLoad(loggen.LoadHigh)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput()
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host())).
+			Build()
 
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
-		objs = append(objs, logPipeline.K8sObject())
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}

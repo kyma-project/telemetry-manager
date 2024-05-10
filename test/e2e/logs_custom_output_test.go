@@ -3,11 +3,14 @@
 package e2e
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -32,8 +35,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithCustomOutput(backend.ExternalService.Host())
-		objs = append(objs, logPipeline.K8sObject())
+		customOutputTemplate := fmt.Sprintf(`
+	name   http
+	port   9880
+	host   %s
+	format json`, backend.ExternalService.Host())
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithCustomOutput(customOutputTemplate).
+			Build()
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}

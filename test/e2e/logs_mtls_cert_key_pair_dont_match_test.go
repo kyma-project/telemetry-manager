@@ -42,18 +42,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			ClientKeyPem:  clientCertsCreatedAgain.ClientKeyPem,
 		}
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithTLS(*invalidClientCerts)
-		pipelineName = logPipeline.Name()
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(
+				testutils.HTTPHost(backend.Host()),
+				testutils.HTTPClientTLS(
+					invalidClientCerts.CaCertPem.String(),
+					invalidClientCerts.ClientCertPem.String(),
+					invalidClientCerts.ClientKeyPem.String(),
+				)).
+			Build()
 
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, logProducer.K8sObject())
 
-		objs = append(objs,
-			logPipeline.K8sObject(),
-		)
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}

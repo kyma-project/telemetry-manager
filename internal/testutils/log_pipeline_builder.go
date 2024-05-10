@@ -14,13 +14,23 @@ type LogPipelineBuilder struct {
 	randSource rand.Source
 
 	name              string
+	deletionTimeStamp metav1.Time
+
+	includeContainers []string
+	excludeContainers []string
+	includeNamespaces []string
+	excludeNamespaces []string
+	systemNamespaces  bool
 	keepAnnotations   bool
 	dropLabels        bool
-	deletionTimeStamp metav1.Time
-	statusConditions  []metav1.Condition
-	httpOutput        *telemetryv1alpha1.HTTPOutput
-	lokiOutput        *telemetryv1alpha1.LokiOutput
-	customOutput      string
+
+	customFilter string
+
+	httpOutput   *telemetryv1alpha1.HTTPOutput
+	lokiOutput   *telemetryv1alpha1.LokiOutput
+	customOutput string
+
+	statusConditions []metav1.Condition
 }
 
 func NewLogPipelineBuilder() *LogPipelineBuilder {
@@ -37,6 +47,31 @@ func (b *LogPipelineBuilder) WithName(name string) *LogPipelineBuilder {
 	return b
 }
 
+func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPipelineBuilder {
+	b.includeContainers = containers
+	return b
+}
+
+func (b *LogPipelineBuilder) WithExcludeContainers(containers ...string) *LogPipelineBuilder {
+	b.excludeContainers = containers
+	return b
+}
+
+func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPipelineBuilder {
+	b.includeNamespaces = namespaces
+	return b
+}
+
+func (b *LogPipelineBuilder) WithExcludeNamespaces(namespaces ...string) *LogPipelineBuilder {
+	b.excludeNamespaces = namespaces
+	return b
+}
+
+func (b *LogPipelineBuilder) WithSystemNamespaces(enable bool) *LogPipelineBuilder {
+	b.systemNamespaces = enable
+	return b
+}
+
 func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder {
 	b.keepAnnotations = keep
 	return b
@@ -47,8 +82,8 @@ func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
 	return b
 }
 
-func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipelineBuilder {
-	b.statusConditions = append(b.statusConditions, cond)
+func (b *LogPipelineBuilder) WithCustomFilter(filter string) *LogPipelineBuilder {
+	b.customFilter = filter
 	return b
 }
 
@@ -76,6 +111,11 @@ func (b *LogPipelineBuilder) WithDeletionTimeStamp(ts metav1.Time) *LogPipelineB
 	return b
 }
 
+func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipelineBuilder {
+	b.statusConditions = append(b.statusConditions, cond)
+	return b
+}
+
 func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	name := b.name
 	if name == "" {
@@ -88,6 +128,15 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.Input{
 				Application: telemetryv1alpha1.ApplicationInput{
+					Containers: telemetryv1alpha1.InputContainers{
+						Include: b.includeContainers,
+						Exclude: b.excludeContainers,
+					},
+					Namespaces: telemetryv1alpha1.InputNamespaces{
+						Include: b.includeNamespaces,
+						Exclude: b.excludeNamespaces,
+						System:  b.systemNamespaces,
+					},
 					KeepAnnotations: b.keepAnnotations,
 					DropLabels:      b.dropLabels,
 				},

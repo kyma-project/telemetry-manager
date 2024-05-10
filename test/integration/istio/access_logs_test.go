@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -43,11 +44,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		istioAccessLogsPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithIncludeContainers([]string{"istio-proxy"}).
-			WithHTTPOutput()
-		objs = append(objs, istioAccessLogsPipeline.K8sObject())
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithIncludeContainers("istio-proxy").
+			WithHTTPOutput(testutils.HTTPHost(backend.Host())).
+			Build()
+
+		objs = append(objs, &logPipeline)
 
 		// Abusing metrics provider for istio access logs
 		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("access-log-emitter"))

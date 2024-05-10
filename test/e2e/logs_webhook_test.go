@@ -8,6 +8,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -32,9 +33,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should reject a logpipeline with denied custom filter", func() {
-			logPipeline := kitk8s.NewLogPipelineV1Alpha1("denied-custom-filter-pipeline").WithStdout().WithFilter("Name kubernetes")
+			logPipeline := testutils.NewLogPipelineBuilder().
+				WithName("denied-custom-filter-pipeline").
+				WithCustomFilter("Name kubernetes").
+				WithCustomOutput("Name stdout").
+				Build()
 			Consistently(func(g Gomega) {
-				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &logPipeline)).ShouldNot(Succeed())
 			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 

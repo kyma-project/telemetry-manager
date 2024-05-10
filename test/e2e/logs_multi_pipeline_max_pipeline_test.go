@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -26,17 +27,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
+			hostKey := "log-host"
 			httpHostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", kitkyma.DefaultNamespaceName,
-				kitk8s.WithStringData("log-host", "http://log-host:9880"))
-			objs = append(objs, httpHostSecret.K8sObject())
+				kitk8s.WithStringData(hostKey, "http://log-host:9880")).K8sObject()
+			objs = append(objs, httpHostSecret)
 			for i := 0; i < maxNumberOfLogPipelines; i++ {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
-				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-					WithSecretKeyRef(httpHostSecret.SecretKeyRefV1Alpha1("log-host")).
-					WithHTTPOutput()
+				pipeline := testutils.NewLogPipelineBuilder().
+					WithName(pipelineName).
+					WithHTTPOutput(testutils.HTTPHostFromSecret(httpHostSecret.Name, httpHostSecret.Namespace, hostKey)).
+					Build()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				objs = append(objs, pipeline.K8sObject())
+				objs = append(objs, &pipeline)
 			}
 
 			return objs
@@ -59,16 +62,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 		It("Should reject logpipeline creation after reaching max logpipeline", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
+				hostKey := "log-host"
 				pipelineHostSecret := kitk8s.NewOpaqueSecret("http-hostname", kitkyma.DefaultNamespaceName,
-					kitk8s.WithStringData("log-host", "http://log-host:9880"))
+					kitk8s.WithStringData(hostKey, "http://log-host:9880")).K8sObject()
 
-				pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-					WithSecretKeyRef(pipelineHostSecret.SecretKeyRefV1Alpha1("log-host")).
-					WithHTTPOutput()
+				pipeline := testutils.NewLogPipelineBuilder().
+					WithName(pipelineName).
+					WithHTTPOutput(testutils.HTTPHostFromSecret(pipelineHostSecret.Name, pipelineHostSecret.Namespace, hostKey)).
+					Build()
 
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject(), pipelineHostSecret.K8sObject())).ShouldNot(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline, pipelineHostSecret)).ShouldNot(Succeed())
 			})
 		})
 	})
-
 })

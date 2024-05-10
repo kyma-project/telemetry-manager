@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
@@ -45,11 +46,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			objs = append(objs, backend1.K8sObjects()...)
 			objs = append(objs, logProducer1.K8sObject())
 
-			logPipeline1 := kitk8s.NewLogPipelineV1Alpha1(pipelineIncludeNamespaceName).
-				WithSecretKeyRef(backend1.HostSecretRefV1Alpha1()).
-				WithHTTPOutput().
-				WithIncludeNamespaces([]string{mock1Ns})
-			objs = append(objs, logPipeline1.K8sObject())
+			logPipeline1 := testutils.NewLogPipelineBuilder().
+				WithName(pipelineIncludeNamespaceName).
+				WithIncludeNamespaces(mock1Ns).
+				WithHTTPOutput(testutils.HTTPHost(backend1.Host())).
+				Build()
+			objs = append(objs, &logPipeline1)
 
 			backend2 := backend.New(mock2Ns, backend.SignalTypeLogs, backend.WithName(backendExcludeNamespaceName))
 
@@ -58,11 +60,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			objs = append(objs, backend2.K8sObjects()...)
 			objs = append(objs, logProducer2.K8sObject())
 
-			logPipeline2 := kitk8s.NewLogPipelineV1Alpha1(pipelineExcludeNamespaceName).
-				WithSecretKeyRef(backend2.HostSecretRefV1Alpha1()).
-				WithHTTPOutput().
-				WithExcludeNamespaces([]string{mock1Ns})
-			objs = append(objs, logPipeline2.K8sObject())
+			logPipeline2 := testutils.NewLogPipelineBuilder().
+				WithName(pipelineIncludeNamespaceName).
+				WithExcludeNamespaces(mock1Ns).
+				WithHTTPOutput(testutils.HTTPHost(backend1.Host())).
+				Build()
+			objs = append(objs, &logPipeline2)
 
 			return objs
 		}

@@ -8,11 +8,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered, func() {
@@ -32,10 +34,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Beta1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Beta1()).
-			WithHTTPOutput()
-		objs = append(objs, logPipeline.K8sObject())
+		logPipeline := telemetryv1beta1.LogPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1beta1.LogPipelineSpec{
+				Output: telemetryv1beta1.Output{
+					HTTP: &telemetryv1beta1.HTTPOutput{
+						Host: telemetryv1beta1.ValueType{
+							Value: backend.Host(),
+						},
+					},
+				},
+			},
+		}
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}
