@@ -14,6 +14,7 @@ type LogPipelineBuilder struct {
 	randSource rand.Source
 
 	name              string
+	labels            map[string]string
 	deletionTimeStamp metav1.Time
 
 	includeContainers []string
@@ -36,14 +37,17 @@ type LogPipelineBuilder struct {
 func NewLogPipelineBuilder() *LogPipelineBuilder {
 	return &LogPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		httpOutput: &telemetryv1alpha1.HTTPOutput{
-			Host: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
-		},
+		labels:     make(map[string]string),
 	}
 }
 
 func (b *LogPipelineBuilder) WithName(name string) *LogPipelineBuilder {
 	b.name = name
+	return b
+}
+
+func (b *LogPipelineBuilder) WithLabels(labels map[string]string) *LogPipelineBuilder {
+	b.labels = labels
 	return b
 }
 
@@ -117,13 +121,19 @@ func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipe
 }
 
 func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
-	name := b.name
-	if name == "" {
-		name = fmt.Sprintf("test-%d", b.randSource.Int63())
+	if b.name == "" {
+		b.name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
+	if b.httpOutput == nil || b.lokiOutput == nil || b.customOutput == "" {
+		b.httpOutput = &telemetryv1alpha1.HTTPOutput{
+			Host: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
+		}
+	}
+
 	logPipeline := telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   b.name,
+			Labels: b.labels,
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.Input{

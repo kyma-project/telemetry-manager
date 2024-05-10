@@ -33,10 +33,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := testutils.NewLogPipelineBuilder().
+		logPipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host())).
-			Build()
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()))
+		if suite.IsOperational() {
+			logPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
+		}
+		logPipeline := logPipelineBuilder.Build()
+
 		objs = append(objs, &logPipeline)
 
 		return objs
