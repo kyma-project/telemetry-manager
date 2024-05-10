@@ -227,7 +227,7 @@ issues:
     - linters: [errcheck]
       path: test/testkit/otel/traces/traces.go
     - linters: [dupl]
-      path: test/testkit/verifiers/(deployment|daemon_set|metrics|traces).go
+      path: test/testkit/assert/(deployment|daemon_set|metrics|traces).go
     - linters: [dupl]
       path: main.go
     - linters:
