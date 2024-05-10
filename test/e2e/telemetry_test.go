@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,6 +16,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -92,17 +92,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		It("Should have Telemetry with warning state", func() {
-			Eventually(func(g Gomega) {
-				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
-
-				logComponentsHealthyCond := meta.FindStatusCondition(telemetry.Status.Conditions, "LogComponentsHealthy")
-				g.Expect(logComponentsHealthyCond).ShouldNot(BeNil())
-				g.Expect(logComponentsHealthyCond.Status).Should(Equal(metav1.ConditionFalse))
-				g.Expect(logComponentsHealthyCond.Reason).Should(Equal(conditions.ReasonUnsupportedLokiOutput))
-				g.Expect(logComponentsHealthyCond.Message).Should(Equal(conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   "LogComponentsHealthy",
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonUnsupportedLokiOutput,
+			})
 		})
 	})
 
@@ -126,19 +121,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		It("Should have Telemetry with warning state", func() {
-			Eventually(func(g Gomega) {
-				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
-
-				traceComponentsHealthyCond := meta.FindStatusCondition(telemetry.Status.Conditions, "TraceComponentsHealthy")
-				g.Expect(traceComponentsHealthyCond).ShouldNot(BeNil())
-				g.Expect(traceComponentsHealthyCond.Status).Should(Equal(metav1.ConditionFalse))
-				g.Expect(traceComponentsHealthyCond.Reason).Should(Equal("TracePipeline" + conditions.ReasonReferencedSecretMissing))
-				g.Expect(traceComponentsHealthyCond.Message).Should(Equal(conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing)))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   "TraceComponentsHealthy",
+				Status: metav1.ConditionFalse,
+				Reason: "TracePipeline" + conditions.ReasonReferencedSecretMissing,
+			})
 		})
-
 	})
 
 	Context("After creating Telemetry resources", Ordered, func() {
