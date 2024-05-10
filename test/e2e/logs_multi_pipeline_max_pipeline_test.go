@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelTelemetryMaxPipeline), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 	Context("When reaching the pipeline limit", Ordered, func() {
 		const maxNumberOfLogPipelines = 5
