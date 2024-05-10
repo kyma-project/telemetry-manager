@@ -26,7 +26,7 @@ func ShouldHaveCorrectOwnerReference(ctx context.Context, k8sClient client.Clien
 		g.Expect(k8sClient.Get(ctx, key, resource)).To(Succeed())
 
 		ownerReferences := resource.GetOwnerReferences()
-		g.Expect(len(ownerReferences)).To(Equal(1))
+		g.Expect(ownerReferences).To(HaveLen(1))
 
 		ownerReference := ownerReferences[0]
 		g.Expect(ownerReference.Kind).To(Equal(expectedOwnerReferenceKind))
