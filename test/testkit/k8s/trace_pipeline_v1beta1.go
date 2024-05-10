@@ -26,6 +26,7 @@ func NewTracePipelineV1Beta1(name string) *tracePipelineV1Beta1 {
 	return &tracePipelineV1Beta1{
 		name:         name,
 		otlpEndpoint: "http://unreachable:4317",
+		headers:      []telemetryv1beta1.Header{},
 	}
 }
 
@@ -123,6 +124,9 @@ func (p *tracePipelineV1Beta1) K8sObject() *telemetryv1beta1.TracePipeline {
 	otlpOutput := &telemetryv1beta1.OTLPOutput{
 		Endpoint: telemetryv1beta1.ValueType{},
 		TLS:      p.tls,
+		Authentication: &telemetryv1beta1.AuthenticationOptions{
+			Basic: &telemetryv1beta1.BasicAuthOptions{},
+		},
 	}
 	if p.otlpEndpointRef != nil {
 		otlpOutput.Endpoint.ValueFrom = &telemetryv1beta1.ValueFromSource{
