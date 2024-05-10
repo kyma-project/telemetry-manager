@@ -12,10 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Ordered, Label(suite.LabelTraces), func() {
@@ -82,7 +82,7 @@ var _ = Describe(suite.ID(), Ordered, Label(suite.LabelTraces), func() {
 		It("Should have a trace gateway secret with correct authentication credentials", func() {
 			encodedCredentials := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", basicAuthSecretUsernameValue, basicAuthSecretPasswordValue)))
 
-			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName,
+			assert.SecretHasKeyValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName,
 				fmt.Sprintf("BASIC_AUTH_HEADER_%s", kitkyma.MakeEnvVarCompliant(pipelineName)),
 				fmt.Sprintf("Basic %s", encodedCredentials),
 			)
@@ -108,7 +108,7 @@ var _ = Describe(suite.ID(), Ordered, Label(suite.LabelTraces), func() {
 
 			encodedCredentials := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", basicAuthSecretUpdatedUsernameValue, basicAuthSecretUpdatedPasswordValue)))
 
-			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName,
+			assert.SecretHasKeyValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName,
 				fmt.Sprintf("BASIC_AUTH_HEADER_%s", kitkyma.MakeEnvVarCompliant(pipelineName)),
 				fmt.Sprintf("Basic %s", encodedCredentials),
 			)
@@ -118,7 +118,7 @@ var _ = Describe(suite.ID(), Ordered, Label(suite.LabelTraces), func() {
 
 	Context("When a TracePipeline with custom header prefix and plain value exists", Ordered, func() {
 		It("Should have a trace gateway secret with custom header prefix and plain value", func() {
-			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName,
+			assert.SecretHasKeyValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName,
 				fmt.Sprintf("HEADER_%s_%s", kitkyma.MakeEnvVarCompliant(pipelineName), kitkyma.MakeEnvVarCompliant(customHeaderName)),
 				fmt.Sprintf("%s %s", customHeaderPrefix, customHeaderPlainValue),
 			)
@@ -127,7 +127,7 @@ var _ = Describe(suite.ID(), Ordered, Label(suite.LabelTraces), func() {
 
 	Context("When a TracePipeline with custom header prefix and value from secret exists", Ordered, func() {
 		It("Should have a trace gateway secret with custom header prefix and value from secret", func() {
-			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName,
+			assert.SecretHasKeyValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName,
 				fmt.Sprintf("HEADER_%s_%s", kitkyma.MakeEnvVarCompliant(pipelineName), kitkyma.MakeEnvVarCompliant(customHeaderNameForSecretRef)),
 				fmt.Sprintf("%s %s", customHeaderPrefixForSecretRef, customHeaderSecretValue),
 			)

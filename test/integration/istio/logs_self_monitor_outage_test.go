@@ -9,12 +9,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered, func() {
@@ -44,7 +44,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
-			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+			assert.WebhookHealthy(ctx, k8sClient)
 		})
 	})
 
@@ -58,23 +58,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 		})
 
 		It("Should have a running logpipeline", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
-			verifiers.LogPipelineConditionReasonsShouldChange(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []string{
+			assert.LogPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []string{
 				conditions.ReasonFlowHealthy,
 				conditions.ReasonNoLogsDelivered,
 				conditions.ReasonAllDataDropped,

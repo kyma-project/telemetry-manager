@@ -1,4 +1,4 @@
-package verifiers
+package assert
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func ShouldExposeCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL string) {
+func ExposesOTelCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(metricsURL)
 		g.Expect(err).NotTo(HaveOccurred())

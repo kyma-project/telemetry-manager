@@ -1,4 +1,4 @@
-package verifiers
+package assert
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func DeploymentShouldBeReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+func DeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
 		ready, err := isDeploymentReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -32,10 +32,10 @@ func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.
 		Namespace:     name.Namespace,
 	}
 
-	return IsPodReady(ctx, k8sClient, listOptions)
+	return PodReady(ctx, k8sClient, listOptions)
 }
 
-func DeploymentShouldHaveCorrectPodEnv(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedSecretRefName string) {
+func DeploymentHasEnvFromSecret(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedSecretRefName string) {
 	Eventually(func(g Gomega) {
 		var deployment appsv1.Deployment
 		g.Expect(k8sClient.Get(ctx, name, &deployment)).To(Succeed())
@@ -48,17 +48,7 @@ func DeploymentShouldHaveCorrectPodEnv(ctx context.Context, k8sClient client.Cli
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func DeploymentShouldHaveCorrectPodMetadata(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
-	Eventually(func(g Gomega) {
-		var deployment appsv1.Deployment
-		g.Expect(k8sClient.Get(ctx, name, &deployment)).To(Succeed())
-
-		g.Expect(deployment.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"]).To(Equal("false"))
-		g.Expect(deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]).ToNot(BeEmpty())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
-func DeploymentShouldHaveCorrectPodPriorityClass(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedPriorityClassName string) {
+func DeploymentHasPriorityClass(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedPriorityClassName string) {
 	Eventually(func(g Gomega) {
 		var deployment appsv1.Deployment
 		g.Expect(k8sClient.Get(ctx, name, &deployment)).To(Succeed())

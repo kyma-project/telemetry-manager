@@ -11,13 +11,13 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func() {
@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
-			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+			assert.WebhookHealthy(ctx, k8sClient)
 		})
 	})
 
@@ -61,23 +61,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 		})
 
 		It("Should have a running logpipeline", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have produced logs in the backend", func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
+			assert.LogsDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {

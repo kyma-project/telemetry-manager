@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
@@ -18,7 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
@@ -61,19 +61,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Ensures the metrics backend is ready", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric agent daemonset is ready", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Ensures the metricpipeline is running", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Ensures custom metric scraped via annotated pods are sent to backend", func() {
@@ -148,7 +148,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backendExportURL, kitkyma.SystemNamespaceName)
+			assert.MetricsFromNamespaceNotDelivered(proxyClient, backendExportURL, kitkyma.SystemNamespaceName)
 		})
 
 		It("Ensures no diagnostic metrics are sent to backend", func() {
