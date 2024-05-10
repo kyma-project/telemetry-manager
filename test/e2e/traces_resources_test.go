@@ -16,10 +16,8 @@ import (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
-	var (
-		pipelineName       = suite.ID()
-		ownerReferenceKind = "TracePipeline"
-	)
+	var pipelineName = suite.ID()
+	const ownerReferenceKind = "TracePipeline"
 
 	Context("When a TracePipeline exists", Ordered, func() {
 
