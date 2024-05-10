@@ -32,37 +32,37 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 
 		It("Should have a ServiceAccount owned by the MetricPipeline", func() {
 			var serviceAccount corev1.ServiceAccount
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &serviceAccount, kitkyma.MetricGatewayServiceAccount, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &serviceAccount, kitkyma.MetricGatewayServiceAccount, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ClusterRole owned by the MetricPipeline", func() {
 			var clusterRole rbacv1.ClusterRole
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &clusterRole, kitkyma.MetricGatewayClusterRole, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &clusterRole, kitkyma.MetricGatewayClusterRole, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ClusterRoleBinding owned by the MetricPipeline", func() {
 			var clusterRoleBinding rbacv1.ClusterRoleBinding
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &clusterRoleBinding, kitkyma.MetricGatewayClusterRoleBinding, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &clusterRoleBinding, kitkyma.MetricGatewayClusterRoleBinding, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Deployment owned by the MetricPipeline", func() {
 			var deployment appsv1.Deployment
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &deployment, kitkyma.MetricGatewayName, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &deployment, kitkyma.MetricGatewayName, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Service owned by the MetricPipeline", func() {
 			var service corev1.Service
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &service, kitkyma.MetricGatewayService, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &service, kitkyma.MetricGatewayService, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ConfigMap owned by the MetricPipeline", func() {
 			var configMap corev1.ConfigMap
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &configMap, kitkyma.MetricGatewayConfigMap, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &configMap, kitkyma.MetricGatewayConfigMap, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Secret owned by the MetricPipeline", func() {
 			var secret corev1.Secret
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &secret, kitkyma.MetricGatewaySecretName, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &secret, kitkyma.MetricGatewaySecretName, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Deployment with correct pod environment configuration", func() {

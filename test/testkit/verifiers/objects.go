@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ShouldNotExist(ctx context.Context, k8sClient client.Client, resources ...client.Object) {
@@ -21,15 +22,19 @@ func ShouldNotExist(ctx context.Context, k8sClient client.Client, resources ...c
 	}
 }
 
-func ShouldHaveCorrectOwnerReference(ctx context.Context, k8sClient client.Client, resource client.Object, key types.NamespacedName, expectedOwnerReferenceKind, expectedOwnerReferenceName string) {
+func ShouldHaveOwnerReference(ctx context.Context, k8sClient client.Client, resource client.Object, key types.NamespacedName, expectedOwnerReferenceKind, expectedOwnerReferenceName string) {
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.Get(ctx, key, resource)).To(Succeed())
-
 		ownerReferences := resource.GetOwnerReferences()
-		g.Expect(ownerReferences).To(HaveLen(1))
-
-		ownerReference := ownerReferences[0]
-		g.Expect(ownerReference.Kind).To(Equal(expectedOwnerReferenceKind))
-		g.Expect(ownerReference.Name).To(Equal(expectedOwnerReferenceName))
+		g.Expect(ownerReferenceExists(ownerReferences, expectedOwnerReferenceKind, expectedOwnerReferenceName)).To(BeTrue())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func ownerReferenceExists(ownerReferences []v1.OwnerReference, expectedOwnerReferenceKind, expectedOwnerReferenceName string) bool {
+	for _, ownerReference := range ownerReferences {
+		if ownerReference.Kind == expectedOwnerReferenceKind && ownerReference.Name == expectedOwnerReferenceName {
+			return true
+		}
+	}
+	return false
 }

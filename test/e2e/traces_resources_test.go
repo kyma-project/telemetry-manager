@@ -32,37 +32,37 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		It("Should have a ServiceAccount owned by the TracePipeline", func() {
 			var serviceAccount corev1.ServiceAccount
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &serviceAccount, kitkyma.TraceGatewayServiceAccount, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &serviceAccount, kitkyma.TraceGatewayServiceAccount, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ClusterRole owned by the TracePipeline", func() {
 			var clusterRole rbacv1.ClusterRole
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &clusterRole, kitkyma.TraceGatewayClusterRole, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &clusterRole, kitkyma.TraceGatewayClusterRole, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ClusterRoleBinding owned by the TracePipeline", func() {
 			var clusterRoleBinding rbacv1.ClusterRoleBinding
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &clusterRoleBinding, kitkyma.TraceGatewayClusterRoleBinding, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &clusterRoleBinding, kitkyma.TraceGatewayClusterRoleBinding, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Deployment owned by the TracePipeline", func() {
 			var deployment appsv1.Deployment
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &deployment, kitkyma.TraceGatewayName, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &deployment, kitkyma.TraceGatewayName, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Service owned by the TracePipeline", func() {
 			var service corev1.Service
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayService, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayService, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ConfigMap owned by the TracePipeline", func() {
 			var configMap corev1.ConfigMap
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &configMap, kitkyma.TraceGatewayConfigMap, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &configMap, kitkyma.TraceGatewayConfigMap, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Secret owned by the TracePipeline", func() {
 			var secret corev1.Secret
-			verifiers.ShouldHaveCorrectOwnerReference(ctx, k8sClient, &secret, kitkyma.TraceGatewaySecretName, ownerReferenceKind, pipelineName)
+			verifiers.ShouldHaveOwnerReference(ctx, k8sClient, &secret, kitkyma.TraceGatewaySecretName, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Deployment with correct pod environment configuration", func() {
