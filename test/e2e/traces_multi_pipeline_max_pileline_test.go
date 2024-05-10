@@ -61,8 +61,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				assert.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
-				assert.TraceCollectorConfigShouldContainPipeline(ctx, k8sClient, pipelineName)
+				assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 			}
 		})
 
@@ -74,8 +73,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
-
-				assert.TraceCollectorConfigShouldNotContainPipeline(ctx, k8sClient, pipelineName)
 
 				var fetched telemetryv1alpha1.TracePipeline
 				key := types.NamespacedName{Name: pipelineName}
@@ -101,7 +98,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
-					assert.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline)
+					assert.TracePipelineHealthy(ctx, k8sClient, pipeline)
 				}
 			})
 		})

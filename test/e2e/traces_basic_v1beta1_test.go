@@ -61,7 +61,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelV1Beta1), func(
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have 2 trace gateway replicas", func() {
@@ -155,24 +155,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelV1Beta1), func(
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a pipeline with legacy condition types at the end of the conditions list", func() {
-			assert.TracePipelineShouldHaveLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHasLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			assert.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.TraceGatewayMetrics.Namespace, kitkyma.TraceGatewayMetrics.Name, "metrics", ports.Metrics)
-			assert.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
+			assert.ExposesOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", func() {

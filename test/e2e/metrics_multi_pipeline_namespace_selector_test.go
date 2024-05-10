@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -15,7 +16,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
@@ -82,50 +82,50 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		// verify metrics from apps1Ns delivered to backend1
 		It("Should deliver Runtime metrics from app1Ns to backend1", func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, app1Ns, kubeletstats.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, kubeletstats.MetricNames)
 		})
 
 		It("Should deliver Prometheus metrics from app1Ns to backend1", func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, app1Ns, prommetricgen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, prommetricgen.MetricNames)
 		})
 
 		It("Should deliver OTLP metrics from app1Ns to backend1", func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, app1Ns, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, telemetrygen.MetricNames)
 		})
 
 		It("Should not deliver metrics from app2Ns to backend1", func() {
-			assert.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backend1ExportURL, app2Ns)
+			assert.MetricsFromNamespaceNotDelivered(proxyClient, backend1ExportURL, app2Ns)
 		})
 
 		// verify metrics from apps2Ns delivered to backend2
 		It("Should deliver Runtime metrics from app2Ns to backend2", func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, app2Ns, kubeletstats.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, kubeletstats.MetricNames)
 		})
 
 		It("Should deliver Prometheus metrics from app2Ns to backend2", func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, app2Ns, prommetricgen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, prommetricgen.MetricNames)
 		})
 
 		It("Should deliver OTLP metrics from app2Ns to backend2", func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, app2Ns, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, telemetrygen.MetricNames)
 		})
 
 		It("Should not deliver metrics from app1Ns to backend2", func() {
-			assert.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backend2ExportURL, app1Ns)
+			assert.MetricsFromNamespaceNotDelivered(proxyClient, backend2ExportURL, app1Ns)
 		})
 	})
 })

@@ -2,68 +2,20 @@ package assert
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"strings"
-
 	. "github.com/onsi/gomega"
-	"go.opentelemetry.io/collector/pdata/pmetric"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func MetricPipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.MetricPipeline
-		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrue())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeAgentHealthy)).To(BeTrue())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
-func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Eventually(func(g Gomega) bool {
-		var collectorConfig corev1.ConfigMap
-		g.Expect(k8sClient.Get(ctx, kitkyma.MetricGatewayName, &collectorConfig)).To(Succeed())
-		configString := collectorConfig.Data["relay.conf"]
-		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
-		return strings.Contains(configString, pipelineAlias)
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
-}
-
-func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Consistently(func(g Gomega) bool {
-		var collectorConfig corev1.ConfigMap
-		g.Expect(k8sClient.Get(ctx, kitkyma.MetricGatewayName, &collectorConfig)).To(Succeed())
-		configString := collectorConfig.Data["relay.conf"]
-		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
-		return !strings.Contains(configString, pipelineAlias)
-	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
-}
-
-func MetricsShouldBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, metrics []pmetric.Metric) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainMd(WithMetrics(BeEquivalentTo(metrics)))))
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
-
-func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string, metricNames []string) {
+func MetricsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string, metricNames []string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -79,7 +31,7 @@ func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, b
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
+func MetricsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -94,7 +46,18 @@ func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func MetricPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.MetricPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeAgentHealthy)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func MetricPipelineNotHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
@@ -104,12 +67,12 @@ func MetricPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Clie
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func MetricPipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
+func MetricPipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName string, condType string, expectedReason string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		g.Expect(condition.Reason).To(Equal(tlsCondition))
+		condition := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+		g.Expect(condition.Reason).To(Equal(expectedReason))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

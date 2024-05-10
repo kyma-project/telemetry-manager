@@ -155,19 +155,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver regular telemetrygen traces", func() {
-			assert.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, regularSpansNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, regularSpansNs)
 		})
 
 		It("Should filter noisy spans", func() {
-			assert.TracesFromNamespacesShouldNotBeDelivered(proxyClient, backendExportURL, []string{
+			assert.TracesFromNamespacesNotDelivered(proxyClient, backendExportURL, []string{
 				vmaScrapeSpansNs,
 				healthzSpansNs,
 				fluentBitSpansNs,

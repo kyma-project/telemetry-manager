@@ -8,12 +8,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
@@ -62,22 +62,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			assert.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipeline1Name)
-			assert.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipeline2Name)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipeline1Name)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipeline2Name)
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, mockNs, telemetrygen.MetricNames)
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, mockNs, telemetrygen.MetricNames)
 		})
 	})
 })

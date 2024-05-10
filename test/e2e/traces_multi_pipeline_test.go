@@ -59,16 +59,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			assert.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline1Name)
-			assert.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipeline1Name)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipeline2Name)
 		})
 		It("Should have a trace backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 		It("Should verify traces from telemetrygen are delivered", func() {
-			assert.TracesFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, mockNs)
-			assert.TracesFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backend1ExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backend2ExportURL, mockNs)
 		})
 	})
 })

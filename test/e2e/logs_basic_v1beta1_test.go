@@ -42,7 +42,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered
 
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
-			assert.WebhookShouldBeHealthy(ctx, k8sClient)
+			assert.WebhookHealthy(ctx, k8sClient)
 		})
 	})
 
@@ -56,23 +56,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a pipeline with legacy condition types at the end of the conditions list", func() {
-			assert.LogPipelineShouldHaveLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHasLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have produced logs in the backend", func() {
-			assert.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
+			assert.LogsDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })

@@ -18,7 +18,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
-			assert.WebhookShouldBeHealthy(ctx, k8sClient)
+			assert.WebhookHealthy(ctx, k8sClient)
 		})
 	})
 

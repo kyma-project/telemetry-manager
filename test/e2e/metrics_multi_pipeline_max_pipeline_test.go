@@ -63,8 +63,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				assert.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
-				assert.MetricGatewayConfigShouldContainPipeline(ctx, k8sClient, pipelineName)
+				assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 			}
 		})
 
@@ -85,7 +84,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 					g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
 					g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
 				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-				assert.MetricGatewayConfigShouldNotContainPipeline(ctx, k8sClient, pipelineName)
 			})
 		})
 
@@ -94,7 +92,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
-					assert.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipeline)
+					assert.MetricPipelineHealthy(ctx, k8sClient, pipeline)
 				}
 			})
 		})

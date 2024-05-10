@@ -12,9 +12,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func SecretShouldHaveValue(ctx context.Context, k8sClient client.Client, name types.NamespacedName, dataKey, dataValue string) {
+func SecretHasKeyValue(ctx context.Context, k8sClient client.Client, name types.NamespacedName, dataKey, dataValue string) {
 	Eventually(func(g Gomega) {
-		secret, err := isSecretExist(ctx, k8sClient, name)
+		secret, err := secretExists(ctx, k8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
 
 		secretValue, found := secret.Data[dataKey]
@@ -24,7 +24,7 @@ func SecretShouldHaveValue(ctx context.Context, k8sClient client.Client, name ty
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func isSecretExist(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (*corev1.Secret, error) {
+func secretExists(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (*corev1.Secret, error) {
 	var secret corev1.Secret
 	err := k8sClient.Get(ctx, name, &secret)
 	if err != nil {

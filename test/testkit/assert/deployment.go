@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func DeploymentShouldBeReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+func DeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
 		ready, err := isDeploymentReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -32,5 +32,5 @@ func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.
 		Namespace:     name.Namespace,
 	}
 
-	return IsPodReady(ctx, k8sClient, listOptions)
+	return PodReady(ctx, k8sClient, listOptions)
 }

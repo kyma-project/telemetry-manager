@@ -61,7 +61,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a running trace gateway deployment", Label(suite.LabelOperational), func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have 2 trace gateway replicas", Label(suite.LabelOperational), func() {
@@ -155,24 +155,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a trace backend running", Label(suite.LabelOperational), func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", Label(suite.LabelOperational), func() {
-			assert.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a pipeline with legacy condition types at the end of the conditions list", Label(suite.LabelOperational), func() {
-			assert.TracePipelineShouldHaveLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHasLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", Label(suite.LabelOperational), func() {
-			assert.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", Label(suite.LabelOperational), func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.TraceGatewayMetrics.Namespace, kitkyma.TraceGatewayMetrics.Name, "metrics", ports.Metrics)
-			assert.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
+			assert.ExposesOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", Label(suite.LabelOperational), func() {

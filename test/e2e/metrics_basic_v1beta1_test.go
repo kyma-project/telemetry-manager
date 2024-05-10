@@ -60,7 +60,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelV1Beta1), Orde
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should reject scaling below minimum", func() {
@@ -145,20 +145,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelV1Beta1), Orde
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen metrics", Label(suite.LabelOperational), func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricGatewayMetrics.Namespace, kitkyma.MetricGatewayMetrics.Name, "metrics", ports.Metrics)
-			assert.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
+			assert.ExposesOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", func() {

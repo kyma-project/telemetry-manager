@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a secret with endpoint and path", func() {
-			assert.SecretShouldHaveValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName, endpointDataKey, endpoint+path)
+			assert.SecretHasKeyValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName, endpointDataKey, endpoint+path)
 		})
 	})
 

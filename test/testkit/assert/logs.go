@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, backendExportURL string) {
+func LogsDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, backendExportURL string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -32,8 +32,8 @@ func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePr
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-//nolint:dupl //LogPipelineShouldBeHealthy and MetricPipelineShouldBeHealthy have similarities, but they are not the same
-func LogPipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+//nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
+func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
@@ -46,7 +46,7 @@ func LogPipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pi
 }
 
 //nolint:dupl // This provides a better readability for the test as we know pipeline should not be healthy
-func LogPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func LogPipelineNotHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
@@ -58,17 +58,17 @@ func LogPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client,
 }
 
 //nolint:dupl // This provides a better readability for the test as we can test the TLS condition in a clear way
-func LogPipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
+func LogPipelineHasCondition(ctx context.Context, k8sClient client.Client, pipelineName, condType, expectedReason string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		g.Expect(condition.Reason).To(Equal(tlsCondition))
+		condition := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+		g.Expect(condition.Reason).To(Equal(expectedReason))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func LogPipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func LogPipelineHasLegacyConditionsAtEnd(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
@@ -84,7 +84,7 @@ func LogPipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient c
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func LogPipelineConditionReasonsShouldChange(ctx context.Context, k8sClient client.Client, pipelineName, condType string, expectedReasons []string) {
+func LogPipelineConditionReasonsTransition(ctx context.Context, k8sClient client.Client, pipelineName, condType string, expectedReasons []string) {
 	var currCond *metav1.Condition
 
 	for _, expected := range expectedReasons {

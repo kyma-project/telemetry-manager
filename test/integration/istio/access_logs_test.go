@@ -9,11 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
@@ -67,7 +67,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have sample app running", func() {
@@ -76,14 +76,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app": "sample-metrics"}),
 					Namespace:     sampleAppNs,
 				}
-				ready, err := assert.IsPodReady(ctx, k8sClient, listOptions)
+				ready, err := assert.PodReady(ctx, k8sClient, listOptions)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
 			}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have the log pipeline running", func() {
-			assert.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {

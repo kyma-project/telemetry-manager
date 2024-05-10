@@ -13,7 +13,9 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
@@ -78,27 +80,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-				assert.ShouldNotExist(ctx, k8sClient, k8sObjects...)
+				for _, resource := range k8sObjects {
+					Eventually(func(g Gomega) {
+						key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
+						err := k8sClient.Get(ctx, key, resource)
+						g.Expect(apierrors.IsNotFound(err)).To(BeTrue())
+					}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+				}
 			})
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
-			assert.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should push metrics successfully", func() {
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
-			assert.MetricsFromNamespaceShouldBeDelivered(proxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
 		})
 	})
