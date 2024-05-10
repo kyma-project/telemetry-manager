@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	"encoding/base64"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
@@ -21,21 +22,27 @@ func TestMakeConfig(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
+		})
 		require.NoError(t, err)
+
 		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
 		require.Equal(t, expectedEndpoint, actualExporterConfig.OTLP.Endpoint)
+
+		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST")
+		require.Equal(t, "http://localhost", string(envVars["OTLP_ENDPOINT_TEST"]))
 	})
 
 	t.Run("secure", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().
 			WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build()})
 		require.NoError(t, err)
-
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
 		require.False(t, actualExporterConfig.OTLP.TLS.Insecure)
 	})
@@ -45,25 +52,63 @@ func TestMakeConfig(t *testing.T) {
 			testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
 		)
 		require.NoError(t, err)
-
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
 		require.True(t, actualExporterConfig.OTLP.TLS.Insecure)
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		})
 		require.NoError(t, err)
-
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
+
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
 		headers := actualExporterConfig.OTLP.Headers
-
 		authHeader, existing := headers["Authorization"]
 		require.True(t, existing)
 		require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
+
+		require.Contains(t, envVars, "BASIC_AUTH_HEADER_TEST_BASIC_AUTH")
+		expectedBasicAuthHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("user:password")))
+		require.Equal(t, expectedBasicAuthHeader, string(envVars["BASIC_AUTH_HEADER_TEST_BASIC_AUTH"]))
+	})
+
+	t.Run("custom header", func(t *testing.T) {
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
+		})
+		require.NoError(t, err)
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-custom-header")
+
+		otlpExporterConfig := collectorConfig.Exporters["otlp/test-custom-header"]
+		headers := otlpExporterConfig.OTLP.Headers
+		customHeader, exists := headers["Authorization"]
+		require.True(t, exists)
+		require.Equal(t, "${HEADER_TEST_CUSTOM_HEADER_AUTHORIZATION}", customHeader)
+
+		require.Contains(t, envVars, "HEADER_TEST_CUSTOM_HEADER_AUTHORIZATION")
+		require.Equal(t, "Api-Token TOKEN_VALUE", string(envVars["HEADER_TEST_CUSTOM_HEADER_AUTHORIZATION"]))
+	})
+
+	t.Run("mtls", func(t *testing.T) {
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLS("cert", "key")).Build(),
+		})
+		require.NoError(t, err)
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-mtls")
+
+		otlpExporterConfig := collectorConfig.Exporters["otlp/test-mtls"]
+		require.Equal(t, "${OTLP_TLS_CERT_PEM_TEST_MTLS}", otlpExporterConfig.OTLP.TLS.CertPem)
+		require.Equal(t, "${OTLP_TLS_KEY_PEM_TEST_MTLS}", otlpExporterConfig.OTLP.TLS.KeyPem)
+
+		require.Contains(t, envVars, "OTLP_TLS_CERT_PEM_TEST_MTLS")
+		require.Equal(t, "cert", string(envVars["OTLP_TLS_CERT_PEM_TEST_MTLS"]))
+
+		require.Contains(t, envVars, "OTLP_TLS_KEY_PEM_TEST_MTLS")
+		require.Equal(t, "key", string(envVars["OTLP_TLS_KEY_PEM_TEST_MTLS"]))
 	})
 
 	t.Run("extensions", func(t *testing.T) {
@@ -324,7 +369,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test-1").WithRuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
 			testutils.NewMetricPipelineBuilder().WithName("test-2").WithPrometheusInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
 			testutils.NewMetricPipelineBuilder().WithName("test-3").WithIstioInput(true).Build()},
@@ -374,6 +419,10 @@ func TestMakeConfig(t *testing.T) {
 			"transform/resolve-service-name",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-3"].Processors)
+
+		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_1")
+		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_2")
+		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_3")
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
