@@ -11,22 +11,26 @@ import (
 type metricPipelineV1Alpha1 struct {
 	persistent bool
 
-	name            string
-	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
-	otlpEndpoint    string
-	runtime         *telemetryv1alpha1.MetricPipelineRuntimeInput
-	prometheus      *telemetryv1alpha1.MetricPipelinePrometheusInput
-	istio           *telemetryv1alpha1.MetricPipelineIstioInput
-	otlp            *telemetryv1alpha1.MetricPipelineOtlpInput
-	tls             *telemetryv1alpha1.OtlpTLS
-	protocol        string
-	endpointPath    string
+	name                 string
+	otlpEndpointRef      *telemetryv1alpha1.SecretKeyRef
+	otlpEndpoint         string
+	runtime              *telemetryv1alpha1.MetricPipelineRuntimeInput
+	prometheus           *telemetryv1alpha1.MetricPipelinePrometheusInput
+	istio                *telemetryv1alpha1.MetricPipelineIstioInput
+	otlp                 *telemetryv1alpha1.MetricPipelineOtlpInput
+	tls                  *telemetryv1alpha1.OtlpTLS
+	protocol             string
+	endpointPath         string
+	basicAuthUserRef     *telemetryv1alpha1.SecretKeyRef
+	basicAuthPasswordRef *telemetryv1alpha1.SecretKeyRef
+	headers              []telemetryv1alpha1.Header
 }
 
 func NewMetricPipelineV1Alpha1(name string) *metricPipelineV1Alpha1 {
 	return &metricPipelineV1Alpha1{
 		name:         name,
 		otlpEndpoint: "http://unreachable:4317",
+		headers:      []telemetryv1alpha1.Header{},
 	}
 }
 
@@ -169,6 +173,42 @@ func (p *metricPipelineV1Alpha1) WithEndpointPath(path string) *metricPipelineV1
 	return p
 }
 
+func (p *metricPipelineV1Alpha1) WithBasicAuthUserFromSecret(basicAuthUserRef *telemetryv1alpha1.SecretKeyRef) *metricPipelineV1Alpha1 {
+	p.basicAuthUserRef = basicAuthUserRef
+	return p
+}
+
+func (p *metricPipelineV1Alpha1) WithBasicAuthPasswordFromSecret(basicAuthPasswordRef *telemetryv1alpha1.SecretKeyRef) *metricPipelineV1Alpha1 {
+	p.basicAuthPasswordRef = basicAuthPasswordRef
+	return p
+}
+
+func (p *metricPipelineV1Alpha1) WithHeader(name, prefix, value string) *metricPipelineV1Alpha1 {
+	p.headers = append(p.headers, telemetryv1alpha1.Header{
+		Name:   name,
+		Prefix: prefix,
+		ValueType: telemetryv1alpha1.ValueType{
+			Value: value,
+		},
+	})
+
+	return p
+}
+
+func (p *metricPipelineV1Alpha1) WithHeaderFromSecret(name string, prefix string, headerValueRef *telemetryv1alpha1.SecretKeyRef) *metricPipelineV1Alpha1 {
+	p.headers = append(p.headers, telemetryv1alpha1.Header{
+		Name:   name,
+		Prefix: prefix,
+		ValueType: telemetryv1alpha1.ValueType{
+			ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: headerValueRef,
+			},
+		},
+	})
+
+	return p
+}
+
 func (p *metricPipelineV1Alpha1) K8sObject() *telemetryv1alpha1.MetricPipeline {
 	var labels Labels
 	if p.persistent {
@@ -179,6 +219,9 @@ func (p *metricPipelineV1Alpha1) K8sObject() *telemetryv1alpha1.MetricPipeline {
 	otlpOutput := &telemetryv1alpha1.OtlpOutput{
 		Endpoint: telemetryv1alpha1.ValueType{},
 		TLS:      p.tls,
+		Authentication: &telemetryv1alpha1.AuthenticationOptions{
+			Basic: &telemetryv1alpha1.BasicAuthOptions{},
+		},
 	}
 	if p.otlpEndpointRef != nil {
 		otlpOutput.Endpoint.ValueFrom = &telemetryv1alpha1.ValueFromSource{
@@ -194,6 +237,22 @@ func (p *metricPipelineV1Alpha1) K8sObject() *telemetryv1alpha1.MetricPipeline {
 
 	if len(p.endpointPath) > 0 {
 		otlpOutput.Path = p.endpointPath
+	}
+
+	if p.basicAuthUserRef != nil {
+		otlpOutput.Authentication.Basic.User.ValueFrom = &telemetryv1alpha1.ValueFromSource{
+			SecretKeyRef: p.basicAuthUserRef,
+		}
+	}
+
+	if p.basicAuthPasswordRef != nil {
+		otlpOutput.Authentication.Basic.Password.ValueFrom = &telemetryv1alpha1.ValueFromSource{
+			SecretKeyRef: p.basicAuthPasswordRef,
+		}
+	}
+
+	if len(p.headers) > 0 {
+		otlpOutput.Headers = p.headers
 	}
 
 	metricPipeline := telemetryv1alpha1.MetricPipeline{
