@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,7 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"encoding/base64"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
