@@ -49,6 +49,11 @@ const (
 	LabelV1Beta1               = "v1beta1"
 	LabelTelemetryLogsAnalysis = "telemetry-logs-analysis"
 
+	// Istio test labels
+	LabelIntegration                    = "integration"
+	LabelSelfMonitoringLogsBackpressure = "self-mon-logs-backpressure"
+	LabelSelfMonitoringLogsOutage       = "self-mon-logs-outage"
+
 	// Operational tests preserve K8s objects between test runs.
 	LabelOperational = "operational"
 )

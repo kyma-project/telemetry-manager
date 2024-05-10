@@ -22,6 +22,7 @@ The Telemetry module provides [Fluent Bit](https://fluentbit.io/) as a log agent
 4. The Telemetry module configures Fluent Bit with your custom output configuration.
 5. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems outside or inside the Kyma cluster. Here, you can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
 6. To analyze and visualize your logs, access the internal or external observability system.
+7. The self monitor observes the log flow to the backend and reports problems in the LogPipeline status.
 
 ### Pipelines
 

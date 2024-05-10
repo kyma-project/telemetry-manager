@@ -14,6 +14,7 @@ service:
                 - filter/drop-if-input-source-runtime
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
+                - filter/drop-if-input-source-otlp
                 - resource/insert-cluster-name
                 - transform/resolve-service-name
                 - batch
@@ -90,6 +91,10 @@ processors:
         metrics:
             metric:
                 - instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+    filter/drop-if-input-source-otlp:
+        metrics:
+            metric:
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio")
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:

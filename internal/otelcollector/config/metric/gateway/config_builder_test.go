@@ -123,7 +123,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-otlp",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -145,7 +144,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -168,7 +166,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -191,7 +188,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -213,7 +209,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -235,7 +230,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -258,7 +252,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -281,7 +274,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -304,7 +296,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -327,7 +318,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -355,7 +345,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/test-1-filter-by-namespace-runtime-input",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-1"].Processors)
 
@@ -370,7 +359,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-2"].Processors)
 
@@ -384,25 +372,45 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-diagnostic-metrics-if-input-source-istio",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-3"].Processors)
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		config, _, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-		})
-		require.NoError(t, err)
+		tests := []struct {
+			name           string
+			goldenFileName string
+			withOtlpInput  bool
+		}{
+			{
+				name:           "OTLP Endpoint enabled",
+				goldenFileName: "config.yaml",
+				withOtlpInput:  true,
+			},
+			{
+				name:           "OTLP Endpoint disabled",
+				goldenFileName: "config_otlp_disabled.yaml",
+				withOtlpInput:  false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
 
-		configYAML, err := yaml.Marshal(config)
-		require.NoError(t, err, "failed to marshal config")
+				config, _, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(tt.withOtlpInput).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				})
+				require.NoError(t, err)
 
-		goldenFilePath := filepath.Join("testdata", "config.yaml")
-		goldenFile, err := os.ReadFile(goldenFilePath)
-		require.NoError(t, err, "failed to load golden file")
+				configYAML, err := yaml.Marshal(config)
+				require.NoError(t, err, "failed to marshal config")
 
-		require.NoError(t, err)
-		require.Equal(t, string(goldenFile), string(configYAML))
+				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
+				goldenFile, err := os.ReadFile(goldenFilePath)
+				require.NoError(t, err, "failed to load golden file")
+
+				require.NoError(t, err)
+				require.Equal(t, string(goldenFile), string(configYAML))
+			})
+		}
 	})
 }

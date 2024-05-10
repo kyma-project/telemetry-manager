@@ -9,7 +9,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
-	istiosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	istionetworkingclientv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	istiosecurityclientv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -70,7 +71,8 @@ var _ = BeforeSuite(func() {
 	scheme := clientgoscheme.Scheme
 	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(operatorv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(istiosecv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(istiosecurityclientv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(istionetworkingclientv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	k8sClient, err = client.New(testEnv.Config, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())

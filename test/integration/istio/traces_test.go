@@ -21,7 +21,7 @@ import (
 	"net/http"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	const (
 		appName          = "app-1"
 		istiofiedAppName = "app-2"
