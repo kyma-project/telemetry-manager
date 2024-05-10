@@ -124,7 +124,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	if b.name == "" {
 		b.name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
-	if b.httpOutput == nil || b.lokiOutput == nil || b.customOutput == "" {
+	if b.httpOutput == nil && b.lokiOutput == nil && b.customOutput == "" {
 		b.httpOutput = &telemetryv1alpha1.HTTPOutput{
 			Host: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
 		}
