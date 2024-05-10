@@ -59,7 +59,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			}
 		})
 
-		It("Should set ConfigurationGenerated condition to false", func() {
+		It("Should reject logpipeline creation after reaching max logpipeline", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
 				pipelineHostSecret := kitk8s.NewOpaqueSecret("http-hostname", kitkyma.DefaultNamespaceName,
