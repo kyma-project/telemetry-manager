@@ -1,6 +1,7 @@
 package logpipeline
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -13,8 +14,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	"github.com/kyma-project/telemetry-manager/internal/tls"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
 type syncer struct {
@@ -26,11 +25,11 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 	log := logf.FromContext(ctx)
 
 	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {
-		return fmt.Errorf("failed to sync sections: %v", err)
+		return fmt.Errorf("failed to sync sections: %w", err)
 	}
 
 	if err := s.syncFilesConfigMap(ctx, pipeline); err != nil {
-		return fmt.Errorf("failed to sync mounted files: %v", err)
+		return fmt.Errorf("failed to sync mounted files: %w", err)
 	}
 
 	if err := s.syncEnvSecret(ctx, deployableLogPipelines); err != nil {
@@ -63,7 +62,11 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 	if !isLogPipelineDeployable(deployablePipelines, pipeline) {
 		delete(cm.Data, cmKey)
 	} else {
-		newConfig, err := builder.BuildFluentBitConfig(pipeline, s.config.PipelineDefaults)
+		builderConfig := builder.BuilderConfig{
+			PipelineDefaults: s.config.PipelineDefaults,
+			CollectAgentLogs: s.config.Overrides.Logging.CollectAgentLogs,
+		}
+		newConfig, err := builder.BuildFluentBitConfig(pipeline, builderConfig)
 		if err != nil {
 			return fmt.Errorf("unable to build section: %w", err)
 		}
@@ -130,7 +133,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 		}
 
 		for _, ref := range logPipelines[i].GetEnvSecretRefs() {
-			targetKey := envvar.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
+			targetKey := builder.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
 			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}
@@ -194,7 +197,10 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 				return err
 			}
 
-			sanitizedCert, sanitizedKey := tls.SanitizeSecret(newSecret.Data[targetCertVariable], newSecret.Data[targetKeyVariable])
+			// Make a best effort replacement of linebreaks in cert/key if present.
+			sanitizedCert := bytes.ReplaceAll(newSecret.Data[targetCertVariable], []byte("\\n"), []byte("\n"))
+			sanitizedKey := bytes.ReplaceAll(newSecret.Data[targetKeyVariable], []byte("\\n"), []byte("\n"))
+
 			newSecret.Data[targetCertVariable] = sanitizedCert
 			newSecret.Data[targetKeyVariable] = sanitizedKey
 		}

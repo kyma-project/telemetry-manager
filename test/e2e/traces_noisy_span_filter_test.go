@@ -3,57 +3,148 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
-
-	const (
-		mockBackendName = "traces-filter-receiver"
-		mockNs          = "traces-noisy-span-filter-test"
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
+	var (
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
-	var (
-		pipelineName string
-		urls         = urlprovider.New()
+	const (
+		// regular spans should NOT be filtered
+		regularSpansNs = "regular-spans"
+
+		// noisy spans should be filtered
+		vmaScrapeSpansNs            = "vma-scrape-spans"
+		healthzSpansNs              = "healthz-spans"
+		fluentBitSpansNs            = "fluent-bit-spans"
+		metricAgentScrapeSpansNs    = "metric-agent-scrape-spans"
+		metricAgentSpansNs          = "metric-agent-spans"
+		metricGatewaySpansNs        = "metric-gateway-spans"
+		metricServiceSpansNs        = "metric-service-spans"
+		traceGatewaySpansNs         = "trace-gateway-spans"
+		traceServiceSpansNs         = "trace-service-spans"
+		traceServiceInternalSpansNs = "trace-service-internal-spans"
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
+			kitk8s.NewNamespace(regularSpansNs).K8sObject(),
+			kitk8s.NewNamespace(vmaScrapeSpansNs).K8sObject(),
+			kitk8s.NewNamespace(healthzSpansNs).K8sObject(),
+			kitk8s.NewNamespace(fluentBitSpansNs).K8sObject(),
+			kitk8s.NewNamespace(metricAgentScrapeSpansNs).K8sObject(),
+			kitk8s.NewNamespace(metricAgentSpansNs).K8sObject(),
+			kitk8s.NewNamespace(metricGatewaySpansNs).K8sObject(),
+			kitk8s.NewNamespace(metricServiceSpansNs).K8sObject(),
+			kitk8s.NewNamespace(traceGatewaySpansNs).K8sObject(),
+			kitk8s.NewNamespace(traceServiceSpansNs).K8sObject(),
+			kitk8s.NewNamespace(traceServiceInternalSpansNs).K8sObject(),
+		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(true))
-		objs = append(objs, mockBackend.K8sObjects()...)
-		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(true))
+		backendExportURL = backend.ExportURL(proxyClient)
+		objs = append(objs, backend.K8sObjects()...)
 
-		pipeline := kitk8s.NewTracePipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
-		pipelineName = pipeline.Name()
+		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
 		objs = append(objs, pipeline.K8sObject())
 
-		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+		regularSpansGen := telemetrygen.New(regularSpansNs, telemetrygen.SignalTypeTraces).K8sObject()
+		vmaScrapeSpansGen := telemetrygen.New(vmaScrapeSpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Ingress"),
+			telemetrygen.WithTelemetryAttribute("user_agent", "vm_promscrape"),
+		).K8sObject()
+		healthzSpansGen := telemetrygen.New(healthzSpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.IstioSystemNamespaceName),
+			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "istio-ingressgateway"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Egress"),
+			telemetrygen.WithTelemetryAttribute("http.url", "https://healthz.some-url/healthz/ready"),
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", "istio-system"),
+		).K8sObject()
+		fluentBitSpansGen := telemetrygen.New(fluentBitSpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "fluent-bit"),
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
+		).K8sObject()
+		metricAgentScrapeSpansGen := telemetrygen.New(metricAgentScrapeSpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Ingress"),
+			telemetrygen.WithTelemetryAttribute("user_agent", "kyma-otelcol/0.1.0"),
+		).K8sObject()
+		metricAgentSpansGen := telemetrygen.New(metricAgentSpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-metric-agent"),
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
+		).K8sObject()
+		metricGatewaySpansGen := telemetrygen.New(metricGatewaySpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-metric-gateway"),
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
+		).K8sObject()
+		metricServiceSpansGen := telemetrygen.New(metricServiceSpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("http.method", "POST"),
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Egress"),
+			telemetrygen.WithTelemetryAttribute("http.url", "http://telemetry-otlp-metrics.kyma-system:4317"),
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
+		).K8sObject()
+		traceGatewaySpansGen := telemetrygen.New(traceGatewaySpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-trace-gateway"),
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
+		).K8sObject()
+		traceServiceSpansGen := telemetrygen.New(traceServiceSpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("http.method", "POST"),
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Egress"),
+			telemetrygen.WithTelemetryAttribute("http.url", "http://telemetry-otlp-traces.kyma-system:4317"),
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
+		).K8sObject()
+		traceServiceInternalSpansGen := telemetrygen.New(traceServiceInternalSpansNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.WithTelemetryAttribute("component", "proxy"),
+			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-trace-collector"),
+			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
+		).K8sObject()
+
+		objs = append(objs,
+			regularSpansGen,
+			vmaScrapeSpansGen,
+			healthzSpansGen,
+			fluentBitSpansGen,
+			metricAgentScrapeSpansGen,
+			metricAgentSpansGen,
+			metricGatewaySpansGen,
+			metricServiceSpansGen,
+			traceGatewaySpansGen,
+			traceServiceSpansGen,
+			traceServiceInternalSpansGen,
 		)
 
 		return objs
 	}
 
-	Context("When noisy span present", Ordered, func() {
-
+	Context("When noisy spans are generated", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -68,67 +159,26 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should verify end-to-end trace delivery", func() {
-			traceID, spanIDs, spanAttrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, spanAttrs)
+		It("Should deliver regular telemetrygen traces", func() {
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, regularSpansNs)
 		})
 
-		It("Should filter noisy victoria metrics spans", func() {
-			traceID := kittraces.MakeAndSendVictoriaMetricsAgentTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy metric agent scrape spans", func() {
-			traceID := kittraces.MakeAndSendMetricAgentScrapeTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy /healthy endpoint spans", func() {
-			traceID := kittraces.MakeAndSendIstioHealthzEndpointTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy telemetry trace service spans", func() {
-			traceID := kittraces.MakeAndSendTraceServiceTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy telemetry trace internal service spans", func() {
-			traceID := kittraces.MakeAndSendTraceInternalServiceTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy telemetry metric service spans", func() {
-			traceID := kittraces.MakeAndSendMetricServiceTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy fluent-bit spans", func() {
-			traceID := kittraces.MakeAndSendFluentBitTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy metric gateway spans", func() {
-			traceID := kittraces.MakeAndSendMetricGatewayTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy trace gateway spans", func() {
-			traceID := kittraces.MakeAndSendTraceGatewayTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy metric gateway spans", func() {
-			traceID := kittraces.MakeAndSendMetricGatewayTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy metric agent spans", func() {
-			traceID := kittraces.MakeAndSendMetricAgentTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
+		It("Should filter noisy spans", func() {
+			verifiers.TracesFromNamespacesShouldNotBeDelivered(proxyClient, backendExportURL, []string{
+				vmaScrapeSpansNs,
+				healthzSpansNs,
+				fluentBitSpansNs,
+				metricAgentScrapeSpansNs,
+				metricAgentSpansNs,
+				metricGatewaySpansNs,
+				metricServiceSpansNs,
+				traceGatewaySpansNs,
+				traceServiceSpansNs,
+				traceServiceInternalSpansNs,
+			})
 		})
 	})
 })

@@ -27,7 +27,7 @@ const istioCertVolumeName = "istio-certs"
 func ApplyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, makeAgentClusterRole(name), cfg.allowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, makeAgentClusterRole(name), cfg.allowedPorts, cfg.ObserveBySelfMonitoring); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -80,6 +80,7 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 		commonresources.WithResources(resources),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+		commonresources.WithGoMemLimitEnvVar(cfg.DaemonSet.MemoryLimit),
 		withVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}}),

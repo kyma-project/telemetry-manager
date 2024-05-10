@@ -20,6 +20,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 const defaultReplicaCount int32 = 2
@@ -41,23 +43,45 @@ type DaemonSetProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
-type Reconciler struct {
-	client.Client
-	config             Config
-	gatewayProber      DeploymentProber
-	agentProber        DaemonSetProber
-	overridesHandler   *overrides.Handler
-	istioStatusChecker istiostatus.Checker
+//go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
+type FlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
-func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
+//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
+type TLSCertValidator interface {
+	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
+}
+
+type Reconciler struct {
+	client.Client
+	config                   Config
+	gatewayProber            DeploymentProber
+	agentProber              DaemonSetProber
+	flowHealthProbingEnabled bool
+	flowHealthProber         FlowHealthProber
+	overridesHandler         *overrides.Handler
+	istioStatusChecker       istiostatus.Checker
+	tlsCertValidator         TLSCertValidator
+}
+
+func NewReconciler(
+	client client.Client, config Config,
+	gatewayProber DeploymentProber,
+	agentProber DaemonSetProber,
+	flowHealthProbingEnabled bool,
+	flowHealthProber FlowHealthProber,
+	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
-		Client:             client,
-		config:             config,
-		gatewayProber:      gatewayProber,
-		agentProber:        agentProber,
-		overridesHandler:   overridesHandler,
-		istioStatusChecker: istiostatus.NewChecker(client),
+		Client:                   client,
+		config:                   config,
+		gatewayProber:            gatewayProber,
+		agentProber:              agentProber,
+		flowHealthProbingEnabled: flowHealthProbingEnabled,
+		flowHealthProber:         flowHealthProber,
+		overridesHandler:         overridesHandler,
+		istioStatusChecker:       istiostatus.NewChecker(client),
+		tlsCertValidator:         tlscert.New(client),
 	}
 }
 
@@ -89,9 +113,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	defer func() {
 		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired); statusErr != nil {
 			if err != nil {
-				err = fmt.Errorf("failed while updating status: %v: %v", statusErr, err)
+				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
 			} else {
-				err = fmt.Errorf("failed to update status: %v", statusErr)
+				err = fmt.Errorf("failed to update status: %w", statusErr)
 			}
 		}
 	}()
@@ -110,16 +134,16 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
 
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, allPipelinesList.Items, r, lock)
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
-	if len(deployablePipelines) == 0 {
+	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no metric pipeline ready for deployment")
 		return nil
 	}
 
-	if err = r.reconcileMetricGateway(ctx, pipeline, deployablePipelines); err != nil {
+	if err = r.reconcileMetricGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile metric gateway: %w", err)
 	}
 
@@ -132,28 +156,47 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return nil
 }
 
-// getDeployableMetricPipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, client client.Client, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
-	var deployablePipelines []telemetryv1alpha1.MetricPipeline
+// getReconcilablePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+	var reconcilablePipelines []telemetryv1alpha1.MetricPipeline
 	for i := range allPipelines {
-		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
-			continue
-		}
-
-		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
-			continue
-		}
-
-		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i], lock)
 		if err != nil {
 			return nil, err
 		}
 
-		if hasLock {
-			deployablePipelines = append(deployablePipelines, allPipelines[i])
+		if isReconcilable {
+			reconcilablePipelines = append(reconcilablePipelines, allPipelines[i])
 		}
 	}
-	return deployablePipelines, nil
+	return reconcilablePipelines, nil
+}
+
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lock *k8sutils.ResourceCountLock) (bool, error) {
+	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return false, nil
+	}
+
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return false, nil
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		cert := pipeline.Spec.Output.Otlp.TLS.Cert
+		key := pipeline.Spec.Output.Otlp.TLS.Key
+
+		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+			if !tlscert.IsCertAboutToExpireError(err) {
+				return false, nil
+			}
+		}
+	}
+
+	hasLock, err := lock.IsLockHolder(ctx, pipeline)
+	if err != nil {
+		return false, fmt.Errorf("failed to check lock: %w", err)
+	}
+	return hasLock, nil
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
@@ -265,4 +308,15 @@ func getGatewayPorts() []int32 {
 		ports.OTLPHTTP,
 		ports.OTLPGRPC,
 	}
+}
+
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	otlp := pipeline.Spec.Output.Otlp
+	if otlp == nil {
+		return false
+	}
+	if otlp.TLS == nil {
+		return false
+	}
+	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil
 }

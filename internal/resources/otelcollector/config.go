@@ -5,21 +5,21 @@ import (
 )
 
 type Config struct {
-	BaseName         string
-	Namespace        string
-	CollectorConfig  string
-	CollectorEnvVars map[string][]byte
+	BaseName                string
+	Namespace               string
+	CollectorConfig         string
+	CollectorEnvVars        map[string][]byte
+	ObserveBySelfMonitoring bool
 }
 
 type GatewayConfig struct {
 	Config
 
-	Deployment           DeploymentConfig
-	Scaling              GatewayScalingConfig
-	Istio                IstioConfig
-	OTLPServiceName      string
-	allowedPorts         []int32
-	CanReceiveOpenCensus bool
+	Deployment      DeploymentConfig
+	Scaling         GatewayScalingConfig
+	Istio           IstioConfig
+	OTLPServiceName string
+	allowedPorts    []int32
 }
 
 type IstioConfig struct {
@@ -89,9 +89,9 @@ type AgentConfig struct {
 }
 
 func (cfg *AgentConfig) WithCollectorConfig(collectorCfgYAML string) *AgentConfig {
-	copy := *cfg
-	copy.CollectorConfig = collectorCfgYAML
-	return &copy
+	cp := *cfg
+	cp.CollectorConfig = collectorCfgYAML
+	return &cp
 }
 
 type DaemonSetConfig struct {

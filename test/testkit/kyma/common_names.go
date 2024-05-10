@@ -10,14 +10,19 @@ const (
 	KubeNamespace            = "kube-system"
 	IstioSystemNamespaceName = "istio-system"
 
+	TelemetryManagerMetricsPort = 8080
+
 	MetricGatewayBaseName = "telemetry-metric-gateway"
 	MetricAgentBaseName   = "telemetry-metric-agent"
 	TraceGatewayBaseName  = "telemetry-trace-collector"
+	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
+	WebhookName           = "validation.webhook.telemetry.kyma-project.io"
 )
 
 var (
-	TelemetryOperatorWebhookServiceName = types.NamespacedName{Name: "telemetry-manager-webhook", Namespace: SystemNamespaceName}
+	TelemetryManagerMetricsServiceName = types.NamespacedName{Name: "telemetry-manager-metrics", Namespace: SystemNamespaceName}
+	TelemetryManagerWebhookServiceName = types.NamespacedName{Name: "telemetry-manager-webhook", Namespace: SystemNamespaceName}
 
 	MetricGatewayName          = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: SystemNamespaceName}
 	MetricGatewayMetrics       = types.NamespacedName{Name: MetricGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}
@@ -33,5 +38,10 @@ var (
 	TraceGatewayNetworkPolicy = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewaySecretName    = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 
+	SelfMonitorName          = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
+	SelfMonitorNetworkPolicy = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
+
 	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
+
+	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
 )

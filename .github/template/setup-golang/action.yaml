@@ -5,9 +5,10 @@ runs:
   using: "composite"
 
   steps:
-    # uses an older go version by default, so configure go with newest version
+    # uses the go version from go.mod.
+    # Run this step after the checkout step!
     - name: Setup Golang
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version-file: "go.mod"
         cache: true

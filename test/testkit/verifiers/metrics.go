@@ -52,20 +52,20 @@ func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient 
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func MetricsShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL string, metrics []pmetric.Metric) {
+func MetricsShouldBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, metrics []pmetric.Metric) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ConsistOfMds(WithMetrics(BeEquivalentTo(metrics)))))
+		g.Expect(resp).To(HaveHTTPBody(ContainMd(WithMetrics(BeEquivalentTo(metrics)))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string, metricNames []string) {
+func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string, metricNames []string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
@@ -79,9 +79,9 @@ func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, t
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string) {
+func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
 	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
@@ -92,4 +92,24 @@ func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+func MetricPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.MetricPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func MetricPipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.MetricPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+		g.Expect(condition.Reason).To(Equal(tlsCondition))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

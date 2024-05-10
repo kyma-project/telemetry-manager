@@ -16,7 +16,6 @@ service:
                 - filter/drop-if-input-source-istio
                 - resource/insert-cluster-name
                 - transform/resolve-service-name
-                - resource/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/test
@@ -42,9 +41,9 @@ processors:
         timeout: 10s
         send_batch_max_size: 1024
     memory_limiter:
-        check_interval: 0.1s
+        check_interval: 1s
         limit_percentage: 75
-        spike_limit_percentage: 20
+        spike_limit_percentage: 15
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -81,16 +80,16 @@ processors:
               value: ${KUBERNETES_SERVICE_HOST}
     filter/drop-if-input-source-runtime:
         metrics:
-            datapoint:
-                - resource.attributes["kyma.source"] == "runtime"
+            metric:
+                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
     filter/drop-if-input-source-prometheus:
         metrics:
-            datapoint:
-                - resource.attributes["kyma.source"] == "prometheus"
+            metric:
+                - instrumentation_scope.name == "io.kyma-project.telemetry/prometheus"
     filter/drop-if-input-source-istio:
         metrics:
-            datapoint:
-                - resource.attributes["kyma.source"] == "istio"
+            metric:
+                - instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:
@@ -104,10 +103,6 @@ processors:
                 - set(attributes["service.name"], attributes["k8s.job.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
                 - set(attributes["service.name"], attributes["k8s.pod.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
                 - set(attributes["service.name"], "unknown_service") where attributes["service.name"] == nil or attributes["service.name"] == ""
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

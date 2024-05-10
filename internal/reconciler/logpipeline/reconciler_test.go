@@ -3,6 +3,7 @@ package logpipeline
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -13,98 +14,71 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
-func TestGetDeployableLogPipelines(t *testing.T) {
+func TestGetReconcilableLogPipelines(t *testing.T) {
 	timestamp := metav1.Now()
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.LogPipeline
-		deployablePipelines bool
+		name                     string
+		pipelines                []telemetryv1alpha1.LogPipeline
+		reconcilableLogPipelines bool
 	}{
 		{
-			name: "should reject LogPipelines which are being deleted",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "pipeline-in-deletion",
-						DeletionTimestamp: &timestamp,
-					},
-					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.Output{
-							Custom: "Name	stdout\n",
-						}},
-				},
-			},
-			deployablePipelines: false,
+			name:                     "should reject LogPipelines which are being deleted",
+			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-in-deletion").WithDeletionTimeStamp(timestamp).WithCustomOutput("Name	stdout\n").Build()},
+			reconcilableLogPipelines: false,
 		},
 		{
-			name: "should reject LogPipelines with missing Secrets",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "pipeline-with-secret",
-					},
-					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.Output{
-							HTTP: &telemetryv1alpha1.HTTPOutput{
-								Host: telemetryv1alpha1.ValueType{
-									ValueFrom: &telemetryv1alpha1.ValueFromSource{
-										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-											Name:      "some-secret",
-											Namespace: "some-namespace",
-											Key:       "host",
-										},
-									},
-								},
-							},
-						}},
-				},
-			},
-			deployablePipelines: false,
+			name:                     "should reject LogPipelines with missing Secrets",
+			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-with-missing-secret").WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()},
+			reconcilableLogPipelines: false,
 		},
 		{
-			name: "should reject LogPipelines with Loki Output",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "pipeline-with-loki-output",
-					},
-					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.Output{
-							Loki: &telemetryv1alpha1.LokiOutput{
-								URL: telemetryv1alpha1.ValueType{
-									Value: "http://logging-loki:3100/loki/api/v1/push",
-								},
-							},
-						}},
-				},
-			},
-			deployablePipelines: false,
+			name:                     "should reject LogPipelines with Loki Output",
+			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-with-loki-output").WithLoki().Build()},
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should accept healthy LogPipelines",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "pipeline-with-stdout-1",
-					},
-					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.Output{
-							Custom: "Name	stdout\n",
-						}},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "pipeline-with-stdout-2",
-					},
-					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.Output{
-							Custom: "Name	stdout\n",
-						}},
-				},
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-1").WithCustomOutput("Name	stdout\n").Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-stdout-2").WithCustomOutput("Name	stdout\n").Build(),
 			},
-			deployablePipelines: true,
+			reconcilableLogPipelines: true,
+		},
+		{
+			name: "should reject LogPipelines with invalid certificate",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-invalid-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
+					testutils.HTTPClientTLS("invalidcert", "somekey")).Build(),
+			},
+			reconcilableLogPipelines: false,
+		},
+		{
+			name: "should reject LogPipelines with invalid certificate key",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-invalid-cert-key").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
+					testutils.HTTPClientTLS("somecert", "invalidkey")).Build(),
+			},
+			reconcilableLogPipelines: false,
+		},
+		{
+			name: "should reject LogPipelines with expired certificate",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-expired-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
+					testutils.HTTPClientTLS("expired", "expired")).Build(),
+			},
+			reconcilableLogPipelines: false,
+		},
+		{
+			name: "should accept LogPipelines with valid certificate",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-valid-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"), testutils.HTTPClientTLS("valid", "valid")).Build(),
+			},
+			reconcilableLogPipelines: true,
 		},
 	}
 
@@ -116,12 +90,25 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-			deployablePipelines := getDeployableLogPipelines(ctx, test.pipelines, fakeClient)
+			validatorStub := &mocks.TLSCertValidator{}
+
+			validatorStub.
+				On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlscert.ErrCertParseFailed).
+				On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "somecert"}, &telemetryv1alpha1.ValueType{Value: "invalidkey"}).Return(tlscert.ErrKeyParseFailed).
+				On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "valid"}, &telemetryv1alpha1.ValueType{Value: "valid"}).Return(nil).
+				On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "expired"}, &telemetryv1alpha1.ValueType{Value: "expired"}).Return(&tlscert.CertExpiredError{Expiry: time.Now().Add(-time.Hour)})
+
+			reconciler := Reconciler{
+				Client:           fakeClient,
+				tlsCertValidator: validatorStub,
+			}
+
+			reconcilablePipelines := reconciler.getReconcilablePipelines(ctx, test.pipelines)
 			for _, pipeline := range test.pipelines {
-				if test.deployablePipelines == true {
-					require.Contains(t, deployablePipelines, pipeline)
+				if test.reconcilableLogPipelines == true {
+					require.Contains(t, reconcilablePipelines, pipeline)
 				} else {
-					require.NotContains(t, deployablePipelines, pipeline)
+					require.NotContains(t, reconcilablePipelines, pipeline)
 				}
 			}
 		})

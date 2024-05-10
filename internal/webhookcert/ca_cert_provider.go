@@ -44,7 +44,7 @@ func newCACertProvider(client client.Client) *caCertProviderImpl {
 
 func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
 	var caSecret corev1.Secret
-	shouldCreateNew := false
+	var shouldCreateNew bool
 	if err := p.client.Get(ctx, caSecretName, &caSecret); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return nil, nil, fmt.Errorf("failed to find ca cert caSecretName: %w", err)

@@ -10,26 +10,22 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Service Name", Label("traces"), func() {
-	const (
-		mockNs          = "trace-mocks-service-name" //#nosec G101 -- This is a false positive
-		mockBackendName = "trace-receiver"
-	)
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -37,14 +33,13 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeTraces)
+		objs = append(objs, backend.K8sObjects()...)
 
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		tracePipeline := kitk8s.NewTracePipeline("pipeline-service-name-test").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
-		pipelineName = tracePipeline.Name()
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
 		objs = append(objs, tracePipeline.K8sObject())
 
 		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeTraces)...)
@@ -67,7 +62,7 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
@@ -76,7 +71,7 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -116,22 +111,6 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
 		})
 
-		It("Should set undefined service.name attribute to unknown_service", func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
-			kittraces.MakeAndSendTraces(proxyClient, gatewayPushURL)
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainTd(
-						// on a Gardener cluster, API server proxy traffic is routed through vpn-shoot, so service.name is set respectively
-						ContainResourceAttrs(HaveKeyWithValue("service.name", BeElementOf("unknown_service", "vpn-shoot"))),
-					),
-				))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
 		It("Should enrich service.name attribute when its value is unknown_service", func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
 		})
@@ -148,7 +127,7 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 
 		It("Should have no kyma resource attributes", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

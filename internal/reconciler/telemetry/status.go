@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -71,9 +72,10 @@ func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operator
 	}
 
 	// Since LogPipeline, MetricPipeline, and TracePipeline have status conditions with positive polarity,
-	// we can assume that the Telemetry Module is in the 'Ready' state if all conditions of dependent resources have the status 'True.'
+	// we can assume that the Telemetry Module is in the 'Ready' state if all conditions of dependent resources have the status 'True',
+	// with the exception being the imminent expiration of the configured TLS certificate.
 	if slices.ContainsFunc(telemetry.Status.Conditions, func(cond metav1.Condition) bool {
-		return cond.Status == metav1.ConditionFalse
+		return cond.Status == metav1.ConditionFalse || cond.Reason == conditions.ReasonTLSCertificateAboutToExpire
 	}) {
 		telemetry.Status.State = operatorv1alpha1.StateWarning
 	} else {
@@ -141,10 +143,7 @@ func (r *Reconciler) dependentCRsFound(ctx context.Context) bool {
 func (r *Reconciler) resourcesExist(ctx context.Context, list client.ObjectList) bool {
 	if err := r.List(ctx, list); err != nil {
 		// no kind found
-		if _, ok := err.(*meta.NoKindMatchError); ok {
-			return false
-		}
-		return true
+		return errors.Is(err, &meta.NoKindMatchError{})
 	}
 	return meta.LenList(list) > 0
 }

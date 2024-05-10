@@ -10,7 +10,7 @@ TABLE_GEN ?= $(LOCALBIN)/table-gen
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
-GOLANGCI-LINT ?= $(LOCALBIN)/golangci-lint
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 K3D ?= $(LOCALBIN)/k3d
 KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
@@ -21,7 +21,7 @@ TABLE_GEN_VERSION ?= $(ENV_TABLE_GEN_VERSION)
 CONTROLLER_TOOLS_VERSION ?= $(ENV_CONTROLLER_TOOLS_VERSION)
 K3D_VERSION ?= $(ENV_K3D_VERSION)
 GINKGO_VERSION ?= $(ENV_GINKGO_VERSION)
-GOLANGCI-LINT_VERSION ?= $(ENV_GOLANGCI-LINT_VERSION)
+GOLANGCI_LINT_VERSION ?= $(ENV_GOLANGCI_LINT_VERSION)
 GO_TEST_COVERAGE_VERSION ?= $(ENV_GO_TEST_COVERAGE_VERSION)
 
 .PHONY: dependencies
@@ -59,9 +59,9 @@ $(TABLE_GEN): $(LOCALBIN)
 
 ## golangci-lint
 .PHONY: golangci-lint
-golangci-lint: $(GOLANGCI-LINT) ## Download golangci-lint locally if necessary.
-$(GOLANGCI-LINT): $(LOCALBIN)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) $(GOLANGCI-LINT_VERSION)
+golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): $(LOCALBIN)
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) $(GOLANGCI_LINT_VERSION)
 
 ## ginkgo
 .PHONY: ginkgo

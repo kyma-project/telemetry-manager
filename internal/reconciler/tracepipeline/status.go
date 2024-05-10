@@ -13,6 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
@@ -23,7 +24,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 			return nil
 		}
 
-		return fmt.Errorf("failed to get TracePipeline: %v", err)
+		return fmt.Errorf("failed to get TracePipeline: %w", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {
@@ -31,16 +32,12 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 		return nil
 	}
 
-	// If the "GatewayHealthy" type doesn't exist in the conditions,
-	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
-	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeGatewayHealthy) == nil {
-		pipeline.Status.Conditions = []metav1.Condition{}
-	}
-
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setPendingAndRunningConditions(ctx, &pipeline, withinPipelineCountLimit)
+	if r.flowHealthProbingEnabled {
+		r.setFlowHealthCondition(ctx, &pipeline)
+	}
+	r.setLegacyConditions(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -63,35 +60,114 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 		reason = conditions.ReasonDeploymentReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeGatewayHealthy, reason, status, pipeline.Generation, conditions.TracesMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeGatewayHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForTracePipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
-	status := metav1.ConditionTrue
-	reason := conditions.ReasonConfigurationGenerated
+	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline, withinPipelineCountLimit)
 
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonReferencedSecretMissing
+	condition := metav1.Condition{
+		Type:               conditions.TypeConfigurationGenerated,
+		Status:             status,
+		ObservedGeneration: pipeline.Generation,
+		Reason:             reason,
+		Message:            message,
 	}
 
-	if !withinPipelineCountLimit {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonMaxPipelinesExceeded
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.TracesMessage))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
+func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) (status metav1.ConditionStatus, reason string, message string) {
 	if !withinPipelineCountLimit {
-		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonMaxPipelinesExceeded, pipeline.Name, conditions.TracesMessage)
+		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded)
+	}
+
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing)
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		if tlsCertValidationRequired(pipeline) {
+			cert := pipeline.Spec.Output.Otlp.TLS.Cert
+			key := pipeline.Spec.Output.Otlp.TLS.Key
+
+			err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
+			return conditions.EvaluateTLSCertCondition(err)
+		}
+	}
+
+	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForTracePipeline(conditions.ReasonConfigurationGenerated)
+}
+
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+	var reason string
+	var status metav1.ConditionStatus
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err == nil {
+		logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
+		reason = flowHealthReasonFor(probeResult)
+		if probeResult.Healthy {
+			status = metav1.ConditionTrue
+		} else {
+			status = metav1.ConditionFalse
+		}
+	} else {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+		reason = conditions.ReasonFlowHealthy
+		status = metav1.ConditionUnknown
+	}
+
+	condition := metav1.Condition{
+		Type:               conditions.TypeFlowHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForTracePipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
+	if probeResult.AllDataDropped {
+		return conditions.ReasonAllDataDropped
+	}
+	if probeResult.SomeDataDropped {
+		return conditions.ReasonSomeDataDropped
+	}
+	if probeResult.QueueAlmostFull {
+		return conditions.ReasonBufferFillingUp
+	}
+	if probeResult.Throttling {
+		return conditions.ReasonGatewayThrottling
+	}
+	return conditions.ReasonFlowHealthy
+}
+
+func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
+	if !withinPipelineCountLimit {
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonMaxPipelinesExceeded,
+			conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded))
 		return
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
 	if referencesNonExistentSecret {
-		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, pipeline.Name, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonReferencedSecretMissing,
+			conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing))
 		return
 	}
 
@@ -102,9 +178,15 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	if !gatewayReady {
-		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonTraceGatewayDeploymentNotReady, pipeline.Name, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonTraceGatewayDeploymentNotReady,
+			conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
 		return
 	}
 
-	conditions.SetRunningCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonTraceGatewayDeploymentReady, pipeline.Name, conditions.TracesMessage)
+	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
+		conditions.ReasonTraceGatewayDeploymentReady,
+		conditions.ReasonTraceGatewayDeploymentNotReady,
+		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
+		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
 }

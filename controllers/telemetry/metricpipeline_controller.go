@@ -29,9 +29,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -39,27 +41,33 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 )
 
-// MetricPipelineReconciler reconciles a MetricPipeline object
-type MetricPipelineReconciler struct {
+// MetricPipelineController reconciles a MetricPipeline object
+type MetricPipelineController struct {
 	client.Client
-
-	reconciler *metricpipeline.Reconciler
+	reconcileTriggerChan <-chan event.GenericEvent
+	reconciler           *metricpipeline.Reconciler
 }
 
-func NewMetricPipelineReconciler(client client.Client, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
-	return &MetricPipelineReconciler{
-		Client:     client,
-		reconciler: reconciler,
+func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *metricpipeline.Reconciler) *MetricPipelineController {
+	return &MetricPipelineController{
+		Client:               client,
+		reconcileTriggerChan: reconcileTriggerChan,
+		reconciler:           reconciler,
 	}
 }
 
-func (r *MetricPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{})
+
+	b.WatchesRawSource(
+		&source.Channel{Source: r.reconcileTriggerChan},
+		&handler.EnqueueRequestForObject{},
+	)
 
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.Deployment{},
@@ -95,7 +103,7 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	).Complete(r)
 }
 
-func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object client.Object) []reconcile.Request {
+func (r *MetricPipelineController) mapCRDChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*apiextensionsv1.CustomResourceDefinition)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected CRD")
@@ -109,7 +117,7 @@ func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object cli
 	return requests
 }
 
-func (r *MetricPipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*operatorv1alpha1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
@@ -123,7 +131,7 @@ func (r *MetricPipelineReconciler) mapTelemetryChanges(ctx context.Context, obje
 	return requests
 }
 
-func (r *MetricPipelineReconciler) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
+func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
 	var pipelines telemetryv1alpha1.MetricPipelineList
 	var requests []reconcile.Request
 	err := r.List(ctx, &pipelines)

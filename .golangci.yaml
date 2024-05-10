@@ -4,40 +4,59 @@ run:
   build-tags:
     - e2e
 linters:
-  disable-all: true
-  enable:
-    - asasalint
-    - asciicheck
-    - bodyclose
-    - dogsled
-    - dupl
-    - dupword
-    - errcheck
-    - errchkjson
-    - exportloopref
-    - gci
-    - ginkgolinter
-    - gocheckcompilerdirectives
-    - gochecknoinits
-    - gocyclo
-    - gofmt
-    - goimports
-    - gosec
-    - gosimple
-    - govet
-    - importas
-    - ineffassign
-    - loggercheck
-    - misspell
-    - misspell
-    - nilnil
-    - nolintlint
-    - revive
-    - staticcheck
-    - stylecheck
-    - typecheck
-    - unparam
-    - unused
+  enable-all: true
+  disable:
+  # Depreacted linters
+    - deadcode
+    - exhaustivestruct
+    - golint
+    - ifshort
+    - interfacer
+    - maligned
+    - nosnakecase
+    - scopelint
+    - structcheck
+    - varcheck
+    - gomnd
+    - execinquery
+  # Linters to be enabled after fixing the issues
+    - intrange
+    - cyclop
+    - depguard
+    - exhaustive
+    - exhaustruct
+    - forcetypeassert
+    - funlen
+    - gochecknoglobals
+    - goconst
+    - gocritic
+    - godot
+    - godox
+    - err113
+    - gofumpt
+    - mnd
+    - ireturn
+    - lll
+    - maintidx
+    - makezero
+    - mirror
+    - nestif
+    - nlreturn
+    - noctx
+    - nonamedreturns
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - protogetter
+    - tagliatelle
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
+    - varnamelen
+    - whitespace
+    - wrapcheck
+    - wsl
 
 linters-settings:
   dupl:
@@ -52,34 +71,42 @@ linters-settings:
         alias: operatorv1alpha1
       - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
         alias: telemetryv1alpha1
+      - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1
+        alias: telemetryv1beta1
       - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
         alias: telemetrycontrollers
       - pkg: github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent
         alias: configmetricagent
+      - pkg: github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook
+        alias: selfmonitorwebhook
       - pkg: github.com/kyma-project/telemetry-manager/internal/resources/common
         alias: commonresources
       - pkg: github.com/kyma-project/telemetry-manager/test/testkit/k8s
         alias: kitk8s
       - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma
         alias: kitkyma
-      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics
-        alias: kitmetrics
-      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/otel/traces
-        alias: kittraces
       - pkg: github.com/kyma-project/telemetry-manager/webhook/logparser
         alias: logparserwebhook
       - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline
         alias: logpipelinewebhook
       - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks
         alias: logpipelinevalidationmocks
+      - pkg: github.com/prometheus/client_golang/api/prometheus/v1
+        alias: promv1
+      - pkg: github.com/prometheus/client_model/go
+        alias: prommodel
       - pkg: go.opentelemetry.io/otel/sdk/trace
         alias: tracesdk
+      - pkg: istio.io/api/networking/v1beta1
+        alias: istionetworkingv1beta1
+      - pkg: istio.io/client-go/pkg/apis/networking/v1beta1
+        alias: istionetworkingclientv1beta1
       - pkg: istio.io/api/security/v1beta1
         alias: istiosecurityv1beta
-      - pkg: istio.io/api/type/v1beta1
-        alias: istiotypev1beta1
       - pkg: istio.io/client-go/pkg/apis/security/v1beta1
         alias: istiosecurityclientv1beta
+      - pkg: istio.io/api/type/v1beta1
+        alias: istiotypev1beta1
       - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
         alias: $1$2
       - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
@@ -130,7 +157,8 @@ linters-settings:
     local-prefixes: github.com/kyma-project/telemetry-manager
 
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
 
   loggercheck:
     klog: true # Allows checking for the k8s.io/klog/v2.

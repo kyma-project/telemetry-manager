@@ -52,18 +52,15 @@ help: ## Display this help.
 
 ##@ Development
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
-	${GOLANGCI-LINT} run --fix
+	${GOLANGCI_LINT} run --fix
 
-lint-manifests:
-	hack/lint-manifests.sh
-
-lint: golangci-lint lint-manifests
+lint: golangci-lint ## Lint the codebase using the golangci-lint tool.
 	go version
-	${GOLANGCI-LINT} version
-	GO111MODULE=on ${GOLANGCI-LINT} run
+	${GOLANGCI_LINT} version
+	GO111MODULE=on ${GOLANGCI_LINT} run
 
 .PHONY: crd-docs-gen
-crd-docs-gen: tablegen ## Generates CRD spec into docs folder
+crd-docs-gen: tablegen manifests## Generates CRD spec into docs folder
 	${TABLE_GEN} --crd-filename ./config/crd/bases/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
@@ -71,9 +68,14 @@ crd-docs-gen: tablegen ## Generates CRD spec into docs folder
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	$(MAKE) crd-docs-gen
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
+	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=config/crd/bases
+
+.PHONY: manifests-dev
+manifests-dev: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -110,6 +112,11 @@ check-coverage: go-test-coverage ## Check tests coverage.
 .PHONY: build
 build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
+
+check-clean: ## Check if repo is clean up-to-date. Used after code generation
+	@echo "Checking if all generated files are up-to-date"
+	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-dev' to update them." && exit 1)
+
 
 tls.key:
 	@openssl genrsa -out tls.key 4096
@@ -157,7 +164,7 @@ undeploy: ## Undeploy resources based on the release (default) variant from the 
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-dev
-deploy-dev: manifests kustomize ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
+deploy-dev: manifests-dev kustomize ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/development | kubectl apply -f -
 

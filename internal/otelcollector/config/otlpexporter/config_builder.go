@@ -39,7 +39,7 @@ func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OtlpOu
 func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporter, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
+		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
 	exportersConfig := makeExportersConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
@@ -79,9 +79,9 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName 
 	return &otlpExporterConfig
 }
 
-func ExporterID(output *telemetryv1alpha1.OtlpOutput, pipelineName string) string {
+func ExporterID(protocol string, pipelineName string) string {
 	var outputType string
-	if output.Protocol == "http" {
+	if protocol == telemetryv1alpha1.OtlpProtocolHTTP {
 		outputType = "otlphttp"
 	} else {
 		outputType = "otlp"

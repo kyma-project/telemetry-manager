@@ -17,16 +17,16 @@ func makeProcessorsConfig(inputs inputSources) Processors {
 		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
 
 		if inputs.runtime {
-			processorsConfig.InsertInputSourceRuntime = makeEmittedByConfig(metric.InputSourceRuntime)
+			processorsConfig.SetInstrumentationScopeRuntime = makeInstrumentationScopeProcessor(metric.InputSourceRuntime)
 		}
 
 		if inputs.prometheus {
-			processorsConfig.InsertInputSourcePrometheus = makeEmittedByConfig(metric.InputSourcePrometheus)
+			processorsConfig.SetInstrumentationScopePrometheus = makeInstrumentationScopeProcessor(metric.InputSourcePrometheus)
 		}
 
 		if inputs.istio {
-			processorsConfig.InsertInputSourceIstio = makeEmittedByConfig(metric.InputSourceIstio)
 			processorsConfig.DropInternalCommunication = makeFilterToDropMetricsForTelemetryComponents()
+			processorsConfig.SetInstrumentationScopeIstio = makeInstrumentationScopeProcessor(metric.InputSourceIstio)
 		}
 	}
 
@@ -43,9 +43,9 @@ func makeBatchProcessorConfig() *config.BatchProcessor {
 
 func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
-		CheckInterval:        "0.1s",
+		CheckInterval:        "1s",
 		LimitPercentage:      75,
-		SpikeLimitPercentage: 20,
+		SpikeLimitPercentage: 15,
 	}
 }
 
@@ -55,18 +55,6 @@ func makeDeleteServiceNameConfig() *config.ResourceProcessor {
 			{
 				Action: "delete",
 				Key:    "service.name",
-			},
-		},
-	}
-}
-
-func makeEmittedByConfig(inputSource metric.InputSourceType) *config.ResourceProcessor {
-	return &config.ResourceProcessor{
-		Attributes: []config.AttributeAction{
-			{
-				Action: "insert",
-				Key:    metric.InputSourceAttribute,
-				Value:  string(inputSource),
 			},
 		},
 	}

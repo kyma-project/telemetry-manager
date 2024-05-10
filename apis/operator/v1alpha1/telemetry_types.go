@@ -71,7 +71,7 @@ type Scaling struct {
 	// +kubebuilder:validation:Enum=Static
 	Type ScalingStrategyType `json:"type,omitempty"`
 
-	// Static is a scaling strategy allowing you to define a custom amount of replicas to be used for the gateway. Present only if Type =
+	// Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type =
 	// StaticScalingStrategyType.
 	// +optional
 	Static *StaticScaling `json:"static,omitempty"`
@@ -142,7 +142,7 @@ type TelemetryList struct {
 	Items           []Telemetry `json:"items"`
 }
 
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
+//nolint:init // SchemeBuilder's registration is required.
 func init() {
 	SchemeBuilder.Register(&Telemetry{}, &TelemetryList{})
 }

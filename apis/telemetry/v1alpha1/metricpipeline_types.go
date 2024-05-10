@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
+//nolint:init // SchemeBuilder's registration is required.
 func init() {
 	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }

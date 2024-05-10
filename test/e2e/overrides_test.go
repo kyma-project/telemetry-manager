@@ -17,34 +17,37 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 	const (
-		mockBackendName = "overrides-receiver"
-		mockNs          = "overrides-http-output"
-		pipelineName    = "overrides-pipeline"
 		appNameLabelKey = "app.kubernetes.io/name"
 	)
-	var telemetryExportURL string
-	var overrides *corev1.ConfigMap
-	var now time.Time
+
+	var (
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
+		overrides        *corev1.ConfigMap
+		now              time.Time
+	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipeline(pipelineName).
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSystemNamespaces(true).
-			WithSecretKeyRef(mockBackend.HostSecretRef()).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput()
-		metricPipeline := kitk8s.NewMetricPipeline(pipelineName)
-		tracePipeline := kitk8s.NewTracePipeline(pipelineName)
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName)
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName)
 		objs = append(objs, logPipeline.K8sObject(), metricPipeline.K8sObject(), tracePipeline.K8sObject())
 
 		return objs
@@ -75,12 +78,12 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have INFO level logs in the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -94,7 +97,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 
 		It("Should not have any DEBUG level logs in the backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -108,7 +111,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		})
 
 		It("Should add the overrides configmap and modify the log pipeline", func() {
-			overrides = kitk8s.NewOverrides(kitk8s.DEBUG).K8sObject()
+			overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, overrides)).Should(Succeed())
 
 			lookupKey := types.NamespacedName{
@@ -130,7 +133,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 
 		It("Should have DEBUG level logs in the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

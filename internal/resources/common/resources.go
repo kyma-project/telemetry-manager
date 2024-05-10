@@ -1,12 +1,17 @@
 package common
 
 import (
+	"strconv"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 type podSpecOption = func(pod *corev1.PodSpec)
@@ -92,6 +97,17 @@ func WithResources(resources corev1.ResourceRequirements) podSpecOption {
 		for i := range pod.Containers {
 			pod.Containers[i].Resources = resources
 		}
+	}
+}
+
+func WithGoMemLimitEnvVar(memory resource.Quantity) podSpecOption {
+	memoryLimit := memory.DeepCopy()
+	goMemLimit := memoryLimit.Value() / 100 * 80
+	return func(pod *corev1.PodSpec) {
+		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
+			Name:  config.EnvVarGoMemLimit,
+			Value: strconv.FormatInt(goMemLimit, 10),
+		})
 	}
 }
 

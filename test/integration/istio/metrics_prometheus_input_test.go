@@ -16,18 +16,19 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
-	const (
-		mockNs                           = "istio-metric-prometheus-input"
-		mockBackendName                  = "metric-agent-receiver"
-		httpsAnnotatedMetricProducerName = "metric-producer-https"
-		httpAnnotatedMetricProducerName  = "metric-producer-http"
-		unannotatedMetricProducerName    = "metric-producer"
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
+	var (
+		mockNs                           = suite.ID()
+		pipelineName                     = suite.ID()
+		httpsAnnotatedMetricProducerName = suite.IDWithSuffix("producer-https")
+		httpAnnotatedMetricProducerName  = suite.IDWithSuffix("producer-http")
+		unannotatedMetricProducerName    = suite.IDWithSuffix("producer")
 	)
-	var telemetryExportURL string
+	var backendExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -35,9 +36,9 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// Mocks namespace objects
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		httpsAnnotatedMetricProducer := prommetricgen.New(mockNs, prommetricgen.WithName(httpsAnnotatedMetricProducerName))
 		httpAnnotatedMetricProducer := prommetricgen.New(mockNs, prommetricgen.WithName(httpAnnotatedMetricProducerName))
@@ -51,8 +52,8 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			unannotatedMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
 
-		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-prometheus-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			PrometheusInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
@@ -75,7 +76,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
@@ -87,15 +88,15 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			// targets discovered via annotated pods must have no service label
 			Context("Annotated pods", func() {
 				It("Should scrape if prometheus.io/scheme=https", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
+					podScrapedMetricsShouldBeDelivered(backendExportURL, httpsAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme=http", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
+					podScrapedMetricsShouldBeDelivered(backendExportURL, httpAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme unset", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
+					podScrapedMetricsShouldBeDelivered(backendExportURL, unannotatedMetricProducerName)
 				})
 			})
 
@@ -103,15 +104,15 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			// targets discovered via annotated service must have the service label
 			Context("Annotated services", func() {
 				It("Should scrape if prometheus.io/scheme=https", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
+					serviceScrapedMetricsShouldBeDelivered(backendExportURL, httpsAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme=http", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
+					serviceScrapedMetricsShouldBeDelivered(backendExportURL, httpAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme unset", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
+					serviceScrapedMetricsShouldBeDelivered(backendExportURL, unannotatedMetricProducerName)
 				})
 			})
 		})

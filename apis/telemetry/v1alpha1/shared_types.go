@@ -70,6 +70,11 @@ type OtlpTLS struct {
 	Key *ValueType `json:"key,omitempty"`
 }
 
+const (
+	OtlpProtocolHTTP string = "http"
+	OtlpProtocolGRPC string = "grpc"
+)
+
 // OtlpOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
 type OtlpOutput struct {

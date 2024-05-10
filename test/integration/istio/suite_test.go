@@ -6,6 +6,11 @@ import (
 	"context"
 	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
+	istionetworkingclientv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	istiosecurityclientv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,21 +22,11 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	istiosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/format"
-)
-
-const (
-	// A label that designates a test as an operational one.
-	// Operational tests preserve K8s objects between test runs.
-	operationalTest = "operational"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var (
@@ -76,12 +71,13 @@ var _ = BeforeSuite(func() {
 	scheme := clientgoscheme.Scheme
 	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(operatorv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(istiosecv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(istiosecurityclientv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(istionetworkingclientv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	k8sClient, err = client.New(testEnv.Config, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(isOperational()).K8sObject()
+	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(suite.IsOperational()).K8sObject()
 	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
 	k8sObjects = []client.Object{
 		telemetryK8sObject,
@@ -96,7 +92,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-	if !isOperational() {
+	if !suite.IsOperational() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
@@ -110,10 +106,3 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
-
-// isOperational returns true if the test is invoked with an "operational" tag.
-func isOperational() bool {
-	labelsFilter := GinkgoLabelFilter()
-
-	return labelsFilter != "" && Label(operationalTest).MatchesLabelFilter(labelsFilter)
-}

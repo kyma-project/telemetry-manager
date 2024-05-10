@@ -21,6 +21,9 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,6 +38,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 const defaultReplicaCount int32 = 2
@@ -50,21 +55,43 @@ type DeploymentProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
-type Reconciler struct {
-	client.Client
-	config             Config
-	prober             DeploymentProber
-	overridesHandler   *overrides.Handler
-	istioStatusChecker istiostatus.Checker
+//go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
+type FlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
+//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
+type TLSCertValidator interface {
+	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
+}
+
+type Reconciler struct {
+	client.Client
+	config                     Config
+	prober                     DeploymentProber
+	flowHealthProbingEnabled   bool
+	flowHealthProber           FlowHealthProber
+	overridesHandler           *overrides.Handler
+	istioStatusChecker         istiostatus.Checker
+	tlsCertValidator           TLSCertValidator
+	pipelinesConditionsCleared bool
+}
+
+func NewReconciler(client client.Client,
+	config Config,
+	prober DeploymentProber,
+	flowHealthProbingEnabled bool,
+	flowHealthProber FlowHealthProber,
+	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
-		Client:             client,
-		config:             config,
-		prober:             prober,
-		overridesHandler:   overridesHandler,
-		istioStatusChecker: istiostatus.NewChecker(client),
+		Client:                   client,
+		config:                   config,
+		prober:                   prober,
+		flowHealthProbingEnabled: flowHealthProbingEnabled,
+		flowHealthProber:         flowHealthProber,
+		overridesHandler:         overridesHandler,
+		istioStatusChecker:       istiostatus.NewChecker(client),
+		tlsCertValidator:         tlscert.New(client),
 	}
 }
 
@@ -96,9 +123,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	defer func() {
 		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired); statusErr != nil {
 			if err != nil {
-				err = fmt.Errorf("failed while updating status: %v: %v", statusErr, err)
+				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
 			} else {
-				err = fmt.Errorf("failed to update status: %v", statusErr)
+				err = fmt.Errorf("failed to update status: %w", statusErr)
 			}
 		}
 	}()
@@ -116,44 +143,72 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
-	deployablePipelines, err := getDeployableTracePipelines(ctx, allPipelinesList.Items, r, lock)
+
+	if err = r.clearPipelinesConditions(ctx, allPipelinesList.Items); err != nil {
+		return fmt.Errorf("failed to clear the conditions list for trace pipelines: %w", err)
+	}
+
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
-	if len(deployablePipelines) == 0 {
+	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no trace pipeline ready for deployment")
 		return nil
 	}
 
-	if err = r.reconcileTraceGateway(ctx, pipeline, deployablePipelines); err != nil {
+	if err = r.reconcileTraceGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
+	}
+
+	if err := r.cleanUpOpenCensusService(ctx); err != nil {
+		return fmt.Errorf("failed to clean up OpenCensus service: %w", err)
 	}
 
 	return nil
 }
 
-// getDeployableTracePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, client client.Client, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
-	var deployablePipelines []telemetryv1alpha1.TracePipeline
+// getReconcilablePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
+	var reconcilablePipelines []telemetryv1alpha1.TracePipeline
 	for i := range allPipelines {
-		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
-			continue
-		}
-
-		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
-			continue
-		}
-
-		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i], lock)
 		if err != nil {
 			return nil, err
 		}
 
-		if hasLock {
-			deployablePipelines = append(deployablePipelines, allPipelines[i])
+		if isReconcilable {
+			reconcilablePipelines = append(reconcilablePipelines, allPipelines[i])
 		}
 	}
-	return deployablePipelines, nil
+	return reconcilablePipelines, nil
+}
+
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, lock *k8sutils.ResourceCountLock) (bool, error) {
+	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return false, nil
+	}
+
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return false, nil
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		cert := pipeline.Spec.Output.Otlp.TLS.Cert
+		key := pipeline.Spec.Output.Otlp.TLS.Key
+
+		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+			if !tlscert.IsCertAboutToExpireError(err) {
+				return false, nil
+			}
+		}
+	}
+	hasLock, err := lock.IsLockHolder(ctx, pipeline)
+	if err != nil {
+		return false, fmt.Errorf("failed to check lock: %w", err)
+	}
+	return hasLock, nil
+
 }
 
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
@@ -182,13 +237,13 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy, ports.OpenCensus)
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive).
+			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive).
 			WithAllowedPorts(allowedPorts)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
@@ -219,4 +274,54 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		}
 	}
 	return defaultReplicaCount
+}
+
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
+	otlp := pipeline.Spec.Output.Otlp
+	if otlp == nil {
+		return false
+	}
+	if otlp.TLS == nil {
+		return false
+	}
+
+	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil
+}
+
+// clearPipelinesConditions clears the status conditions for all TracePipelines only in the 1st reconciliation
+// This is done to allow the legacy conditions ("Running" and "Pending") to be always appended at the end of the conditions list even if new condition types are added
+// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+// TODO: Remove this logic after the end of the deprecation period of the legacy conditions ("Running" and "Pending")
+func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline) error {
+	if r.pipelinesConditionsCleared {
+		return nil
+	}
+
+	for i := range allPipelines {
+		allPipelines[i].Status.Conditions = []metav1.Condition{}
+		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
+			return fmt.Errorf("failed to update TracePipeline status: %w", err)
+		}
+	}
+	r.pipelinesConditionsCleared = true
+
+	return nil
+}
+
+// TODO: Remove this logic after the next release
+func (r *Reconciler) cleanUpOpenCensusService(ctx context.Context) error {
+	openCensusServiceName := "telemetry-trace-collector-internal"
+	openCensusService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openCensusServiceName,
+			Namespace: r.config.Gateway.Namespace,
+		},
+	}
+	if err := r.Delete(ctx, openCensusService); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to delete OpenCensus service: %s in namespace %s: %w", openCensusServiceName, r.config.Gateway.Namespace, err)
+	}
+	return nil
 }

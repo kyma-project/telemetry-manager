@@ -1,0 +1,232 @@
+
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: load-test-1
+spec:
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://trace-receiver.trace-load-test:4317
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: trace-load-test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: trace-load-generator
+  name: trace-load-generator
+  namespace: trace-load-test
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: trace-load-generator
+  template:
+    metadata:
+      labels:
+        app: trace-load-generator
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0
+          args:
+          - traces
+          - --otlp-insecure
+          - --otlp-endpoint
+          - "telemetry-otlp-traces.kyma-system:4317"
+          - --otlp-attributes
+          - "service.name=\"trace-load-generator\""
+          - --workers
+          - "5"
+          - --rate
+          - "2000"
+          - --duration
+          - "20m"
+          - --telemetry-attributes
+          - "key1=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key2=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key3=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key4=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key5=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key6=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key7=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key8=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key9=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key10=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key11=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key12=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key13=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key14=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key15=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key16=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key17=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key18=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key19=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key20=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key21=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key22=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key23=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key24=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key25=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key26=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key27=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key28=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key29=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key30=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key31=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key32=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key33=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key34=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key35=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key36=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key37=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key38=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key39=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          - --telemetry-attributes
+          - "key40=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          imagePullPolicy: IfNotPresent
+          name: telemetrygen
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trace-receiver
+  namespace: trace-load-test
+  labels:
+    app: trace-receiver
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${MY_POD_IP}:4317
+          http:
+            endpoint: ${MY_POD_IP}:4318
+    exporters:
+      debug:
+
+    service:
+      pipelines:
+        traces:
+          receivers:
+            - otlp
+          exporters:
+            - debug
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: trace-receiver
+    sidecar.istio.io/inject: "true"
+  name: trace-receiver
+  namespace: trace-load-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trace-receiver
+  template:
+    metadata:
+      labels:
+        app: trace-receiver
+        sidecar.istio.io/inject: "true"
+    spec:
+      volumes:
+        - name: collector-config
+          configMap:
+            name: trace-receiver
+      securityContext:
+        fsGroup: 101
+      containers:
+        - image: OTEL_IMAGE
+          name: otel-collector
+          resources:
+            limits:
+              memory: 1024Mi
+            requests:
+              memory: 1024Mi
+          volumeMounts:
+            - name: collector-config
+              mountPath: /etc/collector
+          args:
+            - --config=/etc/collector/config.yaml
+          env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: trace-receiver
+  name: trace-receiver
+  namespace: trace-load-test
+spec:
+  ports:
+    - name: grpc-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-otlp
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+  selector:
+    app: trace-receiver

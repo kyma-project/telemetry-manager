@@ -30,51 +30,44 @@ func RemoveResources(ctx context.Context, c client.Client, config *Config) error
 		Name:      config.BaseName,
 		Namespace: config.Namespace,
 	}
-	// Delete Deployment
-	deployment := &appsv1.Deployment{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, deployment); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	// Delete Configmap
-	configMap := &corev1.ConfigMap{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, configMap); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	// Delete Network policy
-	networkPolicy := &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, networkPolicy); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
+
+	if err := deleteObj(ctx, c, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
+		return err
 	}
 
-	// Delete RoleBinding
-	roleBinding := &rbacv1.RoleBinding{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, roleBinding); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	// Delete Role
-	role := &rbacv1.Role{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, role); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
+	if err := deleteObj(ctx, c, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
+		return err
 	}
 
-	// Delete service account
-	serviceAccount := &corev1.ServiceAccount{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, serviceAccount); err != nil {
+	if err := deleteObj(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.Service{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteObj(ctx context.Context, c client.Client, object client.Object) error {
+	if err := c.Delete(ctx, object); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -98,7 +91,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
-	configMap := makeConfigMap(name, config.SelfMonitorConfig)
+	configMap := makeConfigMap(name, config)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
@@ -106,6 +99,10 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, nil)
 	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, makeSelfMonitorDeployment(config, checksum)); err != nil {
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
+	}
+
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeService(name, ports.PrometheusPort)); err != nil {
+		return fmt.Errorf("failed to create self-monitor service: %w", err)
 	}
 
 	return nil
@@ -120,6 +117,24 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 		},
 	}
 	return &serviceAccount
+}
+
+func makeRole(name types.NamespacedName) *rbacv1.Role {
+	role := rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"services", "endpoints", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		},
+	}
+	return &role
 }
 
 func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
@@ -200,7 +215,7 @@ func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 	return networkPolicyPorts
 }
 
-func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.ConfigMap {
+func makeConfigMap(name types.NamespacedName, config *Config) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -208,7 +223,8 @@ func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.
 			Labels:    defaultLabels(name.Name),
 		},
 		Data: map[string]string{
-			"prometheus.yml": selfmonitorConfig,
+			"prometheus.yml":     config.SelfMonitorConfig,
+			"alerting_rules.yml": config.AlertRules,
 		},
 	}
 }
@@ -223,6 +239,7 @@ func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deplo
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
 		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
+		commonresources.WithGoMemLimitEnvVar(cfg.Deployment.MemoryLimit),
 	)
 
 	return &appsv1.Deployment{
@@ -247,24 +264,6 @@ func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deplo
 	}
 }
 
-func makeRole(name types.NamespacedName) *rbacv1.Role {
-	role := rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"services", "endpoints", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
-	}
-	return &role
-}
-
 func defaultLabels(baseName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name": baseName,
@@ -281,17 +280,7 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 			{
 				Name:  containerName,
 				Image: image,
-				Args:  []string{"--storage.tsdb.retention.time=6h", "--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus/", "--web.enable-lifecycle"},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						SecretRef: &corev1.SecretEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: baseName,
-							},
-							Optional: ptr.To(true),
-						},
-					},
-				},
+				Args:  []string{"--storage.tsdb.retention.time=6h", "--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus/"},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged:               ptr.To(false),
 					RunAsUser:                ptr.To(prometheusUser),
@@ -365,6 +354,28 @@ func makeResourceRequirements(cfg *Config) corev1.ResourceRequirements {
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    cfg.Deployment.CPURequest,
 			corev1.ResourceMemory: cfg.Deployment.MemoryRequest,
+		},
+	}
+}
+
+func makeService(name types.NamespacedName, port int) *corev1.Service {
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       int32(port),
+					TargetPort: intstr.FromInt32(int32(port)),
+				},
+			},
+			Selector: defaultLabels(name.Name),
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }

@@ -28,10 +28,10 @@ The gateways automatically enrich your data by adding the following attributes:
   4. Pod name.
   5. If none of the above is available, the value is `unknown_service`.
 - `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including but not limited to:
-  1. Pod name.
-  2. Deployment/DaemonSet/StatefulSet/Job name.
-  3. Namespace.
-  4. Cluster name.
+  - Pod name.
+  - Deployment/DaemonSet/StatefulSet/Job name.
+  - Namespace.
+  - Cluster name.
 
 ## Istio Support
 
@@ -40,5 +40,3 @@ The Telemetry module automatically detects whether Istio is available and inject
 ![Gateways-Istio](assets/gateways-istio.drawio.svg)
 
 Clients in the Istio service mesh transparently communicate to the gateway with mTLS. Clients that don't use Istio can communicate with the gateway in plain text mode. The same pattern applies for the communication to the backends running in the cluster. External clusters use the configuration as specified in the pipelines output section.
-
-

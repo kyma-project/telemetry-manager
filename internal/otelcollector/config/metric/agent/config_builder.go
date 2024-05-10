@@ -25,8 +25,8 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []telemetryv1
 
 	return &Config{
 		Base: config.Base{
-			Extensions: makeExtensionsConfig(),
-			Service:    makeServiceConfig(inputs),
+			Service:    config.DefaultService(makePipelinesConfig(inputs)),
+			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(inputs, isIstioActive),
 		Processors: makeProcessorsConfig(inputs),
@@ -85,37 +85,13 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
 	}
 }
 
-func makeExtensionsConfig() config.Extensions {
-	return config.Extensions{
-		HealthCheck: config.Endpoint{
-			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
-		},
-	}
-}
-
-func makeServiceConfig(inputs inputSources) config.Service {
-	return config.Service{
-		Pipelines: makePipelinesConfig(inputs),
-		Telemetry: config.Telemetry{
-			Metrics: config.Metrics{
-				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
-			},
-			Logs: config.Logs{
-				Level:    "info",
-				Encoding: "json",
-			},
-		},
-		Extensions: []string{"health_check"},
-	}
-}
-
 func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	pipelinesConfig := make(config.Pipelines)
 
 	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = config.Pipeline{
 			Receivers:  []string{"kubeletstats"},
-			Processors: []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-runtime", "batch"},
+			Processors: []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}
@@ -123,7 +99,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.prometheus {
 		pipelinesConfig["metrics/prometheus"] = config.Pipeline{
 			Receivers:  []string{"prometheus/app-pods", "prometheus/app-services"},
-			Processors: []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "batch"},
+			Processors: []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}
@@ -131,7 +107,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.istio {
 		pipelinesConfig["metrics/istio"] = config.Pipeline{
 			Receivers:  []string{"prometheus/istio"},
-			Processors: []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "resource/insert-input-source-istio", "batch"},
+			Processors: []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "transform/set-instrumentation-scope-istio", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}

@@ -25,7 +25,7 @@ func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedNa
 			log.V(1).Info("DaemonSet is not yet created")
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to get %s/%s DaemonSet: %v", name.Namespace, name.Name, err)
+		return false, fmt.Errorf("failed to get %s/%s DaemonSet: %w", name.Namespace, name.Name, err)
 	}
 
 	generation := ds.Generation
@@ -44,7 +44,7 @@ type DaemonSetAnnotator struct {
 func (dsa *DaemonSetAnnotator) SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error {
 	var ds appsv1.DaemonSet
 	if err := dsa.Get(ctx, name, &ds); err != nil {
-		return fmt.Errorf("failed to get %s/%s DaemonSet: %v", name.Namespace, name.Name, err)
+		return fmt.Errorf("failed to get %s/%s DaemonSet: %w", name.Namespace, name.Name, err)
 	}
 
 	patchedDS := *ds.DeepCopy()
@@ -57,7 +57,7 @@ func (dsa *DaemonSetAnnotator) SetAnnotation(ctx context.Context, name types.Nam
 	patchedDS.Spec.Template.ObjectMeta.Annotations[key] = value
 
 	if err := dsa.Patch(ctx, &patchedDS, client.MergeFrom(&ds)); err != nil {
-		return fmt.Errorf("failed to patch %s/%s DaemonSet: %v", name.Namespace, name.Name, err)
+		return fmt.Errorf("failed to patch %s/%s DaemonSet: %w", name.Namespace, name.Name, err)
 	}
 
 	return nil

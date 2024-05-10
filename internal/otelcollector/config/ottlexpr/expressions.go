@@ -32,3 +32,7 @@ func IsMatch(key, regexPattern string) string {
 func HasAttrOnDatapoint(key, value string) string {
 	return fmt.Sprintf("HasAttrOnDatapoint(\"%s\", \"%s\")", key, value)
 }
+
+func ScopeNameEquals(name string) string {
+	return fmt.Sprintf("instrumentation_scope.name == \"%s\"", name)
+}

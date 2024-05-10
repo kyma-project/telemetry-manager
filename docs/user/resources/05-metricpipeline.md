@@ -171,13 +171,29 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 The status of the MetricPipeline is determined by the condition types `GatewayHealthy`, `AgentHealthy` and `ConfigurationGenerated`:
 
-| Condition Type         | Condition Status | Condition Reason        | Condition Message                          |
-|------------------------|------------------|-------------------------|--------------------------------------------|
-| GatewayHealthy         | True             | DeploymentReady         | Metric gateway Deployment is ready         |
-| GatewayHealthy         | False            | DeploymentNotReady      | Metric gateway Deployment is not ready     |
-| AgentHealthy           | True             | AgentNotRequired        |                                            |
-| AgentHealthy           | True             | DaemonSetReady          | Metric agent DaemonSet is ready            |
-| AgentHealthy           | False            | DaemonSetNotReady       | Metric agent DaemonSet is not ready        |
-| ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
-| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
-| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |
+| Condition Type         | Condition Status | Condition Reason             | Condition Message                                                                    |
+|------------------------|------------------|------------------------------|--------------------------------------------------------------------------------------|
+| GatewayHealthy         | True             | DeploymentReady              | Metric gateway Deployment is ready                                                   |
+| GatewayHealthy         | False            | DeploymentNotReady           | Metric gateway Deployment is not ready                                               |
+| AgentHealthy           | True             | AgentNotRequired             |                                                                                      |
+| AgentHealthy           | True             | DaemonSetReady               | Metric agent DaemonSet is ready                                                      |
+| AgentHealthy           | False            | DaemonSetNotReady            | Metric agent DaemonSet is not ready                                                  |
+| ConfigurationGenerated | True             | ConfigurationGenerated       |                                                                                      |
+| ConfigurationGenerated | False            | ReferencedSecretMissing      | One or more referenced Secrets are missing                                           |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded         | Maximum pipeline count limit exceeded                                                |
+| ConfigurationGenerated | False            | TLSCertificateInvalid        | TLS certificate invalid                                                              |
+| ConfigurationGenerated | False            | TLSPrivateKeyInvalid         | TLS private key invalid                                                              |
+| ConfigurationGenerated | False            | TLSCertificateExpired        | TLS certificate expired on YYYY-MM-DD                                                |
+| ConfigurationGenerated | True             | TLSCertificateAboutToExpire  | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |
+| ConfigurationGenerated | False            | TLSCertificateKeyPairInvalid | TLS certificate and private key do not match                                         |
+
+
+Reflecting the MetricPipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
+
+| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                      |
+|----------------------|------------------|-------------------|----------------------------------------------------------------------------------------|
+| TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the metric flow                                                |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate |
+| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                   |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                                 |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting                                  |

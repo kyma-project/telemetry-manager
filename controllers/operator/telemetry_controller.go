@@ -34,26 +34,26 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 )
 
-type TelemetryReconciler struct {
+type TelemetryController struct {
 	client.Client
 
 	reconciler *telemetry.Reconciler
 	config     telemetry.Config
 }
 
-func NewTelemetryReconciler(client client.Client, reconciler *telemetry.Reconciler, config telemetry.Config) *TelemetryReconciler {
-	return &TelemetryReconciler{
+func NewTelemetryController(client client.Client, reconciler *telemetry.Reconciler, config telemetry.Config) *TelemetryController {
+	return &TelemetryController{
 		Client:     client,
 		reconciler: reconciler,
 		config:     config,
 	}
 }
 
-func (r *TelemetryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *TelemetryController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).
 		For(&operatorv1alpha1.Telemetry{}).
 		Watches(
@@ -80,7 +80,7 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Complete(r)
 }
 
-func (r *TelemetryReconciler) mapWebhook(ctx context.Context, object client.Object) []reconcile.Request {
+func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Object) []reconcile.Request {
 	webhook, ok := object.(*admissionregistrationv1.ValidatingWebhookConfiguration)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to ValidatingWebhookConfiguration")
@@ -93,7 +93,7 @@ func (r *TelemetryReconciler) mapWebhook(ctx context.Context, object client.Obje
 	return r.createTelemetryRequests(ctx)
 }
 
-func (r *TelemetryReconciler) mapLogPipeline(ctx context.Context, object client.Object) []reconcile.Request {
+func (r *TelemetryController) mapLogPipeline(ctx context.Context, object client.Object) []reconcile.Request {
 	logPipeline, ok := object.(*telemetryv1alpha1.LogPipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to LogPipeline")
@@ -106,7 +106,7 @@ func (r *TelemetryReconciler) mapLogPipeline(ctx context.Context, object client.
 	return r.createTelemetryRequests(ctx)
 }
 
-func (r *TelemetryReconciler) mapTracePipeline(ctx context.Context, object client.Object) []reconcile.Request {
+func (r *TelemetryController) mapTracePipeline(ctx context.Context, object client.Object) []reconcile.Request {
 	tracePipeline, ok := object.(*telemetryv1alpha1.TracePipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to TracePipeline")
@@ -119,20 +119,20 @@ func (r *TelemetryReconciler) mapTracePipeline(ctx context.Context, object clien
 	return r.createTelemetryRequests(ctx)
 }
 
-func (r *TelemetryReconciler) mapMetricPipeline(ctx context.Context, object client.Object) []reconcile.Request {
-	tracePipeline, ok := object.(*telemetryv1alpha1.MetricPipeline)
+func (r *TelemetryController) mapMetricPipeline(ctx context.Context, object client.Object) []reconcile.Request {
+	metricPipeline, ok := object.(*telemetryv1alpha1.MetricPipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to MetricPipeline")
 		return nil
 	}
-	if len(tracePipeline.Status.Conditions) == 0 {
+	if len(metricPipeline.Status.Conditions) == 0 {
 		return nil
 	}
 
 	return r.createTelemetryRequests(ctx)
 }
 
-func (r *TelemetryReconciler) createTelemetryRequests(ctx context.Context) []reconcile.Request {
+func (r *TelemetryController) createTelemetryRequests(ctx context.Context) []reconcile.Request {
 	var telemetries operatorv1alpha1.TelemetryList
 	err := r.List(ctx, &telemetries)
 	if err != nil {

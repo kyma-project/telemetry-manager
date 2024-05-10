@@ -21,10 +21,11 @@ func TestMetricComponentsCheck(t *testing.T) {
 	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated}
 
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.MetricPipeline
-		telemetryInDeletion bool
-		expectedCondition   *metav1.Condition
+		name                     string
+		pipelines                []telemetryv1alpha1.MetricPipeline
+		telemetryInDeletion      bool
+		flowHealthProbingEnabled bool
+		expectedCondition        *metav1.Condition
 	}{
 		{
 			name:                "should be healthy if no pipelines deployed",
@@ -182,6 +183,60 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (bar,foo)",
 			},
 		},
+		{
+			name: "should be healthy if telemetry flow probing enabled and not healthy",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayThrottling}).
+					Build(),
+			},
+			flowHealthProbingEnabled: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "GatewayThrottling",
+				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
+			},
+		},
+		{
+			name: "should not be healthy if telemetry flow probing enabled and healthy",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayThrottling}).
+					Build(),
+			},
+			flowHealthProbingEnabled: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "GatewayThrottling",
+				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
+			},
+		},
+		{
+			name: "should return show tlsCertInvalid if one of the pipelines has invalid tls cert",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateInvalid, Message: "TLS certificate invalid: unable to decode pem blocks"}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "TLSCertificateInvalid",
+				Message: "TLS certificate invalid: unable to decode pem blocks",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -197,7 +252,8 @@ func TestMetricComponentsCheck(t *testing.T) {
 			fakeClient := b.Build()
 
 			m := &metricComponentsChecker{
-				client: fakeClient,
+				client:                   fakeClient,
+				flowHealthProbingEnabled: test.flowHealthProbingEnabled,
 			}
 
 			condition, err := m.Check(context.Background(), test.telemetryInDeletion)

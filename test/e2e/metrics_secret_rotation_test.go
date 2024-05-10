@@ -16,14 +16,17 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
+		var pipelineName = suite.ID()
+
 		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", kitkyma.DefaultNamespaceName,
 			kitk8s.WithStringData("metric-host", "http://localhost:4317"))
-		metricPipeline := kitk8s.NewMetricPipeline("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRef("metric-host"))
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("metric-host"))
 
 		BeforeAll(func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipeline.K8sObject())).Should(Succeed())
@@ -36,7 +39,7 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 		It("Should set ConfigurationGenerated condition to false", func() {
 			Eventually(func(g Gomega) {
 				var fetched telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: metricPipeline.Name()}
+				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
 				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
 				g.Expect(configurationGeneratedCond).NotTo(BeNil())
@@ -58,7 +61,7 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
 			})
 
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipeline.Name())
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 	})
 })

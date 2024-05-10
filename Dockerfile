@@ -1,7 +1,7 @@
 # Build the manager binary
-FROM golang:1.22.1-bullseye as builder
+FROM golang:1.22.2-bullseye as builder
 
-WORKDIR /workspace
+WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager 
 FROM europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.1-8adfb683
 
 WORKDIR /
-COPY --from=builder /workspace/manager .
+COPY --from=builder /telemetry-manager-workspace/manager .
 
 USER 65532:65532
 

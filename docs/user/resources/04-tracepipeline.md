@@ -147,10 +147,26 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 
 > **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
-| Condition Type         | Condition Status | Condition Reason        | Condition Message                          |
-|------------------------|------------------|-------------------------|--------------------------------------------|
-| GatewayHealthy         | True             | DeploymentReady         | Trace gateway Deployment is ready          |
-| GatewayHealthy         | False            | DeploymentNotReady      | Trace gateway Deployment is not ready      |
-| ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
-| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
-| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |
+| Condition Type         | Condition Status | Condition Reason             | Condition Message                                                                    |
+|------------------------|------------------|------------------------------|--------------------------------------------------------------------------------------|
+| GatewayHealthy         | True             | DeploymentReady              | Trace gateway Deployment is ready                                                    |
+| GatewayHealthy         | False            | DeploymentNotReady           | Trace gateway Deployment is not ready                                                |
+| ConfigurationGenerated | True             | ConfigurationGenerated       |                                                                                      |
+| ConfigurationGenerated | False            | ReferencedSecretMissing      | One or more referenced Secrets are missing                                           |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded         | Maximum pipeline count limit exceeded                                                |
+| ConfigurationGenerated | False            | TLSCertificateInvalid        | TLS certificate invalid                                                              |
+| ConfigurationGenerated | False            | TLSPrivateKeyInvalid         | TLS private key invalid                                                              |
+| ConfigurationGenerated | False            | TLSCertificateExpired        | TLS certificate expired on YYYY-MM-DD                                                |
+| ConfigurationGenerated | True             | TLSCertificateAboutToExpire  | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |
+| ConfigurationGenerated | False            | TLSCertificateKeyPairInvalid | TLS certificate and private key do not match                                         |
+
+
+Reflecting the TracePipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
+
+| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                       |
+|----------------------|------------------|-------------------|-----------------------------------------------------------------------------------------|
+| TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the trace flow                                                  |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive metrics at the current rate |
+| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                    |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                   |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                    |

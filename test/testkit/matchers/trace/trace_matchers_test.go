@@ -1,12 +1,14 @@
 package trace
 
 import (
+	crand "crypto/rand"
+	"encoding/binary"
+	"math/rand"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 )
 
 var _ = Describe("WithTds", func() {
@@ -62,7 +64,7 @@ var _ = Describe("WithTraceID", func() {
 		rs := td.ResourceSpans().AppendEmpty()
 		spans := rs.ScopeSpans().AppendEmpty().Spans()
 
-		traceID := kittraces.NewTraceID()
+		traceID := newTraceID()
 		spans.AppendEmpty().SetTraceID(traceID)
 
 		Expect(mustMarshalTraces(td)).Should(ContainTd(ContainSpan(WithTraceID(Equal(traceID)))))
@@ -75,7 +77,7 @@ var _ = Describe("WithSpanID", func() {
 		rs := td.ResourceSpans().AppendEmpty()
 		spans := rs.ScopeSpans().AppendEmpty().Spans()
 
-		spanID := kittraces.NewSpanID()
+		spanID := newSpanID()
 		spans.AppendEmpty().SetSpanID(spanID)
 
 		Expect(mustMarshalTraces(td)).Should(ContainTd(ContainSpan(WithSpanID(Equal(spanID)))))
@@ -88,7 +90,7 @@ var _ = Describe("WithSpanIDs", func() {
 		rs := td.ResourceSpans().AppendEmpty()
 		spans := rs.ScopeSpans().AppendEmpty().Spans()
 
-		spanIDs := []pcommon.SpanID{kittraces.NewSpanID(), kittraces.NewSpanID()}
+		spanIDs := []pcommon.SpanID{newSpanID(), newSpanID()}
 		spans.AppendEmpty().SetSpanID(spanIDs[0])
 		spans.AppendEmpty().SetSpanID(spanIDs[1])
 
@@ -117,4 +119,23 @@ func mustMarshalTraces(td ptrace.Traces) []byte {
 		panic(err)
 	}
 	return bytes
+}
+
+func newSpanID() pcommon.SpanID {
+	var rngSeed int64
+	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
+	randSource := rand.New(rand.NewSource(rngSeed)) //nolint:gosec // random number generator is sufficient.
+	sid := pcommon.SpanID{}
+	_, _ = randSource.Read(sid[:])
+	return sid
+}
+
+func newTraceID() pcommon.TraceID {
+	var rngSeed int64
+	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
+	randSource := rand.New(rand.NewSource(rngSeed)) //nolint:gosec // random number generator is sufficient.
+	tid := pcommon.TraceID{}
+	_, _ = randSource.Read(tid[:])
+
+	return tid
 }
