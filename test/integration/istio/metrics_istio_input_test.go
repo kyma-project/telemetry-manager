@@ -63,12 +63,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			"source_workload",
 			"source_workload_namespace",
 		}
-		instrumentationScopeIstio = "io.kyma-project.telemetry/istio" // change this to metric.TransformedInstrumentationScopeIstio after PR: https://github.com/kyma-project/telemetry-manager/pull/1041
-		mockNs                    = suite.ID()
-		app1Ns                    = suite.IDWithSuffix("app-1")
-		app2Ns                    = suite.IDWithSuffix("app-2")
-		pipelineName              = suite.ID()
-		backendExportURL          string
+		mockNs           = suite.ID()
+		app1Ns           = suite.IDWithSuffix("app-1")
+		app2Ns           = suite.IDWithSuffix("app-2")
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
