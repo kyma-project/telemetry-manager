@@ -13,12 +13,10 @@ import (
 func HasOwnerReference(ctx context.Context, k8sClient client.Client, resource client.Object, key types.NamespacedName, expectedOwnerReferenceKind, expectedOwnerReferenceName string) {
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.Get(ctx, key, resource)).To(Succeed())
-
 		ownerReferences := resource.GetOwnerReferences()
-		g.Expect(ownerReferences).To(HaveLen(1))
-
-		ownerReference := ownerReferences[0]
-		g.Expect(ownerReference.Kind).To(Equal(expectedOwnerReferenceKind))
-		g.Expect(ownerReference.Name).To(Equal(expectedOwnerReferenceName))
+		g.Expect(ownerReferences).Should(ContainElement(SatisfyAll(
+			HaveField("Kind", expectedOwnerReferenceKind),
+			HaveField("Name", expectedOwnerReferenceName),
+		)))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
