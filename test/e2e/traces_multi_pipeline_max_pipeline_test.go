@@ -8,16 +8,14 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
@@ -61,8 +59,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
-				verifiers.TraceCollectorConfigShouldContainPipeline(ctx, k8sClient, pipelineName)
+				assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 			}
 		})
 
@@ -75,24 +72,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
 
-				verifiers.TraceCollectorConfigShouldNotContainPipeline(ctx, k8sClient, pipelineName)
+				assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+					Type:   conditions.TypeConfigurationGenerated,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonMaxPipelinesExceeded,
+				})
 
-				var fetched telemetryv1alpha1.TracePipeline
-				key := types.NamespacedName{Name: pipelineName}
-				Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
-
-				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
-				Expect(configurationGeneratedCond).NotTo(BeNil())
-				Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
-				Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
-
-				pendingCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypePending)
-				Expect(pendingCond).NotTo(BeNil())
-				Expect(pendingCond.Status).Should(Equal(metav1.ConditionTrue))
-				Expect(pendingCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
-
-				runningCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeRunning)
-				Expect(runningCond).To(BeNil())
+				assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+					Type:   conditions.TypePending,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonMaxPipelinesExceeded,
+				})
 			})
 		})
 
@@ -101,7 +91,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
-					verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline)
+					assert.TracePipelineHealthy(ctx, k8sClient, pipeline)
 				}
 			})
 		})

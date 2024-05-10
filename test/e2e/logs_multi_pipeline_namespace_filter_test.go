@@ -10,13 +10,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
@@ -77,13 +77,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have a running logpipelines", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineIncludeNamespaceName)
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineExcludeNamespaceName)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineIncludeNamespaceName)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineExcludeNamespaceName)
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mock1Ns, Name: backendIncludeNamespaceName})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mock2Ns, Name: backendExcludeNamespaceName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mock1Ns, Name: backendIncludeNamespaceName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mock2Ns, Name: backendExcludeNamespaceName})
 		})
 
 		It("Log pipeline include namespace should have logs from expected namespaces", func() {

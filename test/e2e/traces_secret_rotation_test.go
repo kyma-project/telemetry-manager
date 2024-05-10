@@ -7,17 +7,14 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
@@ -36,24 +33,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
-			Eventually(func(g Gomega) {
-				var fetched telemetryv1alpha1.TracePipeline
-				key := types.NamespacedName{Name: pipelineName}
-				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
 
-				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
-				g.Expect(configurationGeneratedCond).NotTo(BeNil())
-				g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
-				g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonReferencedSecretMissing))
-
-				pendingCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypePending)
-				g.Expect(pendingCond).NotTo(BeNil())
-				g.Expect(pendingCond.Status).Should(Equal(metav1.ConditionTrue))
-				g.Expect(pendingCond.Reason).Should(Equal(conditions.ReasonReferencedSecretMissing))
-
-				runningCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeRunning)
-				g.Expect(runningCond).To(BeNil())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypePending,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
 		})
 
 		It("Should not have trace gateway deployment", func() {
@@ -69,7 +59,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
 			})
 
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 	})
 

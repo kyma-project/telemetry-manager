@@ -1,4 +1,4 @@
-package verifiers
+package assert
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func ConfigMapShouldHaveKey(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedKey string) {
+func ConfigMapHasKey(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedKey string) {
 	Eventually(func(g Gomega) {
 		var configMap corev1.ConfigMap
 		g.Expect(k8sClient.Get(ctx, name, &configMap)).To(Succeed())

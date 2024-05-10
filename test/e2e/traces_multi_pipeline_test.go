@@ -8,11 +8,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
@@ -59,16 +59,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline1Name)
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipeline1Name)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipeline2Name)
 		})
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 		It("Should verify traces from telemetrygen are delivered", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, mockNs)
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backend1ExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backend2ExportURL, mockNs)
 		})
 	})
 })
