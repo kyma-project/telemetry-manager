@@ -113,14 +113,8 @@ func (b *Backend) buildResources() {
 
 	b.ExternalService = NewExternalService(b.name, b.namespace, b.signalType)
 
-	var endpoint string
-	if b.signalType == SignalTypeLogs {
-		endpoint = b.ExternalService.Host()
-	} else {
-		endpoint = b.ExternalService.OTLPGrpcEndpointURL()
-	}
 	b.hostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
-		kitk8s.WithStringData("host", endpoint)).Persistent(b.persistentHostSecret)
+		kitk8s.WithStringData("host", b.Host())).Persistent(b.persistentHostSecret)
 
 	if b.abortFaultPercentage > 0 {
 		b.virtualService = kitk8s.NewVirtualService("fault-injection", b.namespace, b.name).WithAbortFaultPercentage(b.abortFaultPercentage)
@@ -132,7 +126,15 @@ func (b *Backend) Name() string {
 }
 
 func (b *Backend) Host() string {
-	return fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
+	if b.ExternalService == nil {
+		return ""
+	}
+
+	if b.signalType == SignalTypeLogs {
+		return b.ExternalService.Host()
+	} else {
+		return b.ExternalService.OTLPGrpcEndpointURL()
+	}
 }
 
 func (b *Backend) HostSecretRefV1Alpha1() *telemetryv1alpha1.SecretKeyRef {
