@@ -9,7 +9,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -21,15 +20,15 @@ const (
 	telemetryDataFilename = "otlp-data.jsonl"
 	defaultNamespaceName  = "default"
 
-	otlpGRPCPortName     = "grpc-otlp"
-	otlpHTTPPortName     = "http-otlp"
-	otlpHTTPLogsPortName = "http-log"
-	exportPortName       = "http-web"
+	otlpGRPCPortName   = "grpc-otlp"
+	otlpHTTPPortName   = "http-otlp"
+	httpLogsPortName   = "http-logs"
+	httpExportPortName = "http-web"
 
-	otlpGRPCPort = 4317
-	otlpHTTPPort = 4318
-	otlpLogsPort = 9880
-	exportPort   = 80
+	otlpGRPCPort   = 4317
+	otlpHTTPPort   = 4318
+	httpLogsPort   = 9880
+	httpExportPort = 80
 )
 
 const (
@@ -114,20 +113,22 @@ func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
 
 	b.otelCollectorConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
-	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(exportPort)})
+	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(httpExportPort)})
 	b.otlpService = kitk8s.NewService(b.name, b.namespace).
 		WithPort(otlpGRPCPortName, otlpGRPCPort).
 		WithPort(otlpHTTPPortName, otlpHTTPPort).
-		WithPort(exportPortName, exportPort)
+		WithPort(httpExportPortName, httpExportPort)
+	host := b.Addr() // TODO: provide different methods for Log Pipeline  and Metric/Trace Pipeline
 
 	if b.signalType == SignalTypeLogs {
 		b.fluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
 		b.otelCollectorDeployment.WithFluentdConfigName(b.fluentDConfigMap.Name())
-		b.otlpService = b.otlpService.WithPort(otlpHTTPLogsPortName, otlpLogsPort)
+		b.otlpService = b.otlpService.WithPort(httpLogsPortName, httpLogsPort)
+		host = b.Host()
 	}
 
 	b.hostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
-		kitk8s.WithStringData("host", b.Host())).Persistent(b.persistentHostSecret)
+		kitk8s.WithStringData("host", host)).Persistent(b.persistentHostSecret)
 
 	if b.abortFaultPercentage > 0 {
 		b.virtualService = kitk8s.NewVirtualService("fault-injection", b.namespace, b.name).WithAbortFaultPercentage(b.abortFaultPercentage)
@@ -138,19 +139,19 @@ func (b *Backend) Name() string {
 	return b.name
 }
 
+func (b *Backend) Addr() string {
+	return fmt.Sprintf("%s:%d", b.Host(), b.Port())
+}
+
 func (b *Backend) Host() string {
-	if b.signalType == SignalTypeLogs {
-		return fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
-	} else {
-		return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", b.name, b.namespace, otlpGRPCPort)
-	}
+	return fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
 }
 
 func (b *Backend) Port() int {
 	if b.signalType == SignalTypeLogs {
-		return otlpLogsPort
+		return httpLogsPort
 	} else {
-		return ports.OTLPGRPC
+		return otlpGRPCPort
 	}
 }
 
@@ -163,7 +164,7 @@ func (b *Backend) HostSecretRefV1Beta1() *telemetryv1beta1.SecretKeyRef {
 }
 
 func (b *Backend) ExportURL(proxyClient *apiserverproxy.Client) string {
-	return proxyClient.ProxyURLForService(b.namespace, b.name, telemetryDataFilename, exportPort)
+	return proxyClient.ProxyURLForService(b.namespace, b.name, telemetryDataFilename, httpExportPort)
 }
 
 func (b *Backend) K8sObjects() []client.Object {
@@ -177,8 +178,8 @@ func (b *Backend) K8sObjects() []client.Object {
 	}
 
 	objects = append(objects, b.otelCollectorConfigMap.K8sObject())
-	objects = append(objects, b.otelCollectorDeployment.K8sObject(kitk8s.WithLabel("app", b.Name())))
-	objects = append(objects, b.otlpService.K8sObject(kitk8s.WithLabel("app", b.Name())))
+	objects = append(objects, b.otelCollectorDeployment.K8sObject(kitk8s.WithLabel("app", b.name)))
+	objects = append(objects, b.otlpService.K8sObject(kitk8s.WithLabel("app", b.name)))
 	objects = append(objects, b.hostSecret.K8sObject())
 	return objects
 }
