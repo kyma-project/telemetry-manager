@@ -16,17 +16,27 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
 )
 
-type SignalType string
-
 const (
 	// telemetryDataFilename is the filename for the OpenTelemetry collector's file exporter.
 	telemetryDataFilename = "otlp-data.jsonl"
 	defaultNamespaceName  = "default"
+
+	otlpGRPCPortName     = "grpc-otlp"
+	otlpHTTPPortName     = "http-otlp"
+	otlpHTTPLogsPortName = "http-log"
+	exportPortName       = "http-web"
+
+	otlpGRPCPort = 4317
+	otlpHTTPPort = 4318
+	otlpLogsPort = 9880
+	exportPort   = 80
 )
 
 const (
 	DefaultName = "backend"
 )
+
+type SignalType string
 
 const (
 	SignalTypeTraces  = "traces"
@@ -48,10 +58,9 @@ type Backend struct {
 	otelCollectorConfigMap  *ConfigMap
 	fluentDConfigMap        *fluentd.ConfigMap
 	otelCollectorDeployment *Deployment
+	otlpService             *kitk8s.Service
 	hostSecret              *kitk8s.Secret
 	virtualService          *kitk8s.VirtualService
-
-	ExternalService *ExternalService
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -105,14 +114,17 @@ func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
 
 	b.otelCollectorConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
-	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
+	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(exportPort)})
+	b.otlpService = kitk8s.NewService(b.name, b.namespace).
+		WithPort(otlpGRPCPortName, otlpGRPCPort).
+		WithPort(otlpHTTPPortName, otlpHTTPPort).
+		WithPort(exportPortName, exportPort)
 
 	if b.signalType == SignalTypeLogs {
 		b.fluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
 		b.otelCollectorDeployment.WithFluentdConfigName(b.fluentDConfigMap.Name())
+		b.otlpService = b.otlpService.WithPort(otlpHTTPLogsPortName, otlpLogsPort)
 	}
-
-	b.ExternalService = NewExternalService(b.name, b.namespace, b.signalType)
 
 	b.hostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
 		kitk8s.WithStringData("host", b.Host())).Persistent(b.persistentHostSecret)
@@ -127,20 +139,16 @@ func (b *Backend) Name() string {
 }
 
 func (b *Backend) Host() string {
-	if b.ExternalService == nil {
-		return ""
-	}
-
 	if b.signalType == SignalTypeLogs {
-		return b.ExternalService.Host()
+		return fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
 	} else {
-		return b.ExternalService.OTLPGrpcEndpointURL()
+		return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", b.name, b.namespace, otlpGRPCPort)
 	}
 }
 
 func (b *Backend) Port() int {
 	if b.signalType == SignalTypeLogs {
-		return HTTPLogPort
+		return otlpLogsPort
 	} else {
 		return ports.OTLPGRPC
 	}
@@ -155,7 +163,7 @@ func (b *Backend) HostSecretRefV1Beta1() *telemetryv1beta1.SecretKeyRef {
 }
 
 func (b *Backend) ExportURL(proxyClient *apiserverproxy.Client) string {
-	return proxyClient.ProxyURLForService(b.namespace, b.name, telemetryDataFilename, HTTPWebPort)
+	return proxyClient.ProxyURLForService(b.namespace, b.name, telemetryDataFilename, exportPort)
 }
 
 func (b *Backend) K8sObjects() []client.Object {
@@ -170,7 +178,7 @@ func (b *Backend) K8sObjects() []client.Object {
 
 	objects = append(objects, b.otelCollectorConfigMap.K8sObject())
 	objects = append(objects, b.otelCollectorDeployment.K8sObject(kitk8s.WithLabel("app", b.Name())))
-	objects = append(objects, b.ExternalService.K8sObject(kitk8s.WithLabel("app", b.Name())))
+	objects = append(objects, b.otlpService.K8sObject(kitk8s.WithLabel("app", b.Name())))
 	objects = append(objects, b.hostSecret.K8sObject())
 	return objects
 }
