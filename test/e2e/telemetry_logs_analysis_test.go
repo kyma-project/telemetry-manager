@@ -74,7 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 			WithName(otelCollectorLogPipelineName).
 			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
 			WithIncludeContainers("collector").
-			WithHTTPOutput(testutils.HTTPHost(otelCollectorLogBackend.Host())).
+			WithHTTPOutput(testutils.HTTPHost(otelCollectorLogBackend.Host()), testutils.HTTPPort(otelCollectorLogBackend.Port())).
 			Build()
 		objs = append(objs, &otelCollectorLogPipeline)
 
@@ -121,7 +121,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 			WithName(fluentBitLogPipelineName).
 			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
 			WithIncludeContainers("fluent-bit", "exporter").
-			WithHTTPOutput(testutils.HTTPHost(fluentBitLogBackend.Host())).
+			WithHTTPOutput(testutils.HTTPHost(fluentBitLogBackend.Host()), testutils.HTTPPort(fluentBitLogBackend.Port())).
 			Build()
 		objs = append(objs, &fluentBitLogPipeline)
 

@@ -36,7 +36,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 			healthyPipeline := testutils.NewLogPipelineBuilder().
 				WithName(healthyPipelineName).
-				WithHTTPOutput(testutils.HTTPHost(backend.Host())).
+				WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 				Build()
 			logProducer := loggen.New(mockNs)
 			objs = append(objs, logProducer.K8sObject())

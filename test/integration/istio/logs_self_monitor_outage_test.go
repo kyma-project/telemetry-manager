@@ -34,7 +34,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host())).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 			Build()
 
 		objs = append(objs, backend.K8sObjects()...)

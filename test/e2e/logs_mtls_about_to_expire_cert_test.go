@@ -42,6 +42,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithName(pipelineName).
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
+				testutils.HTTPPort(backend.Port()),
 				testutils.HTTPClientTLS(
 					clientCerts.CaCertPem.String(),
 					clientCerts.ClientCertPem.String(),

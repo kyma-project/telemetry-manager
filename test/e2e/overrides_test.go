@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithSystemNamespaces(true).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host())).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 			Build()
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName)
 		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName)

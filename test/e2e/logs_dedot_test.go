@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithIncludeContainers(loggen.DefaultContainerName).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPDedot(true)).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port()), testutils.HTTPDedot(true)).
 			Build()
 		objs = append(objs, &logPipeline)
 

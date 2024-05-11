@@ -43,7 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithName(pipelineName).
 			WithKeepAnnotations(false).
 			WithDropLabels(false).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host())).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 			Build()
 		objs = append(objs, &logPipeline)
 

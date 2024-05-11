@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"strconv"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered, func() {
@@ -44,6 +45,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered
 						Host: telemetryv1beta1.ValueType{
 							Value: backend.Host(),
 						},
+						Port: strconv.Itoa(backend.Port()),
 					},
 				},
 			},

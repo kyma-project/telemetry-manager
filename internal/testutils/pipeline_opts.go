@@ -2,6 +2,7 @@ package testutils
 
 import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"strconv"
 )
 
 type OTLPOutputOption func(*telemetryv1alpha1.OtlpOutput)
@@ -96,6 +97,12 @@ func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOptio
 			Namespace: secretNamespace,
 			Key:       key,
 		}}}
+	}
+}
+
+func HTTPPort(port int) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.HTTPOutput) {
+		output.Port = strconv.Itoa(port)
 	}
 }
 

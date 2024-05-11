@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			logPipeline1 := testutils.NewLogPipelineBuilder().
 				WithName(pipelineIncludeNamespaceName).
 				WithIncludeNamespaces(mock1Ns).
-				WithHTTPOutput(testutils.HTTPHost(backend1.Host())).
+				WithHTTPOutput(testutils.HTTPHost(backend1.Host()), testutils.HTTPPort(backend1.Port())).
 				Build()
 			objs = append(objs, &logPipeline1)
 
@@ -63,7 +63,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			logPipeline2 := testutils.NewLogPipelineBuilder().
 				WithName(pipelineIncludeNamespaceName).
 				WithExcludeNamespaces(mock1Ns).
-				WithHTTPOutput(testutils.HTTPHost(backend1.Host())).
+				WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 				Build()
 			objs = append(objs, &logPipeline2)
 

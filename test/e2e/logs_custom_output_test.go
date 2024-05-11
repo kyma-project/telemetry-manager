@@ -37,9 +37,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		customOutputTemplate := fmt.Sprintf(`
 	name   http
-	port   9880
+	port   %d
 	host   %s
-	format json`, backend.Host())
+	format json`, backend.Port(), backend.Host())
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithCustomOutput(customOutputTemplate).

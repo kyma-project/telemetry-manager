@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithIncludeContainers("istio-proxy").
-			WithHTTPOutput(testutils.HTTPHost(backend.Host())).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 			Build()
 
 		objs = append(objs, &logPipeline)

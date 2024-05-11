@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -27,16 +26,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
-			hostKey := "log-host"
-			httpHostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", kitkyma.DefaultNamespaceName,
-				kitk8s.WithStringData(hostKey, "http://log-host:9880")).K8sObject()
-			objs = append(objs, httpHostSecret)
 			for i := 0; i < maxNumberOfLogPipelines; i++ {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
-				pipeline := testutils.NewLogPipelineBuilder().
-					WithName(pipelineName).
-					WithHTTPOutput(testutils.HTTPHostFromSecret(httpHostSecret.Name, httpHostSecret.Namespace, hostKey)).
-					Build()
+				pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
 				objs = append(objs, &pipeline)
@@ -62,16 +54,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 		It("Should reject logpipeline creation after reaching max logpipeline", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
-				hostKey := "log-host"
-				pipelineHostSecret := kitk8s.NewOpaqueSecret("http-hostname", kitkyma.DefaultNamespaceName,
-					kitk8s.WithStringData(hostKey, "http://log-host:9880")).K8sObject()
+				pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
 
-				pipeline := testutils.NewLogPipelineBuilder().
-					WithName(pipelineName).
-					WithHTTPOutput(testutils.HTTPHostFromSecret(pipelineHostSecret.Name, pipelineHostSecret.Namespace, hostKey)).
-					Build()
-
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline, pipelineHostSecret)).ShouldNot(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline)).ShouldNot(Succeed())
 			})
 		})
 	})

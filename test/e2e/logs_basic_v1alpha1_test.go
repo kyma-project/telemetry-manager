@@ -35,7 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		logPipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host()))
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port()))
 		if suite.IsOperational() {
 			logPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
