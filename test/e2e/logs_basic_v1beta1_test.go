@@ -47,6 +47,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered
 							Value: backend.Host(),
 						},
 						Port: strconv.Itoa(backend.Port()),
+						URI:  "/",
+						TLSConfig: telemetryv1beta1.TLSConfig{
+							Disabled:                  true,
+							SkipCertificateValidation: true,
+						},
 					},
 				},
 			},
