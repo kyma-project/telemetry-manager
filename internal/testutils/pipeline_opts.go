@@ -1,8 +1,9 @@
 package testutils
 
 import (
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"strconv"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type OTLPOutputOption func(*telemetryv1alpha1.OtlpOutput)
