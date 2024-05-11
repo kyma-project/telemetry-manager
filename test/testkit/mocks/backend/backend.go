@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"net"
 	"path/filepath"
 	"strconv"
 
@@ -118,7 +119,10 @@ func (b *Backend) buildResources() {
 		WithPort(otlpGRPCPortName, otlpGRPCPort).
 		WithPort(otlpHTTPPortName, otlpHTTPPort).
 		WithPort(httpExportPortName, httpExportPort)
-	host := b.Addr() // TODO: provide different methods for Log Pipeline  and Metric/Trace Pipeline
+	//TODO: LogPipelines requires the host and the port to be separated.
+	// TracePipeline/MetricPipeline requires an endpoint in the format of scheme://host:port.
+	// The referencable secret is called host in both cases, but the value is different. It has to be refactored.
+	host := b.Endpoint()
 
 	if b.signalType == SignalTypeLogs {
 		b.fluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
@@ -139,8 +143,9 @@ func (b *Backend) Name() string {
 	return b.name
 }
 
-func (b *Backend) Addr() string {
-	return fmt.Sprintf("http://%s:%d", b.Host(), b.Port())
+func (b *Backend) Endpoint() string {
+	addr := net.JoinHostPort(b.Host(), strconv.Itoa(b.Port()))
+	return fmt.Sprintf("http://%s", addr)
 }
 
 func (b *Backend) Host() string {
