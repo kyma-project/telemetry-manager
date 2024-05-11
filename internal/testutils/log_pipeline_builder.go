@@ -19,7 +19,7 @@ type LogPipelineBuilder struct {
 
 	input telemetryv1alpha1.Input
 
-	customFilter string
+	filters []telemetryv1alpha1.Filter
 
 	httpOutput   *telemetryv1alpha1.HTTPOutput
 	lokiOutput   *telemetryv1alpha1.LokiOutput
@@ -81,7 +81,7 @@ func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
 }
 
 func (b *LogPipelineBuilder) WithCustomFilter(filter string) *LogPipelineBuilder {
-	b.customFilter = filter
+	b.filters = append(b.filters, telemetryv1alpha1.Filter{Custom: filter})
 	return b
 }
 
@@ -127,7 +127,8 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Labels: b.labels,
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: b.input,
+			Input:   b.input,
+			Filters: b.filters,
 			Output: telemetryv1alpha1.Output{
 				HTTP:   b.httpOutput,
 				Loki:   b.lokiOutput,
