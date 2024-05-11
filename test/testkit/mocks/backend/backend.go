@@ -140,7 +140,7 @@ func (b *Backend) Name() string {
 }
 
 func (b *Backend) Addr() string {
-	return fmt.Sprintf("%s:%d", b.Host(), b.Port())
+	return fmt.Sprintf("http://%s:%d", b.Host(), b.Port())
 }
 
 func (b *Backend) Host() string {
