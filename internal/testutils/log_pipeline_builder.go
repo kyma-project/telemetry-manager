@@ -92,6 +92,7 @@ func (b *LogPipelineBuilder) WithCustomFilter(filter string) *LogPipelineBuilder
 }
 
 func (b *LogPipelineBuilder) WithHTTPOutput(opts ...HTTPOutputOption) *LogPipelineBuilder {
+	b.httpOutput = defaultHTTPOutput()
 	for _, opt := range opts {
 		opt(b.httpOutput)
 	}
@@ -99,9 +100,7 @@ func (b *LogPipelineBuilder) WithHTTPOutput(opts ...HTTPOutputOption) *LogPipeli
 }
 
 func (b *LogPipelineBuilder) WithLokiOutput() *LogPipelineBuilder {
-	b.lokiOutput = &telemetryv1alpha1.LokiOutput{
-		URL: telemetryv1alpha1.ValueType{Value: "https://localhost:3100"},
-	}
+	b.lokiOutput = defaultLokiOutput()
 	return b
 }
 
@@ -125,9 +124,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 		b.name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
 	if b.httpOutput == nil && b.lokiOutput == nil && b.customOutput == "" {
-		b.httpOutput = &telemetryv1alpha1.HTTPOutput{
-			Host: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
-		}
+		b.httpOutput = defaultHTTPOutput()
 	}
 
 	logPipeline := telemetryv1alpha1.LogPipeline{
@@ -166,4 +163,16 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	}
 
 	return logPipeline
+}
+
+func defaultHTTPOutput() *telemetryv1alpha1.HTTPOutput {
+	return &telemetryv1alpha1.HTTPOutput{
+		Host: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
+	}
+}
+
+func defaultLokiOutput() *telemetryv1alpha1.LokiOutput {
+	return &telemetryv1alpha1.LokiOutput{
+		URL: telemetryv1alpha1.ValueType{Value: "https://localhost:3100"},
+	}
 }
