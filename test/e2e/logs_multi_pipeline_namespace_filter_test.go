@@ -61,7 +61,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			objs = append(objs, logProducer2.K8sObject())
 
 			logPipeline2 := testutils.NewLogPipelineBuilder().
-				WithName(pipelineIncludeNamespaceName).
+				WithName(pipelineExcludeNamespaceName).
 				WithExcludeNamespaces(mock1Ns).
 				WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 				Build()
