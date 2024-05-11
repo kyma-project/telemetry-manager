@@ -17,13 +17,7 @@ type LogPipelineBuilder struct {
 	labels            map[string]string
 	deletionTimeStamp metav1.Time
 
-	includeContainers []string
-	excludeContainers []string
-	includeNamespaces []string
-	excludeNamespaces []string
-	systemNamespaces  bool
-	keepAnnotations   bool
-	dropLabels        bool
+	input telemetryv1alpha1.Input
 
 	customFilter string
 
@@ -52,37 +46,37 @@ func (b *LogPipelineBuilder) WithLabels(labels map[string]string) *LogPipelineBu
 }
 
 func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPipelineBuilder {
-	b.includeContainers = containers
+	b.input.Application.Containers.Include = containers
 	return b
 }
 
 func (b *LogPipelineBuilder) WithExcludeContainers(containers ...string) *LogPipelineBuilder {
-	b.excludeContainers = containers
+	b.input.Application.Containers.Exclude = containers
 	return b
 }
 
 func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPipelineBuilder {
-	b.includeNamespaces = namespaces
+	b.input.Application.Namespaces.Include = namespaces
 	return b
 }
 
 func (b *LogPipelineBuilder) WithExcludeNamespaces(namespaces ...string) *LogPipelineBuilder {
-	b.excludeNamespaces = namespaces
+	b.input.Application.Namespaces.Exclude = namespaces
 	return b
 }
 
 func (b *LogPipelineBuilder) WithSystemNamespaces(enable bool) *LogPipelineBuilder {
-	b.systemNamespaces = enable
+	b.input.Application.Namespaces.System = enable
 	return b
 }
 
 func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder {
-	b.keepAnnotations = keep
+	b.input.Application.KeepAnnotations = keep
 	return b
 }
 
 func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
-	b.dropLabels = drop
+	b.input.Application.DropLabels = drop
 	return b
 }
 
@@ -133,21 +127,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Labels: b.labels,
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{
-				Application: telemetryv1alpha1.ApplicationInput{
-					Containers: telemetryv1alpha1.InputContainers{
-						Include: b.includeContainers,
-						Exclude: b.excludeContainers,
-					},
-					Namespaces: telemetryv1alpha1.InputNamespaces{
-						Include: b.includeNamespaces,
-						Exclude: b.excludeNamespaces,
-						System:  b.systemNamespaces,
-					},
-					KeepAnnotations: b.keepAnnotations,
-					DropLabels:      b.dropLabels,
-				},
-			},
+			Input: b.input,
 			Output: telemetryv1alpha1.Output{
 				HTTP:   b.httpOutput,
 				Loki:   b.lokiOutput,
