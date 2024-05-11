@@ -147,7 +147,8 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 
 func defaultHTTPOutput() *telemetryv1alpha1.HTTPOutput {
 	return &telemetryv1alpha1.HTTPOutput{
-		Host:   telemetryv1alpha1.ValueType{Value: "https://localhost"},
+		Host:   telemetryv1alpha1.ValueType{Value: "127.0.0.1"},
+		Port:   "8080",
 		URI:    "/",
 		Format: "json",
 		TLSConfig: telemetryv1alpha1.TLSConfig{
