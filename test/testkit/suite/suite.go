@@ -48,6 +48,7 @@ const (
 	LabelSelfMonitoringMetrics = "self-mon-metrics"
 	LabelV1Beta1               = "v1beta1"
 	LabelTelemetryLogsAnalysis = "telemetry-logs-analysis"
+	LabelMaxPipeline           = "max-pipeline"
 
 	// Istio test labels
 	LabelIntegration                    = "integration"

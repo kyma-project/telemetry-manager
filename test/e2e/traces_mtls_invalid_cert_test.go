@@ -5,15 +5,16 @@ package e2e
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
@@ -56,17 +57,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should not have running pipelines", func() {
-			verifiers.TracePipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
-		})
-
 		It("Should have a tlsCertificateInvalid Condition set in pipeline conditions", func() {
-			verifiers.TracePipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateInvalid)
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateInvalid,
+			})
 		})
 
 		It("Should have telemetryCR showing tls certificate expired for trace component in its status", func() {
-			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "TraceComponentsHealthy", conditions.ReasonTLSCertificateInvalid, false)
+			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   "TraceComponentsHealthy",
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateInvalid,
+			})
 		})
-
 	})
 })

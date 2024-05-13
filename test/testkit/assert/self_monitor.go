@@ -1,4 +1,4 @@
-package verifiers
+package assert
 
 import (
 	"net/http"
@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func SelfMonitorWebhookShouldHaveBeenCalled(proxyClient *apiserverproxy.Client) {
+func SelfMonitorWebhookCalled(proxyClient *apiserverproxy.Client) {
 	Eventually(func(g Gomega) {
 		telemetryManagerMetricsURL := proxyClient.ProxyURLForService(
 			kitkyma.TelemetryManagerMetricsServiceName.Namespace,
