@@ -8,12 +8,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
@@ -33,20 +34,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			objs = append(objs, backend.K8sObjects()...)
 			backendExportURL = backend.ExportURL(proxyClient)
 
-			healthyPipeline := kitk8s.NewLogPipelineV1Alpha1(healthyPipelineName).
-				WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-				WithHTTPOutput()
+			healthyPipeline := testutils.NewLogPipelineBuilder().
+				WithName(healthyPipelineName).
+				WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+				Build()
 			logProducer := loggen.New(mockNs)
 			objs = append(objs, logProducer.K8sObject())
-			objs = append(objs, healthyPipeline.K8sObject())
+			objs = append(objs, &healthyPipeline)
 
+			hostKey := "log-host"
 			unreachableHostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
-				kitk8s.WithStringData("log-host", "http://unreachable:9880"))
-			brokenPipeline := kitk8s.NewLogPipelineV1Alpha1(brokenPipelineName).
-				WithSecretKeyRef(unreachableHostSecret.SecretKeyRefV1Alpha1("log-host")).
-				WithHTTPOutput()
+				kitk8s.WithStringData(hostKey, "http://unreachable:9880")).K8sObject()
+			brokenPipeline := testutils.NewLogPipelineBuilder().
+				WithName(brokenPipelineName).
+				WithHTTPOutput(testutils.HTTPHostFromSecret(unreachableHostSecret.Name, unreachableHostSecret.Namespace, hostKey)).
+				Build()
 
-			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
+			objs = append(objs, &brokenPipeline, unreachableHostSecret)
 
 			return objs
 		}
@@ -61,16 +65,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, healthyPipelineName)
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, brokenPipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, healthyPipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, brokenPipelineName)
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have produced logs in the backend", func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
+			assert.LogsDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })

@@ -11,18 +11,22 @@ import (
 type tracePipelineV1Alpha1 struct {
 	persistent bool
 
-	name            string
-	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
-	otlpEndpoint    string
-	tls             *telemetryv1alpha1.OtlpTLS
-	protocol        string
-	endpointPath    string
+	name                 string
+	otlpEndpointRef      *telemetryv1alpha1.SecretKeyRef
+	otlpEndpoint         string
+	tls                  *telemetryv1alpha1.OtlpTLS
+	protocol             string
+	endpointPath         string
+	basicAuthUserRef     *telemetryv1alpha1.SecretKeyRef
+	basicAuthPasswordRef *telemetryv1alpha1.SecretKeyRef
+	headers              []telemetryv1alpha1.Header
 }
 
 func NewTracePipelineV1Alpha1(name string) *tracePipelineV1Alpha1 {
 	return &tracePipelineV1Alpha1{
 		name:         name,
 		otlpEndpoint: "http://unreachable:4317",
+		headers:      []telemetryv1alpha1.Header{},
 	}
 }
 
@@ -74,6 +78,42 @@ func (p *tracePipelineV1Alpha1) WithEndpointPath(path string) *tracePipelineV1Al
 	return p
 }
 
+func (p *tracePipelineV1Alpha1) WithBasicAuthUserFromSecret(basicAuthUserRef *telemetryv1alpha1.SecretKeyRef) *tracePipelineV1Alpha1 {
+	p.basicAuthUserRef = basicAuthUserRef
+	return p
+}
+
+func (p *tracePipelineV1Alpha1) WithBasicAuthPasswordFromSecret(basicAuthPasswordRef *telemetryv1alpha1.SecretKeyRef) *tracePipelineV1Alpha1 {
+	p.basicAuthPasswordRef = basicAuthPasswordRef
+	return p
+}
+
+func (p *tracePipelineV1Alpha1) WithHeader(name, prefix, value string) *tracePipelineV1Alpha1 {
+	p.headers = append(p.headers, telemetryv1alpha1.Header{
+		Name:   name,
+		Prefix: prefix,
+		ValueType: telemetryv1alpha1.ValueType{
+			Value: value,
+		},
+	})
+
+	return p
+}
+
+func (p *tracePipelineV1Alpha1) WithHeaderFromSecret(name string, prefix string, headerValueRef *telemetryv1alpha1.SecretKeyRef) *tracePipelineV1Alpha1 {
+	p.headers = append(p.headers, telemetryv1alpha1.Header{
+		Name:   name,
+		Prefix: prefix,
+		ValueType: telemetryv1alpha1.ValueType{
+			ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: headerValueRef,
+			},
+		},
+	})
+
+	return p
+}
+
 func (p *tracePipelineV1Alpha1) K8sObject() *telemetryv1alpha1.TracePipeline {
 	var labels Labels
 	if p.persistent {
@@ -84,6 +124,9 @@ func (p *tracePipelineV1Alpha1) K8sObject() *telemetryv1alpha1.TracePipeline {
 	otlpOutput := &telemetryv1alpha1.OtlpOutput{
 		Endpoint: telemetryv1alpha1.ValueType{},
 		TLS:      p.tls,
+		Authentication: &telemetryv1alpha1.AuthenticationOptions{
+			Basic: &telemetryv1alpha1.BasicAuthOptions{},
+		},
 	}
 	if p.otlpEndpointRef != nil {
 		otlpOutput.Endpoint.ValueFrom = &telemetryv1alpha1.ValueFromSource{
@@ -99,6 +142,22 @@ func (p *tracePipelineV1Alpha1) K8sObject() *telemetryv1alpha1.TracePipeline {
 
 	if len(p.endpointPath) > 0 {
 		otlpOutput.Path = p.endpointPath
+	}
+
+	if p.basicAuthUserRef != nil {
+		otlpOutput.Authentication.Basic.User.ValueFrom = &telemetryv1alpha1.ValueFromSource{
+			SecretKeyRef: p.basicAuthUserRef,
+		}
+	}
+
+	if p.basicAuthPasswordRef != nil {
+		otlpOutput.Authentication.Basic.Password.ValueFrom = &telemetryv1alpha1.ValueFromSource{
+			SecretKeyRef: p.basicAuthPasswordRef,
+		}
+	}
+
+	if len(p.headers) > 0 {
+		otlpOutput.Headers = p.headers
 	}
 
 	pipeline := telemetryv1alpha1.TracePipeline{

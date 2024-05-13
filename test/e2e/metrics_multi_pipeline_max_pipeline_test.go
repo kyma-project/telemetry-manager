@@ -8,20 +8,17 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 	Context("When reaching the pipeline limit", Ordered, func() {
 		const maxNumberOfMetricPipelines = 3
@@ -63,8 +60,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipelineName := range pipelinesNames {
-				verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
-				verifiers.MetricGatewayConfigShouldContainPipeline(ctx, k8sClient, pipelineName)
+				assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 			}
 		})
 
@@ -76,16 +72,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
-				Eventually(func(g Gomega) {
-					var fetched telemetryv1alpha1.MetricPipeline
-					key := types.NamespacedName{Name: pipelineName}
-					g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
-					configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
-					g.Expect(configurationGeneratedCond).NotTo(BeNil())
-					g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
-					g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
-				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-				verifiers.MetricGatewayConfigShouldNotContainPipeline(ctx, k8sClient, pipelineName)
+				assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+					Type:   conditions.TypeConfigurationGenerated,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonMaxPipelinesExceeded,
+				})
 			})
 		})
 
@@ -94,7 +85,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelinesNames[1:] {
-					verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipeline)
+					assert.MetricPipelineHealthy(ctx, k8sClient, pipeline)
 				}
 			})
 		})
