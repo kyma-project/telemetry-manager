@@ -41,7 +41,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 				Build()
 			objs = append(objs, &healthyPipeline)
 
-			secretName, secretNamespace, endpointKey := "trace-rcv-hostname-broken", kitkyma.DefaultNamespaceName, "trace-endpoint"
+			secretName, secretNamespace, endpointKey := "unreachable", kitkyma.DefaultNamespaceName, "trace-endpoint"
 			unreachableHostSecret := kitk8s.NewOpaqueSecret(secretName, secretNamespace,
 				kitk8s.WithStringData(endpointKey, "http://unreachable:4317"))
 			brokenPipeline := testutils.NewTracePipelineBuilder().
