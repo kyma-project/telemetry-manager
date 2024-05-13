@@ -36,12 +36,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithTLS(*clientCerts)
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(
+				testutils.HTTPHost(backend.Host()),
+				testutils.HTTPPort(backend.Port()),
+				testutils.HTTPClientTLS(
+					clientCerts.CaCertPem.String(),
+					clientCerts.ClientCertPem.String(),
+					clientCerts.ClientKeyPem.String(),
+				)).
+			Build()
 
-		objs = append(objs, pipeline.K8sObject())
+		objs = append(objs, &logPipeline)
 		return objs
 	}
 

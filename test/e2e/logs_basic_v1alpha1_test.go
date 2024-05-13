@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -32,11 +33,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			Persistent(suite.IsOperational())
-		objs = append(objs, logPipeline.K8sObject())
+		hostSecretRef := backend.HostSecretRefV1Alpha1()
+		logPipelineBuilder := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(
+				testutils.HTTPHostFromSecret(
+					hostSecretRef.Name,
+					hostSecretRef.Namespace,
+					hostSecretRef.Key,
+				),
+				testutils.HTTPPort(backend.Port()),
+			)
+		if suite.IsOperational() {
+			logPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
+		}
+		logPipeline := logPipelineBuilder.Build()
+
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}

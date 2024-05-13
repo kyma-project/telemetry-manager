@@ -1,6 +1,8 @@
 package testutils
 
 import (
+	"strconv"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
@@ -73,9 +75,10 @@ func OTLPClientTLS(cert, key string) OTLPOutputOption {
 
 type HTTPOutputOption func(output *telemetryv1alpha1.HTTPOutput)
 
-func HTTPClientTLS(cert, key string) HTTPOutputOption {
+func HTTPClientTLS(ca, cert, key string) HTTPOutputOption {
 	return func(output *telemetryv1alpha1.HTTPOutput) {
 		output.TLSConfig = telemetryv1alpha1.TLSConfig{
+			CA:   &telemetryv1alpha1.ValueType{Value: ca},
 			Cert: &telemetryv1alpha1.ValueType{Value: cert},
 			Key:  &telemetryv1alpha1.ValueType{Value: key},
 		}
@@ -95,5 +98,17 @@ func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOptio
 			Namespace: secretNamespace,
 			Key:       key,
 		}}}
+	}
+}
+
+func HTTPPort(port int) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.HTTPOutput) {
+		output.Port = strconv.Itoa(port)
+	}
+}
+
+func HTTPDedot(dedot bool) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.HTTPOutput) {
+		output.Dedot = dedot
 	}
 }

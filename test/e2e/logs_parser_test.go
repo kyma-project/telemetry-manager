@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
@@ -38,9 +39,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		logHTTPPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput()
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			Build()
 
 		parser := `Format regex
 Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
@@ -48,7 +50,7 @@ Time_Key time
 Time_Format %d/%b/%Y:%H:%M:%S %z
 Types user:string pass:string`
 		logRegexParser := kitk8s.NewLogParser("my-regex-parser", parser)
-		objs = append(objs, logHTTPPipeline.K8sObject())
+		objs = append(objs, &logPipeline)
 		objs = append(objs, logRegexParser.K8sObject())
 
 		return objs

@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -68,13 +69,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		// log pipeline
-		otelCollectorLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", otelCollectorLogBackend.Name())).
-			WithSecretKeyRef(otelCollectorLogBackend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
-			WithIncludeContainers([]string{"collector"})
-		otelCollectorLogPipelineName = otelCollectorLogPipeline.Name()
-		objs = append(objs, otelCollectorLogPipeline.K8sObject())
+		otelCollectorLogPipelineName = fmt.Sprintf("%s-pipeline", otelCollectorLogBackend.Name())
+		otelCollectorLogPipeline := testutils.NewLogPipelineBuilder().
+			WithName(otelCollectorLogPipelineName).
+			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
+			WithIncludeContainers("collector").
+			WithHTTPOutput(testutils.HTTPHost(otelCollectorLogBackend.Host()), testutils.HTTPPort(otelCollectorLogBackend.Port())).
+			Build()
+		objs = append(objs, &otelCollectorLogPipeline)
 
 		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
@@ -114,13 +116,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 		fluentBitLogbackendExportURL = fluentBitLogBackend.ExportURL(proxyClient)
 
 		// log pipeline
-		fluentBitLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())).
-			WithSecretKeyRef(fluentBitLogBackend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
-			WithIncludeContainers([]string{"fluent-bit", "exporter"})
-		fluentBitLogPipelineName = fluentBitLogPipeline.Name()
-		objs = append(objs, fluentBitLogPipeline.K8sObject())
+		fluentBitLogPipelineName = fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())
+		fluentBitLogPipeline := testutils.NewLogPipelineBuilder().
+			WithName(fluentBitLogPipelineName).
+			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
+			WithIncludeContainers("fluent-bit", "exporter").
+			WithHTTPOutput(testutils.HTTPHost(fluentBitLogBackend.Host()), testutils.HTTPPort(fluentBitLogBackend.Port())).
+			Build()
+		objs = append(objs, &fluentBitLogPipeline)
 
 		return objs
 	}
