@@ -20,9 +20,7 @@ func CreateObjects(ctx context.Context, cl client.Client, resources ...client.Ob
 				types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()},
 				existingResource,
 			); err == nil {
-				if err = cl.Delete(ctx, existingResource); err != nil {
-					return err
-				}
+				continue
 			}
 		}
 
