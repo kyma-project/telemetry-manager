@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -21,20 +22,20 @@ const (
 )
 
 var (
-	requestsInFlight = promauto.NewGauge(prometheus.GaugeOpts{
+	requestsInFlight = promauto.With(metrics.Registry).NewGauge(prometheus.GaugeOpts{
 		Name: metricPrefix + "in_flight_requests",
 		Help: "The current number of in-flight requests initiated by the self-monitoring prober.",
 	})
 
-	requestsTotal = promauto.NewCounterVec(
+	requestsTotal = promauto.With(metrics.Registry).NewCounterVec(
 		prometheus.CounterOpts{
 			Name: metricPrefix + "requests_total",
 			Help: "Total number of requests initiated by the self-monitoring prober.",
 		},
-		[]string{"code", "method"},
+		[]string{"code"},
 	)
 
-	requestDuration = promauto.NewHistogramVec(
+	requestDuration = promauto.With(metrics.Registry).NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "telemetry_self_monitor_prober_duration_seconds",
 			Help:    "A histogram of latencies for requests initiated by the self-monitoring prober.",
