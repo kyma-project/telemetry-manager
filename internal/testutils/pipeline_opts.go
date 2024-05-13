@@ -64,9 +64,10 @@ func OTLPCustomHeader(name, value, prefix string) OTLPOutputOption {
 	}
 }
 
-func OTLPClientTLS(cert, key string) OTLPOutputOption {
+func OTLPClientTLS(ca, cert, key string) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OtlpOutput) {
 		output.TLS = &telemetryv1alpha1.OtlpTLS{
+			CA:   &telemetryv1alpha1.ValueType{Value: ca},
 			Cert: &telemetryv1alpha1.ValueType{Value: cert},
 			Key:  &telemetryv1alpha1.ValueType{Value: key},
 		}
