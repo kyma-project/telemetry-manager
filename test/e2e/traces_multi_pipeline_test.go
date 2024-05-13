@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 			backend2ExportURL = backend2.ExportURL(proxyClient)
 
 			tracePipeline2 := testutils.NewTracePipelineBuilder().
-				WithName(pipeline1Name).
+				WithName(pipeline2Name).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 				Build()
 			objs = append(objs, &tracePipeline2)
