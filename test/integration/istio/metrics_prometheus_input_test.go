@@ -129,7 +129,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
 			ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
-			ContainScope(WithScopeName(ContainSubstring(InstrumentationScopePrometheus)))),
+			ContainScope(WithScopeName(ContainSubstring(InstrumentationScopePrometheus))),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
