@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"fmt"
+	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -152,7 +153,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 							ContainDataPointAttrs(HaveKeyWithValue("response_code", "200")),
 							ContainDataPointAttrs(HaveKeyWithValue("request_protocol", "http")),
 							ContainDataPointAttrs(HaveKeyWithValue("connection_security_policy", "mutual_tls")),
-						)))),
+						)),
+						ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeIstio))),
+					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -165,7 +168,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			assert.MetricsFromNamespaceNotDelivered(proxyClient, backendExportURL, app2Ns)
 		})
 
-		It("Should verify that istio metric with source_workload=telemetry-metric-agent does not exist", func() {
+		It("Should verify that istio metric with source_workload=telemetry-metric-gateway does not exist", func() {
 			verifyMetricIsNotPresent(backendExportURL, "source_workload", "telemetry-telemetry-gateway")
 		})
 		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {
