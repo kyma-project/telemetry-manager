@@ -95,7 +95,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
-					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopeRuntime)))),
+					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -107,7 +107,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(Not(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
-					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopeRuntime)))),
+					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
 				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -119,7 +119,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
-					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopePrometheus)))),
+					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopePrometheus))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -131,7 +131,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(Not(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
-					WithScope(ContainElement(WithScopeName(ContainSubstring(InstrumentationScopePrometheus)))),
+					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopePrometheus))),
 				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
