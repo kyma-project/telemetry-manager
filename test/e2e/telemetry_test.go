@@ -106,14 +106,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 	Context("When a misconfigured TracePipeline exists", Ordered, func() {
 		var (
-			tracePipelineName                        = suite.IDWithSuffix("missing-secret")
-			secretName, secretNamespace, endpointKey = "non-existent-secret", "default", "endpoint"
+			tracePipelineName = suite.IDWithSuffix("missing-secret")
 		)
 
 		BeforeAll(func() {
 			tracePipeline := testutils.NewTracePipelineBuilder().
 				WithName(tracePipelineName).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret(secretName, secretNamespace, endpointKey)).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret("non-existent-secret", kitkyma.DefaultNamespaceName, "endpoint")).
 				Build()
 
 			DeferCleanup(func() {

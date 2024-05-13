@@ -71,3 +71,7 @@ func (s *Secret) Persistent(p bool) *Secret {
 func (s *Secret) Name() string {
 	return s.name
 }
+
+func (s *Secret) Namespace() string {
+	return s.namespace
+}

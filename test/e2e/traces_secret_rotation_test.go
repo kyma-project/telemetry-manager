@@ -22,11 +22,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	Context("When tracepipeline with missing secret reference exists", Ordered, func() {
 		var pipelineName = suite.ID()
 
-		secretName, secretNamespace, endpointKey := "backend", kitkyma.DefaultNamespaceName, "trace-endpoint"
-		secret := kitk8s.NewOpaqueSecret(secretName, secretNamespace, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+		endpointKey := "trace-endpoint"
+		secret := kitk8s.NewOpaqueSecret("missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
 		tracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
-			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secretName, secretNamespace, endpointKey)).
+			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 			Build()
 
 		BeforeAll(func() {

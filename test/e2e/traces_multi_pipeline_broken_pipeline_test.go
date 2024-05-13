@@ -41,12 +41,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 				Build()
 			objs = append(objs, &healthyPipeline)
 
-			secretName, secretNamespace, endpointKey := "unreachable", kitkyma.DefaultNamespaceName, "trace-endpoint"
-			unreachableHostSecret := kitk8s.NewOpaqueSecret(secretName, secretNamespace,
+			endpointKey := "trace-endpoint"
+			unreachableHostSecret := kitk8s.NewOpaqueSecret("unreachable", kitkyma.DefaultNamespaceName,
 				kitk8s.WithStringData(endpointKey, "http://unreachable:4317"))
 			brokenPipeline := testutils.NewTracePipelineBuilder().
 				WithName(brokenPipelineName).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret(secretName, secretNamespace, endpointKey)).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret(unreachableHostSecret.Name(), unreachableHostSecret.Namespace(), endpointKey)).
 				Build()
 
 			objs = append(objs, &brokenPipeline, unreachableHostSecret.K8sObject())
