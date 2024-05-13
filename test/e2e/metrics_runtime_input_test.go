@@ -104,7 +104,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
-					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime)))),
+					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

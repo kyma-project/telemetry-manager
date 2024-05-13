@@ -154,7 +154,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 							ContainDataPointAttrs(HaveKeyWithValue("request_protocol", "http")),
 							ContainDataPointAttrs(HaveKeyWithValue("connection_security_policy", "mutual_tls")),
 						)),
-						ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeIstio)))),
+						ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeIstio))),
 					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
