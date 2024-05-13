@@ -45,14 +45,14 @@ import (
 )
 
 var (
-	logPipelinesCurrent = promauto.With(metrics.Registry).NewGauge(
+	logPipelinesAll = promauto.With(metrics.Registry).NewGauge(
 		prometheus.GaugeOpts{
 			Name: "telemetry_all_logpipelines",
 			Help: "Number of log pipelines.",
 		},
 	)
 
-	logPipelinesUnsupportedCurrent = promauto.NewGauge(
+	logPipelinesUnsupported = promauto.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "telemetry_unsupported_logpipelines",
 			Help: "Number of log pipelines with custom filters or outputs.",
@@ -271,8 +271,8 @@ func (r *Reconciler) updateMetrics(ctx context.Context) error {
 		return err
 	}
 
-	logPipelinesCurrent.Set(float64(count(&allPipelines, isNotMarkedForDeletion)))
-	logPipelinesUnsupportedCurrent.Set(float64(count(&allPipelines, isUnsupported)))
+	logPipelinesAll.Set(float64(count(&allPipelines, isNotMarkedForDeletion)))
+	logPipelinesUnsupported.Set(float64(count(&allPipelines, isUnsupported)))
 
 	return nil
 }
