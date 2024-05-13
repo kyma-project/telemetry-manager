@@ -39,7 +39,7 @@ var (
 
 	requestDuration = promauto.With(metrics.Registry).NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "telemetry_self_monitor_prober_duration_seconds",
+			Name:    metricPrefix + "duration_seconds",
 			Help:    "A histogram of latencies for requests initiated by the self-monitoring prober.",
 			Buckets: prometheus.DefBuckets,
 		},
