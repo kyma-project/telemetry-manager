@@ -20,10 +20,6 @@ func CreateObjects(ctx context.Context, cl client.Client, resources ...client.Ob
 				types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()},
 				existingResource,
 			); err == nil {
-				if versionsMatch(resource, existingResource) {
-					continue
-				}
-
 				if err = cl.Delete(ctx, existingResource); err != nil {
 					return err
 				}
@@ -71,14 +67,4 @@ func labelMatches(labels Labels, label, value string) bool {
 	}
 
 	return l == value
-}
-
-func versionsMatch(newObj, existingObj client.Object) bool {
-	newVersion := newObj.GetLabels()[VersionLabelName]
-	existingVersion, ok := existingObj.GetLabels()[VersionLabelName]
-	if !ok {
-		return true
-	}
-
-	return newVersion == existingVersion
 }
