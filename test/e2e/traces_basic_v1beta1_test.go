@@ -42,6 +42,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelV1Beta1), func(
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
+		// creating a trace pipeline explicitly since the testutils.TracePipelineBuilder is not available in the v1beta1 API
 		tracePipeline := telemetryv1beta1.TracePipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,
