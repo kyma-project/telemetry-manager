@@ -13,7 +13,8 @@ import (
 type MetricPipelineBuilder struct {
 	randSource rand.Source
 
-	name string
+	name   string
+	labels map[string]string
 
 	inRuntime    *telemetryv1alpha1.MetricPipelineRuntimeInput
 	inPrometheus *telemetryv1alpha1.MetricPipelinePrometheusInput
@@ -36,6 +37,11 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 
 func (b *MetricPipelineBuilder) WithName(name string) *MetricPipelineBuilder {
 	b.name = name
+	return b
+}
+
+func (b *MetricPipelineBuilder) WithLabels(labels map[string]string) *MetricPipelineBuilder {
+	b.labels = labels
 	return b
 }
 
@@ -178,7 +184,8 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 
 	pipeline := telemetryv1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: b.labels,
 		},
 		Status: telemetryv1alpha1.MetricPipelineStatus{
 			Conditions: b.statusConditions,

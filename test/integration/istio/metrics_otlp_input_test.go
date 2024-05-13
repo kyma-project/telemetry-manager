@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -49,16 +50,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		objs = append(objs, backend2.K8sObjects()...)
 		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipeline1Name).
-			WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1()).
-			OtlpInput(true)
-		objs = append(objs, metricPipeline.K8sObject())
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipeline1Name).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+			Build()
+		objs = append(objs, &metricPipeline)
 
-		metricPipelineIstiofiedBackend := kitk8s.NewMetricPipelineV1Alpha1(pipeline2Name).
-			WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1()).
-			OtlpInput(true)
+		metricPipelineIstiofiedBackend := testutils.NewMetricPipelineBuilder().
+			WithName(pipeline2Name).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+			Build()
 
-		objs = append(objs, metricPipelineIstiofiedBackend.K8sObject())
+		objs = append(objs, &metricPipelineIstiofiedBackend)
 
 		// set peerauthentication to strict explicitly
 		peerAuth := kitk8s.NewPeerAuthentication(backend.DefaultName, istiofiedBackendNs)

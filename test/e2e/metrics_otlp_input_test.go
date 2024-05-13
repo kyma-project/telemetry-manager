@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -31,10 +32,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		backendExportURL = backend.ExportURL(proxyClient)
 		objs = append(objs, backend.K8sObjects()...)
 
-		pipelineWithoutOTLP := kitk8s.NewMetricPipelineV1Alpha1(suite.ID()).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			OtlpInput(false)
-		objs = append(objs, pipelineWithoutOTLP.K8sObject())
+		pipelineWithoutOTLP := testutils.NewMetricPipelineBuilder().
+			WithName(suite.ID()).
+			WithOTLPInput(false).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		objs = append(objs, &pipelineWithoutOTLP)
 
 		objs = append(objs, telemetrygen.New(appNs, telemetrygen.SignalTypeMetrics).K8sObject())
 		return objs

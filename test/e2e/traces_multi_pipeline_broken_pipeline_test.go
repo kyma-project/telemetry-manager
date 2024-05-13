@@ -48,13 +48,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 				WithName(brokenPipelineName).
 				WithOTLPOutput(testutils.OTLPEndpointFromSecret(unreachableHostSecret.Name(), unreachableHostSecret.Namespace(), endpointKey)).
 				Build()
-
 			objs = append(objs, &brokenPipeline, unreachableHostSecret.K8sObject())
 
 			objs = append(objs,
 				telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
 			)
-
 			return objs
 		}
 

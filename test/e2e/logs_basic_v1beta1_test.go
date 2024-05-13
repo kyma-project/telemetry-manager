@@ -36,7 +36,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		// creating a trace pipeline explicitly since the testutils.LogPipelineBuilder is not available in the v1beta1 API
+		// creating a log pipeline explicitly since the testutils.LogPipelineBuilder is not available in the v1beta1 API
 		logPipeline := telemetryv1beta1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,

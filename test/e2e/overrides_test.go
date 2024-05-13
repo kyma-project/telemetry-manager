@@ -51,9 +51,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			WithSystemNamespaces(true).
 			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 			Build()
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName)
+		metricPipeline := testutils.NewMetricPipelineBuilder().WithName(pipelineName).Build()
 		tracePipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
-		objs = append(objs, &logPipeline, metricPipeline.K8sObject(), &tracePipeline)
+		objs = append(objs, &logPipeline, &metricPipeline, &tracePipeline)
 
 		return objs
 	}

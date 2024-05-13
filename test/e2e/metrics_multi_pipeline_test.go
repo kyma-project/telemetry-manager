@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -42,19 +43,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			objs = append(objs, backendRuntime.K8sObjects()...)
 			backendRuntimeExportURL = backendRuntime.ExportURL(proxyClient)
 
-			metricPipelineRuntime := kitk8s.NewMetricPipelineV1Alpha1(pipelineRuntimeName).
-				WithOutputEndpointFromSecret(backendRuntime.HostSecretRefV1Alpha1()).
-				RuntimeInput(true)
-			objs = append(objs, metricPipelineRuntime.K8sObject())
+			metricPipelineRuntime := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineRuntimeName).
+				WithRuntimeInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint(backendRuntime.Endpoint())).
+				Build()
+			objs = append(objs, &metricPipelineRuntime)
 
 			backendPrometheus := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendPrometheusName))
 			objs = append(objs, backendPrometheus.K8sObjects()...)
 			backendPrometheusExportURL = backendPrometheus.ExportURL(proxyClient)
 
-			metricPipelinePrometheus := kitk8s.NewMetricPipelineV1Alpha1(pipelinePrometheusName).
-				WithOutputEndpointFromSecret(backendPrometheus.HostSecretRefV1Alpha1()).
-				PrometheusInput(true)
-			objs = append(objs, metricPipelinePrometheus.K8sObject())
+			metricPipelinePrometheus := testutils.NewMetricPipelineBuilder().
+				WithName(pipelinePrometheusName).
+				WithPrometheusInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint(backendPrometheus.Endpoint())).
+				Build()
+			objs = append(objs, &metricPipelinePrometheus)
 
 			metricProducer := prommetricgen.New(mockNs)
 

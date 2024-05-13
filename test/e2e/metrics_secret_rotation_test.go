@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -21,15 +22,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
 		var pipelineName = suite.ID()
 
-		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", kitkyma.DefaultNamespaceName,
-			kitk8s.WithStringData("metric-host", "http://localhost:4317"))
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("metric-host"))
+		endpointKey := "trace-endpoint"
+		secret := kitk8s.NewOpaqueSecret("missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+			Build()
 
 		BeforeAll(func() {
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipeline.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &metricPipeline)).Should(Succeed())
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, metricPipeline.K8sObject(), hostSecret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &metricPipeline, secret.K8sObject())).Should(Succeed())
 			})
 		})
 
@@ -51,7 +55,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have running metricpipeline", func() {
 			By("Creating missing secret", func() {
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, secret.K8sObject())).Should(Succeed())
 			})
 
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)

@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -27,12 +28,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		var objs []client.Object
 
 		pipelineName := suite.ID()
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
-			WithProtocol("http").
-			WithOutputEndpoint(endpoint).WithEndpointPath(path)
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(endpoint), testutils.OTLPEndpointPath(path), testutils.OTLPProtocol("http")).
+			Build()
 
 		endpointDataKey = fmt.Sprintf("%s_%s", "OTLP_ENDPOINT", kitkyma.MakeEnvVarCompliant(pipelineName))
-		objs = append(objs, metricPipeline.K8sObject())
+		objs = append(objs, &metricPipeline)
 		return objs
 	}
 
