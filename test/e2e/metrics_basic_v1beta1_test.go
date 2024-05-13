@@ -10,10 +10,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -40,11 +42,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelV1Beta1), Orde
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Beta1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Beta1())
+		// creating a metric pipeline explicitly since the testutils.MetricPipelineBuilder is not available in the v1beta1 API
+		metricPipeline := telemetryv1beta1.MetricPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1beta1.MetricPipelineSpec{
+				Output: telemetryv1beta1.MetricPipelineOutput{
+					OTLP: &telemetryv1beta1.OTLPOutput{
+						Endpoint: telemetryv1beta1.ValueType{
+							Value: backend.Endpoint(),
+						},
+					},
+				},
+			},
+		}
 		objs = append(objs,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
-			metricPipeline.K8sObject(),
+			&metricPipeline,
 		)
 
 		return objs

@@ -60,12 +60,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		)
 
 		BeforeAll(func() {
-			metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(metricPipelineName).K8sObject()
+			metricPipeline := testutils.NewMetricPipelineBuilder().WithName(metricPipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, metricPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &metricPipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &metricPipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with MetricPipeline endpoints", func() {

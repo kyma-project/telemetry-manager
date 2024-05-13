@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -23,12 +24,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 	Context("When a MetricPipeline exists", Ordered, func() {
 
 		BeforeAll(func() {
-			pipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).K8sObject()
+			pipeline := testutils.NewMetricPipelineBuilder().WithName(pipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &pipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline)).Should(Succeed())
 		})
 
 		It("Should have a ServiceAccount owned by the MetricPipeline", func() {

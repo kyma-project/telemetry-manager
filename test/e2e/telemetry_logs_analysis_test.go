@@ -79,14 +79,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 		objs = append(objs, &otelCollectorLogPipeline)
 
 		// metrics & traces
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
-			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
-			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(otelCollectorNs)).
-			IstioInput(true, kitk8s.IncludeNamespacesV1Alpha1(otelCollectorNs)).
-			OtlpInput(true).
-			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(otelCollectorNs))
-		metricPipelineName = metricPipeline.Name()
-		objs = append(objs, metricPipeline.K8sObject())
+		metricPipelineName = fmt.Sprintf("%s-pipeline", metricBackend.Name())
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(metricPipelineName).
+			WithPrometheusInput(true, testutils.IncludeNamespaces(otelCollectorNs)).
+			WithRuntimeInput(true, testutils.IncludeNamespaces(otelCollectorNs)).
+			WithIstioInput(true, testutils.IncludeNamespaces(otelCollectorNs)).
+			WithOTLPOutput(testutils.OTLPEndpoint(metricBackend.Endpoint())).
+			Build()
+		objs = append(objs, &metricPipeline)
 
 		tracePipelineName = fmt.Sprintf("%s-pipeline", traceBackend.Name())
 		tracePipeline := testutils.NewTracePipelineBuilder().

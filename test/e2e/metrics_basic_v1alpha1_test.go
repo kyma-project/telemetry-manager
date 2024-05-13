@@ -15,6 +15,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -40,12 +41,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			Persistent(suite.IsOperational())
+		hostSecretRef := backend.HostSecretRefV1Alpha1()
+		metricPipelineBuilder := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpointFromSecret(
+				hostSecretRef.Name,
+				hostSecretRef.Namespace,
+				hostSecretRef.Key,
+			))
+		if suite.IsOperational() {
+			metricPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
+		}
+		metricPipeline := metricPipelineBuilder.Build()
 		objs = append(objs,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
-			metricPipeline.K8sObject(),
+			&metricPipeline,
 		)
 
 		return objs

@@ -14,6 +14,7 @@ import (
 
 	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -39,10 +40,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			RuntimeInput(true)
-		objs = append(objs, metricPipeline.K8sObject())
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithRuntimeInput(true).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		objs = append(objs, &metricPipeline)
 
 		return objs
 	}
