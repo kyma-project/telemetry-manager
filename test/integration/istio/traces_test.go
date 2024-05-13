@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"net/http"
 )
@@ -56,11 +57,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		objs = append(objs, backend2.K8sObjects()...)
 		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
 
-		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipeline2Name).WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1())
-		objs = append(objs, istioTracePipeline.K8sObject())
+		istioTracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipeline2Name).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+			Build()
+		objs = append(objs, &istioTracePipeline)
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipeline1Name).WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1())
-		objs = append(objs, tracePipeline.K8sObject())
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipeline1Name).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+			Build()
+		objs = append(objs, &tracePipeline)
 
 		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).

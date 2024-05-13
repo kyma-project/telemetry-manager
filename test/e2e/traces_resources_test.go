@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -23,12 +24,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	Context("When a TracePipeline exists", Ordered, func() {
 
 		BeforeAll(func() {
-			pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).K8sObject()
+			tracePipeline := testutils.NewTracePipelineBuilder().
+				WithName(pipelineName).
+				Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have a ServiceAccount owned by the TracePipeline", func() {

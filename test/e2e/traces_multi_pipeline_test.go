@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -35,15 +36,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 			objs = append(objs, backend1.K8sObjects()...)
 			backend1ExportURL = backend1.ExportURL(proxyClient)
 
-			tracePipeline1 := kitk8s.NewTracePipelineV1Alpha1(pipeline1Name).WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1())
-			objs = append(objs, tracePipeline1.K8sObject())
+			tracePipeline1 := testutils.NewTracePipelineBuilder().
+				WithName(pipeline1Name).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+				Build()
+			objs = append(objs, &tracePipeline1)
 
 			backend2 := backend.New(mockNs, backend.SignalTypeTraces, backend.WithName(backend2Name))
 			objs = append(objs, backend2.K8sObjects()...)
 			backend2ExportURL = backend2.ExportURL(proxyClient)
 
-			tracePipeline2 := kitk8s.NewTracePipelineV1Alpha1(pipeline2Name).WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1())
-			objs = append(objs, tracePipeline2.K8sObject())
+			tracePipeline2 := testutils.NewTracePipelineBuilder().
+				WithName(pipeline1Name).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+				Build()
+			objs = append(objs, &tracePipeline2)
 
 			objs = append(objs, telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject())
 			return objs

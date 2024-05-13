@@ -87,10 +87,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(otelCollectorNs))
 		metricPipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", traceBackend.Name())).
-			WithOutputEndpointFromSecret(traceBackend.HostSecretRefV1Alpha1())
-		tracePipelineName = tracePipeline.Name()
-		objs = append(objs, tracePipeline.K8sObject())
+
+		tracePipelineName = fmt.Sprintf("%s-pipeline", traceBackend.Name())
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(tracePipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.Endpoint())).
+			Build()
+		objs = append(objs, &tracePipeline)
 
 		// metrics istio set-up (trafficgen & telemetrygen)
 		objs = append(objs, trafficgen.K8sObjects(otelCollectorNs)...)

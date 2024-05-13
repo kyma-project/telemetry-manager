@@ -14,6 +14,20 @@ func OTLPEndpoint(endpoint string) OTLPOutputOption {
 	}
 }
 
+func OTLPEndpointFromSecret(secretName, secretNamespace, endpointKey string) OTLPOutputOption {
+	return func(output *telemetryv1alpha1.OtlpOutput) {
+		output.Endpoint = telemetryv1alpha1.ValueType{
+			ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      secretName,
+					Namespace: secretNamespace,
+					Key:       endpointKey,
+				},
+			},
+		}
+	}
+}
+
 func OTLPBasicAuth(user, password string) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OtlpOutput) {
 		output.Authentication = &telemetryv1alpha1.AuthenticationOptions{
@@ -71,6 +85,18 @@ func OTLPClientTLS(ca, cert, key string) OTLPOutputOption {
 			Cert: &telemetryv1alpha1.ValueType{Value: cert},
 			Key:  &telemetryv1alpha1.ValueType{Value: key},
 		}
+	}
+}
+
+func OTLPProtocol(protocol string) OTLPOutputOption {
+	return func(output *telemetryv1alpha1.OtlpOutput) {
+		output.Protocol = protocol
+	}
+}
+
+func OTLPEndpointPath(path string) OTLPOutputOption {
+	return func(output *telemetryv1alpha1.OtlpOutput) {
+		output.Path = path
 	}
 }
 
