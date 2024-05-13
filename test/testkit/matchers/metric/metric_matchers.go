@@ -35,6 +35,15 @@ func WithMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
+func WithScope(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(md pmetric.Metrics) ([]pmetric.ScopeMetrics, error) {
+		return getScope(md), nil
+	}, matcher)
+}
+func ContainScope(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithScope(gomega.ContainElement(matcher))
+}
+
 // ContainMetric is an alias for WithMetrics(gomega.ContainElement()).
 func ContainMetric(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithMetrics(gomega.ContainElement(matcher))
@@ -53,6 +62,12 @@ func WithResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
 // ContainResourceAttrs is an alias for WithResourceAttrs(gomega.ContainElement()).
 func ContainResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithResourceAttrs(gomega.ContainElement(matcher))
+}
+
+func WithScopeName(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(sm pmetric.ScopeMetrics) (string, error) {
+		return sm.Scope().Name(), nil
+	}, matcher)
 }
 
 func WithName(matcher types.GomegaMatcher) types.GomegaMatcher {

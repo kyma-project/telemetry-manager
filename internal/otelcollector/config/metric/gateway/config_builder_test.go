@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,21 +22,27 @@ func TestMakeConfig(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
+		})
 		require.NoError(t, err)
+
 		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
 		require.Equal(t, expectedEndpoint, actualExporterConfig.OTLP.Endpoint)
+
+		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST")
+		require.Equal(t, "http://localhost", string(envVars["OTLP_ENDPOINT_TEST"]))
 	})
 
 	t.Run("secure", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().
 			WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build()})
 		require.NoError(t, err)
-
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
 		require.False(t, actualExporterConfig.OTLP.TLS.Insecure)
 	})
@@ -45,25 +52,63 @@ func TestMakeConfig(t *testing.T) {
 			testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
 		)
 		require.NoError(t, err)
-
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
 		require.True(t, actualExporterConfig.OTLP.TLS.Insecure)
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		})
 		require.NoError(t, err)
-
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
+
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
 		headers := actualExporterConfig.OTLP.Headers
-
 		authHeader, existing := headers["Authorization"]
 		require.True(t, existing)
 		require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
+
+		require.Contains(t, envVars, "BASIC_AUTH_HEADER_TEST_BASIC_AUTH")
+		expectedBasicAuthHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("user:password")))
+		require.Equal(t, expectedBasicAuthHeader, string(envVars["BASIC_AUTH_HEADER_TEST_BASIC_AUTH"]))
+	})
+
+	t.Run("custom header", func(t *testing.T) {
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
+		})
+		require.NoError(t, err)
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-custom-header")
+
+		otlpExporterConfig := collectorConfig.Exporters["otlp/test-custom-header"]
+		headers := otlpExporterConfig.OTLP.Headers
+		customHeader, exists := headers["Authorization"]
+		require.True(t, exists)
+		require.Equal(t, "${HEADER_TEST_CUSTOM_HEADER_AUTHORIZATION}", customHeader)
+
+		require.Contains(t, envVars, "HEADER_TEST_CUSTOM_HEADER_AUTHORIZATION")
+		require.Equal(t, "Api-Token TOKEN_VALUE", string(envVars["HEADER_TEST_CUSTOM_HEADER_AUTHORIZATION"]))
+	})
+
+	t.Run("mtls", func(t *testing.T) {
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLS("cert", "key")).Build(),
+		})
+		require.NoError(t, err)
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-mtls")
+
+		otlpExporterConfig := collectorConfig.Exporters["otlp/test-mtls"]
+		require.Equal(t, "${OTLP_TLS_CERT_PEM_TEST_MTLS}", otlpExporterConfig.OTLP.TLS.CertPem)
+		require.Equal(t, "${OTLP_TLS_KEY_PEM_TEST_MTLS}", otlpExporterConfig.OTLP.TLS.KeyPem)
+
+		require.Contains(t, envVars, "OTLP_TLS_CERT_PEM_TEST_MTLS")
+		require.Equal(t, "cert", string(envVars["OTLP_TLS_CERT_PEM_TEST_MTLS"]))
+
+		require.Contains(t, envVars, "OTLP_TLS_KEY_PEM_TEST_MTLS")
+		require.Equal(t, "key", string(envVars["OTLP_TLS_KEY_PEM_TEST_MTLS"]))
 	})
 
 	t.Run("extensions", func(t *testing.T) {
@@ -123,7 +168,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-otlp",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -145,7 +189,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -168,7 +211,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -191,7 +233,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -213,7 +254,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -235,7 +275,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -258,7 +297,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -281,7 +319,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -304,7 +341,6 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
@@ -327,14 +363,13 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
-				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test-1").WithRuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
 			testutils.NewMetricPipelineBuilder().WithName("test-2").WithPrometheusInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
 			testutils.NewMetricPipelineBuilder().WithName("test-3").WithIstioInput(true).Build()},
@@ -355,7 +390,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/test-1-filter-by-namespace-runtime-input",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-1"].Processors)
 
@@ -370,7 +404,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-2"].Processors)
 
@@ -384,25 +417,49 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-diagnostic-metrics-if-input-source-istio",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-3"].Processors)
+
+		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_1")
+		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_2")
+		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_3")
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		config, _, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-		})
-		require.NoError(t, err)
+		tests := []struct {
+			name           string
+			goldenFileName string
+			withOtlpInput  bool
+		}{
+			{
+				name:           "OTLP Endpoint enabled",
+				goldenFileName: "config.yaml",
+				withOtlpInput:  true,
+			},
+			{
+				name:           "OTLP Endpoint disabled",
+				goldenFileName: "config_otlp_disabled.yaml",
+				withOtlpInput:  false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
 
-		configYAML, err := yaml.Marshal(config)
-		require.NoError(t, err, "failed to marshal config")
+				config, _, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(tt.withOtlpInput).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+				})
+				require.NoError(t, err)
 
-		goldenFilePath := filepath.Join("testdata", "config.yaml")
-		goldenFile, err := os.ReadFile(goldenFilePath)
-		require.NoError(t, err, "failed to load golden file")
+				configYAML, err := yaml.Marshal(config)
+				require.NoError(t, err, "failed to marshal config")
 
-		require.NoError(t, err)
-		require.Equal(t, string(goldenFile), string(configYAML))
+				goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
+				goldenFile, err := os.ReadFile(goldenFilePath)
+				require.NoError(t, err, "failed to load golden file")
+
+				require.NoError(t, err)
+				require.Equal(t, string(goldenFile), string(configYAML))
+			})
+		}
 	})
 }

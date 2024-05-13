@@ -13,6 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
@@ -21,7 +23,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, func() {
@@ -68,13 +69,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		// log pipeline
-		otelCollectorLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", otelCollectorLogBackend.Name())).
-			WithSecretKeyRef(otelCollectorLogBackend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
-			WithIncludeContainers([]string{"collector"})
-		otelCollectorLogPipelineName = otelCollectorLogPipeline.Name()
-		objs = append(objs, otelCollectorLogPipeline.K8sObject())
+		otelCollectorLogPipelineName = fmt.Sprintf("%s-pipeline", otelCollectorLogBackend.Name())
+		otelCollectorLogPipeline := testutils.NewLogPipelineBuilder().
+			WithName(otelCollectorLogPipelineName).
+			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
+			WithIncludeContainers("collector").
+			WithHTTPOutput(testutils.HTTPHost(otelCollectorLogBackend.Host()), testutils.HTTPPort(otelCollectorLogBackend.Port())).
+			Build()
+		objs = append(objs, &otelCollectorLogPipeline)
 
 		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
@@ -114,13 +116,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 		fluentBitLogbackendExportURL = fluentBitLogBackend.ExportURL(proxyClient)
 
 		// log pipeline
-		fluentBitLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())).
-			WithSecretKeyRef(fluentBitLogBackend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
-			WithIncludeContainers([]string{"fluent-bit", "exporter"})
-		fluentBitLogPipelineName = fluentBitLogPipeline.Name()
-		objs = append(objs, fluentBitLogPipeline.K8sObject())
+		fluentBitLogPipelineName = fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())
+		fluentBitLogPipeline := testutils.NewLogPipelineBuilder().
+			WithName(fluentBitLogPipelineName).
+			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
+			WithIncludeContainers("fluent-bit", "exporter").
+			WithHTTPOutput(testutils.HTTPHost(fluentBitLogBackend.Host()), testutils.HTTPPort(fluentBitLogBackend.Port())).
+			Build()
+		objs = append(objs, &fluentBitLogPipeline)
 
 		return objs
 	}
@@ -136,32 +139,32 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 		})
 
 		It("Should have running metric and trace gateways", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have running backends", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: otelCollectorLogBackendName})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: metricBackendName})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: traceBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: otelCollectorLogBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: metricBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: traceBackendName})
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, otelCollectorLogPipelineName)
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipelineName)
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, otelCollectorLogPipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, metricPipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, tracePipelineName)
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricbackendExportURL, otelCollectorNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, metricbackendExportURL, otelCollectorNs, telemetrygen.MetricNames)
 		})
 
 		It("Should push traces successfully", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, tracebackendExportURL, otelCollectorNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, tracebackendExportURL, otelCollectorNs)
 		})
 
 		It("Should not have any ERROR/WARNING logs in the OtelCollector containers", func() {
@@ -199,11 +202,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 		})
 
 		It("Should have a running backend", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: fluentBitNs, Name: fluentBitLogBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: fluentBitNs, Name: fluentBitLogBackendName})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, fluentBitLogPipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, fluentBitLogPipelineName)
 		})
 
 		It("Should not have any ERROR/WARNING logs in the FluentBit containers", func() {

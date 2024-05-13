@@ -11,6 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"fmt"
+	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
@@ -18,10 +20,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	// https://istio.io/latest/docs/reference/config/metrics/
 	var (
 		istioProxyMetricNames = []string{
@@ -103,15 +104,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Should verify istio proxy metric scraping", func() {
@@ -152,20 +153,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 							ContainDataPointAttrs(HaveKeyWithValue("response_code", "200")),
 							ContainDataPointAttrs(HaveKeyWithValue("request_protocol", "http")),
 							ContainDataPointAttrs(HaveKeyWithValue("connection_security_policy", "mutual_tls")),
-						)))),
+						)),
+						ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeIstio))),
+					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should deliver metrics from app-1 namespace", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, app1Ns, istioProxyMetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, app1Ns, istioProxyMetricNames)
 		})
 
 		It("Should not deliver metrics from app-2 namespace", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backendExportURL, app2Ns)
+			assert.MetricsFromNamespaceNotDelivered(proxyClient, backendExportURL, app2Ns)
 		})
 
-		It("Should verify that istio metric with source_workload=telemetry-metric-agent does not exist", func() {
+		It("Should verify that istio metric with source_workload=telemetry-metric-gateway does not exist", func() {
 			verifyMetricIsNotPresent(backendExportURL, "source_workload", "telemetry-telemetry-gateway")
 		})
 		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {

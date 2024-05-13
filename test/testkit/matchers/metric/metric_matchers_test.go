@@ -90,6 +90,16 @@ var _ = Describe("WithDataPointAttrs", func() {
 	})
 })
 
+var _ = Describe("Contain Instrumentation Scope", func() {
+	It("should apply matcher", func() {
+		md := pmetric.NewMetrics()
+		md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Scope().SetName("container")
+
+		Expect(mustMarshalMetrics(md)).Should(ContainMd(WithScope(HaveLen(1))))
+		Expect(mustMarshalMetrics(md)).Should(ContainMd(WithScope(ContainElement(WithScopeName(ContainSubstring("container"))))))
+	})
+})
+
 func mustMarshalMetrics(md pmetric.Metrics) []byte {
 	var marshaler pmetric.JSONMarshaler
 	bytes, err := marshaler.MarshalMetrics(md)
