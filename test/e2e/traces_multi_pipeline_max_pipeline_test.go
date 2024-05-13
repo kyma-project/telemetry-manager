@@ -13,6 +13,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -32,13 +33,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			var objs []client.Object
 			for i := 0; i < maxNumberOfTracePipelines; i++ {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
-				pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName)
+				pipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				objs = append(objs, pipeline.K8sObject())
+				objs = append(objs, &pipeline)
 
 				if i == 0 {
-					pipelineCreatedFirst = pipeline.K8sObject()
+					pipelineCreatedFirst = &pipeline
 				}
 			}
 
@@ -66,11 +67,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := suite.IDWithSuffix("limit-exceeding")
-				pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName)
-				pipelineCreatedLater = pipeline.K8sObject()
+				pipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
+				pipelineCreatedLater = &pipeline
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline)).Should(Succeed())
 
 				assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 					Type:   conditions.TypeConfigurationGenerated,

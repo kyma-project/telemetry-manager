@@ -15,6 +15,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -40,12 +41,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			Persistent(suite.IsOperational())
+		hostSecretRef := backend.HostSecretRefV1Alpha1()
+		tracePipelineBuilder := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpointFromSecret(
+				hostSecretRef.Name,
+				hostSecretRef.Namespace,
+				hostSecretRef.Key,
+			))
+		if suite.IsOperational() {
+			tracePipelineBuilder.WithLabels(kitk8s.PersistentLabel)
+		}
+		tracePipeline := tracePipelineBuilder.Build()
+
 		objs = append(objs,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
-			pipeline.K8sObject(),
+			&tracePipeline,
 		)
 		return objs
 	}

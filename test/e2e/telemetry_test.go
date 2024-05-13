@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -34,12 +33,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		)
 
 		BeforeAll(func() {
-			tracePipeline := kitk8s.NewTracePipelineV1Alpha1(tracePipelineName).K8sObject()
+			tracePipeline := testutils.NewTracePipelineBuilder().WithName(tracePipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with TracePipeline endpoints", func() {
@@ -108,20 +107,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 	Context("When a misconfigured TracePipeline exists", Ordered, func() {
 		var (
 			tracePipelineName = suite.IDWithSuffix("missing-secret")
-			OTLPEndpointRef   = &telemetryv1alpha1.SecretKeyRef{
-				Name:      "non-existent-secret",
-				Namespace: "default",
-				Key:       "endpoint",
-			}
 		)
 
 		BeforeAll(func() {
-			tracePipeline := kitk8s.NewTracePipelineV1Alpha1(tracePipelineName).WithOutputEndpointFromSecret(OTLPEndpointRef).K8sObject()
+			tracePipeline := testutils.NewTracePipelineBuilder().
+				WithName(tracePipelineName).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret("non-existent-secret", kitkyma.DefaultNamespaceName, "endpoint")).
+				Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with warning state", func() {

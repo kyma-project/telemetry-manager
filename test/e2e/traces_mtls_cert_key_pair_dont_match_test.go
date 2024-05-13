@@ -42,11 +42,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			ClientKeyPem:  clientCertsCreatedAgain.ClientKeyPem,
 		}
 
-		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			WithTLS(*invalidClientCerts)
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(backend.Endpoint()),
+				testutils.OTLPClientTLS(
+					invalidClientCerts.CaCertPem.String(),
+					invalidClientCerts.ClientCertPem.String(),
+					invalidClientCerts.ClientKeyPem.String(),
+				),
+			).
+			Build()
 
-		objs = append(objs, pipeline.K8sObject(),
+		objs = append(objs, &tracePipeline,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
 		)
 

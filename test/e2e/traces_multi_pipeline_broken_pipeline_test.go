@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -34,13 +35,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 			objs = append(objs, backend.K8sObjects()...)
 			backendExportURL = backend.ExportURL(proxyClient)
 
-			healthyPipeline := kitk8s.NewTracePipelineV1Alpha1(healthyPipelineName).WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
-			objs = append(objs, healthyPipeline.K8sObject())
+			healthyPipeline := testutils.NewTracePipelineBuilder().
+				WithName(healthyPipelineName).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				Build()
+			objs = append(objs, &healthyPipeline)
 
-			unreachableHostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
-				kitk8s.WithStringData("trace-host", "http://unreachable:4317"))
-			brokenPipeline := kitk8s.NewTracePipelineV1Alpha1(brokenPipelineName).WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRefV1Alpha1("trace-host"))
-			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
+			endpointKey := "trace-endpoint"
+			unreachableHostSecret := kitk8s.NewOpaqueSecret("unreachable", kitkyma.DefaultNamespaceName,
+				kitk8s.WithStringData(endpointKey, "http://unreachable:4317"))
+			brokenPipeline := testutils.NewTracePipelineBuilder().
+				WithName(brokenPipelineName).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret(unreachableHostSecret.Name(), unreachableHostSecret.Namespace(), endpointKey)).
+				Build()
+
+			objs = append(objs, &brokenPipeline, unreachableHostSecret.K8sObject())
 
 			objs = append(objs,
 				telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
