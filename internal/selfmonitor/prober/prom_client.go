@@ -8,12 +8,12 @@ import (
 	"github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const (
@@ -22,10 +22,12 @@ const (
 )
 
 var (
-	requestsInFlight = promauto.With(metrics.Registry).NewGauge(prometheus.GaugeOpts{
-		Name: metricPrefix + "in_flight_requests",
-		Help: "The current number of in-flight requests initiated by the self-monitoring prober.",
-	})
+	requestsInFlight = promauto.With(metrics.Registry).NewGauge(
+		prometheus.GaugeOpts{
+			Name: metricPrefix + "in_flight_requests",
+			Help: "The current number of in-flight requests initiated by the self-monitoring prober.",
+		},
+	)
 
 	requestsTotal = promauto.With(metrics.Registry).NewCounterVec(
 		prometheus.CounterOpts{
