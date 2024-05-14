@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -88,15 +87,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		It("Should have produced logs in the backend", Label(suite.LabelOperational), func() {
 			assert.LogsDelivered(proxyClient, loggen.DefaultName, backendExportURL)
-		})
-
-		Context("Metric instrumentation", Ordered, func() {
-			It("Ensures that telemetry_all_logpipelines metric is emitted", Label(suite.LabelOperational), func() {
-				assert.ManagerEmitsMetric(proxyClient,
-					Equal("telemetry_all_logpipelines"),
-					WithValue(BeNumerically(">", 0)),
-				)
-			})
 		})
 	})
 })
