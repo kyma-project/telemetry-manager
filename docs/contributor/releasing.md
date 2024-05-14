@@ -65,7 +65,7 @@ This release process covers the steps to release new major and minor versions fo
      git push upstream {RELEASE_VERSION}
      ```
 
-11. If the previous release was a bugfix version (patch release) that contains cherry-picked changes, these changes might appear again in the generated change log. Edit the release description and remove redundant entries if necessary.
+11. If the previous release was a bugfix version (patch release) that contains cherry-picked changes, these changes might appear again in the generated change log. If there are redundant entries, edit the release description and remove them.
 
 ## Changelog
 
