@@ -18,13 +18,13 @@ const (
 )
 
 const (
-	// Telemetry CR reasons
-	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
-	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
-	ReasonComponentsRunning      = "ComponentsRunning"
+	// Universal pipeline reasons
+	ReasonNoPipelineDeployed      = "NoPipelineDeployed"
+	ReasonComponentsRunning       = "ComponentsRunning"
+	ReasonReferencedSecretMissing = "ReferencedSecretMissing"
+	ReasonResourceBlocksDeletion  = "ResourceBlocksDeletion"
 
 	// Common pipeline reasons
-	ReasonReferencedSecretMissing      = "ReferencedSecretMissing"
 	ReasonMaxPipelinesExceeded         = "MaxPipelinesExceeded"
 	ReasonConfigurationGenerated       = "ConfigurationGenerated"
 	ReasonDeploymentNotReady           = "DeploymentNotReady"
@@ -69,8 +69,6 @@ var commonMessages = map[string]string{
 	ReasonTLSCertificateKeyPairInvalid: "TLS certificate and private key do not match: %s",
 }
 
-// TODO: telemetryMessages
-
 var metricPipelineMessages = map[string]string{
 	ReasonDeploymentNotReady: "Metric gateway Deployment is not ready",
 	ReasonDeploymentReady:    "Metric gateway Deployment is ready",
@@ -110,8 +108,6 @@ var logPipelineMessages = map[string]string{
 	ReasonNoLogsDelivered:       "No logs delivered to backend",
 	ReasonFlowHealthy:           "No problems detected in the log flow",
 }
-
-// TODO: MessageForTelemetry
 
 func MessageForLogPipeline(reason string) string {
 	return message(reason, logPipelineMessages)
