@@ -3,7 +3,6 @@ package telemetry
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -388,120 +387,6 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		})
 	})
 
-	Context("When another LogPipeline with missing secret reference is created, then config is not updated", Ordered, func() {
-		var pipelineSecret = &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "foo",
-				Namespace: "default",
-			},
-
-			Data: map[string][]byte{
-				"host":     []byte("http://foo.bar"),
-				"user":     []byte("user"),
-				"password": []byte("pass"),
-			},
-			StringData: nil,
-			Type:       "opaque",
-		}
-
-		var healthyLogPipeline = &telemetryv1alpha1.LogPipeline{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "telemetry.kyma-project.io/v1alpha1",
-				Kind:       "LogPipeline",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "healthy-logpipeline",
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Input: telemetryv1alpha1.Input{Application: telemetryv1alpha1.ApplicationInput{
-					Namespaces: telemetryv1alpha1.InputNamespaces{
-						System: true}}},
-				Output: telemetryv1alpha1.Output{Custom: FluentBitOutputConfig},
-			},
-		}
-
-		var missingSecretRefLogPipeline = &telemetryv1alpha1.LogPipeline{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "telemetry.kyma-project.io/v1alpha1",
-				Kind:       "LogPipeline",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "missing-secret-ref-logpipeline",
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					HTTP: &telemetryv1alpha1.HTTPOutput{
-						Host: telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-									Name:      "foo",
-									Namespace: "default",
-									Key:       "host",
-								},
-							},
-						},
-						User: telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-									Name:      "foo",
-									Namespace: "default",
-									Key:       "user",
-								},
-							},
-						},
-						Password: telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-									Name:      "foo",
-									Namespace: "default",
-									Key:       "password",
-								},
-							},
-						},
-						Dedot: false,
-					},
-				},
-			},
-		}
-
-		var errExpectedKeyNotFound = errors.New("did not find the key: missing-secret-ref-logpipeline.conf")
-
-		It("Creates a healthy LogPipeline", func() {
-			Expect(k8sClient.Create(ctx, healthyLogPipeline)).Should(Succeed())
-		})
-
-		It("Creates a LogPipeline with missing secret reference", func() {
-			Expect(k8sClient.Create(ctx, missingSecretRefLogPipeline)).Should(Succeed())
-		})
-
-		It("Should create a fluent-bit-sections configmap which contains the healthy pipeline", func() {
-			Eventually(func() error {
-				return validateKeyExistsInFluentbitSectionsConf(ctx, "healthy-logpipeline.conf")
-			}, timeout, interval).Should(BeNil())
-		})
-
-		It("Should not include the LogPipeline with missing secret in fluent-bit-sections configmap", func() {
-			Consistently(func() error {
-				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(Equal(errExpectedKeyNotFound))
-		})
-
-		It("Should update fluent-bit-sections configmap when secret is created", func() {
-			Expect(k8sClient.Create(ctx, pipelineSecret)).Should(Succeed())
-			Eventually(func() error {
-				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(BeNil())
-		})
-
-		It("Should remove LogPipeline from configmap when secret is deleted", func() {
-			Expect(k8sClient.Delete(ctx, pipelineSecret)).Should(Succeed())
-			Eventually(func() error {
-				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(Equal(errExpectedKeyNotFound))
-		})
-
-	})
-
 })
 
 func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) error {
@@ -516,22 +401,5 @@ func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) err
 		return fmt.Errorf("unexpected owner reference name: %s", ownerReference.Kind)
 	}
 
-	return nil
-}
-
-func validateKeyExistsInFluentbitSectionsConf(ctx context.Context, key string) error {
-	configMapLookupKey := types.NamespacedName{
-		Name:      testLogPipelineConfig.SectionsConfigMap.Name,
-		Namespace: testLogPipelineConfig.SectionsConfigMap.Namespace,
-	}
-	var fluentBitCm corev1.ConfigMap
-	err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
-	if err != nil {
-
-		return fmt.Errorf("could not get configmap: %s: %w", configMapLookupKey.Name, err)
-	}
-	if _, ok := fluentBitCm.Data[key]; !ok {
-		return fmt.Errorf("did not find the key: %s", key)
-	}
 	return nil
 }

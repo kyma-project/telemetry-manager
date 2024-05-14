@@ -39,7 +39,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should not include the pipeline in fluent-bit-sections ConfigMap", func() {
-			assert.ConfigMapDoesNotHaveKey(ctx, k8sClient, kitkyma.FluentBitSectionsConfigMap, fmt.Sprintf("%s.conf", pipelineName))
+			assert.ConfigMapConsistentlyNotHaveKey(ctx, k8sClient, kitkyma.FluentBitSectionsConfigMap, fmt.Sprintf("%s.conf", pipelineName))
 		})
 
 		It("Should have ConfigurationGenerated condition set to False in pipeline", func() {
