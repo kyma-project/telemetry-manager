@@ -75,7 +75,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Ensures accessibility of metric agent metrics endpoint", func() {
 			agentMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricAgentMetrics.Namespace, kitkyma.MetricAgentMetrics.Name, "metrics", ports.Metrics)
-			assert.ExposesOTelCollectorMetrics(proxyClient, agentMetricsURL)
+			assert.EmitsOTelCollectorMetrics(proxyClient, agentMetricsURL)
 		})
 
 		It("Ensures the metric agent network policy exists", func() {
