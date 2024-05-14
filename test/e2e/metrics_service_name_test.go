@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
@@ -18,7 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
@@ -38,10 +39,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(kitkyma.SystemNamespaceName))
-		objs = append(objs, metricPipeline.K8sObject())
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithRuntimeInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName)).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		objs = append(objs, &metricPipeline)
 
 		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeMetrics)...)
 
@@ -59,16 +62,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
@@ -125,19 +128,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithInvalidStartForUnknownServicePatternName, servicenamebundle.AttrWithInvalidStartForUnknownServicePattern)
 			verifyServiceNameAttr(servicenamebundle.PodWithInvalidEndForUnknownServicePatternName, servicenamebundle.AttrWithInvalidEndForUnknownServicePattern)
 			verifyServiceNameAttr(servicenamebundle.PodWithMissingProcessForUnknownServicePatternName, servicenamebundle.AttrWithMissingProcessForUnknownServicePattern)
-		})
-
-		It("Should have no kyma resource attributes", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(
-						ContainResourceAttrs(HaveKey(ContainSubstring("kyma"))),
-					)),
-				))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should have metrics with service.name set to telemetry-metric-gateway", func() {

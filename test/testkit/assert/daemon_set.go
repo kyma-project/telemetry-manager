@@ -1,4 +1,4 @@
-package verifiers
+package assert
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func DaemonSetShouldBeReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+func DaemonSetReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
 	Eventually(func(g Gomega) {
 		ready, err := isDaemonSetReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -31,5 +31,5 @@ func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.N
 		LabelSelector: labels.SelectorFromSet(daemonSet.Spec.Selector.MatchLabels),
 		Namespace:     name.Namespace,
 	}
-	return IsPodReady(ctx, k8sClient, listOptions)
+	return PodReady(ctx, k8sClient, listOptions)
 }

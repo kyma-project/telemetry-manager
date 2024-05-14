@@ -8,6 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -15,7 +17,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
@@ -39,23 +40,27 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		backend1ExportURL = backend1.ExportURL(proxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
-		pipelineIncludeApp1Ns := kitk8s.NewMetricPipelineV1Alpha1("include-"+app1Ns).
-			WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1()).
-			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns)).
-			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns)).
-			OtlpInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns))
-		objs = append(objs, pipelineIncludeApp1Ns.K8sObject())
+		pipelineIncludeApp1Ns := testutils.NewMetricPipelineBuilder().
+			WithName("include-"+app1Ns).
+			WithPrometheusInput(true, testutils.IncludeNamespaces(app1Ns)).
+			WithRuntimeInput(true, testutils.IncludeNamespaces(app1Ns)).
+			WithOTLPInput(true, testutils.IncludeNamespaces(app1Ns)).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+			Build()
+		objs = append(objs, &pipelineIncludeApp1Ns)
 
 		backend2 := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backend2Name))
 		backend2ExportURL = backend2.ExportURL(proxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
-		pipelineExcludeApp1Ns := kitk8s.NewMetricPipelineV1Alpha1("exclude-"+app1Ns).
-			WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1()).
-			PrometheusInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns)).
-			RuntimeInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns)).
-			OtlpInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns))
-		objs = append(objs, pipelineExcludeApp1Ns.K8sObject())
+		pipelineExcludeApp1Ns := testutils.NewMetricPipelineBuilder().
+			WithName("exclude-"+app1Ns).
+			WithPrometheusInput(true, testutils.ExcludeNamespaces(app1Ns)).
+			WithRuntimeInput(true, testutils.ExcludeNamespaces(app1Ns)).
+			WithOTLPInput(true, testutils.ExcludeNamespaces(app1Ns)).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+			Build()
+		objs = append(objs, &pipelineExcludeApp1Ns)
 
 		objs = append(objs,
 			telemetrygen.New(app1Ns, telemetrygen.SignalTypeMetrics).K8sObject(),
@@ -82,50 +87,50 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		// verify metrics from apps1Ns delivered to backend1
 		It("Should deliver Runtime metrics from app1Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, app1Ns, kubeletstats.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, kubeletstats.MetricNames)
 		})
 
 		It("Should deliver Prometheus metrics from app1Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, app1Ns, prommetricgen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, prommetricgen.MetricNames)
 		})
 
 		It("Should deliver OTLP metrics from app1Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, app1Ns, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, telemetrygen.MetricNames)
 		})
 
 		It("Should not deliver metrics from app2Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backend1ExportURL, app2Ns)
+			assert.MetricsFromNamespaceNotDelivered(proxyClient, backend1ExportURL, app2Ns)
 		})
 
 		// verify metrics from apps2Ns delivered to backend2
 		It("Should deliver Runtime metrics from app2Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, app2Ns, kubeletstats.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, kubeletstats.MetricNames)
 		})
 
 		It("Should deliver Prometheus metrics from app2Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, app2Ns, prommetricgen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, prommetricgen.MetricNames)
 		})
 
 		It("Should deliver OTLP metrics from app2Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, app2Ns, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, telemetrygen.MetricNames)
 		})
 
 		It("Should not deliver metrics from app1Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backend2ExportURL, app1Ns)
+			assert.MetricsFromNamespaceNotDelivered(proxyClient, backend2ExportURL, app1Ns)
 		})
 	})
 })

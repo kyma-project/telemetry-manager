@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
@@ -18,7 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
@@ -35,12 +36,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		backend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, backend.K8sObjects()...)
-
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
-		objs = append(objs, tracePipeline.K8sObject())
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		objs = append(objs, &tracePipeline)
 
 		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeTraces)...)
 		return objs
@@ -57,16 +59,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {

@@ -38,7 +38,7 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 		},
 		{
 			name:                     "should reject LogPipelines with Loki Output",
-			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-with-loki-output").WithLoki().Build()},
+			pipelines:                []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("pipeline-with-loki-output").WithLokiOutput().Build()},
 			reconcilableLogPipelines: false,
 		},
 		{
@@ -53,7 +53,7 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 			name: "should reject LogPipelines with invalid certificate",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("pipeline-with-invalid-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
-					testutils.HTTPClientTLS("invalidcert", "somekey")).Build(),
+					testutils.HTTPClientTLS("ca", "invalidcert", "somekey")).Build(),
 			},
 			reconcilableLogPipelines: false,
 		},
@@ -61,7 +61,7 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 			name: "should reject LogPipelines with invalid certificate key",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("pipeline-with-invalid-cert-key").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
-					testutils.HTTPClientTLS("somecert", "invalidkey")).Build(),
+					testutils.HTTPClientTLS("ca", "somecert", "invalidkey")).Build(),
 			},
 			reconcilableLogPipelines: false,
 		},
@@ -69,14 +69,14 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 			name: "should reject LogPipelines with expired certificate",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("pipeline-with-expired-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"),
-					testutils.HTTPClientTLS("expired", "expired")).Build(),
+					testutils.HTTPClientTLS("ca", "expired", "expired")).Build(),
 			},
 			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should accept LogPipelines with valid certificate",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("pipeline-with-valid-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"), testutils.HTTPClientTLS("valid", "valid")).Build(),
+				testutils.NewLogPipelineBuilder().WithName("pipeline-with-valid-cert").WithHTTPOutput(testutils.HTTPHost("http://somehost"), testutils.HTTPClientTLS("ca", "valid", "valid")).Build(),
 			},
 			reconcilableLogPipelines: true,
 		},

@@ -9,11 +9,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
@@ -34,13 +34,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			WithTLS(*clientCerts)
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(backend.Endpoint()),
+				testutils.OTLPClientTLS(
+					clientCerts.CaCertPem.String(),
+					clientCerts.ClientCertPem.String(),
+					clientCerts.ClientKeyPem.String(),
+				),
+			).
+			Build()
 
 		objs = append(objs,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
-			metricPipeline.K8sObject(),
+			&metricPipeline,
 		)
 
 		return objs
@@ -57,15 +65,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a metric backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 	})
 })

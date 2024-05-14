@@ -10,6 +10,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
@@ -17,10 +20,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	var (
 		mockNs                           = suite.ID()
 		pipelineName                     = suite.ID()
@@ -52,10 +54,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			unannotatedMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			PrometheusInput(true)
-		objs = append(objs, metricPipeline.K8sObject())
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithPrometheusInput(true, testutils.IncludeNamespaces(mockNs)).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		objs = append(objs, &metricPipeline)
 
 		return objs
 	}
@@ -72,15 +76,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		Context("Verify metric scraping works with annotating pods and services", Ordered, func() {
@@ -120,6 +124,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 })
 
 func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
+
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -127,6 +132,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
 			ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
+			ContainScope(WithScopeName(ContainSubstring(InstrumentationScopePrometheus))),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

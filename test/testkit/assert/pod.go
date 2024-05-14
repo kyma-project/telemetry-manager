@@ -1,4 +1,4 @@
-package verifiers
+package assert
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func IsPodReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
+func PodReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
 	var pods corev1.PodList
 	err := k8sClient.List(ctx, &pods, &listOptions)
 	if err != nil {

@@ -7,21 +7,12 @@ import (
 type Labels map[string]string
 
 const (
-	VersionLabelName    = "version"
 	PersistentLabelName = "persistent"
 )
 
 var (
 	PersistentLabel = Labels{PersistentLabelName: "true"}
 )
-
-// Version sets a property corresponding to a version to the passed value.
-func (l *Labels) Version(v string) {
-	if *l == nil {
-		*l = make(Labels, 0)
-	}
-	(*l)[VersionLabelName] = v
-}
 
 // WithLabel is a functional option for attaching a label value.
 func WithLabel(label, value string) testkit.OptFunc {

@@ -8,12 +8,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
@@ -61,9 +62,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		backendExportURL = backend.ExportURL(proxyClient)
 		objs = append(objs, backend.K8sObjects()...)
 
-		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
-		objs = append(objs, pipeline.K8sObject())
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		objs = append(objs, &tracePipeline)
 
 		regularSpansGen := telemetrygen.New(regularSpansNs, telemetrygen.SignalTypeTraces).K8sObject()
 		vmaScrapeSpansGen := telemetrygen.New(vmaScrapeSpansNs, telemetrygen.SignalTypeTraces,
@@ -155,19 +158,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver regular telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, regularSpansNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, regularSpansNs)
 		})
 
 		It("Should filter noisy spans", func() {
-			verifiers.TracesFromNamespacesShouldNotBeDelivered(proxyClient, backendExportURL, []string{
+			assert.TracesFromNamespacesNotDelivered(proxyClient, backendExportURL, []string{
 				vmaScrapeSpansNs,
 				healthzSpansNs,
 				fluentBitSpansNs,

@@ -206,7 +206,7 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("loki output is defined", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithLoki().Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithLokiOutput().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
@@ -808,7 +808,7 @@ func TestUpdateStatus(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().WithHTTPOutput(testutils.HTTPClientTLS("fooCert", "fooKey")).Build()
+				pipeline := testutils.NewLogPipelineBuilder().WithHTTPOutput(testutils.HTTPClientTLS("", "fooCert", "fooKey")).Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				proberStub := &mocks.DaemonSetProber{}
