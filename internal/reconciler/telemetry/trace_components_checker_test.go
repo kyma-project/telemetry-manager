@@ -57,7 +57,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "True",
-				Reason:  "TraceComponentsRunning",
+				Reason:  "ComponentsRunning",
 				Message: "All trace components are running",
 			},
 		},
@@ -178,7 +178,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "True",
-				Reason:  "TraceComponentsRunning",
+				Reason:  "ComponentsRunning",
 				Message: "All trace components are running",
 			},
 		},

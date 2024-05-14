@@ -58,7 +58,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "True",
-				Reason:  "LogComponentsRunning",
+				Reason:  "ComponentsRunning",
 				Message: "All log components are running",
 			},
 		},
@@ -210,7 +210,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "True",
-				Reason:  "LogComponentsRunning",
+				Reason:  "ComponentsRunning",
 				Message: "All log components are running",
 			},
 		},

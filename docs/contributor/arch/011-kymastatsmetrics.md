@@ -84,19 +84,19 @@ status:
   - lastTransitionTime: "2024-04-18T13:43:03Z"
     message: All log components are running
     observedGeneration: 2
-    reason: LogComponentsRunning
+    reason: ComponentsRunning
     status: "True"
     type: LogComponentsHealthy
   - lastTransitionTime: "2024-04-18T13:41:55Z"
     message: All metric components are running
     observedGeneration: 2
-    reason: MetricComponentsRunning
+    reason: ComponentsRunning
     status: "True"
     type: MetricComponentsHealthy
   - lastTransitionTime: "2024-04-15T12:36:47Z"
     message: All trace components are running
     observedGeneration: 2
-    reason: TraceComponentsRunning
+    reason: ComponentsRunning
     status: "True"
     type: TraceComponentsHealthy
   endpoints:

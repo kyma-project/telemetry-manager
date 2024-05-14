@@ -55,7 +55,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
-				Reason:  "MetricComponentsRunning",
+				Reason:  "ComponentsRunning",
 				Message: "All metric components are running",
 			},
 		},

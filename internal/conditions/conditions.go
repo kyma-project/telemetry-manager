@@ -19,11 +19,9 @@ const (
 
 const (
 	// Telemetry CR reasons
-	ReasonNoPipelineDeployed      = "NoPipelineDeployed"
-	ReasonResourceBlocksDeletion  = "ResourceBlocksDeletion"
-	ReasonLogComponentsRunning    = "LogComponentsRunning"
-	ReasonMetricComponentsRunning = "MetricComponentsRunning"
-	ReasonTraceComponentsRunning  = "TraceComponentsRunning"
+	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
+	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
+	ReasonComponentsRunning      = "ComponentsRunning"
 
 	// Common pipeline reasons
 	ReasonReferencedSecretMissing      = "ReferencedSecretMissing"
@@ -74,16 +72,16 @@ var commonMessages = map[string]string{
 // TODO: telemetryMessages
 
 var metricPipelineMessages = map[string]string{
-	ReasonDeploymentNotReady:      "Metric gateway Deployment is not ready",
-	ReasonDeploymentReady:         "Metric gateway Deployment is ready",
-	ReasonDaemonSetNotReady:       "Metric agent DaemonSet is not ready",
-	ReasonDaemonSetReady:          "Metric agent DaemonSet is ready",
-	ReasonMetricComponentsRunning: "All metric components are running",
-	ReasonAllDataDropped:          "All metrics dropped: backend unreachable or rejecting",
-	ReasonSomeDataDropped:         "Some metrics dropped: backend unreachable or rejecting",
-	ReasonBufferFillingUp:         "Buffer nearing capacity: incoming metric rate exceeds export rate",
-	ReasonGatewayThrottling:       "Metric gateway experiencing high influx: unable to receive metrics at current rate",
-	ReasonFlowHealthy:             "No problems detected in the metric flow",
+	ReasonDeploymentNotReady: "Metric gateway Deployment is not ready",
+	ReasonDeploymentReady:    "Metric gateway Deployment is ready",
+	ReasonDaemonSetNotReady:  "Metric agent DaemonSet is not ready",
+	ReasonDaemonSetReady:     "Metric agent DaemonSet is ready",
+	ReasonComponentsRunning:  "All metric components are running",
+	ReasonAllDataDropped:     "All metrics dropped: backend unreachable or rejecting",
+	ReasonSomeDataDropped:    "Some metrics dropped: backend unreachable or rejecting",
+	ReasonBufferFillingUp:    "Buffer nearing capacity: incoming metric rate exceeds export rate",
+	ReasonGatewayThrottling:  "Metric gateway experiencing high influx: unable to receive metrics at current rate",
+	ReasonFlowHealthy:        "No problems detected in the metric flow",
 }
 
 var tracePipelineMessages = map[string]string{
@@ -91,7 +89,7 @@ var tracePipelineMessages = map[string]string{
 	ReasonDeploymentReady:                "Trace gateway Deployment is ready",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
-	ReasonTraceComponentsRunning:         "All trace components are running",
+	ReasonComponentsRunning:              "All trace components are running",
 	ReasonAllDataDropped:                 "All traces dropped: backend unreachable or rejecting",
 	ReasonSomeDataDropped:                "Some traces dropped: backend unreachable or rejecting",
 	ReasonBufferFillingUp:                "Buffer nearing capacity: incoming trace rate exceeds export rate",
@@ -105,7 +103,7 @@ var logPipelineMessages = map[string]string{
 	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
 	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
 	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
-	ReasonLogComponentsRunning:  "All log components are running",
+	ReasonComponentsRunning:     "All log components are running",
 	ReasonAllDataDropped:        "All logs dropped: backend unreachable or rejecting",
 	ReasonSomeDataDropped:       "Some logs dropped: backend unreachable or rejecting",
 	ReasonBufferFillingUp:       "Buffer nearing capacity: incoming log rate exceeds export rate",

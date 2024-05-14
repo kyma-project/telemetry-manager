@@ -30,19 +30,19 @@ Status:
     - lastTransitionTime: "2023-09-01T15:28:28Z"
       message: All log components are running
       observedGeneration: 2
-      reason: LogComponentsRunning
+      reason: ComponentsRunning
       status: "True"
       type: LogComponentsHealthy
     - lastTransitionTime: "2023-09-01T15:46:59Z"
       message: All metric components are running
       observedGeneration: 2
-      reason: MetricComponentsRunning
+      reason: ComponentsRunning
       status: "True"
       type: MetricComponentsHealthy
     - lastTransitionTime: "2023-09-01T15:35:38Z"
       message: All trace components are running
       observedGeneration: 2
-      reason: TraceComponentsRunning
+      reason: ComponentsRunning
       status: "True"
       type: TraceComponentsHealthy
 ```

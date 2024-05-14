@@ -60,7 +60,7 @@ func (t *traceComponentsChecker) determineReason(pipelines []telemetryv1alpha1.T
 		}
 	}
 
-	return conditions.ReasonTraceComponentsRunning
+	return conditions.ReasonComponentsRunning
 }
 
 func (t *traceComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.TracePipeline) string {
@@ -86,7 +86,7 @@ func (t *traceComponentsChecker) firstUnhealthyPipelineReason(pipelines []teleme
 }
 
 func (t *traceComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonTraceComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse

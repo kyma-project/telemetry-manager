@@ -107,7 +107,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, telemetr
 	if err != nil {
 		return nil, fmt.Errorf("failed to check trace components: %w", err)
 	}
-	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonTraceComponentsRunning {
+	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonComponentsRunning {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
@@ -119,7 +119,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, telemet
 	if err != nil {
 		return nil, fmt.Errorf("failed to check trace components: %w", err)
 	}
-	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonMetricComponentsRunning {
+	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonComponentsRunning {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
