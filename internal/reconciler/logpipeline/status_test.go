@@ -51,8 +51,8 @@ func TestUpdateStatus(t *testing.T) {
 		agentHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, agentHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetNotReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonDaemonSetNotReady), agentHealthyCond.Message)
+		require.Equal(t, conditions.ReasonAgentNotReady, agentHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentNotReady), agentHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
@@ -92,8 +92,8 @@ func TestUpdateStatus(t *testing.T) {
 		agentHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, agentHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady), agentHealthyCond.Message)
+		require.Equal(t, conditions.ReasonAgentReady, agentHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentReady), agentHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
@@ -374,8 +374,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -467,8 +467,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -552,8 +552,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{

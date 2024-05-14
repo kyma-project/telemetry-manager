@@ -28,13 +28,12 @@ func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion 
 	reason := t.determineReason(tracePipelines.Items, telemetryInDeletion)
 	status := t.determineConditionStatus(reason)
 	message := t.createMessageForReason(tracePipelines.Items, reason)
-	reasonWithPrefix := t.addReasonPrefix(reason)
 
 	conditionType := "TraceComponentsHealthy"
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,
-		Reason:  reasonWithPrefix,
+		Reason:  reason,
 		Message: message,
 	}, nil
 
@@ -108,16 +107,6 @@ func (t *traceComponentsChecker) createMessageForReason(pipelines []telemetryv1a
 			return p.Name
 		}),
 	})
-}
-
-func (t *traceComponentsChecker) addReasonPrefix(reason string) string {
-	switch {
-	case reason == conditions.ReasonDeploymentNotReady:
-		return "TraceGateway" + reason
-	case reason == conditions.ReasonReferencedSecretMissing:
-		return "TracePipeline" + reason
-	}
-	return reason
 }
 
 func (t *traceComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.TracePipeline) string {

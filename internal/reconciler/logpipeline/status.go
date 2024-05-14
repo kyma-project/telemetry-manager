@@ -72,10 +72,10 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	}
 
 	status := metav1.ConditionFalse
-	reason := conditions.ReasonDaemonSetNotReady
+	reason := conditions.ReasonAgentNotReady
 	if healthy {
 		status = metav1.ConditionTrue
-		reason = conditions.ReasonDaemonSetReady
+		reason = conditions.ReasonAgentReady
 	}
 
 	condition := metav1.Condition{

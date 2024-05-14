@@ -58,7 +58,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonDeploymentNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonGatewayNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
@@ -90,7 +90,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonDeploymentNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonGatewayNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
@@ -122,7 +122,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, conditions.ReasonDeploymentReady, cond.Reason)
+		require.Equal(t, conditions.ReasonGatewayReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
@@ -157,7 +157,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonAgentNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
@@ -192,7 +192,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonAgentNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
@@ -227,7 +227,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetReady, cond.Reason)
+		require.Equal(t, conditions.ReasonAgentReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})

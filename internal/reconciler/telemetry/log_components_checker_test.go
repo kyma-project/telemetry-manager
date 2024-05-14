@@ -16,7 +16,7 @@ import (
 )
 
 func TestLogComponentsCheck(t *testing.T) {
-	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady}
+	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonAgentReady}
 	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated}
 	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady}
 
@@ -81,7 +81,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "LogPipelineReferencedSecretMissing",
+				Reason:  "ReferencedSecretMissing",
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -95,7 +95,7 @@ func TestLogComponentsCheck(t *testing.T) {
 					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSNotReady}).
 					Build(),
@@ -104,7 +104,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "FluentBitDaemonSetNotReady",
+				Reason:  "AgentNotReady",
 				Message: "Fluent Bit DaemonSet is not ready",
 			},
 		},
@@ -135,7 +135,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should prioritize unready ConfigGenerated reason over AgentHealthy reason",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSNotReady}).
 					Build(),
@@ -149,7 +149,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "LogPipelineReferencedSecretMissing",
+				Reason:  "ReferencedSecretMissing",
 				Message: "One or more referenced Secrets are missing",
 			},
 		},

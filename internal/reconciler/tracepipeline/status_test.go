@@ -53,8 +53,8 @@ func TestUpdateStatus(t *testing.T) {
 		gatewayHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, gatewayHealthyCond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, gatewayHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDeploymentNotReady, gatewayHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonDeploymentNotReady), gatewayHealthyCond.Message)
+		require.Equal(t, conditions.ReasonGatewayNotReady, gatewayHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonGatewayNotReady), gatewayHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, gatewayHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, gatewayHealthyCond.LastTransitionTime)
 
@@ -95,8 +95,8 @@ func TestUpdateStatus(t *testing.T) {
 		gatewayHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, gatewayHealthyCond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionTrue, gatewayHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDeploymentReady, gatewayHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonDeploymentReady), gatewayHealthyCond.Message)
+		require.Equal(t, conditions.ReasonGatewayReady, gatewayHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonGatewayReady), gatewayHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, gatewayHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, gatewayHealthyCond.LastTransitionTime)
 
@@ -438,8 +438,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeGatewayHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDeploymentReady,
-						Message:            conditions.MessageForTracePipeline(conditions.ReasonDeploymentReady),
+						Reason:             conditions.ReasonGatewayReady,
+						Message:            conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
