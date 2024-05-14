@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs, "test"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var pipelineName = suite.ID()
 
 	Context("When a LogPipeline with Loki output exists", func() {
