@@ -16,13 +16,14 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, func() {
@@ -41,10 +42,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, fu
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
 		objs = append(objs,
-			pipeline.K8sObject(),
+			&tracePipeline,
 			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeTraces).K8sObject(),
 		)
 
@@ -62,7 +65,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, fu
 		})
 
 		It("Should have a running self-monitor", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a network policy deployed", func() {
@@ -89,15 +92,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, fu
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
+			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {
-			//TODO: add the conditions.TypeFlowHealthy check to verifiers.TracePipelineShouldBeHealthy after self monitor is released
+			//TODO: add the conditions.TypeFlowHealthy check to assert.TracePipelineHealthy after self monitor is released
 			Eventually(func(g Gomega) {
 				var pipeline telemetryv1alpha1.TracePipeline
 				key := types.NamespacedName{Name: pipelineName}
@@ -108,7 +111,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTraces), Ordered, fu
 
 		It("Should ensure that the self-monitor webhook has been called", func() {
 			// Pushing traces to the trace gateway triggers an alert, which in turn makes the self-monitor call the webhook
-			verifiers.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
+			assert.SelfMonitorWebhookCalled(proxyClient)
 		})
 	})
 })

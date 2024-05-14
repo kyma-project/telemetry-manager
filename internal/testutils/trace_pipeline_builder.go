@@ -13,7 +13,9 @@ import (
 type TracePipelineBuilder struct {
 	randSource rand.Source
 
-	name             string
+	name   string
+	labels map[string]string
+
 	statusConditions []metav1.Condition
 	outOTLP          *telemetryv1alpha1.OtlpOutput
 }
@@ -29,6 +31,11 @@ func NewTracePipelineBuilder() *TracePipelineBuilder {
 
 func (b *TracePipelineBuilder) WithName(name string) *TracePipelineBuilder {
 	b.name = name
+	return b
+}
+
+func (b *TracePipelineBuilder) WithLabels(labels map[string]string) *TracePipelineBuilder {
+	b.labels = labels
 	return b
 }
 
@@ -54,6 +61,7 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Generation: 1,
+			Labels:     b.labels,
 		},
 		Spec: telemetryv1alpha1.TracePipelineSpec{
 			Output: telemetryv1alpha1.TracePipelineOutput{

@@ -3,6 +3,7 @@ package tlscert
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -25,6 +26,8 @@ var (
 	ErrKeyParseFailed  = errors.New("failed to parse private key")
 
 	ErrValueResolveFailed = errors.New("failed to resolve value")
+
+	ErrInvalidCertificateKeyPair = errors.New("certificate and private key do not match")
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
@@ -91,6 +94,11 @@ func (v *Validator) ValidateCertificate(ctx context.Context, cert, key *telemetr
 	// Parse the private key
 	if err = parsePrivateKey(sanitizedKey); err != nil {
 		return err
+	}
+
+	_, err = tls.X509KeyPair(sanitizedCert, sanitizedKey)
+	if err != nil {
+		return ErrInvalidCertificateKeyPair
 	}
 
 	if v.now().After(certExpiry) {

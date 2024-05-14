@@ -8,13 +8,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
@@ -28,18 +28,26 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
 		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithTLS(*serverCerts))
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			WithTLS(*clientCerts)
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(backend.Endpoint()),
+				testutils.OTLPClientTLS(
+					clientCerts.CaCertPem.String(),
+					clientCerts.ClientCertPem.String(),
+					clientCerts.ClientKeyPem.String(),
+				),
+			).
+			Build()
 
-		objs = append(objs, pipeline.K8sObject(),
+		objs = append(objs, &tracePipeline,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
 		)
 
@@ -57,20 +65,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should verify traces from telemetrygen are delivered", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
 		})
 
 	})

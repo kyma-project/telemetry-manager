@@ -9,14 +9,17 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	const (
 		metricProducer1Name = "metric-producer-1"
 		metricProducer2Name = "metric-producer-2"
@@ -47,16 +50,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		objs = append(objs, backend2.K8sObjects()...)
 		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipeline1Name).
-			WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1()).
-			OtlpInput(true)
-		objs = append(objs, metricPipeline.K8sObject())
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipeline1Name).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+			Build()
+		objs = append(objs, &metricPipeline)
 
-		metricPipelineIstiofiedBackend := kitk8s.NewMetricPipelineV1Alpha1(pipeline2Name).
-			WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1()).
-			OtlpInput(true)
+		metricPipelineIstiofiedBackend := testutils.NewMetricPipelineBuilder().
+			WithName(pipeline2Name).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+			Build()
 
-		objs = append(objs, metricPipelineIstiofiedBackend.K8sObject())
+		objs = append(objs, &metricPipelineIstiofiedBackend)
 
 		// set peerauthentication to strict explicitly
 		peerAuth := kitk8s.NewPeerAuthentication(backend.DefaultName, istiofiedBackendNs)
@@ -78,27 +83,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-				verifiers.ShouldNotExist(ctx, k8sClient, k8sObjects...)
+				for _, resource := range k8sObjects {
+					Eventually(func(g Gomega) {
+						key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
+						err := k8sClient.Get(ctx, key, resource)
+						g.Expect(apierrors.IsNotFound(err)).To(BeTrue())
+					}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+				}
 			})
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
 		})
 	})

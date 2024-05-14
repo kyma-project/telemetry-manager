@@ -5,15 +5,16 @@ package e2e
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
@@ -26,7 +27,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(backend.DefaultName, mockNs).
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
 			WithInvalidClientCert().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
@@ -34,17 +35,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
 		objs = append(objs, backend.K8sObjects()...)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithTLS(*clientCerts)
-		pipelineName = logPipeline.Name()
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(
+				testutils.HTTPHost(backend.Host()),
+				testutils.HTTPPort(backend.Port()),
+				testutils.HTTPClientTLS(
+					clientCerts.CaCertPem.String(),
+					clientCerts.ClientCertPem.String(),
+					clientCerts.ClientKeyPem.String(),
+				)).
+			Build()
 
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, logProducer.K8sObject())
-		objs = append(objs,
-			logPipeline.K8sObject(),
-		)
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}
@@ -59,16 +64,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should not have running pipelines", func() {
-			verifiers.LogPipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
-		})
-
 		It("Should have a tls certificate with invalid Condition set in pipeline conditions", func() {
-			verifiers.LogPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateInvalid)
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateInvalid,
+			})
 		})
 
 		It("Should have telemetryCR showing tls certificate expired for log component in its status", func() {
-			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateInvalid, false)
+			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   "LogComponentsHealthy",
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateInvalid,
+			})
 		})
 	})
 })

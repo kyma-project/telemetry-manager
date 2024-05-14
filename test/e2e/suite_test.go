@@ -84,9 +84,9 @@ var _ = AfterSuite(func() {
 	if !suite.IsOperational() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
-			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
+			g.Expect(k8sClient.Get(ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 	}
 
