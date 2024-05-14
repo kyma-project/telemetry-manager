@@ -126,7 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, f
 					))
 			})
 
-			It("Ensures that telemetry_self_monitor_prober_requests_total is increased", func() {
+			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
 				assert.ManagerEmitsMetric(proxyClient,
 					Equal("telemetry_self_monitor_prober_requests_total"),
 					WithValue(BeNumerically(">", 0)),
