@@ -7,7 +7,6 @@ import (
 const (
 	DefaultNamespaceName     = "default"
 	SystemNamespaceName      = "kyma-system"
-	KubeNamespace            = "kube-system"
 	IstioSystemNamespaceName = "istio-system"
 
 	TelemetryManagerMetricsPort = 8080
@@ -21,6 +20,8 @@ const (
 
 	MetricGatewayServiceName = "telemetry-otlp-metrics"
 	TraceGatewayServiceName  = "telemetry-otlp-traces"
+
+	FluentBitSectionsConfigMapName = "telemetry-fluent-bit-sections"
 )
 
 var (
@@ -57,4 +58,6 @@ var (
 	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
 
 	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
+
+	FluentBitSectionsConfigMap = types.NamespacedName{Name: FluentBitSectionsConfigMapName, Namespace: SystemNamespaceName}
 )

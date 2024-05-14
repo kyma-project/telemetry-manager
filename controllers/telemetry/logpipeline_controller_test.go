@@ -14,13 +14,11 @@ import (
 	"github.com/prometheus/common/expfmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
@@ -504,46 +502,6 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 
 	})
 
-	Context("When creating a LogPipeline with Loki Output", Ordered, func() {
-		pipelineName := "pipeline-with-loki-output"
-		pipelineWithLokiOutput := &telemetryv1alpha1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					Loki: &telemetryv1alpha1.LokiOutput{
-						URL: telemetryv1alpha1.ValueType{
-							Value: "http://logging-loki:3100/loki/api/v1/push",
-						},
-					},
-				}},
-		}
-
-		BeforeAll(func() {
-			Expect(k8sClient.Create(ctx, pipelineWithLokiOutput)).Should(Succeed())
-			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, pipelineWithLokiOutput)).Should(Succeed())
-			})
-		})
-
-		It("Should not include the LogPipeline in fluent-bit-sections configmap", func() {
-			expectedErr := errors.New("did not find the key: pipeline-with-loki-output.conf")
-			Consistently(func() error {
-				return validateKeyExistsInFluentbitSectionsConf(ctx, "pipeline-with-loki-output.conf")
-			}, timeout, interval).Should(Equal(expectedErr))
-		})
-
-		It("Should have a pending LogPipeline", func() {
-			Consistently(func(g Gomega) {
-				var pipeline telemetryv1alpha1.LogPipeline
-				key := types.NamespacedName{Name: pipelineName}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeFalse())
-			}, timeout, interval).Should(Succeed())
-		})
-
-	})
 })
 
 func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) error {

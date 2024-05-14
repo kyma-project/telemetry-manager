@@ -19,3 +19,12 @@ func ConfigMapHasKey(ctx context.Context, k8sClient client.Client, name types.Na
 		g.Expect(configMap.Data).Should(HaveKey(expectedKey))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
+
+func ConfigMapDoesNotHaveKey(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedKey string) {
+	Consistently(func(g Gomega) {
+		var configMap corev1.ConfigMap
+		g.Expect(k8sClient.Get(ctx, name, &configMap)).To(Succeed())
+
+		g.Expect(configMap.Data).ShouldNot(HaveKey(expectedKey))
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
