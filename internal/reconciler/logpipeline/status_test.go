@@ -791,13 +791,13 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "key decode failed",
 				tlsCertErr:     tlscert.ErrKeyDecodeFailed,
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSPrivateKeyInvalid,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
 			},
 			{
 				name:           "key parse failed",
 				tlsCertErr:     tlscert.ErrKeyParseFailed,
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSPrivateKeyInvalid,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
 			},
 			{
 				name:           "cert parse failed",

@@ -25,22 +25,20 @@ const (
 	ReasonResourceBlocksDeletion  = "ResourceBlocksDeletion"
 
 	// Common pipeline reasons
-	ReasonMaxPipelinesExceeded         = "MaxPipelinesExceeded"
-	ReasonConfigurationGenerated       = "ConfigurationGenerated"
-	ReasonGatewayNotReady              = "GatewayNotReady"
-	ReasonGatewayReady                 = "GatewayReady"
-	ReasonAgentNotReady                = "AgentNotReady"
-	ReasonAgentReady                   = "AgentReady"
-	ReasonAllDataDropped               = "AllTelemetryDataDropped"
-	ReasonSomeDataDropped              = "SomeTelemetryDataDropped"
-	ReasonBufferFillingUp              = "BufferFillingUp"
-	ReasonGatewayThrottling            = "GatewayThrottling"
-	ReasonFlowHealthy                  = "Healthy"
-	ReasonTLSCertificateInvalid        = "TLSCertificateInvalid"
-	ReasonTLSPrivateKeyInvalid         = "TLSPrivateKeyInvalid"
-	ReasonTLSCertificateKeyPairInvalid = "TLSCertificateKeyPairInvalid"
-	ReasonTLSCertificateExpired        = "TLSCertificateExpired"
-	ReasonTLSCertificateAboutToExpire  = "TLSCertificateAboutToExpire"
+	ReasonMaxPipelinesExceeded        = "MaxPipelinesExceeded"
+	ReasonConfigurationGenerated      = "ConfigurationGenerated"
+	ReasonGatewayNotReady             = "GatewayNotReady"
+	ReasonGatewayReady                = "GatewayReady"
+	ReasonAgentNotReady               = "AgentNotReady"
+	ReasonAgentReady                  = "AgentReady"
+	ReasonAllDataDropped              = "AllTelemetryDataDropped"
+	ReasonSomeDataDropped             = "SomeTelemetryDataDropped"
+	ReasonBufferFillingUp             = "BufferFillingUp"
+	ReasonGatewayThrottling           = "GatewayThrottling"
+	ReasonFlowHealthy                 = "Healthy"
+	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
+	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
+	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
 
 	// LogPipeline only reasons
 	ReasonNoLogsDelivered       = "NoLogsDelivered"
@@ -59,14 +57,12 @@ const (
 )
 
 var commonMessages = map[string]string{
-	ReasonNoPipelineDeployed:           "No pipelines have been deployed",
-	ReasonReferencedSecretMissing:      "One or more referenced Secrets are missing",
-	ReasonMaxPipelinesExceeded:         "Maximum pipeline count limit exceeded",
-	ReasonTLSCertificateInvalid:        "TLS certificate invalid: %s",
-	ReasonTLSPrivateKeyInvalid:         "TLS private key invalid: %s",
-	ReasonTLSCertificateExpired:        "TLS certificate expired on %s",
-	ReasonTLSCertificateAboutToExpire:  "TLS certificate is about to expire, configured certificate is valid until %s",
-	ReasonTLSCertificateKeyPairInvalid: "TLS certificate and private key do not match: %s",
+	ReasonNoPipelineDeployed:          "No pipelines have been deployed",
+	ReasonReferencedSecretMissing:     "One or more referenced Secrets are missing",
+	ReasonMaxPipelinesExceeded:        "Maximum pipeline count limit exceeded",
+	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
+	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
+	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
 }
 
 var metricPipelineMessages = map[string]string{
