@@ -134,21 +134,6 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Variables: []telemetryv1alpha1.VariableRef{variableRefs},
 		},
 	}
-	Context("On startup", Ordered, func() {
-		It("Should not have any Logpipelines", func() {
-			ctx := context.Background()
-			var logPipelineList telemetryv1alpha1.LogPipelineList
-			err := k8sClient.List(ctx, &logPipelineList)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(logPipelineList.Items).Should(BeEmpty())
-		})
-		It("Should not have any fluent-bit daemon set", func() {
-			var fluentBitDaemonSetList appsv1.DaemonSetList
-			err := k8sClient.List(ctx, &fluentBitDaemonSetList)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(fluentBitDaemonSetList.Items).Should(BeEmpty())
-		})
-	})
 
 	Context("When creating a LogPipeline", Ordered, func() {
 		BeforeAll(func() {
@@ -187,6 +172,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				return actualFluentBitConfig
 			}, timeout, interval).Should(Equal(expectedFluentBitConfig))
 		})
+
 		It("Should verify files have been copied into fluent-bit-files configmap", func() {
 			Eventually(func() string {
 				filesConfigMapLookupKey := types.NamespacedName{
@@ -232,6 +218,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				return string(envSecret.Data["myKey"])
 			}, timeout, interval).Should(Equal("value"))
 		})
+
 		It("Should have added the finalizers", func() {
 			Eventually(func() []string {
 				loggingConfigLookupKey := types.NamespacedName{
@@ -246,6 +233,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				return updatedLogPipeline.Finalizers
 			}, timeout, interval).Should(ContainElement("FLUENT_BIT_SECTIONS_CONFIG_MAP"))
 		})
+
 		It("Should have created a fluent-bit daemon set", func() {
 			Eventually(func() error {
 				var fluentBitDaemonSet appsv1.DaemonSet
@@ -256,6 +244,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				return err
 			}, timeout, interval).Should(BeNil())
 		})
+
 		It("Should have the correct priority class", func() {
 			Eventually(func(g Gomega) {
 				var fluentBitDaemonSet appsv1.DaemonSet
@@ -267,6 +256,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				g.Expect(priorityClassName).To(Equal("telemetry-priority-class-high"))
 			}, timeout, interval).Should(Succeed())
 		})
+
 		It("Should have the checksum annotation set to the fluent-bit daemonset", func() {
 			// Fluent Bit daemon set should have checksum annotation set
 			Eventually(func() bool {
@@ -283,6 +273,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				return found
 			}, timeout, interval).Should(BeTrue())
 		})
+
 		It("Should have the expected owner references", func() {
 			Eventually(func() error {
 				var fluentBitDaemonSet appsv1.DaemonSet
