@@ -187,7 +187,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelV1Beta1), func(
 
 		It("Should be able to get trace gateway metrics endpoint", func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.TraceGatewayMetrics.Namespace, kitkyma.TraceGatewayMetrics.Name, "metrics", ports.Metrics)
-			assert.ExposesOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
+			assert.EmitsOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", func() {
