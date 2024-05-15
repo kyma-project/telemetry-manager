@@ -126,7 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   "TraceComponentsHealthy",
 				Status: metav1.ConditionFalse,
-				Reason: "TracePipeline" + conditions.ReasonReferencedSecretMissing,
+				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 		})
 	})
