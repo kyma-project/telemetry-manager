@@ -43,7 +43,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 )
 
@@ -131,20 +130,6 @@ var _ = BeforeSuite(func() {
 		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
 
 	err = logPipelineController.SetupWithManager(mgr)
-	Expect(err).ToNot(HaveOccurred())
-
-	logParserController := NewLogParserController(
-		client,
-		logparser.NewReconciler(
-			client,
-			testLogParserConfig,
-			&k8sutils.DaemonSetProber{Client: client},
-			&k8sutils.DaemonSetAnnotator{Client: client},
-			overridesHandler,
-		),
-		testLogParserConfig,
-	)
-	err = logParserController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

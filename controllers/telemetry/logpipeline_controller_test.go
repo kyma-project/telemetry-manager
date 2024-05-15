@@ -1,16 +1,13 @@
 package telemetry
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/prometheus/common/expfmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -173,54 +170,6 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Expect(k8sClient.Create(ctx, logPipeline)).Should(Succeed())
 
 		})
-		It("Should verify metrics from the telemetry operator are exported", func() {
-			Eventually(func() bool {
-				resp, err := http.Get("http://localhost:8080/metrics")
-				if err != nil {
-					return false
-				}
-				defer resp.Body.Close()
-				scanner := bufio.NewScanner(resp.Body)
-				for scanner.Scan() {
-					line := scanner.Text()
-					if strings.Contains(line, "telemetry_all_logpipelines") || strings.Contains(line, "telemetry_unsupported_logpipelines") {
-						return true
-					}
-				}
-				return false
-			}, timeout, interval).Should(BeTrue())
-		})
-		It("Should have the telemetry_all_logpipelines metric set to 1", func() {
-			// All log pipeline gauge should be updated
-			Eventually(func() float64 {
-				resp, err := http.Get("http://localhost:8080/metrics")
-				if err != nil {
-					return 0
-				}
-				var parser expfmt.TextParser
-				mf, err := parser.TextToMetricFamilies(resp.Body)
-				if err != nil {
-					return 0
-				}
-
-				return *mf["telemetry_all_logpipelines"].Metric[0].Gauge.Value
-			}, timeout, interval).Should(Equal(1.0))
-		})
-		It("Should have the telemetry_unsupported_logpipelines metric set to 1", func() {
-			Eventually(func() float64 {
-				resp, err := http.Get("http://localhost:8080/metrics")
-				if err != nil {
-					return 0
-				}
-				var parser expfmt.TextParser
-				mf, err := parser.TextToMetricFamilies(resp.Body)
-				if err != nil {
-					return 0
-				}
-
-				return *mf["telemetry_unsupported_logpipelines"].Metric[0].Gauge.Value
-			}, timeout, interval).Should(Equal(1.0))
-		})
 		It("Should have fluent bit config section copied to the Fluent Bit configmap", func() {
 			// Fluent Bit config section should be copied to ConfigMap
 			Eventually(func() string {
@@ -349,41 +298,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 	})
 
 	Context("When deleting the LogPipeline", Ordered, func() {
-
 		BeforeAll(func() {
 			Expect(k8sClient.Delete(ctx, logPipeline)).Should(Succeed())
-		})
-
-		It("Should reset the telemetry_all_logpipelines metric", func() {
-			Eventually(func() float64 {
-				resp, err := http.Get("http://localhost:8080/metrics")
-				if err != nil {
-					return 0
-				}
-				var parser expfmt.TextParser
-				mf, err := parser.TextToMetricFamilies(resp.Body)
-				if err != nil {
-					return 0
-				}
-
-				return *mf["telemetry_all_logpipelines"].Metric[0].Gauge.Value
-			}, timeout, interval).Should(Equal(0.0))
-		})
-
-		It("Should reset the telemetry_unsupported_logpipelines metric", func() {
-			Eventually(func() float64 {
-				resp, err := http.Get("http://localhost:8080/metrics")
-				if err != nil {
-					return 0
-				}
-				var parser expfmt.TextParser
-				mf, err := parser.TextToMetricFamilies(resp.Body)
-				if err != nil {
-					return 0
-				}
-
-				return *mf["telemetry_unsupported_logpipelines"].Metric[0].Gauge.Value
-			}, timeout, interval).Should(Equal(0.0))
 		})
 	})
 

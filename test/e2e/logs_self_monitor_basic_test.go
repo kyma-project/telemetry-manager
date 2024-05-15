@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -89,6 +90,26 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+
+		Context("Metric instrumentation", Ordered, func() {
+			It("Ensures that controller_runtime_webhook_requests_total is increased", func() {
+				// Pushing metrics to the metric gateway triggers an alert.
+				// It makes the self-monitor call the webhook, which in turn increases the counter.
+				assert.ManagerEmitsMetric(proxyClient,
+					Equal("controller_runtime_webhook_requests_total"),
+					SatisfyAll(
+						WithLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
+						WithValue(BeNumerically(">", 0)),
+					))
+			})
+
+			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
+				assert.ManagerEmitsMetric(proxyClient,
+					Equal("telemetry_self_monitor_prober_requests_total"),
+					WithValue(BeNumerically(">", 0)),
+				)
+			})
 		})
 	})
 })
