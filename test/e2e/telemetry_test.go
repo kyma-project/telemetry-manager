@@ -97,7 +97,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		It("Should have Telemetry with warning state", func() {
 			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
-				Type:   "LogComponentsHealthy",
+				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonUnsupportedLokiOutput,
 			})
@@ -124,7 +124,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		It("Should have Telemetry with warning state", func() {
 			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
-				Type:   "TraceComponentsHealthy",
+				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
@@ -252,17 +252,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
 				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
 				expectedConditions := map[string]metav1.Condition{
-					"LogComponentsHealthy": {
+					conditions.TypeLogComponentsHealthy: {
 						Status:  "False",
 						Reason:  "ResourceBlocksDeletion",
 						Message: fmt.Sprintf("The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (%s)", logPipelineName),
 					},
-					"MetricComponentsHealthy": {
+					conditions.TypeMetricComponentsHealthy: {
 						Status:  "True",
 						Reason:  "NoPipelineDeployed",
 						Message: "No pipelines have been deployed",
 					},
-					"TraceComponentsHealthy": {
+					conditions.TypeTraceComponentsHealthy: {
 						Status:  "True",
 						Reason:  "NoPipelineDeployed",
 						Message: "No pipelines have been deployed",

@@ -35,7 +35,7 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 	status := l.determineConditionStatus(reason)
 	message := l.createMessageForReason(logPipelines.Items, logParsers.Items, reason)
 
-	conditionType := "LogComponentsHealthy"
+	conditionType := conditions.TypeLogComponentsHealthy
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,

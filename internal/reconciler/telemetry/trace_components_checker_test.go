@@ -31,7 +31,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			name:                "should be healthy if no pipelines deployed",
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "True",
 				Reason:  "NoPipelineDeployed",
 				Message: "No pipelines have been deployed",
@@ -55,7 +55,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "True",
 				Reason:  "ComponentsRunning",
 				Message: "All trace components are running",
@@ -78,7 +78,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
 				Reason:  "ReferencedSecretMissing",
 				Message: "One or more referenced Secrets are missing",
@@ -101,7 +101,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayNotReady",
 				Message: "Trace gateway Deployment is not ready",
@@ -124,7 +124,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
 				Reason:  "MaxPipelinesExceeded",
 				Message: "Maximum pipeline count limit exceeded",
@@ -146,7 +146,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
 				Reason:  "ReferencedSecretMissing",
 				Message: "One or more referenced Secrets are missing",
@@ -160,7 +160,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (bar,foo)",
@@ -176,7 +176,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "True",
 				Reason:  "ComponentsRunning",
 				Message: "All trace components are running",
@@ -192,7 +192,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
 				Message: "Trace gateway experiencing high influx: unable to receive traces at current rate",
@@ -212,7 +212,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
-				Type:    "TraceComponentsHealthy",
+				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "True",
 				Reason:  "TLSCertificateAboutToExpire",
 				Message: "TLS certificate is about to expire, configured certificate is valid until 22.04.2024",

@@ -31,7 +31,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			name:                "should be healthy if no pipelines deployed",
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "True",
 				Reason:  "NoPipelineDeployed",
 				Message: "No pipelines have been deployed",
@@ -53,7 +53,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "True",
 				Reason:  "ComponentsRunning",
 				Message: "All metric components are running",
@@ -75,7 +75,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "ReferencedSecretMissing",
 				Message: "One or more referenced Secrets are missing",
@@ -97,7 +97,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayNotReady",
 				Message: "Metric gateway Deployment is not ready",
@@ -119,7 +119,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentNotReady",
 				Message: "Metric agent DaemonSet is not ready",
@@ -141,7 +141,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "MaxPipelinesExceeded",
 				Message: "Maximum pipeline count limit exceeded",
@@ -163,7 +163,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayNotReady",
 				Message: "Metric gateway Deployment is not ready",
@@ -177,7 +177,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (bar,foo)",
@@ -194,7 +194,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
 				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
@@ -211,7 +211,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
 				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
@@ -231,7 +231,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "TLSCertificateInvalid",
 				Message: "TLS certificate invalid: unable to decode pem blocks",

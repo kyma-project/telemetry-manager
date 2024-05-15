@@ -1,10 +1,13 @@
 package conditions
 
 const (
-	TypeGatewayHealthy         = "GatewayHealthy"
-	TypeAgentHealthy           = "AgentHealthy"
-	TypeConfigurationGenerated = "ConfigurationGenerated"
-	TypeFlowHealthy            = "TelemetryFlowHealthy"
+	TypeGatewayHealthy          = "GatewayHealthy"
+	TypeAgentHealthy            = "AgentHealthy"
+	TypeConfigurationGenerated  = "ConfigurationGenerated"
+	TypeFlowHealthy             = "TelemetryFlowHealthy"
+	TypeLogComponentsHealthy    = "LogComponentsHealthy"
+	TypeTraceComponentsHealthy  = "TraceComponentsHealthy"
+	TypeMetricComponentsHealthy = "MetricComponentsHealthy"
 
 	// NOTE: The "Running" and "Pending" types are deprecated
 	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision

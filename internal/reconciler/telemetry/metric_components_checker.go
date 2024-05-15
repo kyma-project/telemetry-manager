@@ -29,7 +29,7 @@ func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion
 	status := m.determineConditionStatus(reason)
 	message := m.createMessageForReason(metricPipelines.Items, reason)
 
-	conditionType := "MetricComponentsHealthy"
+	conditionType := conditions.TypeMetricComponentsHealthy
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,

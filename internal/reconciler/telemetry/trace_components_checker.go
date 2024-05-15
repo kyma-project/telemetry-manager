@@ -29,7 +29,7 @@ func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion 
 	status := t.determineConditionStatus(reason)
 	message := t.createMessageForReason(tracePipelines.Items, reason)
 
-	conditionType := "TraceComponentsHealthy"
+	conditionType := conditions.TypeTraceComponentsHealthy
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,

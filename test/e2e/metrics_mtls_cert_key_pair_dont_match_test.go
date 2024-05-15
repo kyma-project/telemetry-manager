@@ -83,7 +83,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		It("Should have telemetryCR showing tls certificate key pair invalid condition for metric component in its status", func() {
 			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
-				Type:   "MetricComponentsHealthy",
+				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSCertificateInvalid,
 			})
