@@ -21,8 +21,6 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -159,10 +157,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if err = r.reconcileTraceGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
-	}
-
-	if err := r.cleanUpOpenCensusService(ctx); err != nil {
-		return fmt.Errorf("failed to clean up OpenCensus service: %w", err)
 	}
 
 	return nil
@@ -305,23 +299,5 @@ func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines 
 	}
 	r.pipelinesConditionsCleared = true
 
-	return nil
-}
-
-// TODO: Remove this logic after the next release
-func (r *Reconciler) cleanUpOpenCensusService(ctx context.Context) error {
-	openCensusServiceName := "telemetry-trace-collector-internal"
-	openCensusService := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      openCensusServiceName,
-			Namespace: r.config.Gateway.Namespace,
-		},
-	}
-	if err := r.Delete(ctx, openCensusService); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return fmt.Errorf("failed to delete OpenCensus service: %s in namespace %s: %w", openCensusServiceName, r.config.Gateway.Namespace, err)
-	}
 	return nil
 }
