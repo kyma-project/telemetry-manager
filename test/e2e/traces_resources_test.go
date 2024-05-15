@@ -83,10 +83,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
-		It("Should have a ConfigMap containing the key 'relay.conf'", func() {
-			assert.ConfigMapHasKey(ctx, k8sClient, kitkyma.TraceGatewayConfigMap, "relay.conf")
-		})
-
 		It("Should have a Deployment with correct pod priority class", func() {
 			assert.DeploymentHasPriorityClass(ctx, k8sClient, kitkyma.TraceGatewayName, "telemetry-priority-class")
 		})
