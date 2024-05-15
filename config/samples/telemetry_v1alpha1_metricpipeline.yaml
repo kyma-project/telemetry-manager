@@ -51,7 +51,7 @@ spec:
         fsGroup: 101
       containers:
         - image: otel/opentelemetry-collector-contrib:latest
-          name: otel-collector
+          name: collector
           volumeMounts:
             - name: config
               mountPath: /etc/collector
@@ -99,7 +99,7 @@ spec:
       containers:
         - image: ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736
           imagePullPolicy: IfNotPresent
-          name: sample-metrics
+          name: metric-gen
           ports:
             - containerPort: 8080
               name: http-metrics
