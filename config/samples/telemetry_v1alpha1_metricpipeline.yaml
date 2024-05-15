@@ -2,16 +2,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: metric-receiver
-spec: {}
+  name: metric-sink
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mock-metric-receiver
-  namespace: metric-receiver
-  labels:
-    app: mock-metric-receiver
+  name: metric-sink-config
+  namespace: metric-sink
 data:
   config.yaml: |
     receivers:
@@ -20,45 +17,43 @@ data:
           grpc: {}
           http: {}
     exporters:
-      logging:
-        loglevel: debug
+      debug:
+        verbosity: detailed
     service:
       pipelines:
         metrics:
           receivers:
             - otlp
           exporters:
-            - logging
+            - debug
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: mock-metric-receiver
-  name: mock-metric-receiver
-  namespace: metric-receiver
+  name: metric-sink
+  namespace: metric-sink
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mock-metric-receiver
+      app: metric-sink
   strategy: {}
   template:
     metadata:
       labels:
-        app: mock-metric-receiver
+        app: metric-sink
     spec:
       volumes:
-        - name: collector-config
+        - name: config
           configMap:
-            name: mock-metric-receiver
+            name: metric-sink-config
       securityContext:
         fsGroup: 101
       containers:
-        - image: otel/opentelemetry-collector-contrib:0.70.0
+        - image: otel/opentelemetry-collector-contrib:latest
           name: otel-collector
           volumeMounts:
-            - name: collector-config
+            - name: config
               mountPath: /etc/collector
           args:
             - --config=/etc/collector/config.yaml
@@ -66,10 +61,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    app: mock-metric-receiver
-  name: mock-metric-receiver
-  namespace: metric-receiver
+  name: metric-sink
+  namespace: metric-sink
 spec:
   ports:
     - name: grpc-otlp
@@ -81,29 +74,27 @@ spec:
       protocol: TCP
       targetPort: 4318
   selector:
-    app: mock-metric-receiver
+    app: metric-sink
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: metric-producer
+  name: metric-gen
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: metric-producer
-  name: metric-producer
-  namespace: metric-producer
+  name: metric-gen
+  namespace: metric-gen
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: metric-producer
+      app: metric-gen
   template:
     metadata:
       labels:
-        app: metric-producer
+        app: metric-gen
     spec:
       containers:
         - image: ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736
@@ -126,10 +117,8 @@ metadata:
     prometheus.io/path: "/metrics"
     prometheus.io/port: "8080"
     prometheus.io/scrape: "true"
-  labels:
-    app: metric-producer
-  name: metric-producer
-  namespace: metric-producer
+  name: metric-gen-metrics
+  namespace: metric-gen
 spec:
   ports:
     - name: http-metrics
@@ -137,19 +126,13 @@ spec:
       protocol: TCP
       targetPort: 8080
   selector:
-    app: metric-producer
+    app: metric-gen
   type: ClusterIP
 ---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
 metadata:
-  labels:
-    app.kubernetes.io/name: metricpipeline
-    app.kubernetes.io/instance: metricpipeline-sample
-    app.kubernetes.io/part-of: telemetry-manager
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: telemetry-manager
-  name: metricpipeline-sample
+  name: sample
 spec:
   input:
     runtime:
@@ -161,4 +144,4 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://mock-metric-receiver.metric-receiver:4317
+        value: http://metric-sink.metric-sink:4317
