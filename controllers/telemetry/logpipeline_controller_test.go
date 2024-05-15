@@ -296,13 +296,6 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			}, timeout, interval).Should(BeNil())
 		})
 	})
-
-	Context("When deleting the LogPipeline", Ordered, func() {
-		BeforeAll(func() {
-			Expect(k8sClient.Delete(ctx, logPipeline)).Should(Succeed())
-		})
-	})
-
 })
 
 func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) error {
