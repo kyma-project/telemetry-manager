@@ -20,7 +20,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var pipelineName = suite.ID()
 
-	Context("When a LogPipeline with missing secret reference exists", func() {
+	Context("When a LogPipeline with missing secret reference exists", Ordered, func() {
 
 		endpointKey := "logs-endpoint"
 		secret := kitk8s.NewOpaqueSecret("logs-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
