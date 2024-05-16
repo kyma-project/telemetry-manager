@@ -3,15 +3,16 @@
 package e2e
 
 import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
