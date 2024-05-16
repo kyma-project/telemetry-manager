@@ -53,7 +53,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 
 		It("Should have a Service owned by the MetricPipeline", func() {
 			var service corev1.Service
-			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.MetricGatewayService, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.MetricGatewayOTLPService, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ConfigMap owned by the MetricPipeline", func() {
