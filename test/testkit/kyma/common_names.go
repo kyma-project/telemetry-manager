@@ -51,8 +51,18 @@ var (
 	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayConfigMap          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 
-	FluentBitDaemonSet         = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
-	FluentBitSectionsConfigMap = types.NamespacedName{Name: FluentBitBaseName + "-sections", Namespace: SystemNamespaceName}
+	FluentBitDaemonSet              = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitServiceAccount         = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitClusterRole            = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitClusterRoleBinding     = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitExporterMetricsService = types.NamespacedName{Name: FluentBitBaseName + "-exporter-metrics", Namespace: SystemNamespaceName}
+	FluentBitMetricsService         = types.NamespacedName{Name: FluentBitBaseName + "-metrics", Namespace: SystemNamespaceName}
+	FluentBitConfigMap              = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitSectionsConfigMap      = types.NamespacedName{Name: FluentBitBaseName + "-sections", Namespace: SystemNamespaceName}
+	FluentBitLuaConfigMap           = types.NamespacedName{Name: FluentBitBaseName + "-luascripts", Namespace: SystemNamespaceName}
+	FluentBiParserConfigMap         = types.NamespacedName{Name: FluentBitBaseName + "-parsers", Namespace: SystemNamespaceName}
+	FluentBiFilesConfigMap          = types.NamespacedName{Name: FluentBitBaseName + "-files", Namespace: SystemNamespaceName}
+	FluentBiNetworkPolicy           = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
 
 	SelfMonitorName          = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
 	SelfMonitorNetworkPolicy = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
