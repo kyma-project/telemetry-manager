@@ -14,14 +14,13 @@ const (
 	MetricGatewayBaseName = "telemetry-metric-gateway"
 	MetricAgentBaseName   = "telemetry-metric-agent"
 	TraceGatewayBaseName  = "telemetry-trace-collector"
+	FluentBitBaseName     = "telemetry-fluent-bit"
 	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
 	WebhookName           = "validation.webhook.telemetry.kyma-project.io"
 
 	MetricGatewayServiceName = "telemetry-otlp-metrics"
 	TraceGatewayServiceName  = "telemetry-otlp-traces"
-
-	FluentBitSectionsConfigMapName = "telemetry-fluent-bit-sections"
 )
 
 var (
@@ -52,12 +51,13 @@ var (
 	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayConfigMap          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 
+	FluentBitDaemonSet         = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitSectionsConfigMap = types.NamespacedName{Name: FluentBitBaseName + "-sections", Namespace: SystemNamespaceName}
+
 	SelfMonitorName          = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
 	SelfMonitorNetworkPolicy = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
 
 	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
 
 	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
-
-	FluentBitSectionsConfigMap = types.NamespacedName{Name: FluentBitSectionsConfigMapName, Namespace: SystemNamespaceName}
 )
