@@ -55,7 +55,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		It("Should have a Service owned by the TracePipeline", func() {
 			var service corev1.Service
-			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayService, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayOTLPService, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ConfigMap owned by the TracePipeline", func() {
