@@ -65,7 +65,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should not include the pipeline in fluent-bit-sections ConfigMap", func() {
-			assert.ConfigMapConsistentlyNotHaveKey(ctx, k8sClient, kitkyma.FluentBitSectionsConfigMap, fmt.Sprintf("%s.conf", pipelineName))
+			Consistently(func(g Gomega) {
+				var configMap corev1.ConfigMap
+				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
+
+				g.Expect(configMap.Data).ShouldNot(HaveKey(fmt.Sprintf("%s.conf", pipelineName)))
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })

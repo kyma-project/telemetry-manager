@@ -65,7 +65,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should not include the LogPipeline with missing secret in fluent-bit-sections configmap", func() {
-			assert.ConfigMapConsistentlyNotHaveKey(ctx, k8sClient, kitkyma.FluentBitSectionsConfigMap, fmt.Sprintf("%s.conf", pipelineName))
+			Consistently(func(g Gomega) {
+				var configMap corev1.ConfigMap
+				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
+
+				g.Expect(configMap.Data).ShouldNot(HaveKey(fmt.Sprintf("%s.conf", pipelineName)))
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a healthy pipeline and update fluent-bit-sections configmap", func() {
@@ -74,7 +79,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
-			assert.ConfigMapHasKey(ctx, k8sClient, kitkyma.FluentBitSectionsConfigMap, fmt.Sprintf("%s.conf", pipelineName))
+
+			Eventually(func(g Gomega) {
+				var configMap corev1.ConfigMap
+				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
+
+				g.Expect(configMap.Data).Should(HaveKey(fmt.Sprintf("%s.conf", pipelineName)))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should remove pipeline from fluent-bit-sections configmap", func() {
@@ -82,7 +93,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, secret.K8sObject())).Should(Succeed())
 			})
 
-			assert.ConfigMapEventuallyNotHaveKey(ctx, k8sClient, kitkyma.FluentBitSectionsConfigMap, fmt.Sprintf("%s.conf", pipelineName))
+			Eventually(func(g Gomega) {
+				var configMap corev1.ConfigMap
+				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
+
+				g.Expect(configMap.Data).ShouldNot(HaveKey(fmt.Sprintf("%s.conf", pipelineName)))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 	})
