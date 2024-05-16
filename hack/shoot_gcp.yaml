@@ -1,0 +1,43 @@
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: ${GARDENER_CLUSTER_NAME}
+spec:
+  secretBindingName: ${GARDENER_SECRET_NAME}
+  cloudProfileName: gcp
+  region: europe-west3
+  purpose: evaluation
+  provider:
+    type: gcp
+    infrastructureConfig:
+      apiVersion: gcp.provider.extensions.gardener.cloud/v1alpha1
+      kind: InfrastructureConfig
+      networks:
+        workers: 10.250.0.0/16
+    controlPlaneConfig:
+      apiVersion: gcp.provider.extensions.gardener.cloud/v1alpha1
+      kind: ControlPlaneConfig
+      zone: europe-west3-a
+    workers:
+      - name: cpu-worker
+        minimum: ${GARDENER_MIN_NODES}
+        maximum: ${GARDENER_MAX_NODES}
+        machine:
+          type: ${GARDENER_MACHINE_TYPE}
+        volume:
+          type: pd-standard
+          size: 50Gi
+        zones:
+          - europe-west3-a
+  networking:
+    type: calico
+    pods: 100.96.0.0/11
+    nodes: 10.250.0.0/16
+    services: 100.64.0.0/13
+  kubernetes:
+    version: ${GARDENER_K8S_VERSION_FULL}
+  hibernation:
+    enabled: true
+    schedules:
+      - start: "00 ${HIBERNATION_HOUR} * * ?"
+        location: "Europe/Berlin"

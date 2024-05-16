@@ -35,18 +35,25 @@ GARDENER_OS_VERSION=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudpr
 endif
 
 .PHONY: provision-gardener
-provision-gardener: kyma ## Provision gardener cluster with latest k8s version
-	${KYMA} provision gardener gcp \
-				--credentials ${GARDENER_SA_PATH} \
-				--name ${GARDENER_CLUSTER_NAME} \
-				--project ${GARDENER_PROJECT} \
-				--secret ${GARDENER_SECRET_NAME} \
-				--kube-version ${GARDENER_K8S_VERSION_FULL} \
-				--gardenlinux-version ${GARDENER_OS_VERSION} \
-				--hibernation-start="00 ${HIBERNATION_HOUR} * * ?" \
-				--type ${GARDENER_MACHINE_TYPE} \
-				--scaler-min ${GARDENER_MIN_NODES} \
-				--scaler-max ${GARDENER_MAX_NODES}
+provision-gardener: ## Provision gardener cluster with latest k8s version
+	# render and applyshoot template
+	shoot_template=$(envsubst < hack/shoot_gcp.yaml)
+
+	echo "${shoot_template}" | kubectl --kubeconfig "${GARDENER_SA_PATH}" apply -f -
+
+	echo "waiting fo cluster to be ready..."
+	kubectl wait --kubeconfig "${GARDENER_SA_PATH}" --for=condition=EveryNodeReady shoot/${GARDENER_CLUSTER_NAME} --timeout=17m
+
+	# create kubeconfig request, that creates a kubeconfig which is valid for one day
+	kubectl --kubeconfig "${GARDENER_SA_PATH}" create \
+		-f <(printf '{"spec":{"expirationSeconds":86400}}') \
+		--raw /apis/core.gardener.cloud/v1beta1/namespaces/garden-${GARDENER_PROJECT}/shoots/${GARDENER_CLUSTER_NAME}/adminkubeconfig | \
+		jq -r ".status.kubeconfig" | \
+		base64 -d > ${GARDENER_CLUSTER_NAME}_kubeconfig.yaml
+
+	# replace the default kubeconfig
+	mkdir -p ~/.kube
+	mv ${GARDENER_CLUSTER_NAME}_kubeconfig.yaml ~/.kube/config
 
 .PHONY: deprovision-gardener
 deprovision-gardener: kyma ## Deprovision gardener cluster
