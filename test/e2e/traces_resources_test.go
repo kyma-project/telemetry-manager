@@ -14,6 +14,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
@@ -53,7 +54,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			assert.HasOwnerReference(ctx, k8sClient, &deployment, kitkyma.TraceGatewayName, ownerReferenceKind, pipelineName)
 		})
 
-		It("Should have a Service owned by the TracePipeline", func() {
+		It("Should have an OTLP Service owned by the TracePipeline", func() {
 			var service corev1.Service
 			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayOTLPService, ownerReferenceKind, pipelineName)
 		})
@@ -66,6 +67,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		It("Should have a Secret owned by the TracePipeline", func() {
 			var secret corev1.Secret
 			assert.HasOwnerReference(ctx, k8sClient, &secret, kitkyma.TraceGatewaySecretName, ownerReferenceKind, pipelineName)
+		})
+
+		It("Should have a Metrics service owned by the TracePipeline", func() {
+			var service corev1.Service
+			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayMetricsService, ownerReferenceKind, pipelineName)
+		})
+
+		It("Should have a Network Policy owned by the TracePipeline", func() {
+			var networkPolicy networkingv1.NetworkPolicy
+			assert.HasOwnerReference(ctx, k8sClient, &networkPolicy, kitkyma.TraceGatewayNetworkPolicy, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Deployment with correct pod priority class", func() {
