@@ -189,7 +189,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayThrottling}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonSelfMonGatewayThrottling}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,
@@ -206,7 +206,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayThrottling}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonSelfMonGatewayThrottling}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,

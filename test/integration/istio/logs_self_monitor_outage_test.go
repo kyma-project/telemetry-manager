@@ -77,9 +77,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
 			assert.LogPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []string{
-				conditions.ReasonFlowHealthy,
-				conditions.ReasonNoLogsDelivered,
-				conditions.ReasonAllDataDropped,
+				conditions.ReasonSelfMonFlowHealthy,
+				conditions.ReasonSelfMonNoLogsDelivered,
+				conditions.ReasonSelfMonAllDataDropped,
 			})
 		})
 	})

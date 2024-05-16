@@ -203,7 +203,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonFlowHealthy}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonSelfMonFlowHealthy}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,
@@ -219,7 +219,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonNoLogsDelivered}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonSelfMonNoLogsDelivered}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,

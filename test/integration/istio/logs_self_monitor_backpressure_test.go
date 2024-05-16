@@ -74,9 +74,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), O
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
 			assert.LogPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []string{
-				conditions.ReasonFlowHealthy,
-				conditions.ReasonBufferFillingUp,
-				conditions.ReasonSomeDataDropped,
+				conditions.ReasonSelfMonFlowHealthy,
+				conditions.ReasonSelfMonBufferFillingUp,
+				conditions.ReasonSelfMonSomeDataDropped,
 			})
 		})
 	})

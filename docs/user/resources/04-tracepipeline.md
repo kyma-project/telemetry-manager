@@ -152,18 +152,18 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 | GatewayHealthy         | True             | GatewayReady                | Trace gateway Deployment is ready                                                    |
 | GatewayHealthy         | False            | GatewayNotReady             | Trace gateway Deployment is not ready                                                |
 | ConfigurationGenerated | True             | ConfigurationGenerated      |                                                                                      |
-| ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                           |
-| ConfigurationGenerated | False            | MaxPipelinesExceeded        | Maximum pipeline count limit exceeded                                                |
-| ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                              |
-| ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                |
 | ConfigurationGenerated | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded        | Maximum pipeline count limit exceeded                                                |
+| ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                           |
+| ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                |
+| ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                              |
 
 Reflecting the TracePipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
 
 | Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                     |
 | -------------------- | ---------------- | ----------------- | ------------------------------------------------------------------------------------- |
 | TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the trace flow                                                |
-| TelemetryFlowHealthy | False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive metrics at the current rate |
-| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                  |
-| TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                 |
 | TelemetryFlowHealthy | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                  |
+| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                  |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive metrics at the current rate |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                 |

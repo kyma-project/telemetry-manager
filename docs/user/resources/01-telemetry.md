@@ -107,25 +107,25 @@ The state of the log components is determined by the status condition of type `L
 
 | Condition Status | Condition Reason            | Condition Message                                                                                                                                                                                                                                         |
 | ---------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| True             | NoPipelineDeployed          | No pipelines have been deployed                                                                                                                                                                                                                           |
 | True             | ComponentsRunning           | All log components are running                                                                                                                                                                                                                            |
+| True             | NoPipelineDeployed          | No pipelines have been deployed                                                                                                                                                                                                                           |
 | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                                                                      |
-| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                                                                                                                                |
 | False            | AgentNotReady               | Fluent Bit agent DaemonSet is not ready                                                                                                                                                                                                                   |
+| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                                                                                                                                |
 | False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (resource-1, resource-2,...), LogParsers (resource-1, resource-2,...)                                                                        |
-| False            | UnsupportedLokiOutput       | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README). |
-| False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                                                                                                                                   |
 | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                                                                                                                                                                                     |
+| False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                                                                                                                                   |
+| False            | UnsupportedLokiOutput       | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README). |
 
 Reflecting the log data flow in the status condition is currently under development and determined by the following reasons:
 
 | Condition Status | Condition Reason | Condition Message                                                  |
 | ---------------- | ---------------- | ------------------------------------------------------------------ |
 | True             | FlowHealthy      | No problems detected in the log flow                               |
+| False            | AllDataDropped   | All logs dropped: backend unreachable or rejecting                 |
 | False            | BufferFillingUp  | Buffer nearing capacity: incoming log rate exceeds the export rate |
 | False            | NoLogsDelivered  | No logs delivered to backend                                       |
 | False            | SomeDataDropped  | Some logs dropped: backend unreachable or rejecting                |
-| False            | AllDataDropped   | All logs dropped: backend unreachable or rejecting                 |
 
 ### Trace Components State
 
@@ -133,25 +133,25 @@ The state of the trace components is determined by the status condition of type 
 
 | Condition Status | Condition Reason            | Condition Message                                                                                                                           |
 | ---------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| True             | NoPipelineDeployed          | No pipelines have been deployed                                                                                                             |
 | True             | ComponentsRunning           | All trace components are running                                                                                                            |
+| True             | NoPipelineDeployed          | No pipelines have been deployed                                                                                                             |
 | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                        |
-| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                  |
 | False            | GatewayNotReady             | Trace gateway Deployment is not ready                                                                                                       |
-| False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (resource-1, resource-2,...) |
 | False            | MaxPipelinesExceeded        | Maximum pipeline count exceeded                                                                                                             |
-| False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                     |
+| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                  |
+| False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (resource-1, resource-2,...) |
 | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                                                                       |
+| False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                     |
 
 Reflecting the trace data flow in the status condition is currently under development and determined by the following reasons:
 
 | Condition Status | Condition Reason  | Condition Message                                                                    |
 | ---------------- | ----------------- | ------------------------------------------------------------------------------------ |
 | True             | FlowHealthy       | No problems detected in the trace flow                                               |
-| False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive traces at the current rate |
-| False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                 |
-| False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                |
 | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                 |
+| False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                 |
+| False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive traces at the current rate |
+| False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                |
 
 ### Metric Components State
 
@@ -159,26 +159,26 @@ The state of the metric components is determined by the status condition of type
 
 | Condition Status | Condition Reason            | Condition Message                                                                                                                            |
 | ---------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| True             | NoPipelineDeployed          | No pipelines have been deployed                                                                                                              |
 | True             | ComponentsRunning           | All metric components are running                                                                                                            |
+| True             | NoPipelineDeployed          | No pipelines have been deployed                                                                                                              |
 | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                         |
-| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                   |
-| False            | GatewayNotReady             | Metric gateway deployment is not ready                                                                                                       |
 | False            | AgentNotReady               | Metric agent DaemonSet is not ready                                                                                                          |
-| False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
+| False            | GatewayNotReady             | Metric gateway deployment is not ready                                                                                                       |
 | False            | MaxPipelinesExceeded        | Maximum pipeline count exceeded                                                                                                              |
-| False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                      |
+| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                   |
+| False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
 | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                                                                        |
+| False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                      |
 
 Reflecting the metric data flow in the status condition is currently under development and determined by the following reasons:
 
 | Condition Status | Condition Reason  | Condition Message                                                                      |
 | ---------------- | ----------------- | -------------------------------------------------------------------------------------- |
 | True             | FlowHealthy       | No problems detected in the metric flow                                                |
-| False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate |
-| False            | BufferFillingUp   | Buffer nearing capacity: incoming metric rate exceeds the export rate                  |
-| False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                                 |
 | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting                                  |
+| False            | BufferFillingUp   | Buffer nearing capacity: incoming metric rate exceeds the export rate                  |
+| False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate |
+| False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                                 |
 
 ### Telemetry CR State
 

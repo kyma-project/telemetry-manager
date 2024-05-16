@@ -155,7 +155,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	} else {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
 
-		reason = conditions.ReasonFlowHealthy
+		reason = conditions.ReasonSelfMonFlowHealthy
 		status = metav1.ConditionUnknown
 	}
 
@@ -172,16 +172,16 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 
 func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 	if probeResult.AllDataDropped {
-		return conditions.ReasonAllDataDropped
+		return conditions.ReasonSelfMonAllDataDropped
 	}
 	if probeResult.SomeDataDropped {
-		return conditions.ReasonSomeDataDropped
+		return conditions.ReasonSelfMonSomeDataDropped
 	}
 	if probeResult.QueueAlmostFull {
-		return conditions.ReasonBufferFillingUp
+		return conditions.ReasonSelfMonBufferFillingUp
 	}
 	if probeResult.Throttling {
-		return conditions.ReasonGatewayThrottling
+		return conditions.ReasonSelfMonGatewayThrottling
 	}
-	return conditions.ReasonFlowHealthy
+	return conditions.ReasonSelfMonFlowHealthy
 }

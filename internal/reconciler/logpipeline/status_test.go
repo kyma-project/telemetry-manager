@@ -258,7 +258,7 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "prober fails",
 				probeErr:       assert.AnError,
 				expectedStatus: metav1.ConditionUnknown,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonFlowHealthy,
 			},
 			{
 				name: "healthy",
@@ -266,7 +266,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus: metav1.ConditionTrue,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonFlowHealthy,
 			},
 			{
 				name: "buffer filling up",
@@ -274,7 +274,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonBufferFillingUp,
+				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
 			},
 			{
 				name: "no logs delivered",
@@ -282,7 +282,7 @@ func TestUpdateStatus(t *testing.T) {
 					NoLogsDelivered: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonNoLogsDelivered,
+				expectedReason: conditions.ReasonSelfMonNoLogsDelivered,
 			},
 			{
 				name: "no logs delivered shadows other problems",
@@ -291,7 +291,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonNoLogsDelivered,
+				expectedReason: conditions.ReasonSelfMonNoLogsDelivered,
 			},
 			{
 				name: "some data dropped",
@@ -299,7 +299,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -308,7 +308,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp:     true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "all data dropped",
@@ -316,7 +316,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -327,7 +327,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 		}
 
