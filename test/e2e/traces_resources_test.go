@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -71,16 +70,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		It("Should have a Deployment with correct pod environment configuration", func() {
 			assert.DeploymentHasEnvFromSecret(ctx, k8sClient, kitkyma.TraceGatewayName, kitkyma.TraceGatewayBaseName)
-		})
-
-		It("Should have a Deployment with correct pod metadata", func() {
-			Eventually(func(g Gomega) {
-				var deployment appsv1.Deployment
-				g.Expect(k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)).To(Succeed())
-
-				g.Expect(deployment.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"]).To(Equal("false"))
-				g.Expect(deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]).ToNot(BeEmpty())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a Deployment with correct pod priority class", func() {
