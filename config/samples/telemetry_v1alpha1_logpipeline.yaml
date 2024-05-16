@@ -4,58 +4,6 @@ kind: Namespace
 metadata:
   name: log-sink
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: fluentd-config
-  namespace: log-sink
-data:
-  config.yaml: |
-    <source>
-      @type http
-      port 9880
-      bind 0.0.0.0
-      body_size_limit 32m
-      add_http_headers true
-      <parse>
-        @type json
-      </parse>
-    </source>
-    <match **>
-      @type forward
-      send_timeout 60s
-      recover_wait 10s
-      hard_timeout 60s
-      flush_interval 1s
-      <server>
-        name otlp
-        host 127.0.0.1
-        port 8006
-        weight 60
-      </server>
-    </match>
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: log-sink-config
-  namespace: log-sink
-data:
-  config.yaml: |
-    receivers:
-      fluentforward:
-        endpoint: localhost:8006
-    exporters:
-      debug:
-        verbosity: detailed
-    service:
-      pipelines:
-        logs:
-          receivers:
-            - fluentforward
-          exporters:
-            - debug
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -66,37 +14,29 @@ spec:
   selector:
     matchLabels:
       app: log-sink
-  strategy: {}
   template:
     metadata:
       labels:
         app: log-sink
+      name: log-sink
     spec:
-      volumes:
-        - name: collector-config
-          configMap:
-            name: log-sink-config
-        - name: fluentd-config
-          configMap:
-            name: fluentd-config
-      securityContext:
-        fsGroup: 101
       containers:
-        - image: otel/opentelemetry-collector-contrib:latest
-          name: collector
-          volumeMounts:
-            - name: collector-config
-              mountPath: /etc/collector
-          args:
-            - --config=/etc/collector/config.yaml
-        - image: fluent/fluentd:edge
-          name: fluentd
-          volumeMounts:
-            - name: fluentd-config
-              mountPath: /etc/fluentd
-          args:
-            - -v
-            - --config=/etc/fluentd/config.yaml
+        - args:
+            - -i http
+            - -o stdout
+            - -q
+          image: europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.2-b5220c17
+          livenessProbe:
+            tcpSocket:
+              port: http-ingest
+          name: log-sink
+          ports:
+            - containerPort: 9880
+              name: http-ingest
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: http-ingest
 ---
 apiVersion: v1
 kind: Service
@@ -105,18 +45,10 @@ metadata:
   namespace: log-sink
 spec:
   ports:
-    - name: grpc-otlp
-      port: 4317
-      protocol: TCP
-      targetPort: 4317
-    - name: http-otlp
-      port: 4318
-      protocol: TCP
-      targetPort: 4318
-    - name: http-fluentd
+    - name: http-ingest
       port: 9880
       protocol: TCP
-      targetPort: 9880
+      targetPort: http-ingest
   selector:
     app: log-sink
 ---
@@ -141,18 +73,23 @@ spec:
         app: log-gen
     spec:
       containers:
-      - image: mingrammer/flog:latest
-        name: flog
-        args:
-        - -b=1024
-        - -f=json
-        - -l
+        - image: mingrammer/flog:latest
+          name: flog
+          args:
+            - -b=64
+            - -f=json
+            - -l
 ---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogPipeline
 metadata:
   name: sample
 spec:
+  input:
+    application:
+      namespaces:
+        include:
+        - log-gen
   output:
     http:
       dedot: true
