@@ -21,6 +21,11 @@ const (
 )
 
 const (
+	// Telemetry reasons
+	ReasonComponentsRunning      = "ComponentsRunning"
+	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
+	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
+
 	// Common reasons
 	ReasonAgentNotReady               = "AgentNotReady"
 	ReasonAgentReady                  = "AgentReady"
@@ -37,11 +42,6 @@ const (
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
-
-	// Telemetry reasons
-	ReasonComponentsRunning      = "ComponentsRunning"
-	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
-	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
 
 	// LogPipeline reasons
 	ReasonSelfMonNoLogsDelivered = "NoLogsDelivered"
