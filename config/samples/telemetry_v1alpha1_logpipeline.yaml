@@ -25,7 +25,7 @@ spec:
             - -i http
             - -o stdout
             - -q
-          image: fluent/fluent-bit:latest:
+          image: fluent/fluent-bit:latest
           livenessProbe:
             tcpSocket:
               port: http-ingest
