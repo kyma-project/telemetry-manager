@@ -58,7 +58,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "True",
-				Reason:  "ComponentsRunning",
+				Reason:  conditions.ReasonComponentsRunning,
 				Message: "All log components are running",
 			},
 		},
@@ -81,7 +81,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
-				Reason:  "ReferencedSecretMissing",
+				Reason:  conditions.ReasonReferencedSecretMissing,
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -149,7 +149,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
-				Reason:  "ReferencedSecretMissing",
+				Reason:  conditions.ReasonReferencedSecretMissing,
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -210,7 +210,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "True",
-				Reason:  "ComponentsRunning",
+				Reason:  conditions.ReasonComponentsRunning,
 				Message: "All log components are running",
 			},
 		},

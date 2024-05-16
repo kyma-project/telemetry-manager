@@ -57,7 +57,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "True",
-				Reason:  "ComponentsRunning",
+				Reason:  conditions.ReasonComponentsRunning,
 				Message: "All trace components are running",
 			},
 		},
@@ -80,7 +80,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
-				Reason:  "ReferencedSecretMissing",
+				Reason:  conditions.ReasonReferencedSecretMissing,
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -148,7 +148,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
-				Reason:  "ReferencedSecretMissing",
+				Reason:  conditions.ReasonReferencedSecretMissing,
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -178,7 +178,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "True",
-				Reason:  "ComponentsRunning",
+				Reason:  conditions.ReasonComponentsRunning,
 				Message: "All trace components are running",
 			},
 		},

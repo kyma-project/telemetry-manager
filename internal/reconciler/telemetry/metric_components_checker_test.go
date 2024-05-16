@@ -55,7 +55,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "True",
-				Reason:  "ComponentsRunning",
+				Reason:  conditions.ReasonComponentsRunning,
 				Message: "All metric components are running",
 			},
 		},
@@ -77,7 +77,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
-				Reason:  "ReferencedSecretMissing",
+				Reason:  conditions.ReasonReferencedSecretMissing,
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
