@@ -14,7 +14,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
@@ -53,6 +55,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
+		})
+
+		It("Should have a fluent-bit-sections ConfigMap", func() {
+			Eventually(func(g Gomega) {
+				var configMap corev1.ConfigMap
+				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should not include the LogPipeline with missing secret in fluent-bit-sections configmap", func() {

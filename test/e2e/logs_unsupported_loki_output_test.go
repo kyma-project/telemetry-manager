@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs, "test"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var pipelineName = suite.ID()
 
 	Context("When a LogPipeline with Loki output exists", Ordered, func() {
