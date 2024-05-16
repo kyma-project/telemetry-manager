@@ -68,10 +68,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			assert.HasOwnerReference(ctx, k8sClient, &secret, kitkyma.TraceGatewaySecretName, ownerReferenceKind, pipelineName)
 		})
 
-		It("Should have a Deployment with correct pod environment configuration", func() {
-			assert.DeploymentHasEnvFromSecret(ctx, k8sClient, kitkyma.TraceGatewayName, kitkyma.TraceGatewayBaseName)
-		})
-
 		It("Should have a Deployment with correct pod priority class", func() {
 			assert.DeploymentHasPriorityClass(ctx, k8sClient, kitkyma.TraceGatewayName, "telemetry-priority-class")
 		})

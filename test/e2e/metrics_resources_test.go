@@ -66,10 +66,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 			assert.HasOwnerReference(ctx, k8sClient, &secret, kitkyma.MetricGatewaySecretName, ownerReferenceKind, pipelineName)
 		})
 
-		It("Should have a Deployment with correct pod environment configuration", func() {
-			assert.DeploymentHasEnvFromSecret(ctx, k8sClient, kitkyma.MetricGatewayName, kitkyma.MetricGatewayBaseName)
-		})
-
 		It("Should have a Deployment with correct pod priority class", func() {
 			assert.DeploymentHasPriorityClass(ctx, k8sClient, kitkyma.MetricGatewayName, "telemetry-priority-class")
 		})

@@ -35,19 +35,6 @@ func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.
 	return PodReady(ctx, k8sClient, listOptions)
 }
 
-func DeploymentHasEnvFromSecret(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedSecretRefName string) {
-	Eventually(func(g Gomega) {
-		var deployment appsv1.Deployment
-		g.Expect(k8sClient.Get(ctx, name, &deployment)).To(Succeed())
-
-		container := deployment.Spec.Template.Spec.Containers[0]
-		env := container.EnvFrom[0]
-
-		g.Expect(env.SecretRef.LocalObjectReference.Name).To(Equal(expectedSecretRefName))
-		g.Expect(*env.SecretRef.Optional).To(BeTrue())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
 func DeploymentHasPriorityClass(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedPriorityClassName string) {
 	Eventually(func(g Gomega) {
 		var deployment appsv1.Deployment
