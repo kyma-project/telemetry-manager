@@ -86,6 +86,7 @@ func TracePipelineHasLegacyConditionsAtEnd(ctx context.Context, k8sClient client
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
+//nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
 func TracePipelineConditionReasonsTransition(ctx context.Context, k8sClient client.Client, pipelineName, condType string, expected []ReasonStatus) {
 	var currCond *metav1.Condition
 
