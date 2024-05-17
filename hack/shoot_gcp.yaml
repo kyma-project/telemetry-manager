@@ -37,7 +37,10 @@ spec:
   kubernetes:
     version: ${GARDENER_K8S_VERSION_FULL}
   hibernation:
-    enabled: true
+    enabled: false
     schedules:
       - start: "00 ${HIBERNATION_HOUR} * * ?"
         location: "Europe/Berlin"
+  addons:
+    nginxIngress:
+      enabled: false
