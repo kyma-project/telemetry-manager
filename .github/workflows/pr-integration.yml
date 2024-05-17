@@ -84,6 +84,10 @@ jobs:
           - integration
           - self-mon-logs-backpressure
           - self-mon-logs-outage
+          - self-mon-traces-backpressure
+          - self-mon-traces-outage
+          - self-mon-metrics-backpressure
+          - self-mon-metrics-outage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
