@@ -34,13 +34,12 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 	reason := l.determineReason(logPipelines.Items, logParsers.Items, telemetryInDeletion)
 	status := l.determineConditionStatus(reason)
 	message := l.createMessageForReason(logPipelines.Items, logParsers.Items, reason)
-	reasonWithPrefix := l.addReasonPrefix(reason)
 
-	conditionType := "LogComponentsHealthy"
+	conditionType := conditions.TypeLogComponentsHealthy
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,
-		Reason:  reasonWithPrefix,
+		Reason:  reason,
 		Message: message,
 	}, nil
 }
@@ -65,7 +64,7 @@ func (l *logComponentsChecker) determineReason(pipelines []telemetryv1alpha1.Log
 		}
 	}
 
-	return conditions.ReasonLogComponentsRunning
+	return conditions.ReasonComponentsRunning
 }
 
 func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.LogPipeline) string {
@@ -87,7 +86,7 @@ func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetr
 }
 
 func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonLogComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse
@@ -124,14 +123,4 @@ func (l *logComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv
 		}
 	}
 	return ""
-}
-
-func (l *logComponentsChecker) addReasonPrefix(reason string) string {
-	switch {
-	case reason == conditions.ReasonDaemonSetNotReady:
-		return "FluentBit" + reason
-	case reason == conditions.ReasonReferencedSecretMissing:
-		return "LogPipeline" + reason
-	}
-	return reason
 }
