@@ -2,8 +2,11 @@ package assert
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"time"
 
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,4 +72,31 @@ func MetricPipelineHasCondition(ctx context.Context, k8sClient client.Client, pi
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
 		g.Expect(condition.Status).To(Equal(expectedCond.Status))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+type ReasonStatus struct {
+	Reason string
+	Status metav1.ConditionStatus
+}
+
+func MetricPipelineConditionReasonsTransition(ctx context.Context, k8sClient client.Client, pipelineName, condType string, expected []ReasonStatus) {
+	var currCond *metav1.Condition
+
+	for _, expected := range expected {
+		// Wait for the current condition to match the expected condition
+		Eventually(func(g Gomega) ReasonStatus {
+			var pipeline telemetryv1alpha1.MetricPipeline
+			key := types.NamespacedName{Name: pipelineName}
+			err := k8sClient.Get(ctx, key, &pipeline)
+			g.Expect(err).To(Succeed())
+			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			if currCond == nil {
+				return ReasonStatus{}
+			}
+
+			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
+		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
+
+		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
+	}
 }

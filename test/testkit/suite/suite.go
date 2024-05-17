@@ -58,6 +58,9 @@ const (
 	LabelSelfMonitoringTracesBackpressure = "self-mon-traces-backpressure"
 	LabelSelfMonitoringTracesOutage       = "self-mon-traces-outage"
 
+	LabelSelfMonitoringMetricsBackpressure = "self-mon-metrics-backpressure"
+	LabelSelfMonitoringMetricsOutage       = "self-mon-metrics-outage"
+
 	// Operational tests preserve K8s objects between test runs.
 	LabelOperational = "operational"
 )
