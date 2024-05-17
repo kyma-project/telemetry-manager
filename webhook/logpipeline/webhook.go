@@ -46,7 +46,7 @@ type ValidatingWebhookHandler struct {
 	variablesValidator          validation.VariablesValidator
 	maxPipelinesValidator       validation.MaxPipelinesValidator
 	fileValidator               validation.FilesValidator
-	decoder                     *admission.Decoder
+	decoder                     admission.Decoder
 	dryRunner                   DryRunner
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig
 }
@@ -56,7 +56,7 @@ func NewValidatingWebhookHandler(
 	variablesValidator validation.VariablesValidator,
 	maxPipelinesValidator validation.MaxPipelinesValidator,
 	fileValidator validation.FilesValidator,
-	decoder *admission.Decoder,
+	decoder admission.Decoder,
 	dryRunner DryRunner,
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig,
 ) *ValidatingWebhookHandler {
