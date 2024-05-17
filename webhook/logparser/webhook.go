@@ -39,10 +39,10 @@ type DryRunner interface {
 type ValidatingWebhookHandler struct {
 	client.Client
 	dryRunner DryRunner
-	decoder   *admission.Decoder
+	decoder   admission.Decoder
 }
 
-func NewValidatingWebhookHandler(client client.Client, dryRunner DryRunner, decoder *admission.Decoder) *ValidatingWebhookHandler {
+func NewValidatingWebhookHandler(client client.Client, dryRunner DryRunner, decoder admission.Decoder) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
 		Client:    client,
 		dryRunner: dryRunner,
@@ -87,10 +87,5 @@ func (v *ValidatingWebhookHandler) validateLogParser(ctx context.Context, logPar
 		return err
 	}
 
-	return nil
-}
-
-func (v *ValidatingWebhookHandler) InjectDecoder(d *admission.Decoder) error {
-	v.decoder = d
 	return nil
 }
