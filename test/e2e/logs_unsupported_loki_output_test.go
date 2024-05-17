@@ -51,7 +51,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		It("Should have LogComponentsHealthy condition set to False in Telemetry", func() {
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
-				Type:   "LogComponentsHealthy",
+				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonUnsupportedLokiOutput,
 			})
