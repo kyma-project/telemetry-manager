@@ -70,12 +70,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		It("Should have a telemetry-fluent-bit-parsers ConfigMap owned by the LogPipeline", func() {
 			var configMap corev1.ConfigMap
-			assert.HasOwnerReference(ctx, k8sClient, &configMap, kitkyma.FluentBiParserConfigMap, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(ctx, k8sClient, &configMap, kitkyma.FluentBitParserConfigMap, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a telemetry-fluent-bit-files ConfigMap owned by the LogPipeline", func() {
 			var configMap corev1.ConfigMap
-			assert.HasOwnerReference(ctx, k8sClient, &configMap, kitkyma.FluentBiFilesConfigMap, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(ctx, k8sClient, &configMap, kitkyma.FluentBitFilesConfigMap, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a DaemonSet owned by the LogPipeline", func() {
@@ -85,7 +85,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		It("Should have a Network Policy owned by the LogPipeline", func() {
 			var networkPolicy networkingv1.NetworkPolicy
-			assert.HasOwnerReference(ctx, k8sClient, &networkPolicy, kitkyma.FluentBiNetworkPolicy, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(ctx, k8sClient, &networkPolicy, kitkyma.FluentBitNetworkPolicy, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a DaemonSet with correct pod priority class", func() {

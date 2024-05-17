@@ -60,9 +60,9 @@ var (
 	FluentBitConfigMap              = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
 	FluentBitSectionsConfigMap      = types.NamespacedName{Name: FluentBitBaseName + "-sections", Namespace: SystemNamespaceName}
 	FluentBitLuaConfigMap           = types.NamespacedName{Name: FluentBitBaseName + "-luascripts", Namespace: SystemNamespaceName}
-	FluentBiParserConfigMap         = types.NamespacedName{Name: FluentBitBaseName + "-parsers", Namespace: SystemNamespaceName}
-	FluentBiFilesConfigMap          = types.NamespacedName{Name: FluentBitBaseName + "-files", Namespace: SystemNamespaceName}
-	FluentBiNetworkPolicy           = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitParserConfigMap        = types.NamespacedName{Name: FluentBitBaseName + "-parsers", Namespace: SystemNamespaceName}
+	FluentBitFilesConfigMap         = types.NamespacedName{Name: FluentBitBaseName + "-files", Namespace: SystemNamespaceName}
+	FluentBitNetworkPolicy          = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
 
 	SelfMonitorName          = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
 	SelfMonitorNetworkPolicy = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
