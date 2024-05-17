@@ -5,6 +5,7 @@ package istio
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -84,10 +85,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 		})
 
 		It("Should wait for the trace flow to gradually become unhealthy", func() {
-			assert.TracePipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []string{
-				conditions.ReasonFlowHealthy,
-				conditions.ReasonBufferFillingUp,
-				conditions.ReasonSomeDataDropped,
+			assert.TracePipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+				{Reason: conditions.ReasonFlowHealthy, Status: metav1.ConditionTrue},
+				{Reason: conditions.ReasonBufferFillingUp, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSomeDataDropped, Status: metav1.ConditionFalse},
 			})
 		})
 	})

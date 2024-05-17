@@ -86,23 +86,23 @@ func TracePipelineHasLegacyConditionsAtEnd(ctx context.Context, k8sClient client
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TracePipelineConditionReasonsTransition(ctx context.Context, k8sClient client.Client, pipelineName, condType string, expectedReasons []string) {
+func TracePipelineConditionReasonsTransition(ctx context.Context, k8sClient client.Client, pipelineName, condType string, expected []ReasonStatus) {
 	var currCond *metav1.Condition
 
-	for _, expected := range expectedReasons {
+	for _, expected := range expected {
 		// Wait for the current condition to match the expected condition
-		Eventually(func(g Gomega) string {
+		Eventually(func(g Gomega) ReasonStatus {
 			var pipeline telemetryv1alpha1.TracePipeline
 			key := types.NamespacedName{Name: pipelineName}
 			err := k8sClient.Get(ctx, key, &pipeline)
 			g.Expect(err).To(Succeed())
 			currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if currCond == nil {
-				return ""
+				return ReasonStatus{}
 			}
 
-			return currCond.Reason
-		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s of type %s not reached", expected, condType)
+			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
+		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
 
 		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
