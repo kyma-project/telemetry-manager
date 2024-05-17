@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -75,13 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 		})
 
 		It("Should have a telemetrygen running", func() {
-			listOptions := client.ListOptions{
-				LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": telemetrygen.DefaultName}),
-				Namespace:     mockNs,
-			}
-
-			// types.NamespacedName{Namespace: mockNs, Name: telemetrygen.DefaultName})
-			assert.PodReady(ctx, k8sClient, listOptions)
+			assert.PodReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should wait for the trace flow to gradually become unhealthy", func() {
