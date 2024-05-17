@@ -86,8 +86,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 
 		It("Should wait for the metrics flow to gradually become unhealthy", func() {
 			assert.MetricPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-				{Reason: conditions.ReasonFlowHealthy, Status: metav1.ConditionTrue},
-				{Reason: conditions.ReasonSomeDataDropped, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+				{Reason: conditions.ReasonSelfMonSomeDataDropped, Status: metav1.ConditionFalse},
 			})
 		})
 	})
