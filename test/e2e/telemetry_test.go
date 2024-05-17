@@ -79,31 +79,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 	})
 
-	Context("When a LogPipeline with Loki output exists", Ordered, func() {
-		var logPipelineName = suite.IDWithSuffix("loki-output")
-
-		BeforeAll(func() {
-			logPipeline := testutils.NewLogPipelineBuilder().
-				WithName(logPipelineName).
-				WithLokiOutput().
-				Build()
-
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &logPipeline)).Should(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, &logPipeline)).Should(Succeed())
-		})
-
-		It("Should have Telemetry with warning state", func() {
-			assert.TelemetryHasWarningState(ctx, k8sClient)
-			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
-				Type:   conditions.TypeLogComponentsHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonUnsupportedLokiOutput,
-			})
-		})
-	})
-
 	Context("When a misconfigured TracePipeline exists", Ordered, func() {
 		var (
 			tracePipelineName = suite.IDWithSuffix("missing-secret")

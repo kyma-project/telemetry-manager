@@ -7,13 +7,13 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -54,9 +54,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			assert.HasOwnerReference(ctx, k8sClient, &deployment, kitkyma.TraceGatewayName, ownerReferenceKind, pipelineName)
 		})
 
-		It("Should have a Service owned by the TracePipeline", func() {
+		It("Should have an OTLP Service owned by the TracePipeline", func() {
 			var service corev1.Service
-			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayService, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayOTLPService, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a ConfigMap owned by the TracePipeline", func() {
@@ -69,22 +69,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			assert.HasOwnerReference(ctx, k8sClient, &secret, kitkyma.TraceGatewaySecretName, ownerReferenceKind, pipelineName)
 		})
 
-		It("Should have a Deployment with correct pod environment configuration", func() {
-			assert.DeploymentHasEnvFromSecret(ctx, k8sClient, kitkyma.TraceGatewayName, kitkyma.TraceGatewayBaseName)
+		It("Should have a Metrics service owned by the TracePipeline", func() {
+			var service corev1.Service
+			assert.HasOwnerReference(ctx, k8sClient, &service, kitkyma.TraceGatewayMetricsService, ownerReferenceKind, pipelineName)
 		})
 
-		It("Should have a Deployment with correct pod metadata", func() {
-			Eventually(func(g Gomega) {
-				var deployment appsv1.Deployment
-				g.Expect(k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)).To(Succeed())
-
-				g.Expect(deployment.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"]).To(Equal("false"))
-				g.Expect(deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]).ToNot(BeEmpty())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		})
-
-		It("Should have a ConfigMap containing the key 'relay.conf'", func() {
-			assert.ConfigMapHasKey(ctx, k8sClient, kitkyma.TraceGatewayConfigMap, "relay.conf")
+		It("Should have a Network Policy owned by the TracePipeline", func() {
+			var networkPolicy networkingv1.NetworkPolicy
+			assert.HasOwnerReference(ctx, k8sClient, &networkPolicy, kitkyma.TraceGatewayNetworkPolicy, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Deployment with correct pod priority class", func() {
