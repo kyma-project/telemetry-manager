@@ -14,7 +14,7 @@ env:
 jobs:
   load-test:
     strategy:
-      max-parallel: 3
+      max-parallel: 1
       matrix:
         argument:
           - "-n ci-traces -t traces"
