@@ -63,8 +63,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.TracePipeline{})
 
 	b.WatchesRawSource(
-		&source.Channel{Source: r.reconcileTriggerChan},
-		&handler.EnqueueRequestForObject{},
+		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
 	ownedResourceTypesToWatch := []client.Object{

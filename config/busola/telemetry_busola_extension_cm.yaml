@@ -161,7 +161,7 @@ data:
       version: v1alpha1
     name: Telemetry
     category: Kyma
-    urlPath: telemetries
+    urlPath: kymatelemetries
     scope: namespace
     description: >-
       The {{[Telemetry](https://kyma-project.io/#/telemetry-manager/user/resources/01-telemetry)}} resource configures the telemetry module.

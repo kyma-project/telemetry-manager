@@ -51,7 +51,7 @@ status:
   - lastTransitionTime: "2024-02-28T22:48:24Z"
     message: Fluent Bit DaemonSet is ready
     observedGeneration: 2
-    reason: DaemonSetReady
+    reason: AgentReady
     status: "True"
     type: AgentHealthy
   - lastTransitionTime: "2024-02-28T22:48:11Z"
@@ -199,25 +199,23 @@ The status of the LogPipeline is determined by the condition types `AgentHealthy
 
 > **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
-| Condition Type         | Condition Status | Condition Reason             | Condition Message                                                                                                                                                                                                                   |
-|------------------------|------------------|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| AgentHealthy           | True             | DaemonSetReady               | Fluent Bit DaemonSet is ready                                                                                                                                                                                                       |
-| AgentHealthy           | False            | DaemonSetNotReady            | Fluent Bit DaemonSet is not ready                                                                                                                                                                                                   |
-| ConfigurationGenerated | True             | ConfigurationGenerated       |                                                                                                                                                                                                                                     |
-| ConfigurationGenerated | False            | ReferencedSecretMissing      | One or more referenced Secrets are missing                                                                                                                                                                                          |
-| ConfigurationGenerated | False            | UnsupportedLokiOutput        | grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Intergrate with Loki](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README). |
-| ConfigurationGenerated | False            | TLSCertificateInvalid        | TLS certificate invalid                                                                                                                                                                                                             |
-| ConfigurationGenerated | False            | TLSPrivateKeyInvalid         | TLS private key invalid                                                                                                                                                                                                             |
-| ConfigurationGenerated | False            | TLSCertificateExpired        | TLS certificate expired on YYYY-MM-DD                                                                                                                                                                                               |
-| ConfigurationGenerated | True             | TLSCertificateAboutToExpire  | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                                                |
-| ConfigurationGenerated | False            | TLSCertificateKeyPairInvalid | TLS certificate and private key do not match                                                                                                                                                                                        |
+| Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                                                                                                                                                                   |
+| ---------------------- | ---------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AgentHealthy           | True             | AgentReady                  | Fluent Bit agent DaemonSet is ready                                                                                                                                                                                                 |
+| AgentHealthy           | False            | AgentNotReady               | Fluent Bit agent DaemonSet is not ready                                                                                                                                                                                             |
+| ConfigurationGenerated | True             | ConfigurationGenerated      |                                                                                                                                                                                                                                     |
+| ConfigurationGenerated | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                                                |
+| ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                                                                                                          |
+| ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                                                                                                                                                               |
+| ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                                                                                                             |
+| ConfigurationGenerated | False            | UnsupportedLokiOutput       | grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Intergrate with Loki](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README). |
 
 Reflecting the LogPipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
 
 | Condition Type       | Condition Status | Condition Reason | Condition Message                                                  |
-|----------------------|------------------|------------------|--------------------------------------------------------------------|
+| -------------------- | ---------------- | ---------------- | ------------------------------------------------------------------ |
 | TelemetryFlowHealthy | True             | FlowHealthy      | No problems detected in the log flow                               |
+| TelemetryFlowHealthy | False            | AllDataDropped   | All logs dropped: backend unreachable or rejecting                 |
 | TelemetryFlowHealthy | False            | BufferFillingUp  | Buffer nearing capacity: incoming log rate exceeds the export rate |
 | TelemetryFlowHealthy | False            | NoLogsDelivered  | No logs delivered to backend                                       |
 | TelemetryFlowHealthy | False            | SomeDataDropped  | Some logs dropped: backend unreachable or rejecting                |
-| TelemetryFlowHealthy | False            | AllDataDropped   | All logs dropped: backend unreachable or rejecting                 |

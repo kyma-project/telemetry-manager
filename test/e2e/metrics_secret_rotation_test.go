@@ -22,8 +22,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
 		var pipelineName = suite.ID()
 
-		endpointKey := "trace-endpoint"
-		secret := kitk8s.NewOpaqueSecret("missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+		endpointKey := "metrics-endpoint"
+		secret := kitk8s.NewOpaqueSecret("metrics-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
 		metricPipeline := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
 			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
