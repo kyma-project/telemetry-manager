@@ -167,7 +167,7 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 
 	processors = append(processors, makeDiagnosticMetricFilters(input)...)
 
-	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "resource/drop-kyma-attributes", "batch")
+	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
 
 	return config.Pipeline{
 		Receivers:  []string{"otlp"},

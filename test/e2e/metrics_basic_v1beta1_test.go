@@ -10,18 +10,20 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelV1Beta1), Ordered, func() {
@@ -40,11 +42,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelV1Beta1), Orde
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Beta1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Beta1())
+		// creating a metric pipeline explicitly since the testutils.MetricPipelineBuilder is not available in the v1beta1 API
+		metricPipeline := telemetryv1beta1.MetricPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1beta1.MetricPipelineSpec{
+				Output: telemetryv1beta1.MetricPipelineOutput{
+					OTLP: &telemetryv1beta1.OTLPOutput{
+						Endpoint: telemetryv1beta1.ValueType{
+							Value: backend.Endpoint(),
+						},
+					},
+				},
+			},
+		}
 		objs = append(objs,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
-			metricPipeline.K8sObject(),
+			&metricPipeline,
 		)
 
 		return objs
@@ -60,7 +75,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelV1Beta1), Orde
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should reject scaling below minimum", func() {
@@ -145,20 +160,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelV1Beta1), Orde
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen metrics", Label(suite.LabelOperational), func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricGatewayMetrics.Namespace, kitkyma.MetricGatewayMetrics.Name, "metrics", ports.Metrics)
-			verifiers.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
+			assert.EmitsOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", func() {

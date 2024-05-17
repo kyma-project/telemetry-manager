@@ -1,10 +1,11 @@
-package verifiers
+package assert
 
 import (
 	"net/http"
 	"time"
 
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -12,7 +13,22 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func SelfMonitorWebhookShouldHaveBeenCalled(proxyClient *apiserverproxy.Client) {
+func EmitsOTelCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(metricsURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(ContainMetricFamily(WithName(ContainSubstring("otelcol")))))
+
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func ManagerEmitsMetric(
+	proxyClient *apiserverproxy.Client,
+	nameMatcher types.GomegaMatcher,
+	metricMatcher types.GomegaMatcher) {
 	Eventually(func(g Gomega) {
 		telemetryManagerMetricsURL := proxyClient.ProxyURLForService(
 			kitkyma.TelemetryManagerMetricsServiceName.Namespace,
@@ -24,11 +40,8 @@ func SelfMonitorWebhookShouldHaveBeenCalled(proxyClient *apiserverproxy.Client) 
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
 		g.Expect(resp).To(HaveHTTPBody(ContainMetricFamily(SatisfyAll(
-			WithName(Equal("controller_runtime_webhook_requests_total")),
-			ContainMetric(SatisfyAll(
-				WithLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
-				WithValue(BeNumerically(">", 0)),
-			)),
+			WithName(nameMatcher),
+			ContainMetric(metricMatcher),
 		))))
 
 		err = resp.Body.Close()

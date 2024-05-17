@@ -9,12 +9,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -22,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	const (
 		//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 		sampleAppNs = "istio-permissive-mtls"
@@ -43,11 +44,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		istioAccessLogsPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithIncludeContainers([]string{"istio-proxy"}).
-			WithHTTPOutput()
-		objs = append(objs, istioAccessLogsPipeline.K8sObject())
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithIncludeContainers("istio-proxy").
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			Build()
+
+		objs = append(objs, &logPipeline)
 
 		// Abusing metrics provider for istio access logs
 		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("access-log-emitter"))
@@ -67,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have sample app running", func() {
@@ -76,14 +79,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app": "sample-metrics"}),
 					Namespace:     sampleAppNs,
 				}
-				ready, err := verifiers.IsPodReady(ctx, k8sClient, listOptions)
+				ready, err := assert.PodReady(ctx, k8sClient, listOptions)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
 			}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have the log pipeline running", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {

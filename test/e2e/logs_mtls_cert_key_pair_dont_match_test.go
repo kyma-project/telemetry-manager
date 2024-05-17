@@ -5,15 +5,16 @@ package e2e
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
@@ -41,18 +42,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			ClientKeyPem:  clientCertsCreatedAgain.ClientKeyPem,
 		}
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithTLS(*invalidClientCerts)
-		pipelineName = logPipeline.Name()
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(
+				testutils.HTTPHost(backend.Host()),
+				testutils.HTTPPort(backend.Port()),
+				testutils.HTTPClientTLS(
+					invalidClientCerts.CaCertPem.String(),
+					invalidClientCerts.ClientCertPem.String(),
+					invalidClientCerts.ClientKeyPem.String(),
+				)).
+			Build()
 
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, logProducer.K8sObject())
 
-		objs = append(objs,
-			logPipeline.K8sObject(),
-		)
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}
@@ -67,17 +72,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should not have running pipelines", func() {
-			verifiers.LogPipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
-		})
-
 		It("Should have a tls certificate key pair invalid condition set in pipeline conditions", func() {
-			verifiers.LogPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateKeyPairInvalid)
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateKeyPairInvalid,
+			})
 		})
 
 		It("Should have telemetryCR showing tls certificate key pair invalid condition for log component in its status", func() {
-			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateKeyPairInvalid, false)
+			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   "LogComponentsHealthy",
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonTLSCertificateKeyPairInvalid,
+			})
 		})
-
 	})
 })

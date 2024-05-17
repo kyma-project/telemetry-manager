@@ -11,13 +11,15 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func() {
@@ -31,24 +33,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(suite.IsOperational()))
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			Persistent(suite.IsOperational())
-		objs = append(objs, logPipeline.K8sObject())
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			Build()
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}
 
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
-			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+			assert.WebhookHealthy(ctx, k8sClient)
 		})
 	})
 
@@ -61,24 +63,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", Label(suite.LabelOperational), func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+		It("Should have a running logpipeline", func() {
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a log backend running", Label(suite.LabelOperational), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+		It("Should have a log backend running", func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have a log producer running", Label(suite.LabelOperational), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+		It("Should have a log producer running", func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should have produced logs in the backend", Label(suite.LabelOperational), func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
+		It("Should have produced logs in the backend", func() {
+			assert.LogsDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
@@ -88,6 +90,26 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogs), Ordered, func
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+
+		Context("Metric instrumentation", Ordered, func() {
+			It("Ensures that controller_runtime_webhook_requests_total is increased", func() {
+				// Pushing metrics to the metric gateway triggers an alert.
+				// It makes the self-monitor call the webhook, which in turn increases the counter.
+				assert.ManagerEmitsMetric(proxyClient,
+					Equal("controller_runtime_webhook_requests_total"),
+					SatisfyAll(
+						WithLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
+						WithValue(BeNumerically(">", 0)),
+					))
+			})
+
+			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
+				assert.ManagerEmitsMetric(proxyClient,
+					Equal("telemetry_self_monitor_prober_requests_total"),
+					WithValue(BeNumerically(">", 0)),
+				)
+			})
 		})
 	})
 })

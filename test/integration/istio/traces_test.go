@@ -4,24 +4,25 @@ package istio
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"net/http"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	const (
 		appName          = "app-1"
 		istiofiedAppName = "app-2"
@@ -56,11 +57,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		objs = append(objs, backend2.K8sObjects()...)
 		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
 
-		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipeline2Name).WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1())
-		objs = append(objs, istioTracePipeline.K8sObject())
+		istioTracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipeline2Name).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+			Build()
+		objs = append(objs, &istioTracePipeline)
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipeline1Name).WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1())
-		objs = append(objs, tracePipeline.K8sObject())
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipeline1Name).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+			Build()
+		objs = append(objs, &tracePipeline)
 
 		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
@@ -91,8 +98,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
@@ -105,12 +112,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have a running trace collector deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have the trace pipelines running", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline1Name)
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipeline1Name)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipeline2Name)
 		})
 
 		It("Trace collector with should answer requests", func() {
@@ -159,7 +166,7 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		hasIstioSidecar, err := verifiers.HasContainer(ctx, k8sClient, listOptions, "istio-proxy")
+		hasIstioSidecar, err := assert.HasContainer(ctx, k8sClient, listOptions, "istio-proxy")
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(hasIstioSidecar).To(BeTrue())
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
@@ -172,7 +179,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		ready, err := verifiers.IsPodReady(ctx, k8sClient, listOptions)
+		ready, err := assert.PodReady(ctx, k8sClient, listOptions)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrue())
 

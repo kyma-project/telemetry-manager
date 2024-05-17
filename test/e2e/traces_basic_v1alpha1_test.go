@@ -15,13 +15,14 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
@@ -40,12 +41,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
-			Persistent(suite.IsOperational())
+		hostSecretRef := backend.HostSecretRefV1Alpha1()
+		tracePipelineBuilder := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpointFromSecret(
+				hostSecretRef.Name,
+				hostSecretRef.Namespace,
+				hostSecretRef.Key,
+			))
+		if suite.IsOperational() {
+			tracePipelineBuilder.WithLabels(kitk8s.PersistentLabel)
+		}
+		tracePipeline := tracePipelineBuilder.Build()
+
 		objs = append(objs,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
-			pipeline.K8sObject(),
+			&tracePipeline,
 		)
 		return objs
 	}
@@ -61,7 +72,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a running trace gateway deployment", Label(suite.LabelOperational), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have 2 trace gateway replicas", Label(suite.LabelOperational), func() {
@@ -155,24 +166,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have a trace backend running", Label(suite.LabelOperational), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", Label(suite.LabelOperational), func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a pipeline with legacy condition types at the end of the conditions list", Label(suite.LabelOperational), func() {
-			verifiers.TracePipelineShouldHaveLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHasLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", Label(suite.LabelOperational), func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", Label(suite.LabelOperational), func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.TraceGatewayMetrics.Namespace, kitkyma.TraceGatewayMetrics.Name, "metrics", ports.Metrics)
-			verifiers.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
+			assert.EmitsOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", Label(suite.LabelOperational), func() {
