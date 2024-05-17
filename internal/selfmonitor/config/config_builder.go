@@ -132,8 +132,6 @@ func scrapableMetricsRegex() string {
 	otelCollectorMetrics := []string{
 		metricOtelCollectorExporterSent,
 		metricOtelCollectorExporterSendFailed,
-		metricOtelCollectorExporterQueueSize,
-		metricOtelCollectorExporterQueueCapacity,
 		metricOtelCollectorExporterEnqueueFailed,
 		metricOtelCollectorReceiverRefused,
 	}
@@ -142,5 +140,9 @@ func scrapableMetricsRegex() string {
 		otelCollectorMetrics[i] += "_.*"
 	}
 
-	return strings.Join(append(fluentBitMetrics, otelCollectorMetrics...), "|")
+	// exporter_queue_size and exporter_queue_capacity do not have a suffix
+	otelCollectorMetrics = append(otelCollectorMetrics, metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity)
+
+	return strings.Join(append(fluentBitMetrics,
+		otelCollectorMetrics...), "|")
 }
