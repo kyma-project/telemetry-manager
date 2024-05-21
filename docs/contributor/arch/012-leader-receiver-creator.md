@@ -53,7 +53,7 @@ leader_receiver_creator:
 
 For a draft implementation, see [github.com/skhalash/leaderreceivercreator](https://github.com/skhalash/leaderreceivercreator).
 
-The new receiver can be deployed as part of either the metric agent or the metric gateway. However, it is preferable to run it within the metric gateway to avoid an additional network hop, as these metrics are not strictly node-affine.
+The new Leader Receiver Creator in combination with Kubernetes Cluster Receiver can be deployed as part of either the metric agent or the metric gateway. However, it is preferable to run it within the metric gateway to avoid an additional network hop, as these metrics are not strictly node-affine.
 
 ## Consequences
 
