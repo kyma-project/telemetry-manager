@@ -548,7 +548,7 @@ Up to three MetricPipeline resources at a time are supported.
 
 ## Troubleshooting
 
-### No Metrics Arrive at the Destination
+### Metrics Not Arriving at the Destination
 
 Symptom: No metrics arrive at the destination.
 

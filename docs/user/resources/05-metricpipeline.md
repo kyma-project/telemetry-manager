@@ -190,7 +190,7 @@ Reflecting the MetricPipeline's data flow in `TelemetryFlowHealthy` condition ty
 | Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                      |
 | -------------------- | ---------------- | ----------------- | -------------------------------------------------------------------------------------- |
 | TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the metric flow                                                |
-| TelemetryFlowHealthy | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting                                  |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting. See troubleshooting: [Metrics Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination)                                   |
 | TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                   |
 | TelemetryFlowHealthy | False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate |
-| TelemetryFlowHealthy | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                                 |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting. See troubleshooting: [Metrics Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination)                                 |

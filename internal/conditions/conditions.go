@@ -36,7 +36,7 @@ const (
 	ReasonReferencedSecretMissing     = "ReferencedSecretMissing"
 	ReasonSelfMonAllDataDropped       = "AllTelemetryDataDropped"
 	ReasonSelfMonBufferFillingUp      = "BufferFillingUp"
-	ReasonSelfMonFlowHealthy          = "Healthy"
+	ReasonSelfMonFlowHealthy          = "FlowHealthy"
 	ReasonSelfMonGatewayThrottling    = "GatewayThrottling"
 	ReasonSelfMonSomeDataDropped      = "SomeTelemetryDataDropped"
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
@@ -86,11 +86,11 @@ var tracePipelineMessages = map[string]string{
 	ReasonComponentsRunning:              "All trace components are running",
 	ReasonGatewayNotReady:                "Trace gateway Deployment is not ready",
 	ReasonGatewayReady:                   "Trace gateway Deployment is ready",
-	ReasonSelfMonAllDataDropped:          "All traces dropped: backend unreachable or rejecting",
+	ReasonSelfMonAllDataDropped:          "All traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
 	ReasonSelfMonBufferFillingUp:         "Buffer nearing capacity: incoming trace rate exceeds export rate",
 	ReasonSelfMonFlowHealthy:             "No problems detected in the trace flow",
 	ReasonSelfMonGatewayThrottling:       "Trace gateway experiencing high influx: unable to receive traces at current rate",
-	ReasonSelfMonSomeDataDropped:         "Some traces dropped: backend unreachable or rejecting",
+	ReasonSelfMonSomeDataDropped:         "Some traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 }
@@ -101,11 +101,11 @@ var metricPipelineMessages = map[string]string{
 	ReasonComponentsRunning:        "All metric components are running",
 	ReasonGatewayNotReady:          "Metric gateway Deployment is not ready",
 	ReasonGatewayReady:             "Metric gateway Deployment is ready",
-	ReasonSelfMonAllDataDropped:    "All metrics dropped: backend unreachable or rejecting",
+	ReasonSelfMonAllDataDropped:    "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 	ReasonSelfMonBufferFillingUp:   "Buffer nearing capacity: incoming metric rate exceeds export rate",
 	ReasonSelfMonFlowHealthy:       "No problems detected in the metric flow",
 	ReasonSelfMonGatewayThrottling: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
-	ReasonSelfMonSomeDataDropped:   "Some metrics dropped: backend unreachable or rejecting",
+	ReasonSelfMonSomeDataDropped:   "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 }
 
 func MessageForLogPipeline(reason string) string {
