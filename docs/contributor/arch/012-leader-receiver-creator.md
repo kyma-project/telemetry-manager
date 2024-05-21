@@ -64,7 +64,7 @@ It can be reused in other contexts where leader election is required. It can be 
 
 Open questions:
 
-* How to handle multiple different receiver that have to follow the leader election pattern?
+* How to handle multiple different receivers that must follow the leader election pattern?
 * How to test leader election?
 * How to monitor leader election?
 
