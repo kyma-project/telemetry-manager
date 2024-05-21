@@ -53,7 +53,7 @@ leader_receiver_creator:
       enabled: false
 ```
 
-A draft implementation can be found here: github.com/skhalash/leaderreceivercreator.
+For a draft implementationy see: github.com/skhalash/leaderreceivercreator.
 
 The new receiver can be deployed as part of either the metric agent or the metric gateway. However, it is preferable to run it within the metric gateway to avoid an additional network hop, as these metrics are not strictly node-affine.
 
