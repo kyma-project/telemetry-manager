@@ -39,7 +39,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		objs = append(objs,
 			&metricPipeline,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics,
-				telemetrygen.WithRate(200000),
+				telemetrygen.WithRate(100000),
 				telemetrygen.WithWorkers(10)).K8sObject(),
 		)
 
