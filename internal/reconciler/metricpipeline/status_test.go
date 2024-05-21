@@ -262,7 +262,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, conditions.ReasonConfigurationGenerated, cond.Reason)
+		require.Equal(t, conditions.ReasonAgentGatewayConfigured, cond.Reason)
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {

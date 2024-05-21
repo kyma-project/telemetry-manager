@@ -236,8 +236,8 @@ func TestUpdateStatus(t *testing.T) {
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionTrue, configurationGeneratedCond.Status)
-		require.Equal(t, conditions.ReasonConfigurationGenerated, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonConfigurationGenerated), configurationGeneratedCond.Message)
+		require.Equal(t, conditions.ReasonGatewayConfigured, configurationGeneratedCond.Reason)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured), configurationGeneratedCond.Message)
 		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
 		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
 

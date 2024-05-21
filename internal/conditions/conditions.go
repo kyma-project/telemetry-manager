@@ -27,9 +27,8 @@ const (
 	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
 
 	// Common reasons
-	ReasonAgentNotReady               = "AgentNotReady"
-	ReasonAgentReady                  = "AgentReady"
-	ReasonConfigurationGenerated      = "ConfigurationGenerated"
+	ReasonAgentNotReady = "AgentNotReady"
+	ReasonAgentReady    = "AgentReady"
 	ReasonGatewayNotReady             = "GatewayNotReady"
 	ReasonGatewayReady                = "GatewayReady"
 	ReasonMaxPipelinesExceeded        = "MaxPipelinesExceeded"
@@ -44,10 +43,15 @@ const (
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
 
 	// LogPipeline reasons
+	ReasonAgentConfigured        = "AgentConfigured"
 	ReasonSelfMonNoLogsDelivered = "NoLogsDelivered"
 	ReasonUnsupportedLokiOutput  = "UnsupportedLokiOutput"
 
+	// TracePipeline reasons
+	ReasonGatewayConfigured = "GatewayConfigured"
+
 	// MetricPipeline reasons
+	ReasonAgentGatewayConfigured = "AgentGatewayConfigured"
 	ReasonMetricAgentNotRequired = "AgentNotRequired"
 
 	// NOTE: The "FluentBitDaemonSetNotReady", "FluentBitDaemonSetReady", "TraceGatewayDeploymentNotReady" and "TraceGatewayDeploymentReady" reasons are deprecated.
@@ -69,6 +73,7 @@ var commonMessages = map[string]string{
 }
 
 var logPipelineMessages = map[string]string{
+	ReasonAgentConfigured:        "Fluent Bit agent successfully configured",
 	ReasonAgentNotReady:          "Fluent Bit agent DaemonSet is not ready",
 	ReasonAgentReady:             "Fluent Bit agent DaemonSet is ready",
 	ReasonComponentsRunning:      "All log components are running",
@@ -83,6 +88,7 @@ var logPipelineMessages = map[string]string{
 }
 
 var tracePipelineMessages = map[string]string{
+	ReasonGatewayConfigured:              "Trace gateway successfully configured",
 	ReasonComponentsRunning:              "All trace components are running",
 	ReasonGatewayNotReady:                "Trace gateway Deployment is not ready",
 	ReasonGatewayReady:                   "Trace gateway Deployment is ready",
@@ -96,6 +102,7 @@ var tracePipelineMessages = map[string]string{
 }
 
 var metricPipelineMessages = map[string]string{
+	ReasonAgentGatewayConfigured:   "Metric agent and gateway successfully configured",
 	ReasonAgentNotReady:            "Metric agent DaemonSet is not ready",
 	ReasonAgentReady:               "Metric agent DaemonSet is ready",
 	ReasonComponentsRunning:        "All metric components are running",

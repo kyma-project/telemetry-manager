@@ -100,11 +100,11 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			key := pipeline.Spec.Output.Otlp.TLS.Key
 
 			err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
-			return conditions.EvaluateTLSCertCondition(err)
+			return conditions.EvaluateTLSCertCondition(err, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured))
 		}
 	}
 
-	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForTracePipeline(conditions.ReasonConfigurationGenerated)
+	return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {

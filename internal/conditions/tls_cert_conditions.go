@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
-func EvaluateTLSCertCondition(errValidation error) (status metav1.ConditionStatus, reason, message string) {
+func EvaluateTLSCertCondition(errValidation error, configuredReason string, configuredMessage string) (status metav1.ConditionStatus, reason, message string) {
 	if errors.Is(errValidation, tlscert.ErrCertDecodeFailed) || errors.Is(errValidation, tlscert.ErrCertParseFailed) {
 		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], errValidation)
 	}
@@ -33,5 +33,5 @@ func EvaluateTLSCertCondition(errValidation error) (status metav1.ConditionStatu
 		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], errValidation)
 	}
 
-	return metav1.ConditionTrue, ReasonConfigurationGenerated, ""
+	return metav1.ConditionTrue, configuredReason, configuredMessage
 }
