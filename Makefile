@@ -2,7 +2,6 @@ include .env
 
 # Environment Variables
 IMG ?= $(ENV_IMG)
-ENVTEST_K8S_VERSION ?= $(ENV_ENVTEST_K8S_VERSION)
 
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
@@ -98,9 +97,9 @@ tidy: ## Check if there any dirty change for go mod tidy.
 
 ##@ Testing
 .PHONY: test
-test: ginkgo manifests generate fmt vet tidy envtest ## Run tests.
+test: ginkgo manifests generate fmt vet tidy ## Run tests.
 	$(GINKGO) run test/testkit/matchers/...
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+	go test ./... -coverprofile cover.out
 
 .PHONY: check-coverage
 check-coverage: go-test-coverage ## Check tests coverage.
