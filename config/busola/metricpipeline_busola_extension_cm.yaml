@@ -526,7 +526,7 @@ data:
     urlPath: metricpipelines
     scope: cluster
     description: >-
-      {{[MetricPipeline](https://kyma-project.io/#/telemetry-manager/user/resources/05-metricpipeline)}} configures a custom Metric Pipeline
+      {{[MetricPipeline custom resource](https://kyma-project.io/#/telemetry-manager/user/resources/05-metricpipeline)}} configures a custom Metric Pipeline.
   list: |-
     - source: >-
         $each(spec.output, function($v, $k) {$v.endpoint.value or
