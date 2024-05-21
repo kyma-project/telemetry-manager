@@ -121,7 +121,6 @@ type OTLPEndpoints struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:categories=kyma-modules
 // +kubebuilder:printcolumn:name="generation",type="integer",JSONPath=".metadata.generation"
 // +kubebuilder:printcolumn:name="age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="state",type="string",JSONPath=".status.state"
