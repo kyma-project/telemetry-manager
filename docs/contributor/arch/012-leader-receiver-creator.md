@@ -24,7 +24,7 @@ The leader election pattern is well known in Kubernetes, the following building 
 * [Resource lock client](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection/resourcelock)
 * [Leader election client](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection)
 
-One way to integrate leader election with k8s_cluster receiver is to bundle the receiver with the leader election logic. However, this approach tightly couples it with the concrete receiver. If we need the leader election logic in another context, we will have to reimplement it. Additionally, it will be challenging to contribute this combined implementation to the community since the receiver already has its own maintainers.
+One way to integrate leader election with k8s_cluster receiver is to bundle the receiver with the leader election logic. However, this approach tightly couples it with the specific receiver. If we need the leader election logic in another context, we will have to reimplement it. Additionally, it will be challenging to contribute this combined implementation to the community, because the receiver already has its own maintainers.
 
 An alternative approach is to create a separate component responsible for leader election that manages another arbitrary sub-receiver. This pattern is already used by the [receiver_creator](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/receivercreator/README.md), which can instantiate other receivers at runtime based on observed endpoints matching a configured rule.
 
