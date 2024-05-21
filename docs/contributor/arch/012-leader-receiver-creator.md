@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-As part of metrics collection, the Telemetry module must expose Kubernetes API server metrics. The corresponding OpenTelemetry (OTel) Collector receiver for this task is k8s_cluster receiver. However, there are some open questions:
+As part of metrics collection, the Telemetry module must expose Kubernetes API server metrics. The corresponding OpenTelemetry (OTel) Collector receiver for this task is [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver). However, there are some open questions:
 
 * How can we ensure that the receiver operates in high availability mode? Should it be integrated into the metric agent (which currently only collects node-affine metrics), incorporated into the gateway (which typically runs multiple replicas), or deployed as a separate component?
 
@@ -16,7 +16,7 @@ As part of metrics collection, the Telemetry module must expose Kubernetes API s
 
 ## Decision
 
-The easiest way to ensure high availability and prevent duplicate metrics is to use the leader election pattern. In this way, only one replica of OTel Collector will have an active instance of k8s_cluster_receiver running. 
+The easiest way to ensure high availability and prevent duplicate metrics is to use the leader election pattern. In this way, only one replica of OTel Collector will have an active instance of Kubernetes Cluster Receiver running.
 of the replicas will be in standby mode. If the active instance fails, the standby instance will take over.
 
 The leader election pattern is well known in Kubernetes. The following building blocks are available:
@@ -24,13 +24,11 @@ The leader election pattern is well known in Kubernetes. The following building 
 * [Resource lock client](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection/resourcelock)
 * [Leader election client](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection)
 
-One way to integrate leader election with k8s_cluster receiver is to bundle the receiver with the leader election logic. However, this approach tightly couples it with the specific receiver. If we need the leader election logic in another context, we will have to reimplement it. Additionally, it will be challenging to contribute this combined implementation to the community, because the receiver already has its own maintainers.
+One way to integrate leader election with Kubernetes Cluster Receiver is to bundle the receiver with the leader election logic. However, this approach tightly couples it with the specific receiver. If we need the leader election logic in another context, we will have to reimplement it. Additionally, it will be challenging to contribute this combined implementation to the community, because the receiver already has its own maintainers.
 
-An alternative approach is to create a separate component responsible for leader election that manages another arbitrary sub-receiver. This pattern is already used by the [receiver_creator](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/receivercreator/README.md), which can instantiate other receivers at runtime based on observed endpoints matching a configured rule.
+An alternative approach is to create a separate component responsible for leader election that manages another arbitrary sub-receiver. This pattern is already used by the [Receiver Creator](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/receivercreator/README.md), which can instantiate other receivers at runtime based on observed endpoints matching a configured rule.
 
-In this way, the new receiver (let's call it `leader_receiver_creator`) can be configured to create k8s_cluster receiver only if it is the leader. Here's the proposed API:
-
-yaml
+In this way, the new receiver (let's call it `Leader Receiver Creator`) can be configured to create Kubernetes Cluster Receiver only if the underlying instance is a leader. Here's the proposed API:
 
 ```yaml
 leader_receiver_creator:
