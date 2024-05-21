@@ -57,7 +57,7 @@ The new receiver can be deployed as part of either the metric agent or the metri
 
 ## Consequences
 
-The new leader_receiver_creator can be maintained as an internal project and later contributed to the community.
+The new Leader Receiver Creator can be maintained as an internal project and later contributed to the community.
 It can be reused in other contexts where leader election is required. It can be bundled into our custom OTel Collector image.
 
 Open questions:
