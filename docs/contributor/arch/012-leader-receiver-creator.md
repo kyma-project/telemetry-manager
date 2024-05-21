@@ -28,7 +28,7 @@ One way to integrate leader election with Kubernetes Cluster Receiver is to bund
 
 An alternative approach is to create a separate component responsible for leader election that manages another arbitrary sub-receiver. This pattern is already used by the [Receiver Creator](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/receivercreator/README.md), which can instantiate other receivers at runtime based on observed endpoints matching a configured rule.
 
-In this way, the new receiver (let's call it `Leader Receiver Creator`) can be configured to create Kubernetes Cluster Receiver only if the underlying instance is a leader. Here's the proposed API:
+In this way, the new receiver (let's call it "Leader Receiver Creator") can be configured to create Kubernetes Cluster Receiver only if the underlying instance is a leader. Here's the proposed API:
 
 ```yaml
 leader_receiver_creator:
