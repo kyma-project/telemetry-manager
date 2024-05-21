@@ -19,7 +19,7 @@ As part of metrics collection, the Telemetry module must expose Kubernetes API s
 The easiest way to ensure high availability and prevent duplicate metrics is to use the leader election pattern. In this way, only one replica of OTel Collector will have an active instance of k8s_cluster_receiver running. 
 of the replicas will be in standby mode. If the active instance fails, the standby instance will take over.
 
-The leader election pattern is well known in Kubernetes, the following building blocks are available:
+The leader election pattern is well known in Kubernetes. The following building blocks are available:
 * [Lease](https://kubernetes.io/docs/concepts/architecture/leases/)
 * [Resource lock client](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection/resourcelock)
 * [Leader election client](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection)
