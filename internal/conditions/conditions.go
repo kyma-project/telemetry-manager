@@ -27,8 +27,8 @@ const (
 	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
 
 	// Common reasons
-	ReasonAgentNotReady = "AgentNotReady"
-	ReasonAgentReady    = "AgentReady"
+	ReasonAgentNotReady               = "AgentNotReady"
+	ReasonAgentReady                  = "AgentReady"
 	ReasonGatewayNotReady             = "GatewayNotReady"
 	ReasonGatewayReady                = "GatewayReady"
 	ReasonMaxPipelinesExceeded        = "MaxPipelinesExceeded"
@@ -37,6 +37,7 @@ const (
 	ReasonSelfMonBufferFillingUp      = "BufferFillingUp"
 	ReasonSelfMonFlowHealthy          = "FlowHealthy"
 	ReasonSelfMonGatewayThrottling    = "GatewayThrottling"
+	ReasonSelfMonProbingNotReachable  = "ProbingNotReachable"
 	ReasonSelfMonSomeDataDropped      = "SomeTelemetryDataDropped"
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
@@ -67,6 +68,7 @@ var commonMessages = map[string]string{
 	ReasonMaxPipelinesExceeded:        "Maximum pipeline count limit exceeded",
 	ReasonNoPipelineDeployed:          "No pipelines have been deployed",
 	ReasonReferencedSecretMissing:     "One or more referenced Secrets are missing",
+	ReasonSelfMonProbingNotReachable:  "Self monitoring probing not reachable",
 	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
 	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
 	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",

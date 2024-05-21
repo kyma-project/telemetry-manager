@@ -140,7 +140,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	} else {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
 
-		reason = conditions.ReasonSelfMonFlowHealthy
+		reason = conditions.ReasonSelfMonProbingNotReachable
 		status = metav1.ConditionUnknown
 	}
 
