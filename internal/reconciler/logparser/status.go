@@ -28,13 +28,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 		return nil
 	}
 
-	// If the "AgentHealthy" type doesn't exist in the conditions,
-	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
-	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	if meta.FindStatusCondition(parser.Status.Conditions, conditions.TypeAgentHealthy) == nil {
-		parser.Status.Conditions = []metav1.Condition{}
-	}
-
 	r.setAgentHealthyCondition(ctx, &parser)
 	r.setLegacyConditions(ctx, &parser)
 
@@ -53,10 +46,10 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, parser *telem
 	}
 
 	status := metav1.ConditionFalse
-	reason := conditions.ReasonDaemonSetNotReady
+	reason := conditions.ReasonAgentNotReady
 	if healthy {
 		status = metav1.ConditionTrue
-		reason = conditions.ReasonDaemonSetReady
+		reason = conditions.ReasonAgentReady
 	}
 
 	condition := metav1.Condition{

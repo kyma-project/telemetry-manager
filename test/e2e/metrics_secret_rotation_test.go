@@ -7,42 +7,42 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
-		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", kitkyma.DefaultNamespaceName,
-			kitk8s.WithStringData("metric-host", "http://localhost:4317"))
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("metric-host"))
+		var pipelineName = suite.ID()
+
+		endpointKey := "metrics-endpoint"
+		secret := kitk8s.NewOpaqueSecret("metrics-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+			Build()
 
 		BeforeAll(func() {
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipeline.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &metricPipeline)).Should(Succeed())
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, metricPipeline.K8sObject(), hostSecret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &metricPipeline, secret.K8sObject())).Should(Succeed())
 			})
 		})
 
 		It("Should set ConfigurationGenerated condition to false", func() {
-			Eventually(func(g Gomega) {
-				var fetched telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: metricPipeline.Name()}
-				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
-				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
-				g.Expect(configurationGeneratedCond).NotTo(BeNil())
-				g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
-				g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonReferencedSecretMissing))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
 		})
 
 		It("Should not have metric gateway deployment", func() {
@@ -55,10 +55,10 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 
 		It("Should have running metricpipeline", func() {
 			By("Creating missing secret", func() {
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, secret.K8sObject())).Should(Succeed())
 			})
 
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipeline.Name())
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 	})
 })

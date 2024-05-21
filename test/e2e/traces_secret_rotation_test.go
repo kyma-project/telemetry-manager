@@ -7,50 +7,48 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	Context("When tracepipeline with missing secret reference exists", Ordered, func() {
-		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", kitkyma.DefaultNamespaceName, kitk8s.WithStringData("trace-host", "http://localhost:4317"))
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("trace-host"))
+		var pipelineName = suite.ID()
+
+		endpointKey := "traces-endpoint"
+		secret := kitk8s.NewOpaqueSecret("traces-missing", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+		tracePipeline := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+			Build()
 
 		BeforeAll(func() {
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipeline.K8sObject())).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &tracePipeline)).Should(Succeed())
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, tracePipeline.K8sObject(), hostSecret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &tracePipeline, secret.K8sObject())).Should(Succeed())
 			})
 		})
 
 		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
-			Eventually(func(g Gomega) {
-				var fetched telemetryv1alpha1.TracePipeline
-				key := types.NamespacedName{Name: tracePipeline.Name()}
-				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
 
-				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
-				g.Expect(configurationGeneratedCond).NotTo(BeNil())
-				g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
-				g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonReferencedSecretMissing))
-
-				pendingCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypePending)
-				g.Expect(pendingCond).NotTo(BeNil())
-				g.Expect(pendingCond.Status).Should(Equal(metav1.ConditionTrue))
-				g.Expect(pendingCond.Reason).Should(Equal(conditions.ReasonReferencedSecretMissing))
-
-				runningCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeRunning)
-				g.Expect(runningCond).To(BeNil())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypePending,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
 		})
 
 		It("Should not have trace gateway deployment", func() {
@@ -63,10 +61,10 @@ var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 
 		It("Should have running tracepipeline", func() {
 			By("Creating missing secret", func() {
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, secret.K8sObject())).Should(Succeed())
 			})
 
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipeline.Name())
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 	})
 

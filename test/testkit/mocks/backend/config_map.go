@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 type ConfigMap struct {
@@ -14,17 +14,15 @@ type ConfigMap struct {
 	namespace        string
 	exportedFilePath string
 	signalType       SignalType
-	withTLS          bool
-	certs            tls.Certs
+	certs            *testutils.ServerCerts
 }
 
-func NewConfigMap(name, namespace, path string, signalType SignalType, withTLS bool, certs tls.Certs) *ConfigMap {
+func NewConfigMap(name, namespace, path string, signalType SignalType, certs *testutils.ServerCerts) *ConfigMap {
 	return &ConfigMap{
 		name:             name,
 		namespace:        namespace,
 		exportedFilePath: path,
 		signalType:       signalType,
-		withTLS:          withTLS,
 		certs:            certs,
 	}
 }
@@ -107,7 +105,7 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	var configTemplate string
 	if cm.signalType == SignalTypeLogs {
 		configTemplate = LogConfigTemplate
-	} else if cm.withTLS {
+	} else if cm.certs != nil {
 		configTemplate = tlsConfigTemplate
 	} else {
 		configTemplate = metricsAndTracesConfigTemplate
@@ -116,7 +114,7 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
 
 	data := make(map[string]string)
-	if cm.withTLS && cm.signalType != SignalTypeLogs {
+	if cm.certs != nil && cm.signalType != SignalTypeLogs {
 		certPem := strings.ReplaceAll(cm.certs.ServerCertPem.String(), "\n", "\\n")
 		keyPem := strings.ReplaceAll(cm.certs.ServerKeyPem.String(), "\n", "\\n")
 		config = strings.Replace(config, "{{ CERT_PEM }}", certPem, 1)

@@ -12,40 +12,40 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
-	const (
-		mockNs          = "metric-runtime-input-mocks"
-		mockBackendName = "metric-agent-receiver"
-	)
-
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-runtime-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
-			RuntimeInput(true)
-		pipelineName = metricPipeline.Name()
-		objs = append(objs, metricPipeline.K8sObject())
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithRuntimeInput(true).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
+		objs = append(objs, &metricPipeline)
 
 		return objs
 	}
@@ -62,20 +62,20 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Ensures the metrics backend is ready", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric agent daemonset is ready", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Ensures accessibility of metric agent metrics endpoint", func() {
 			agentMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricAgentMetrics.Namespace, kitkyma.MetricAgentMetrics.Name, "metrics", ports.Metrics)
-			verifiers.ShouldExposeCollectorMetrics(proxyClient, agentMetricsURL)
+			assert.EmitsOTelCollectorMetrics(proxyClient, agentMetricsURL)
 		})
 
 		It("Ensures the metric agent network policy exists", func() {
@@ -97,23 +97,24 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		})
 
 		It("Ensures the metricpipeline is running", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Ensures kubeletstats metrics are sent to backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames)))),
-				))
+				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
+					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
+					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
+				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Checks for correct attributes in kubeletstats metrics", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -123,7 +124,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		})
 
 		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, kitkyma.SystemNamespaceName)
+			assert.MetricsFromNamespaceNotDelivered(proxyClient, backendExportURL, kitkyma.SystemNamespaceName)
 		})
 	})
 })

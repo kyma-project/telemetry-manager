@@ -3,6 +3,7 @@ package logpipeline
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -20,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -28,22 +30,8 @@ func TestUpdateStatus(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	t.Run("fluent bit is not ready", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					HTTP: &telemetryv1alpha1.HTTPOutput{
-						Host: telemetryv1alpha1.ValueType{
-							Value: "localhost",
-						},
-					},
-				}},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -58,13 +46,13 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		agentHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, agentHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetNotReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonDaemonSetNotReady), agentHealthyCond.Message)
+		require.Equal(t, conditions.ReasonAgentNotReady, agentHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentNotReady), agentHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
@@ -83,22 +71,8 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("fluent bit is ready", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					HTTP: &telemetryv1alpha1.HTTPOutput{
-						Host: telemetryv1alpha1.ValueType{
-							Value: "localhost",
-						},
-					},
-				}},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -113,13 +87,13 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		agentHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, agentHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady), agentHealthyCond.Message)
+		require.Equal(t, conditions.ReasonAgentReady, agentHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentReady), agentHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
@@ -145,28 +119,8 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					HTTP: &telemetryv1alpha1.HTTPOutput{
-						Host: telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-									Name:      "some-secret",
-									Namespace: "some-namespace",
-									Key:       "host",
-								},
-							},
-						},
-					},
-				}},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -181,7 +135,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
@@ -206,27 +160,6 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("referenced secret exists", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					HTTP: &telemetryv1alpha1.HTTPOutput{
-						Host: telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-									Name:      "some-secret",
-									Namespace: "some-namespace",
-									Key:       "host",
-								},
-							},
-						},
-					},
-				}},
-		}
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
@@ -235,7 +168,8 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"host": nil},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -250,7 +184,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
@@ -272,22 +206,8 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("loki output is defined", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					Loki: &telemetryv1alpha1.LokiOutput{
-						URL: telemetryv1alpha1.ValueType{
-							Value: "http://logging-loki:3100/loki/api/v1/push",
-						},
-					},
-				}},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithLokiOutput().Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -302,7 +222,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
@@ -338,7 +258,7 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "prober fails",
 				probeErr:       assert.AnError,
 				expectedStatus: metav1.ConditionUnknown,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonFlowHealthy,
 			},
 			{
 				name: "healthy",
@@ -346,7 +266,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus: metav1.ConditionTrue,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonFlowHealthy,
 			},
 			{
 				name: "buffer filling up",
@@ -354,7 +274,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonBufferFillingUp,
+				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
 			},
 			{
 				name: "no logs delivered",
@@ -362,7 +282,7 @@ func TestUpdateStatus(t *testing.T) {
 					NoLogsDelivered: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonNoLogsDelivered,
+				expectedReason: conditions.ReasonSelfMonNoLogsDelivered,
 			},
 			{
 				name: "no logs delivered shadows other problems",
@@ -371,7 +291,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonNoLogsDelivered,
+				expectedReason: conditions.ReasonSelfMonNoLogsDelivered,
 			},
 			{
 				name: "some data dropped",
@@ -379,7 +299,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -388,7 +308,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp:     true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "all data dropped",
@@ -396,7 +316,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -407,7 +327,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 		}
 
@@ -454,8 +374,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -547,8 +467,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -632,8 +552,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -841,6 +761,78 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
-
 	})
+	t.Run("tls conditions", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			tlsCertErr     error
+			expectedStatus metav1.ConditionStatus
+			expectedReason string
+		}{
+			{
+				name:           "cert expired",
+				tlsCertErr:     &tlscert.CertExpiredError{Expiry: time.Now().Add(-time.Hour)},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateExpired,
+			},
+			{
+				name:           "cert about to expire",
+				tlsCertErr:     &tlscert.CertAboutToExpireError{Expiry: time.Now().Add(7 * 24 * time.Hour)},
+				expectedStatus: metav1.ConditionTrue,
+				expectedReason: conditions.ReasonTLSCertificateAboutToExpire,
+			},
+			{
+				name:           "cert decode failed",
+				tlsCertErr:     tlscert.ErrCertDecodeFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+			{
+				name:           "key decode failed",
+				tlsCertErr:     tlscert.ErrKeyDecodeFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+			{
+				name:           "key parse failed",
+				tlsCertErr:     tlscert.ErrKeyParseFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+			{
+				name:           "cert parse failed",
+				tlsCertErr:     tlscert.ErrCertParseFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewLogPipelineBuilder().WithHTTPOutput(testutils.HTTPClientTLS("", "fooCert", "fooKey")).Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				proberStub := &mocks.DaemonSetProber{}
+				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				tlsStub := &mocks.TLSCertValidator{}
+				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
+
+				sut := Reconciler{
+					Client:           fakeClient,
+					tlsCertValidator: tlsStub,
+					prober:           proberStub,
+				}
+
+				err := sut.updateStatus(context.Background(), pipeline.Name)
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.LogPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+				require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
+				require.Equal(t, tt.expectedStatus, cond.Status)
+				require.Equal(t, tt.expectedReason, cond.Reason)
+			})
+		}
+	})
+
 }

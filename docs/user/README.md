@@ -46,6 +46,10 @@ If Telemetry Manager detects a configuration, it rolls out the relevant componen
 
 For more information, see [Telemetry Manager](01-manager.md).
 
+### Self Monitor
+
+The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed components listed below. It provides insights about the telemetry data flow health and the module and pipeline status.
+
 ### Gateways
 
 The Traces and Metric feature each share the common approach of providing a gateway based on the [OTel Collector](https://opentelemetry.io/docs/collector/). It acts as a central point in the cluster to push data in the OTLP format. From here, the data is enriched and filtered and then dispatched as defined in the individual pipeline resources.

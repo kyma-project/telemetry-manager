@@ -3,48 +3,52 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Metrics mTLS", Label("metrics"), func() {
-	const (
-		mockBackendName = "metric-tls-receiver"
-		mockNs          = "metric-mocks-tls-pipeline"
-		telemetrygenNs  = "metric-mtls"
-	)
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
-			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
-		)
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS())
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
+		Expect(err).ToNot(HaveOccurred())
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
-			WithTLS(mockBackend.TLSCerts)
-		pipelineName = metricPipeline.Name()
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
+
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(backend.Endpoint()),
+				testutils.OTLPClientTLS(
+					clientCerts.CaCertPem.String(),
+					clientCerts.ClientCertPem.String(),
+					clientCerts.ClientKeyPem.String(),
+				),
+			).
+			Build()
 
 		objs = append(objs,
-			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeMetrics).K8sObject(),
-			metricPipeline.K8sObject(),
+			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+			&metricPipeline,
 		)
 
 		return objs
@@ -61,15 +65,15 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a metric backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 	})
 })

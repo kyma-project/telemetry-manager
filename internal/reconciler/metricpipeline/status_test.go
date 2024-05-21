@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -56,7 +58,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonDeploymentNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonGatewayNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
@@ -88,7 +90,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonDeploymentNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonGatewayNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
@@ -120,13 +122,13 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, conditions.ReasonDeploymentReady, cond.Reason)
+		require.Equal(t, conditions.ReasonGatewayReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
 
 	t.Run("metric agent daemonset is not ready", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -155,13 +157,13 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonAgentNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
 
 	t.Run("metric agent prober fails", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -190,13 +192,13 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonAgentNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
 
 	t.Run("metric agent daemonset is ready", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -225,7 +227,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetReady, cond.Reason)
+		require.Equal(t, conditions.ReasonAgentReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
@@ -239,8 +241,8 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"user": {}, "password": {}},
 		}
-		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret(
-			secret.Name, secret.Namespace, "user", "password").Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
+
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -264,8 +266,8 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret(
-			"some-secret", "some-namespace", "user", "password").Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
+
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -289,8 +291,7 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("waiting for lock", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret(
-			"some-secret", "some-namespace", "user", "password").Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -324,7 +325,7 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "prober fails",
 				probeErr:       assert.AnError,
 				expectedStatus: metav1.ConditionUnknown,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonFlowHealthy,
 			},
 			{
 				name: "healthy",
@@ -332,7 +333,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus: metav1.ConditionTrue,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonFlowHealthy,
 			},
 			{
 				name: "throttling",
@@ -340,7 +341,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonGatewayThrottling,
+				expectedReason: conditions.ReasonSelfMonGatewayThrottling,
 			},
 			{
 				name: "buffer filling up",
@@ -348,7 +349,7 @@ func TestUpdateStatus(t *testing.T) {
 					QueueAlmostFull: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonBufferFillingUp,
+				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
 			},
 			{
 				name: "buffer filling up shadows other problems",
@@ -357,7 +358,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling:      true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonBufferFillingUp,
+				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
 			},
 			{
 				name: "some data dropped",
@@ -365,7 +366,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -374,7 +375,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling:          true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "all data dropped",
@@ -382,7 +383,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -391,7 +392,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling:          true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 		}
 
@@ -424,5 +425,78 @@ func TestUpdateStatus(t *testing.T) {
 				require.Equal(t, tt.expectedReason, cond.Reason)
 			})
 		}
+	})
+	t.Run("tls conditions", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			tlsCertErr     error
+			expectedStatus metav1.ConditionStatus
+			expectedReason string
+		}{
+			{
+				name:           "cert expired",
+				tlsCertErr:     &tlscert.CertExpiredError{Expiry: time.Now().Add(-time.Hour)},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateExpired,
+			},
+			{
+				name:           "cert about to expire",
+				tlsCertErr:     &tlscert.CertAboutToExpireError{Expiry: time.Now().Add(7 * 24 * time.Hour)},
+				expectedStatus: metav1.ConditionTrue,
+				expectedReason: conditions.ReasonTLSCertificateAboutToExpire,
+			},
+			{
+				name:           "cert decode failed",
+				tlsCertErr:     tlscert.ErrCertDecodeFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+			{
+				name:           "key decode failed",
+				tlsCertErr:     tlscert.ErrKeyDecodeFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+			{
+				name:           "key parse failed",
+				tlsCertErr:     tlscert.ErrKeyParseFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+			{
+				name:           "cert parse failed",
+				tlsCertErr:     tlscert.ErrCertParseFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPClientTLS("ca", "fooCert", "fooKey")).Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				gatewayProberStub := &mocks.DeploymentProber{}
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				tlsStub := &mocks.TLSCertValidator{}
+				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
+
+				sut := Reconciler{
+					Client:           fakeClient,
+					tlsCertValidator: tlsStub,
+					gatewayProber:    gatewayProberStub,
+				}
+
+				err := sut.updateStatus(context.Background(), pipeline.Name, true)
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.MetricPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+				require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
+				require.Equal(t, tt.expectedStatus, cond.Status)
+				require.Equal(t, tt.expectedReason, cond.Reason)
+			})
+		}
+
 	})
 }

@@ -51,12 +51,6 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
-	if cfg.CanReceiveOpenCensus {
-		if err := k8sutils.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
-			return fmt.Errorf("failed to create open census service: %w", err)
-		}
-	}
-
 	if cfg.Istio.Enabled {
 		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
@@ -186,30 +180,6 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 					},
 				},
 			},
-		},
-	}
-}
-
-func makeOpenCensusService(name types.NamespacedName) *corev1.Service {
-	labels := defaultLabels(name.Name)
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-internal",
-			Namespace: name.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "http-opencensus",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OpenCensus,
-					TargetPort: intstr.FromInt32(ports.OpenCensus),
-				},
-			},
-			Selector: labels,
-			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }

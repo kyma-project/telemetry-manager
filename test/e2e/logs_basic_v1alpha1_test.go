@@ -8,43 +8,55 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Logs Basic v1alpha1", Label("logs"), Ordered, func() {
-	const (
-		mockBackendName = "log-receiver"
-		mockNs          = "log-http-output"
-		logProducerName = "log-producer-http-output" //#nosec G101 -- This is a false positive
-		pipelineName    = "http-output-pipeline-alpha1"
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+	var (
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
-	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(isOperational()))
-		mockLogProducer := loggen.New(logProducerName, mockNs)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(suite.IsOperational()))
+		logProducer := loggen.New(mockNs)
+		objs = append(objs, backend.K8sObjects()...)
+		objs = append(objs, logProducer.K8sObject())
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			Persistent(isOperational())
-		objs = append(objs, logPipeline.K8sObject())
+		hostSecretRef := backend.HostSecretRefV1Alpha1()
+		logPipelineBuilder := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithHTTPOutput(
+				testutils.HTTPHostFromSecret(
+					hostSecretRef.Name,
+					hostSecretRef.Namespace,
+					hostSecretRef.Key,
+				),
+				testutils.HTTPPort(backend.Port()),
+			)
+		if suite.IsOperational() {
+			logPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
+		}
+		logPipeline := logPipelineBuilder.Build()
+
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}
 
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
-			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+			assert.WebhookHealthy(ctx, k8sClient)
 		})
 	})
 
@@ -57,20 +69,24 @@ var _ = Describe("Logs Basic v1alpha1", Label("logs"), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", Label(operationalTest), func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+		It("Should have a running pipeline", Label(suite.LabelOperational), func() {
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a log backend running", Label(operationalTest), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+		It("Should have a pipeline with legacy condition types at the end of the conditions list", Label(suite.LabelOperational), func() {
+			assert.LogPipelineHasLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a log producer running", Label(operationalTest), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+		It("Should have a log backend running", Label(suite.LabelOperational), func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have produced logs in the backend", Label(operationalTest), func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
+		It("Should have a log producer running", Label(suite.LabelOperational), func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+		})
+
+		It("Should have produced logs in the backend", Label(suite.LabelOperational), func() {
+			assert.LogsDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })

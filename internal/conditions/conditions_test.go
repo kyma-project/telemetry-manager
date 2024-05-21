@@ -13,14 +13,14 @@ func TestMessageFor(t *testing.T) {
 	})
 
 	t.Run("should return correct message which is unique to each pipeline", func(t *testing.T) {
-		logsDaemonSetNotReadyMessage := MessageForLogPipeline(ReasonDaemonSetNotReady)
-		require.Equal(t, logPipelineMessages[ReasonDaemonSetNotReady], logsDaemonSetNotReadyMessage)
+		logsDaemonSetNotReadyMessage := MessageForLogPipeline(ReasonAgentNotReady)
+		require.Equal(t, logPipelineMessages[ReasonAgentNotReady], logsDaemonSetNotReadyMessage)
 
-		tracesDeploymentNotReadyMessage := MessageForTracePipeline(ReasonDeploymentNotReady)
-		require.Equal(t, tracePipelineMessages[ReasonDeploymentNotReady], tracesDeploymentNotReadyMessage)
+		tracesDeploymentNotReadyMessage := MessageForTracePipeline(ReasonGatewayNotReady)
+		require.Equal(t, tracePipelineMessages[ReasonGatewayNotReady], tracesDeploymentNotReadyMessage)
 
-		metricsDeploymentNotReadyMessage := MessageForMetricPipeline(ReasonDeploymentNotReady)
-		require.Equal(t, metricPipelineMessages[ReasonDeploymentNotReady], metricsDeploymentNotReadyMessage)
+		metricsDeploymentNotReadyMessage := MessageForMetricPipeline(ReasonGatewayNotReady)
+		require.Equal(t, metricPipelineMessages[ReasonGatewayNotReady], metricsDeploymentNotReadyMessage)
 	})
 
 	t.Run("should return empty message for reasons which do not have a specialized message", func(t *testing.T) {

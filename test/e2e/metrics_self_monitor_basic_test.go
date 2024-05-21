@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,23 +16,22 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Metrics Self Monitor", Label("self-mon-metrics"), Ordered, func() {
-	const (
-		mockBackendName = "metrics-receiver-selfmon"
-		mockNs          = "metrics-basic-selfmon-test"
-	)
-
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -41,16 +39,17 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon-metrics"), Ordered, fun
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackendName)).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
-		pipelineName = pipeline.Name()
+		pipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			Build()
 		objs = append(objs,
 			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
-			pipeline.K8sObject(),
+			&pipeline,
 		)
 
 		return objs
@@ -67,7 +66,7 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon-metrics"), Ordered, fun
 		})
 
 		It("Should have a running self-monitor", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a network policy deployed", func() {
@@ -94,19 +93,19 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon-metrics"), Ordered, fun
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
-			//TODO: add the conditions.TypeFlowHealthy check to verifiers.MetricPipelineShouldBeHealthy after self monitor is released
+			//TODO: add the conditions.TypeFlowHealthy check to assert.MetricPipelineHealthy after self monitor is released
 			Eventually(func(g Gomega) {
 				var pipeline telemetryv1alpha1.MetricPipeline
 				key := types.NamespacedName{Name: pipelineName}
@@ -115,9 +114,24 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon-metrics"), Ordered, fun
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
-		It("Should ensure that the self-monitor webhook has been called", func() {
-			// Pushing metrics to the metric gateway triggers an alert, which in turn makes the self-monitor call the webhook
-			verifiers.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
+		Context("Metric instrumentation", Ordered, func() {
+			It("Ensures that controller_runtime_webhook_requests_total is increased", func() {
+				// Pushing metrics to the metric gateway triggers an alert.
+				// It makes the self-monitor call the webhook, which in turn increases the counter.
+				assert.ManagerEmitsMetric(proxyClient,
+					Equal("controller_runtime_webhook_requests_total"),
+					SatisfyAll(
+						WithLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
+						WithValue(BeNumerically(">", 0)),
+					))
+			})
+
+			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
+				assert.ManagerEmitsMetric(proxyClient,
+					Equal("telemetry_self_monitor_prober_requests_total"),
+					WithValue(BeNumerically(">", 0)),
+				)
+			})
 		})
 	})
 })

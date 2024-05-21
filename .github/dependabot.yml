@@ -9,6 +9,8 @@ updates:
       prefix: "chore(dependabot)"
     labels:
       - "area/dependency"
+    ignore:
+      - dependency-name: "kyma-project/prod/tpi/fluent-bit"
 
   - package-ecosystem: "gomod"
     directory: "/"

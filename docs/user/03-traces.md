@@ -31,6 +31,7 @@ The Telemetry module provides an in-cluster central deployment of an [OTel Colle
 5. The backend can run in-cluster.
 6. The backend can also run out-cluster, if authentication has been set up.
 7. The trace data can be consumed using the backend system.
+8. The self monitor observes the trace flow to the backend and reports problems in the TracePipeline status.
 
 ### Trace Gateway
 
@@ -411,7 +412,7 @@ By default, all engines for the [Serverless](https://kyma-project.io/#/serverles
 
 ## Operations
 
-A TracePipeline creates a Deployment running OTel Collector instances in your cluster. That instances will serve OTLP endpoints and ship received data to the configured backend. The Telemetry module assures that the OTel Collector instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop logs because the backend is either not reachable for some duration, or cannot handle the log load and is causing back pressure.
+A TracePipeline creates a Deployment running OTel Collector instances in your cluster. That Deployment serves OTLP endpoints and ships received data to the configured backend. The Telemetry module assures that the OTel Collector instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop traces because the backend is either not reachable for some duration, or cannot handle the traces load and is causing back pressure.
 
 To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, a service `telemetry-trace-collector-metrics` is located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
 

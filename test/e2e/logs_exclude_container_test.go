@@ -10,45 +10,46 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Logs Exclude Container", Label("logs"), Ordered, func() {
-	const (
-		mockNs          = "log-exclude-container-mocks"
-		mockBackendName = "log-receiver-exclude-container"
-		logProducerName = "log-producer-exclude-container"
-		pipelineName    = "pipeline-exclude-container-test"
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+	var (
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
-	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
-		mockLogProducer := loggen.New(logProducerName, mockNs)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-exclude-container")))
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		logProducer := loggen.New(mockNs)
+		objs = append(objs, backend.K8sObjects()...)
+		objs = append(objs, logProducer.K8sObject())
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithExcludeContainers([]string{logProducerName})
-		objs = append(objs, logPipeline.K8sObject())
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithExcludeContainers(loggen.DefaultContainerName).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			Build()
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}
 
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
-			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+			assert.WebhookHealthy(ctx, k8sClient)
 		})
 	})
 
@@ -62,20 +63,20 @@ var _ = Describe("Logs Exclude Container", Label("logs"), Ordered, func() {
 		})
 
 		It("Should have a running logpipeline", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have any logs in the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainLd(WithLogRecords(Not(BeEmpty())))))
@@ -84,11 +85,11 @@ var _ = Describe("Logs Exclude Container", Label("logs"), Ordered, func() {
 
 		It("Should have no log-producer logs in the backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
-					WithContainerName(ContainSubstring(logProducerName))))),
+					WithContainerName(ContainSubstring(loggen.DefaultName))))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

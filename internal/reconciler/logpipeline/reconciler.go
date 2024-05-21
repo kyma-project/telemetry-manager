@@ -19,15 +19,13 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -70,7 +68,7 @@ type DaemonSetAnnotator interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
+	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
 }
 
 //go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
@@ -80,16 +78,15 @@ type FlowHealthProber interface {
 
 type Reconciler struct {
 	client.Client
-	config                   Config
-	prober                   DaemonSetProber
-	flowHealthProbingEnabled bool
-	flowHealthProber         FlowHealthProber
-	allLogPipelines          prometheus.Gauge
-	unsupportedLogPipelines  prometheus.Gauge
-	syncer                   syncer
-	overridesHandler         *overrides.Handler
-	istioStatusChecker       istiostatus.Checker
-	tlsCertValidator         TLSCertValidator
+	config                     Config
+	prober                     DaemonSetProber
+	flowHealthProbingEnabled   bool
+	flowHealthProber           FlowHealthProber
+	syncer                     syncer
+	overridesHandler           *overrides.Handler
+	istioStatusChecker         istiostatus.Checker
+	tlsCertValidator           TLSCertValidator
+	pipelinesConditionsCleared bool
 }
 
 func NewReconciler(
@@ -105,9 +102,6 @@ func NewReconciler(
 	r.prober = agentProber
 	r.flowHealthProbingEnabled = flowHealthProbingEnabled
 	r.flowHealthProber = flowHealthProber
-	r.allLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_all_logpipelines", Help: "Number of log pipelines."})
-	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
-	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
 	r.istioStatusChecker = istiostatus.NewChecker(client)
@@ -127,10 +121,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if overrideConfig.Logging.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
-	}
-
-	if err := r.updateMetrics(ctx); err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to get all LogPipelines while updating metrics")
 	}
 
 	var pipeline telemetryv1alpha1.LogPipeline
@@ -156,6 +146,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := r.List(ctx, &allPipelines); err != nil {
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
+	}
+
+	if err = r.clearPipelinesConditions(ctx, allPipelines.Items); err != nil {
+		return fmt.Errorf("failed to clear the conditions list for log pipelines: %w", err)
 	}
 
 	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
@@ -248,38 +242,6 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	return nil
 }
 
-func (r *Reconciler) updateMetrics(ctx context.Context) error {
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(ctx, &allPipelines); err != nil {
-		return err
-	}
-
-	r.allLogPipelines.Set(float64(count(&allPipelines, isNotMarkedForDeletion)))
-	r.unsupportedLogPipelines.Set(float64(count(&allPipelines, isUnsupported)))
-
-	return nil
-}
-
-type keepFunc func(*telemetryv1alpha1.LogPipeline) bool
-
-func count(pipelines *telemetryv1alpha1.LogPipelineList, keep keepFunc) int {
-	c := 0
-	for i := range pipelines.Items {
-		if keep(&pipelines.Items[i]) {
-			c++
-		}
-	}
-	return c
-}
-
-func isNotMarkedForDeletion(pipeline *telemetryv1alpha1.LogPipeline) bool {
-	return pipeline.ObjectMeta.DeletionTimestamp.IsZero()
-}
-
-func isUnsupported(pipeline *telemetryv1alpha1.LogPipeline) bool {
-	return isNotMarkedForDeletion(pipeline) && pipeline.ContainsCustomPlugin()
-}
-
 func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	var baseCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.DaemonSet, &baseCm); err != nil {
@@ -345,9 +307,13 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
-		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
-			return false
+		cert := pipeline.Spec.Output.HTTP.TLSConfig.Cert
+		key := pipeline.Spec.Output.HTTP.TLSConfig.Key
+
+		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+			if !tlscert.IsCertAboutToExpireError(err) {
+				return false
+			}
 		}
 	}
 
@@ -367,4 +333,24 @@ func tlsCertValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 		return false
 	}
 	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil
+}
+
+// clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation
+// This is done to allow the legacy conditions ("Running" and "Pending") to be always appended at the end of the conditions list even if new condition types are added
+// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+// TODO: Remove this logic after the end of the deprecation period of the legacy conditions ("Running" and "Pending")
+func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) error {
+	if r.pipelinesConditionsCleared {
+		return nil
+	}
+
+	for i := range allPipelines {
+		allPipelines[i].Status.Conditions = []metav1.Condition{}
+		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
+			return fmt.Errorf("failed to update LogPipeline status: %w", err)
+		}
+	}
+	r.pipelinesConditionsCleared = true
+
+	return nil
 }

@@ -19,9 +19,9 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,18 +60,19 @@ type FlowHealthProber interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
+	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
 }
 
 type Reconciler struct {
 	client.Client
-	config                   Config
-	prober                   DeploymentProber
-	flowHealthProbingEnabled bool
-	flowHealthProber         FlowHealthProber
-	overridesHandler         *overrides.Handler
-	istioStatusChecker       istiostatus.Checker
-	tlsCertValidator         TLSCertValidator
+	config                     Config
+	prober                     DeploymentProber
+	flowHealthProbingEnabled   bool
+	flowHealthProber           FlowHealthProber
+	overridesHandler           *overrides.Handler
+	istioStatusChecker         istiostatus.Checker
+	tlsCertValidator           TLSCertValidator
+	pipelinesConditionsCleared bool
 }
 
 func NewReconciler(client client.Client,
@@ -140,6 +141,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
+
+	if err = r.clearPipelinesConditions(ctx, allPipelinesList.Items); err != nil {
+		return fmt.Errorf("failed to clear the conditions list for trace pipelines: %w", err)
+	}
+
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
@@ -182,9 +188,13 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
-		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
-			return false, nil
+		cert := pipeline.Spec.Output.Otlp.TLS.Cert
+		key := pipeline.Spec.Output.Otlp.TLS.Key
+
+		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+			if !tlscert.IsCertAboutToExpireError(err) {
+				return false, nil
+			}
 		}
 	}
 	hasLock, err := lock.IsLockHolder(ctx, pipeline)
@@ -221,13 +231,13 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy, ports.OpenCensus)
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive).
+			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive).
 			WithAllowedPorts(allowedPorts)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
@@ -270,4 +280,24 @@ func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
 	}
 
 	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil
+}
+
+// clearPipelinesConditions clears the status conditions for all TracePipelines only in the 1st reconciliation
+// This is done to allow the legacy conditions ("Running" and "Pending") to be always appended at the end of the conditions list even if new condition types are added
+// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+// TODO: Remove this logic after the end of the deprecation period of the legacy conditions ("Running" and "Pending")
+func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline) error {
+	if r.pipelinesConditionsCleared {
+		return nil
+	}
+
+	for i := range allPipelines {
+		allPipelines[i].Status.Conditions = []metav1.Condition{}
+		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
+			return fmt.Errorf("failed to update TracePipeline status: %w", err)
+		}
+	}
+	r.pipelinesConditionsCleared = true
+
+	return nil
 }

@@ -11,28 +11,29 @@ import (
 )
 
 const (
-	replicas           int32 = 1
-	otelCollectorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.97.0-cccde9ac"
-	nginxImage               = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
-	fluentDImage             = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
+	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.99.0-41265c69"
+	nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
+	fluentDImage       = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
 )
 
 type Deployment struct {
 	name              string
 	namespace         string
 	configmapName     string
+	replicas          int32
 	dataPath          string
 	signalType        SignalType
 	fluentdConfigName string
 	annotations       map[string]string
 }
 
-func NewDeployment(name, namespace, configmapName, dataPath string, signalType SignalType) *Deployment {
+func NewDeployment(name, namespace, configmapName, dataPath string, replicas int32, signalType SignalType) *Deployment {
 	return &Deployment{
 		name:          name,
 		namespace:     namespace,
 		configmapName: configmapName,
 		dataPath:      dataPath,
+		replicas:      replicas,
 		signalType:    signalType,
 	}
 }
@@ -59,7 +60,7 @@ func (d *Deployment) K8sObject(opts ...testkit.OptFunc) *appsv1.Deployment {
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(replicas),
+			Replicas: ptr.To(d.replicas),
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

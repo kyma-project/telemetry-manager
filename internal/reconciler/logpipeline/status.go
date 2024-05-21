@@ -36,13 +36,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 		return err
 	}
 
-	// If the "AgentHealthy" type doesn't exist in the conditions,
-	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
-	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy) == nil {
-		pipeline.Status.Conditions = []metav1.Condition{}
-	}
-
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
 
@@ -79,10 +72,10 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	}
 
 	status := metav1.ConditionFalse
-	reason := conditions.ReasonDaemonSetNotReady
+	reason := conditions.ReasonAgentNotReady
 	if healthy {
 		status = metav1.ConditionTrue
-		reason = conditions.ReasonDaemonSetReady
+		reason = conditions.ReasonAgentReady
 	}
 
 	condition := metav1.Condition{
@@ -120,8 +113,11 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
-		return conditions.EvaluateTLSCertCondition(certValidationResult)
+		cert := pipeline.Spec.Output.HTTP.TLSConfig.Cert
+		key := pipeline.Spec.Output.HTTP.TLSConfig.Key
+
+		err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
+		return conditions.EvaluateTLSCertCondition(err)
 	}
 
 	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(conditions.ReasonConfigurationGenerated)
@@ -144,7 +140,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	} else {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
 
-		reason = conditions.ReasonFlowHealthy
+		reason = conditions.ReasonSelfMonFlowHealthy
 		status = metav1.ConditionUnknown
 	}
 
@@ -162,15 +158,15 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
 	switch {
 	case probeResult.AllDataDropped:
-		return conditions.ReasonAllDataDropped
+		return conditions.ReasonSelfMonAllDataDropped
 	case probeResult.SomeDataDropped:
-		return conditions.ReasonSomeDataDropped
+		return conditions.ReasonSelfMonSomeDataDropped
 	case probeResult.NoLogsDelivered:
-		return conditions.ReasonNoLogsDelivered
+		return conditions.ReasonSelfMonNoLogsDelivered
 	case probeResult.BufferFillingUp:
-		return conditions.ReasonBufferFillingUp
+		return conditions.ReasonSelfMonBufferFillingUp
 	default:
-		return conditions.ReasonFlowHealthy
+		return conditions.ReasonSelfMonFlowHealthy
 	}
 }
 

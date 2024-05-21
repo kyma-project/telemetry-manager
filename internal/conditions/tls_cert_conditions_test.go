@@ -14,52 +14,66 @@ import (
 func Test_EvaluateTLSCertCondition(t *testing.T) {
 	tests := []struct {
 		name            string
-		given           tlscert.TLSCertValidationResult
+		given           error
 		expectedStatus  metav1.ConditionStatus
 		expectedReason  string
 		expectedMessage string
 	}{
 		{
-			name:            "Invalid Certificate",
-			given:           tlscert.TLSCertValidationResult{CertValid: false, CertValidationMessage: "Cert is invalid", PrivateKeyValid: true, Validity: time.Now().AddDate(1, 0, 0)},
+			name:            "cert decode failed",
+			given:           tlscert.ErrCertDecodeFailed,
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  ReasonTLSCertificateInvalid,
-			expectedMessage: fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], "Cert is invalid"),
+			expectedMessage: fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], tlscert.ErrCertDecodeFailed),
 		},
 		{
-			name:            "Invalid Certificate and PrivateKey",
-			given:           tlscert.TLSCertValidationResult{CertValid: false, CertValidationMessage: "Cert is invalid", PrivateKeyValid: false, PrivateKeyValidationMessage: "PrivateKey is invalid", Validity: time.Now().AddDate(1, 0, 0)},
+			name:            "cert parse failed",
+			given:           tlscert.ErrCertParseFailed,
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  ReasonTLSCertificateInvalid,
-			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateInvalid), "Cert is invalid"),
+			expectedMessage: fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], tlscert.ErrCertParseFailed),
 		},
 		{
-			name:            "Invalid PrivateKey",
-			given:           tlscert.TLSCertValidationResult{CertValid: true, PrivateKeyValid: false, PrivateKeyValidationMessage: "PrivateKey is invalid", Validity: time.Now().AddDate(1, 0, 0)},
+			name:            "private key decode failed",
+			given:           tlscert.ErrKeyDecodeFailed,
 			expectedStatus:  metav1.ConditionFalse,
-			expectedReason:  ReasonTLSPrivateKeyInvalid,
-			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSPrivateKeyInvalid), "PrivateKey is invalid"),
+			expectedReason:  ReasonTLSCertificateInvalid,
+			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateInvalid), tlscert.ErrKeyDecodeFailed),
 		},
 		{
-			name:            "Expired Certificate",
-			given:           tlscert.TLSCertValidationResult{CertValid: true, PrivateKeyValid: true, Validity: time.Date(2000, 2, 1, 12, 30, 0, 0, time.UTC)},
+			name:            "private key parse failed",
+			given:           tlscert.ErrKeyParseFailed,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  ReasonTLSCertificateInvalid,
+			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateInvalid), tlscert.ErrKeyParseFailed),
+		},
+		{
+			name:            "cert expired",
+			given:           &tlscert.CertExpiredError{Expiry: time.Date(2000, 2, 1, 0, 0, 0, 0, time.UTC)},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  ReasonTLSCertificateExpired,
 			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateExpired), "2000-02-01"),
 		},
 		{
-			name:            "Certificate about to expire",
-			given:           tlscert.TLSCertValidationResult{CertValid: true, PrivateKeyValid: true, Validity: time.Now().AddDate(0, 0, 7)},
+			name:            "cert about to expire",
+			given:           &tlscert.CertAboutToExpireError{Expiry: time.Now().AddDate(0, 0, 7)},
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  ReasonTLSCertificateAboutToExpire,
 			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateAboutToExpire), time.Now().AddDate(0, 0, 7).Format(time.DateOnly)),
 		},
 		{
-			name:            "TLS Cert/key valid",
-			given:           tlscert.TLSCertValidationResult{CertValid: true, PrivateKeyValid: true, Validity: time.Now().AddDate(1, 0, 0)},
+			name:            "cert and private key valid",
+			given:           nil,
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  ReasonConfigurationGenerated,
 			expectedMessage: MessageForLogPipeline(ReasonConfigurationGenerated),
+		},
+		{
+			name:            "invalid cert key pair",
+			given:           tlscert.ErrInvalidCertificateKeyPair,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  ReasonTLSCertificateInvalid,
+			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateInvalid), tlscert.ErrInvalidCertificateKeyPair),
 		},
 	}
 
@@ -69,7 +83,6 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 			require.Equal(t, test.expectedStatus, status)
 			require.Equal(t, test.expectedReason, reason)
 			require.Equal(t, test.expectedMessage, msg)
-
 		})
 	}
 }

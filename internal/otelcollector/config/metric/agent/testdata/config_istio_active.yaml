@@ -12,7 +12,7 @@ service:
                 - memory_limiter
                 - filter/drop-internal-communication
                 - resource/delete-service-name
-                - resource/insert-input-source-istio
+                - transform/set-instrumentation-scope-istio
                 - batch
             exporters:
                 - otlp
@@ -23,7 +23,7 @@ service:
             processors:
                 - memory_limiter
                 - resource/delete-service-name
-                - resource/insert-input-source-prometheus
+                - transform/set-instrumentation-scope-prometheus
                 - batch
             exporters:
                 - otlp
@@ -33,7 +33,7 @@ service:
             processors:
                 - memory_limiter
                 - resource/delete-service-name
-                - resource/insert-input-source-runtime
+                - transform/set-instrumentation-scope-runtime
                 - batch
             exporters:
                 - otlp
@@ -297,27 +297,30 @@ processors:
         attributes:
             - action: delete
               key: service.name
-    resource/insert-input-source-runtime:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: runtime
-    resource/insert-input-source-prometheus:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: prometheus
-    resource/insert-input-source-istio:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: istio
     filter/drop-internal-communication:
         metrics:
             metric:
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("source_workload", "telemetry-metric-agent")
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-metric-gateway")
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-trace-collector")
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(name, "io.kyma-project.telemetry/runtime") where name == "" or name == "otelcol/kubeletstatsreceiver"
+    transform/set-instrumentation-scope-prometheus:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(name, "io.kyma-project.telemetry/prometheus") where name == "" or name == "otelcol/prometheusreceiver"
+    transform/set-instrumentation-scope-istio:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(name, "io.kyma-project.telemetry/istio") where name == "" or name == "otelcol/prometheusreceiver"
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317

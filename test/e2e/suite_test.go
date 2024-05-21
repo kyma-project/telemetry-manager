@@ -24,12 +24,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-)
-
-const (
-	// A label that designates a test as an operational one.
-	// Operational tests preserve K8s objects between test runs.
-	operationalTest = "operational"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var (
@@ -71,7 +66,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(isOperational()).K8sObject()
+	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(suite.IsOperational()).K8sObject()
 	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
 	k8sObjects = []client.Object{
 		telemetryK8sObject,
@@ -86,12 +81,12 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-	if !isOperational() {
+	if !suite.IsOperational() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
-			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
+			g.Expect(k8sClient.Get(ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 	}
 
@@ -100,10 +95,3 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
-
-// isOperational returns true if the test is invoked with an "operational" tag.
-func isOperational() bool {
-	labelsFilter := GinkgoLabelFilter()
-
-	return labelsFilter != "" && Label(operationalTest).MatchesLabelFilter(labelsFilter)
-}

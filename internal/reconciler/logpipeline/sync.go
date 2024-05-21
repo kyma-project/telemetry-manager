@@ -14,7 +14,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
 type syncer struct {
@@ -76,10 +75,10 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		} else if oldConfig, hasKey := cm.Data[cmKey]; !hasKey || oldConfig != newConfig {
 			cm.Data[cmKey] = newConfig
 		}
+	}
 
-		if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {
-			return fmt.Errorf("unable to set owner reference for section configmap: %w", err)
-		}
+	if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {
+		return fmt.Errorf("unable to set owner reference for section configmap: %w", err)
 	}
 
 	if err = s.Update(ctx, &cm); err != nil {
@@ -134,7 +133,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 		}
 
 		for _, ref := range logPipelines[i].GetEnvSecretRefs() {
-			targetKey := envvar.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
+			targetKey := builder.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
 			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}

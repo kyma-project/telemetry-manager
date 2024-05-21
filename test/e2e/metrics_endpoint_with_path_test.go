@@ -9,12 +9,14 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Metrics Endpoint with Path", Label("metrics"), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	const (
 		path     = "/v1/mock"
 		endpoint = "metric-mock"
@@ -25,13 +27,14 @@ var _ = Describe("Metrics Endpoint with Path", Label("metrics"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("mock-metric-endpoint-path").
-			WithProtocol("http").
-			WithOutputEndpoint(endpoint).WithEndpointPath(path)
+		pipelineName := suite.ID()
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(endpoint), testutils.OTLPEndpointPath(path), testutils.OTLPProtocol("http")).
+			Build()
 
-		pipelineName := metricPipeline.Name()
 		endpointDataKey = fmt.Sprintf("%s_%s", "OTLP_ENDPOINT", kitkyma.MakeEnvVarCompliant(pipelineName))
-		objs = append(objs, metricPipeline.K8sObject())
+		objs = append(objs, &metricPipeline)
 		return objs
 	}
 
@@ -46,7 +49,7 @@ var _ = Describe("Metrics Endpoint with Path", Label("metrics"), func() {
 		})
 
 		It("Should have a secret with endpoint and path", func() {
-			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.MetricGatewaySecretName, endpointDataKey, endpoint+path)
+			assert.SecretHasKeyValue(ctx, k8sClient, kitkyma.MetricGatewaySecretName, endpointDataKey, endpoint+path)
 		})
 	})
 })

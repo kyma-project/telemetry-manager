@@ -28,13 +28,12 @@ func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion
 	reason := m.determineReason(metricPipelines.Items, telemetryInDeletion)
 	status := m.determineConditionStatus(reason)
 	message := m.createMessageForReason(metricPipelines.Items, reason)
-	reasonWithPrefix := m.addReasonPrefix(reason)
 
-	conditionType := "MetricComponentsHealthy"
+	conditionType := conditions.TypeMetricComponentsHealthy
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,
-		Reason:  reasonWithPrefix,
+		Reason:  reason,
 		Message: message,
 	}, nil
 }
@@ -59,7 +58,7 @@ func (m *metricComponentsChecker) determineReason(pipelines []telemetryv1alpha1.
 		}
 	}
 
-	return conditions.ReasonMetricComponentsRunning
+	return conditions.ReasonComponentsRunning
 }
 
 func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.MetricPipeline) string {
@@ -86,7 +85,7 @@ func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telem
 }
 
 func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonMetricComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse
@@ -107,18 +106,6 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1
 			return p.Name
 		}),
 	})
-}
-
-func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
-	switch {
-	case reason == conditions.ReasonDeploymentNotReady:
-		return "MetricGateway" + reason
-	case reason == conditions.ReasonDaemonSetNotReady:
-		return "MetricAgent" + reason
-	case reason == conditions.ReasonReferencedSecretMissing:
-		return "MetricPipeline" + reason
-	}
-	return reason
 }
 
 func (m *metricComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.MetricPipeline) string {

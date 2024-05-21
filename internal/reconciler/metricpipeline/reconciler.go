@@ -3,7 +3,6 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,7 +50,7 @@ type FlowHealthProber interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
+	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
 }
 
 type Reconciler struct {
@@ -183,9 +182,13 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
-		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
-			return false, nil
+		cert := pipeline.Spec.Output.Otlp.TLS.Cert
+		key := pipeline.Spec.Output.Otlp.TLS.Key
+
+		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+			if !tlscert.IsCertAboutToExpireError(err) {
+				return false, nil
+			}
 		}
 	}
 
