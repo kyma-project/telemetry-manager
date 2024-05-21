@@ -16,8 +16,8 @@ import (
 )
 
 func TestMetricComponentsCheck(t *testing.T) {
-	healthyGatewayCond := metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDeploymentReady}
-	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady}
+	healthyGatewayCond := metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonGatewayReady}
+	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonAgentReady}
 	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated}
 
 	tests := []struct {
@@ -31,7 +31,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			name:                "should be healthy if no pipelines deployed",
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "True",
 				Reason:  "NoPipelineDeployed",
 				Message: "No pipelines have been deployed",
@@ -53,9 +53,9 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "True",
-				Reason:  "MetricComponentsRunning",
+				Reason:  conditions.ReasonComponentsRunning,
 				Message: "All metric components are running",
 			},
 		},
@@ -75,9 +75,9 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
-				Reason:  "MetricPipelineReferencedSecretMissing",
+				Reason:  conditions.ReasonReferencedSecretMissing,
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -90,16 +90,16 @@ func TestMetricComponentsCheck(t *testing.T) {
 					WithStatusCondition(configGeneratedCond).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady}).
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
-				Reason:  "MetricGatewayDeploymentNotReady",
+				Reason:  "GatewayNotReady",
 				Message: "Metric gateway Deployment is not ready",
 			},
 		},
@@ -113,15 +113,15 @@ func TestMetricComponentsCheck(t *testing.T) {
 					Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
-				Reason:  "MetricAgentDaemonSetNotReady",
+				Reason:  "AgentNotReady",
 				Message: "Metric agent DaemonSet is not ready",
 			},
 		},
@@ -141,7 +141,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "MaxPipelinesExceeded",
 				Message: "Maximum pipeline count limit exceeded",
@@ -151,21 +151,21 @@ func TestMetricComponentsCheck(t *testing.T) {
 			name: "should prioritize unhealthy gateway reason over unhealthy agent",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
-				Reason:  "MetricGatewayDeploymentNotReady",
+				Reason:  "GatewayNotReady",
 				Message: "Metric gateway Deployment is not ready",
 			},
 		},
@@ -177,7 +177,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (bar,foo)",
@@ -189,12 +189,12 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayThrottling}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonSelfMonGatewayThrottling}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
 				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
@@ -206,12 +206,12 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayThrottling}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonSelfMonGatewayThrottling}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
 				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
@@ -231,7 +231,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
-				Type:    "MetricComponentsHealthy",
+				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "TLSCertificateInvalid",
 				Message: "TLS certificate invalid: unable to decode pem blocks",
