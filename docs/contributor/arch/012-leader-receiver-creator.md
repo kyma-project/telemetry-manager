@@ -21,8 +21,8 @@ The rest of the replicas are in standby mode. If the active instance fails, the 
 
 The leader election pattern is well known in Kubernetes. The following building blocks are available:
 * [Lease](https://kubernetes.io/docs/concepts/architecture/leases/)
-* [Resource lock client](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection/resourcelock)
-* [Leader election client](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection)
+* [Resource lock package](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection/resourcelock)
+* [Leader election package](https://pkg.go.dev/k8s.io/client-go/tools/leaderelection)
 
 One way to integrate leader election with Kubernetes Cluster Receiver is to bundle the receiver with the leader election logic. However, this approach tightly couples it with the specific receiver. If we need the leader election logic in another context, we will have to reimplement it. Additionally, it will be challenging to contribute this combined implementation to the community, because the receiver already has its own maintainers.
 
