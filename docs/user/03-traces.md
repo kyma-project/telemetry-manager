@@ -502,3 +502,21 @@ System-related spans reported by Istio are filtered out without the opt-out opti
           - name: "kyma-traces"
           randomSamplingPercentage: 60
     ```
+
+### Buffer Filling Up
+
+  Cause: The backend sizing is inadequate
+
+  Remedy:
+  
+  - Option 1: Increase backend capabilities (i.e. scale out CLS or Dynatrace instances)
+
+  - Option 2: Decrease data influx
+
+### Gateway Throttling 
+
+  Cause: Gateway is unable to receive traces at the given rate
+
+  Remedy:
+
+  - Manually scale out the gateway (i.e. increase the number of replicas for the `telemetry-trace-gateway`). See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration)

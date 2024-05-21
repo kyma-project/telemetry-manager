@@ -95,9 +95,9 @@ var tracePipelineMessages = map[string]string{
 	ReasonGatewayNotReady:                "Trace gateway Deployment is not ready",
 	ReasonGatewayReady:                   "Trace gateway Deployment is ready",
 	ReasonSelfMonAllDataDropped:          "All traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
-	ReasonSelfMonBufferFillingUp:         "Buffer nearing capacity: incoming trace rate exceeds export rate",
+	ReasonSelfMonBufferFillingUp:         "Buffer nearing capacity: incoming trace rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up",
 	ReasonSelfMonFlowHealthy:             "No problems detected in the trace flow",
-	ReasonSelfMonGatewayThrottling:       "Trace gateway experiencing high influx: unable to receive traces at current rate",
+	ReasonSelfMonGatewayThrottling:       "Trace gateway experiencing high influx: unable to receive traces at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
 	ReasonSelfMonSomeDataDropped:         "Some traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
@@ -111,9 +111,9 @@ var metricPipelineMessages = map[string]string{
 	ReasonGatewayNotReady:          "Metric gateway Deployment is not ready",
 	ReasonGatewayReady:             "Metric gateway Deployment is ready",
 	ReasonSelfMonAllDataDropped:    "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
-	ReasonSelfMonBufferFillingUp:   "Buffer nearing capacity: incoming metric rate exceeds export rate",
+	ReasonSelfMonBufferFillingUp:   "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
 	ReasonSelfMonFlowHealthy:       "No problems detected in the metric flow",
-	ReasonSelfMonGatewayThrottling: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
+	ReasonSelfMonGatewayThrottling: "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
 	ReasonSelfMonSomeDataDropped:   "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 }
 

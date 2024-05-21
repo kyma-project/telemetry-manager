@@ -594,3 +594,21 @@ Configure the workload using 'STRICT' mTLS mode (for example, by applying a corr
 Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 
 <!-- tabs:end -->
+
+### Buffer Filling Up
+
+  Cause: The backend sizing is inadequate
+
+  Remedy:
+  
+  - Option 1: Increase backend capabilities (i.e. scale out CLS or Dynatrace instances)
+
+  - Option 2: Decrease data influx
+
+### Gateway Throttling 
+
+  Cause: Gateway is unable to receive metrics at the given rate
+
+  Remedy:
+
+  - Manually scale out the gateway (i.e. increase the number of replicas for the `telemetry-metric-gateway`). See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration)

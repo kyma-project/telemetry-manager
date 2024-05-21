@@ -197,7 +197,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
+				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
 			},
 		},
 		{
@@ -214,7 +214,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
+				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
 			},
 		},
 		{
