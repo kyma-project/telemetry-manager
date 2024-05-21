@@ -40,7 +40,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			&metricPipeline,
 			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics,
 				telemetrygen.WithRate(50000),
-				telemetrygen.WithWorkers(10)).K8sObject(),
+				telemetrygen.WithWorkers(10),
+				telemetrygen.WithAttributes(map[string]string{
+					"foo":    "bar",
+					"baz":    "qux",
+					"quux":   "corge",
+					"grault": "garply",
+					"waldo":  "fred",
+					"plugh":  "xyzzy",
+					"thud":   "wibble",
+					"wobble": "wubble",
+					"flub":   "flum",
+					"bloop":  "blarp",
+					"blip":   "blop",
+				})).K8sObject(),
 		)
 
 		return objs
