@@ -38,7 +38,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 
 		objs = append(objs,
 			&metricPipeline,
-			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeMetrics,
+			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeMetrics,
 				telemetrygen.WithRate(800),
 				telemetrygen.WithWorkers(5)).K8sObject(),
 		)
