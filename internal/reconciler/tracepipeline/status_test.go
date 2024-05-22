@@ -79,7 +79,7 @@ func TestStatus(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			conditions.MessageForTracePipeline(conditions.ReasonGatewayNotReady),
+			"Trace gateway Deployment is not ready",
 		)
 
 		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
@@ -125,7 +125,7 @@ func TestStatus(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionTrue,
 			conditions.ReasonGatewayReady,
-			conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
+			"Trace gateway Deployment is ready",
 		)
 
 		conditionsSize := len(updatedPipeline.Status.Conditions)
@@ -181,7 +181,7 @@ func TestStatus(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonReferencedSecretMissing,
-			conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing),
+			"One or more referenced Secrets are missing",
 		)
 
 		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
@@ -237,8 +237,8 @@ func TestStatus(t *testing.T) {
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
-			conditions.ReasonConfigurationGenerated,
-			"",
+			conditions.ReasonGatewayConfigured,
+			"Trace gateway successfully configured",
 		)
 
 		conditionsSize := len(updatedPipeline.Status.Conditions)
@@ -281,7 +281,7 @@ func TestStatus(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonMaxPipelinesExceeded,
-			conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded),
+			"Maximum pipeline count limit exceeded",
 		)
 
 		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
@@ -300,41 +300,46 @@ func TestStatus(t *testing.T) {
 
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
-			name           string
-			probe          prober.OTelPipelineProbeResult
-			probeErr       error
-			expectedStatus metav1.ConditionStatus
-			expectedReason string
+			name            string
+			probe           prober.OTelPipelineProbeResult
+			probeErr        error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
 		}{
 			{
-				name:           "prober fails",
-				probeErr:       assert.AnError,
-				expectedStatus: metav1.ConditionUnknown,
-				expectedReason: conditions.ReasonSelfMonFlowHealthy,
+				name:            "prober fails",
+				probeErr:        assert.AnError,
+				expectedStatus:  metav1.ConditionUnknown,
+				expectedReason:  conditions.ReasonSelfMonProbingNotReachable,
+				expectedMessage: "Self monitoring probing not reachable",
 			},
 			{
 				name: "healthy",
 				probe: prober.OTelPipelineProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
-				expectedStatus: metav1.ConditionTrue,
-				expectedReason: conditions.ReasonSelfMonFlowHealthy,
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+				expectedMessage: "No problems detected in the trace flow",
 			},
 			{
 				name: "throttling",
 				probe: prober.OTelPipelineProbeResult{
 					Throttling: true,
 				},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSelfMonGatewayThrottling,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
+				expectedMessage: "Trace gateway experiencing high influx: unable to receive traces at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
 			},
 			{
 				name: "buffer filling up",
 				probe: prober.OTelPipelineProbeResult{
 					QueueAlmostFull: true,
 				},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedMessage: "Buffer nearing capacity: incoming trace rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up",
 			},
 			{
 				name: "buffer filling up shadows other problems",
@@ -342,16 +347,18 @@ func TestStatus(t *testing.T) {
 					QueueAlmostFull: true,
 					Throttling:      true,
 				},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedMessage: "Buffer nearing capacity: incoming trace rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
 				probe: prober.OTelPipelineProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedMessage: "Some traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -359,16 +366,18 @@ func TestStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 					Throttling:          true,
 				},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedMessage: "Some traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
 			},
 			{
 				name: "all data dropped",
 				probe: prober.OTelPipelineProbeResult{
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSelfMonAllDataDropped,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedMessage: "All traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -376,8 +385,9 @@ func TestStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 					Throttling:          true,
 				},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSelfMonAllDataDropped,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedMessage: "All traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
 			},
 		}
 
@@ -416,7 +426,7 @@ func TestStatus(t *testing.T) {
 					conditions.TypeFlowHealthy,
 					tt.expectedStatus,
 					tt.expectedReason,
-					conditions.MessageForTracePipeline(tt.expectedReason),
+					tt.expectedMessage,
 				)
 			})
 		}
