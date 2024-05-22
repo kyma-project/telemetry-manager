@@ -34,7 +34,8 @@ In this way, the new receiver (let's call it "Leader Receiver Creator") can be c
 leader_receiver_creator:
   auth_type: serviceAccount
   leader_election:
-    enabled: true
+    lease_name: foo
+    lease_namespace: bar
     lease_duration: 15s
     renew_deadline: 10s
     retry_period: 2s
