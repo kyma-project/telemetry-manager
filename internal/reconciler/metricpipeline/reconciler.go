@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -131,7 +132,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}()
 
-	lock := k8sutils.NewResourceCountLock(r.Client, types.NamespacedName{
+	lock := resourcelock.New(r.Client, types.NamespacedName{
 		Name:      "telemetry-metricpipeline-lock",
 		Namespace: r.config.Gateway.Namespace,
 	}, r.config.MaxPipelines)
@@ -168,7 +169,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getReconcilablePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, lock *resourcelock.Checker) ([]telemetryv1alpha1.MetricPipeline, error) {
 	var reconcilablePipelines []telemetryv1alpha1.MetricPipeline
 	for i := range allPipelines {
 		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i], lock)
@@ -183,7 +184,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	return reconcilablePipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lock *k8sutils.ResourceCountLock) (bool, error) {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lock *resourcelock.Checker) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}

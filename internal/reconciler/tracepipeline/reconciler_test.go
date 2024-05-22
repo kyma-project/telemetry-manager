@@ -14,9 +14,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
@@ -95,6 +95,10 @@ func TestReconcile(t *testing.T) {
 	overridesHandlerStub := &mocks.OverridesHandler{}
 	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
 
+	pipelineLockStub := &mocks.PipelineLock{}
+	pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+	pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
 	gatewayProberStub := &mocks.DeploymentProber{}
 	gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
@@ -123,6 +127,7 @@ func TestReconcile(t *testing.T) {
 			MaxPipelines: 3,
 		},
 		pipelinesConditionsCleared: true,
+		pipelineLock:               pipelineLockStub,
 		prober:                     gatewayProberStub,
 		flowHealthProbingEnabled:   false,
 		flowHealthProber:           flowHealthProberStub,
@@ -145,18 +150,15 @@ func TestGetDeployableTracePipelines(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
-
-	err := l.TryAcquireLock(ctx, &pipeline1)
-	require.NoError(t, err)
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.TracePipeline{pipeline1}
 	reconciler := Reconciler{
 		Client:           fakeClient,
 		tlsCertValidator: validatorStub,
+		pipelineLock:     resourcelock.New(fakeClient, lockName, 2),
 	}
-	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 }
@@ -167,21 +169,15 @@ func TestMultipleGetDeployableTracePipelines(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
-
-	err := l.TryAcquireLock(ctx, &pipeline1)
-	require.NoError(t, err)
-
-	err = l.TryAcquireLock(ctx, &pipeline2)
-	require.NoError(t, err)
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.TracePipeline{pipeline1, pipeline2}
 	reconciler := Reconciler{
 		Client:           fakeClient,
 		tlsCertValidator: validatorStub,
+		pipelineLock:     resourcelock.New(fakeClient, lockName, 2),
 	}
-	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 	require.Contains(t, deployablePipelines, pipeline2)
@@ -193,18 +189,15 @@ func TestMultipleGetDeployableTracePipelinesWithoutLock(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
-
-	err := l.TryAcquireLock(ctx, &pipeline1)
-	require.NoError(t, err)
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.TracePipeline{pipeline1, pipeline2}
 	reconciler := Reconciler{
 		Client:           fakeClient,
 		tlsCertValidator: validatorStub,
+		pipelineLock:     resourcelock.New(fakeClient, lockName, 2),
 	}
-	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 	require.NotContains(t, deployablePipelines, pipeline2)
@@ -216,18 +209,15 @@ func TestGetDeployableTracePipelinesWithMissingSecretReference(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
-
-	err := l.TryAcquireLock(ctx, &pipelineWithSecretRef)
-	require.NoError(t, err)
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.TracePipeline{pipelineWithSecretRef}
 	reconciler := Reconciler{
 		Client:           fakeClient,
 		tlsCertValidator: validatorStub,
+		pipelineLock:     resourcelock.New(fakeClient, lockName, 2),
 	}
-	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines)
 	require.NoError(t, err)
 	require.NotContains(t, deployablePipelines, pipelineWithSecretRef)
 }
@@ -238,18 +228,15 @@ func TestGetDeployableTracePipelinesWithoutLock(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
-
-	err := l.TryAcquireLock(ctx, &pipelineWithSecretRef)
-	require.NoError(t, err)
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.TracePipeline{pipeline1}
 	reconciler := Reconciler{
 		Client:           fakeClient,
 		tlsCertValidator: validatorStub,
+		pipelineLock:     resourcelock.New(fakeClient, lockName, 2),
 	}
-	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines)
 	require.NoError(t, err)
 	require.NotContains(t, deployablePipelines, pipeline1)
 }
