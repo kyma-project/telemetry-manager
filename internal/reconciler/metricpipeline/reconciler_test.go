@@ -3,9 +3,14 @@ package metricpipeline
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -13,11 +18,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func TestReconcile(t *testing.T) {
@@ -25,73 +33,683 @@ func TestReconcile(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
-	pipeline := testutils.NewMetricPipelineBuilder().WithName("test").Build()
-	fakeClient := fake.NewClientBuilder().
-		WithObjects(&pipeline).
-		WithStatusSubresource(&pipeline).
-		WithScheme(scheme).
-		Build()
-
 	overridesHandlerStub := &mocks.OverridesHandler{}
 	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
-
-	pipelineLockStub := &mocks.PipelineLock{}
-	pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-	pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
-
-	gatewayProberStub := &mocks.DeploymentProber{}
-	gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
-
-	agentProberStub := &mocks.DeploymentProber{}
-	agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
-
-	flowHealthProberStub := &mocks.FlowHealthProber{}
-	flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
-
-	tlsCertValidatorStub := &mocks.TLSCertValidator{}
-	tlsCertValidatorStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	istioStatusCheckerStub := &mocks.IstioStatusChecker{}
 	istioStatusCheckerStub.On("IsIstioActive", mock.Anything).Return(false)
 
-	sut := Reconciler{
-		Client: fakeClient,
-		config: Config{
-			Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{
-					BaseName:  "gateway",
-					Namespace: "default",
-				},
-				Deployment: otelcollector.DeploymentConfig{
-					Image: "otel/opentelemetry-collector-contrib",
-				},
-				OTLPServiceName: "otlp",
+	testConfig := Config{
+		Gateway: otelcollector.GatewayConfig{
+			Config: otelcollector.Config{
+				BaseName:  "gateway",
+				Namespace: "default",
 			},
-			Agent: otelcollector.AgentConfig{
-				Config: otelcollector.Config{
-					BaseName:  "agent",
-					Namespace: "default",
-				},
-				DaemonSet: otelcollector.DaemonSetConfig{
-					Image: "otel/opentelemetry-collector-contrib",
-				},
+			Deployment: otelcollector.DeploymentConfig{
+				Image: "otel/opentelemetry-collector-contrib",
 			},
-			MaxPipelines: 3,
+			OTLPServiceName: "otlp",
 		},
-		pipelineLock:             pipelineLockStub,
-		gatewayProber:            gatewayProberStub,
-		agentProber:              agentProberStub,
-		flowHealthProbingEnabled: false,
-		flowHealthProber:         flowHealthProberStub,
-		tlsCertValidator:         tlsCertValidatorStub,
-		overridesHandler:         overridesHandlerStub,
-		istioStatusChecker:       istioStatusCheckerStub,
+		Agent: otelcollector.AgentConfig{
+			Config: otelcollector.Config{
+				BaseName:  "gateway",
+				Namespace: "default",
+			},
+			DaemonSet: otelcollector.DaemonSetConfig{
+				Image: "otel/opentelemetry-collector-contrib",
+			},
+		},
 	}
 
-	_, err := sut.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name: "test",
-		},
+	t.Run("metric gateway deployment is not ready", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeGatewayHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonGatewayNotReady,
+			"Metric gateway Deployment is not ready")
+
+		mock.AssertExpectationsForObjects(t, gatewayProberStub)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.NoError(t, err, "gateway configmap must exist")
+		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
 	})
-	require.NoError(t, err)
+
+	t.Run("metric gateway prober fails", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberMock := &mocks.DeploymentProber{}
+		gatewayProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeGatewayHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonGatewayNotReady,
+			"Metric gateway Deployment is not ready")
+
+		mock.AssertExpectationsForObjects(t, gatewayProberMock)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.NoError(t, err, "gateway configmap must exist")
+		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+	})
+
+	t.Run("metric gateway deployment is ready", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberMock := &mocks.DeploymentProber{}
+		gatewayProberMock.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeGatewayHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonGatewayReady,
+			"Metric gateway Deployment is ready")
+
+		mock.AssertExpectationsForObjects(t, gatewayProberMock)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.NoError(t, err, "gateway configmap must exist")
+		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+	})
+
+	t.Run("metric agent daemonset is not ready", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		agentProberMock := &mocks.DaemonSetProber{}
+		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			agentProber:        agentProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonAgentNotReady,
+			"Metric agent DaemonSet is not ready")
+
+		mock.AssertExpectationsForObjects(t, agentProberMock)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.NoError(t, err, "gateway configmap must exist")
+		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+	})
+
+	t.Run("metric agent prober fails", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		agentProberMock := &mocks.DaemonSetProber{}
+		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			agentProber:        agentProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonAgentNotReady,
+			"Metric agent DaemonSet is not ready")
+
+		mock.AssertExpectationsForObjects(t, agentProberMock)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.NoError(t, err, "gateway configmap must exist")
+		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+	})
+
+	t.Run("metric agent daemonset is ready", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		agentProberMock := &mocks.DaemonSetProber{}
+		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			agentProber:        agentProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonAgentReady,
+			"Metric agent DaemonSet is ready")
+
+		mock.AssertExpectationsForObjects(t, agentProberMock)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.NoError(t, err, "gateway configmap must exist")
+		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+	})
+
+	t.Run("referenced secret exists", func(t *testing.T) {
+		secret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "some-secret",
+				Namespace: "some-namespace",
+			},
+			Data: map[string][]byte{"user": {}, "password": {}},
+		}
+		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionTrue,
+			conditions.ReasonAgentGatewayConfigured,
+			"Metric agent and gateway successfully configured")
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.NoError(t, err, "gateway configmap must exist")
+		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+	})
+
+	t.Run("referenced secret missing", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonReferencedSecretMissing,
+			"One or more referenced Secrets are missing")
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.Error(t, err, "gateway configmap must not exist")
+	})
+
+	t.Run("max pipelines exceeded", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrLockInUse)
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.Error(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonMaxPipelinesExceeded,
+			"Maximum pipeline count limit exceeded",
+		)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), types.NamespacedName{
+			Name:      testConfig.Gateway.BaseName,
+			Namespace: testConfig.Gateway.Namespace,
+		}, &cm)
+		require.Error(t, err, "gateway configmap must not exist")
+	})
+
+	t.Run("flow healthy", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			probe           prober.OTelPipelineProbeResult
+			probeErr        error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
+		}{
+			{
+				name:            "prober fails",
+				probeErr:        assert.AnError,
+				expectedStatus:  metav1.ConditionUnknown,
+				expectedReason:  conditions.ReasonSelfMonProbingNotReachable,
+				expectedMessage: "Self monitoring probing not reachable",
+			},
+			{
+				name: "healthy",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+				expectedMessage: "No problems detected in the metric flow",
+			},
+			{
+				name: "throttling",
+				probe: prober.OTelPipelineProbeResult{
+					Throttling: true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
+				expectedMessage: "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
+			},
+			{
+				name: "buffer filling up",
+				probe: prober.OTelPipelineProbeResult{
+					QueueAlmostFull: true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedMessage: "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
+			},
+			{
+				name: "buffer filling up shadows other problems",
+				probe: prober.OTelPipelineProbeResult{
+					QueueAlmostFull: true,
+					Throttling:      true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
+				expectedMessage: "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
+			},
+			{
+				name: "some data dropped",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedMessage: "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+			},
+			{
+				name: "some data dropped shadows other problems",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+					Throttling:          true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
+				expectedMessage: "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+			},
+			{
+				name: "all data dropped",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedMessage: "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+			},
+			{
+				name: "all data dropped shadows other problems",
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+					Throttling:          true,
+				},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
+				expectedMessage: "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewMetricPipelineBuilder().Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+				gatewayProberStub := &mocks.DeploymentProber{}
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				sut := Reconciler{
+					Client:                   fakeClient,
+					config:                   testConfig,
+					pipelineLock:             pipelineLockStub,
+					gatewayProber:            gatewayProberStub,
+					flowHealthProbingEnabled: true,
+					flowHealthProber:         flowHealthProberStub,
+					overridesHandler:         overridesHandlerStub,
+					istioStatusChecker:       istioStatusCheckerStub,
+				}
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.MetricPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				requireHasStatusCondition(t, updatedPipeline,
+					conditions.TypeFlowHealthy,
+					tt.expectedStatus,
+					tt.expectedReason,
+					tt.expectedMessage,
+				)
+
+				var cm corev1.ConfigMap
+				err = fakeClient.Get(context.Background(), types.NamespacedName{
+					Name:      testConfig.Gateway.BaseName,
+					Namespace: testConfig.Gateway.Namespace,
+				}, &cm)
+				require.NoError(t, err, "gateway configmap must exist")
+				require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+			})
+		}
+	})
+	t.Run("tls conditions", func(t *testing.T) {
+		tests := []struct {
+			name                    string
+			tlsCertErr              error
+			expectedStatus          metav1.ConditionStatus
+			expectedReason          string
+			expectedMessage         string
+			expectGatewayConfigured bool
+		}{
+			{
+				name:            "cert expired",
+				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateExpired,
+				expectedMessage: "TLS certificate expired on 2020-11-01",
+			},
+			{
+				name:            "cert about to expire",
+				tlsCertErr:      &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage: "TLS certificate is about to expire, configured certificate is valid until 2024-11-01",
+			},
+			{
+				name:            "cert decode failed",
+				tlsCertErr:      tlscert.ErrCertDecodeFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: failed to decode PEM block containing cert",
+			},
+			{
+				name:            "key decode failed",
+				tlsCertErr:      tlscert.ErrKeyDecodeFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: failed to decode PEM block containing private key",
+			},
+			{
+				name:            "key parse failed",
+				tlsCertErr:      tlscert.ErrKeyParseFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: failed to parse private key",
+			},
+			{
+				name:            "cert parse failed",
+				tlsCertErr:      tlscert.ErrCertParseFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: failed to parse certificate",
+			},
+			{
+				name:            "cert and key mismatch",
+				tlsCertErr:      tlscert.ErrInvalidCertificateKeyPair,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: certificate and private key do not match",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPClientTLS("ca", "fooCert", "fooKey")).Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+				gatewayProberStub := &mocks.DeploymentProber{}
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				tlsStub := &mocks.TLSCertValidator{}
+				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
+
+				sut := Reconciler{
+					Client:             fakeClient,
+					config:             testConfig,
+					pipelineLock:       pipelineLockStub,
+					gatewayProber:      gatewayProberStub,
+					tlsCertValidator:   tlsStub,
+					overridesHandler:   overridesHandlerStub,
+					istioStatusChecker: istioStatusCheckerStub,
+				}
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.MetricPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				requireHasStatusCondition(t, updatedPipeline,
+					conditions.TypeConfigurationGenerated,
+					tt.expectedStatus,
+					tt.expectedReason,
+					tt.expectedMessage,
+				)
+
+				var cm corev1.ConfigMap
+				err = fakeClient.Get(context.Background(), types.NamespacedName{
+					Name:      testConfig.Gateway.BaseName,
+					Namespace: testConfig.Gateway.Namespace,
+				}, &cm)
+				if !tt.expectGatewayConfigured {
+					require.Error(t, err, "gateway configmap must not exist")
+				} else {
+					require.NoError(t, err, "gateway configmap must exist")
+					require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+				}
+			})
+		}
+
+	})
+}
+
+func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.MetricPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+	require.NotNil(t, cond, "could not find condition of type %s", condType)
+	require.Equal(t, status, cond.Status)
+	require.Equal(t, reason, cond.Reason)
+	require.Equal(t, message, cond.Message)
+	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
+	require.NotEmpty(t, cond.LastTransitionTime)
 }
