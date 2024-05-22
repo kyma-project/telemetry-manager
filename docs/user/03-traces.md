@@ -509,9 +509,9 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
   Remedy:
   
-  - Option 1: Increase backend capabilities (i.e. scale out CLS or Dynatrace instances)
+  - Option 1: Increase ingestion rate capabilities in your backend (i.e. scale out SAP Cloud Logging or Dynatrace instances)
 
-  - Option 2: Decrease data influx
+  - Option 2: Decrease data influx (i.e. re-configure the trace pipeline)
 
 ### Gateway Throttling 
 

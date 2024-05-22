@@ -473,3 +473,22 @@ Each Fluent Bit Pod can process up to 10 MB/s of logs for a single LogPipeline. 
 ### Max Amount of Pipelines
 
 The maximum amount of LogPipelines is 5.
+
+## Troubleshooting
+
+### Logs Not Arriving at the Destination
+
+   Cause: The backend is not reachable or wrong authentication credentials are used.
+
+   Remedy: Investigate the cause with the following steps:
+   1. Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+
+### Influx Capacity Reaching Its Limit
+
+  Cause: The backend sizing is inadequate
+
+  Remedy:
+
+  - Option 1: Increase ingestion rate capabilities in your backend (i.e. scale out SAP Cloud Logging or Dynatrace instances)
+
+  - Option 2: Decrease data influx (i.e. re-configure the log pipeline)

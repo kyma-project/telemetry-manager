@@ -601,9 +601,9 @@ Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotat
 
   Remedy:
   
-  - Option 1: Increase backend capabilities (i.e. scale out CLS or Dynatrace instances)
+  - Option 1: Increase ingestion rate capabilities in your backend (i.e. scale out SAP Cloud Logging or Dynatrace instances)
 
-  - Option 2: Decrease data influx
+  - Option 2: Decrease data influx (i.e. re-configure the metric pipeline)
 
 ### Gateway Throttling 
 

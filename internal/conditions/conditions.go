@@ -81,11 +81,11 @@ var logPipelineMessages = map[string]string{
 	ReasonComponentsRunning:      "All log components are running",
 	ReasonFluentBitDSNotReady:    "Fluent Bit DaemonSet is not ready",
 	ReasonFluentBitDSReady:       "Fluent Bit DaemonSet is ready",
-	ReasonSelfMonAllDataDropped:  "All logs dropped: backend unreachable or rejecting",
-	ReasonSelfMonBufferFillingUp: "Buffer nearing capacity: incoming log rate exceeds export rate",
+	ReasonSelfMonAllDataDropped:  "All logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+	ReasonSelfMonBufferFillingUp: "Buffer nearing capacity: incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
 	ReasonSelfMonFlowHealthy:     "No problems detected in the log flow",
-	ReasonSelfMonNoLogsDelivered: "No logs delivered to backend",
-	ReasonSelfMonSomeDataDropped: "Some logs dropped: backend unreachable or rejecting",
+	ReasonSelfMonNoLogsDelivered: "No logs delivered to backend. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+	ReasonSelfMonSomeDataDropped: "Some logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
 	ReasonUnsupportedLokiOutput:  "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 }
 
