@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +33,12 @@ type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
+}
+
+//go:generate mockery --name PipelineLock --filename pipeline_lock.go
+type PipelineLock interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+	IsLockHolder(ctx context.Context, owner metav1.Object) (bool, error)
 }
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
