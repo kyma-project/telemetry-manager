@@ -75,6 +75,7 @@ type Reconciler struct {
 	client.Client
 	config Config
 
+	pipelineLock             PipelineLock
 	gatewayProber            DeploymentProber
 	agentProber              DaemonSetProber
 	flowHealthProbingEnabled bool
@@ -92,15 +93,19 @@ func NewReconciler(
 	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
-		Client:                   client,
-		config:                   config,
+		Client: client,
+		config: config,
+		pipelineLock: resourcelock.New(client, types.NamespacedName{
+			Name:      "telemetry-metricpipeline-lock",
+			Namespace: config.Gateway.Namespace,
+		}, config.MaxPipelines),
 		gatewayProber:            gatewayProber,
 		agentProber:              agentProber,
 		flowHealthProbingEnabled: flowHealthProbingEnabled,
 		flowHealthProber:         flowHealthProber,
+		tlsCertValidator:         tlscert.New(client),
 		overridesHandler:         overridesHandler,
 		istioStatusChecker:       istiostatus.NewChecker(client),
-		tlsCertValidator:         tlscert.New(client),
 	}
 }
 
@@ -139,11 +144,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}()
 
-	lock := resourcelock.New(r.Client, types.NamespacedName{
-		Name:      "telemetry-metricpipeline-lock",
-		Namespace: r.config.Gateway.Namespace,
-	}, r.config.MaxPipelines)
-	if err = lock.TryAcquireLock(ctx, pipeline); err != nil {
+	if err = r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		lockAcquired = false
 		return err
 	}
@@ -153,7 +154,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
 
-	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items, lock)
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
@@ -176,10 +177,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getReconcilablePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, lock *resourcelock.Checker) ([]telemetryv1alpha1.MetricPipeline, error) {
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline) ([]telemetryv1alpha1.MetricPipeline, error) {
 	var reconcilablePipelines []telemetryv1alpha1.MetricPipeline
 	for i := range allPipelines {
-		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i], lock)
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +192,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	return reconcilablePipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lock *resourcelock.Checker) (bool, error) {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
@@ -211,7 +212,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		}
 	}
 
-	hasLock, err := lock.IsLockHolder(ctx, pipeline)
+	hasLock, err := r.pipelineLock.IsLockHolder(ctx, pipeline)
 	if err != nil {
 		return false, fmt.Errorf("failed to check lock: %w", err)
 	}

@@ -2,7 +2,6 @@ package metricpipeline
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -19,11 +18,14 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -31,25 +33,54 @@ func TestUpdateStatus(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
+	overridesHandlerStub := &mocks.OverridesHandler{}
+	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+
+	istioStatusCheckerStub := &mocks.IstioStatusChecker{}
+	istioStatusCheckerStub.On("IsIstioActive", mock.Anything).Return(false)
+
+	testConfig := Config{
+		Gateway: otelcollector.GatewayConfig{
+			Config: otelcollector.Config{
+				BaseName:  "gateway",
+				Namespace: "default",
+			},
+			Deployment: otelcollector.DeploymentConfig{
+				Image: "otel/opentelemetry-collector-contrib",
+			},
+			OTLPServiceName: "otlp",
+		},
+		Agent: otelcollector.AgentConfig{
+			Config: otelcollector.Config{
+				BaseName:  "gateway",
+				Namespace: "default",
+			},
+			DaemonSet: otelcollector.DaemonSetConfig{
+				Image: "otel/opentelemetry-collector-contrib",
+			},
+		},
+	}
+
 	t.Run("metric gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		gatewayProberMock := &mocks.DeploymentProber{}
-		fakeGatewayName := types.NamespacedName{Name: "gateway", Namespace: "telemetry"}
-		gatewayProberMock.On("IsReady", mock.Anything, fakeGatewayName).Return(false, nil)
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{
-					BaseName:  fakeGatewayName.Name,
-					Namespace: fakeGatewayName.Namespace,
-				},
-			}},
-			gatewayProber: gatewayProberMock,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -60,28 +91,29 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
 		require.Equal(t, conditions.ReasonGatewayNotReady, cond.Reason)
 
-		mock.AssertExpectationsForObjects(t, gatewayProberMock)
+		mock.AssertExpectationsForObjects(t, gatewayProberStub)
 	})
 
 	t.Run("metric gateway prober fails", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
 		gatewayProberMock := &mocks.DeploymentProber{}
-		fakeGatewayName := types.NamespacedName{Name: "gateway", Namespace: "telemetry"}
-		gatewayProberMock.On("IsReady", mock.Anything, fakeGatewayName).Return(false, errors.New("failed to probe"))
+		gatewayProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{
-					BaseName:  fakeGatewayName.Name,
-					Namespace: fakeGatewayName.Namespace,
-				},
-			}},
-			gatewayProber: gatewayProberMock,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -99,21 +131,22 @@ func TestUpdateStatus(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
 		gatewayProberMock := &mocks.DeploymentProber{}
-		fakeGatewayName := types.NamespacedName{Name: "gateway", Namespace: "telemetry"}
-		gatewayProberMock.On("IsReady", mock.Anything, fakeGatewayName).Return(true, nil)
+		gatewayProberMock.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{
-					BaseName:  fakeGatewayName.Name,
-					Namespace: fakeGatewayName.Namespace,
-				},
-			}},
-			gatewayProber: gatewayProberMock,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -131,24 +164,26 @@ func TestUpdateStatus(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		agentProberMock := &mocks.DaemonSetProber{}
-		fakeAgentName := types.NamespacedName{Name: "agent", Namespace: "telemetry"}
-		agentProberMock.On("IsReady", mock.Anything, fakeAgentName).Return(false, nil)
+		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Agent: otelcollector.AgentConfig{
-				Config: otelcollector.Config{
-					BaseName:  fakeAgentName.Name,
-					Namespace: fakeAgentName.Namespace,
-				},
-			}},
-			gatewayProber: gatewayProberStub,
-			agentProber:   agentProberMock,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			agentProber:        agentProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -166,24 +201,26 @@ func TestUpdateStatus(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		agentProberMock := &mocks.DaemonSetProber{}
-		fakeAgentName := types.NamespacedName{Name: "agent", Namespace: "telemetry"}
-		agentProberMock.On("IsReady", mock.Anything, fakeAgentName).Return(false, errors.New("failed to probe"))
+		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Agent: otelcollector.AgentConfig{
-				Config: otelcollector.Config{
-					BaseName:  fakeAgentName.Name,
-					Namespace: fakeAgentName.Namespace,
-				},
-			}},
-			gatewayProber: gatewayProberStub,
-			agentProber:   agentProberMock,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			agentProber:        agentProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -201,24 +238,26 @@ func TestUpdateStatus(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		agentProberMock := &mocks.DaemonSetProber{}
-		fakeAgentName := types.NamespacedName{Name: "agent", Namespace: "telemetry"}
-		agentProberMock.On("IsReady", mock.Anything, fakeAgentName).Return(true, nil)
+		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Agent: otelcollector.AgentConfig{
-				Config: otelcollector.Config{
-					BaseName:  fakeAgentName.Name,
-					Namespace: fakeAgentName.Namespace,
-				},
-			}},
-			gatewayProber: gatewayProberStub,
-			agentProber:   agentProberMock,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			agentProber:        agentProberMock,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -242,18 +281,24 @@ func TestUpdateStatus(t *testing.T) {
 			Data: map[string][]byte{"user": {}, "password": {}},
 		}
 		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
-
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client:        fakeClient,
-			gatewayProber: gatewayProberStub,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -267,18 +312,24 @@ func TestUpdateStatus(t *testing.T) {
 
 	t.Run("referenced secret missing", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
-
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client:        fakeClient,
-			gatewayProber: gatewayProberStub,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -290,19 +341,26 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.ReasonReferencedSecretMissing, cond.Reason)
 	})
 
-	t.Run("waiting for lock", func(t *testing.T) {
+	t.Run("max pipelines exceeded", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrLockInUse)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client:        fakeClient,
-			gatewayProber: gatewayProberStub,
+			Client:             fakeClient,
+			config:             testConfig,
+			pipelineLock:       pipelineLockStub,
+			gatewayProber:      gatewayProberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, false)
-		require.NoError(t, err)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.Error(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
@@ -401,6 +459,10 @@ func TestUpdateStatus(t *testing.T) {
 				pipeline := testutils.NewMetricPipelineBuilder().Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
 				gatewayProberStub := &mocks.DeploymentProber{}
 				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
@@ -409,11 +471,15 @@ func TestUpdateStatus(t *testing.T) {
 
 				sut := Reconciler{
 					Client:                   fakeClient,
+					config:                   testConfig,
+					pipelineLock:             pipelineLockStub,
 					gatewayProber:            gatewayProberStub,
 					flowHealthProbingEnabled: true,
 					flowHealthProber:         flowHealthProberStub,
+					overridesHandler:         overridesHandlerStub,
+					istioStatusChecker:       istioStatusCheckerStub,
 				}
-				err := sut.updateStatus(context.Background(), pipeline.Name, false)
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.MetricPipeline
@@ -475,18 +541,25 @@ func TestUpdateStatus(t *testing.T) {
 				pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPClientTLS("ca", "fooCert", "fooKey")).Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
 				gatewayProberStub := &mocks.DeploymentProber{}
 				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 				tlsStub := &mocks.TLSCertValidator{}
 				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
 
 				sut := Reconciler{
-					Client:           fakeClient,
-					tlsCertValidator: tlsStub,
-					gatewayProber:    gatewayProberStub,
+					Client:             fakeClient,
+					config:             testConfig,
+					pipelineLock:       pipelineLockStub,
+					gatewayProber:      gatewayProberStub,
+					tlsCertValidator:   tlsStub,
+					overridesHandler:   overridesHandlerStub,
+					istioStatusChecker: istioStatusCheckerStub,
 				}
-
-				err := sut.updateStatus(context.Background(), pipeline.Name, true)
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.MetricPipeline

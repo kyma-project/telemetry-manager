@@ -111,9 +111,9 @@ func NewReconciler(client client.Client,
 		prober:                   prober,
 		flowHealthProbingEnabled: flowHealthProbingEnabled,
 		flowHealthProber:         flowHealthProber,
+		tlsCertValidator:         tlscert.New(client),
 		overridesHandler:         overridesHandler,
 		istioStatusChecker:       istiostatus.NewChecker(client),
-		tlsCertValidator:         tlscert.New(client),
 	}
 }
 
