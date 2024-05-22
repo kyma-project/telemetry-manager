@@ -82,18 +82,10 @@ func TestStatus(t *testing.T) {
 			"Trace gateway Deployment is not ready",
 		)
 
-		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
-		require.Nil(t, runningCond)
-
-		conditionsSize := len(updatedPipeline.Status.Conditions)
-		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-1]
-		require.Equal(t, conditions.TypePending, pendingCond.Type)
-		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
-		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady)
-		require.Equal(t, pendingCondMsg, pendingCond.Message)
-		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
-		require.NotEmpty(t, pendingCond.LastTransitionTime)
+		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
+			conditions.ReasonTraceGatewayDeploymentNotReady,
+			"[NOTE: The \"Pending\" type is deprecated] Trace gateway Deployment is not ready",
+		)
 	})
 
 	t.Run("trace gateway deployment is ready", func(t *testing.T) {
@@ -128,25 +120,10 @@ func TestStatus(t *testing.T) {
 			"Trace gateway Deployment is ready",
 		)
 
-		conditionsSize := len(updatedPipeline.Status.Conditions)
-
-		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-2]
-		require.Equal(t, conditions.TypePending, pendingCond.Type)
-		require.Equal(t, metav1.ConditionFalse, pendingCond.Status)
-		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady)
-		require.Equal(t, pendingCondMsg, pendingCond.Message)
-		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
-		require.NotEmpty(t, pendingCond.LastTransitionTime)
-
-		runningCond := updatedPipeline.Status.Conditions[conditionsSize-1]
-		require.Equal(t, conditions.TypeRunning, runningCond.Type)
-		require.Equal(t, metav1.ConditionTrue, runningCond.Status)
-		require.Equal(t, conditions.ReasonTraceGatewayDeploymentReady, runningCond.Reason)
-		runningCondMsg := conditions.RunningTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady)
-		require.Equal(t, runningCondMsg, runningCond.Message)
-		require.Equal(t, updatedPipeline.Generation, runningCond.ObservedGeneration)
-		require.NotEmpty(t, runningCond.LastTransitionTime)
+		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
+			conditions.ReasonTraceGatewayDeploymentReady,
+			"[NOTE: The \"Running\" type is deprecated] Trace gateway Deployment is ready",
+		)
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
@@ -184,18 +161,10 @@ func TestStatus(t *testing.T) {
 			"One or more referenced Secrets are missing",
 		)
 
-		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
-		require.Nil(t, runningCond)
-
-		conditionsSize := len(updatedPipeline.Status.Conditions)
-		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-1]
-		require.Equal(t, conditions.TypePending, pendingCond.Type)
-		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
-		require.Equal(t, conditions.ReasonReferencedSecretMissing, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing)
-		require.Equal(t, pendingCondMsg, pendingCond.Message)
-		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
-		require.NotEmpty(t, pendingCond.LastTransitionTime)
+		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
+			conditions.ReasonReferencedSecretMissing,
+			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing",
+		)
 	})
 
 	t.Run("referenced secret exists", func(t *testing.T) {
@@ -241,15 +210,10 @@ func TestStatus(t *testing.T) {
 			"Trace gateway successfully configured",
 		)
 
-		conditionsSize := len(updatedPipeline.Status.Conditions)
-		runningCond := updatedPipeline.Status.Conditions[conditionsSize-1]
-		require.Equal(t, conditions.TypeRunning, runningCond.Type)
-		require.Equal(t, metav1.ConditionTrue, runningCond.Status)
-		require.Equal(t, conditions.ReasonTraceGatewayDeploymentReady, runningCond.Reason)
-		runningCondMsg := conditions.RunningTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady)
-		require.Equal(t, runningCondMsg, runningCond.Message)
-		require.Equal(t, updatedPipeline.Generation, runningCond.ObservedGeneration)
-		require.NotEmpty(t, runningCond.LastTransitionTime)
+		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
+			conditions.ReasonTraceGatewayDeploymentReady,
+			"[NOTE: The \"Running\" type is deprecated] Trace gateway Deployment is ready",
+		)
 	})
 
 	t.Run("max pipelines exceeded", func(t *testing.T) {
@@ -284,18 +248,10 @@ func TestStatus(t *testing.T) {
 			"Maximum pipeline count limit exceeded",
 		)
 
-		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
-		require.Nil(t, runningCond)
-
-		conditionsSize := len(updatedPipeline.Status.Conditions)
-		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-1]
-		require.Equal(t, conditions.TypePending, pendingCond.Type)
-		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
-		require.Equal(t, conditions.ReasonMaxPipelinesExceeded, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded)
-		require.Equal(t, pendingCondMsg, pendingCond.Message)
-		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
-		require.NotEmpty(t, pendingCond.LastTransitionTime)
+		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
+			conditions.ReasonMaxPipelinesExceeded,
+			"[NOTE: The \"Pending\" type is deprecated] Maximum pipeline count limit exceeded",
+		)
 	})
 
 	t.Run("flow healthy", func(t *testing.T) {
@@ -440,28 +396,24 @@ func TestStatus(t *testing.T) {
 					Type:               conditions.TypeGatewayHealthy,
 					Status:             metav1.ConditionTrue,
 					Reason:             conditions.ReasonGatewayReady,
-					Message:            conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
 					LastTransitionTime: metav1.Now(),
 				},
 				metav1.Condition{
 					Type:               conditions.TypeConfigurationGenerated,
 					Status:             metav1.ConditionTrue,
 					Reason:             conditions.TypeConfigurationGenerated,
-					Message:            conditions.MessageForTracePipeline(conditions.TypeConfigurationGenerated),
 					LastTransitionTime: metav1.Now(),
 				},
 				metav1.Condition{
 					Type:               conditions.TypePending,
 					Status:             metav1.ConditionFalse,
 					Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
-					Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady),
 					LastTransitionTime: metav1.Now(),
 				},
 				metav1.Condition{
 					Type:               conditions.TypeRunning,
 					Status:             metav1.ConditionTrue,
 					Reason:             conditions.ReasonTraceGatewayDeploymentReady,
-					Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
 					LastTransitionTime: metav1.Now(),
 				}).
 			Build()
@@ -491,15 +443,10 @@ func TestStatus(t *testing.T) {
 		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
 		require.Nil(t, runningCond)
 
-		conditionsSize := len(updatedPipeline.Status.Conditions)
-		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-1]
-		require.Equal(t, conditions.TypePending, pendingCond.Type)
-		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
-		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady)
-		require.Equal(t, pendingCondMsg, pendingCond.Message)
-		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
-		require.NotEmpty(t, pendingCond.LastTransitionTime)
+		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
+			conditions.ReasonTraceGatewayDeploymentNotReady,
+			"[NOTE: The \"Pending\" type is deprecated] Trace gateway Deployment is not ready",
+		)
 	})
 
 	t.Run("tls conditions", func(t *testing.T) {
@@ -611,12 +558,35 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.TracePip
 	require.NotEmpty(t, cond.LastTransitionTime)
 }
 
-func requireHasLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+func requireEndsWithLegacyPendingCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, reason, message string) {
 	cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning)
-	require.NotNil(t, cond, "could not find condition of type %s", condType)
-	require.Equal(t, status, cond.Status)
-	require.Equal(t, reason, cond.Reason)
-	require.Equal(t, message, cond.Message)
-	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
-	require.NotEmpty(t, cond.LastTransitionTime)
+	require.Nil(t, cond, "running condition should not be present")
+
+	require.NotEmpty(t, pipeline.Status.Conditions)
+
+	condLen := len(pipeline.Status.Conditions)
+	lastCond := pipeline.Status.Conditions[condLen-1]
+	require.Equal(t, conditions.TypePending, lastCond.Type)
+	require.Equal(t, metav1.ConditionTrue, lastCond.Status)
+	require.Equal(t, reason, lastCond.Reason)
+	require.Equal(t, message, lastCond.Message)
+	require.Equal(t, pipeline.Generation, lastCond.ObservedGeneration)
+	require.NotEmpty(t, lastCond.LastTransitionTime)
+}
+
+func requireEndsWithLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, reason, message string) {
+	require.Greater(t, len(pipeline.Status.Conditions), 1)
+
+	condLen := len(pipeline.Status.Conditions)
+	lastCond := pipeline.Status.Conditions[condLen-1]
+	require.Equal(t, conditions.TypeRunning, lastCond.Type)
+	require.Equal(t, metav1.ConditionTrue, lastCond.Status)
+	require.Equal(t, reason, lastCond.Reason)
+	require.Equal(t, message, lastCond.Message)
+	require.Equal(t, pipeline.Generation, lastCond.ObservedGeneration)
+	require.NotEmpty(t, lastCond.LastTransitionTime)
+
+	prevCond := pipeline.Status.Conditions[condLen-2]
+	require.Equal(t, conditions.TypePending, prevCond.Type)
+	require.Equal(t, metav1.ConditionFalse, prevCond.Status)
 }
