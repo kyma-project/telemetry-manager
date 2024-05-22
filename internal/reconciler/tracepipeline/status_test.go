@@ -18,17 +18,36 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func TestUpdateStatus(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	overridesHandlerStub := &mocks.OverridesHandler{}
+	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+
+	istioStatusCheckerStub := &mocks.IstioStatusChecker{}
+	istioStatusCheckerStub.On("IsIstioActive", mock.Anything).Return(false)
+
+	testConfig := Config{Gateway: otelcollector.GatewayConfig{
+		Config: otelcollector.Config{
+			BaseName:  "gateway",
+			Namespace: "default",
+		},
+		Deployment: otelcollector.DeploymentConfig{
+			Image: "otel/opentelemetry-collector-contrib",
+		},
+		OTLPServiceName: "otlp",
+	}}
 
 	t.Run("trace gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
@@ -38,13 +57,13 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{BaseName: "trace-gateway"},
-			}},
-			prober: proberStub,
+			Client:             fakeClient,
+			config:             testConfig,
+			prober:             proberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
@@ -80,13 +99,13 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{BaseName: "trace-gateway"},
-			}},
-			prober: proberStub,
+			Client:             fakeClient,
+			config:             testConfig,
+			prober:             proberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
@@ -122,45 +141,27 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
-					Otlp: &telemetryv1alpha1.OtlpOutput{
-						Endpoint: telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-									Name:      "some-secret",
-									Namespace: "some-namespace",
-									Key:       "host",
-								},
-							},
-						},
-					},
-				}},
-		}
+		pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPEndpointFromSecret(
+			"non-existing",
+			"default",
+			"endpoint")).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{BaseName: "trace-gateway"},
-			}},
-			prober: proberStub,
+			Client:             fakeClient,
+			config:             testConfig,
+			prober:             proberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
@@ -185,53 +186,35 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("referenced secret exists", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
-					Otlp: &telemetryv1alpha1.OtlpOutput{
-						Endpoint: telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-									Name:      "some-secret",
-									Namespace: "some-namespace",
-									Key:       "host",
-								},
-							},
-						},
-					},
-				}},
-		}
+		pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPEndpointFromSecret(
+			"existing",
+			"default",
+			"endpoint")).Build()
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "some-secret",
-				Namespace: "some-namespace",
+				Name:      "existing",
+				Namespace: "default",
 			},
-			Data: map[string][]byte{"host": nil},
+			Data: map[string][]byte{"endpoint": nil},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{BaseName: "trace-gateway"},
-			}},
-			prober: proberStub,
+			Client:             fakeClient,
+			config:             testConfig,
+			prober:             proberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
@@ -402,11 +385,14 @@ func TestUpdateStatus(t *testing.T) {
 
 				sut := Reconciler{
 					Client:                   fakeClient,
+					config:                   testConfig,
 					prober:                   gatewayProberStub,
 					flowHealthProbingEnabled: true,
 					flowHealthProber:         flowHealthProberStub,
+					overridesHandler:         overridesHandlerStub,
+					istioStatusChecker:       istioStatusCheckerStub,
 				}
-				err := sut.updateStatus(context.Background(), pipeline.Name, false)
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.TracePipeline
@@ -421,68 +407,55 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("should remove running condition and set pending condition to true if trace gateway deployment becomes not ready again", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
-					Otlp: &telemetryv1alpha1.OtlpOutput{
-						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
-					},
-				}},
-			Status: telemetryv1alpha1.TracePipelineStatus{
-				Conditions: []metav1.Condition{
-					{
-						Type:               conditions.TypeGatewayHealthy,
-						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonGatewayReady,
-						Message:            conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
-						LastTransitionTime: metav1.Now(),
-					},
-					{
-						Type:               conditions.TypeConfigurationGenerated,
-						Status:             metav1.ConditionTrue,
-						Reason:             conditions.TypeConfigurationGenerated,
-						Message:            conditions.MessageForTracePipeline(conditions.TypeConfigurationGenerated),
-						LastTransitionTime: metav1.Now(),
-					},
-					{
-						Type:               conditions.TypePending,
-						Status:             metav1.ConditionFalse,
-						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
-						Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady),
-						LastTransitionTime: metav1.Now(),
-					},
-					{
-						Type:               conditions.TypeRunning,
-						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonTraceGatewayDeploymentReady,
-						Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
-						LastTransitionTime: metav1.Now(),
-					},
+		pipeline := testutils.NewTracePipelineBuilder().
+			WithOTLPOutput(testutils.OTLPEndpoint("localhost")).
+			WithStatusConditions(
+				metav1.Condition{
+					Type:               conditions.TypeGatewayHealthy,
+					Status:             metav1.ConditionTrue,
+					Reason:             conditions.ReasonGatewayReady,
+					Message:            conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
+					LastTransitionTime: metav1.Now(),
 				},
-			},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+				metav1.Condition{
+					Type:               conditions.TypeConfigurationGenerated,
+					Status:             metav1.ConditionTrue,
+					Reason:             conditions.TypeConfigurationGenerated,
+					Message:            conditions.MessageForTracePipeline(conditions.TypeConfigurationGenerated),
+					LastTransitionTime: metav1.Now(),
+				},
+				metav1.Condition{
+					Type:               conditions.TypePending,
+					Status:             metav1.ConditionFalse,
+					Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
+					Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady),
+					LastTransitionTime: metav1.Now(),
+				},
+				metav1.Condition{
+					Type:               conditions.TypeRunning,
+					Status:             metav1.ConditionTrue,
+					Reason:             conditions.ReasonTraceGatewayDeploymentReady,
+					Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
+					LastTransitionTime: metav1.Now(),
+				}).
+			Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{BaseName: "trace-gateway"},
-			}},
-			prober: proberStub,
+			Client:             fakeClient,
+			config:             testConfig,
+			prober:             proberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
 		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
 		require.Nil(t, runningCond)
@@ -497,6 +470,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
 	})
+
 	t.Run("tls conditions", func(t *testing.T) {
 		tests := []struct {
 			name           string
@@ -544,7 +518,6 @@ func TestUpdateStatus(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				pipeline := testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPClientTLS("ca", "fooCert", "fooKey")).Build()
-				//WithTLS("fooCert", "fooKey").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				proberStub := &mocks.DeploymentProber{}
@@ -553,12 +526,14 @@ func TestUpdateStatus(t *testing.T) {
 				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
 
 				sut := Reconciler{
-					Client:           fakeClient,
-					tlsCertValidator: tlsStub,
-					prober:           proberStub,
+					Client:             fakeClient,
+					config:             testConfig,
+					prober:             proberStub,
+					tlsCertValidator:   tlsStub,
+					overridesHandler:   overridesHandlerStub,
+					istioStatusChecker: istioStatusCheckerStub,
 				}
-
-				err := sut.updateStatus(context.Background(), pipeline.Name, true)
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.TracePipeline
