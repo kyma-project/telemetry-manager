@@ -167,7 +167,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
 - Use a MetricPipeline to push metrics directly.
    
 > [!NOTE]
-> The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration) the full OTLP specification and needs custom transformation. A MetricPipeline does not support these transformation features, so that only metrics can be ingested that don't hit the limitations. At the moment, metrics of type "histogram" and "Summary" are not supported. Furthermore, "Sum"s must use "delta" aggregation temporality. 
+> The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration) the full OTLP specification and needs custom transformation. A MetricPipeline does not support these transformation features, so that only metrics can be ingested that don't hit the limitations. At the moment, metrics of type "Histogram" and "Summary" are not supported. Furthermore, "Sum"s must use "delta" aggregation temporality. 
 
 Use this setup when your application pushes metrics to the telemetry metric service natively with OTLP, and if you have explicitly enabled "delta" aggregation temporality. You cannot enable additional inputs for the MetricPipeline.
    1. Deploy the MetricPipeline:
