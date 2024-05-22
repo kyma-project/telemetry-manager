@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"github.com/stretchr/testify/mock"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
@@ -18,9 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
-	"github.com/stretchr/testify/mock"
-	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
@@ -85,8 +84,11 @@ func TestReconcile(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	pipeline := testutils.NewTracePipelineBuilder().WithName("test").Build()
 	fakeClient := fake.NewClientBuilder().
-		WithObjects(ptr.To(testutils.NewTracePipelineBuilder().WithName("test").Build())).
+		WithObjects(&pipeline).
+		WithStatusSubresource(&pipeline).
 		WithScheme(scheme).
 		Build()
 
