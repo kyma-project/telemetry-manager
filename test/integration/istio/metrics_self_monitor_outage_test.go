@@ -7,10 +7,13 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -57,6 +60,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 	}
 
 	Context("Before deploying a metricpipeline", func() {
+		It("Should set scaling for metrics", Label(suite.LabelOperational), func() {
+			var telemetry operatorv1alpha1.Telemetry
+			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+			Expect(err).NotTo(HaveOccurred())
+
+			telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
+				Gateway: operatorv1alpha1.MetricGatewaySpec{
+					Scaling: operatorv1alpha1.Scaling{
+						Type: operatorv1alpha1.StaticScalingStrategyType,
+						Static: &operatorv1alpha1.StaticScaling{
+							Replicas: 1,
+						},
+					},
+				},
+			}
+			err = k8sClient.Update(ctx, &telemetry)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("Should have a healthy webhook", func() {
 			assert.WebhookHealthy(ctx, k8sClient)
 		})
@@ -91,6 +113,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			assert.MetricPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonBufferFillingUp, Status: metav1.ConditionFalse},
+			})
+		})
+
+		It("Should stop sending metrics from telemetrygen", func() {
+			var telgen v1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: mockNs, Name: telemetrygen.DefaultName}, &telgen)
+			Expect(err).NotTo(HaveOccurred())
+
+			telgen.Spec.Replicas = ptr.To(int32(0))
+			err = k8sClient.Update(ctx, &telgen)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should wait for the metrics flow to gradually become unhealthy", func() {
+			assert.MetricPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
 			})
 		})
