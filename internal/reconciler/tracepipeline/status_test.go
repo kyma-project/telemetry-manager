@@ -28,7 +28,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
-func TestStatus(t *testing.T) {
+func TestUpdateStatus(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
