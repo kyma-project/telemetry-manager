@@ -13,7 +13,14 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/stretchr/testify/mock"
+	"k8s.io/utils/ptr"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
@@ -73,6 +80,74 @@ var (
 		},
 	}
 )
+
+func TestReconcile(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().
+		WithObjects(ptr.To(testutils.NewMetricPipelineBuilder().WithName("test").Build())).
+		WithScheme(scheme).
+		Build()
+
+	overridesHandlerStub := &mocks.OverridesHandler{}
+	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+
+	gatewayProberStub := &mocks.DeploymentProber{}
+	gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+	agentProberStub := &mocks.DeploymentProber{}
+	agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+	flowHealthProberStub := &mocks.FlowHealthProber{}
+	flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
+
+	tlsCertValidatorStub := &mocks.TLSCertValidator{}
+	tlsCertValidatorStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	istioStatusCheckerStub := &mocks.IstioStatusChecker{}
+	istioStatusCheckerStub.On("IsIstioActive", mock.Anything).Return(false)
+
+	sut := Reconciler{
+		Client: fakeClient,
+		config: Config{
+			Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{
+					BaseName:  "gateway",
+					Namespace: "default",
+				},
+				Deployment: otelcollector.DeploymentConfig{
+					Image: "otel/opentelemetry-collector-contrib",
+				},
+				OTLPServiceName: "otlp",
+			},
+			Agent: otelcollector.AgentConfig{
+				Config: otelcollector.Config{
+					BaseName:  "agent",
+					Namespace: "default",
+				},
+				DaemonSet: otelcollector.DaemonSetConfig{
+					Image: "otel/opentelemetry-collector-contrib",
+				},
+			},
+			MaxPipelines: 3,
+		},
+		gatewayProber:            gatewayProberStub,
+		agentProber:              agentProberStub,
+		flowHealthProbingEnabled: false,
+		flowHealthProber:         flowHealthProberStub,
+		tlsCertValidator:         tlsCertValidatorStub,
+		overridesHandler:         overridesHandlerStub,
+		istioStatusChecker:       istioStatusCheckerStub,
+	}
+
+	_, err := sut.Reconcile(context.Background(), ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name: "test",
+		},
+	})
+	require.NoError(t, err)
+}
 
 func TestGetDeployableMetricPipelines(t *testing.T) {
 	ctx := context.Background()
