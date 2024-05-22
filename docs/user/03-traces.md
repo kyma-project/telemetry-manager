@@ -463,7 +463,7 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
 ### Traces Not Arriving at the Destination
 
-   Cause: The backend is not reachable or wrong authentication credentials are used.
+   Cause: Wrong backend endpoint configuration or authentication credentials are used.
 
    Remedy: Investigate the cause with the following steps:
    1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
@@ -505,18 +505,18 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
 ### Buffer Filling Up
 
-  Cause: The backend sizing is inadequate
+  Cause: The backend ingestion rate is too small for the data influx.
 
   Remedy:
   
-  - Option 1: Increase ingestion rate capabilities in your backend (i.e. scale out SAP Cloud Logging or Dynatrace instances)
+  - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
 
-  - Option 2: Decrease data influx (i.e. re-configure the trace pipeline)
+  - Option 2: Decrease data influx, that is, re-configure the trace pipeline.
 
 ### Gateway Throttling 
 
-  Cause: Gateway is unable to receive traces at the given rate
+  Cause: Gateway cannot receive traces at the given rate.
 
   Remedy:
 
-  - Manually scale out the gateway (i.e. increase the number of replicas for the `telemetry-trace-gateway`). See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration)
+  - Manually scale out the gateway by increasing the number of replicas for the `telemetry-trace-gateway`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).

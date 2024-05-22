@@ -552,7 +552,7 @@ Up to three MetricPipeline resources at a time are supported.
 
 Symptom: No metrics arrive at the destination.
 
-Cause: The backend is not reachable or wrong authentication credentials are used.
+Cause: Wrong backend endpoint configuration or authentication credentials are used.
 
 Remedy:
 
@@ -597,18 +597,18 @@ Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotat
 
 ### Buffer Filling Up
 
-  Cause: The backend sizing is inadequate
+  Cause: The backend ingestion rate is too small for the data influx.
 
   Remedy:
   
-  - Option 1: Increase ingestion rate capabilities in your backend (i.e. scale out SAP Cloud Logging or Dynatrace instances)
+  - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
 
-  - Option 2: Decrease data influx (i.e. re-configure the metric pipeline)
+  - Option 2: Decrease data influx, that is, re-configure the metric pipeline.
 
 ### Gateway Throttling 
 
-  Cause: Gateway is unable to receive metrics at the given rate
+  Cause: Gateway cannot receive metrics at the given rate.
 
   Remedy:
 
-  - Manually scale out the gateway (i.e. increase the number of replicas for the `telemetry-metric-gateway`). See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration)
+  - Manually scale out the gateway by increasing the number of replicas for the `telemetry-metric-gateway`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
