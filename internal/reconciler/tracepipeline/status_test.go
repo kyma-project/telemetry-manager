@@ -75,13 +75,12 @@ func TestStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		gatewayHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
-		require.NotNil(t, gatewayHealthyCond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
-		require.Equal(t, metav1.ConditionFalse, gatewayHealthyCond.Status)
-		require.Equal(t, conditions.ReasonGatewayNotReady, gatewayHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonGatewayNotReady), gatewayHealthyCond.Message)
-		require.Equal(t, updatedPipeline.Generation, gatewayHealthyCond.ObservedGeneration)
-		require.NotEmpty(t, gatewayHealthyCond.LastTransitionTime)
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeGatewayHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonGatewayNotReady,
+			conditions.MessageForTracePipeline(conditions.ReasonGatewayNotReady),
+		)
 
 		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
 		require.Nil(t, runningCond)
@@ -122,13 +121,12 @@ func TestStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		gatewayHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
-		require.NotNil(t, gatewayHealthyCond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
-		require.Equal(t, metav1.ConditionTrue, gatewayHealthyCond.Status)
-		require.Equal(t, conditions.ReasonGatewayReady, gatewayHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonGatewayReady), gatewayHealthyCond.Message)
-		require.Equal(t, updatedPipeline.Generation, gatewayHealthyCond.ObservedGeneration)
-		require.NotEmpty(t, gatewayHealthyCond.LastTransitionTime)
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeGatewayHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonGatewayReady,
+			conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
+		)
 
 		conditionsSize := len(updatedPipeline.Status.Conditions)
 
@@ -179,13 +177,12 @@ func TestStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
-		require.Equal(t, metav1.ConditionFalse, configurationGeneratedCond.Status)
-		require.Equal(t, conditions.ReasonReferencedSecretMissing, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing), configurationGeneratedCond.Message)
-		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
-		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonReferencedSecretMissing,
+			conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing),
+		)
 
 		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
 		require.Nil(t, runningCond)
@@ -237,13 +234,12 @@ func TestStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
-		require.Equal(t, metav1.ConditionTrue, configurationGeneratedCond.Status)
-		require.Equal(t, conditions.ReasonConfigurationGenerated, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonConfigurationGenerated), configurationGeneratedCond.Message)
-		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
-		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionTrue,
+			conditions.ReasonConfigurationGenerated,
+			"",
+		)
 
 		conditionsSize := len(updatedPipeline.Status.Conditions)
 		runningCond := updatedPipeline.Status.Conditions[conditionsSize-1]
@@ -281,13 +277,12 @@ func TestStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
-		require.Equal(t, metav1.ConditionFalse, configurationGeneratedCond.Status)
-		require.Equal(t, conditions.ReasonMaxPipelinesExceeded, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded), configurationGeneratedCond.Message)
-		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
-		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonMaxPipelinesExceeded,
+			conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded),
+		)
 
 		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
 		require.Nil(t, runningCond)
@@ -417,10 +412,12 @@ func TestStatus(t *testing.T) {
 				var updatedPipeline telemetryv1alpha1.TracePipeline
 				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeFlowHealthy)
-				require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeFlowHealthy)
-				require.Equal(t, tt.expectedStatus, cond.Status)
-				require.Equal(t, tt.expectedReason, cond.Reason)
+				requireHasStatusCondition(t, updatedPipeline,
+					conditions.TypeFlowHealthy,
+					tt.expectedStatus,
+					tt.expectedReason,
+					conditions.MessageForTracePipeline(tt.expectedReason),
+				)
 			})
 		}
 	})
@@ -497,46 +494,60 @@ func TestStatus(t *testing.T) {
 
 	t.Run("tls conditions", func(t *testing.T) {
 		tests := []struct {
-			name           string
-			tlsCertErr     error
-			expectedStatus metav1.ConditionStatus
-			expectedReason string
+			name            string
+			tlsCertErr      error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
 		}{
 			{
-				name:           "cert expired",
-				tlsCertErr:     &tlscert.CertExpiredError{Expiry: time.Now().Add(-time.Hour)},
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSCertificateExpired,
+				name:            "cert expired",
+				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateExpired,
+				expectedMessage: "TLS certificate expired on 2020-11-01",
 			},
 			{
-				name:           "cert about to expire",
-				tlsCertErr:     &tlscert.CertAboutToExpireError{Expiry: time.Now().Add(7 * 24 * time.Hour)},
-				expectedStatus: metav1.ConditionTrue,
-				expectedReason: conditions.ReasonTLSCertificateAboutToExpire,
+				name:            "cert about to expire",
+				tlsCertErr:      &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage: "TLS certificate is about to expire, configured certificate is valid until 2024-11-01",
 			},
 			{
-				name:           "cert decode failed",
-				tlsCertErr:     tlscert.ErrCertDecodeFailed,
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSCertificateInvalid,
+				name:            "cert decode failed",
+				tlsCertErr:      tlscert.ErrCertDecodeFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: failed to decode PEM block containing cert",
 			},
 			{
-				name:           "key decode failed",
-				tlsCertErr:     tlscert.ErrKeyDecodeFailed,
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSCertificateInvalid,
+				name:            "key decode failed",
+				tlsCertErr:      tlscert.ErrKeyDecodeFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: failed to decode PEM block containing private key",
 			},
 			{
-				name:           "key parse failed",
-				tlsCertErr:     tlscert.ErrKeyParseFailed,
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSCertificateInvalid,
+				name:            "key parse failed",
+				tlsCertErr:      tlscert.ErrKeyParseFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: failed to parse private key",
 			},
 			{
-				name:           "cert parse failed",
-				tlsCertErr:     tlscert.ErrCertParseFailed,
-				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSCertificateInvalid,
+				name:            "cert parse failed",
+				tlsCertErr:      tlscert.ErrCertParseFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: failed to parse certificate",
+			},
+			{
+				name:            "cert and key mismatch",
+				tlsCertErr:      tlscert.ErrInvalidCertificateKeyPair,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateInvalid,
+				expectedMessage: "TLS certificate invalid: certificate and private key do not match",
 			},
 		}
 		for _, tt := range tests {
@@ -568,11 +579,34 @@ func TestStatus(t *testing.T) {
 
 				var updatedPipeline telemetryv1alpha1.TracePipeline
 				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-				require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
-				require.Equal(t, tt.expectedStatus, cond.Status)
-				require.Equal(t, tt.expectedReason, cond.Reason)
+
+				requireHasStatusCondition(t, updatedPipeline,
+					conditions.TypeConfigurationGenerated,
+					tt.expectedStatus,
+					tt.expectedReason,
+					tt.expectedMessage,
+				)
 			})
 		}
 	})
+}
+
+func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+	require.NotNil(t, cond, "could not find condition of type %s", condType)
+	require.Equal(t, status, cond.Status)
+	require.Equal(t, reason, cond.Reason)
+	require.Equal(t, message, cond.Message)
+	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
+	require.NotEmpty(t, cond.LastTransitionTime)
+}
+
+func requireHasLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+	cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning)
+	require.NotNil(t, cond, "could not find condition of type %s", condType)
+	require.Equal(t, status, cond.Status)
+	require.Equal(t, reason, cond.Reason)
+	require.Equal(t, message, cond.Message)
+	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
+	require.NotEmpty(t, cond.LastTransitionTime)
 }
