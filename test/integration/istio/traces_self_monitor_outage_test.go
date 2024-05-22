@@ -38,7 +38,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 
 		objs = append(objs,
 			&tracePipeline,
-			telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces,
+			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeTraces,
 				telemetrygen.WithRate(5),
 				telemetrygen.WithWorkers(1)).K8sObject(),
 		)
@@ -74,7 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 		})
 
 		It("Should have a telemetrygen running", func() {
-			assert.PodReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should wait for the trace flow to gradually become unhealthy", func() {

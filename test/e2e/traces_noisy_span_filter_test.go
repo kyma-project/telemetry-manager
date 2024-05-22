@@ -68,14 +68,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			Build()
 		objs = append(objs, &tracePipeline)
 
-		regularSpansGen := telemetrygen.New(regularSpansNs, telemetrygen.SignalTypeTraces).K8sObject()
-		vmaScrapeSpansGen := telemetrygen.New(vmaScrapeSpansNs, telemetrygen.SignalTypeTraces,
+		regularSpansGen := telemetrygen.NewPod(regularSpansNs, telemetrygen.SignalTypeTraces).K8sObject()
+		vmaScrapeSpansGen := telemetrygen.NewPod(vmaScrapeSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("OperationName", "Ingress"),
 			telemetrygen.WithTelemetryAttribute("user_agent", "vm_promscrape"),
 		).K8sObject()
-		healthzSpansGen := telemetrygen.New(healthzSpansNs, telemetrygen.SignalTypeTraces,
+		healthzSpansGen := telemetrygen.NewPod(healthzSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.IstioSystemNamespaceName),
 			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
@@ -84,47 +84,47 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			telemetrygen.WithTelemetryAttribute("http.url", "https://healthz.some-url/healthz/ready"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", "istio-system"),
 		).K8sObject()
-		fluentBitSpansGen := telemetrygen.New(fluentBitSpansNs, telemetrygen.SignalTypeTraces,
+		fluentBitSpansGen := telemetrygen.NewPod(fluentBitSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "fluent-bit"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
-		metricAgentScrapeSpansGen := telemetrygen.New(metricAgentScrapeSpansNs, telemetrygen.SignalTypeTraces,
+		metricAgentScrapeSpansGen := telemetrygen.NewPod(metricAgentScrapeSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("OperationName", "Ingress"),
 			telemetrygen.WithTelemetryAttribute("user_agent", "kyma-otelcol/0.1.0"),
 		).K8sObject()
-		metricAgentSpansGen := telemetrygen.New(metricAgentSpansNs, telemetrygen.SignalTypeTraces,
+		metricAgentSpansGen := telemetrygen.NewPod(metricAgentSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-metric-agent"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
-		metricGatewaySpansGen := telemetrygen.New(metricGatewaySpansNs, telemetrygen.SignalTypeTraces,
+		metricGatewaySpansGen := telemetrygen.NewPod(metricGatewaySpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-metric-gateway"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
-		metricServiceSpansGen := telemetrygen.New(metricServiceSpansNs, telemetrygen.SignalTypeTraces,
+		metricServiceSpansGen := telemetrygen.NewPod(metricServiceSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "POST"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("OperationName", "Egress"),
 			telemetrygen.WithTelemetryAttribute("http.url", "http://telemetry-otlp-metrics.kyma-system:4317"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
-		traceGatewaySpansGen := telemetrygen.New(traceGatewaySpansNs, telemetrygen.SignalTypeTraces,
+		traceGatewaySpansGen := telemetrygen.NewPod(traceGatewaySpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-trace-gateway"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
-		traceServiceSpansGen := telemetrygen.New(traceServiceSpansNs, telemetrygen.SignalTypeTraces,
+		traceServiceSpansGen := telemetrygen.NewPod(traceServiceSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "POST"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("OperationName", "Egress"),
 			telemetrygen.WithTelemetryAttribute("http.url", "http://telemetry-otlp-traces.kyma-system:4317"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
-		traceServiceInternalSpansGen := telemetrygen.New(traceServiceInternalSpansNs, telemetrygen.SignalTypeTraces,
+		traceServiceInternalSpansGen := telemetrygen.NewPod(traceServiceInternalSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-trace-collector"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),

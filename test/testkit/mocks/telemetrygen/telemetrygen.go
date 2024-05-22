@@ -75,16 +75,6 @@ func WithRate(rate int) Option {
 	}
 }
 
-// WithAttributes sets the otlp-attributes of the telemetry generator
-func WithAttributes(attributes map[string]string) Option {
-	return func(spec *corev1.PodSpec) {
-		for key, value := range attributes {
-			spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
-			spec.Containers[0].Args = append(spec.Containers[0].Args, fmt.Sprintf("%s=\"%s\"", key, value))
-		}
-	}
-}
-
 // WithWorkers sets the number of workers in the telemetry generator
 func WithWorkers(workers int) Option {
 	return func(spec *corev1.PodSpec) {
@@ -101,8 +91,12 @@ func WithSpanSize(spanSize int) Option {
 	}
 }
 
-func New(namespace string, signalType SignalType, opts ...Option) *kitk8s.Pod {
+func NewPod(namespace string, signalType SignalType, opts ...Option) *kitk8s.Pod {
 	return kitk8s.NewPod(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
+}
+
+func NewDeployment(namespace string, signalType SignalType, opts ...Option) *kitk8s.Deployment {
+	return kitk8s.NewDeployment(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
 }
 
 func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {

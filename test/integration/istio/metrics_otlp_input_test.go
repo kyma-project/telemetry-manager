@@ -3,11 +3,14 @@
 package istio
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -16,7 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
@@ -70,8 +72,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		// Create 2 deployments (with and without side-car) which would push the metrics to the metrics gateway.
 		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 		objs = append(objs,
-			kitk8s.NewDeployment(metricProducer1Name, backendNs).WithPodSpec(podSpec).K8sObject(),
-			kitk8s.NewDeployment(metricProducer2Name, istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
+			kitk8s.NewDeployment(metricProducer1Name, backendNs).WithPodSpec(podSpec).WithPersistentLabel().K8sObject(),
+			kitk8s.NewDeployment(metricProducer2Name, istiofiedBackendNs).WithPodSpec(podSpec).WithPersistentLabel().K8sObject(),
 		)
 
 		return objs

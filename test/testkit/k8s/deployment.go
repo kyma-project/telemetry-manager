@@ -1,8 +1,6 @@
 package k8s
 
 import (
-	"maps"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,24 +34,31 @@ func (d *Deployment) WithPodSpec(podSpec corev1.PodSpec) *Deployment {
 	return d
 }
 
-func (d *Deployment) K8sObject() *appsv1.Deployment {
-	labels := d.labels
-	maps.Copy(labels, PersistentLabel)
+func (d *Deployment) WithReplicas(replicas int32) *Deployment {
+	d.replicas = replicas
+	return d
+}
 
+func (d *Deployment) WithPersistentLabel() *Deployment {
+	d.labels[PersistentLabelName] = "true"
+	return d
+}
+
+func (d *Deployment) K8sObject() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      d.name,
 			Namespace: d.namespace,
-			Labels:    labels,
+			Labels:    d.labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &d.replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: d.labels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Labels: d.labels,
 				},
 				Spec: d.podSpec,
 			},

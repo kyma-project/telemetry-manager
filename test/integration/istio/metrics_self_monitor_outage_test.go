@@ -3,6 +3,8 @@
 package istio
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +30,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithReplicas(0))
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithReplicas(1), backend.WithFaultDelayInjection(100, 5))
 		objs = append(objs, backend.K8sObjects()...)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
@@ -36,24 +38,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 
+		opts := func() []telemetrygen.Option {
+			var opts []telemetrygen.Option
+			for i := range 100 {
+				opts = append(opts, telemetrygen.WithTelemetryAttribute("foo", fmt.Sprintf("bar_%v", i)))
+				opts = append(opts, telemetrygen.WithResourceAttribute("foo", fmt.Sprintf("bar_%v", i)))
+			}
+			return opts
+		}()
+		opts = append(opts, telemetrygen.WithRate(500_000), telemetrygen.WithWorkers(5))
+
 		objs = append(objs,
 			&metricPipeline,
-			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics,
-				telemetrygen.WithRate(50000),
-				telemetrygen.WithWorkers(10),
-				telemetrygen.WithAttributes(map[string]string{
-					"foo":    "bar",
-					"baz":    "qux",
-					"quux":   "corge",
-					"grault": "garply",
-					"waldo":  "fred",
-					"plugh":  "xyzzy",
-					"thud":   "wibble",
-					"wobble": "wubble",
-					"flub":   "flum",
-					"bloop":  "blarp",
-					"blip":   "blop",
-				})).K8sObject(),
+			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeMetrics, opts...).WithReplicas(2).K8sObject(),
 		)
 
 		return objs
@@ -87,7 +84,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 		})
 
 		It("Should have a telemetrygen running", func() {
-			assert.PodReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should wait for the metrics flow to gradually become unhealthy", func() {

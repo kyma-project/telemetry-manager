@@ -38,7 +38,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 
 		objs = append(objs,
 			&metricPipeline,
-			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics,
+			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeMetrics,
 				telemetrygen.WithRate(800),
 				telemetrygen.WithWorkers(5)).K8sObject(),
 		)
@@ -74,7 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 		})
 
 		It("Should have a telemetrygen running", func() {
-			assert.PodReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should wait for the metrics flow to gradually become unhealthy", func() {
