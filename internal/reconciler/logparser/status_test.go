@@ -149,8 +149,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonConfigurationGenerated,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated),
+						Reason:             conditions.ReasonAgentConfigured,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured),
 						LastTransitionTime: metav1.Now(),
 					},
 					{

@@ -21,8 +21,8 @@ func TestHandlePendingCondition(t *testing.T) {
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
-				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
+				Reason:             ReasonAgentConfigured,
+				Message:            MessageForLogPipeline(ReasonAgentConfigured),
 				LastTransitionTime: metav1.Now(),
 			},
 		}
@@ -54,8 +54,8 @@ func TestHandlePendingCondition(t *testing.T) {
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
-				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
+				Reason:             ReasonAgentConfigured,
+				Message:            MessageForLogPipeline(ReasonAgentConfigured),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
@@ -106,8 +106,8 @@ func TestHandleRunningCondition(t *testing.T) {
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
-				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
+				Reason:             ReasonAgentConfigured,
+				Message:            MessageForLogPipeline(ReasonAgentConfigured),
 				LastTransitionTime: metav1.Now(),
 			},
 		}

@@ -117,10 +117,10 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		key := pipeline.Spec.Output.HTTP.TLSConfig.Key
 
 		err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
-		return conditions.EvaluateTLSCertCondition(err)
+		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured))
 	}
 
-	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(conditions.ReasonConfigurationGenerated)
+	return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
@@ -140,7 +140,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	} else {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
 
-		reason = conditions.ReasonSelfMonFlowHealthy
+		reason = conditions.ReasonSelfMonProbingNotReachable
 		status = metav1.ConditionUnknown
 	}
 
