@@ -32,7 +32,7 @@ override:
   - threshold: 75
     path: ^internal/resources/selfmonitor$
   - threshold: 75
-    path: ^internal/resources/resourcelock$
+    path: ^internal/resourcelock$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
