@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"github.com/google/uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +50,7 @@ func (d *Deployment) K8sObject() *appsv1.Deployment {
 	labels := d.labels
 	if len(labels) == 0 {
 		labels = map[string]string{
-			"app": d.name,
+			"app": uuid.New().String(),
 		}
 	}
 	return &appsv1.Deployment{
