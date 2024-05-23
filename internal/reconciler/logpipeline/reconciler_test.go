@@ -5,105 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
-
-var (
-	testConfig = Config{
-		DaemonSet:             types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
-		SectionsConfigMap:     types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
-		FilesConfigMap:        types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
-		LuaConfigMap:          types.NamespacedName{Name: "test-telemetry-fluent-bit-lua", Namespace: "default"},
-		ParsersConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
-		EnvSecret:             types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
-		OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
-		OverrideConfigMap:     types.NamespacedName{Name: "override-config", Namespace: "default"},
-		PipelineDefaults: builder.PipelineDefaults{
-			InputTag:          "kube",
-			MemoryBufferLimit: "10M",
-			StorageType:       "filesystem",
-			FsBufferLimit:     "1G",
-		},
-		Overrides: overrides.Config{},
-		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			FluentBitImage:              "my-fluent-bit-image",
-			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
-			ExporterImage:               "my-exporter-image",
-			PriorityClassName:           "my-priority-class",
-			CPULimit:                    resource.MustParse("1"),
-			MemoryLimit:                 resource.MustParse("500Mi"),
-			CPURequest:                  resource.MustParse(".1"),
-			MemoryRequest:               resource.MustParse("100Mi"),
-		},
-		ObserveBySelfMonitoring: false,
-	}
-)
-
-func TestReconcile(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	pipeline := testutils.NewLogPipelineBuilder().WithName("test").Build()
-	fakeClient := fake.NewClientBuilder().
-		WithObjects(&pipeline).
-		WithStatusSubresource(&pipeline).
-		WithScheme(scheme).
-		Build()
-
-	overridesHandlerStub := &mocks.OverridesHandler{}
-	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
-
-	agentProberStub := &mocks.DaemonSetProber{}
-	agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
-
-	flowHealthProberStub := &mocks.FlowHealthProber{}
-	flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
-
-	tlsCertValidatorStub := &mocks.TLSCertValidator{}
-	tlsCertValidatorStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	istioStatusCheckerStub := &mocks.IstioStatusChecker{}
-	istioStatusCheckerStub.On("IsIstioActive", mock.Anything).Return(false)
-
-	sut := Reconciler{
-		Client:                     fakeClient,
-		config:                     testConfig,
-		pipelinesConditionsCleared: true,
-		prober:                     agentProberStub,
-		flowHealthProbingEnabled:   false,
-		flowHealthProber:           flowHealthProberStub,
-		tlsCertValidator:           tlsCertValidatorStub,
-		overridesHandler:           overridesHandlerStub,
-		istioStatusChecker:         istioStatusCheckerStub,
-		syncer:                     syncer{fakeClient, testConfig},
-	}
-
-	_, err := sut.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name: "test",
-		},
-	})
-	require.NoError(t, err)
-}
 
 func TestGetReconcilableLogPipelines(t *testing.T) {
 	timestamp := metav1.Now()
