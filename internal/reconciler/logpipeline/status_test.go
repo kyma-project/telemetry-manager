@@ -189,8 +189,8 @@ func TestUpdateStatus(t *testing.T) {
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionTrue, configurationGeneratedCond.Status)
-		require.Equal(t, conditions.ReasonConfigurationGenerated, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated), configurationGeneratedCond.Message)
+		require.Equal(t, conditions.ReasonAgentConfigured, configurationGeneratedCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured), configurationGeneratedCond.Message)
 		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
 		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
 
@@ -258,7 +258,7 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "prober fails",
 				probeErr:       assert.AnError,
 				expectedStatus: metav1.ConditionUnknown,
-				expectedReason: conditions.ReasonSelfMonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonProbingNotReachable,
 			},
 			{
 				name: "healthy",
@@ -381,8 +381,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonConfigurationGenerated,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated),
+						Reason:             conditions.ReasonAgentConfigured,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -474,8 +474,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonConfigurationGenerated,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated),
+						Reason:             conditions.ReasonAgentConfigured,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -559,8 +559,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonConfigurationGenerated,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated),
+						Reason:             conditions.ReasonAgentConfigured,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured),
 						LastTransitionTime: metav1.Now(),
 					},
 					{

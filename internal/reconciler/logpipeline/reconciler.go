@@ -76,17 +76,28 @@ type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
 }
 
+//go:generate mockery --name OverridesHandler --filename overrides_handler.go
+type OverridesHandler interface {
+	LoadOverrides(ctx context.Context) (*overrides.Config, error)
+}
+
+//go:generate mockery --name IstioStatusChecker --filename istio_status_checker.go
+type IstioStatusChecker interface {
+	IsIstioActive(ctx context.Context) bool
+}
+
 type Reconciler struct {
 	client.Client
 	config                     Config
-	prober                     DaemonSetProber
-	flowHealthProbingEnabled   bool
-	flowHealthProber           FlowHealthProber
-	syncer                     syncer
-	overridesHandler           *overrides.Handler
-	istioStatusChecker         istiostatus.Checker
-	tlsCertValidator           TLSCertValidator
 	pipelinesConditionsCleared bool
+
+	prober                   DaemonSetProber
+	flowHealthProbingEnabled bool
+	flowHealthProber         FlowHealthProber
+	tlsCertValidator         TLSCertValidator
+	syncer                   syncer
+	overridesHandler         OverridesHandler
+	istioStatusChecker       IstioStatusChecker
 }
 
 func NewReconciler(

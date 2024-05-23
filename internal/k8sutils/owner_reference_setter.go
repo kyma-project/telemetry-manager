@@ -2,6 +2,7 @@ package k8sutils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,6 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+var ErrNotImplemented = errors.New("not implemented")
 
 // NewOwnerReferenceSetter wraps an existing Kubernetes client with additional functionality
 // to set the owner reference for objects before they are created or updated.
@@ -40,7 +43,7 @@ type noopWatchClient struct {
 }
 
 func (n *noopWatchClient) Watch(_ context.Context, _ client.ObjectList, _ ...client.ListOption) (watch.Interface, error) {
-	return nil, nil
+	return nil, ErrNotImplemented
 }
 
 func setOwnerReference(owner metav1.Object, ownee client.Object, scheme *runtime.Scheme) error {

@@ -16,8 +16,8 @@ type Checker struct {
 
 const peerAuthenticationIstioCRD = "peerauthentications.security.istio.io"
 
-func NewChecker(client client.Reader) Checker {
-	return Checker{
+func NewChecker(client client.Reader) *Checker {
+	return &Checker{
 		client: client,
 	}
 

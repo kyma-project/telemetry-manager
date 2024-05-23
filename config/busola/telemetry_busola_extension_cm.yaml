@@ -164,7 +164,7 @@ data:
     urlPath: kymatelemetries
     scope: namespace
     description: >-
-      The {{[Telemetry](https://kyma-project.io/#/telemetry-manager/user/resources/01-telemetry)}} resource configures the telemetry module.
+      {{[Telemetry custom resource](https://kyma-project.io/#/telemetry-manager/user/resources/01-telemetry)}} configures the Telemetry module.
     features:
       actions:
         disableCreate: true
