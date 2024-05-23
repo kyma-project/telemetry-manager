@@ -1,4 +1,4 @@
-package k8sutils
+package resourcelock
 
 import (
 	"context"
@@ -40,7 +40,7 @@ func TestTryAcquireLock(t *testing.T) {
 
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
-	l := NewResourceCountLock(fakeClient, lockName, 2)
+	l := New(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, owner1)
 	require.NoError(t, err)
@@ -49,7 +49,7 @@ func TestTryAcquireLock(t *testing.T) {
 	require.NoError(t, err)
 
 	err = l.TryAcquireLock(ctx, owner3)
-	require.Equal(t, errLockInUse, err)
+	require.Equal(t, ErrLockInUse, err)
 }
 
 func TestIsLockHolder(t *testing.T) {
@@ -62,7 +62,7 @@ func TestIsLockHolder(t *testing.T) {
 
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
-	l := NewResourceCountLock(fakeClient, lockName, 2)
+	l := New(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, owner1)
 	require.NoError(t, err)
@@ -88,7 +88,7 @@ func TestIsNotLockHolder(t *testing.T) {
 
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
-	l := NewResourceCountLock(fakeClient, lockName, 2)
+	l := New(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, owner1)
 	require.NoError(t, err)

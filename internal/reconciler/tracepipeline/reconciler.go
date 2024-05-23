@@ -34,6 +34,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -46,6 +47,12 @@ type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
+}
+
+//go:generate mockery --name PipelineLock --filename pipeline_lock.go
+type PipelineLock interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+	IsLockHolder(ctx context.Context, owner metav1.Object) (bool, error)
 }
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -78,6 +85,7 @@ type Reconciler struct {
 	config                     Config
 	pipelinesConditionsCleared bool
 
+	pipelineLock             PipelineLock
 	prober                   DeploymentProber
 	flowHealthProbingEnabled bool
 	flowHealthProber         FlowHealthProber
@@ -93,14 +101,19 @@ func NewReconciler(client client.Client,
 	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
-		Client:                   client,
-		config:                   config,
+		Client: client,
+		config: config,
+		pipelineLock: resourcelock.New(client,
+			types.NamespacedName{
+				Name:      "telemetry-tracepipeline-lock",
+				Namespace: config.Gateway.Namespace,
+			}, config.MaxPipelines),
 		prober:                   prober,
 		flowHealthProbingEnabled: flowHealthProbingEnabled,
 		flowHealthProber:         flowHealthProber,
+		tlsCertValidator:         tlscert.New(client),
 		overridesHandler:         overridesHandler,
 		istioStatusChecker:       istiostatus.NewChecker(client),
-		tlsCertValidator:         tlscert.New(client),
 	}
 }
 
@@ -139,11 +152,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}()
 
-	lock := k8sutils.NewResourceCountLock(r.Client, types.NamespacedName{
-		Name:      "telemetry-tracepipeline-lock",
-		Namespace: r.config.Gateway.Namespace,
-	}, r.config.MaxPipelines)
-	if err = lock.TryAcquireLock(ctx, pipeline); err != nil {
+	if err = r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		lockAcquired = false
 		return err
 	}
@@ -157,7 +166,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to clear the conditions list for trace pipelines: %w", err)
 	}
 
-	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items, lock)
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
@@ -174,10 +183,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getReconcilablePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline) ([]telemetryv1alpha1.TracePipeline, error) {
 	var reconcilablePipelines []telemetryv1alpha1.TracePipeline
 	for i := range allPipelines {
-		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i], lock)
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
 		if err != nil {
 			return nil, err
 		}
@@ -189,7 +198,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	return reconcilablePipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, lock *k8sutils.ResourceCountLock) (bool, error) {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
@@ -208,7 +217,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 			}
 		}
 	}
-	hasLock, err := lock.IsLockHolder(ctx, pipeline)
+	hasLock, err := r.pipelineLock.IsLockHolder(ctx, pipeline)
 	if err != nil {
 		return false, fmt.Errorf("failed to check lock: %w", err)
 	}
