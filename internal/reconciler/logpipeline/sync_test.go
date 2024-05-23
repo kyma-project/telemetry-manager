@@ -413,7 +413,9 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
-		sut := syncer{fakeClient, Config{}}
+		sut := syncer{fakeClient, Config{
+			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+		}}
 		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
@@ -440,7 +442,10 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		}
 		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
 
-		sut := syncer{fakeClient, Config{}}
+		config := Config{
+			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+		}
+		sut := syncer{fakeClient, config}
 		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
@@ -452,7 +457,7 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), Config{}.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
