@@ -52,7 +52,7 @@ func TestReconcile(t *testing.T) {
 		},
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
-				BaseName:  "gateway",
+				BaseName:  "agent",
 				Namespace: "default",
 			},
 			DaemonSet: otelcollector.DaemonSetConfig{
