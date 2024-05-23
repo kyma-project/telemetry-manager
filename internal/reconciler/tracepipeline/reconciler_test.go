@@ -306,8 +306,8 @@ func TestReconcile(t *testing.T) {
 				name:            "prober fails",
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonProbingNotReachable,
-				expectedMessage: "Self monitoring probing not reachable",
+				expectedReason:  conditions.ReasonSelfMonProbingFailed,
+				expectedMessage: "Self monitoring probing failed for unknown reasons",
 			},
 			{
 				name: "healthy",

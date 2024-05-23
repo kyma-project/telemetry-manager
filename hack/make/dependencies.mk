@@ -24,6 +24,12 @@ GINKGO_VERSION ?= $(ENV_GINKGO_VERSION)
 GOLANGCI_LINT_VERSION ?= $(ENV_GOLANGCI_LINT_VERSION)
 GO_TEST_COVERAGE_VERSION ?= $(ENV_GO_TEST_COVERAGE_VERSION)
 
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
 .PHONY: dependencies
 dependencies: kustomize tablegen controller-gen envtest golangci-lint ginkgo k3d kyma ## Download and install all build dependencies.
 
@@ -60,8 +66,34 @@ $(TABLE_GEN): $(LOCALBIN)
 ## golangci-lint
 .PHONY: golangci-lint $(GOLANGCI_LINT)
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): GOLANGCI_LINT_LATEST = $(shell curl -sL https://api.github.com/repos/golangci/golangci-lint/releases/latest | jq -r ".tag_name" )
 $(GOLANGCI_LINT): $(LOCALBIN)
+	if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANG_CI_LINT_LATEST)" ]; then \
+		echo -e ${RED}########################################################################################${NC}; \
+		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANG_CI_LINT_LATEST}${NC}; \
+		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}.env${RED} file and the ${YELLOW}github workflow definition${NC}; \
+		echo -e ${RED}########################################################################################${NC}; \
+    fi
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) $(GOLANGCI_LINT_VERSION)
+
+.PHONY: check-linter-version
+check-linter-version: GOLANGCI_LINT_LATEST = $(shell curl -sL https://api.github.com/repos/golangci/golangci-lint/releases/latest | jq -r ".tag_name" )
+check-linter-version: GOLANGCI_LINT_WORKFLOW = $(shell yq '.jobs.lint.steps[]|select(.name == "Run lint").with.version'  .github/workflows/pr-code-checks.yml )
+check-linter-version:
+	@if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
+		echo -e ${RED}########################################################################################${NC}; \
+		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANGCI_LINT_LATEST}${NC}; \
+		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}.env${RED} file${NC}; \
+		echo -e ${RED}########################################################################################${NC}; \
+		exit 1; \
+    fi
+	@if [ "$(GOLANGCI_LINT_WORKFLOW)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
+		echo -e ${RED}########################################################################################${NC}; \
+		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANGCI_LINT_LATEST}${NC}; \
+		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}github workflow definition${NC}; \
+		echo -e ${RED}########################################################################################${NC}; \
+		exit 1; \
+    fi
 
 ## ginkgo
 .PHONY: ginkgo
