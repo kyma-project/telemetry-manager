@@ -109,13 +109,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should wait for the metrics flow to gradually become unhealthy", func() {
+		It("Should wait for the metrics flow to report a full buffer", func() {
 			assert.MetricPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonBufferFillingUp, Status: metav1.ConditionFalse},
 			})
 		})
 
+		// this is needed to give the metrics flow time to report a full buffer
 		It("Should stop sending metrics from telemetrygen", func() {
 			var telgen v1.Deployment
 			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: mockNs, Name: telemetrygen.DefaultName}, &telgen)
@@ -126,7 +127,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should wait for the metrics flow to gradually become unhealthy", func() {
+		It("Should wait for the metrics flow to report dropped metrics", func() {
 			assert.MetricPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
 			})
