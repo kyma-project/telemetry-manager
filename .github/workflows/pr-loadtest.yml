@@ -31,6 +31,7 @@ jobs:
           - "-n ci-logs-m -t logs-fluentbit -m true"
           - "-n ci-logs-b -t logs-fluentbit -b true"
           - "-n ci-logs-mb -t logs-fluentbit -m true -b true"
+          - "-n ci-self-monitor -t self-monitor"
     runs-on: ubuntu-latest
 
     steps:

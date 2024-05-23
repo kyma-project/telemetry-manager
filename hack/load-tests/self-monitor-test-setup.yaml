@@ -247,7 +247,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: telemetry-receiver
+    app: docker-receiver
   name: telemetry-receiver
   namespace: self-monitor-load-test
 spec:
@@ -282,7 +282,7 @@ spec:
           volumeMounts:
             - mountPath: /fluentd/etc/
               name: fluentd-config
-        - image: "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.99.0-41265c69"
+        - image: OTEL_IMAGE
           name: otel-collector
           resources:
             limits:

@@ -360,15 +360,15 @@ function get_result_and_cleanup_fluentbit() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_selfmonitor() {
-   RECEIVED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   SCRAPESAMPLES=$(curl -fs --data-urlencode 'query=sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor"}[5m]) / 300' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   EXPORTED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   SERIESCREATED=$(curl -fs --data-urlencode 'query=prometheus_tsdb_head_series{service="telemetry-self-monitor"}' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   QUEUE=$(curl -fs --data-urlencode 'query=round((sum(rate(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   HEADSTORAGESIZE=$(curl -fs --data-urlencode 'query=prometheus_tsdb_head_chunks_storage_size_bytes{service="telemetry-self-monitor"}' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="fluent-bit"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="self-monitor"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    kill %1
 
@@ -379,8 +379,8 @@ function get_result_and_cleanup_selfmonitor() {
    echo "\Self Monitor Pods got $restarts time restarted\n"
 
    echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET\n"
-   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "" "Input Bytes Processing Rate/sec" "Output Bytes Processing Rate/sec" "Filesystem Buffer Usage" "Pod Memory Usage(MB)" "Pod CPU Usage"
-   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+   printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Scrape Samples/sec" "Total Series Created" "Head Chunk Storage Size/bytes" "Pod Memory Usage(MB)" "Pod CPU Usage"
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$SCRAPESAMPLES" "$SERIESCREATED" "$HEADSTORAGESIZE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
 }
 
 function print_metric_result(){

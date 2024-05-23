@@ -36,7 +36,7 @@ spec:
         sidecar.istio.io/inject: "true"
     spec:
       containers:
-        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0
+        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.100.0
           args:
           - traces
           - --otlp-insecure
