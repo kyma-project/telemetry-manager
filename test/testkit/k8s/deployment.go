@@ -45,20 +45,27 @@ func (d *Deployment) WithPersistentLabel() *Deployment {
 }
 
 func (d *Deployment) K8sObject() *appsv1.Deployment {
+	// prevent empty labels
+	labels := d.labels
+	if len(labels) == 0 {
+		labels = map[string]string{
+			"app": d.name,
+		}
+	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      d.name,
 			Namespace: d.namespace,
-			Labels:    d.labels,
+			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &d.replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: d.labels,
+				MatchLabels: labels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: d.labels,
+					Labels: labels,
 				},
 				Spec: d.podSpec,
 			},
