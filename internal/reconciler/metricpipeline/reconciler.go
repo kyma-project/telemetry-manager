@@ -53,16 +53,27 @@ type TLSCertValidator interface {
 	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
 }
 
+//go:generate mockery --name OverridesHandler --filename overrides_handler.go
+type OverridesHandler interface {
+	LoadOverrides(ctx context.Context) (*overrides.Config, error)
+}
+
+//go:generate mockery --name IstioStatusChecker --filename istio_status_checker.go
+type IstioStatusChecker interface {
+	IsIstioActive(ctx context.Context) bool
+}
+
 type Reconciler struct {
 	client.Client
-	config                   Config
+	config Config
+
 	gatewayProber            DeploymentProber
 	agentProber              DaemonSetProber
 	flowHealthProbingEnabled bool
 	flowHealthProber         FlowHealthProber
-	overridesHandler         *overrides.Handler
-	istioStatusChecker       istiostatus.Checker
 	tlsCertValidator         TLSCertValidator
+	overridesHandler         OverridesHandler
+	istioStatusChecker       IstioStatusChecker
 }
 
 func NewReconciler(

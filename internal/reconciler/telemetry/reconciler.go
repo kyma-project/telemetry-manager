@@ -64,13 +64,18 @@ type healthCheckers struct {
 	logs, metrics, traces ComponentHealthChecker
 }
 
+//go:generate mockery --name OverridesHandler --filename overrides_handler.go
+type OverridesHandler interface {
+	LoadOverrides(ctx context.Context) (*overrides.Config, error)
+}
+
 type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
 	config           Config
 	healthCheckers   healthCheckers
-	overridesHandler *overrides.Handler
+	overridesHandler OverridesHandler
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler, flowHealthProbingEnabled bool) *Reconciler {

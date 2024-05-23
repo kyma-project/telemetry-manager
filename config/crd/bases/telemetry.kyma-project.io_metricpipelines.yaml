@@ -8,6 +8,8 @@ metadata:
 spec:
   group: telemetry.kyma-project.io
   names:
+    categories:
+    - telemetry-pipelines
     kind: MetricPipeline
     listKind: MetricPipelineList
     plural: metricpipelines

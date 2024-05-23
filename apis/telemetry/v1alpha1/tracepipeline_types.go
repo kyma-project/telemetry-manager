@@ -39,7 +39,7 @@ type TracePipelineStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,categories={telemetry-pipelines}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
 // +kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
@@ -55,7 +55,7 @@ type TracePipeline struct {
 	Status TracePipelineStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // TracePipelineList contains a list of TracePipeline
 type TracePipelineList struct {
