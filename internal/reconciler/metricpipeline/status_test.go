@@ -325,7 +325,7 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "prober fails",
 				probeErr:       assert.AnError,
 				expectedStatus: metav1.ConditionUnknown,
-				expectedReason: conditions.ReasonSelfMonProbingNotReachable,
+				expectedReason: conditions.ReasonSelfMonProbingFailed,
 			},
 			{
 				name: "healthy",

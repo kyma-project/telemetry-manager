@@ -162,38 +162,79 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 
 ### Ingest Metrics
 
-To collect custom metrics, you usually use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), because the Dynatrace OTLP integration is [limited](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration). As long as your workload is conform to the limitations (not exporting histograms, using delta aggregation temporality), you can use the metric functionality to push OTLP metrics to Dynatrace. In this case, the Prometheus feature of the MetricPipeline cannot be used because it hits the limitations by design.
+There are several approaches to ingest custom metrics to Dynatrace, each with different benefits and limitations:
 
-1. Deploy the MetricPipeline:
+- Use a MetricPipeline to push metrics directly.
+   
+> [!NOTE]
+> The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration) the full OTLP specification and needs custom transformation. A MetricPipeline does not support these transformation features, so that only metrics can be ingested that don't hit the limitations. At the moment, metrics of type "Histogram" and "Summary" are not supported. Furthermore, "Sum"s must use "delta" aggregation temporality. 
 
-    ```bash
-    cat <<EOF | kubectl apply -f -
-    apiVersion: telemetry.kyma-project.io/v1alpha1
-    kind: MetricPipeline
-    metadata:
-        name: dynatrace
-    spec:
-        output:
-            otlp:
-                endpoint:
-                    valueFrom:
-                        secretKeyRef:
-                            name: dynakube
-                            namespace: ${DYNATRACE_NS}
-                            key: apiurl
-                path: v2/otlp/v1/metrics
-                headers:
-                    - name: Authorization
-                      prefix: Api-Token
-                      valueFrom:
-                          secretKeyRef:
-                              name: dynakube
-                              namespace: ${DYNATRACE_NS}
-                              key: dataIngestToken
-                protocol: http
-    EOF
-    ```
+Use this setup when your application pushes metrics to the telemetry metric service natively with OTLP, and if you have explicitly enabled "delta" aggregation temporality. You cannot enable additional inputs for the MetricPipeline.
+   1. Deploy the MetricPipeline:
+        ```bash
+        cat <<EOF | kubectl apply -f -
+        apiVersion: telemetry.kyma-project.io/v1alpha1
+        kind: MetricPipeline
+        metadata:
+            name: dynatrace
+        spec:
+            output:
+                otlp:
+                    endpoint:
+                        valueFrom:
+                            secretKeyRef:
+                                name: dynakube
+                                namespace: ${DYNATRACE_NS}
+                                key: apiurl
+                    path: v2/otlp/v1/metrics
+                    headers:
+                        - name: Authorization
+                        prefix: Api-Token
+                        valueFrom:
+                            secretKeyRef:
+                                name: dynakube
+                                namespace: ${DYNATRACE_NS}
+                                key: dataIngestToken
+                    protocol: http
+        EOF
+        ```
+    1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/limitations#aggregation-temporality)
 
-1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/limitations#aggregation-temporality)
+    1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
+- Use a MetricPipeline together with a custom OTel Collector Deployment.
 
-1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
+   This approach adds the required transformation by running an additional custom OTel Collector. The Telemetry Metric gateway is configured to ship the metrics to the custom collector, and the collector transforms them before shipping the data to the Dynatrace endpoint. This approach enables support for all metric types and inputs for the MetricPipeline. However, you must operate the additional OTel Collector in a custom way.
+
+    1. Deploy the custom OTel Collector using Helm:
+        ```bash
+        helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+        helm repo update
+
+        helm upgrade --install -n ${DYNATRACE_NS} dynatrace-exporter open-telemetry/opentelemetry-collector -f exporter-values.yaml
+        ```
+    1. Deploy the MetricPipeline that ships to the custom OTel Collector:
+        ```bash
+        cat <<EOF | kubectl apply -f -
+        apiVersion: telemetry.kyma-project.io/v1alpha1
+        kind: MetricPipeline
+        metadata:
+            name: dynatrace
+        spec:
+            input:
+                istio:
+                    enabled: true
+                prometheus:
+                    enabled: true
+            output:
+                otlp:
+                    endpoint:
+                        value: http://dynatrace-exporter-opentelemetry-collector.${DYNATRACE_NS}:4317
+        EOF
+        ```
+
+- Use the Dynatrace metric ingestion with Prometheus exporters.
+
+   Use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), where the Dynatrace ActiveGate component running in your cluster scrapes workloads that are annotated with Dynatrace-specific annotations. 
+   
+  This approach works well with workloads that expose metrics in the typical Prometheus format when not running with Istio.
+  If you use Istio, you must disable Istio interception for the relevant metric port with the [traffic.istio.io/excludeInboundPorts](https://istio.io/latest/docs/reference/config/annotations/#TrafficExcludeInboundPorts) annotation. To collect Istio metrics from the envoys themselves, you need additional Dynatrace annotations for every workload. 
