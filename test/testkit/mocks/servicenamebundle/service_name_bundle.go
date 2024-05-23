@@ -61,7 +61,7 @@ func K8sObjects(namespace string, signalType telemetrygen.SignalType) []client.O
 			WithLabel("app", AppLabelValue).
 			WithPodSpec(podSpecWithUndefinedService).
 			K8sObject(),
-		kitk8s.NewDeployment(DeploymentName, namespace).WithPodSpec(podSpecWithUndefinedService).WithPersistentLabel().K8sObject(),
+		kitk8s.NewDeployment(DeploymentName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
 		kitk8s.NewStatefulSet(StatefulSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
 		kitk8s.NewDaemonSet(DaemonSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
 		kitk8s.NewJob(JobName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),

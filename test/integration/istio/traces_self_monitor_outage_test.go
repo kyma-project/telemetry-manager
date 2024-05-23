@@ -5,8 +5,10 @@ package istio
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -28,7 +30,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithReplicas(0))
+		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithReplicas(1), backend.WithFaultDelayInjection(100, 5))
 		objs = append(objs, backend.K8sObjects()...)
 
 		tracePipeline := testutils.NewTracePipelineBuilder().
@@ -39,8 +41,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 		objs = append(objs,
 			&tracePipeline,
 			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeTraces,
-				telemetrygen.WithRate(5),
-				telemetrygen.WithWorkers(1)).K8sObject(),
+				telemetrygen.WithRate(80),
+				telemetrygen.WithWorkers(10)).K8sObject(),
 		)
 
 		return objs
@@ -77,9 +79,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should wait for the trace flow to gradually become unhealthy", func() {
+		It("Should wait for the trace flow to report a full buffer", func() {
 			assert.TracePipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+				{Reason: conditions.ReasonSelfMonBufferFillingUp, Status: metav1.ConditionFalse},
+			})
+		})
+
+		It("Should stop sending metrics from telemetrygen", func() {
+			var telgen v1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: mockNs, Name: telemetrygen.DefaultName}, &telgen)
+			Expect(err).NotTo(HaveOccurred())
+
+			telgen.Spec.Replicas = ptr.To(int32(0))
+			err = k8sClient.Update(ctx, &telgen)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should wait for the trace flow to report dropped metrics", func() {
+			assert.TracePipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
 			})
 		})

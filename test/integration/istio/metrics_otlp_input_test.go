@@ -72,8 +72,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		// Create 2 deployments (with and without side-car) which would push the metrics to the metrics gateway.
 		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 		objs = append(objs,
-			kitk8s.NewDeployment(metricProducer1Name, backendNs).WithPodSpec(podSpec).WithPersistentLabel().K8sObject(),
-			kitk8s.NewDeployment(metricProducer2Name, istiofiedBackendNs).WithPodSpec(podSpec).WithPersistentLabel().K8sObject(),
+			kitk8s.NewDeployment(metricProducer1Name, backendNs).WithPodSpec(podSpec).K8sObject(),
+			kitk8s.NewDeployment(metricProducer2Name, istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
 		)
 
 		return objs

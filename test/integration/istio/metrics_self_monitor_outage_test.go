@@ -3,8 +3,6 @@
 package istio
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/apps/v1"
@@ -41,19 +39,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 
-		opts := func() []telemetrygen.Option {
-			var opts []telemetrygen.Option
-			for i := range 100 {
-				opts = append(opts, telemetrygen.WithTelemetryAttribute("foo", fmt.Sprintf("bar_%v", i)))
-				opts = append(opts, telemetrygen.WithResourceAttribute("foo", fmt.Sprintf("bar_%v", i)))
-			}
-			return opts
-		}()
-		opts = append(opts, telemetrygen.WithRate(500_000), telemetrygen.WithWorkers(5))
-
 		objs = append(objs,
 			&metricPipeline,
-			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeMetrics, opts...).WithReplicas(2).K8sObject(),
+			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeMetrics, telemetrygen.WithRate(500_000), telemetrygen.WithWorkers(5)).WithReplicas(2).K8sObject(),
 		)
 
 		return objs
