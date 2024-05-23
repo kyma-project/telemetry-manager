@@ -9,7 +9,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -369,6 +371,10 @@ func TestSyncEnvSecret(t *testing.T) {
 }
 
 func TestSyncTLSConfigSecret(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
 	allPipelines := telemetryv1alpha1.LogPipelineList{
 		Items: []telemetryv1alpha1.LogPipeline{
 			{
@@ -411,16 +417,17 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 			},
 			Data: map[string][]byte{"my-key.key": []byte("fake-key-value")},
 		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
-		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
-		sut := syncer{fakeClient, Config{
+		config := Config{
 			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
-		}}
+		}
+		sut := syncer{fakeClient, config}
 		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), Config{}.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
@@ -440,7 +447,7 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 			},
 			Data: map[string][]byte{"my-key.key": []byte("fake-key-value")},
 		}
-		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
 		config := Config{
 			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
@@ -475,9 +482,12 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 			},
 			Data: map[string][]byte{"my-key.key": []byte("fake-key-value")},
 		}
-		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
-		sut := syncer{fakeClient, Config{}}
+		config := Config{
+			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+		}
+		sut := syncer{fakeClient, config}
 		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
@@ -487,7 +497,7 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), Config{}.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
