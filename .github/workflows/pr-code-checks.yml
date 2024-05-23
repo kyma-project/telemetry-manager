@@ -49,7 +49,7 @@ jobs:
         uses: golangci/golangci-lint-action@v4.0.0
         with:
           install-mode: binary
-          version: 1.58.2
+          version: v1.58.2
           args: --timeout=5m --config=./.golangci.yaml
 
   coverage:

@@ -87,7 +87,7 @@ check-linter-version:
 		echo -e ${RED}########################################################################################${NC}; \
 		exit 1; \
     fi
-	@if [ "v$(GOLANGCI_LINT_WORKFLOW)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
+	@if [ "$(GOLANGCI_LINT_WORKFLOW)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
 		echo -e ${RED}########################################################################################${NC}; \
 		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANGCI_LINT_LATEST}${NC}; \
 		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}github workflow definition${NC}; \
