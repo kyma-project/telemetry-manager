@@ -23,7 +23,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
 		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint(testutils.ValidInsecureEndpoint)).Build(),
 		})
 		require.NoError(t, err)
 
@@ -34,12 +34,12 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, expectedEndpoint, actualExporterConfig.OTLP.Endpoint)
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST")
-		require.Equal(t, "http://localhost", string(envVars["OTLP_ENDPOINT_TEST"]))
+		require.Equal(t, testutils.ValidInsecureEndpoint, string(envVars["OTLP_ENDPOINT_TEST"]))
 	})
 
 	t.Run("secure", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().
-			WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build()})
+			WithName("test").WithOTLPOutput(testutils.OTLPEndpoint(testutils.ValidSecureEndpoint)).Build()})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
@@ -49,7 +49,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
+			testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint(testutils.ValidInsecureEndpoint)).Build()},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
@@ -446,7 +446,7 @@ func TestMakeConfig(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 
 				config, _, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(tt.withOtlpInput).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(tt.withOtlpInput).WithOTLPOutput(testutils.OTLPEndpoint(testutils.ValidSecureEndpoint)).Build(),
 				})
 				require.NoError(t, err)
 
@@ -457,7 +457,6 @@ func TestMakeConfig(t *testing.T) {
 				goldenFile, err := os.ReadFile(goldenFilePath)
 				require.NoError(t, err, "failed to load golden file")
 
-				require.NoError(t, err)
 				require.Equal(t, string(goldenFile), string(configYAML))
 			})
 		}

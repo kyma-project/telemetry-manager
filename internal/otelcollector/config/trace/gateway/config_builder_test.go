@@ -22,7 +22,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
 		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
+			testutils.NewTracePipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint(testutils.ValidSecureEndpoint)).Build(),
 		})
 		require.NoError(t, err)
 
@@ -33,7 +33,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, expectedEndpoint, otlpExporterConfig.OTLP.Endpoint)
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST")
-		require.Equal(t, "http://localhost", string(envVars["OTLP_ENDPOINT_TEST"]))
+		require.Equal(t, testutils.ValidSecureEndpoint, string(envVars["OTLP_ENDPOINT_TEST"]))
 	})
 
 	t.Run("secure", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
+			testutils.NewTracePipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint(testutils.ValidInsecureEndpoint)).Build()},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")

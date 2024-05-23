@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -137,6 +139,15 @@ func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv
 		return nil, err
 	}
 
+	sanEndpoint := sanitizedEndpoint(string(endpoint))
+	_, port, err := net.SplitHostPort(sanEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := strconv.Atoi(port); err != nil {
+		return nil, fmt.Errorf(`invalid port "%s"`, port)
+	}
+
 	if len(output.Path) > 0 {
 		u, err := url.Parse(string(endpoint))
 		if err != nil {
@@ -147,6 +158,19 @@ func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv
 	}
 
 	return endpoint, nil
+}
+
+func sanitizedEndpoint(endpoint string) string {
+	switch {
+	case strings.HasPrefix(endpoint, "http://"):
+		return strings.TrimPrefix(endpoint, "http://")
+	case strings.HasPrefix(endpoint, "https://"):
+		return strings.TrimPrefix(endpoint, "https://")
+	case strings.HasPrefix(endpoint, "dns:///"):
+		return strings.TrimPrefix(endpoint, "dns:///")
+	default:
+		return endpoint
+	}
 }
 
 func formatBasicAuthHeader(username string, password string) string {

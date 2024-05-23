@@ -6,6 +6,12 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
+const (
+	ValidInsecureEndpoint = "http://localhost:8080"
+	ValidSecureEndpoint   = "https://localhost:8080"
+	InvalidEndpoint       = "http://host-without-port"
+)
+
 type OTLPOutputOption func(*telemetryv1alpha1.OtlpOutput)
 
 func OTLPEndpoint(endpoint string) OTLPOutputOption {

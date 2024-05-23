@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestExporterIDHTTP(t *testing.T) {
@@ -24,7 +25,7 @@ func TestExorterIDDefault(t *testing.T) {
 
 func TestMakeConfig(t *testing.T) {
 	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Endpoint: telemetryv1alpha1.ValueType{Value: testutils.ValidInsecureEndpoint},
 	}
 
 	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
@@ -33,7 +34,7 @@ func TestMakeConfig(t *testing.T) {
 	require.NotNil(t, envVars)
 
 	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
-	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint"))
+	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte(testutils.ValidInsecureEndpoint))
 
 	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.Endpoint)
 	require.True(t, otlpExporterConfig.SendingQueue.Enabled)
@@ -47,7 +48,7 @@ func TestMakeConfig(t *testing.T) {
 
 func TestMakeConfigTraceWithPath(t *testing.T) {
 	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Endpoint: telemetryv1alpha1.ValueType{Value: testutils.ValidSecureEndpoint},
 		Path:     "/v1/test",
 		Protocol: "http",
 	}
@@ -58,7 +59,7 @@ func TestMakeConfigTraceWithPath(t *testing.T) {
 	require.NotNil(t, envVars)
 
 	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
-	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint/v1/test"))
+	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte(testutils.ValidSecureEndpoint+"/v1/test"))
 
 	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.TracesEndpoint)
 	require.Empty(t, otlpExporterConfig.Endpoint)
@@ -66,7 +67,7 @@ func TestMakeConfigTraceWithPath(t *testing.T) {
 
 func TestMakeConfigMetricWithPath(t *testing.T) {
 	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Endpoint: telemetryv1alpha1.ValueType{Value: testutils.ValidInsecureEndpoint},
 		Path:     "/v1/test",
 		Protocol: "http",
 	}
@@ -77,7 +78,7 @@ func TestMakeConfigMetricWithPath(t *testing.T) {
 	require.NotNil(t, envVars)
 
 	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
-	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint/v1/test"))
+	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte(testutils.ValidInsecureEndpoint+"/v1/test"))
 
 	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.MetricsEndpoint)
 	require.Empty(t, otlpExporterConfig.Endpoint)
@@ -93,7 +94,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		},
 	}
 	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Endpoint: telemetryv1alpha1.ValueType{Value: testutils.ValidSecureEndpoint},
 		Headers:  headers,
 	}
 
@@ -111,7 +112,7 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 		Insecure: true,
 	}
 	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Endpoint: telemetryv1alpha1.ValueType{Value: testutils.ValidInsecureEndpoint},
 		TLS:      tls,
 	}
 
@@ -129,7 +130,7 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 		InsecureSkipVerify: true,
 	}
 	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Endpoint: telemetryv1alpha1.ValueType{Value: testutils.ValidSecureEndpoint},
 		TLS:      tls,
 	}
 
@@ -158,7 +159,7 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 		},
 	}
 	output := &telemetryv1alpha1.OtlpOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Endpoint: telemetryv1alpha1.ValueType{Value: testutils.ValidSecureEndpoint},
 		TLS:      tls,
 	}
 
