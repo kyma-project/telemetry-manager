@@ -50,7 +50,7 @@ func (d *Deployment) K8sObject() *appsv1.Deployment {
 	labels := d.labels
 	if len(labels) == 0 {
 		labels = map[string]string{
-			"app": uuid.New().String(),
+			"test/label": uuid.New().String(),
 		}
 	}
 	return &appsv1.Deployment{
