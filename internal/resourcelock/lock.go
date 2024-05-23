@@ -1,4 +1,4 @@
-package k8sutils
+package resourcelock
 
 import (
 	"context"
@@ -13,23 +13,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var errLockInUse = errors.New("lock is already acquired by other resources")
+var ErrLockInUse = errors.New("lock is already acquired by other resources")
 
-type ResourceCountLock struct {
+type Checker struct {
 	client    client.Client
 	lockName  types.NamespacedName
 	maxOwners int
 }
 
-func NewResourceCountLock(client client.Client, lockName types.NamespacedName, maxOwners int) *ResourceCountLock {
-	return &ResourceCountLock{
+func New(client client.Client, lockName types.NamespacedName, maxOwners int) *Checker {
+	return &Checker{
 		client:    client,
 		lockName:  lockName,
 		maxOwners: maxOwners,
 	}
 }
 
-func (l *ResourceCountLock) TryAcquireLock(ctx context.Context, owner metav1.Object) error {
+func (l *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error {
 	var lock corev1.ConfigMap
 	if err := l.client.Get(ctx, l.lockName, &lock); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -55,10 +55,10 @@ func (l *ResourceCountLock) TryAcquireLock(ctx context.Context, owner metav1.Obj
 		return nil
 	}
 
-	return errLockInUse
+	return ErrLockInUse
 }
 
-func (l *ResourceCountLock) IsLockHolder(ctx context.Context, obj metav1.Object) (bool, error) {
+func (l *Checker) IsLockHolder(ctx context.Context, obj metav1.Object) (bool, error) {
 	var lock corev1.ConfigMap
 	if err := l.client.Get(ctx, l.lockName, &lock); err != nil {
 		return false, fmt.Errorf("failed to get lock: %w", err)
@@ -73,7 +73,7 @@ func (l *ResourceCountLock) IsLockHolder(ctx context.Context, obj metav1.Object)
 	return false, nil
 }
 
-func (l *ResourceCountLock) createLock(ctx context.Context, owner metav1.Object) error {
+func (l *Checker) createLock(ctx context.Context, owner metav1.Object) error {
 	lock := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      l.lockName.Name,
