@@ -2,6 +2,7 @@ include .env
 
 # Environment Variables
 IMG ?= $(ENV_IMG)
+K3S_K8S_VERSION ?= $(ENV_K3S_K8S_VERSION)
 
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)

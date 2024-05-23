@@ -1,7 +1,7 @@
 ##@ k3d
 .PHONY: provision-k3d
 provision-k3d: k3d
-	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-k3d.sh
+	K8S_VERSION=$(K3S_K8S_VERSION) hack/provision-k3d.sh
 
 .PHONY: provision-k3d-e2e
 provision-k3d-e2e: kyma kustomize provision-k3d ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
