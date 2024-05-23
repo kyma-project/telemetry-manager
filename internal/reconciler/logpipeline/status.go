@@ -171,18 +171,11 @@ func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
 }
 
 func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	if pipeline.Spec.Output.IsLokiDefined() {
+	evaluatedCondition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+	if evaluatedCondition.Status == metav1.ConditionFalse {
 		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
-			conditions.ReasonUnsupportedLokiOutput,
-			conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput))
-		return
-	}
-
-	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
-	if referencesNonExistentSecret {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
-			conditions.ReasonReferencedSecretMissing,
-			conditions.MessageForLogPipeline(conditions.ReasonReferencedSecretMissing))
+			evaluatedCondition.Reason,
+			conditions.MessageForTracePipeline(evaluatedCondition.Reason))
 		return
 	}
 
