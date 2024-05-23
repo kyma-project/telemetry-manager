@@ -37,7 +37,7 @@ const (
 	ReasonSelfMonBufferFillingUp      = "BufferFillingUp"
 	ReasonSelfMonFlowHealthy          = "FlowHealthy"
 	ReasonSelfMonGatewayThrottling    = "GatewayThrottling"
-	ReasonSelfMonProbingNotReachable  = "ProbingNotReachable"
+	ReasonSelfMonProbingFailed        = "ProbingFailed"
 	ReasonSelfMonSomeDataDropped      = "SomeTelemetryDataDropped"
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
@@ -68,7 +68,7 @@ var commonMessages = map[string]string{
 	ReasonMaxPipelinesExceeded:        "Maximum pipeline count limit exceeded",
 	ReasonNoPipelineDeployed:          "No pipelines have been deployed",
 	ReasonReferencedSecretMissing:     "One or more referenced Secrets are missing",
-	ReasonSelfMonProbingNotReachable:  "Self monitoring probing not reachable",
+	ReasonSelfMonProbingFailed:        "Self monitoring probing failed for unknown reasons",
 	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
 	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
 	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
