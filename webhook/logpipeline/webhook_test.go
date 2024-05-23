@@ -1,281 +1,115 @@
 package logpipeline
 
 import (
-	"errors"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/mock"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
+	"context"
+	"encoding/json"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/mocks"
+	logpipelinevalidationmocks "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"testing"
 )
 
-var testLogPipeline = types.NamespacedName{
-	Name:      "log-pipeline",
-	Namespace: controllerNamespace,
-}
+func TestHandle(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
 
-// getLogPipeline creates a standard LopPipeline
-func getLogPipeline() *telemetryv1alpha1.LogPipeline {
-	file := telemetryv1alpha1.FileMount{
-		Name:    "1st-file",
-		Content: "file-content",
-	}
-	output := telemetryv1alpha1.Output{
-		Custom: "Name   foo\n",
-	}
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "telemetry.kyma-project.io/v1alpha1",
-			Kind:       "LogPipeline",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testLogPipeline.Name,
-			Namespace: testLogPipeline.Namespace,
-		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{Custom: output.Custom},
-			Files:  []telemetryv1alpha1.FileMount{file},
-		},
-	}
+	t.Run("should execute validations for max pipelines, variables, files and dry runner", func(t *testing.T) {
+		maxPipelinesValidatorMock := &logpipelinevalidationmocks.MaxPipelinesValidator{}
+		variableValidatorMock := &logpipelinevalidationmocks.VariablesValidator{}
+		fileValidatorMock := &logpipelinevalidationmocks.FilesValidator{}
+		dryRunnerMock := &mocks.DryRunner{}
 
-	return logPipeline
-}
+		maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
 
-// getLogPipeline creates a standard LopPipeline
-func getLokiPipeline() *telemetryv1alpha1.LogPipeline {
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "telemetry.kyma-project.io/v1alpha1",
-			Kind:       "LogPipeline",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testLogPipeline.Name,
-			Namespace: testLogPipeline.Namespace,
-		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{Loki: &telemetryv1alpha1.LokiOutput{
-				URL: telemetryv1alpha1.ValueType{
-					Value: "http://foo.bar",
-				},
-				Labels:     map[string]string{"job": "telemetry-fluent-bit"},
-				RemoveKeys: []string{"kubernetes", "stream"},
-			}},
-		},
-	}
+		logPipeline := testutils.NewLogPipelineBuilder().Build()
+		pipelineJSON, _ := json.Marshal(logPipeline)
+		admissionRequest := admissionv1.AdmissionRequest{
+			Object: runtime.RawExtension{Raw: pipelineJSON},
+		}
+		request := admission.Request{
+			AdmissionRequest: admissionRequest,
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
+		validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{}, DeniedFilterPlugins: []string{}}
+		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme), dryRunnerMock, validationConfig)
 
-	return logPipeline
-}
+		response := logPipelineValidatingWebhookHandler.Handle(context.Background(), request)
+		require.True(t, response.Allowed)
 
-var invalidOutput = telemetryv1alpha1.Output{
-	Custom: "Name   stdout\n",
-}
-
-var invalidFilter = telemetryv1alpha1.Filter{
-	Custom: "Name   stdout\n",
-}
-
-var _ = Describe("LogPipeline webhook", Ordered, func() {
-	Context("When creating LogPipeline", Ordered, func() {
-		AfterEach(func() {
-			logPipeline := getLogPipeline()
-			err := k8sClient.Delete(ctx, logPipeline, client.GracePeriodSeconds(0))
-			if !apierrors.IsNotFound(err) {
-				Expect(err).NotTo(HaveOccurred())
-			}
-		})
-
-		It("Should accept valid LogPipeline", func() {
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			logPipeline := getLokiPipeline()
-			err := k8sClient.Create(ctx, logPipeline)
-
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("Should reject LogPipeline with invalid indentation in yaml", func() {
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			configErr := errors.New("Error in line 4: Invalid indentation level")
-			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(configErr).Times(1)
-
-			logPipeline := getLogPipeline()
-			err := k8sClient.Create(ctx, logPipeline)
-
-			Expect(err).To(HaveOccurred())
-			var status apierrors.APIStatus
-			errors.As(err, &status)
-
-			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-			Expect(status.Status().Message).To(ContainSubstring(configErr.Error()))
-		})
-
-		It("Should reject LogPipeline with forbidden plugin", func() {
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			pluginErr := errors.New("filter plugin 'stdout' is forbidden")
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			logPipeline := getLogPipeline()
-			logPipeline.Spec.Filters = []telemetryv1alpha1.Filter{invalidFilter}
-			err := k8sClient.Create(ctx, logPipeline)
-
-			Expect(err).To(HaveOccurred())
-			var status apierrors.APIStatus
-			errors.As(err, &status)
-
-			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-			Expect(status.Status().Message).To(ContainSubstring(pluginErr.Error()))
-		})
-
-		It("Should reject LogPipeline with invalid output", func() {
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			outputErr := errors.New("output plugin 'stdout' is forbidden")
-
-			logPipeline := getLogPipeline()
-			logPipeline.Spec.Output = invalidOutput
-			err := k8sClient.Create(ctx, logPipeline)
-
-			Expect(err).To(HaveOccurred())
-			var status apierrors.APIStatus
-			errors.As(err, &status)
-
-			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-			Expect(status.Status().Message).To(ContainSubstring(outputErr.Error()))
-		})
-
-		It("Should reject LogPipeline when exceeding pipeline limit", func() {
-			maxPipelinesErr := errors.New("too many pipelines")
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(maxPipelinesErr).Times(1)
-
-			logPipeline := getLogPipeline()
-			err := k8sClient.Create(ctx, logPipeline)
-
-			Expect(err).To(HaveOccurred())
-			var status apierrors.APIStatus
-			errors.As(err, &status)
-
-			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-			Expect(status.Status().Message).To(ContainSubstring(maxPipelinesErr.Error()))
-		})
-
-		It("Should reject LogPipeline when duplicate filename is used", func() {
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			fileError := errors.New("duplicate file name: 1st-file")
-			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(fileError).Times(1)
-			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			logPipeline := getLogPipeline()
-			err := k8sClient.Create(ctx, logPipeline)
-
-			Expect(err).To(HaveOccurred())
-			var status apierrors.APIStatus
-			errors.As(err, &status)
-
-			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-			Expect(status.Status().Message).To(ContainSubstring(fileError.Error()))
-		})
-
+		variableValidatorMock.AssertExpectations(t)
+		maxPipelinesValidatorMock.AssertExpectations(t)
+		fileValidatorMock.AssertExpectations(t)
+		dryRunnerMock.AssertExpectations(t)
 	})
 
-	Context("When updating LogPipeline", Ordered, func() {
-		It("Should create valid LogPipeline", func() {
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
+	t.Run("should execute validations for API semantic", func(t *testing.T) {
+		maxPipelinesValidatorMock := &logpipelinevalidationmocks.MaxPipelinesValidator{}
+		variableValidatorMock := &logpipelinevalidationmocks.VariablesValidator{}
+		fileValidatorMock := &logpipelinevalidationmocks.FilesValidator{}
+		dryRunnerMock := &mocks.DryRunner{}
 
-			logPipeline := getLogPipeline()
-			err := k8sClient.Create(ctx, logPipeline)
+		maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
 
-			Expect(err).NotTo(HaveOccurred())
-		})
+		logPipeline := testutils.NewLogPipelineBuilder().WithName("denied-filter").WithCustomFilter("Name kubernetes").Build()
+		pipelineJSON, _ := json.Marshal(logPipeline)
+		admissionRequest := admissionv1.AdmissionRequest{
+			Object: runtime.RawExtension{Raw: pipelineJSON},
+		}
+		request := admission.Request{
+			AdmissionRequest: admissionRequest,
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
+		validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{}, DeniedFilterPlugins: []string{"kubernetes"}}
+		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme), dryRunnerMock, validationConfig)
 
-		It("Should update previously created valid LogPipeline", func() {
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			var logPipeline telemetryv1alpha1.LogPipeline
-			err := k8sClient.Get(ctx, testLogPipeline, &logPipeline)
-			Expect(err).NotTo(HaveOccurred())
-
-			logPipeline.Spec.Files = append(logPipeline.Spec.Files, telemetryv1alpha1.FileMount{
-				Name:    "2nd-file",
-				Content: "file content",
-			})
-			err = k8sClient.Update(ctx, &logPipeline)
-
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("Should reject new update of previously created LogPipeline", func() {
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-			outputErr := errors.New("configuration section must have name attribute")
-
-			var logPipeline telemetryv1alpha1.LogPipeline
-			err := k8sClient.Get(ctx, testLogPipeline, &logPipeline)
-			Expect(err).NotTo(HaveOccurred())
-
-			logPipeline.Spec.Output = telemetryv1alpha1.Output{
-				Custom: "invalid content",
-			}
-
-			err = k8sClient.Update(ctx, &logPipeline)
-
-			Expect(err).To(HaveOccurred())
-			var status apierrors.APIStatus
-			errors.As(err, &status)
-
-			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-			Expect(status.Status().Message).To(ContainSubstring(outputErr.Error()))
-		})
-
-		It("Should reject new update with invalid plugin usage of previously created LogPipeline", func() {
-			pluginErr := errors.New("output plugin 'stdout' is forbidden")
-			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			var logPipeline telemetryv1alpha1.LogPipeline
-			err := k8sClient.Get(ctx, testLogPipeline, &logPipeline)
-			Expect(err).NotTo(HaveOccurred())
-
-			logPipeline.Spec.Output = invalidOutput
-
-			logPipeline.Spec.Files = append(logPipeline.Spec.Files, telemetryv1alpha1.FileMount{
-				Name:    "3rd-file",
-				Content: "file content",
-			})
-
-			err = k8sClient.Update(ctx, &logPipeline)
-
-			Expect(err).To(HaveOccurred())
-			var status apierrors.APIStatus
-			errors.As(err, &status)
-
-			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-			Expect(status.Status().Message).To(ContainSubstring(pluginErr.Error()))
-		})
-
-		It("Should delete LogPipeline", func() {
-			logPipeline := getLogPipeline()
-			err := k8sClient.Delete(ctx, logPipeline, client.GracePeriodSeconds(0))
-			Expect(err).NotTo(HaveOccurred())
-		})
+		response := logPipelineValidatingWebhookHandler.Handle(context.Background(), request)
+		require.False(t, response.Allowed)
+		require.Equal(t, int32(http.StatusForbidden), response.Result.Code)
+		require.Equal(t, "InvalidConfiguration", string(response.Result.Reason))
+		require.Contains(t, response.Result.Message, "filter plugin 'kubernetes' is forbidden")
 	})
-})
+
+	t.Run("should return a warning when a custom plugin is used", func(t *testing.T) {
+		maxPipelinesValidatorMock := &logpipelinevalidationmocks.MaxPipelinesValidator{}
+		variableValidatorMock := &logpipelinevalidationmocks.VariablesValidator{}
+		fileValidatorMock := &logpipelinevalidationmocks.FilesValidator{}
+		dryRunnerMock := &mocks.DryRunner{}
+
+		maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+		dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
+
+		logPipeline := testutils.NewLogPipelineBuilder().WithName("custom-output").WithCustomOutput("Name stdout").Build()
+		pipelineJSON, _ := json.Marshal(logPipeline)
+		admissionRequest := admissionv1.AdmissionRequest{
+			Object: runtime.RawExtension{Raw: pipelineJSON},
+		}
+		request := admission.Request{
+			AdmissionRequest: admissionRequest,
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
+		validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{}, DeniedFilterPlugins: []string{}}
+		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme), dryRunnerMock, validationConfig)
+
+		response := logPipelineValidatingWebhookHandler.Handle(context.Background(), request)
+		require.True(t, response.Allowed)
+		require.Contains(t, response.Warnings, "Logpipeline 'custom-output' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: https://kyma-project.io/#/telemetry-manager/user/02-logs")
+	})
+}
