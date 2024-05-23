@@ -3,19 +3,10 @@ package prober
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
-)
-
-const (
-	clientTimeout = 10 * time.Second
 )
 
 //go:generate mockery --name alertGetter --filename=alert_getter.go --exported
@@ -31,21 +22,8 @@ type PipelineProbeResult struct {
 
 type matcherFunc func(alertLabels map[string]string, expectedRuleName string, expectedPipelineName string) bool
 
-func newPrometheusClient(selfMonitorName types.NamespacedName) (promv1.API, error) {
-	client, err := api.NewClient(api.Config{
-		Address: fmt.Sprintf("http://%s.%s:%d", selfMonitorName.Name, selfMonitorName.Namespace, ports.PrometheusPort),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Prometheus client: %w", err)
-	}
-	return promv1.NewAPI(client), nil
-}
-
 func retrieveAlerts(ctx context.Context, getter alertGetter) ([]promv1.Alert, error) {
-	childCtx, cancel := context.WithTimeout(ctx, clientTimeout)
-	defer cancel()
-
-	result, err := getter.Alerts(childCtx)
+	result, err := getter.Alerts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Prometheus alerts: %w", err)
 	}

@@ -72,10 +72,10 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	}
 
 	status := metav1.ConditionFalse
-	reason := conditions.ReasonDaemonSetNotReady
+	reason := conditions.ReasonAgentNotReady
 	if healthy {
 		status = metav1.ConditionTrue
-		reason = conditions.ReasonDaemonSetReady
+		reason = conditions.ReasonAgentReady
 	}
 
 	condition := metav1.Condition{
@@ -117,10 +117,10 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		key := pipeline.Spec.Output.HTTP.TLSConfig.Key
 
 		err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
-		return conditions.EvaluateTLSCertCondition(err)
+		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured))
 	}
 
-	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(conditions.ReasonConfigurationGenerated)
+	return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
@@ -140,7 +140,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	} else {
 		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
 
-		reason = conditions.ReasonFlowHealthy
+		reason = conditions.ReasonSelfMonProbingNotReachable
 		status = metav1.ConditionUnknown
 	}
 
@@ -158,15 +158,15 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
 	switch {
 	case probeResult.AllDataDropped:
-		return conditions.ReasonAllDataDropped
+		return conditions.ReasonSelfMonAllDataDropped
 	case probeResult.SomeDataDropped:
-		return conditions.ReasonSomeDataDropped
+		return conditions.ReasonSelfMonSomeDataDropped
 	case probeResult.NoLogsDelivered:
-		return conditions.ReasonNoLogsDelivered
+		return conditions.ReasonSelfMonNoLogsDelivered
 	case probeResult.BufferFillingUp:
-		return conditions.ReasonBufferFillingUp
+		return conditions.ReasonSelfMonBufferFillingUp
 	default:
-		return conditions.ReasonFlowHealthy
+		return conditions.ReasonSelfMonFlowHealthy
 	}
 }
 

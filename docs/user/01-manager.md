@@ -12,6 +12,27 @@ If Telemetry Manager detects a configuration, it rolls out the relevant componen
 
 In the [Telemetry resource](resources/01-telemetry.md), you can configure the number of replicas for the `telemetry-trace-gateway` and `telemetry-metric-gateway` deployments. The default value is 2.
 
+```yaml
+apiVersion: operator.kyma-project.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  trace:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: 3
+  metric:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: 4
+```
+
 ## Module Status
 
 Telemetry Manager syncs the overall status of the module into the [Telemetry resource](resources/01-telemetry.md); it can be found in the `status` section. In future, the status will be enhanced with more runtime information.

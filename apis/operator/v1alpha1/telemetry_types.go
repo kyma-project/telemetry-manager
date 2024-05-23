@@ -105,17 +105,17 @@ type TelemetryStatus struct {
 }
 
 type GatewayEndpoints struct {
-	//traces contains the endpoints for trace gateway supporting OTLP.
+	// traces contains the endpoints for trace gateway supporting OTLP.
 	Traces *OTLPEndpoints `json:"traces,omitempty"`
 
-	//metrics contains the endpoints for metric gateway supporting OTLP.
+	// metrics contains the endpoints for metric gateway supporting OTLP.
 	Metrics *OTLPEndpoints `json:"metrics,omitempty"`
 }
 
 type OTLPEndpoints struct {
-	//GRPC endpoint for OTLP.
+	// GRPC endpoint for OTLP.
 	GRPC string `json:"grpc,omitempty"`
-	//HTTP endpoint for OTLP.
+	// HTTP endpoint for OTLP.
 	HTTP string `json:"http,omitempty"`
 }
 
@@ -133,7 +133,7 @@ type Telemetry struct {
 	Status TelemetryStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // TelemetryList contains a list of Telemetry
 type TelemetryList struct {

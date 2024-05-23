@@ -16,8 +16,8 @@ import (
 )
 
 func TestLogComponentsCheck(t *testing.T) {
-	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady}
-	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated}
+	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonAgentReady}
+	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonAgentConfigured}
 	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady}
 
 	tests := []struct {
@@ -32,7 +32,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			name:                "should be healthy if no pipelines deployed",
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "True",
 				Reason:  "NoPipelineDeployed",
 				Message: "No pipelines have been deployed",
@@ -56,9 +56,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "True",
-				Reason:  "LogComponentsRunning",
+				Reason:  conditions.ReasonComponentsRunning,
 				Message: "All log components are running",
 			},
 		},
@@ -79,9 +79,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
-				Reason:  "LogPipelineReferencedSecretMissing",
+				Reason:  conditions.ReasonReferencedSecretMissing,
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -95,17 +95,17 @@ func TestLogComponentsCheck(t *testing.T) {
 					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSNotReady}).
 					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
-				Reason:  "FluentBitDaemonSetNotReady",
-				Message: "Fluent Bit DaemonSet is not ready",
+				Reason:  "AgentNotReady",
+				Message: "Fluent Bit agent DaemonSet is not ready",
 			},
 		},
 		{
@@ -125,7 +125,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "UnsupportedLokiOutput",
 				Message: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
@@ -135,7 +135,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should prioritize unready ConfigGenerated reason over AgentHealthy reason",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSNotReady}).
 					Build(),
@@ -147,9 +147,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
-				Reason:  "LogPipelineReferencedSecretMissing",
+				Reason:  conditions.ReasonReferencedSecretMissing,
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -161,7 +161,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (bar,foo)",
@@ -175,7 +175,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogParsers (bar,foo)",
@@ -192,7 +192,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (baz,foo), LogParsers (bar)",
@@ -203,14 +203,14 @@ func TestLogComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonFlowHealthy}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonSelfMonFlowHealthy}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "True",
-				Reason:  "LogComponentsRunning",
+				Reason:  conditions.ReasonComponentsRunning,
 				Message: "All log components are running",
 			},
 		},
@@ -219,15 +219,15 @@ func TestLogComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonNoLogsDelivered}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonSelfMonNoLogsDelivered}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "NoLogsDelivered",
-				Message: "No logs delivered to backend",
+				Message: "No logs delivered to backend. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
 			},
 		},
 		{
@@ -245,7 +245,7 @@ func TestLogComponentsCheck(t *testing.T) {
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
+				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "TLSCertificateExpired",
 				Message: "TLS certificate expired on 20.01.2023",

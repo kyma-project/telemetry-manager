@@ -34,8 +34,7 @@ func determineTLSCertMsg(statusConditions []metav1.Condition) string {
 	cond := meta.FindStatusCondition(statusConditions, conditions.TypeConfigurationGenerated)
 	if cond != nil && (cond.Reason == conditions.ReasonTLSCertificateAboutToExpire ||
 		cond.Reason == conditions.ReasonTLSCertificateExpired ||
-		cond.Reason == conditions.ReasonTLSCertificateInvalid ||
-		cond.Reason == conditions.ReasonTLSPrivateKeyInvalid) {
+		cond.Reason == conditions.ReasonTLSCertificateInvalid) {
 		return cond.Message
 	}
 	return ""

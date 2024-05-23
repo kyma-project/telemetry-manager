@@ -75,10 +75,10 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		} else if oldConfig, hasKey := cm.Data[cmKey]; !hasKey || oldConfig != newConfig {
 			cm.Data[cmKey] = newConfig
 		}
+	}
 
-		if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {
-			return fmt.Errorf("unable to set owner reference for section configmap: %w", err)
-		}
+	if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {
+		return fmt.Errorf("unable to set owner reference for section configmap: %w", err)
 	}
 
 	if err = s.Update(ctx, &cm); err != nil {

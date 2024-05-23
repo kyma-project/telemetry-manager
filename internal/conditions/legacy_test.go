@@ -14,15 +14,15 @@ func TestHandlePendingCondition(t *testing.T) {
 			{
 				Type:               TypeAgentHealthy,
 				Status:             metav1.ConditionFalse,
-				Reason:             ReasonDaemonSetNotReady,
-				Message:            MessageForLogPipeline(ReasonDaemonSetNotReady),
+				Reason:             ReasonAgentNotReady,
+				Message:            MessageForLogPipeline(ReasonAgentNotReady),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
-				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
+				Reason:             ReasonAgentConfigured,
+				Message:            MessageForLogPipeline(ReasonAgentConfigured),
 				LastTransitionTime: metav1.Now(),
 			},
 		}
@@ -47,15 +47,15 @@ func TestHandlePendingCondition(t *testing.T) {
 			{
 				Type:               TypeAgentHealthy,
 				Status:             metav1.ConditionFalse,
-				Reason:             ReasonDaemonSetNotReady,
-				Message:            MessageForLogPipeline(ReasonDaemonSetNotReady),
+				Reason:             ReasonAgentNotReady,
+				Message:            MessageForLogPipeline(ReasonAgentNotReady),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
-				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
+				Reason:             ReasonAgentConfigured,
+				Message:            MessageForLogPipeline(ReasonAgentConfigured),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
@@ -99,15 +99,15 @@ func TestHandleRunningCondition(t *testing.T) {
 			{
 				Type:               TypeAgentHealthy,
 				Status:             metav1.ConditionTrue,
-				Reason:             ReasonDaemonSetReady,
-				Message:            MessageForLogPipeline(ReasonDaemonSetReady),
+				Reason:             ReasonAgentReady,
+				Message:            MessageForLogPipeline(ReasonAgentReady),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
-				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
+				Reason:             ReasonAgentConfigured,
+				Message:            MessageForLogPipeline(ReasonAgentConfigured),
 				LastTransitionTime: metav1.Now(),
 			},
 		}

@@ -168,8 +168,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", Label(suite.LabelOperational), func() {
-			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricGatewayMetrics.Namespace, kitkyma.MetricGatewayMetrics.Name, "metrics", ports.Metrics)
-			assert.ExposesOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
+			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
+			assert.EmitsOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", Label(suite.LabelOperational), func() {

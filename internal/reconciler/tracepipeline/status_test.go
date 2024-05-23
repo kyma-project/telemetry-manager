@@ -53,8 +53,8 @@ func TestUpdateStatus(t *testing.T) {
 		gatewayHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, gatewayHealthyCond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, gatewayHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDeploymentNotReady, gatewayHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonDeploymentNotReady), gatewayHealthyCond.Message)
+		require.Equal(t, conditions.ReasonGatewayNotReady, gatewayHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonGatewayNotReady), gatewayHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, gatewayHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, gatewayHealthyCond.LastTransitionTime)
 
@@ -95,8 +95,8 @@ func TestUpdateStatus(t *testing.T) {
 		gatewayHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		require.NotNil(t, gatewayHealthyCond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionTrue, gatewayHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDeploymentReady, gatewayHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonDeploymentReady), gatewayHealthyCond.Message)
+		require.Equal(t, conditions.ReasonGatewayReady, gatewayHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonGatewayReady), gatewayHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, gatewayHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, gatewayHealthyCond.LastTransitionTime)
 
@@ -236,8 +236,8 @@ func TestUpdateStatus(t *testing.T) {
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionTrue, configurationGeneratedCond.Status)
-		require.Equal(t, conditions.ReasonConfigurationGenerated, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonConfigurationGenerated), configurationGeneratedCond.Message)
+		require.Equal(t, conditions.ReasonGatewayConfigured, configurationGeneratedCond.Reason)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured), configurationGeneratedCond.Message)
 		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
 		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
 
@@ -318,7 +318,7 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "prober fails",
 				probeErr:       assert.AnError,
 				expectedStatus: metav1.ConditionUnknown,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonProbingNotReachable,
 			},
 			{
 				name: "healthy",
@@ -326,7 +326,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus: metav1.ConditionTrue,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonFlowHealthy,
 			},
 			{
 				name: "throttling",
@@ -334,7 +334,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonGatewayThrottling,
+				expectedReason: conditions.ReasonSelfMonGatewayThrottling,
 			},
 			{
 				name: "buffer filling up",
@@ -342,7 +342,7 @@ func TestUpdateStatus(t *testing.T) {
 					QueueAlmostFull: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonBufferFillingUp,
+				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
 			},
 			{
 				name: "buffer filling up shadows other problems",
@@ -351,7 +351,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling:      true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonBufferFillingUp,
+				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
 			},
 			{
 				name: "some data dropped",
@@ -359,7 +359,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -368,7 +368,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling:          true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "all data dropped",
@@ -376,7 +376,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -385,7 +385,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling:          true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 		}
 
@@ -438,8 +438,8 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeGatewayHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDeploymentReady,
-						Message:            conditions.MessageForTracePipeline(conditions.ReasonDeploymentReady),
+						Reason:             conditions.ReasonGatewayReady,
+						Message:            conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -526,13 +526,13 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "key decode failed",
 				tlsCertErr:     tlscert.ErrKeyDecodeFailed,
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSPrivateKeyInvalid,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
 			},
 			{
 				name:           "key parse failed",
 				tlsCertErr:     tlscert.ErrKeyParseFailed,
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSPrivateKeyInvalid,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
 			},
 			{
 				name:           "cert parse failed",

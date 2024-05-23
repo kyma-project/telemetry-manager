@@ -48,7 +48,7 @@ For more information, see [Telemetry Manager](01-manager.md).
 
 ### Self Monitor
 
-The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed components listed below. It provides insights about the telemetry data flow health the the module and pipeline status.
+The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed components listed below. It provides insights about the telemetry data flow health and the module and pipeline status.
 
 ### Gateways
 

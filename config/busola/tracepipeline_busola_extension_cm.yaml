@@ -358,7 +358,7 @@ data:
     urlPath: tracepipelines
     scope: cluster
     description: >-
-      {{[TracePipeline](https://kyma-project.io/#/telemetry-manager/user/resources/04-tracepipeline)}} configures a custom Trace Pipeline
+      {{[TracePipeline custom resource](https://kyma-project.io/#/telemetry-manager/user/resources/04-tracepipeline)}} configures a custom Trace Pipeline.
   list: |-
     - source: >-
         $each(spec.output, function($v, $k) {$v.endpoint.value or

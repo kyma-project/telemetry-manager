@@ -28,13 +28,12 @@ func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion 
 	reason := t.determineReason(tracePipelines.Items, telemetryInDeletion)
 	status := t.determineConditionStatus(reason)
 	message := t.createMessageForReason(tracePipelines.Items, reason)
-	reasonWithPrefix := t.addReasonPrefix(reason)
 
-	conditionType := "TraceComponentsHealthy"
+	conditionType := conditions.TypeTraceComponentsHealthy
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,
-		Reason:  reasonWithPrefix,
+		Reason:  reason,
 		Message: message,
 	}, nil
 
@@ -60,7 +59,7 @@ func (t *traceComponentsChecker) determineReason(pipelines []telemetryv1alpha1.T
 		}
 	}
 
-	return conditions.ReasonTraceComponentsRunning
+	return conditions.ReasonComponentsRunning
 }
 
 func (t *traceComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.TracePipeline) string {
@@ -86,7 +85,7 @@ func (t *traceComponentsChecker) firstUnhealthyPipelineReason(pipelines []teleme
 }
 
 func (t *traceComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonTraceComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse
@@ -108,16 +107,6 @@ func (t *traceComponentsChecker) createMessageForReason(pipelines []telemetryv1a
 			return p.Name
 		}),
 	})
-}
-
-func (t *traceComponentsChecker) addReasonPrefix(reason string) string {
-	switch {
-	case reason == conditions.ReasonDeploymentNotReady:
-		return "TraceGateway" + reason
-	case reason == conditions.ReasonReferencedSecretMissing:
-		return "TracePipeline" + reason
-	}
-	return reason
 }
 
 func (t *traceComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.TracePipeline) string {

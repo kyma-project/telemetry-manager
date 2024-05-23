@@ -51,8 +51,8 @@ func TestUpdateStatus(t *testing.T) {
 		agentHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, agentHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetNotReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonDaemonSetNotReady), agentHealthyCond.Message)
+		require.Equal(t, conditions.ReasonAgentNotReady, agentHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentNotReady), agentHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
@@ -92,8 +92,8 @@ func TestUpdateStatus(t *testing.T) {
 		agentHealthyCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, agentHealthyCond.Status)
-		require.Equal(t, conditions.ReasonDaemonSetReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady), agentHealthyCond.Message)
+		require.Equal(t, conditions.ReasonAgentReady, agentHealthyCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentReady), agentHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
@@ -189,8 +189,8 @@ func TestUpdateStatus(t *testing.T) {
 		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionTrue, configurationGeneratedCond.Status)
-		require.Equal(t, conditions.ReasonConfigurationGenerated, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated), configurationGeneratedCond.Message)
+		require.Equal(t, conditions.ReasonAgentConfigured, configurationGeneratedCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured), configurationGeneratedCond.Message)
 		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
 		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
 
@@ -258,7 +258,7 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "prober fails",
 				probeErr:       assert.AnError,
 				expectedStatus: metav1.ConditionUnknown,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonProbingNotReachable,
 			},
 			{
 				name: "healthy",
@@ -266,7 +266,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus: metav1.ConditionTrue,
-				expectedReason: conditions.ReasonFlowHealthy,
+				expectedReason: conditions.ReasonSelfMonFlowHealthy,
 			},
 			{
 				name: "buffer filling up",
@@ -274,7 +274,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonBufferFillingUp,
+				expectedReason: conditions.ReasonSelfMonBufferFillingUp,
 			},
 			{
 				name: "no logs delivered",
@@ -282,7 +282,7 @@ func TestUpdateStatus(t *testing.T) {
 					NoLogsDelivered: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonNoLogsDelivered,
+				expectedReason: conditions.ReasonSelfMonNoLogsDelivered,
 			},
 			{
 				name: "no logs delivered shadows other problems",
@@ -291,7 +291,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonNoLogsDelivered,
+				expectedReason: conditions.ReasonSelfMonNoLogsDelivered,
 			},
 			{
 				name: "some data dropped",
@@ -299,7 +299,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -308,7 +308,7 @@ func TestUpdateStatus(t *testing.T) {
 					BufferFillingUp:     true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeDataDropped,
+				expectedReason: conditions.ReasonSelfMonSomeDataDropped,
 			},
 			{
 				name: "all data dropped",
@@ -316,7 +316,7 @@ func TestUpdateStatus(t *testing.T) {
 					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -327,7 +327,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllDataDropped,
+				expectedReason: conditions.ReasonSelfMonAllDataDropped,
 			},
 		}
 
@@ -374,15 +374,15 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonConfigurationGenerated,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated),
+						Reason:             conditions.ReasonAgentConfigured,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -467,15 +467,15 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonConfigurationGenerated,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated),
+						Reason:             conditions.ReasonAgentConfigured,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -552,15 +552,15 @@ func TestUpdateStatus(t *testing.T) {
 					{
 						Type:               conditions.TypeAgentHealthy,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonDaemonSetReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonDaemonSetReady),
+						Reason:             conditions.ReasonAgentReady,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonConfigurationGenerated,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonConfigurationGenerated),
+						Reason:             conditions.ReasonAgentConfigured,
+						Message:            conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
@@ -791,13 +791,13 @@ func TestUpdateStatus(t *testing.T) {
 				name:           "key decode failed",
 				tlsCertErr:     tlscert.ErrKeyDecodeFailed,
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSPrivateKeyInvalid,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
 			},
 			{
 				name:           "key parse failed",
 				tlsCertErr:     tlscert.ErrKeyParseFailed,
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonTLSPrivateKeyInvalid,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
 			},
 			{
 				name:           "cert parse failed",

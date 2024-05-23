@@ -25,7 +25,7 @@ func init() {
 	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // MetricPipelineList contains a list of MetricPipeline.
 type MetricPipelineList struct {
@@ -34,13 +34,13 @@ type MetricPipelineList struct {
 	Items           []MetricPipeline `json:"items"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:resource:scope=Cluster
-//+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
-//+kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
-//+kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
-//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,categories={telemetry-pipelines}
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
+// +kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
+// +kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // MetricPipeline is the Schema for the metricpipelines API.
 type MetricPipeline struct {
@@ -66,16 +66,16 @@ type MetricPipelineSpec struct {
 // MetricPipelineInput defines the input configuration section.
 type MetricPipelineInput struct {
 	// Configures Prometheus scraping.
-	//+optional
+	// +optional
 	Prometheus *MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
 	// Configures runtime scraping.
-	//+optional
+	// +optional
 	Runtime *MetricPipelineRuntimeInput `json:"runtime,omitempty"`
 	// Configures istio-proxy metrics scraping.
-	//+optional
+	// +optional
 	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
 	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
-	//+optional
+	// +optional
 	Otlp *MetricPipelineOtlpInput `json:"otlp,omitempty"`
 }
 
@@ -84,11 +84,11 @@ type MetricPipelinePrometheusInput struct {
 	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default.
-	//+optional
-	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
+	// +optional
+	// +kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
-	//+optional
+	// +optional
 	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
@@ -97,8 +97,8 @@ type MetricPipelineRuntimeInput struct {
 	// If enabled, workload-related Kubernetes metrics are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default.
-	//+optional
-	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
+	// +optional
+	// +kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
@@ -107,10 +107,10 @@ type MetricPipelineIstioInput struct {
 	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default.
-	//+optional
+	// +optional
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
-	//+optional
+	// +optional
 	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
@@ -119,7 +119,7 @@ type MetricPipelineOtlpInput struct {
 	// If disabled, push-based OTLP metrics are not collected. The default is `false`.
 	Disabled bool `json:"disabled,omitempty"`
 	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are enabled by default.
-	//+optional
+	// +optional
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
