@@ -66,15 +66,34 @@ $(TABLE_GEN): $(LOCALBIN)
 ## golangci-lint
 .PHONY: golangci-lint $(GOLANGCI_LINT)
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
-$(GOLANGCI_LINT): LATEST = $(shell curl -sL https://api.github.com/repos/golangci/golangci-lint/releases/latest | jq -r ".tag_name" )
+$(GOLANGCI_LINT): GOLANGCI_LINT_LATEST = $(shell curl -sL https://api.github.com/repos/golangci/golangci-lint/releases/latest | jq -r ".tag_name" )
 $(GOLANGCI_LINT): $(LOCALBIN)
-	@if [ "$(GOLANGCI_LINT_VERSION)" != "$(LATEST)" ]; then \
+	if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANG_CI_LINT_LATEST)" ]; then \
 		echo -e ${RED}########################################################################################${NC}; \
-		echo -e ${RED}A new version of GolangCI-Lint is available: ${LATEST}${NC}; \
+		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANG_CI_LINT_LATEST}${NC}; \
 		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}.env${RED} file and the ${YELLOW}github workflow definition${NC}; \
 		echo -e ${RED}########################################################################################${NC}; \
-    fi	
+    fi
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) $(GOLANGCI_LINT_VERSION)
+
+.PHONY: check-linter-version
+check-linter-version: GOLANGCI_LINT_LATEST = $(shell curl -sL https://api.github.com/repos/golangci/golangci-lint/releases/latest | jq -r ".tag_name" )
+check-linter-version: GOLANGCI_LINT_WORKFLOW = $(shell yq '.jobs.lint.steps[]|select(.name == "Run lint").with.version'  .github/workflows/pr-code-checks.yml )
+check-linter-version:
+	@if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
+		echo -e ${RED}########################################################################################${NC}; \
+		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANGCI_LINT_LATEST}${NC}; \
+		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}.env${RED} file${NC}; \
+		echo -e ${RED}########################################################################################${NC}; \
+		exit 1; \
+    fi
+	@if [ "v$(GOLANGCI_LINT_WORKFLOW)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
+		echo -e ${RED}########################################################################################${NC}; \
+		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANGCI_LINT_LATEST}${NC}; \
+		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}github workflow definition${NC}; \
+		echo -e ${RED}########################################################################################${NC}; \
+		exit 1; \
+    fi
 
 ## ginkgo
 .PHONY: ginkgo

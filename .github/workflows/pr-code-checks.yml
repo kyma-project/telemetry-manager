@@ -26,6 +26,16 @@ jobs:
     - name: Run tests
       run: make test
 
+  check-linter-version:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Check linter version
+        run: make check-linter-version
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -39,7 +49,7 @@ jobs:
         uses: golangci/golangci-lint-action@v4.0.0
         with:
           install-mode: binary
-          version: latest
+          version: 1.58.2
           args: --timeout=5m --config=./.golangci.yaml
 
   coverage:
