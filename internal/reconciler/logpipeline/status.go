@@ -175,7 +175,7 @@ func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetr
 	if evaluatedCondition.Status == metav1.ConditionFalse {
 		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
 			evaluatedCondition.Reason,
-			conditions.MessageForTracePipeline(evaluatedCondition.Reason))
+			conditions.MessageForLogPipeline(evaluatedCondition.Reason))
 		return
 	}
 
