@@ -11,6 +11,7 @@ HELM_PROM_RELEASE="prometheus"
 TRACE_NAMESPACE="trace-load-test"
 METRIC_NAMESPACE="metric-load-test"
 LOG_NAMESPACE="log-load-test"
+SELFMONITOR_NAMESPACE="self-monitor-load-test"
 MAX_PIPELINE="false"
 BACKPRESSURE_TEST="false"
 TEST_TARGET="traces"
@@ -55,10 +56,15 @@ function setup() {
         setup_metric_agent
     fi
 
-   if [ "$TEST_TARGET" = "logs-fluentbit" ];
+    if [ "$TEST_TARGET" = "logs-fluentbit" ];
     then
         setup_fluentbit
-  fi
+    fi
+
+    if [ "$TEST_TARGET" = "self-monitor" ];
+    then
+        setup_selfmonitor
+    fi
 }
 
 # shellcheck disable=SC2112
@@ -109,6 +115,12 @@ function setup_fluentbit() {
 }
 
 # shellcheck disable=SC2112
+function setup_selfmonitor() {
+    # Deploy test setup
+    cat hack/load-tests/self-monitor-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" | kubectl apply -f -
+}
+
+# shellcheck disable=SC2112
 function wait_for_resources() {
 
   kubectl -n ${PROMETHEUS_NAMESPACE} rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus
@@ -131,6 +143,11 @@ function wait_for_resources() {
   if [ "$TEST_TARGET" = "logs-fluentbit" ];
   then
       wait_for_fluentbit_resources
+  fi
+
+  if [ "$TEST_TARGET" = "self-monitor" ];
+  then
+      wait_for_selfmonitor_resources
   fi
 
   echo "\nRunning Tests\n"
@@ -170,6 +187,19 @@ function wait_for_fluentbit_resources() {
 }
 
 # shellcheck disable=SC2112
+function wait_for_selfmonitor_resources() {
+
+    kubectl -n kyma-system rollout status deployment telemetry-trace-collector
+    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway
+    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent
+    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit
+    kubectl -n ${SELFMONITOR_NAMESPACE} rollout status deployment telemetry-receiver
+    kubectl -n ${SELFMONITOR_NAMESPACE} rollout status deployment trace-load-generator
+    kubectl -n ${SELFMONITOR_NAMESPACE} rollout status deployment metric-load-generator
+    kubectl -n ${SELFMONITOR_NAMESPACE} rollout status deployment metric-agent-load-generator
+}
+
+# shellcheck disable=SC2112
 function cleanup() {
     kubectl -n ${PROMETHEUS_NAMESPACE} port-forward $(kubectl -n ${PROMETHEUS_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -oname) 9090 &
     sleep 3
@@ -189,6 +219,10 @@ function cleanup() {
 
     if [ "$TEST_TARGET" = "logs-fluentbit" ]; then
         get_result_and_cleanup_fluentbit
+    fi
+
+    if [ "$TEST_TARGET" = "self-monitor" ]; then
+        get_result_and_cleanup_selfmonitor
     fi
 
     helm delete -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE}
@@ -320,6 +354,31 @@ function get_result_and_cleanup_fluentbit() {
    echo "\nLogPipeline Pods got $restarts time restarted\n"
 
    echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "" "Input Bytes Processing Rate/sec" "Output Bytes Processing Rate/sec" "Filesystem Buffer Usage" "Pod Memory Usage(MB)" "Pod CPU Usage"
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+}
+
+# shellcheck disable=SC2112
+function get_result_and_cleanup_selfmonitor() {
+   RECEIVED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   EXPORTED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   QUEUE=$(curl -fs --data-urlencode 'query=round((sum(rate(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="fluent-bit"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   kill %1
+
+   restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-self-monitor -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
+
+   kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
+
+   echo "\Self Monitor Pods got $restarts time restarted\n"
+
+   echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET\n"
    printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "" "Input Bytes Processing Rate/sec" "Output Bytes Processing Rate/sec" "Filesystem Buffer Usage" "Pod Memory Usage(MB)" "Pod CPU Usage"
    printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
 }

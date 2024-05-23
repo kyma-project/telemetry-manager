@@ -336,7 +336,7 @@ metadata:
   name: metric-load-generator
   namespace: self-monitor-load-test
 spec:
-  replicas: 20
+  replicas: 10
   selector:
     matchLabels:
       app: metric-load-generator
@@ -398,7 +398,7 @@ metadata:
   name: metric-agent-load-generator
   namespace: self-monitor-load-test
 spec:
-  replicas: 20
+  replicas: 10
   selector:
     matchLabels:
       app: metric-agent-load-generator
