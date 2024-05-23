@@ -461,14 +461,14 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
 ## Troubleshooting
 
-- Symptom: No traces are arriving at the destination.
+### Traces Not Arriving at the Destination
 
-   Cause: The backend is not reachable or wrong authentication credentials are used.
+   Cause: Wrong backend endpoint configuration or authentication credentials are used.
 
    Remedy: Investigate the cause with the following steps:
    1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
 
-- Symptom: Custom spans don't arrive at the destination, but Istio spans do.
+### Custom Spans don't Arrive at the Destination, but Istio Spans do
 
    Cause: Your SDK version is incompatible with the OTel collector version.
 
@@ -477,7 +477,7 @@ System-related spans reported by Istio are filtered out without the opt-out opti
    1. Investigate whether it is compatible with the OTel collector version.
    1. If required, upgrade to a supported SDK version.
 
-- Symptom: Trace backend shows fewer traces than you would like to see.
+### Trace Backend Shows Fewer Traces than Expected
 
    Cause: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
 
@@ -502,3 +502,21 @@ System-related spans reported by Istio are filtered out without the opt-out opti
           - name: "kyma-traces"
           randomSamplingPercentage: 60
     ```
+
+### Buffer Filling Up
+
+  Cause: The backend ingestion rate is too small for the data influx.
+
+  Remedy:
+  
+  - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
+
+  - Option 2: Decrease data influx, that is, re-configure the trace pipeline.
+
+### Gateway Throttling 
+
+  Cause: Gateway cannot receive traces at the given rate.
+
+  Remedy:
+
+  - Manually scale out the gateway by increasing the number of replicas for the `telemetry-trace-gateway`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).

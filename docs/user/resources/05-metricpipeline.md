@@ -178,7 +178,7 @@ The status of the MetricPipeline is determined by the condition types `GatewayHe
 | AgentHealthy           | True             | AgentNotRequired            |                                                                                      |
 | AgentHealthy           | True             | AgentReady                  | Metric agent DaemonSet is ready                                                      |
 | AgentHealthy           | False            | AgentNotReady               | Metric agent DaemonSet is not ready                                                  |
-| ConfigurationGenerated | True             | ConfigurationGenerated      |                                                                                      |
+| ConfigurationGenerated | True             | AgentGatewayConfigured      | Metric agent and gateway successfully configured                                     |
 | ConfigurationGenerated | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |
 | ConfigurationGenerated | False            | MaxPipelinesExceeded        | Maximum pipeline count limit exceeded                                                |
 | ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                           |
@@ -187,10 +187,11 @@ The status of the MetricPipeline is determined by the condition types `GatewayHe
 
 Reflecting the MetricPipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
 
-| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                      |
-| -------------------- | ---------------- | ----------------- | -------------------------------------------------------------------------------------- |
-| TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the metric flow                                                |
-| TelemetryFlowHealthy | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting                                  |
-| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                   |
-| TelemetryFlowHealthy | False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate |
-| TelemetryFlowHealthy | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                                 |
+| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                                                                                                                                                              |
+| -------------------- | ---------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the metric flow                                                                                                                                                                                        |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting. See troubleshooting: [Metrics Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination)  |
+| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate. See troubleshooting: [Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up)                               |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)           |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting. See troubleshooting: [Metrics Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination) |
+| TelemetryFlowHealthy | Unknown          | ProbingFailed     | Self monitoring probing failed for unknown reasons                                                                                                                                                                             |

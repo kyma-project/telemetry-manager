@@ -65,8 +65,8 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 			name:            "cert and private key valid",
 			given:           nil,
 			expectedStatus:  metav1.ConditionTrue,
-			expectedReason:  ReasonConfigurationGenerated,
-			expectedMessage: MessageForLogPipeline(ReasonConfigurationGenerated),
+			expectedReason:  ReasonAgentConfigured,
+			expectedMessage: MessageForLogPipeline(ReasonAgentConfigured),
 		},
 		{
 			name:            "invalid cert key pair",
@@ -79,7 +79,7 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			status, reason, msg := EvaluateTLSCertCondition(test.given)
+			status, reason, msg := EvaluateTLSCertCondition(test.given, ReasonAgentConfigured, MessageForLogPipeline(ReasonAgentConfigured))
 			require.Equal(t, test.expectedStatus, status)
 			require.Equal(t, test.expectedReason, reason)
 			require.Equal(t, test.expectedMessage, msg)

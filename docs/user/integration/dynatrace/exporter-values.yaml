@@ -1,0 +1,82 @@
+# All available settings are documented here: https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml
+# helm upgrade --install dynatrace-exporter open-telemetry/opentelemetry-collector -f exporter-values.yaml
+
+# Uses the deployment mode
+mode: "deployment"
+
+image:
+  repository: "otel/opentelemetry-collector-contrib"
+
+config:
+  exporters:
+    otlphttp:
+      endpoint: ${apiurl}/v2/otlp
+      headers:
+        Authorization: Api-Token ${otlpToken}
+      sending_queue:
+        enabled: true
+        queue_size: 128
+      retry_on_failure:
+        enabled: true
+        initial_interval: 5s
+        max_interval: 30s
+        max_elapsed_time: 300s
+
+  processors:
+    cumulativetodelta: {}
+
+    transform:
+      # See https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/collector/use-cases/histograms
+      metric_statements:
+      - context: metric
+        statements:
+          # Get count from the histogram. The new metric name will be <histogram_name>_count
+          - extract_count_metric(true) where type == METRIC_DATA_TYPE_HISTOGRAM
+
+          # Get sum from the histogram. The new metric name will be <histogram_name>_sum
+          - extract_sum_metric(true) where type == METRIC_DATA_TYPE_HISTOGRAM
+      - context: datapoint
+        statements:
+          # convert the <histogram_name>_sum metrics to gauges.
+          - convert_sum_to_gauge() where IsMatch(metric.name, ".*_sum")
+
+    # Selects only one metric for the current collector pod 
+    filter:
+      error_mode: ignore
+      metrics:
+        datapoint:
+        - 'metric.type == METRIC_DATA_TYPE_HISTOGRAM' # histograms are excluded
+        - 'metric.type == METRIC_DATA_TYPE_SUMMARY' # summaries are excluded
+        - 'IsMatch(metric.unit, "\\{.*\\}")' # unit does not contain square brackets
+        - 'IsMatch(metric.name, "^(.{1}|.{2})$")' # name has at least 3 characters
+
+  service:
+    # Enables metrics only with a custom config
+    pipelines:
+      logs: null
+      traces: null
+      metrics:
+        exporters:
+          - otlphttp
+        processors:
+          - memory_limiter
+          - cumulativetodelta
+          - transform
+          - filter
+          - batch
+        receivers:
+          - otlp
+
+# Defines resourceLimits, as a good practice
+resources:
+  requests:
+    cpu: 10m
+    memory: 50Mi
+  limits:
+    cpu: 512m
+    memory: 1024Mi
+
+# Load envs from a secret called "dynatrace" to be located in the same namespace
+extraEnvsFrom:
+  - secretRef:
+      name: dynatrace
