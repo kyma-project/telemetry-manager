@@ -17,12 +17,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	configmetricagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
-const istioCertVolumeName = "istio-certs"
+const (
+	istioCertVolumeName = "istio-certs"
+	IstioCertPath       = "/etc/istio-output-certs"
+)
 
 type AgentApplier struct {
 	Config AgentConfig
@@ -88,7 +90,7 @@ func (aa *AgentApplier) makeAgentDaemonSet(configChecksum string) *appsv1.Daemon
 	podLabels["sidecar.istio.io/inject"] = "true"
 
 	annotations := map[string]string{"checksum/config": configChecksum}
-	maps.Copy(annotations, makeIstioTLSPodAnnotations(configmetricagent.IstioCertPath))
+	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))
 
 	dsConfig := aa.Config.DaemonSet
 	resources := aa.makeAgentResourceRequirements()
@@ -105,7 +107,7 @@ func (aa *AgentApplier) makeAgentDaemonSet(configChecksum string) *appsv1.Daemon
 		}}),
 		withVolumeMount(corev1.VolumeMount{
 			Name:      istioCertVolumeName,
-			MountPath: configmetricagent.IstioCertPath,
+			MountPath: IstioCertPath,
 			ReadOnly:  true,
 		}),
 	)

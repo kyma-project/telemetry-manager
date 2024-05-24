@@ -272,7 +272,8 @@ func TestBuildAgentConfig(t *testing.T) {
 					testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(tt.istioEnabled).Build(),
 				}
 				config := sut.Build(pipelines, BuildOptions{
-					IstioEnabled: tt.istioEnabled,
+					IstioEnabled:  tt.istioEnabled,
+					IstioCertPath: "/etc/istio-output-certs",
 				})
 				configYAML, err := yaml.Marshal(config)
 				require.NoError(t, err, "failed to marshal config")

@@ -9,21 +9,14 @@ import (
 )
 
 const scrapeInterval = 30 * time.Second
-const IstioCertPath = "/etc/istio-output-certs"
 const sampleLimit = 50000
 
-var (
-	istioCAFile   = filepath.Join(IstioCertPath, "root-cert.pem")
-	istioCertFile = filepath.Join(IstioCertPath, "cert-chain.pem")
-	istioKeyFile  = filepath.Join(IstioCertPath, "key.pem")
-)
-
-func makeReceiversConfig(inputs inputSources, istioEnabled bool) Receivers {
+func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 	var receiversConfig Receivers
 
 	if inputs.prometheus {
-		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods(istioEnabled)
-		receiversConfig.PrometheusAppServices = makePrometheusConfigForServices(istioEnabled)
+		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods(opts)
+		receiversConfig.PrometheusAppServices = makePrometheusConfigForServices(opts)
 	}
 
 	if inputs.runtime {
@@ -57,15 +50,15 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 	}
 }
 
-func makePrometheusConfigForPods(istioEnabled bool) *PrometheusReceiver {
-	return makePrometheusConfig(istioEnabled, "app-pods", RolePod, makePrometheusPodsRelabelConfigs)
+func makePrometheusConfigForPods(opts BuildOptions) *PrometheusReceiver {
+	return makePrometheusConfig(opts, "app-pods", RolePod, makePrometheusPodsRelabelConfigs)
 }
 
-func makePrometheusConfigForServices(istioEnabled bool) *PrometheusReceiver {
-	return makePrometheusConfig(istioEnabled, "app-services", RoleEndpoints, makePrometheusServicesRelabelConfigs)
+func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
+	return makePrometheusConfig(opts, "app-services", RoleEndpoints, makePrometheusServicesRelabelConfigs)
 }
 
-func makePrometheusConfig(istioEnabled bool, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
+func makePrometheusConfig(opts BuildOptions, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	baseScrapeConfig := ScrapeConfig{
@@ -79,11 +72,11 @@ func makePrometheusConfig(istioEnabled bool, jobNamePrefix string, role Role, re
 	httpScrapeConfig.RelabelConfigs = relabelConfigFn(false)
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
-	if istioEnabled {
+	if opts.IstioEnabled {
 		httpsScrapeConfig := baseScrapeConfig
 		httpsScrapeConfig.JobName = jobNamePrefix + "-secure"
 		httpsScrapeConfig.RelabelConfigs = relabelConfigFn(true)
-		httpsScrapeConfig.TLSConfig = makeTLSConfig()
+		httpsScrapeConfig.TLSConfig = makeTLSConfig(opts.IstioCertPath)
 		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
 	}
 
@@ -135,7 +128,11 @@ func makePrometheusServicesRelabelConfigs(keepSecure bool) []RelabelConfig {
 		inferServiceFromMetaLabel())
 }
 
-func makeTLSConfig() *TLSConfig {
+func makeTLSConfig(istioCertPath string) *TLSConfig {
+	istioCAFile := filepath.Join(istioCertPath, "root-cert.pem")
+	istioCertFile := filepath.Join(istioCertPath, "cert-chain.pem")
+	istioKeyFile := filepath.Join(istioCertPath, "key.pem")
+
 	return &TLSConfig{
 		CAFile:             istioCAFile,
 		CertFile:           istioCertFile,

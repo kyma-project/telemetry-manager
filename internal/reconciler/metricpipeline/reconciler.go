@@ -313,7 +313,8 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
-		IstioEnabled: isIstioActive,
+		IstioEnabled:  isIstioActive,
+		IstioCertPath: otelcollector.IstioCertPath,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
