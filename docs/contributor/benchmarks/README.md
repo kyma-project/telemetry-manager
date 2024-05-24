@@ -313,7 +313,7 @@ Backend outages are simulated with Istio Fault Injection, 70% of traffic to the 
 
 The following diagram shows the test setup used for test.
 
-![LogPipeline Test Setup](./assets/selfmonitor_perf_test_setup.drawio.svg)
+![Self Monitor Test Setup](./assets/selfmonitor_perf_test_setup.drawio.svg)
 
 In this test scenarios, a preconfigured load generator is deployed on the test cluster.
 
