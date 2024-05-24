@@ -19,6 +19,8 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -65,6 +67,9 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -73,14 +78,14 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberStub,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -94,37 +99,32 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonGatewayNotReady,
 			"Metric gateway Deployment is not ready")
 
-		mock.AssertExpectationsForObjects(t, gatewayProberStub)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.NoError(t, err, "gateway configmap must exist")
-		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
 	t.Run("metric gateway prober fails", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
-		gatewayProberMock := &mocks.DeploymentProber{}
-		gatewayProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberMock,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -138,37 +138,32 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonGatewayNotReady,
 			"Metric gateway Deployment is not ready")
 
-		mock.AssertExpectationsForObjects(t, gatewayProberMock)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.NoError(t, err, "gateway configmap must exist")
-		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
 	t.Run("metric gateway deployment is ready", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
-		gatewayProberMock := &mocks.DeploymentProber{}
-		gatewayProberMock.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberMock,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -182,20 +177,18 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonGatewayReady,
 			"Metric gateway Deployment is ready")
 
-		mock.AssertExpectationsForObjects(t, gatewayProberMock)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.NoError(t, err, "gateway configmap must exist")
-		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
 	t.Run("metric agent daemonset is not ready", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}).Times(1)
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -204,19 +197,21 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
-		agentProberMock := &mocks.DaemonSetProber{}
-		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		agentProberStub := &mocks.DaemonSetProber{}
+		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberStub,
-			agentProber:        agentProberMock,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			agentConfigBuilder:   agentConfigBuilderMock,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			agentProber:          agentProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -230,20 +225,19 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentNotReady,
 			"Metric agent DaemonSet is not ready")
 
-		mock.AssertExpectationsForObjects(t, agentProberMock)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.NoError(t, err, "gateway configmap must exist")
-		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+		agentConfigBuilderMock.AssertExpectations(t)
+		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
 	t.Run("metric agent prober fails", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}).Times(1)
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -256,15 +250,17 @@ func TestReconcile(t *testing.T) {
 		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberStub,
-			agentProber:        agentProberMock,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			agentConfigBuilder:   agentConfigBuilderMock,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			agentProber:          agentProberMock,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -278,20 +274,19 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentNotReady,
 			"Metric agent DaemonSet is not ready")
 
-		mock.AssertExpectationsForObjects(t, agentProberMock)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.NoError(t, err, "gateway configmap must exist")
-		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+		agentConfigBuilderMock.AssertExpectations(t)
+		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
 	t.Run("metric agent daemonset is ready", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}).Times(1)
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -304,15 +299,17 @@ func TestReconcile(t *testing.T) {
 		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberStub,
-			agentProber:        agentProberMock,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			agentConfigBuilder:   agentConfigBuilderMock,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			agentProber:          agentProberMock,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -326,15 +323,8 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentReady,
 			"Metric agent DaemonSet is ready")
 
-		mock.AssertExpectationsForObjects(t, agentProberMock)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.NoError(t, err, "gateway configmap must exist")
-		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+		agentConfigBuilderMock.AssertExpectations(t)
+		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
 	t.Run("referenced secret exists", func(t *testing.T) {
@@ -349,6 +339,9 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -357,14 +350,14 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberStub,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -378,18 +371,15 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentGatewayConfigured,
 			"Metric agent and gateway successfully configured")
 
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.NoError(t, err, "gateway configmap must exist")
-		require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -399,12 +389,13 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberStub,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -418,17 +409,15 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonReferencedSecretMissing,
 			"One or more referenced Secrets are missing")
 
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.Error(t, err, "gateway configmap must not exist")
+		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
 
 	t.Run("max pipelines exceeded", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrLockInUse)
@@ -437,12 +426,13 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			pipelineLock:       pipelineLockStub,
-			gatewayProber:      gatewayProberStub,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
+			Client:               fakeClient,
+			config:               testConfig,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			pipelineLock:         pipelineLockStub,
+			gatewayProber:        gatewayProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.Error(t, err)
@@ -457,12 +447,7 @@ func TestReconcile(t *testing.T) {
 			"Maximum pipeline count limit exceeded",
 		)
 
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      testConfig.Gateway.BaseName,
-			Namespace: testConfig.Gateway.Namespace,
-		}, &cm)
-		require.Error(t, err, "gateway configmap must not exist")
+		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
 
 	t.Run("flow healthy", func(t *testing.T) {
@@ -563,6 +548,9 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewMetricPipelineBuilder().Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -576,7 +564,7 @@ func TestReconcile(t *testing.T) {
 				sut := Reconciler{
 					Client:                   fakeClient,
 					config:                   testConfig,
-					agentApplier:             &otelcollector.AgentApplier{Config: testConfig.Agent},
+					gatewayConfigBuilder:     gatewayConfigBuilderMock,
 					gatewayApplier:           &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 					pipelineLock:             pipelineLockStub,
 					gatewayProber:            gatewayProberStub,
@@ -598,13 +586,7 @@ func TestReconcile(t *testing.T) {
 					tt.expectedMessage,
 				)
 
-				var cm corev1.ConfigMap
-				err = fakeClient.Get(context.Background(), types.NamespacedName{
-					Name:      testConfig.Gateway.BaseName,
-					Namespace: testConfig.Gateway.Namespace,
-				}, &cm)
-				require.NoError(t, err, "gateway configmap must exist")
-				require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+				gatewayConfigBuilderMock.AssertExpectations(t)
 			})
 		}
 	})
@@ -673,6 +655,9 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPClientTLS("ca", "fooCert", "fooKey")).Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -683,15 +668,15 @@ func TestReconcile(t *testing.T) {
 				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
 
 				sut := Reconciler{
-					Client:             fakeClient,
-					config:             testConfig,
-					agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
-					gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-					pipelineLock:       pipelineLockStub,
-					gatewayProber:      gatewayProberStub,
-					tlsCertValidator:   tlsStub,
-					overridesHandler:   overridesHandlerStub,
-					istioStatusChecker: istioStatusCheckerStub,
+					Client:               fakeClient,
+					config:               testConfig,
+					gatewayConfigBuilder: gatewayConfigBuilderMock,
+					gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+					pipelineLock:         pipelineLockStub,
+					gatewayProber:        gatewayProberStub,
+					tlsCertValidator:     tlsStub,
+					overridesHandler:     overridesHandlerStub,
+					istioStatusChecker:   istioStatusCheckerStub,
 				}
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
@@ -706,16 +691,10 @@ func TestReconcile(t *testing.T) {
 					tt.expectedMessage,
 				)
 
-				var cm corev1.ConfigMap
-				err = fakeClient.Get(context.Background(), types.NamespacedName{
-					Name:      testConfig.Gateway.BaseName,
-					Namespace: testConfig.Gateway.Namespace,
-				}, &cm)
 				if !tt.expectGatewayConfigured {
-					require.Error(t, err, "gateway configmap must not exist")
+					gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 				} else {
-					require.NoError(t, err, "gateway configmap must exist")
-					require.Contains(t, cm.Data["relay.conf"], pipeline.Name, "gateway configmap must contain pipeline name")
+					gatewayConfigBuilderMock.AssertExpectations(t)
 				}
 			})
 		}
@@ -731,4 +710,10 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.MetricPi
 	require.Equal(t, message, cond.Message)
 	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
 	require.NotEmpty(t, cond.LastTransitionTime)
+}
+
+func containsPipeline(p telemetryv1alpha1.MetricPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+		return len(pipelines) == 1 && pipelines[0].Name == p.Name
+	})
 }
