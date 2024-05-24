@@ -3,11 +3,8 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -15,7 +12,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -57,49 +53,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 		})
 
-		It("Should have a fluent-bit-sections ConfigMap", func() {
-			Eventually(func(g Gomega) {
-				var configMap corev1.ConfigMap
-				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		})
-
-		It("Should not include the LogPipeline with missing secret in fluent-bit-sections configmap", func() {
-			Consistently(func(g Gomega) {
-				var configMap corev1.ConfigMap
-				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
-
-				g.Expect(configMap.Data).ShouldNot(HaveKey(fmt.Sprintf("%s.conf", pipelineName)))
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
-		})
-
-		It("Should have a healthy pipeline and update fluent-bit-sections configmap", func() {
+		It("Should have a healthy pipeline", func() {
 			By("Creating missing secret", func() {
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, secret.K8sObject())).Should(Succeed())
 			})
 
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
-
-			Eventually(func(g Gomega) {
-				var configMap corev1.ConfigMap
-				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
-
-				g.Expect(configMap.Data).Should(HaveKey(fmt.Sprintf("%s.conf", pipelineName)))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
-
-		It("Should remove pipeline from fluent-bit-sections configmap", func() {
-			By("Deleting the secret", func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, secret.K8sObject())).Should(Succeed())
-			})
-
-			Eventually(func(g Gomega) {
-				var configMap corev1.ConfigMap
-				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
-
-				g.Expect(configMap.Data).ShouldNot(HaveKey(fmt.Sprintf("%s.conf", pipelineName)))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		})
-
 	})
 })

@@ -31,7 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithReplicas(1), backend.WithFaultDelayInjection(100, 5))
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithReplicas(0))
 		objs = append(objs, backend.K8sObjects()...)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().

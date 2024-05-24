@@ -8,7 +8,6 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 TABLE_GEN ?= $(LOCALBIN)/table-gen
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
@@ -31,7 +30,7 @@ YELLOW='\033[0;33m'
 NC='\033[0m'
 
 .PHONY: dependencies
-dependencies: kustomize tablegen controller-gen envtest golangci-lint ginkgo k3d kyma ## Download and install all build dependencies.
+dependencies: kustomize tablegen controller-gen golangci-lint ginkgo k3d kyma ## Download and install all build dependencies.
 
 ## kustomize
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
@@ -50,12 +49,6 @@ controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessar
 $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(CONTROLLER_GEN) && $(CONTROLLER_GEN) --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
-
-## envtest
-.PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 ## tablegen
 .PHONY: tablegen
