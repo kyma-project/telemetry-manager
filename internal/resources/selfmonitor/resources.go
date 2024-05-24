@@ -9,9 +9,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,7 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
@@ -40,55 +39,99 @@ type ApplierDeleter struct {
 	Config *Config
 }
 
-func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, prometheusConfigYAML, alertRulesYAML string) error {
-	name := types.NamespacedName{Namespace: ad.Config.Namespace, Name: ad.Config.BaseName}
+func (ad *ApplierDeleter) RemoveResources(ctx context.Context, c client.Client) error {
+	objectMeta := metav1.ObjectMeta{
+		Name:      ad.Config.BaseName,
+		Namespace: ad.Config.Namespace,
+	}
 
+	if err := deleteObj(ctx, c, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.Service{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteObj(ctx context.Context, c client.Client, object client.Object) error {
+	if err := c.Delete(ctx, object); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, prometheusConfigYAML, alertRulesYAML string) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
-	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, ad.makeServiceAccount(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, ad.makeServiceAccount()); err != nil {
 		return fmt.Errorf("failed to create self-monitor service account: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateRole(ctx, c, ad.makeRole(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateRole(ctx, c, ad.makeRole()); err != nil {
 		return fmt.Errorf("failed to create self-monitor role: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, ad.makeRoleBinding(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, ad.makeRoleBinding()); err != nil {
 		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, ad.makeNetworkPolicy(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, ad.makeNetworkPolicy()); err != nil {
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
-	configMap := ad.makeConfigMap(name, prometheusConfigYAML, alertRulesYAML)
+	configMap := ad.makeConfigMap(prometheusConfigYAML, alertRulesYAML)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, nil)
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, ad.makeDeployment(ad.Config, checksum)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, ad.makeDeployment(checksum)); err != nil {
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, ad.makeService(name, ports.PrometheusPort)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, ad.makeService(ports.PrometheusPort)); err != nil {
 		return fmt.Errorf("failed to create self-monitor service: %w", err)
 	}
 
 	return nil
 }
 
-func (ad *ApplierDeleter) makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
+func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
+			Name:      ad.Config.BaseName,
+			Namespace: ad.Config.Namespace,
 			Labels:    ad.defaultLabels(),
 		},
 	}
 	return &serviceAccount
 }
 
-func (ad *ApplierDeleter) makeRole(name types.NamespacedName) *rbacv1.Role {
+func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
@@ -106,29 +149,29 @@ func (ad *ApplierDeleter) makeRole(name types.NamespacedName) *rbacv1.Role {
 	return &role
 }
 
-func (ad *ApplierDeleter) makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
+func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
+			Name:      ad.Config.BaseName,
+			Namespace: ad.Config.Namespace,
 			Labels:    ad.defaultLabels(),
 		},
-		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
+		Subjects: []rbacv1.Subject{{Name: ad.Config.BaseName, Namespace: ad.Config.Namespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     name.Name,
+			Name:     ad.Config.BaseName,
 		},
 	}
 	return &roleBinding
 }
 
-func (ad *ApplierDeleter) makeNetworkPolicy(name types.NamespacedName) *networkingv1.NetworkPolicy {
+func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 	allowedPorts := []int32{int32(ports.PrometheusPort)}
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
+			Name:      ad.Config.BaseName,
+			Namespace: ad.Config.Namespace,
 			Labels:    ad.defaultLabels(),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
@@ -184,11 +227,11 @@ func (ad *ApplierDeleter) makeNetworkPolicyPorts(ports []int32) []networkingv1.N
 	return networkPolicyPorts
 }
 
-func (ad *ApplierDeleter) makeConfigMap(name types.NamespacedName, prometheusConfigYAML, alertRulesYAML string) *corev1.ConfigMap {
+func (ad *ApplierDeleter) makeConfigMap(prometheusConfigYAML, alertRulesYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
+			Name:      ad.Config.BaseName,
+			Namespace: ad.Config.Namespace,
 			Labels:    ad.defaultLabels(),
 		},
 		Data: map[string]string{
@@ -197,24 +240,24 @@ func (ad *ApplierDeleter) makeConfigMap(name types.NamespacedName, prometheusCon
 		},
 	}
 }
-func (ad *ApplierDeleter) makeDeployment(cfg *Config, configChecksum string) *appsv1.Deployment {
+func (ad *ApplierDeleter) makeDeployment(configChecksum string) *appsv1.Deployment {
 	var replicas int32 = 1
 	selectorLabels := ad.defaultLabels()
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "false"
 
 	annotations := map[string]string{"checksum/Config": configChecksum}
-	resources := makeResourceRequirements(cfg)
-	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
-		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
+	resources := makeResourceRequirements()
+	podSpec := makePodSpec(ad.Config.BaseName, ad.Config.Deployment.Image,
+		commonresources.WithPriorityClass(ad.Config.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
 		commonresources.WithGoMemLimitEnvVar(memoryLimit),
 	)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cfg.BaseName,
-			Namespace: cfg.Namespace,
+			Name:      ad.Config.BaseName,
+			Namespace: ad.Config.Namespace,
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -320,10 +363,14 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 		},
 	}
 
+	for _, opt := range opts {
+		opt(&pod)
+	}
+
 	return pod
 }
 
-func makeResourceRequirements(cfg *Config) corev1.ResourceRequirements {
+func makeResourceRequirements() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    cpuLimit,
@@ -336,7 +383,7 @@ func makeResourceRequirements(cfg *Config) corev1.ResourceRequirements {
 	}
 }
 
-func (ad *ApplierDeleter) makeService(name types.NamespacedName, port int) *corev1.Service {
+func (ad *ApplierDeleter) makeService(port int) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
@@ -356,50 +403,4 @@ func (ad *ApplierDeleter) makeService(name types.NamespacedName, port int) *core
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
-}
-
-func (ad *ApplierDeleter) RemoveResources(ctx context.Context, c client.Client) error {
-	objectMeta := metav1.ObjectMeta{
-		Name:      ad.Config.BaseName,
-		Namespace: ad.Config.Namespace,
-	}
-
-	if err := deleteObj(ctx, c, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
-		return err
-	}
-
-	if err := deleteObj(ctx, c, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
-		return err
-	}
-
-	if err := deleteObj(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
-		return err
-	}
-
-	if err := deleteObj(ctx, c, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
-		return err
-	}
-
-	if err := deleteObj(ctx, c, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
-		return err
-	}
-
-	if err := deleteObj(ctx, c, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
-		return err
-	}
-
-	if err := deleteObj(ctx, c, &corev1.Service{ObjectMeta: objectMeta}); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func deleteObj(ctx context.Context, c client.Client, object client.Object) error {
-	if err := c.Delete(ctx, object); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	return nil
 }
