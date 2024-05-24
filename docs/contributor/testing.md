@@ -13,15 +13,6 @@ Software Testing Life Cycle phases:
 | Test validation                       | Acceptance phase during the sprint              | During the code review and iteration review, verify that the Test Suite correctly and completely covers the Acceptance Criteria. | The Acceptance Criteria are integrated into the E2E test suite and become a regression suite for future verification.                                                  |
 | Test execution                        | A part of the CI process                        |                                                                                                                                  |                                                                                                                                                                        |
 
-​
-| Phase | When | How | Result |
-| --- | --- | --- | --- |
-| Requirement analysis | Sprint planning, grooming and triaging meetings | Brainstorm the feature implementation, design and its implications on the testability. | A clarified implementation design with a focus on testability, the acceptance tests criteria are collected, and the testing surface is defined as a part of the story. |
-| Test planning, design and development | Development phase during the sprint | Implement Unit and Acceptance tests for new functionalities. | All functionalities are covered with Unit and Acceptance tests. |
-| Test validation | Acceptance phase during the sprint | During the code review and iteration review, verify that the Test Suite correctly and completely covers the Acceptance Criteria. | The Acceptance Criteria are integrated into the E2E test suite and become a regression suite for future verification. |
-| Test execution | A part of the CI process | | |
-​
-
 The roles and responsibilities during the STLC:
 
 | Role        | Responsibilities                                                                                                           | Performed by     |
