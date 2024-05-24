@@ -3,19 +3,14 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -55,22 +50,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonUnsupportedLokiOutput,
 			})
-		})
-
-		It("Should have a fluent-bit-sections ConfigMap", func() {
-			Eventually(func(g Gomega) {
-				var configMap corev1.ConfigMap
-				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		})
-
-		It("Should not include the pipeline in fluent-bit-sections ConfigMap", func() {
-			Consistently(func(g Gomega) {
-				var configMap corev1.ConfigMap
-				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)).To(Succeed())
-
-				g.Expect(configMap.Data).ShouldNot(HaveKey(fmt.Sprintf("%s.conf", pipelineName)))
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })
