@@ -52,7 +52,7 @@ The regression test suite validates the correctness of the product's previously 
 
 | Type | Automation     | Frequency                                                                                               | Results                      |
 | --- |----------------|---------------------------------------------------------------------------------------------------------|------------------------------|
-| Performance tests | Semi-automated | Automated performance tests are manually triggered when bumping images for Fluent Bit or Otel Collector | `PR Load Test` Github action |
+| Performance tests | Semi-automated | Automated performance tests are manually triggered when bumping images for Fluent Bit or OTel Collector | `PR Load Test` Github action |
 | Security tests (done SAP-internally) | Automated      |                                                                                                         |                              |
 
 ### Source Code Quality
