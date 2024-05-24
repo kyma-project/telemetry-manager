@@ -657,8 +657,8 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 				PriorityClassName: selfMonitorPriorityClass,
 			},
 		},
-		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
 		WebhookScheme: "https",
+		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
 	}
 }
 
