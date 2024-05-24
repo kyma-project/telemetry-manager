@@ -31,6 +31,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -47,6 +48,16 @@ type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
+}
+
+//go:generate mockery --name GatewayConfigBuilder --filename gateway_config_builder.go
+type GatewayConfigBuilder interface {
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
+}
+
+//go:generate mockery --name GatewayApplier --filename gateway_applier.go
+type GatewayApplier interface {
+	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
 }
 
 //go:generate mockery --name PipelineLock --filename pipeline_lock.go
@@ -85,8 +96,8 @@ type Reconciler struct {
 	config                     Config
 	pipelinesConditionsCleared bool
 
-	gatewayConfigBuilder     *gateway.Builder
-	gatewayApplier           *otelcollector.GatewayApplier
+	gatewayConfigBuilder     GatewayConfigBuilder
+	gatewayApplier           GatewayApplier
 	pipelineLock             PipelineLock
 	prober                   DeploymentProber
 	flowHealthProbingEnabled bool
