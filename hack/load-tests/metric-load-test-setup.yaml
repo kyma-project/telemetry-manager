@@ -28,15 +28,15 @@ spec:
   replicas: 20
   selector:
     matchLabels:
-      app: trace-load-generator
+      app: metric-load-generator
   template:
     metadata:
       labels:
-        app: trace-load-generator
+        app: metric-load-generator
         sidecar.istio.io/inject: "true"
     spec:
       containers:
-        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0
+        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.100.0
           args:
           - metrics
           - --otlp-insecure

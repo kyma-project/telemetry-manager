@@ -61,7 +61,7 @@ $(TABLE_GEN): $(LOCALBIN)
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): GOLANGCI_LINT_LATEST = $(shell curl -sL https://api.github.com/repos/golangci/golangci-lint/releases/latest | jq -r ".tag_name" )
 $(GOLANGCI_LINT): $(LOCALBIN)
-	if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANG_CI_LINT_LATEST)" ]; then \
+	@if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
 		echo -e ${RED}########################################################################################${NC}; \
 		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANG_CI_LINT_LATEST}${NC}; \
 		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}.env${RED} file and the ${YELLOW}github workflow definition${NC}; \

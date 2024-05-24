@@ -50,7 +50,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			objs = append(objs, &brokenPipeline, unreachableHostSecret.K8sObject())
 
 			objs = append(objs,
-				telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+				telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 			)
 			return objs
 		}

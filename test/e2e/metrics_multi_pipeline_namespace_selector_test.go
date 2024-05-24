@@ -63,9 +63,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		objs = append(objs, &pipelineExcludeApp1Ns)
 
 		objs = append(objs,
-			telemetrygen.New(app1Ns, telemetrygen.SignalTypeMetrics).K8sObject(),
-			telemetrygen.New(app2Ns, telemetrygen.SignalTypeMetrics).K8sObject(),
-			telemetrygen.New(kitkyma.SystemNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.NewPod(app1Ns, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.NewPod(app2Ns, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.NewPod(kitkyma.SystemNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
 
 			prommetricgen.New(app1Ns).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 			prommetricgen.New(app2Ns).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),

@@ -5,6 +5,7 @@ import (
 	"net"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -55,12 +56,14 @@ type Backend struct {
 	certs                *testutils.ServerCerts
 	abortFaultPercentage float64
 
-	otelCollectorConfigMap  *ConfigMap
-	fluentDConfigMap        *fluentd.ConfigMap
-	otelCollectorDeployment *Deployment
-	otlpService             *kitk8s.Service
-	hostSecret              *kitk8s.Secret
-	virtualService          *kitk8s.VirtualService
+	otelCollectorConfigMap      *ConfigMap
+	fluentDConfigMap            *fluentd.ConfigMap
+	otelCollectorDeployment     *Deployment
+	otlpService                 *kitk8s.Service
+	hostSecret                  *kitk8s.Secret
+	virtualService              *kitk8s.VirtualService
+	faultDelayPercentage        float64
+	faultDelayFixedDelaySeconds int
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -110,6 +113,13 @@ func WithAbortFaultInjection(abortFaultPercentage float64) Option {
 	}
 }
 
+func WithFaultDelayInjection(faultPercentage float64, delaySeconds int) Option {
+	return func(b *Backend) {
+		b.faultDelayPercentage = faultPercentage
+		b.faultDelayFixedDelaySeconds = delaySeconds
+	}
+}
+
 func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
 
@@ -119,7 +129,7 @@ func (b *Backend) buildResources() {
 		WithPort(otlpGRPCPortName, otlpGRPCPort).
 		WithPort(otlpHTTPPortName, otlpHTTPPort).
 		WithPort(httpExportPortName, httpExportPort)
-	//TODO: LogPipelines requires the host and the port to be separated.
+	// TODO: LogPipelines requires the host and the port to be separated.
 	// TracePipeline/MetricPipeline requires an endpoint in the format of scheme://host:port.
 	// The referencable secret is called host in both cases, but the value is different. It has to be refactored.
 	host := b.Endpoint()
@@ -134,8 +144,8 @@ func (b *Backend) buildResources() {
 	b.hostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
 		kitk8s.WithStringData("host", host)).Persistent(b.persistentHostSecret)
 
-	if b.abortFaultPercentage > 0 {
-		b.virtualService = kitk8s.NewVirtualService("fault-injection", b.namespace, b.name).WithAbortFaultPercentage(b.abortFaultPercentage)
+	if b.abortFaultPercentage > 0 || b.faultDelayPercentage > 0 {
+		b.virtualService = kitk8s.NewVirtualService("fault-injection", b.namespace, b.name).WithFaultAbortPercentage(b.abortFaultPercentage).WithFaultDelay(b.faultDelayPercentage, time.Duration(b.faultDelayFixedDelaySeconds)*time.Second)
 	}
 }
 

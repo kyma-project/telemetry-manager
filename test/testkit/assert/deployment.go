@@ -32,7 +32,7 @@ func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.
 		Namespace:     name.Namespace,
 	}
 
-	return PodReady(ctx, k8sClient, listOptions)
+	return PodsReady(ctx, k8sClient, listOptions)
 }
 
 func DeploymentHasPriorityClass(ctx context.Context, k8sClient client.Client, name types.NamespacedName, expectedPriorityClassName string) {

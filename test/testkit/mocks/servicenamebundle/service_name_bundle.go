@@ -17,7 +17,7 @@ const (
 	AppLabelValue = "workload"
 
 	// Predefined names for Kubernetes resources
-	PodWithBothLabelsName                             = "pod-with-both-app-labels" //#nosec G101 -- This is a false positive
+	PodWithBothLabelsName                             = "pod-with-both-app-labels" // #nosec G101 -- This is a false positive
 	PodWithAppLabelName                               = "pod-with-app-label"
 	DeploymentName                                    = "deployment"
 	StatefulSetName                                   = "stateful-set"

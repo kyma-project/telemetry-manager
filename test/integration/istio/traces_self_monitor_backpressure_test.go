@@ -15,11 +15,11 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure), Ordered, func() {
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
@@ -28,27 +28,31 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), O
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithAbortFaultInjection(90))
-		logProducer := loggen.New(mockNs).WithReplicas(3).WithLoad(loggen.LoadHigh)
+		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithAbortFaultInjection(95))
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, logProducer.K8sObject())
 
-		logPipeline := testutils.NewLogPipelineBuilder().
+		tracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
-		objs = append(objs, &logPipeline)
+
+		objs = append(objs,
+			&tracePipeline,
+			telemetrygen.NewDeployment(mockNs, telemetrygen.SignalTypeTraces,
+				telemetrygen.WithRate(800),
+				telemetrygen.WithWorkers(5)).K8sObject(),
+		)
 
 		return objs
 	}
 
-	Context("Before deploying a logpipeline", func() {
+	Context("Before deploying a tracepipeline", func() {
 		It("Should have a healthy webhook", func() {
 			assert.WebhookHealthy(ctx, k8sClient)
 		})
 	})
 
-	Context("When a logpipeline exists", Ordered, func() {
+	Context("When a tracepipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -57,24 +61,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), O
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", func() {
-			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
+		It("Should have a running tracepipeline", func() {
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
-		It("Should have a log backend running", func() {
+		It("Should have a trace backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have a log producer running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+		It("Should have a telemetrygen running", func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: telemetrygen.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should wait for the log flow to gradually become unhealthy", func() {
-			assert.LogPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+		It("Should wait for the trace flow to gradually become unhealthy", func() {
+			assert.TracePipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonBufferFillingUp, Status: metav1.ConditionFalse},
 				{Reason: conditions.ReasonSelfMonSomeDataDropped, Status: metav1.ConditionFalse},

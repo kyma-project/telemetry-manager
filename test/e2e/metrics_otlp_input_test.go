@@ -39,7 +39,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			Build()
 		objs = append(objs, &pipelineWithoutOTLP)
 
-		objs = append(objs, telemetrygen.New(appNs, telemetrygen.SignalTypeMetrics).K8sObject())
+		objs = append(objs, telemetrygen.NewPod(appNs, telemetrygen.SignalTypeMetrics).K8sObject())
 		return objs
 	}
 

@@ -3,6 +3,14 @@
 package istio
 
 import (
+	"net/http"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -11,22 +19,16 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"net/http"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	const (
 		appName          = "app-1"
 		istiofiedAppName = "app-2"
-		istiofiedAppNs   = "istio-permissive-mtls" //creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
+		istiofiedAppNs   = "istio-permissive-mtls" // creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 	)
 
 	var (
@@ -179,7 +181,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		ready, err := assert.PodReady(ctx, k8sClient, listOptions)
+		ready, err := assert.PodsReady(ctx, k8sClient, listOptions)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrue())
 
