@@ -158,10 +158,10 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.NotNil(t, container.LivenessProbe, "liveness probe must be defined")
 	require.NotNil(t, container.ReadinessProbe, "readiness probe must be defined")
 	resources := container.Resources
-	require.Equal(t, cpuRequest, *resources.Requests.Cpu(), "cpu requests should be defined")
-	require.Equal(t, memoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
-	require.Equal(t, cpuLimit, *resources.Limits.Cpu(), "cpu limit should be defined")
-	require.Equal(t, memoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
+	require.True(t, cpuRequest.Equal(*resources.Requests.Cpu()), "cpu requests should be defined")
+	require.True(t, memoryRequest.Equal(*resources.Requests.Memory()), "memory requests should be defined")
+	require.True(t, cpuLimit.Equal(*resources.Limits.Cpu()), "cpu limit should be defined")
+	require.True(t, memoryLimit.Equal(*resources.Limits.Memory()), "memory limit should be defined")
 
 	//security contexts
 	podSecurityContext := dep.Spec.Template.Spec.SecurityContext
