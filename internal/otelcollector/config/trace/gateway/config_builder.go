@@ -14,7 +14,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.TracePipeline) (*Config, otlpexporter.EnvVars, error) {
+type Builder struct {
+	Reader client.Reader
+}
+
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
 			Service:    config.DefaultService(make(config.Pipelines)),
@@ -34,7 +38,13 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 			continue
 		}
 
-		otlpExporterBuilder := otlpexporter.NewConfigBuilder(c, pipeline.Spec.Output.Otlp, pipeline.Name, queueSize, otlpexporter.SignalTypeTrace)
+		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
+			b.Reader,
+			pipeline.Spec.Output.Otlp,
+			pipeline.Name,
+			queueSize,
+			otlpexporter.SignalTypeTrace,
+		)
 		if err := addComponentsForTracePipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
 			return nil, nil, err
 		}

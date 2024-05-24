@@ -85,6 +85,7 @@ type Reconciler struct {
 	config                     Config
 	pipelinesConditionsCleared bool
 
+	gatewayConfigBuilder     *gateway.Builder
 	gatewayApplier           *otelcollector.GatewayApplier
 	pipelineLock             PipelineLock
 	prober                   DeploymentProber
@@ -102,9 +103,14 @@ func NewReconciler(client client.Client,
 	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
-		Client:         client,
-		config:         config,
-		gatewayApplier: &otelcollector.GatewayApplier{Config: config.Gateway},
+		Client: client,
+		config: config,
+		gatewayConfigBuilder: &gateway.Builder{
+			Reader: client,
+		},
+		gatewayApplier: &otelcollector.GatewayApplier{
+			Config: config.Gateway,
+		},
 		pipelineLock: resourcelock.New(client,
 			types.NamespacedName{
 				Name:      "telemetry-tracepipeline-lock",
@@ -228,7 +234,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 }
 
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
-	collectorConfig, collectorEnvVars, err := gateway.MakeConfig(ctx, r.Client, allPipelines)
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}

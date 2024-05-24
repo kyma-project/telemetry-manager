@@ -14,9 +14,10 @@ import (
 func TestProcessors(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
+	sut := Builder{Reader: fakeClient}
 
 	t.Run("insert cluster name processor", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, 1, len(collectorConfig.Processors.InsertClusterName.Attributes))
@@ -26,7 +27,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("memory limit processors", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
@@ -35,7 +36,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("batch processors", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, 512, collectorConfig.Processors.Batch.SendBatchSize)
@@ -44,7 +45,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("k8s attributes processors", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "serviceAccount", collectorConfig.Processors.K8sAttributes.AuthType)
@@ -72,7 +73,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("filter processor", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, 10, len(collectorConfig.Processors.DropNoisySpans.Traces.Span), "Span filter list size is wrong")
