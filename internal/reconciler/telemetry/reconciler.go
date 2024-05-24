@@ -92,14 +92,7 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, 
 		},
 		overridesHandler: overridesHandler,
 		selfMonitorApplierDeleter: &selfmonitor.ApplierDeleter{
-			Config: &selfmonitor.Config{
-				BaseName:  config.SelfMonitor.BaseName,
-				Namespace: config.SelfMonitor.Namespace,
-				Deployment: selfmonitor.DeploymentConfig{
-					Image:             config.SelfMonitor.Deployment.Image,
-					PriorityClassName: config.SelfMonitor.Deployment.PriorityClassName,
-				},
-			},
+			Config: config.SelfMonitor.Config,
 		},
 	}
 }

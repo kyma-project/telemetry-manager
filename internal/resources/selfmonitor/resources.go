@@ -36,7 +36,7 @@ var (
 )
 
 type ApplierDeleter struct {
-	Config *Config
+	Config Config
 }
 
 func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {

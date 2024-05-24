@@ -26,7 +26,7 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	sut := ApplierDeleter{
-		Config: &Config{
+		Config: Config{
 			BaseName:  name,
 			Namespace: namespace,
 		},
@@ -87,7 +87,7 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	sut := ApplierDeleter{
-		Config: &Config{
+		Config: Config{
 			BaseName:  name,
 			Namespace: namespace,
 		},
