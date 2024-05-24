@@ -1,0 +1,599 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: self-monitor-load-test
+
+---
+apiVersion: operator.kyma-project.io/v1alpha1
+kind: Telemetry
+metadata:
+  labels:
+    app.kubernetes.io/name: telemetry
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: telemetry-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: telemetry-manager
+  name: default
+  namespace: kyma-system
+spec:
+  trace:
+    gateway:
+      scaling:
+        type: "Static"
+        static:
+          replicas: 4
+  metric:
+    gateway:
+      scaling:
+        type: "Static"
+        static:
+          replicas: 4
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: load-test-1
+spec:
+  output:
+    http:
+      dedot: true
+      format: json
+      host:
+        value: telemetry-receiver.self-monitor-load-test
+      port: "9880"
+      tls:
+        disabled: true
+        skipCertificateValidation: true
+      uri: "/"
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: load-test-2
+spec:
+  output:
+    http:
+      dedot: true
+      format: json
+      host:
+        value: telemetry-receiver.self-monitor-load-test
+      port: "9880"
+      tls:
+        disabled: true
+        skipCertificateValidation: true
+      uri: "/"
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: load-test-3
+spec:
+  output:
+    http:
+      dedot: true
+      format: json
+      host:
+        value: telemetry-receiver.self-monitor-load-test
+      port: "9880"
+      tls:
+        disabled: true
+        skipCertificateValidation: true
+      uri: "/"
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: load-test-1
+spec:
+  input:
+    runtime:
+      enabled: true
+    prometheus:
+      enabled: true
+    istio:
+      enabled: true
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://telemetry-receiver.self-monitor-load-test:4317
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: load-test-2
+spec:
+  input:
+    runtime:
+      enabled: true
+    prometheus:
+      enabled: true
+    istio:
+      enabled: true
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://telemetry-receiver.self-monitor-load-test:4317
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: load-test-3
+spec:
+  input:
+    runtime:
+      enabled: true
+    prometheus:
+      enabled: true
+    istio:
+      enabled: true
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://telemetry-receiver.self-monitor-load-test:4317
+
+---
+
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: load-test-1
+spec:
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://telemetry-receiver.self-monitor-load-test:4317
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: load-test-2
+spec:
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://telemetry-receiver.self-monitor-load-test:4317
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: load-test-3
+spec:
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://telemetry-receiver.self-monitor-load-test:4317
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telemetry-receiver
+  namespace: self-monitor-load-test
+  labels:
+    app: telemetry-receiver
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${MY_POD_IP}:4317
+          http:
+            endpoint: ${MY_POD_IP}:4318
+    exporters:
+      debug:
+
+    service:
+      pipelines:
+        traces:
+          receivers:
+            - otlp
+          exporters:
+            - debug
+        metrics:
+          receivers:
+            - otlp
+          exporters:
+            - debug
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-receiver-fluentd
+  namespace: self-monitor-load-test
+data:
+  fluent.conf: |-
+    <source>
+      @type http
+      port 9880
+      bind 0.0.0.0
+      body_size_limit 100m
+      add_http_headers true
+      <parse>
+        @type json
+      </parse>
+    </source>
+    <match **>
+      @type null
+    </match>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: docker-receiver
+  name: telemetry-receiver
+  namespace: self-monitor-load-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetry-receiver
+  template:
+    metadata:
+      labels:
+        app: telemetry-receiver
+        sidecar.istio.io/inject: "true"
+    spec:
+      volumes:
+        - name: collector-config
+          configMap:
+            name: telemetry-receiver
+        - configMap:
+            defaultMode: 420
+            name: log-receiver-fluentd
+          name: fluentd-config
+      securityContext:
+        fsGroup: 101
+      containers:
+        - image: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1
+          imagePullPolicy: IfNotPresent
+          name: fluentd
+          ports:
+            - containerPort: 9880
+              name: http-log
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /fluentd/etc/
+              name: fluentd-config
+        - image: OTEL_IMAGE
+          name: otel-collector
+          resources:
+            limits:
+              memory: 1024Mi
+            requests:
+              memory: 1024Mi
+          volumeMounts:
+            - name: collector-config
+              mountPath: /etc/collector
+          args:
+            - --config=/etc/collector/config.yaml
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: telemetry-receiver
+  name: telemetry-receiver
+  namespace: self-monitor-load-test
+spec:
+  ports:
+    - name: http-log
+      port: 9880
+      protocol: TCP
+      targetPort: 9880
+    - name: grpc-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-otlp
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+  selector:
+    app: telemetry-receiver
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: metric-load-generator
+  name: metric-load-generator
+  namespace: self-monitor-load-test
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: metric-load-generator
+  template:
+    metadata:
+      labels:
+        app: metric-load-generator
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.100.0
+          args:
+            - metrics
+            - --otlp-insecure
+            - --otlp-endpoint
+            - "telemetry-otlp-metrics.kyma-system:4317"
+            - --otlp-attributes
+            - "service.name=\"metric-load-generator\""
+            - --workers
+            - "100"
+            - --duration
+            - "20m"
+            - --rate
+            - "10000000"
+            - --interval
+            - "30s"
+            - --telemetry-attributes
+            - "key1=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key2=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key3=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key4=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key5=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key6=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key7=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key8=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key9=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+            - --telemetry-attributes
+            - "key10=\"SimSimulates a client generating metrics. (Stability level: Development)\""
+          imagePullPolicy: IfNotPresent
+          name: telemetrygen
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              memory: 256Mi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metric-agent-load-generator
+  namespace: self-monitor-load-test
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: metric-agent-load-generator
+  template:
+    metadata:
+      labels:
+        app: metric-agent-load-generator
+        sidecar.istio.io/inject: "true"
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+    spec:
+      containers:
+        - name: metric-agent-load-generator
+          image: quay.io/freshtracks.io/avalanche
+          imagePullPolicy: IfNotPresent
+          args:
+            - --metric-count=1000
+            - --series-count=10
+            - --port=8080
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: metrics
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: trace-load-generator
+  name: trace-load-generator
+  namespace: self-monitor-load-test
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: trace-load-generator
+  template:
+    metadata:
+      labels:
+        app: trace-load-generator
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.100.0
+          args:
+            - traces
+            - --otlp-insecure
+            - --otlp-endpoint
+            - "telemetry-otlp-traces.kyma-system:4317"
+            - --otlp-attributes
+            - "service.name=\"trace-load-generator\""
+            - --workers
+            - "5"
+            - --rate
+            - "2000"
+            - --duration
+            - "20m"
+            - --telemetry-attributes
+            - "key1=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key2=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key3=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key4=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key5=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key6=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key7=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key8=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key9=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key10=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key11=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key12=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key13=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key14=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key15=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key16=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key17=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key18=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key19=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key20=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key21=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key22=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key23=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key24=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key25=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key26=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key27=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key28=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key29=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key30=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key31=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key32=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key33=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key34=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key35=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key36=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key37=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key38=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key39=\"Simulates a client generating traces. (Stability level: Alpha)\""
+            - --telemetry-attributes
+            - "key40=\"Simulates a client generating traces. (Stability level: Alpha)\""
+          imagePullPolicy: IfNotPresent
+          name: telemetrygen
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 512Mi
+
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: telemetry-receiver-fault
+  namespace: self-monitor-load-test
+spec:
+  hosts:
+    - telemetry-receiver
+  http:
+    - fault:
+        abort:
+          httpStatus: 503
+          percentage:
+            value: 70
+        delay:
+          percentage:
+            value: 70
+          fixedDelay: 1s
+      route:
+        - destination:
+            host: telemetry-receiver
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "9090"
+    prometheus.io/scrape: "true"
+  labels:
+    app.kubernetes.io/name: telemetry-self-monitor
+  name: telemetry-self-monitor-metrics
+  namespace: kyma-system
+spec:
+  internalTrafficPolicy: Cluster
+  ports:
+    - name: http
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    app.kubernetes.io/name: telemetry-self-monitor
+  sessionAffinity: None
+  type: ClusterIP

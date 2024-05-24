@@ -22,8 +22,8 @@ func MakeConfig(builderCfg BuilderConfig) Config {
 
 func makeGlobalConfig() GlobalConfig {
 	return GlobalConfig{
-		ScraperInterval:    10 * time.Second,
-		EvaluationInterval: 10 * time.Second,
+		ScraperInterval:    30 * time.Second,
+		EvaluationInterval: 30 * time.Second,
 	}
 }
 
@@ -111,6 +111,10 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					Action:       Replace,
 					Regex:        "otelcol_.+;.+/([a-zA-Z0-9-]+)",
 					TargetLabel:  "pipeline_name",
+				},
+				{
+					Action: LabelDrop,
+					Regex:  "^(receiver|exporter|directory|service_instance_id|service_version|transport|service_name|alertname|job|instance|namespace|node)$",
 				},
 			},
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{

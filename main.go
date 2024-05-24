@@ -273,8 +273,8 @@ func main() {
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorCPULimit, "self-monitor-cpu-limit", "0.2", "CPU limit for self-monitor")
 	flag.StringVar(&selfMonitorCPURequest, "self-monitor-cpu-request", "0.1", "CPU request for self-monitor")
-	flag.StringVar(&selfMonitorMemoryLimit, "self-monitor-memory-limit", "90Mi", "Memory limit for self-monitor")
-	flag.StringVar(&selfMonitorMemoryRequest, "self-monitor-memory-request", "42Mi", "Memory request for self-monitor")
+	flag.StringVar(&selfMonitorMemoryLimit, "self-monitor-memory-limit", "180Mi", "Memory limit for self-monitor")
+	flag.StringVar(&selfMonitorMemoryRequest, "self-monitor-memory-request", "50Mi", "Memory request for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
 	flag.StringVar(&deniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")

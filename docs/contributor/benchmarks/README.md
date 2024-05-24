@@ -16,7 +16,7 @@ This document describes a reproducible test setup to determine the limits and KP
 
 All test scenarios use a single test script [run-load-test.sh](../../../hack/load-tests/run-load-test.sh), which provides following parameters:
 
-- `-t` The test target type supported values are `traces, metrics, metricagent, logs-fluentbit`, default is `traces`
+- `-t` The test target type supported values are `traces, metrics, metricagent, logs-fluentbit, self-monitor`, default is `traces`
 - `-n` Test name e.g. `0.92`
 - `-m` Enables multi pipeline scenarios, default is `false`
 - `-b` Enables backpressure scenarios, default is `false`
@@ -89,7 +89,7 @@ A typical test result output looks like the following example:
 <div class="table-wrapper" markdown="block">
 
 |       Version/Test |       Single Pipeline       |                             |                     |                      |               |       Multi Pipeline        |                             |                     |                      |               | Single Pipeline Backpressure |                             |                     |                      |               | Multi Pipeline Backpressure |                             |                     |                      |               |
-| -----------------: | :-------------------------: | :-------------------------: | :-----------------: | :------------------: | :-----------: | :-------------------------: | :-------------------------: | :-----------------: | :------------------: | :-----------: | :--------------------------: | :-------------------------: | :-----------------: | :------------------: | :-----------: | :-------------------------: | :-------------------------: | :-----------------: | :------------------: | :-----------: |
+|-------------------:|:---------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:|:---------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:|:---------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:|
 |                    | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec  | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
 |               0.91 |            19815            |            19815            |          0          |       137, 139       |     1, 1      |            13158            |            38929            |          0          |       117, 98        |   1.3, 1.3    |             9574             |            1280             |         509         |      1929, 1726      |   0.7, 0.7    |            9663             |            1331             |         510         |      2029, 1686      |   0.7, 0.7    |
 |               0.92 |            21146            |            21146            |          0          |        72, 50        |     1, 1      |            12757            |            38212            |          0          |       90, 111        |   1.3, 1.1    |             3293             |            2918             |         204         |       866, 873       |   0.6, 0.6    |            9694             |            1399             |         510         |      1730, 1796      |   0.7, 0.7    |
@@ -181,7 +181,7 @@ Each test scenario has its own test scripts responsible for preparing test scena
 <div class="table-wrapper" markdown="block">
 
 |       Version/Test |       Single Pipeline        |                              |                     |                      |               |        Multi Pipeline        |                              |                     |                      |               | Single Pipeline Backpressure |                              |                     |                      |               | Multi Pipeline Backpressure  |                              |                     |                      |               |
-| -----------------: | :--------------------------: | :--------------------------: | :-----------------: | :------------------: | :-----------: | :--------------------------: | :--------------------------: | :-----------------: | :------------------: | :-----------: | :--------------------------: | :--------------------------: | :-----------------: | :------------------: | :-----------: | :--------------------------: | :--------------------------: | :-----------------: | :------------------: | :-----------: |
+|-------------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
 |                    | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
 |               0.92 |             5992             |             5993             |          0          |       225, 178       |   1.6, 1.5    |             4882             |            14647             |          0          |       165, 255       |   1.7, 1.8    |             635              |             636              |         114         |       770, 707       |     0, 0      |             965              |             1910             |         400         |      1694, 1500      |   0.1, 0.1    |
 |               0.93 |             5592             |             5593             |          0          |       104, 100       |   1.6, 1.5    |             4721             |            14164             |          0          |       161, 175       |   1.8, 1.7    |             723              |             634              |         217         |       805, 889       |   1.4, 1.4    |             1492             |             1740             |         419         |      1705, 1535      |    0.2, 0     |
@@ -214,7 +214,7 @@ Each test scenario has its own test scripts responsible for preparing test scena
 <div class="table-wrapper" markdown="block">
 
 |       Version/Test |       Single Pipeline        |                              |                     |                      |               | Single Pipeline Backpressure |                              |                     |                      |               |
-| -----------------: | :--------------------------: | :--------------------------: | :-----------------: | :------------------: | :-----------: | :--------------------------: | :--------------------------: | :-----------------: | :------------------: | :-----------: |
+|-------------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
 |                    | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
 |               0.92 |            20123             |            20137             |          0          |       704, 747       |   0.2, 0.2    |            19952             |            15234             |          0          |       751, 736       |   0.3, 0.2    |
 |               0.93 |            19949             |            19946             |          0          |       704, 729       |   0.2, 0.2    |            16699             |            16591             |         107         |       852, 771       |   0.2, 0.2    |
@@ -290,12 +290,62 @@ Each test scenario has its own test scripts responsible for preparing the test s
 <div class="table-wrapper" markdown="block">
 
 |      Version/Test |             Single Pipeline             |                                          |                                 |                      |               |             Multi Pipeline              |                                          |                                 |                      |               |      Single Pipeline Backpressure       |                                          |                                 |                      |               |       Multi Pipeline Backpressure       |                                          |                                 |                      |               |
-| ----------------: | :-------------------------------------: | :--------------------------------------: | :-----------------------------: | :------------------: | :-----------: | :-------------------------------------: | :--------------------------------------: | :-----------------------------: | :------------------: | :-----------: | :-------------------------------------: | :--------------------------------------: | :-----------------------------: | :------------------: | :-----------: | :-------------------------------------: | :--------------------------------------: | :-----------------------------: | :------------------: | :-----------: |
+|------------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|
 |                   | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage |
 |             2.2.1 |                  5165                   |                   8541                   |              68518              |       172, 190       |     1, 1      |                  2009                   |                   2195                   |             102932              |       332, 320       |   0.9, 0.9    |                  5914                   |                   1498                   |              79247              |       184, 176       |    0.9, 1     |                  1979                   |                   489                    |              83442              |       310, 322       |   0.9, 0.9    |
 |             2.2.2 |                  5159                   |                   7811                   |              75545              |       171, 170       |     1, 1      |                  1910                   |                   2516                   |             103780              |       324, 324       |   0.9, 0.9    |                  5857                   |                   1513                   |              72494              |       189, 200       |     1, 1      |                  1860                   |                   421                    |              90852              |       314, 322       |   0.9, 0.9    |
 | 2.2.2 (new setup) |                  5445                   |                   9668                   |              68453              |       248, 981       |     1, 1      |                  6201                   |                   2747                   |              89291              |       544, 720       |     1, 1      |                  6009                   |                   1723                   |              58982              |       650, 682       |     1, 1      |                  6111                   |                   385                    |             108909              |       686, 931       |   0.9, 0.9    |
 |             3.0.3 |                  9483                   |                  22042                   |              53251              |       366, 681       |     1, 1      |                  10737                  |                   8785                   |             115232              |       953, 568       |   0.9, 0.9    |                  10425                  |                   4610                   |              80614              |       856, 704       |   0.9, 0.9    |                  10955                  |                   1724                   |              87530              |       503, 594       |   0.9 ,0.9    |
 |             3.0.4 |                  4341                   |                   8296                   |              35628              |       971, 726       |    0.1,0.1    |                  1201                   |                   544                    |             103624              |       652, 815       |     0, 0      |                  932                    |                   297                    |              37663              |       615, 726       |   0.1,0.1     |                  1477                   |                   171                    |             108885              |       530, 566       |     0, 0.1    |
+
+</div>
+
+## Self Monitor
+
+### Assumptions
+
+The test is executed for 20 minutes. In this test case, 3 LogPipelines, 3 MetricPipelines with mode, and 3 TracePipelines with backpressure simulation are deployed on the test cluster. 
+Each pipeline instance is loaded with synthetic load to ensure all possible metrics are generated and collected by Self Monitor.  
+
+Backend outages are simulated with Istio Fault Injection, 70% of traffic to the test backend will return `HTTP 503` to simulate service outages.
+
+### Setup
+
+The following diagram shows the test setup.
+
+![Self Monitor Test Setup](./assets/selfmonitor_perf_test_setup.drawio.svg)
+
+In this test scenario, a preconfigured load generator is deployed on the test cluster.
+
+A Prometheus instance is deployed on the test cluster to collect relevant metrics from the Self Monitor instance and to fetch the metrics at the end of the test as test scenario result.
+
+All test scenarios also have a test backend deployed to simulate end-to-end behavior.
+
+This test measures the ingestion rate and resource usage of Self Monitor. The measured ingestion rate is based on pipelines deployed with this test case with 4 Trace Gateway, 4 Metric Gateway, 2 Fluent Bit, and 2 Metric Agent Pods.
+
+The average measured values with these 12 target Pods in total, must be the following:
+- Scrape Samples/sec: 15 - 22 samples/sec
+- Total Series Created: 150 - 200 series
+- Head Chunk Storage Size/bytes: 130 - 350 KB
+
+Configured memory, CPU limits, and storage are based on this base value and will work up to max scrape 120 targets.
+
+### Running Tests
+
+1. To test the average throughput of Self Monitor, run:
+
+```shell
+./run-load-test.sh -t self-monitor -n "2.45.5"
+```
+
+
+#### Test Results
+
+<div class="table-wrapper" markdown="block">
+
+|      Version/Test |      Default       |                      |                               |                      |               | 
+|------------------:|:------------------:|:--------------------:|:-----------------------------:|:--------------------:|:-------------:|
+|                   | Scrape Samples/sec | Total Series Created | Head Chunk Storage Size/bytes | Pod Memory Usage(MB) | Pod CPU Usage | 
+|            2.45.5 |        15.4        |         157          |            131072             |          62          |       0       | 
 
 </div>
