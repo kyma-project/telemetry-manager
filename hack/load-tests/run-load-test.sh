@@ -360,11 +360,11 @@ function get_result_and_cleanup_fluentbit() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_selfmonitor() {
-   SCRAPESAMPLES=$(curl -fs --data-urlencode 'query=sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor"}[5m]) / 300' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   SCRAPESAMPLES=$(curl -fs --data-urlencode 'query=sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor-metrics"}[5m]) / 300' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   SERIESCREATED=$(curl -fs --data-urlencode 'query=prometheus_tsdb_head_series{service="telemetry-self-monitor"}' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   SERIESCREATED=$(curl -fs --data-urlencode 'query=prometheus_tsdb_head_series{service="telemetry-self-monitor-metrics"}' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   HEADSTORAGESIZE=$(curl -fs --data-urlencode 'query=prometheus_tsdb_head_chunks_storage_size_bytes{service="telemetry-self-monitor"}' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   HEADSTORAGESIZE=$(curl -fs --data-urlencode 'query=prometheus_tsdb_head_chunks_storage_size_bytes{service="telemetry-self-monitor-metrics"}' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="self-monitor"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 

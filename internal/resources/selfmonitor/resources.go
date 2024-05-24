@@ -280,7 +280,7 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 			{
 				Name:  containerName,
 				Image: image,
-				Args:  []string{"--storage.tsdb.retention.time=2h", "--storage.tsdb.retention.size=30MB", "--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus/"},
+				Args:  []string{"--storage.tsdb.retention.time=2h", "--storage.tsdb.retention.size=80MB", "--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus/"},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged:               ptr.To(false),
 					RunAsUser:                ptr.To(prometheusUser),
@@ -315,7 +315,8 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 				},
 			},
 		},
-		ServiceAccountName: baseName,
+		ServiceAccountName:            baseName,
+		TerminationGracePeriodSeconds: ptr.To(int64(300)),
 		SecurityContext: &corev1.PodSecurityContext{
 			RunAsUser:    ptr.To(prometheusUser),
 			RunAsNonRoot: ptr.To(true),
@@ -372,10 +373,6 @@ func makeService(name types.NamespacedName, port int) *corev1.Service {
 			Name:      name.Name,
 			Namespace: name.Namespace,
 			Labels:    defaultLabels(name.Name),
-			Annotations: map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   "9090",
-			},
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
