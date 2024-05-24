@@ -44,15 +44,6 @@ The roles and responsibilities during the STLC:
 | E2E Operational                                                                                         | System                   | It validates the operational aspects of the module (successful module upgrades, deletions, etc.).                                                                                          |
 | [E2E integration](https://github.com/kyma-project/telemetry-manager/issues/261#issuecomment-1647336680) | Integration (high-level) | tests the Telemetry Module integration with 3rd party components and modules (with a focus on contract fulfilment).                                                                        |
 
-
-​
-| Test suite | Testing level | Purpose |
-| --- | --- | --- |
-| Unit (located along with the individual source files) | Unit | It tests the individual units of application logic in isolation, focusing on the implementation correctness. |
-| [E2E Acceptance](../../test/e2e) | Acceptance  (high-level) | It tests the usability scenarios of Telemetry Manager in a cluster. This test suite assesses the functional correctness of Telemetry Controller. |
-| E2E Operational | System | It validates the operational aspects of the module (successful module upgrades, deletions, etc.). |
-| [E2E integration](https://github.com/kyma-project/telemetry-manager/issues/261#issuecomment-1647336680) |Integration (high-level)|tests the Telemetry Module integration with 3rd party components and modules (with a focus on contract fulfilment).|
-
 ![E2E Test Suites](assets/e2e-test-suites.png)
 
 #### Testing of New Functionality
