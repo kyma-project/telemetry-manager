@@ -80,14 +80,15 @@ import (
 )
 
 var (
-	certDir             string
-	deniedFilterPlugins string
-	deniedOutputPlugins string
-	logLevel            string
-	overridesHandler    *overrides.Handler
-	scheme              = runtime.NewScheme()
-	setupLog            = ctrl.Log.WithName("setup")
-	telemetryNamespace  string
+	certDir                      string
+	fluentBitDeniedFilterPlugins string
+	fluentBitDeniedOutputPlugins string
+	logLevel                     string
+	overridesHandler             *overrides.Handler
+	scheme                       = runtime.NewScheme()
+	setupLog                     = ctrl.Log.WithName("setup")
+	telemetryNamespace           string
+	enableWebhook                bool
 
 	maxLogPipelines    int
 	maxTracePipelines  int
@@ -133,8 +134,6 @@ var (
 	selfMonitorMemoryRequest string
 	selfMonitorMemoryLimit   string
 	selfMonitorPriorityClass string
-
-	enableWebhook bool
 )
 
 const (
@@ -233,6 +232,7 @@ func main() {
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
+	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
 
 	flag.StringVar(&traceGatewayImage, "trace-collector-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
@@ -260,7 +260,8 @@ func main() {
 
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
 	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
-	flag.StringVar(&deniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag,multiline", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
+	flag.StringVar(&fluentBitDeniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag,multiline", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
+	flag.StringVar(&fluentBitDeniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
 	flag.StringVar(&fluentBitMemoryLimit, "fluent-bit-memory-limit", "1Gi", "Memory limit for fluent-bit")
 	flag.StringVar(&fluentBitCPURequest, "fluent-bit-cpu-request", "100m", "CPU request for fluent-bit")
@@ -268,6 +269,7 @@ func main() {
 	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
+	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
 	flag.BoolVar(&enableSelfMonitor, "self-monitor-enabled", false, "Enable self-monitoring of the pipelines")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
@@ -276,11 +278,6 @@ func main() {
 	flag.StringVar(&selfMonitorMemoryLimit, "self-monitor-memory-limit", "90Mi", "Memory limit for self-monitor")
 	flag.StringVar(&selfMonitorMemoryRequest, "self-monitor-memory-request", "42Mi", "Memory request for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
-
-	flag.StringVar(&deniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
-	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
-
-	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -554,7 +551,7 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 		validation.NewFilesValidator(),
 		admission.NewDecoder(scheme),
 		dryrun.NewDryRunner(client, createDryRunConfig()),
-		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(deniedOutputPlugins), DeniedFilterPlugins: parsePlugins(deniedFilterPlugins)})
+		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(fluentBitDeniedOutputPlugins), DeniedFilterPlugins: parsePlugins(fluentBitDeniedFilterPlugins)})
 }
 
 func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
