@@ -76,6 +76,7 @@ type Reconciler struct {
 	config Config
 
 	agentConfigBuilder       *configmetricagent.Builder
+	gatewayConfigBuilder     *gateway.Builder
 	gatewayApplier           *otelcollector.GatewayApplier
 	agentApplier             *otelcollector.AgentApplier
 	pipelineLock             PipelineLock
@@ -100,7 +101,9 @@ func NewReconciler(
 	return &Reconciler{
 		Client: client,
 		config: config,
-
+		gatewayConfigBuilder: &gateway.Builder{
+			Reader: client,
+		},
 		agentConfigBuilder: &configmetricagent.Builder{
 			Config: configmetricagent.BuilderConfig{
 				GatewayOTLPServiceName: types.NamespacedName{
@@ -248,7 +251,7 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	collectorConfig, collectorEnvVars, err := gateway.MakeConfig(ctx, r.Client, allPipelines)
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}
