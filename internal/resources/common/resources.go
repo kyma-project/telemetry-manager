@@ -14,8 +14,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-type podSpecOption = func(pod *corev1.PodSpec)
-
 func MakeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
@@ -86,13 +84,15 @@ func MakeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels m
 	}
 }
 
-func WithPriorityClass(priorityClassName string) podSpecOption {
+type PodSpecOption = func(pod *corev1.PodSpec)
+
+func WithPriorityClass(priorityClassName string) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.PriorityClassName = priorityClassName
 	}
 }
 
-func WithResources(resources corev1.ResourceRequirements) podSpecOption {
+func WithResources(resources corev1.ResourceRequirements) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		for i := range pod.Containers {
 			pod.Containers[i].Resources = resources
@@ -100,7 +100,7 @@ func WithResources(resources corev1.ResourceRequirements) podSpecOption {
 	}
 }
 
-func WithGoMemLimitEnvVar(memory resource.Quantity) podSpecOption {
+func WithGoMemLimitEnvVar(memory resource.Quantity) PodSpecOption {
 	memoryLimit := memory.DeepCopy()
 	goMemLimit := memoryLimit.Value() / 100 * 80
 	return func(pod *corev1.PodSpec) {

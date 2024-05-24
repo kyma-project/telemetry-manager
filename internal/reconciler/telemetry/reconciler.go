@@ -54,8 +54,9 @@ type WebhookConfig struct {
 }
 
 type SelfMonitorConfig struct {
+	selfmonitor.Config
+
 	Enabled       bool
-	Config        selfmonitor.Config
 	WebhookURL    string
 	WebhookScheme string
 }
@@ -73,9 +74,10 @@ type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
-	config           Config
-	healthCheckers   healthCheckers
-	overridesHandler OverridesHandler
+	config                    Config
+	healthCheckers            healthCheckers
+	overridesHandler          OverridesHandler
+	selfMonitorApplierDeleter *selfmonitor.ApplierDeleter
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler, flowHealthProbingEnabled bool) *Reconciler {
@@ -89,6 +91,16 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, 
 			metrics: &metricComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
 		},
 		overridesHandler: overridesHandler,
+		selfMonitorApplierDeleter: &selfmonitor.ApplierDeleter{
+			Config: &selfmonitor.Config{
+				BaseName:  config.SelfMonitor.BaseName,
+				Namespace: config.SelfMonitor.Namespace,
+				Deployment: selfmonitor.DeploymentConfig{
+					Image:             config.SelfMonitor.Deployment.Image,
+					PriorityClassName: config.SelfMonitor.Deployment.PriorityClassName,
+				},
+			},
+		},
 	}
 }
 
@@ -141,34 +153,34 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 		return err
 	}
 	if !pipelinesPresent {
-		if err := selfmonitor.RemoveResources(ctx, r.Client, &r.config.SelfMonitor.Config); err != nil {
+		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
 			return fmt.Errorf("failed to delete self-monitor resources: %w", err)
 		}
 		return nil
 	}
 
-	selfMonitorConfig := config.MakeConfig(config.BuilderConfig{
+	prometheusConfig := config.MakeConfig(config.BuilderConfig{
 		ScrapeNamespace: r.config.SelfMonitor.Config.Namespace,
 		WebhookURL:      r.config.SelfMonitor.WebhookURL,
 		WebhookScheme:   r.config.SelfMonitor.WebhookScheme,
 	})
-	selfMonitorConfigYAML, err := yaml.Marshal(selfMonitorConfig)
+	prometheusConfigYAML, err := yaml.Marshal(prometheusConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
 
-	rules := config.MakeRules()
-	rulesYAML, err := yaml.Marshal(rules)
+	alertRules := config.MakeRules()
+	alertRulesYAML, err := yaml.Marshal(alertRules)
 	if err != nil {
 		return fmt.Errorf("failed to marshal rules: %w", err)
 	}
 
-	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYAML)
-	r.config.SelfMonitor.Config.AlertRules = string(rulesYAML)
-
-	if err := selfmonitor.ApplyResources(ctx,
+	if err := r.selfMonitorApplierDeleter.ApplyResources(
+		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
-		&r.config.SelfMonitor.Config); err != nil {
+		string(prometheusConfigYAML),
+		string(alertRulesYAML),
+	); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}
 
