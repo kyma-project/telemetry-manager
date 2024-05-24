@@ -304,31 +304,31 @@ Each test scenario has its own test scripts responsible for preparing the test s
 
 ### Assumptions
 
-The test is executed for 20 minutes, with this test case, 3 LogPipelines, 3 MetricPipelines with mode, and 3 TracePipelines with backpressure simulation deployed on the test cluster. 
-Each pipeline instance loaded with synthetic load to ensure all possible metrics are generated and collected by Self Monitor.  
+The test is executed for 20 minutes. In this test case, 3 LogPipelines, 3 MetricPipelines with mode, and 3 TracePipelines with backpressure simulation are deployed on the test cluster. 
+Each pipeline instance is loaded with synthetic load to ensure all possible metrics are generated and collected by Self Monitor.  
 
 Backend outages are simulated with Istio Fault Injection, 70% of traffic to the test backend will return `HTTP 503` to simulate service outages.
 
 ### Setup
 
-The following diagram shows the test setup used for test.
+The following diagram shows the test setup.
 
 ![Self Monitor Test Setup](./assets/selfmonitor_perf_test_setup.drawio.svg)
 
-In this test scenarios, a preconfigured load generator is deployed on the test cluster.
+In this test scenario, a preconfigured load generator is deployed on the test cluster.
 
-A Prometheus instance is deployed on the test cluster to collect relevant metrics from Self Monitor instance and to fetch the metrics at the end of the test as test scenario result.
+A Prometheus instance is deployed on the test cluster to collect relevant metrics from the Self Monitor instance and to fetch the metrics at the end of the test as test scenario result.
 
-All test scenarios also have a test backend deployed to simulate end-to-end behaviour.
+All test scenarios also have a test backend deployed to simulate end-to-end behavior.
 
-This test measure ingestion rate and resource usage of Self Monitor. The measured ingestion rate based on pipelines deployed with this test case with 4 Trace Gateway, 4 Metric Gateway, 2 Fluent-Bit, and 2 Metric Agent pods.
+This test measures the ingestion rate and resource usage of Self Monitor. The measured ingestion rate is based on pipelines deployed with this test case with 4 Trace Gateway, 4 Metric Gateway, 2 Fluent Bit, and 2 Metric Agent Pods.
 
-The average measured values with this 12 target pods in total, should be 
+The average measured values with these 12 target Pods in total, must be the following:
 - Scrape Samples/sec: 15 - 22 samples/sec
 - Total Series Created: 150 - 200 series
 - Head Chunk Storage Size/bytes: 130 - 350 KB
 
-Configured memory, CPU limits, and the storage based on this base value and will work up to max scrape 120 targets.
+Configured memory, CPU limits, and storage are based on this base value and will work up to max scrape 120 targets.
 
 ### Running Tests
 
