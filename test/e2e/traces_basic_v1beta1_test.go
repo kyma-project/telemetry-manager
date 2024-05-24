@@ -58,7 +58,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelV1Beta1), func(
 			},
 		}
 		objs = append(objs,
-			telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
+			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeTraces).K8sObject(),
 			&tracePipeline,
 		)
 

@@ -1,8 +1,7 @@
 package k8s
 
 import (
-	"maps"
-
+	"github.com/google/uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,10 +35,24 @@ func (d *Deployment) WithPodSpec(podSpec corev1.PodSpec) *Deployment {
 	return d
 }
 
-func (d *Deployment) K8sObject() *appsv1.Deployment {
-	labels := d.labels
-	maps.Copy(labels, PersistentLabel)
+func (d *Deployment) WithReplicas(replicas int32) *Deployment {
+	d.replicas = replicas
+	return d
+}
 
+func (d *Deployment) WithPersistentLabel() *Deployment {
+	d.labels[PersistentLabelName] = "true"
+	return d
+}
+
+func (d *Deployment) K8sObject() *appsv1.Deployment {
+	// prevent empty labels
+	labels := d.labels
+	if len(labels) == 0 {
+		labels = map[string]string{
+			"test/label": uuid.New().String(),
+		}
+	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      d.name,

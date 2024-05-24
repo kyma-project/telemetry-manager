@@ -5,10 +5,25 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func PodReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
+func PodReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
+	var pod corev1.Pod
+	err := k8sClient.Get(ctx, name, &pod)
+	if err != nil {
+		return false, fmt.Errorf("failed to get pod: %w", err)
+	}
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.State.Running == nil {
+			return false, generateContainerError(pod.Name, containerStatus)
+		}
+	}
+	return true, nil
+}
+
+func PodsReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
 	var pods corev1.PodList
 	err := k8sClient.List(ctx, &pods, &listOptions)
 	if err != nil {

@@ -5,6 +5,7 @@ package istio
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -76,10 +77,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
-			assert.LogPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []string{
-				conditions.ReasonSelfMonFlowHealthy,
-				conditions.ReasonSelfMonNoLogsDelivered,
-				conditions.ReasonSelfMonAllDataDropped,
+			assert.LogPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
+				{Reason: conditions.ReasonSelfMonNoLogsDelivered, Status: metav1.ConditionFalse},
+				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
 			})
 		})
 	})
