@@ -39,7 +39,7 @@ type ApplierDeleter struct {
 	Config *Config
 }
 
-func (ad *ApplierDeleter) RemoveResources(ctx context.Context, c client.Client) error {
+func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
 	objectMeta := metav1.ObjectMeta{
 		Name:      ad.Config.BaseName,
 		Namespace: ad.Config.Namespace,

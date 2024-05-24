@@ -80,15 +80,13 @@ import (
 )
 
 var (
-	certDir                      string
-	fluentBitDeniedFilterPlugins string
-	fluentBitDeniedOutputPlugins string
-	logLevel                     string
-	overridesHandler             *overrides.Handler
-	scheme                       = runtime.NewScheme()
-	setupLog                     = ctrl.Log.WithName("setup")
-	telemetryNamespace           string
-	enableWebhook                bool
+	certDir            string
+	logLevel           string
+	overridesHandler   *overrides.Handler
+	scheme             = runtime.NewScheme()
+	setupLog           = ctrl.Log.WithName("setup")
+	telemetryNamespace string
+	enableWebhook      bool
 
 	maxLogPipelines    int
 	maxTracePipelines  int
@@ -105,6 +103,8 @@ var (
 	traceGatewayMemoryRequest        string
 	traceGatewayDynamicMemoryRequest string
 
+	fluentBitDeniedFilterPlugins       string
+	fluentBitDeniedOutputPlugins       string
 	fluentBitMemoryBufferLimit         string
 	fluentBitFsBufferLimit             string
 	fluentBitCPULimit                  string
@@ -254,10 +254,10 @@ func main() {
 	flag.StringVar(&metricGatewayDynamicMemoryRequest, "metric-gateway-dynamic-memory-request", "0", "Additional memory request for metrics OpenTelemetry Collector per MetricPipeline")
 	flag.IntVar(&maxMetricPipelines, "metric-gateway-pipelines", 3, "Maximum number of MetricPipelines to be created. If 0, no limit is applied.")
 
-	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
-	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
 	flag.StringVar(&fluentBitDeniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag,multiline", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
 	flag.StringVar(&fluentBitDeniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
+	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
+	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
 	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
 	flag.StringVar(&fluentBitMemoryLimit, "fluent-bit-memory-limit", "1Gi", "Memory limit for fluent-bit")
 	flag.StringVar(&fluentBitCPURequest, "fluent-bit-cpu-request", "100m", "CPU request for fluent-bit")

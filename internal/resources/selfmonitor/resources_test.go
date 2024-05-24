@@ -21,7 +21,7 @@ const (
 	alertRulesYAML       = "dummy alert rules"
 )
 
-func TestRemoveSelfMonitorResources(t *testing.T) {
+func TestDeleteSelfMonitorResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 
@@ -45,7 +45,7 @@ func TestRemoveSelfMonitorResources(t *testing.T) {
 		verifyService(ctx, t, client)
 	})
 
-	err = sut.RemoveResources(ctx, client)
+	err = sut.DeleteResources(ctx, client)
 	require.NoError(t, err)
 
 	t.Run("Deployment should not be present", func(t *testing.T) {

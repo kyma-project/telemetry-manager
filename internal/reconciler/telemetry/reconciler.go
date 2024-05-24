@@ -153,7 +153,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 		return err
 	}
 	if !pipelinesPresent {
-		if err := r.selfMonitorApplierDeleter.RemoveResources(ctx, r.Client); err != nil {
+		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
 			return fmt.Errorf("failed to delete self-monitor resources: %w", err)
 		}
 		return nil
