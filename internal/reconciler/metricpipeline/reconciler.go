@@ -75,6 +75,7 @@ type Reconciler struct {
 	client.Client
 	config Config
 
+	agentConfigBuilder       *configmetricagent.Builder
 	gatewayApplier           *otelcollector.GatewayApplier
 	agentApplier             *otelcollector.AgentApplier
 	pipelineLock             PipelineLock
@@ -100,8 +101,20 @@ func NewReconciler(
 		Client: client,
 		config: config,
 
-		gatewayApplier: &otelcollector.GatewayApplier{Config: config.Gateway},
-		agentApplier:   &otelcollector.AgentApplier{Config: config.Agent},
+		agentConfigBuilder: &configmetricagent.Builder{
+			Config: configmetricagent.BuilderConfig{
+				GatewayOTLPServiceName: types.NamespacedName{
+					Namespace: config.Gateway.Namespace,
+					Name:      config.Gateway.OTLPServiceName,
+				},
+			},
+		},
+		gatewayApplier: &otelcollector.GatewayApplier{
+			Config: config.Gateway,
+		},
+		agentApplier: &otelcollector.AgentApplier{
+			Config: config.Agent,
+		},
 		pipelineLock: resourcelock.New(client, types.NamespacedName{
 			Name:      "telemetry-metricpipeline-lock",
 			Namespace: config.Gateway.Namespace,
@@ -275,10 +288,9 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
-	agentConfig := configmetricagent.MakeConfig(types.NamespacedName{
-		Namespace: r.config.Gateway.Namespace,
-		Name:      r.config.Gateway.OTLPServiceName,
-	}, allPipelines, isIstioActive)
+	agentConfig := r.agentConfigBuilder.Build(allPipelines, configmetricagent.BuildOptions{
+		IstioEnabled: isIstioActive,
+	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
 	if err != nil {

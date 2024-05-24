@@ -18,12 +18,12 @@ var (
 	istioKeyFile  = filepath.Join(IstioCertPath, "key.pem")
 )
 
-func makeReceiversConfig(inputs inputSources, isIstioActive bool) Receivers {
+func makeReceiversConfig(inputs inputSources, istioEnabled bool) Receivers {
 	var receiversConfig Receivers
 
 	if inputs.prometheus {
-		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods(isIstioActive)
-		receiversConfig.PrometheusAppServices = makePrometheusConfigForServices(isIstioActive)
+		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods(istioEnabled)
+		receiversConfig.PrometheusAppServices = makePrometheusConfigForServices(istioEnabled)
 	}
 
 	if inputs.runtime {
@@ -57,15 +57,15 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 	}
 }
 
-func makePrometheusConfigForPods(isIstioActive bool) *PrometheusReceiver {
-	return makePrometheusConfig(isIstioActive, "app-pods", RolePod, makePrometheusPodsRelabelConfigs)
+func makePrometheusConfigForPods(istioEnabled bool) *PrometheusReceiver {
+	return makePrometheusConfig(istioEnabled, "app-pods", RolePod, makePrometheusPodsRelabelConfigs)
 }
 
-func makePrometheusConfigForServices(isIstioActive bool) *PrometheusReceiver {
-	return makePrometheusConfig(isIstioActive, "app-services", RoleEndpoints, makePrometheusServicesRelabelConfigs)
+func makePrometheusConfigForServices(istioEnabled bool) *PrometheusReceiver {
+	return makePrometheusConfig(istioEnabled, "app-services", RoleEndpoints, makePrometheusServicesRelabelConfigs)
 }
 
-func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
+func makePrometheusConfig(istioEnabled bool, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	baseScrapeConfig := ScrapeConfig{
@@ -79,7 +79,7 @@ func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, r
 	httpScrapeConfig.RelabelConfigs = relabelConfigFn(false)
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
-	if isIstioActive {
+	if istioEnabled {
 		httpsScrapeConfig := baseScrapeConfig
 		httpsScrapeConfig.JobName = jobNamePrefix + "-secure"
 		httpsScrapeConfig.RelabelConfigs = relabelConfigFn(true)
