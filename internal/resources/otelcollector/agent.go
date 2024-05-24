@@ -33,7 +33,7 @@ type AgentApplyOptions struct {
 	CollectorConfigYAML string
 }
 
-func (aa *AgentApplier) ApplyAgentResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
+func (aa *AgentApplier) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aa.Config.Namespace, Name: aa.Config.BaseName}
 
 	if err := applyCommonResources(

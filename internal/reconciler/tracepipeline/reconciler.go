@@ -261,7 +261,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayApplier.ApplyGatewayResources(
+	if err := r.gatewayApplier.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,

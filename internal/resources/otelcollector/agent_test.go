@@ -29,7 +29,7 @@ func TestApplyAgentResources(t *testing.T) {
 		},
 	}
 
-	err := sut.ApplyAgentResources(ctx, client, AgentApplyOptions{
+	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
 		AllowedPorts:        []int32{5555, 6666},
 		CollectorConfigYAML: cfg,
 	})
@@ -254,7 +254,7 @@ func TestApplyAgentResources_WithSelfMonEnabled(t *testing.T) {
 		},
 	}
 
-	err := sut.ApplyAgentResources(ctx, client, AgentApplyOptions{
+	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
 		AllowedPorts:        []int32{5555, 6666},
 		CollectorConfigYAML: cfg,
 	})

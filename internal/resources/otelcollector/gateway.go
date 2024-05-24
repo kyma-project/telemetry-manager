@@ -46,7 +46,7 @@ type GatewayApplyOptions struct {
 	ResourceRequirementsMultiplier int
 }
 
-func (ga *GatewayApplier) ApplyGatewayResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
+func (ga *GatewayApplier) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
 	name := types.NamespacedName{Namespace: ga.Config.Namespace, Name: ga.Config.BaseName}
 
 	if err := applyCommonResources(

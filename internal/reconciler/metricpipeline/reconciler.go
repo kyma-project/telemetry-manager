@@ -262,7 +262,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayApplier.ApplyGatewayResources(
+	if err := r.gatewayApplier.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,
@@ -290,7 +290,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	if err := r.agentApplier.ApplyAgentResources(
+	if err := r.agentApplier.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{

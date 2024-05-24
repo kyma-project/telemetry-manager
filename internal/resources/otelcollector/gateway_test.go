@@ -43,7 +43,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		Config: createGatewayConfig(false),
 	}
 
-	err := sut.ApplyGatewayResources(ctx, client, GatewayApplyOptions{
+	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
 		AllowedPorts:        []int32{5555, 6666},
 		CollectorConfigYAML: cfg,
 		CollectorEnvVars:    envVars,
@@ -306,7 +306,7 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 		Config: createGatewayConfig(false),
 	}
 
-	err := sut.ApplyGatewayResources(ctx, client, GatewayApplyOptions{
+	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
 		CollectorConfigYAML: cfg,
 		CollectorEnvVars:    envVars,
 		IstioEnabled:        true,
@@ -356,7 +356,7 @@ func TestApplyGatewayResourcesWithSelfMonEnabled(t *testing.T) {
 		Config: createGatewayConfig(true),
 	}
 
-	err := sut.ApplyGatewayResources(ctx, client, GatewayApplyOptions{
+	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
 		CollectorConfigYAML: cfg,
 		CollectorEnvVars:    envVars,
 	})
