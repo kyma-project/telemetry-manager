@@ -75,6 +75,7 @@ type Reconciler struct {
 	client.Client
 	config Config
 
+	gatewayApplier           *otelcollector.GatewayApplier
 	agentApplier             *otelcollector.AgentApplier
 	pipelineLock             PipelineLock
 	gatewayProber            DeploymentProber
@@ -99,7 +100,8 @@ func NewReconciler(
 		Client: client,
 		config: config,
 
-		agentApplier: &otelcollector.AgentApplier{Config: config.Agent},
+		gatewayApplier: &otelcollector.GatewayApplier{Config: config.Gateway},
+		agentApplier:   &otelcollector.AgentApplier{Config: config.Agent},
 		pipelineLock: resourcelock.New(client, types.NamespacedName{
 			Name:      "telemetry-metricpipeline-lock",
 			Namespace: config.Gateway.Namespace,
@@ -233,11 +235,6 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	scaling := otelcollector.GatewayScalingConfig{
-		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
-		ResourceRequirementsMultiplier: len(allPipelines),
-	}
-
 	collectorConfig, collectorEnvVars, err := gateway.MakeConfig(ctx, r.Client, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -255,11 +252,21 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	if err := otelcollector.ApplyGatewayResources(ctx,
+	opts := otelcollector.GatewayApplyOptions{
+		AllowedPorts:                   allowedPorts,
+		CollectorConfigYAML:            string(collectorConfigYAML),
+		CollectorEnvVars:               collectorEnvVars,
+		IstioEnabled:                   isIstioActive,
+		IstioExcludePorts:              []int32{ports.Metrics},
+		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		ResourceRequirementsMultiplier: len(allPipelines),
+	}
+
+	if err := r.gatewayApplier.ApplyGatewayResources(
+		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive).
-			WithAllowedPorts(allowedPorts)); err != nil {
+		opts,
+	); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 

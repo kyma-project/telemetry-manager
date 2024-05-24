@@ -7,8 +7,6 @@ import (
 type Config struct {
 	BaseName                string
 	Namespace               string
-	CollectorConfig         string
-	CollectorEnvVars        map[string][]byte
 	ObserveBySelfMonitoring bool
 }
 
@@ -16,46 +14,7 @@ type GatewayConfig struct {
 	Config
 
 	Deployment      DeploymentConfig
-	Scaling         GatewayScalingConfig
-	Istio           IstioConfig
 	OTLPServiceName string
-	allowedPorts    []int32
-}
-
-type IstioConfig struct {
-	Enabled      bool
-	ExcludePorts string
-}
-
-func (cfg *GatewayConfig) WithScaling(s GatewayScalingConfig) *GatewayConfig {
-	cfgCopy := *cfg
-	cfgCopy.Scaling = s
-	return &cfgCopy
-}
-
-func (cfg *GatewayConfig) WithCollectorConfig(collectorCfgYAML string, collectorEnvVars map[string][]byte) *GatewayConfig {
-	cfgCopy := *cfg
-	cfgCopy.CollectorConfig = collectorCfgYAML
-	cfgCopy.CollectorEnvVars = collectorEnvVars
-	return &cfgCopy
-}
-
-func (cfg *GatewayConfig) WithIstioConfig(excludePorts string, istioEnabled bool) *GatewayConfig {
-	cfgCopy := *cfg
-	istioConfg := IstioConfig{
-		Enabled:      istioEnabled,
-		ExcludePorts: excludePorts,
-	}
-	cfgCopy.Istio = istioConfg
-	return &cfgCopy
-}
-
-func (cfg *GatewayConfig) WithAllowedPorts(ports []int32) *GatewayConfig {
-	cfgCopy := *cfg
-
-	cfgCopy.allowedPorts = ports
-	return &cfgCopy
-
 }
 
 type DeploymentConfig struct {
@@ -71,26 +30,10 @@ type DeploymentConfig struct {
 	DynamicMemoryRequest resource.Quantity
 }
 
-type GatewayScalingConfig struct {
-	// Replicas specifies the number of gateway replicas.
-	Replicas int32
-
-	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
-	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
-	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
-	ResourceRequirementsMultiplier int
-}
-
 type AgentConfig struct {
 	Config
 
 	DaemonSet DaemonSetConfig
-}
-
-func (cfg *AgentConfig) WithCollectorConfig(collectorCfgYAML string) *AgentConfig {
-	cp := *cfg
-	cp.CollectorConfig = collectorCfgYAML
-	return &cp
 }
 
 type DaemonSetConfig struct {
