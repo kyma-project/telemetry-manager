@@ -75,6 +75,8 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			gatewayProber:      gatewayProberStub,
 			overridesHandler:   overridesHandlerStub,
@@ -117,6 +119,8 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			gatewayProber:      gatewayProberMock,
 			overridesHandler:   overridesHandlerStub,
@@ -159,6 +163,8 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			gatewayProber:      gatewayProberMock,
 			overridesHandler:   overridesHandlerStub,
@@ -204,6 +210,8 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			gatewayProber:      gatewayProberStub,
 			agentProber:        agentProberMock,
@@ -250,6 +258,8 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			gatewayProber:      gatewayProberStub,
 			agentProber:        agentProberMock,
@@ -296,6 +306,8 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			gatewayProber:      gatewayProberStub,
 			agentProber:        agentProberMock,
@@ -347,6 +359,8 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			gatewayProber:      gatewayProberStub,
 			overridesHandler:   overridesHandlerStub,
@@ -562,6 +576,8 @@ func TestReconcile(t *testing.T) {
 				sut := Reconciler{
 					Client:                   fakeClient,
 					config:                   testConfig,
+					agentApplier:             &otelcollector.AgentApplier{Config: testConfig.Agent},
+					gatewayApplier:           &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 					pipelineLock:             pipelineLockStub,
 					gatewayProber:            gatewayProberStub,
 					flowHealthProbingEnabled: true,
@@ -669,6 +685,8 @@ func TestReconcile(t *testing.T) {
 				sut := Reconciler{
 					Client:             fakeClient,
 					config:             testConfig,
+					agentApplier:       &otelcollector.AgentApplier{Config: testConfig.Agent},
+					gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 					pipelineLock:       pipelineLockStub,
 					gatewayProber:      gatewayProberStub,
 					tlsCertValidator:   tlsStub,

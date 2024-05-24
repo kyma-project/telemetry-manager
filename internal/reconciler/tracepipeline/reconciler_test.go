@@ -64,6 +64,7 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			prober:             proberStub,
 			overridesHandler:   overridesHandlerStub,
@@ -111,6 +112,7 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			prober:             proberStub,
 			overridesHandler:   overridesHandlerStub,
@@ -216,6 +218,7 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			prober:             proberStub,
 			overridesHandler:   overridesHandlerStub,
@@ -404,6 +407,7 @@ func TestReconcile(t *testing.T) {
 				sut := Reconciler{
 					Client:                   fakeClient,
 					config:                   testConfig,
+					gatewayApplier:           &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 					pipelineLock:             pipelineLockStub,
 					prober:                   gatewayProberStub,
 					flowHealthProbingEnabled: true,
@@ -476,6 +480,7 @@ func TestReconcile(t *testing.T) {
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
+			gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:       pipelineLockStub,
 			prober:             proberStub,
 			overridesHandler:   overridesHandlerStub,
@@ -574,6 +579,7 @@ func TestReconcile(t *testing.T) {
 				sut := Reconciler{
 					Client:             fakeClient,
 					config:             testConfig,
+					gatewayApplier:     &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 					pipelineLock:       pipelineLockStub,
 					prober:             proberStub,
 					tlsCertValidator:   tlsStub,
