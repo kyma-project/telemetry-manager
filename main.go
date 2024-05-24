@@ -129,10 +129,6 @@ var (
 
 	enableSelfMonitor        bool
 	selfMonitorImage         string
-	selfMonitorCPURequest    string
-	selfMonitorCPULimit      string
-	selfMonitorMemoryRequest string
-	selfMonitorMemoryLimit   string
 	selfMonitorPriorityClass string
 )
 
@@ -273,10 +269,6 @@ func main() {
 
 	flag.BoolVar(&enableSelfMonitor, "self-monitor-enabled", false, "Enable self-monitoring of the pipelines")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
-	flag.StringVar(&selfMonitorCPULimit, "self-monitor-cpu-limit", "0.2", "CPU limit for self-monitor")
-	flag.StringVar(&selfMonitorCPURequest, "self-monitor-cpu-request", "0.1", "CPU request for self-monitor")
-	flag.StringVar(&selfMonitorMemoryLimit, "self-monitor-memory-limit", "90Mi", "Memory limit for self-monitor")
-	flag.StringVar(&selfMonitorMemoryRequest, "self-monitor-memory-request", "42Mi", "Memory request for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
 	flag.Parse()
@@ -660,18 +652,12 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 		Config: selfmonitor.Config{
 			BaseName:  selfMonitorName,
 			Namespace: telemetryNamespace,
-
 			Deployment: selfmonitor.DeploymentConfig{
 				Image:             selfMonitorImage,
 				PriorityClassName: selfMonitorPriorityClass,
-				CPULimit:          resource.MustParse(selfMonitorCPULimit),
-				CPURequest:        resource.MustParse(selfMonitorCPURequest),
-				MemoryLimit:       resource.MustParse(selfMonitorMemoryLimit),
-				MemoryRequest:     resource.MustParse(selfMonitorMemoryRequest),
 			},
 		},
-		WebhookScheme: "https",
-		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
+		WebhookURL: fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
 	}
 }
 

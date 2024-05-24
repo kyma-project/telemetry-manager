@@ -9,31 +9,30 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
-	namespace = "my-namespace"
-	name      = "my-self-monitor"
-	cfg       = "dummy self-monitor config"
-)
-
-var (
-	baseCPURequest    = resource.MustParse("10m")
-	baseCPULimit      = resource.MustParse("30m")
-	baseMemoryRequest = resource.MustParse("15Mi")
-	baseMemoryLimit   = resource.MustParse("30Mi")
+	namespace            = "my-namespace"
+	name                 = "my-self-monitor"
+	prometheusConfigYAML = "dummy prometheus Config"
+	alertRulesYAML       = "dummy alert rules"
 )
 
 func TestRemoveSelfMonitorResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 
-	selfMonConfig := makeSelfMonitorConfig()
-	err := ApplyResources(ctx, client, selfMonConfig)
+	sut := ApplierDeleter{
+		Config: &Config{
+			BaseName:  name,
+			Namespace: namespace,
+		},
+	}
+
+	err := sut.ApplyResources(ctx, client, prometheusConfigYAML, alertRulesYAML)
 	require.NoError(t, err)
 
 	t.Run("It should create all resources", func(t *testing.T) {
@@ -46,7 +45,7 @@ func TestRemoveSelfMonitorResources(t *testing.T) {
 		verifyService(ctx, t, client)
 	})
 
-	err = RemoveResources(ctx, client, selfMonConfig)
+	err = sut.RemoveResources(ctx, client)
 	require.NoError(t, err)
 
 	t.Run("Deployment should not be present", func(t *testing.T) {
@@ -87,10 +86,17 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 
-	err := ApplyResources(ctx, client, makeSelfMonitorConfig())
+	sut := ApplierDeleter{
+		Config: &Config{
+			BaseName:  name,
+			Namespace: namespace,
+		},
+	}
+
+	err := sut.ApplyResources(ctx, client, prometheusConfigYAML, alertRulesYAML)
 	require.NoError(t, err)
 
-	t.Run("should create collector config configmap", func(t *testing.T) {
+	t.Run("should create collector Config configmap", func(t *testing.T) {
 		verifyConfigMapIsPresent(ctx, t, client)
 	})
 
@@ -143,7 +149,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 
 	//annotations
 	podAnnotations := dep.Spec.Template.ObjectMeta.Annotations
-	require.NotEmpty(t, podAnnotations["checksum/config"])
+	require.NotEmpty(t, podAnnotations["checksum/Config"])
 
 	//self-monitor container
 	require.Len(t, dep.Spec.Template.Spec.Containers, 1)
@@ -152,10 +158,10 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.NotNil(t, container.LivenessProbe, "liveness probe must be defined")
 	require.NotNil(t, container.ReadinessProbe, "readiness probe must be defined")
 	resources := container.Resources
-	require.Equal(t, baseCPURequest, *resources.Requests.Cpu(), "cpu requests should be defined")
-	require.Equal(t, baseMemoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
-	require.Equal(t, baseCPULimit, *resources.Limits.Cpu(), "cpu limit should be defined")
-	require.Equal(t, baseMemoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
+	require.Equal(t, cpuRequest, *resources.Requests.Cpu(), "cpu requests should be defined")
+	require.Equal(t, memoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
+	require.Equal(t, cpuLimit, *resources.Limits.Cpu(), "cpu limit should be defined")
+	require.Equal(t, memoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
 
 	//security contexts
 	podSecurityContext := dep.Spec.Template.Spec.SecurityContext
@@ -183,7 +189,7 @@ func verifyConfigMapIsPresent(ctx context.Context, t *testing.T, client client.C
 	require.Equal(t, map[string]string{
 		"app.kubernetes.io/name": name,
 	}, cm.Labels)
-	require.Equal(t, cfg, cm.Data["prometheus.yml"])
+	require.Equal(t, prometheusConfigYAML, cm.Data["prometheus.yml"])
 }
 
 func verifyRoleIsPresent(ctx context.Context, t *testing.T, client client.Client) {
@@ -292,19 +298,4 @@ func verifyService(ctx context.Context, t *testing.T, client client.Client) {
 		Port:       9090,
 		TargetPort: intstr.FromInt32(9090),
 	}, svc.Spec.Ports[0])
-}
-
-func makeSelfMonitorConfig() *Config {
-	return &Config{
-		BaseName:          name,
-		Namespace:         namespace,
-		SelfMonitorConfig: cfg,
-		Deployment: DeploymentConfig{
-			Image:         "foo.bar",
-			CPULimit:      baseCPULimit,
-			CPURequest:    baseCPURequest,
-			MemoryLimit:   baseMemoryLimit,
-			MemoryRequest: baseMemoryRequest,
-		},
-	}
 }
