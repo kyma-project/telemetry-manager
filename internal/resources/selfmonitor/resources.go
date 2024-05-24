@@ -23,6 +23,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
+const (
+	retentionTime = "2h"
+	retentionSize = "80MB"
+)
+
 var (
 	storageVolumeSize = resource.MustParse("100Mi")
 	cpuRequest        = resource.MustParse("0.1")
@@ -243,7 +248,12 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 			{
 				Name:  containerName,
 				Image: image,
-				Args:  []string{"--storage.tsdb.retention.time=6h", "--Config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus/"},
+				Args: []string{
+					"--storage.tsdb.retention.time=" + retentionTime,
+					"--storage.tsdb.retention.size=" + retentionSize,
+					"--config.file=/etc/prometheus/prometheus.yml",
+					"--storage.tsdb.path=/prometheus/",
+				},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged:               ptr.To(false),
 					RunAsUser:                ptr.To(prometheusUser),
@@ -257,20 +267,29 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 						Drop: []corev1.Capability{"ALL"},
 					},
 				},
-				VolumeMounts: []corev1.VolumeMount{{Name: "prometheus-Config-volume", MountPath: "/etc/prometheus/"}, {Name: "prometheus-storage-volume", MountPath: "/prometheus/"}},
+				VolumeMounts: []corev1.VolumeMount{{Name: "prometheus-config-volume", MountPath: "/etc/prometheus/"}, {Name: "prometheus-storage-volume", MountPath: "/prometheus/"}},
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "http-web",
+						ContainerPort: ports.PrometheusPort,
+					},
+				},
 				LivenessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
+						HTTPGet: &corev1.HTTPGetAction{Path: "/-/healthy", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
 					},
+					FailureThreshold: 5, PeriodSeconds: 5, TimeoutSeconds: 3, SuccessThreshold: 1,
 				},
 				ReadinessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
 					},
+					FailureThreshold: 3, PeriodSeconds: 5, TimeoutSeconds: 3, SuccessThreshold: 1,
 				},
 			},
 		},
-		ServiceAccountName: baseName,
+		ServiceAccountName:            baseName,
+		TerminationGracePeriodSeconds: ptr.To(int64(300)),
 		SecurityContext: &corev1.PodSecurityContext{
 			RunAsUser:    ptr.To(prometheusUser),
 			RunAsNonRoot: ptr.To(true),
@@ -280,7 +299,7 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 		},
 		Volumes: []corev1.Volume{
 			{
-				Name: "prometheus-Config-volume",
+				Name: "prometheus-config-volume",
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						DefaultMode: &defaultMode,
@@ -299,10 +318,6 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 				},
 			},
 		},
-	}
-
-	for _, opt := range opts {
-		opt(&pod)
 	}
 
 	return pod

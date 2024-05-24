@@ -1,6 +1,6 @@
 global:
-    scrape_interval: 10s
-    evaluation_interval: 10s
+    scrape_interval: 30s
+    evaluation_interval: 30s
 alerting:
     alertmanagers:
         - static_configs:
@@ -52,6 +52,8 @@ scrape_configs:
           regex: otelcol_.+;.+/([a-zA-Z0-9-]+)
           target_label: pipeline_name
           action: replace
+        - regex: ^(receiver|exporter|directory|service_instance_id|service_version|transport|service_name|alertname|job|instance|namespace|node)$
+          action: labeldrop
       kubernetes_sd_configs:
         - role: endpoints
           namespaces:
