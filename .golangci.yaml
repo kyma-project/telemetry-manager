@@ -19,6 +19,7 @@ linters:
     - varcheck
     - gomnd
     - execinquery
+    - gochecknoinits
   # Linters to be enabled after fixing the issues
     - intrange
     - cyclop
