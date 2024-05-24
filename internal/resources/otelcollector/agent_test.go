@@ -20,16 +20,19 @@ func TestApplyAgentResources(t *testing.T) {
 	name := "my-agent"
 	cfg := "dummy otel collector config"
 
-	agentConfig := &AgentConfig{
-		allowedPorts: []int32{5555, 6666},
-		Config: Config{
-			BaseName:        name,
-			Namespace:       namespace,
-			CollectorConfig: cfg,
+	sut := AgentApplier{
+		Config: AgentConfig{
+			Config: Config{
+				BaseName:  name,
+				Namespace: namespace,
+			},
 		},
 	}
 
-	err := ApplyAgentResources(ctx, client, agentConfig)
+	err := sut.ApplyAgentResources(ctx, client, AgentApplyOptions{
+		AllowedPorts:        []int32{5555, 6666},
+		CollectorConfigYAML: cfg,
+	})
 	require.NoError(t, err)
 
 	t.Run("should create collector config configmap", func(t *testing.T) {
@@ -241,17 +244,20 @@ func TestApplyAgentResources_WithSelfMonEnabled(t *testing.T) {
 	name := "my-agent"
 	cfg := "dummy otel collector config"
 
-	agentConfig := &AgentConfig{
-		allowedPorts: []int32{5555, 6666},
-		Config: Config{
-			BaseName:                name,
-			Namespace:               namespace,
-			CollectorConfig:         cfg,
-			ObserveBySelfMonitoring: true,
+	sut := AgentApplier{
+		Config: AgentConfig{
+			Config: Config{
+				BaseName:                name,
+				Namespace:               namespace,
+				ObserveBySelfMonitoring: true,
+			},
 		},
 	}
 
-	err := ApplyAgentResources(ctx, client, agentConfig)
+	err := sut.ApplyAgentResources(ctx, client, AgentApplyOptions{
+		AllowedPorts:        []int32{5555, 6666},
+		CollectorConfigYAML: cfg,
+	})
 	require.NoError(t, err)
 
 	t.Run("should create metrics service", func(t *testing.T) {

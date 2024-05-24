@@ -83,7 +83,6 @@ type GatewayScalingConfig struct {
 
 type AgentConfig struct {
 	Config
-	allowedPorts []int32
 
 	DaemonSet DaemonSetConfig
 }
@@ -101,12 +100,4 @@ type DaemonSetConfig struct {
 	CPURequest        resource.Quantity
 	MemoryLimit       resource.Quantity
 	MemoryRequest     resource.Quantity
-}
-
-func (cfg *AgentConfig) WithAllowedPorts(ports []int32) *AgentConfig {
-	cfgCopy := *cfg
-
-	cfgCopy.allowedPorts = ports
-	return &cfgCopy
-
 }

@@ -75,6 +75,7 @@ type Reconciler struct {
 	client.Client
 	config Config
 
+	agentApplier             *otelcollector.AgentApplier
 	pipelineLock             PipelineLock
 	gatewayProber            DeploymentProber
 	agentProber              DaemonSetProber
@@ -86,15 +87,19 @@ type Reconciler struct {
 }
 
 func NewReconciler(
-	client client.Client, config Config,
+	client client.Client,
+	config Config,
 	gatewayProber DeploymentProber,
 	agentProber DaemonSetProber,
 	flowHealthProbingEnabled bool,
 	flowHealthProber FlowHealthProber,
-	overridesHandler *overrides.Handler) *Reconciler {
+	overridesHandler *overrides.Handler,
+) *Reconciler {
 	return &Reconciler{
 		Client: client,
 		config: config,
+
+		agentApplier: &otelcollector.AgentApplier{Config: config.Agent},
 		pipelineLock: resourcelock.New(client, types.NamespacedName{
 			Name:      "telemetry-metricpipeline-lock",
 			Namespace: config.Gateway.Namespace,
@@ -276,13 +281,16 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	allowedPorts := getAgentPorts()
 	if isIstioActive {
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-
 	}
 
-	if err := otelcollector.ApplyAgentResources(ctx,
+	if err := r.agentApplier.ApplyAgentResources(
+		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Agent.WithCollectorConfig(string(agentConfigYAML)).
-			WithAllowedPorts(allowedPorts)); err != nil {
+		otelcollector.AgentApplyOptions{
+			AllowedPorts:        allowedPorts,
+			CollectorConfigYAML: string(agentConfigYAML),
+		},
+	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
 	}
 

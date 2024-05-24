@@ -78,7 +78,7 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 	return &clusterRoleBinding
 }
 
-func makeConfigMap(name types.NamespacedName, collectorConfig string) *corev1.ConfigMap {
+func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -86,7 +86,7 @@ func makeConfigMap(name types.NamespacedName, collectorConfig string) *corev1.Co
 			Labels:    defaultLabels(name.Name),
 		},
 		Data: map[string]string{
-			configMapKey: collectorConfig,
+			configMapKey: collectorConfigYAML,
 		},
 	}
 }
