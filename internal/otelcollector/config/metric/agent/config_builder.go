@@ -10,13 +10,26 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
+type BuilderConfig struct {
+	GatewayOTLPServiceName types.NamespacedName
+}
+
+type Builder struct {
+	Config BuilderConfig
+}
+
 type inputSources struct {
 	runtime    bool
 	prometheus bool
 	istio      bool
 }
 
-func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []telemetryv1alpha1.MetricPipeline, isIstioActive bool) *Config {
+type BuildOptions struct {
+	IstioEnabled  bool
+	IstioCertPath string
+}
+
+func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {
 	inputs := inputSources{
 		runtime:    enableRuntimeMetricScraping(pipelines),
 		prometheus: enablePrometheusMetricScraping(pipelines),
@@ -28,9 +41,9 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []telemetryv1
 			Service:    config.DefaultService(makePipelinesConfig(inputs)),
 			Extensions: config.DefaultExtensions(),
 		},
-		Receivers:  makeReceiversConfig(inputs, isIstioActive),
+		Receivers:  makeReceiversConfig(inputs, opts),
 		Processors: makeProcessorsConfig(inputs),
-		Exporters:  makeExportersConfig(gatewayServiceName),
+		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
 	}
 }
 

@@ -75,8 +75,6 @@ linters-settings:
         alias: telemetryv1beta1
       - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
         alias: telemetrycontrollers
-      - pkg: github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent
-        alias: configmetricagent
       - pkg: github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook
         alias: selfmonitorwebhook
       - pkg: github.com/kyma-project/telemetry-manager/internal/resources/common

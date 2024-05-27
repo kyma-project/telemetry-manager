@@ -11,10 +11,17 @@ import (
 )
 
 func TestProcessors(t *testing.T) {
+	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
+	sut := Builder{
+		Config: BuilderConfig{
+			GatewayOTLPServiceName: gatewayServiceName,
+		},
+	}
+
 	t.Run("delete service name", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, false)
+		}, BuildOptions{})
 
 		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 		require.Len(t, collectorConfig.Processors.DeleteServiceName.Attributes, 1)
@@ -23,9 +30,9 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("memory limiter proessor", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, false)
+		}, BuildOptions{})
 
 		require.NotNil(t, collectorConfig.Processors.MemoryLimiter)
 		require.Equal(t, collectorConfig.Processors.MemoryLimiter.LimitPercentage, 75)
@@ -34,9 +41,9 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("batch processor", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, false)
+		}, BuildOptions{})
 
 		require.NotNil(t, collectorConfig.Processors.Batch)
 		require.Equal(t, collectorConfig.Processors.Batch.SendBatchSize, 1024)
@@ -45,9 +52,9 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("insert input source runtime", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, false)
+		}, BuildOptions{})
 
 		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 		require.Len(t, collectorConfig.Processors.DeleteServiceName.Attributes, 1)
@@ -56,9 +63,9 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("set instrumentation scope runtime", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, false)
+		}, BuildOptions{})
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeRuntime.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements, 1)
@@ -68,9 +75,9 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("set instrumentation scope prometheus", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, false)
+		}, BuildOptions{})
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopePrometheus.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements, 1)
@@ -80,9 +87,9 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("set instrumentation scope istio", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithIstioInput(true).Build(),
-		}, true)
+		}, BuildOptions{})
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeIstio.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements, 1)
