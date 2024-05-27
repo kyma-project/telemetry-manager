@@ -179,7 +179,6 @@ func TestUpdateStatus(t *testing.T) {
 		)
 
 		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-			conditions.ReasonFluentBitDSReady,
 			"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
 
 		var cm corev1.ConfigMap
@@ -275,7 +274,6 @@ func TestUpdateStatus(t *testing.T) {
 		)
 
 		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-			conditions.ReasonFluentBitDSReady,
 			"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
 
 		var cm corev1.ConfigMap
@@ -458,7 +456,6 @@ func TestUpdateStatus(t *testing.T) {
 				)
 
 				requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-					conditions.ReasonFluentBitDSReady,
 					"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
 
 				var cm corev1.ConfigMap
@@ -649,7 +646,7 @@ func TestUpdateStatus(t *testing.T) {
 					requireEndsWithLegacyPendingCondition(t, updatedPipeline, tt.expectedReason, expectedLegacyMessage)
 				} else {
 					expectedLegacyMessage := conditions.RunningTypeDeprecationMsg + conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady)
-					requireEndsWithLegacyRunningCondition(t, updatedPipeline, conditions.ReasonFluentBitDSReady, expectedLegacyMessage)
+					requireEndsWithLegacyRunningCondition(t, updatedPipeline, expectedLegacyMessage)
 				}
 
 				var cm corev1.ConfigMap
@@ -691,14 +688,14 @@ func requireEndsWithLegacyPendingCondition(t *testing.T, pipeline telemetryv1alp
 	require.NotEmpty(t, lastCond.LastTransitionTime)
 }
 
-func requireEndsWithLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, reason, message string) {
+func requireEndsWithLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, message string) {
 	require.Greater(t, len(pipeline.Status.Conditions), 1)
 
 	condLen := len(pipeline.Status.Conditions)
 	lastCond := pipeline.Status.Conditions[condLen-1]
 	require.Equal(t, conditions.TypeRunning, lastCond.Type)
 	require.Equal(t, metav1.ConditionTrue, lastCond.Status)
-	require.Equal(t, reason, lastCond.Reason)
+	require.Equal(t, conditions.ReasonFluentBitDSReady, lastCond.Reason)
 	require.Equal(t, message, lastCond.Message)
 	require.Equal(t, pipeline.Generation, lastCond.ObservedGeneration)
 	require.NotEmpty(t, lastCond.LastTransitionTime)
