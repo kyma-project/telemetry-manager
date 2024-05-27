@@ -39,7 +39,16 @@ func TestApplyGatewayResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 
-	err := ApplyGatewayResources(ctx, client, createGatewayConfig(false, false))
+	sut := GatewayApplier{
+		Config: createGatewayConfig(false),
+	}
+
+	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
+		AllowedPorts:        []int32{5555, 6666},
+		CollectorConfigYAML: cfg,
+		CollectorEnvVars:    envVars,
+		Replicas:            replicas,
+	})
 	require.NoError(t, err)
 
 	t.Run("should create collector config configmap", func(t *testing.T) {
@@ -293,7 +302,17 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	err := ApplyGatewayResources(ctx, client, createGatewayConfig(true, false))
+	sut := GatewayApplier{
+		Config: createGatewayConfig(false),
+	}
+
+	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
+		CollectorConfigYAML: cfg,
+		CollectorEnvVars:    envVars,
+		IstioEnabled:        true,
+		IstioExcludePorts:   []int32{1111, 2222},
+		Replicas:            replicas,
+	})
 	require.NoError(t, err)
 
 	t.Run("It should have permissive peer authentication created", func(t *testing.T) {
@@ -333,7 +352,14 @@ func TestApplyGatewayResourcesWithSelfMonEnabled(t *testing.T) {
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	err := ApplyGatewayResources(ctx, client, createGatewayConfig(false, true))
+	sut := GatewayApplier{
+		Config: createGatewayConfig(true),
+	}
+
+	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
+		CollectorConfigYAML: cfg,
+		CollectorEnvVars:    envVars,
+	})
 	require.NoError(t, err)
 
 	t.Run("should create metrics service", func(t *testing.T) {
@@ -366,24 +392,14 @@ func TestApplyGatewayResourcesWithSelfMonEnabled(t *testing.T) {
 	})
 }
 
-func createGatewayConfig(istioEnabled, selfMonEnabled bool) *GatewayConfig {
-	return &GatewayConfig{
+func createGatewayConfig(selfMonEnabled bool) GatewayConfig {
+	return GatewayConfig{
 		Config: Config{
 			BaseName:                name,
 			Namespace:               namespace,
-			CollectorConfig:         cfg,
-			CollectorEnvVars:        envVars,
 			ObserveBySelfMonitoring: selfMonEnabled,
 		},
 		OTLPServiceName: otlpServiceName,
-		allowedPorts:    []int32{5555, 6666},
-		Istio: IstioConfig{
-			Enabled:      istioEnabled,
-			ExcludePorts: "1111, 2222",
-		},
-		Scaling: GatewayScalingConfig{
-			Replicas: replicas,
-		},
 		Deployment: DeploymentConfig{
 			BaseCPURequest:    baseCPURequest,
 			BaseCPULimit:      baseCPULimit,

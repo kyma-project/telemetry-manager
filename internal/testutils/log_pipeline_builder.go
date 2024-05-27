@@ -15,6 +15,7 @@ type LogPipelineBuilder struct {
 
 	name              string
 	labels            map[string]string
+	finalizers        []string
 	deletionTimeStamp metav1.Time
 
 	input telemetryv1alpha1.Input
@@ -42,6 +43,11 @@ func (b *LogPipelineBuilder) WithName(name string) *LogPipelineBuilder {
 
 func (b *LogPipelineBuilder) WithLabels(labels map[string]string) *LogPipelineBuilder {
 	b.labels = labels
+	return b
+}
+
+func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder {
+	b.finalizers = append(b.finalizers, finalizer)
 	return b
 }
 
@@ -113,6 +119,11 @@ func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipe
 	return b
 }
 
+func (b *LogPipelineBuilder) WithStatusConditions(cond ...metav1.Condition) *LogPipelineBuilder {
+	b.statusConditions = append(b.statusConditions, cond...)
+	return b
+}
+
 func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	if b.name == "" {
 		b.name = fmt.Sprintf("test-%d", b.randSource.Int63())
@@ -123,8 +134,9 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 
 	logPipeline := telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   b.name,
-			Labels: b.labels,
+			Name:       b.name,
+			Labels:     b.labels,
+			Finalizers: b.finalizers,
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input:   b.input,

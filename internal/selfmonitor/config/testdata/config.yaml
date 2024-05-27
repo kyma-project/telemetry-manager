@@ -1,6 +1,6 @@
 global:
-    scrape_interval: 10s
-    evaluation_interval: 10s
+    scrape_interval: 30s
+    evaluation_interval: 30s
 alerting:
     alertmanagers:
         - static_configs:
@@ -42,7 +42,7 @@ scrape_configs:
           action: replace
       metric_relabel_configs:
         - source_labels: [__name__]
-          regex: fluentbit_output_proc_bytes_total|fluentbit_output_dropped_records_total|fluentbit_input_bytes_total|telemetry_fsbuffer_usage_bytes|otelcol_exporter_sent_.*|otelcol_exporter_send_failed_.*|otelcol_exporter_queue_size_.*|otelcol_exporter_queue_capacity_.*|otelcol_exporter_enqueue_failed_.*|otelcol_receiver_refused_.*
+          regex: fluentbit_output_proc_bytes_total|fluentbit_output_dropped_records_total|fluentbit_input_bytes_total|telemetry_fsbuffer_usage_bytes|otelcol_exporter_sent_.*|otelcol_exporter_send_failed_.*|otelcol_exporter_enqueue_failed_.*|otelcol_receiver_refused_.*|otelcol_exporter_queue_size|otelcol_exporter_queue_capacity
           action: keep
         - source_labels: [__name__, name]
           regex: fluentbit_.+;([a-zA-Z0-9-]+)
@@ -52,6 +52,8 @@ scrape_configs:
           regex: otelcol_.+;.+/([a-zA-Z0-9-]+)
           target_label: pipeline_name
           action: replace
+        - regex: ^(receiver|exporter|directory|service_instance_id|service_version|transport|service_name|alertname|job|instance|namespace|node)$
+          action: labeldrop
       kubernetes_sd_configs:
         - role: endpoints
           namespaces:

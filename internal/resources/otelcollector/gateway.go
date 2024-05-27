@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"strings"
 
 	istiosecurityv1beta "istio.io/api/security/v1beta1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
@@ -25,34 +26,61 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
-func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
-	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
+type GatewayApplier struct {
+	Config GatewayConfig
+}
 
-	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name), cfg.allowedPorts, cfg.ObserveBySelfMonitoring); err != nil {
+type GatewayApplyOptions struct {
+	AllowedPorts        []int32
+	CollectorConfigYAML string
+	CollectorEnvVars    map[string][]byte
+	IstioEnabled        bool
+	IstioExcludePorts   []int32
+
+	// Replicas specifies the number of gateway replicas.
+	Replicas int32
+
+	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
+	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
+	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
+	ResourceRequirementsMultiplier int
+}
+
+func (ga *GatewayApplier) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
+	name := types.NamespacedName{Namespace: ga.Config.Namespace, Name: ga.Config.BaseName}
+
+	if err := applyCommonResources(
+		ctx,
+		c,
+		name,
+		ga.makeGatewayClusterRole(name),
+		opts.AllowedPorts,
+		ga.Config.ObserveBySelfMonitoring,
+	); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	secret := makeSecret(name, cfg.CollectorEnvVars)
+	secret := makeSecret(name, opts.CollectorEnvVars)
 	if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
-	configMap := makeConfigMap(name, cfg.CollectorConfig)
+	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.Istio)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, ga.makeGatewayDeployment(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, makeOTLPService(cfg)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, ga.makeOTLPService()); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
-	if cfg.Istio.Enabled {
-		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
+	if opts.IstioEnabled {
+		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, ga.makePeerAuthentication()); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
@@ -60,7 +88,7 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 	return nil
 }
 
-func makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+func (ga *GatewayApplier) makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -83,24 +111,31 @@ func makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfig IstioConfig) *appsv1.Deployment {
-	selectorLabels := defaultLabels(cfg.BaseName)
+func (ga *GatewayApplier) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
+	selectorLabels := defaultLabels(ga.Config.BaseName)
 	podLabels := maps.Clone(selectorLabels)
-	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", istioConfig.Enabled)
+	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", opts.IstioEnabled)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
-	if istioConfig.Enabled {
-		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = istioConfig.ExcludePorts
+	if opts.IstioEnabled {
+		var excludeInboundPorts []string
+		for _, p := range opts.IstioExcludePorts {
+			excludeInboundPorts = append(excludeInboundPorts, fmt.Sprintf("%d", p))
+		}
+		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = strings.Join(excludeInboundPorts, ", ")
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
 		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
 	}
-	resources := makeGatewayResourceRequirements(cfg)
+	resources := ga.makeGatewayResourceRequirements(opts)
 	affinity := makePodAffinity(selectorLabels)
 
-	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
-		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
+	deploymentConfig := ga.Config.Deployment
+	podSpec := makePodSpec(
+		ga.Config.BaseName,
+		deploymentConfig.Image,
+		commonresources.WithPriorityClass(deploymentConfig.PriorityClassName),
 		commonresources.WithResources(resources),
 		withAffinity(affinity),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -110,12 +145,12 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cfg.BaseName,
-			Namespace: cfg.Namespace,
+			Name:      ga.Config.BaseName,
+			Namespace: ga.Config.Namespace,
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(cfg.Scaling.Replicas),
+			Replicas: ptr.To(opts.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
@@ -130,17 +165,19 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 	}
 }
 
-func makeGatewayResourceRequirements(cfg *GatewayConfig) corev1.ResourceRequirements {
-	memoryRequest := cfg.Deployment.BaseMemoryRequest.DeepCopy()
-	memoryLimit := cfg.Deployment.BaseMemoryLimit.DeepCopy()
-	cpuRequest := cfg.Deployment.BaseCPURequest.DeepCopy()
-	cpuLimit := cfg.Deployment.BaseCPULimit.DeepCopy()
+func (ga *GatewayApplier) makeGatewayResourceRequirements(opts GatewayApplyOptions) corev1.ResourceRequirements {
+	deploymentConfig := ga.Config.Deployment
 
-	for i := 0; i < cfg.Scaling.ResourceRequirementsMultiplier; i++ {
-		memoryRequest.Add(cfg.Deployment.DynamicMemoryRequest)
-		memoryLimit.Add(cfg.Deployment.DynamicMemoryLimit)
-		cpuRequest.Add(cfg.Deployment.DynamicCPURequest)
-		cpuLimit.Add(cfg.Deployment.DynamicCPULimit)
+	memoryRequest := deploymentConfig.BaseMemoryRequest.DeepCopy()
+	memoryLimit := deploymentConfig.BaseMemoryLimit.DeepCopy()
+	cpuRequest := deploymentConfig.BaseCPURequest.DeepCopy()
+	cpuLimit := deploymentConfig.BaseCPULimit.DeepCopy()
+
+	for i := 0; i < opts.ResourceRequirementsMultiplier; i++ {
+		memoryRequest.Add(deploymentConfig.DynamicMemoryRequest)
+		memoryLimit.Add(deploymentConfig.DynamicMemoryLimit)
+		cpuRequest.Add(deploymentConfig.DynamicCPURequest)
+		cpuLimit.Add(deploymentConfig.DynamicCPULimit)
 	}
 
 	resources := corev1.ResourceRequirements{
@@ -184,13 +221,13 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 	}
 }
 
-func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
-	labels := defaultLabels(cfg.BaseName)
+func (ga *GatewayApplier) makeOTLPService() *corev1.Service {
+	labels := defaultLabels(ga.Config.BaseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cfg.OTLPServiceName,
-			Namespace: cfg.Namespace,
+			Name:      ga.Config.OTLPServiceName,
+			Namespace: ga.Config.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -214,13 +251,17 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 	}
 }
 
-func makePeerAuthentication(cfg *GatewayConfig) *istiosecurityclientv1beta.PeerAuthentication {
-	selectorLabels := defaultLabels(cfg.BaseName)
+func (ga *GatewayApplier) makePeerAuthentication() *istiosecurityclientv1beta.PeerAuthentication {
+	labels := defaultLabels(ga.Config.BaseName)
 
 	return &istiosecurityclientv1beta.PeerAuthentication{
-		ObjectMeta: metav1.ObjectMeta{Name: cfg.BaseName, Namespace: cfg.Namespace, Labels: selectorLabels},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ga.Config.BaseName,
+			Namespace: ga.Config.Namespace,
+			Labels:    labels,
+		},
 		Spec: istiosecurityv1beta.PeerAuthentication{
-			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
+			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: labels},
 			Mtls:     &istiosecurityv1beta.PeerAuthentication_MutualTLS{Mode: istiosecurityv1beta.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}

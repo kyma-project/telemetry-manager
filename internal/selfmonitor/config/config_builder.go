@@ -22,8 +22,8 @@ func MakeConfig(builderCfg BuilderConfig) Config {
 
 func makeGlobalConfig() GlobalConfig {
 	return GlobalConfig{
-		ScraperInterval:    10 * time.Second,
-		EvaluationInterval: 10 * time.Second,
+		ScraperInterval:    30 * time.Second,
+		EvaluationInterval: 30 * time.Second,
 	}
 }
 
@@ -112,6 +112,10 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					Regex:        "otelcol_.+;.+/([a-zA-Z0-9-]+)",
 					TargetLabel:  "pipeline_name",
 				},
+				{
+					Action: LabelDrop,
+					Regex:  "^(receiver|exporter|directory|service_instance_id|service_version|transport|service_name|alertname|job|instance|namespace|node)$",
+				},
 			},
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{
 				Role:       RoleEndpoints,
@@ -132,8 +136,6 @@ func scrapableMetricsRegex() string {
 	otelCollectorMetrics := []string{
 		metricOtelCollectorExporterSent,
 		metricOtelCollectorExporterSendFailed,
-		metricOtelCollectorExporterQueueSize,
-		metricOtelCollectorExporterQueueCapacity,
 		metricOtelCollectorExporterEnqueueFailed,
 		metricOtelCollectorReceiverRefused,
 	}
@@ -142,5 +144,9 @@ func scrapableMetricsRegex() string {
 		otelCollectorMetrics[i] += "_.*"
 	}
 
-	return strings.Join(append(fluentBitMetrics, otelCollectorMetrics...), "|")
+	// exporter_queue_size and exporter_queue_capacity do not have a suffix
+	otelCollectorMetrics = append(otelCollectorMetrics, metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity)
+
+	return strings.Join(append(fluentBitMetrics,
+		otelCollectorMetrics...), "|")
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -31,6 +33,12 @@ type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
+}
+
+//go:generate mockery --name PipelineLock --filename pipeline_lock.go
+type PipelineLock interface {
+	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+	IsLockHolder(ctx context.Context, owner metav1.Object) (bool, error)
 }
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -67,6 +75,9 @@ type Reconciler struct {
 	client.Client
 	config Config
 
+	gatewayApplier           *otelcollector.GatewayApplier
+	agentApplier             *otelcollector.AgentApplier
+	pipelineLock             PipelineLock
 	gatewayProber            DeploymentProber
 	agentProber              DaemonSetProber
 	flowHealthProbingEnabled bool
@@ -77,22 +88,31 @@ type Reconciler struct {
 }
 
 func NewReconciler(
-	client client.Client, config Config,
+	client client.Client,
+	config Config,
 	gatewayProber DeploymentProber,
 	agentProber DaemonSetProber,
 	flowHealthProbingEnabled bool,
 	flowHealthProber FlowHealthProber,
-	overridesHandler *overrides.Handler) *Reconciler {
+	overridesHandler *overrides.Handler,
+) *Reconciler {
 	return &Reconciler{
-		Client:                   client,
-		config:                   config,
+		Client: client,
+		config: config,
+
+		gatewayApplier: &otelcollector.GatewayApplier{Config: config.Gateway},
+		agentApplier:   &otelcollector.AgentApplier{Config: config.Agent},
+		pipelineLock: resourcelock.New(client, types.NamespacedName{
+			Name:      "telemetry-metricpipeline-lock",
+			Namespace: config.Gateway.Namespace,
+		}, config.MaxPipelines),
 		gatewayProber:            gatewayProber,
 		agentProber:              agentProber,
 		flowHealthProbingEnabled: flowHealthProbingEnabled,
 		flowHealthProber:         flowHealthProber,
+		tlsCertValidator:         tlscert.New(client),
 		overridesHandler:         overridesHandler,
 		istioStatusChecker:       istiostatus.NewChecker(client),
-		tlsCertValidator:         tlscert.New(client),
 	}
 }
 
@@ -131,11 +151,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}()
 
-	lock := k8sutils.NewResourceCountLock(r.Client, types.NamespacedName{
-		Name:      "telemetry-metricpipeline-lock",
-		Namespace: r.config.Gateway.Namespace,
-	}, r.config.MaxPipelines)
-	if err = lock.TryAcquireLock(ctx, pipeline); err != nil {
+	if err = r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		lockAcquired = false
 		return err
 	}
@@ -145,7 +161,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
 
-	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items, lock)
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
@@ -168,10 +184,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getReconcilablePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline) ([]telemetryv1alpha1.MetricPipeline, error) {
 	var reconcilablePipelines []telemetryv1alpha1.MetricPipeline
 	for i := range allPipelines {
-		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i], lock)
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +199,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	return reconcilablePipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lock *k8sutils.ResourceCountLock) (bool, error) {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
@@ -203,7 +219,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		}
 	}
 
-	hasLock, err := lock.IsLockHolder(ctx, pipeline)
+	hasLock, err := r.pipelineLock.IsLockHolder(ctx, pipeline)
 	if err != nil {
 		return false, fmt.Errorf("failed to check lock: %w", err)
 	}
@@ -219,11 +235,6 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	scaling := otelcollector.GatewayScalingConfig{
-		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
-		ResourceRequirementsMultiplier: len(allPipelines),
-	}
-
 	collectorConfig, collectorEnvVars, err := gateway.MakeConfig(ctx, r.Client, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -241,11 +252,21 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	if err := otelcollector.ApplyGatewayResources(ctx,
+	opts := otelcollector.GatewayApplyOptions{
+		AllowedPorts:                   allowedPorts,
+		CollectorConfigYAML:            string(collectorConfigYAML),
+		CollectorEnvVars:               collectorEnvVars,
+		IstioEnabled:                   isIstioActive,
+		IstioExcludePorts:              []int32{ports.Metrics},
+		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		ResourceRequirementsMultiplier: len(allPipelines),
+	}
+
+	if err := r.gatewayApplier.ApplyResources(
+		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive).
-			WithAllowedPorts(allowedPorts)); err != nil {
+		opts,
+	); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
@@ -267,13 +288,16 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	allowedPorts := getAgentPorts()
 	if isIstioActive {
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
-
 	}
 
-	if err := otelcollector.ApplyAgentResources(ctx,
+	if err := r.agentApplier.ApplyResources(
+		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Agent.WithCollectorConfig(string(agentConfigYAML)).
-			WithAllowedPorts(allowedPorts)); err != nil {
+		otelcollector.AgentApplyOptions{
+			AllowedPorts:        allowedPorts,
+			CollectorConfigYAML: string(agentConfigYAML),
+		},
+	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
 	}
 

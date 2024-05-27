@@ -24,32 +24,48 @@ import (
 
 const istioCertVolumeName = "istio-certs"
 
-func ApplyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig) error {
-	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
+type AgentApplier struct {
+	Config AgentConfig
+}
 
-	if err := applyCommonResources(ctx, c, name, makeAgentClusterRole(name), cfg.allowedPorts, cfg.ObserveBySelfMonitoring); err != nil {
+type AgentApplyOptions struct {
+	AllowedPorts        []int32
+	CollectorConfigYAML string
+}
+
+func (aa *AgentApplier) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
+	name := types.NamespacedName{Namespace: aa.Config.Namespace, Name: aa.Config.BaseName}
+
+	if err := applyCommonResources(
+		ctx,
+		c,
+		name,
+		aa.makeAgentClusterRole(),
+		opts.AllowedPorts,
+		aa.Config.ObserveBySelfMonitoring,
+	); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	configMap := makeConfigMap(name, cfg.CollectorConfig)
+	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, makeAgentDaemonSet(cfg, configChecksum)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aa.makeAgentDaemonSet(configChecksum)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
 	return nil
 }
 
-func makeAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+func (aa *AgentApplier) makeAgentClusterRole() *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Name:      aa.Config.BaseName,
+			Namespace: aa.Config.Namespace,
+			Labels:    defaultLabels(aa.Config.BaseName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -66,21 +82,24 @@ func makeAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonSet {
-	selectorLabels := defaultLabels(cfg.BaseName)
+func (aa *AgentApplier) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
+	selectorLabels := defaultLabels(aa.Config.BaseName)
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "true"
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(configmetricagent.IstioCertPath))
 
-	resources := makeAgentResourceRequirements(cfg)
-	podSpec := makePodSpec(cfg.BaseName, cfg.DaemonSet.Image,
-		commonresources.WithPriorityClass(cfg.DaemonSet.PriorityClassName),
+	dsConfig := aa.Config.DaemonSet
+	resources := aa.makeAgentResourceRequirements()
+	podSpec := makePodSpec(
+		aa.Config.BaseName,
+		dsConfig.Image,
+		commonresources.WithPriorityClass(dsConfig.PriorityClassName),
 		commonresources.WithResources(resources),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-		commonresources.WithGoMemLimitEnvVar(cfg.DaemonSet.MemoryLimit),
+		commonresources.WithGoMemLimitEnvVar(dsConfig.MemoryLimit),
 		withVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}}),
@@ -93,8 +112,8 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cfg.BaseName,
-			Namespace: cfg.Namespace,
+			Name:      aa.Config.BaseName,
+			Namespace: aa.Config.Namespace,
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -112,15 +131,16 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 	}
 }
 
-func makeAgentResourceRequirements(cfg *AgentConfig) corev1.ResourceRequirements {
+func (aa *AgentApplier) makeAgentResourceRequirements() corev1.ResourceRequirements {
+	dsConfig := aa.Config.DaemonSet
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    cfg.DaemonSet.CPULimit,
-			corev1.ResourceMemory: cfg.DaemonSet.MemoryLimit,
+			corev1.ResourceCPU:    dsConfig.CPULimit,
+			corev1.ResourceMemory: dsConfig.MemoryLimit,
 		},
 		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    cfg.DaemonSet.CPURequest,
-			corev1.ResourceMemory: cfg.DaemonSet.MemoryRequest,
+			corev1.ResourceCPU:    dsConfig.CPURequest,
+			corev1.ResourceMemory: dsConfig.MemoryRequest,
 		},
 	}
 }

@@ -52,7 +52,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 				Build()
 			objs = append(objs, &tracePipeline2)
 
-			objs = append(objs, telemetrygen.New(mockNs, telemetrygen.SignalTypeTraces).K8sObject())
+			objs = append(objs, telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeTraces).K8sObject())
 			return objs
 		}
 

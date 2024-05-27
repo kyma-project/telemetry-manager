@@ -8,7 +8,6 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 TABLE_GEN ?= $(LOCALBIN)/table-gen
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
@@ -31,7 +30,7 @@ YELLOW='\033[0;33m'
 NC='\033[0m'
 
 .PHONY: dependencies
-dependencies: kustomize tablegen controller-gen envtest golangci-lint ginkgo k3d kyma ## Download and install all build dependencies.
+dependencies: kustomize tablegen controller-gen golangci-lint ginkgo k3d kyma ## Download and install all build dependencies.
 
 ## kustomize
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
@@ -51,12 +50,6 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(CONTROLLER_GEN) && $(CONTROLLER_GEN) --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
-## envtest
-.PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-
 ## tablegen
 .PHONY: tablegen
 tablegen: $(TABLE_GEN) ## Download table-gen locally if necessary.
@@ -68,7 +61,7 @@ $(TABLE_GEN): $(LOCALBIN)
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): GOLANGCI_LINT_LATEST = $(shell curl -sL https://api.github.com/repos/golangci/golangci-lint/releases/latest | jq -r ".tag_name" )
 $(GOLANGCI_LINT): $(LOCALBIN)
-	if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANG_CI_LINT_LATEST)" ]; then \
+	@if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
 		echo -e ${RED}########################################################################################${NC}; \
 		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANG_CI_LINT_LATEST}${NC}; \
 		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}.env${RED} file and the ${YELLOW}github workflow definition${NC}; \

@@ -58,7 +58,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelV1Beta1), Orde
 			},
 		}
 		objs = append(objs,
-			telemetrygen.New(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 			&metricPipeline,
 		)
 
