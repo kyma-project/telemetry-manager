@@ -119,14 +119,14 @@ The state of the log components is determined by the status condition of type `L
 
 Reflecting the log data flow in the status condition is currently under development and determined by the following reasons:
 
-| Condition Status | Condition Reason | Condition Message                                                  |
-| ---------------- | ---------------- | ------------------------------------------------------------------ |
-| True             | FlowHealthy      | No problems detected in the log flow                               |
-| False            | AllDataDropped   | All logs dropped: backend unreachable or rejecting                 |
-| False            | BufferFillingUp  | Buffer nearing capacity: incoming log rate exceeds the export rate |
-| False            | NoLogsDelivered  | No logs delivered to backend                                       |
-| False            | SomeDataDropped  | Some logs dropped: backend unreachable or rejecting                |
-| Unknown          | ProbingFailed    | Self monitoring probing failed for unknown reasons                 |
+| Condition Status | Condition Reason | Condition Message                                                                            |
+| ---------------- | ---------------- | -------------------------------------------------------------------------------------------- |
+| True             | FlowHealthy      | No problems detected in the telemetry flow                                                   |
+| False            | AllDataDropped   | All logs dropped: backend unreachable or rejecting                                           |
+| False            | BufferFillingUp  | Buffer nearing capacity: incoming log rate exceeds the export rate                           |
+| False            | NoLogsDelivered  | No logs delivered to backend                                                                 |
+| False            | SomeDataDropped  | Some logs dropped: backend unreachable or rejecting                                          |
+| Unknown          | ProbingFailed    | Could not determine the health of the telemetry flow because the self monitor probing failed |
 
 ### Trace Components State
 
@@ -148,12 +148,12 @@ Reflecting the trace data flow in the status condition is currently under develo
 
 | Condition Status | Condition Reason  | Condition Message                                                                                                                                                                                                          |
 | ---------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| True             | FlowHealthy       | No problems detected in the trace flow                                                                                                                                                                                     |
+| True             | FlowHealthy       | No problems detected in the telemetry flow                                                                                                                                                                                 |
 | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting. See troubleshooting: [Traces Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination)  |
 | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate. See troubleshooting: [Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up)                            |
 | False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive traces at the current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)          |
 | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting. See troubleshooting: [Traces Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination) |
-| Unknown          | ProbingFailed     | Self monitoring probing failed for unknown reasons                                                                                                                                                                         |
+| Unknown          | ProbingFailed     | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                               |
 
 ### Metric Components State
 
@@ -176,12 +176,12 @@ Reflecting the metric data flow in the status condition is currently under devel
 
 | Condition Status | Condition Reason  | Condition Message                                                                                                                                                                                                              |
 | ---------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| True             | FlowHealthy       | No problems detected in the metric flow                                                                                                                                                                                        |
+| True             | FlowHealthy       | No problems detected in the telemetry flow                                                                                                                                                                                     |
 | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting. See troubleshooting: [Metrics Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination)  |
 | False            | BufferFillingUp   | Buffer nearing capacity: incoming metric rate exceeds the export rate. See troubleshooting: [Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up)                              |
 | False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)           |
 | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting. See troubleshooting: [Metrics Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination) |
-| Unknown          | ProbingFailed     | Self monitoring probing failed for unknown reasons                                                                                                                                                                             |
+| Unknown          | ProbingFailed     | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                                   |
 
 ### Telemetry CR State
 
