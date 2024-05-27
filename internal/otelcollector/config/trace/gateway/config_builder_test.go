@@ -16,12 +16,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
-func TestMakeConfig(t *testing.T) {
+func TestBuildConfig(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
+	sut := Builder{Reader: fakeClient}
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
+		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 		})
 		require.NoError(t, err)
@@ -37,7 +38,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("secure", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
@@ -46,9 +47,8 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("insecure", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
-		)
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
+			testutils.NewTracePipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
 
@@ -57,7 +57,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
-		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
+		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		})
 		require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("custom header", func(t *testing.T) {
-		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
+		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
 		})
 		require.NoError(t, err)
@@ -92,7 +92,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("mtls", func(t *testing.T) {
-		collectorConfig, envVars, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
+		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLS("ca", "cert", "key")).Build(),
 		})
 		require.NoError(t, err)
@@ -110,7 +110,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
@@ -120,7 +120,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
@@ -129,17 +129,16 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
 		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-1").Build(),
 			testutils.NewTracePipelineBuilder().WithName("test-2").Build(),
-			testutils.NewTracePipelineBuilder().WithName("test-3").Build()},
-		)
+			testutils.NewTracePipelineBuilder().WithName("test-3").Build()})
 		require.NoError(t, err)
 		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-1"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-2"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
@@ -147,7 +146,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
@@ -165,10 +164,9 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
-		collectorConfig, envVars, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.TracePipeline{
+		collectorConfig, envVars, err := sut.Build(context.Background(), []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-1").Build(),
-			testutils.NewTracePipelineBuilder().WithName("test-2").Build()},
-		)
+			testutils.NewTracePipelineBuilder().WithName("test-2").Build()})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-1")
@@ -201,7 +199,7 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		config, _, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.TracePipeline{
+		config, _, err := sut.Build(context.Background(), []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test").Build(),
 		})
 		require.NoError(t, err)

@@ -15,8 +15,9 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	configmetricagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -33,6 +34,26 @@ type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
+}
+
+//go:generate mockery --name AgentConfigBuilder --filename agent_config_builder.go
+type AgentConfigBuilder interface {
+	Build(pipelines []telemetryv1alpha1.MetricPipeline, options agent.BuildOptions) *agent.Config
+}
+
+//go:generate mockery --name GatewayConfigBuilder --filename gateway_config_builder.go
+type GatewayConfigBuilder interface {
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
+}
+
+//go:generate mockery --name AgentApplier --filename agent_applier.go
+type AgentApplier interface {
+	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
+}
+
+//go:generate mockery --name GatewayApplier --filename gateway_applier.go
+type GatewayApplier interface {
+	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
 }
 
 //go:generate mockery --name PipelineLock --filename pipeline_lock.go
@@ -75,8 +96,10 @@ type Reconciler struct {
 	client.Client
 	config Config
 
-	gatewayApplier           *otelcollector.GatewayApplier
-	agentApplier             *otelcollector.AgentApplier
+	agentConfigBuilder       AgentConfigBuilder
+	gatewayConfigBuilder     GatewayConfigBuilder
+	agentApplier             AgentApplier
+	gatewayApplier           GatewayApplier
 	pipelineLock             PipelineLock
 	gatewayProber            DeploymentProber
 	agentProber              DaemonSetProber
@@ -99,9 +122,23 @@ func NewReconciler(
 	return &Reconciler{
 		Client: client,
 		config: config,
-
-		gatewayApplier: &otelcollector.GatewayApplier{Config: config.Gateway},
-		agentApplier:   &otelcollector.AgentApplier{Config: config.Agent},
+		gatewayConfigBuilder: &gateway.Builder{
+			Reader: client,
+		},
+		agentConfigBuilder: &agent.Builder{
+			Config: agent.BuilderConfig{
+				GatewayOTLPServiceName: types.NamespacedName{
+					Namespace: config.Gateway.Namespace,
+					Name:      config.Gateway.OTLPServiceName,
+				},
+			},
+		},
+		gatewayApplier: &otelcollector.GatewayApplier{
+			Config: config.Gateway,
+		},
+		agentApplier: &otelcollector.AgentApplier{
+			Config: config.Agent,
+		},
 		pipelineLock: resourcelock.New(client, types.NamespacedName{
 			Name:      "telemetry-metricpipeline-lock",
 			Namespace: config.Gateway.Namespace,
@@ -235,7 +272,7 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	collectorConfig, collectorEnvVars, err := gateway.MakeConfig(ctx, r.Client, allPipelines)
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}
@@ -275,10 +312,10 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
-	agentConfig := configmetricagent.MakeConfig(types.NamespacedName{
-		Namespace: r.config.Gateway.Namespace,
-		Name:      r.config.Gateway.OTLPServiceName,
-	}, allPipelines, isIstioActive)
+	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
+		IstioEnabled:  isIstioActive,
+		IstioCertPath: otelcollector.IstioCertPath,
+	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
 	if err != nil {

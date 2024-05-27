@@ -11,10 +11,17 @@ import (
 )
 
 func TestReceivers(t *testing.T) {
+	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
+	sut := Builder{
+		Config: BuilderConfig{
+			GatewayOTLPServiceName: gatewayServiceName,
+		},
+	}
+
 	t.Run("no input enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().Build(),
-		}, false)
+		}, BuildOptions{})
 
 		require.Nil(t, collectorConfig.Receivers.KubeletStats)
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
@@ -22,9 +29,9 @@ func TestReceivers(t *testing.T) {
 	})
 
 	t.Run("runtime input enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-		}, false)
+		}, BuildOptions{})
 
 		require.NotNil(t, collectorConfig.Receivers.KubeletStats)
 		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
@@ -38,12 +45,12 @@ func TestReceivers(t *testing.T) {
 	t.Run("prometheus input enabled", func(t *testing.T) {
 		tests := []struct {
 			name                      string
-			istioActive               bool
+			istioEnabled              bool
 			expectedPodScrapeJobs     []string
 			expectedServiceScrapeJobs []string
 		}{
 			{
-				name: "istio not active",
+				name: "istio not enabled",
 				expectedPodScrapeJobs: []string{
 					"app-pods",
 				},
@@ -52,8 +59,8 @@ func TestReceivers(t *testing.T) {
 				},
 			},
 			{
-				name:        "istio active",
-				istioActive: true,
+				name:         "istio enabled",
+				istioEnabled: true,
 				expectedPodScrapeJobs: []string{
 					"app-pods",
 					"app-pods-secure",
@@ -67,9 +74,11 @@ func TestReceivers(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+				collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
-				}, tt.istioActive)
+				}, BuildOptions{
+					IstioEnabled: tt.istioEnabled,
+				})
 
 				receivers := collectorConfig.Receivers
 
@@ -92,9 +101,11 @@ func TestReceivers(t *testing.T) {
 	})
 
 	t.Run("istio input enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
-		}, false)
+		}, BuildOptions{
+			IstioEnabled: true,
+		})
 
 		require.Nil(t, collectorConfig.Receivers.KubeletStats)
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
