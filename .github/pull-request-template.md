@@ -13,7 +13,7 @@ Changes refer to particular issues, PRs or documents:
 - [ ] The PR has a milestone set.
 - [ ] The PR has a respective `area` and `kind` label.
 - [ ] The follow-up issues (if any) are linked in the `Related Issues` section.
-- [ ] Adjusted the documentation if the change is user-facing.
+- [ ] If the change is user-facing, the documentation has been adjusted.
 - [ ] The feature is unit-tested.
 - [ ] The feature is e2e-tested.
 
