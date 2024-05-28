@@ -77,6 +77,9 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
@@ -84,6 +87,7 @@ func TestReconcile(t *testing.T) {
 			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -116,6 +120,9 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
@@ -123,6 +130,7 @@ func TestReconcile(t *testing.T) {
 			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -155,6 +163,9 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
@@ -162,6 +173,7 @@ func TestReconcile(t *testing.T) {
 			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -200,6 +212,9 @@ func TestReconcile(t *testing.T) {
 		agentProberStub := &mocks.DaemonSetProber{}
 		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
@@ -210,6 +225,7 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			agentProber:          agentProberStub,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -249,6 +265,9 @@ func TestReconcile(t *testing.T) {
 		agentProberMock := &mocks.DaemonSetProber{}
 		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
@@ -259,6 +278,7 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			agentProber:          agentProberMock,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -298,6 +318,9 @@ func TestReconcile(t *testing.T) {
 		agentProberMock := &mocks.DaemonSetProber{}
 		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
@@ -308,6 +331,7 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			agentProber:          agentProberMock,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -349,6 +373,9 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
@@ -356,6 +383,7 @@ func TestReconcile(t *testing.T) {
 			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -388,12 +416,16 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -425,12 +457,16 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := &mocks.DeploymentProber{}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:               fakeClient,
 			config:               testConfig,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
+			flowHealthProber:     flowHealthProberStub,
 			overridesHandler:     overridesHandlerStub,
 			istioStatusChecker:   istioStatusCheckerStub,
 		}
@@ -663,6 +699,10 @@ func TestReconcile(t *testing.T) {
 
 				gatewayProberStub := &mocks.DeploymentProber{}
 				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 				tlsStub := &mocks.TLSCertValidator{}
 				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
 
@@ -673,6 +713,7 @@ func TestReconcile(t *testing.T) {
 					gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 					pipelineLock:         pipelineLockStub,
 					gatewayProber:        gatewayProberStub,
+					flowHealthProber:     flowHealthProberStub,
 					tlsCertValidator:     tlsStub,
 					overridesHandler:     overridesHandlerStub,
 					istioStatusChecker:   istioStatusCheckerStub,
