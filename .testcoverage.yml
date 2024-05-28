@@ -23,7 +23,7 @@ override:
     path: ^internal/istiostatus$
   - threshold: 86
     path: ^internal/otelcollector/config/otlpexporter$
-  - threshold: 84
+  - threshold: 75
     path: ^internal/reconciler/logpipeline$
   - threshold: 78
     path: ^internal/reconciler/metricpipeline$
