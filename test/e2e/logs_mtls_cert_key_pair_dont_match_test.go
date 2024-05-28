@@ -78,6 +78,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSCertificateInvalid,
 			})
+
+			// legacy
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypePending,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonTLSCertificateInvalid,
+			})
 		})
 
 		It("Should have telemetryCR showing tls certificate key pair invalid condition for log component in its status", func() {

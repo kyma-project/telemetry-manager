@@ -71,6 +71,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSCertificateInvalid,
 			})
+
+			// legacy
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypePending,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonTLSCertificateInvalid,
+			})
 		})
 
 		It("Should have telemetryCR showing tls certificate expired for trace component in its status", func() {
