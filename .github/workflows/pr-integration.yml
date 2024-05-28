@@ -122,7 +122,7 @@ jobs:
 
       - name: Deploy Istio Module
         # we need Istio for fault injection to simulate backpressure and outages
-        if: matrix.scenario != healthy
+        if: ${{ matrix.scenario != healthy }}
         run: hack/deploy-istio.sh
 
       - name: Run tests
