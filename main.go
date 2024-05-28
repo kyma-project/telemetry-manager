@@ -66,6 +66,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
+	"github.com/kyma-project/telemetry-manager/internal/version"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -386,7 +387,7 @@ func main() {
 }
 
 func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) {
-	setupLog.Info("Starting with telemetry manager controller")
+	setupLog.WithValues("version", version.Version).Info("Starting with telemetry manager controller")
 
 	if err := createTelemetryController(mgr.GetClient(), mgr.GetScheme(), webhookConfig, selfMonitorConfig).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Telemetry")

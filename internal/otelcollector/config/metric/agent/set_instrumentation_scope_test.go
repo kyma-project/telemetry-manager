@@ -18,8 +18,11 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
-					Context:    "scope",
-					Statements: []string{"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"\" or name == \"otelcol/kubeletstatsreceiver\""},
+					Context: "scope",
+					Statements: []string{
+						"set(version, \"main\") where name == \"otelcol/kubeletstatsreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"\" or name == \"otelcol/kubeletstatsreceiver\"",
+					},
 				}},
 			},
 			inputSource: metric.InputSourceRuntime,
@@ -28,8 +31,11 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
-					Context:    "scope",
-					Statements: []string{"set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"\" or name == \"otelcol/prometheusreceiver\""},
+					Context: "scope",
+					Statements: []string{
+						"set(version, \"main\") where name == \"otelcol/prometheusreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"\" or name == \"otelcol/prometheusreceiver\"",
+					},
 				}},
 			},
 			inputSource: metric.InputSourcePrometheus,
@@ -38,8 +44,11 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
-					Context:    "scope",
-					Statements: []string{"set(name, \"io.kyma-project.telemetry/istio\") where name == \"\" or name == \"otelcol/prometheusreceiver\""},
+					Context: "scope",
+					Statements: []string{
+						"set(version, \"main\") where name == \"otelcol/prometheusreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/istio\") where name == \"\" or name == \"otelcol/prometheusreceiver\"",
+					},
 				}},
 			},
 			inputSource: metric.InputSourceIstio,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/version"
 )
 
 var upstreamInstrumentationScopeName = map[metric.InputSourceType]string{
@@ -27,6 +28,7 @@ func makeInstrumentationScopeProcessor(inputSource metric.InputSourceType) *Tran
 
 func makeInstrumentationStatement(inputSource metric.InputSourceType) []string {
 	return []string{
+		fmt.Sprintf("set(version, \"%s\") where name == \"%s\"", version.Version, upstreamInstrumentationScopeName[inputSource]),
 		fmt.Sprintf("set(name, \"%s\") where name == \"\" or name == \"%s\"", metric.InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
 	}
 }
