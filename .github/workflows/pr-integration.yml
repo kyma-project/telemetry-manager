@@ -120,14 +120,20 @@ jobs:
           release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy Istio Module
+      - name: Run tests without Istio
+        if: ${{ matrix.scenario == 'healthy' }}
+        run: |
+          bin/ginkgo run --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/e2e
+
         # we need Istio for fault injection to simulate backpressure and outages
+      - name: Deploy Istio Module
         if: ${{ matrix.scenario != 'healthy' }}
         run: hack/deploy-istio.sh
 
-      - name: Run tests
+      - name: Run tests with Istio
+        if: ${{ matrix.scenario != 'healthy' }}
         run: |
-          bin/ginkgo run --tags e2e,istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/integration/istio
+          bin/ginkgo run --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
