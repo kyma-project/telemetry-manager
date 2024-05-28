@@ -187,6 +187,47 @@ func TestUpdateStatus(t *testing.T) {
 		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
 
+	t.Run("log agent prober fails", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		proberStub := &mocks.DaemonSetProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			prober:             proberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+			syncer: syncer{
+				Client: fakeClient,
+				config: testConfig,
+			},
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonAgentNotReady,
+			"Fluent Bit agent DaemonSet is not ready",
+		)
+
+		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
+			conditions.ReasonFluentBitDSNotReady,
+			"[NOTE: The \"Pending\" type is deprecated] Fluent Bit DaemonSet is not ready")
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+		require.NoError(t, err, "sections configmap must exist")
+		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
+	})
+
 	t.Run("referenced secret missing", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().
 			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
