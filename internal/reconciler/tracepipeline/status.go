@@ -37,7 +37,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	if r.flowHealthProbingEnabled {
 		r.setFlowHealthCondition(ctx, &pipeline)
 	}
-	r.setLegacyConditions(ctx, &pipeline, withinPipelineCountLimit)
+	r.setLegacyConditions(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -155,19 +155,12 @@ func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 	return conditions.ReasonSelfMonFlowHealthy
 }
 
-func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
-	if !withinPipelineCountLimit {
+func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+	if meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated) {
+		evaluatedCondition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
-			conditions.ReasonMaxPipelinesExceeded,
-			conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded))
-		return
-	}
-
-	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
-	if referencesNonExistentSecret {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
-			conditions.ReasonReferencedSecretMissing,
-			conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing))
+			evaluatedCondition.Reason,
+			evaluatedCondition.Message)
 		return
 	}
 
