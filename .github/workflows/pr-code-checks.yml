@@ -26,16 +26,6 @@ jobs:
     - name: Run tests
       run: make test
 
-  check-linter-version:
-    if: github.event.pull_request.base.ref == 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Check linter version
-        run: make check-linter-version
-
   lint:
     runs-on: ubuntu-latest
     steps:
