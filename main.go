@@ -127,7 +127,6 @@ var (
 	metricGatewayMemoryRequest        string
 	metricGatewayDynamicMemoryRequest string
 
-	enableSelfMonitor        bool
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 )
@@ -267,7 +266,6 @@ func main() {
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
-	flag.BoolVar(&enableSelfMonitor, "self-monitor-enabled", false, "Enable self-monitoring of the pipelines")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
@@ -372,7 +370,7 @@ func main() {
 		enableWebhookServer(mgr, webhookConfig)
 	}
 
-	if enableWebhook && enableSelfMonitor {
+	if enableWebhook {
 		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 			mgr.GetClient(),
 			selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
@@ -500,7 +498,6 @@ func createLogPipelineController(client client.Client, reconcileTriggerChan <-ch
 			CPURequest:                  resource.MustParse(fluentBitCPURequest),
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
-		ObserveBySelfMonitoring: enableSelfMonitor,
 	}
 
 	return telemetrycontrollers.NewLogPipelineController(
@@ -510,7 +507,6 @@ func createLogPipelineController(client client.Client, reconcileTriggerChan <-ch
 			client,
 			config,
 			&k8sutils.DaemonSetProber{Client: client},
-			enableSelfMonitor,
 			flowHealthProber,
 			overridesHandler,
 		))
@@ -557,9 +553,8 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
-				Namespace:               telemetryNamespace,
-				BaseName:                "telemetry-trace-collector",
-				ObserveBySelfMonitoring: enableSelfMonitor,
+				Namespace: telemetryNamespace,
+				BaseName:  "telemetry-trace-collector",
 			},
 			Deployment: otelcollector.DeploymentConfig{
 				Image:                traceGatewayImage,
@@ -586,7 +581,6 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 			client,
 			config,
 			&k8sutils.DeploymentProber{Client: client},
-			enableSelfMonitor,
 			flowHealthProber,
 			overridesHandler),
 	)
@@ -596,9 +590,8 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
-				Namespace:               telemetryNamespace,
-				BaseName:                "telemetry-metric-agent",
-				ObserveBySelfMonitoring: enableSelfMonitor,
+				Namespace: telemetryNamespace,
+				BaseName:  "telemetry-metric-agent",
 			},
 			DaemonSet: otelcollector.DaemonSetConfig{
 				Image:             metricGatewayImage,
@@ -611,9 +604,8 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 		},
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
-				Namespace:               telemetryNamespace,
-				BaseName:                "telemetry-metric-gateway",
-				ObserveBySelfMonitoring: enableSelfMonitor,
+				Namespace: telemetryNamespace,
+				BaseName:  "telemetry-metric-gateway",
 			},
 			Deployment: otelcollector.DeploymentConfig{
 				Image:                metricGatewayImage,
@@ -636,19 +628,11 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 	return telemetrycontrollers.NewMetricPipelineController(
 		client,
 		reconcileTriggerChan,
-		metricpipeline.NewReconciler(
-			client,
-			config,
-			&k8sutils.DeploymentProber{Client: client},
-			&k8sutils.DaemonSetProber{Client: client},
-			enableSelfMonitor,
-			flowHealthProber,
-			overridesHandler))
+		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, overridesHandler))
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
-		Enabled: enableSelfMonitor,
 		Config: selfmonitor.Config{
 			BaseName:  selfMonitorName,
 			Namespace: telemetryNamespace,
@@ -697,7 +681,7 @@ func createTelemetryController(client client.Client, scheme *runtime.Scheme, web
 		SelfMonitor:            selfMonitorConfig,
 	}
 
-	return operator.NewTelemetryController(client, telemetry.NewReconciler(client, scheme, config, overridesHandler, enableSelfMonitor), config)
+	return operator.NewTelemetryController(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

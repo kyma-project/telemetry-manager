@@ -49,14 +49,7 @@ type GatewayApplyOptions struct {
 func (ga *GatewayApplier) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
 	name := types.NamespacedName{Namespace: ga.Config.Namespace, Name: ga.Config.BaseName}
 
-	if err := applyCommonResources(
-		ctx,
-		c,
-		name,
-		ga.makeGatewayClusterRole(name),
-		opts.AllowedPorts,
-		ga.Config.ObserveBySelfMonitoring,
-	); err != nil {
+	if err := applyCommonResources(ctx, c, name, ga.makeGatewayClusterRole(name), opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 

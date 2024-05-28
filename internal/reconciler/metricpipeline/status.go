@@ -35,10 +35,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-
-	if r.flowHealthProbingEnabled {
-		r.setFlowHealthCondition(ctx, &pipeline)
-	}
+	r.setFlowHealthCondition(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)

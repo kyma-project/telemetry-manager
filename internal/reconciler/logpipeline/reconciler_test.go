@@ -432,13 +432,12 @@ func TestUpdateStatus(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
 				sut := Reconciler{
-					Client:                   fakeClient,
-					config:                   testConfig,
-					prober:                   agentProberStub,
-					flowHealthProbingEnabled: true,
-					flowHealthProber:         flowHealthProberStub,
-					overridesHandler:         overridesHandlerStub,
-					istioStatusChecker:       istioStatusCheckerStub,
+					Client:             fakeClient,
+					config:             testConfig,
+					prober:             agentProberStub,
+					flowHealthProber:   flowHealthProberStub,
+					overridesHandler:   overridesHandlerStub,
+					istioStatusChecker: istioStatusCheckerStub,
 					syncer: syncer{
 						Client: fakeClient,
 						config: testConfig,

@@ -85,7 +85,7 @@ func TestMakeClusterRole(t *testing.T) {
 
 func TestMakeMetricsService(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	service := MakeMetricsService(name, true)
+	service := MakeMetricsService(name)
 
 	require.NotNil(t, service)
 	require.Equal(t, service.Name, "telemetry-fluent-bit-metrics")
@@ -107,7 +107,7 @@ func TestMakeMetricsService(t *testing.T) {
 
 func TestMakeExporterMetricsService(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	service := MakeExporterMetricsService(name, true)
+	service := MakeExporterMetricsService(name)
 
 	require.NotNil(t, service)
 	require.Equal(t, service.Name, "telemetry-fluent-bit-exporter-metrics")

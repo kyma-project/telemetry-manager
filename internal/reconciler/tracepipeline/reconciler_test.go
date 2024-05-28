@@ -400,16 +400,15 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
 				sut := Reconciler{
-					Client:                   fakeClient,
-					config:                   testConfig,
-					gatewayConfigBuilder:     gatewayConfigBuilderMock,
-					gatewayApplier:           &otelcollector.GatewayApplier{Config: testConfig.Gateway},
-					pipelineLock:             pipelineLockStub,
-					prober:                   gatewayProberStub,
-					flowHealthProbingEnabled: true,
-					flowHealthProber:         flowHealthProberStub,
-					overridesHandler:         overridesHandlerStub,
-					istioStatusChecker:       istioStatusCheckerStub,
+					Client:               fakeClient,
+					config:               testConfig,
+					gatewayConfigBuilder: gatewayConfigBuilderMock,
+					gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+					pipelineLock:         pipelineLockStub,
+					prober:               gatewayProberStub,
+					flowHealthProber:     flowHealthProberStub,
+					overridesHandler:     overridesHandlerStub,
+					istioStatusChecker:   istioStatusCheckerStub,
 				}
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)

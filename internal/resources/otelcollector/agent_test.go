@@ -216,60 +216,6 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, name+"-metrics", svc.Name)
 		require.Equal(t, namespace, svc.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, svc.Labels)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, svc.Spec.Selector)
-		require.Equal(t, map[string]string{
-			"prometheus.io/port":   "8888",
-			"prometheus.io/scheme": "http",
-			"prometheus.io/scrape": "true",
-		}, svc.Annotations)
-		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
-		require.Len(t, svc.Spec.Ports, 1)
-		require.Equal(t, corev1.ServicePort{
-			Name:       "http-metrics",
-			Protocol:   corev1.ProtocolTCP,
-			Port:       8888,
-			TargetPort: intstr.FromInt32(8888),
-		}, svc.Spec.Ports[0])
-	})
-}
-
-func TestApplyAgentResources_WithSelfMonEnabled(t *testing.T) {
-	ctx := context.Background()
-	client := fake.NewClientBuilder().Build()
-	namespace := "my-namespace"
-	name := "my-agent"
-	cfg := "dummy otel collector config"
-
-	sut := AgentApplier{
-		Config: AgentConfig{
-			Config: Config{
-				BaseName:                name,
-				Namespace:               namespace,
-				ObserveBySelfMonitoring: true,
-			},
-		},
-	}
-
-	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
-		AllowedPorts:        []int32{5555, 6666},
-		CollectorConfigYAML: cfg,
-	})
-	require.NoError(t, err)
-
-	t.Run("should create metrics service", func(t *testing.T) {
-		var svcs corev1.ServiceList
-		require.NoError(t, client.List(ctx, &svcs))
-		require.Len(t, svcs.Items, 1)
-
-		svc := svcs.Items[0]
-		require.NotNil(t, svc)
-		require.Equal(t, name+"-metrics", svc.Name)
-		require.Equal(t, namespace, svc.Namespace)
-		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name":                 name,
 			"telemetry.kyma-project.io/self-monitor": "enabled",
 		}, svc.Labels)

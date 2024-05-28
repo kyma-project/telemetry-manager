@@ -38,11 +38,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
-
-	if r.flowHealthProbingEnabled {
-		r.setFlowHealthCondition(ctx, &pipeline)
-	}
-
+	r.setFlowHealthCondition(ctx, &pipeline)
 	r.setLegacyConditions(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
