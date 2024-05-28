@@ -101,16 +101,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ginkgo-labels:
+        signal-type:
           - logs
           - metrics
           - traces
-          - logs-backpressure
-          - logs-outage
-          - traces-backpressure
-          - traces-outage
-          - metrics-backpressure
-          - metrics-outage
+        scenario:
+          - healthy
+          - backpressure
+          - outage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -123,11 +121,12 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Istio Module
+        if: matrix.scenario != healthy # we need Istio for fault injection to simulate backpressure and outages
         run: hack/deploy-istio.sh
 
       - name: Run tests
         run: |
-          bin/ginkgo run --tags e2e,istio --label-filter="self-mon-${{ matrix.ginkgo-labels }}" test/integration/istio
+          bin/ginkgo run --tags e2e,istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
