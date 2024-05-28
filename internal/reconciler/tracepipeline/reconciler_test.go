@@ -300,7 +300,7 @@ func TestReconcile(t *testing.T) {
 				probeErr:        assert.AnError,
 				expectedStatus:  metav1.ConditionUnknown,
 				expectedReason:  conditions.ReasonSelfMonProbingFailed,
-				expectedMessage: "Self monitoring probing failed for unknown reasons",
+				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing failed",
 			},
 			{
 				name: "healthy",
@@ -309,7 +309,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionTrue,
 				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
-				expectedMessage: "No problems detected in the trace flow",
+				expectedMessage: "No problems detected in the telemetry flow",
 			},
 			{
 				name: "throttling",

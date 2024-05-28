@@ -19,20 +19,28 @@ threshold:
 # specific to more general rules.
 override:
   # Temporarily decrease coverage threshold for certain packages, we need to increase the coverage and remove these entries from the list
-  - threshold: 75
-    path: ^webhook/dryrun$
   - threshold: 57
     path: ^internal/istiostatus$
   - threshold: 86
     path: ^internal/otelcollector/config/otlpexporter$
+  - threshold: 74
+    path: ^internal/reconciler/logpipeline$
+  - threshold: 78
+    path: ^internal/reconciler/metricpipeline$
+  - threshold: 65
+    path: ^internal/reconciler/telemetry$
+  - threshold: 75
+    path: ^internal/reconciler/tracepipeline$
   - threshold: 85
     path: ^internal/resources/otelcollector$
-  - threshold: 86
-    path: ^internal/webhookcert$
   - threshold: 75
     path: ^internal/resources/selfmonitor$
   - threshold: 75
     path: ^internal/resourcelock$
+  - threshold: 86
+    path: ^internal/webhookcert$
+  - threshold: 75
+    path: ^webhook/dryrun$
   - threshold: 70
     path: ^webhook/logpipeline
 
@@ -46,7 +54,7 @@ exclude:
     - mocks
     - ^internal/k8sutils   # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
     - internal/logger
-    - ^internal/reconciler # reconcilers are covered by e2e tests
+    - ^internal/reconciler/logparser  # logparser reconciler will be removed soon
     - ^test                # e2e and integration tests
     - webhook/logparser    # logparser will be removed soon
     - ^internal/testutils  # some functions in testutils are being used in e2e tests only
