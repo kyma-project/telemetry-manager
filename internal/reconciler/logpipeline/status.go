@@ -172,6 +172,7 @@ func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
 
 func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	if meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated) {
+		evaluatedCondition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
 			evaluatedCondition.Reason,
 			evaluatedCondition.Message)
