@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e-release:
+  e2e:
     strategy:
       fail-fast: false
       matrix:
@@ -23,6 +23,8 @@ jobs:
         - metrics
         - traces
         - telemetry
+        - max-pipeline
+        - telemetry-log-analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -51,12 +53,6 @@ jobs:
         - logs
         - metrics
         - traces
-        - self-mon-logs
-        - self-mon-metrics
-        - self-mon-traces
-        - telemetry
-        - telemetry-log-analysis
-        - max-pipeline
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -68,7 +64,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run --tags e2e --label-filter="${{ matrix.ginkgo-labels }}" test/e2e
+        run: bin/ginkgo run --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && v1beta1" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -77,17 +73,6 @@ jobs:
           failure: failure()
 
   e2e-istio:
-    strategy:
-      fail-fast: false
-      matrix:
-        ginkgo-labels:
-          - integration
-          - self-mon-logs-backpressure
-          - self-mon-logs-outage
-          - self-mon-traces-backpressure
-          - self-mon-traces-outage
-          - self-mon-metrics-backpressure
-          - self-mon-metrics-outage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -96,6 +81,7 @@ jobs:
       - name: Prepare Test
         uses: "./.github/template/prepare-test"
         with:
+          release: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy Istio Module
@@ -103,7 +89,51 @@ jobs:
 
       - name: Run tests
         run: |
-          bin/ginkgo run --tags istio --label-filter="${{ matrix.ginkgo-labels }}" test/integration/istio
+          bin/ginkgo run --tags istio --label-filter="integration" test/integration/istio
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+
+  e2e-self-mon:
+    strategy:
+      fail-fast: false
+      matrix:
+        signal-type:
+          - logs
+          - metrics
+          - traces
+        scenario:
+          - healthy
+          - backpressure
+          - outage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests without Istio
+        if: ${{ matrix.scenario == 'healthy' }}
+        run: |
+          bin/ginkgo run --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/e2e
+
+        # we need Istio for fault injection to simulate backpressure and outages
+      - name: Deploy Istio Module
+        if: ${{ matrix.scenario != 'healthy' }}
+        run: hack/deploy-istio.sh
+
+      - name: Run tests with Istio
+        if: ${{ matrix.scenario != 'healthy' }}
+        run: |
+          bin/ginkgo run --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"

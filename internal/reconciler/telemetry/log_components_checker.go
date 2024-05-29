@@ -14,8 +14,7 @@ import (
 )
 
 type logComponentsChecker struct {
-	client                   client.Client
-	flowHealthProbingEnabled bool
+	client client.Client
 }
 
 func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {

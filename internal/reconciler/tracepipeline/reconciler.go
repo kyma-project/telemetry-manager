@@ -96,21 +96,19 @@ type Reconciler struct {
 	config                     Config
 	pipelinesConditionsCleared bool
 
-	gatewayConfigBuilder     GatewayConfigBuilder
-	gatewayApplier           GatewayApplier
-	pipelineLock             PipelineLock
-	prober                   DeploymentProber
-	flowHealthProbingEnabled bool
-	flowHealthProber         FlowHealthProber
-	tlsCertValidator         TLSCertValidator
-	overridesHandler         OverridesHandler
-	istioStatusChecker       IstioStatusChecker
+	gatewayConfigBuilder GatewayConfigBuilder
+	gatewayApplier       GatewayApplier
+	pipelineLock         PipelineLock
+	prober               DeploymentProber
+	flowHealthProber     FlowHealthProber
+	tlsCertValidator     TLSCertValidator
+	overridesHandler     OverridesHandler
+	istioStatusChecker   IstioStatusChecker
 }
 
 func NewReconciler(client client.Client,
 	config Config,
 	prober DeploymentProber,
-	flowHealthProbingEnabled bool,
 	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
@@ -127,12 +125,11 @@ func NewReconciler(client client.Client,
 				Name:      "telemetry-tracepipeline-lock",
 				Namespace: config.Gateway.Namespace,
 			}, config.MaxPipelines),
-		prober:                   prober,
-		flowHealthProbingEnabled: flowHealthProbingEnabled,
-		flowHealthProber:         flowHealthProber,
-		tlsCertValidator:         tlscert.New(client),
-		overridesHandler:         overridesHandler,
-		istioStatusChecker:       istiostatus.NewChecker(client),
+		prober:             prober,
+		flowHealthProber:   flowHealthProber,
+		tlsCertValidator:   tlscert.New(client),
+		overridesHandler:   overridesHandler,
+		istioStatusChecker: istiostatus.NewChecker(client),
 	}
 }
 

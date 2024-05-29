@@ -59,10 +59,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -86,10 +90,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -113,10 +121,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -154,10 +166,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -194,10 +210,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -238,10 +258,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -290,10 +314,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -330,10 +358,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -471,13 +503,12 @@ func TestUpdateStatus(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
 				sut := Reconciler{
-					Client:                   fakeClient,
-					config:                   testConfig,
-					prober:                   agentProberStub,
-					flowHealthProbingEnabled: true,
-					flowHealthProber:         flowHealthProberStub,
-					overridesHandler:         overridesHandlerStub,
-					istioStatusChecker:       istioStatusCheckerStub,
+					Client:             fakeClient,
+					config:             testConfig,
+					prober:             agentProberStub,
+					flowHealthProber:   flowHealthProberStub,
+					overridesHandler:   overridesHandlerStub,
+					istioStatusChecker: istioStatusCheckerStub,
 					syncer: syncer{
 						Client: fakeClient,
 						config: testConfig,
@@ -550,10 +581,14 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 		sut := Reconciler{
 			Client:             fakeClient,
 			config:             testConfig,
 			prober:             proberStub,
+			flowHealthProber:   flowHealthProberStub,
 			overridesHandler:   overridesHandlerStub,
 			istioStatusChecker: istioStatusCheckerStub,
 			syncer: syncer{
@@ -654,6 +689,10 @@ func TestUpdateStatus(t *testing.T) {
 
 				proberStub := &mocks.DaemonSetProber{}
 				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
 				tlsStub := &mocks.TLSCertValidator{}
 				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
 
@@ -661,6 +700,7 @@ func TestUpdateStatus(t *testing.T) {
 					Client:             fakeClient,
 					config:             testConfig,
 					prober:             proberStub,
+					flowHealthProber:   flowHealthProberStub,
 					tlsCertValidator:   tlsStub,
 					overridesHandler:   overridesHandlerStub,
 					istioStatusChecker: istioStatusCheckerStub,

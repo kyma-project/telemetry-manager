@@ -269,8 +269,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			fakeClient := b.Build()
 
 			m := &logComponentsChecker{
-				client:                   fakeClient,
-				flowHealthProbingEnabled: test.flowHealthProbingEnabled,
+				client: fakeClient,
 			}
 
 			condition, err := m.Check(context.Background(), test.telemetryInDeletion)

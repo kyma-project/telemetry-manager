@@ -96,18 +96,17 @@ type Reconciler struct {
 	client.Client
 	config Config
 
-	agentConfigBuilder       AgentConfigBuilder
-	gatewayConfigBuilder     GatewayConfigBuilder
-	agentApplier             AgentApplier
-	gatewayApplier           GatewayApplier
-	pipelineLock             PipelineLock
-	gatewayProber            DeploymentProber
-	agentProber              DaemonSetProber
-	flowHealthProbingEnabled bool
-	flowHealthProber         FlowHealthProber
-	tlsCertValidator         TLSCertValidator
-	overridesHandler         OverridesHandler
-	istioStatusChecker       IstioStatusChecker
+	agentConfigBuilder   AgentConfigBuilder
+	gatewayConfigBuilder GatewayConfigBuilder
+	agentApplier         AgentApplier
+	gatewayApplier       GatewayApplier
+	pipelineLock         PipelineLock
+	gatewayProber        DeploymentProber
+	agentProber          DaemonSetProber
+	flowHealthProber     FlowHealthProber
+	tlsCertValidator     TLSCertValidator
+	overridesHandler     OverridesHandler
+	istioStatusChecker   IstioStatusChecker
 }
 
 func NewReconciler(
@@ -115,7 +114,6 @@ func NewReconciler(
 	config Config,
 	gatewayProber DeploymentProber,
 	agentProber DaemonSetProber,
-	flowHealthProbingEnabled bool,
 	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler,
 ) *Reconciler {
@@ -143,13 +141,12 @@ func NewReconciler(
 			Name:      "telemetry-metricpipeline-lock",
 			Namespace: config.Gateway.Namespace,
 		}, config.MaxPipelines),
-		gatewayProber:            gatewayProber,
-		agentProber:              agentProber,
-		flowHealthProbingEnabled: flowHealthProbingEnabled,
-		flowHealthProber:         flowHealthProber,
-		tlsCertValidator:         tlscert.New(client),
-		overridesHandler:         overridesHandler,
-		istioStatusChecker:       istiostatus.NewChecker(client),
+		gatewayProber:      gatewayProber,
+		agentProber:        agentProber,
+		flowHealthProber:   flowHealthProber,
+		tlsCertValidator:   tlscert.New(client),
+		overridesHandler:   overridesHandler,
+		istioStatusChecker: istiostatus.NewChecker(client),
 	}
 }
 
