@@ -139,25 +139,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	var reason string
-	var status metav1.ConditionStatus
-
-	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
-	if err == nil {
-		logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
-
-		reason = flowHealthReasonFor(probeResult)
-		if probeResult.Healthy {
-			status = metav1.ConditionTrue
-		} else {
-			status = metav1.ConditionFalse
-		}
-	} else {
-		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
-
-		reason = conditions.ReasonSelfMonProbingFailed
-		status = metav1.ConditionUnknown
-	}
+	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeFlowHealthy,
@@ -168,6 +150,27 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) (metav1.ConditionStatus, string) {
+	if meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated) {
+		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
+	}
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonProbingFailed
+	}
+
+	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
+	reason := flowHealthReasonFor(probeResult)
+	if probeResult.Healthy {
+		return metav1.ConditionTrue, reason
+	}
+
+	return metav1.ConditionFalse, reason
 }
 
 func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {

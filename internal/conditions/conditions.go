@@ -106,16 +106,17 @@ var tracePipelineMessages = map[string]string{
 }
 
 var metricPipelineMessages = map[string]string{
-	ReasonAgentGatewayConfigured:   "Metric agent and gateway successfully configured",
-	ReasonAgentNotReady:            "Metric agent DaemonSet is not ready",
-	ReasonAgentReady:               "Metric agent DaemonSet is ready",
-	ReasonComponentsRunning:        "All metric components are running",
-	ReasonGatewayNotReady:          "Metric gateway Deployment is not ready",
-	ReasonGatewayReady:             "Metric gateway Deployment is ready",
-	ReasonSelfMonAllDataDropped:    "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
-	ReasonSelfMonBufferFillingUp:   "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
-	ReasonSelfMonGatewayThrottling: "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
-	ReasonSelfMonSomeDataDropped:   "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+	ReasonAgentGatewayConfigured:    "Metric agent and gateway successfully configured",
+	ReasonAgentNotReady:             "Metric agent DaemonSet is not ready",
+	ReasonAgentReady:                "Metric agent DaemonSet is ready",
+	ReasonComponentsRunning:         "All metric components are running",
+	ReasonGatewayNotReady:           "Metric gateway Deployment is not ready",
+	ReasonGatewayReady:              "Metric gateway Deployment is ready",
+	ReasonSelfMonAllDataDropped:     "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
+	ReasonSelfMonGatewayThrottling:  "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
+	ReasonSelfMonSomeDataDropped:    "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+	ReasonSelfMonConfigNotGenerated: "No metrics delivered to backend because the configuration for the Metric agent and gateway was not generated. Check the 'ConfigurationGenerated' condition for more details",
 }
 
 func MessageForLogPipeline(reason string) string {
