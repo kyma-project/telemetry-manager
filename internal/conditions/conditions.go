@@ -21,11 +21,6 @@ const (
 )
 
 const (
-	// Telemetry reasons
-	ReasonComponentsRunning      = "ComponentsRunning"
-	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
-	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
-
 	// Common reasons
 	ReasonAgentNotReady               = "AgentNotReady"
 	ReasonAgentReady                  = "AgentReady"
@@ -39,9 +34,15 @@ const (
 	ReasonSelfMonGatewayThrottling    = "GatewayThrottling"
 	ReasonSelfMonProbingFailed        = "ProbingFailed"
 	ReasonSelfMonSomeDataDropped      = "SomeTelemetryDataDropped"
+	ReasonSelfMonConfigNotGenerated   = "ConfigurationNotGenerated"
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
+
+	// Telemetry reasons
+	ReasonComponentsRunning      = "ComponentsRunning"
+	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
+	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
 
 	// LogPipeline reasons
 	ReasonAgentConfigured        = "AgentConfigured"
@@ -76,17 +77,18 @@ var commonMessages = map[string]string{
 }
 
 var logPipelineMessages = map[string]string{
-	ReasonAgentConfigured:        "Fluent Bit agent successfully configured",
-	ReasonAgentNotReady:          "Fluent Bit agent DaemonSet is not ready",
-	ReasonAgentReady:             "Fluent Bit agent DaemonSet is ready",
-	ReasonComponentsRunning:      "All log components are running",
-	ReasonFluentBitDSNotReady:    "Fluent Bit DaemonSet is not ready",
-	ReasonFluentBitDSReady:       "Fluent Bit DaemonSet is ready",
-	ReasonSelfMonAllDataDropped:  "All logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
-	ReasonSelfMonBufferFillingUp: "Buffer nearing capacity: incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
-	ReasonSelfMonNoLogsDelivered: "No logs delivered to backend. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
-	ReasonSelfMonSomeDataDropped: "Some logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
-	ReasonUnsupportedLokiOutput:  "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
+	ReasonAgentConfigured:           "Fluent Bit agent successfully configured",
+	ReasonAgentNotReady:             "Fluent Bit agent DaemonSet is not ready",
+	ReasonAgentReady:                "Fluent Bit agent DaemonSet is ready",
+	ReasonComponentsRunning:         "All log components are running",
+	ReasonFluentBitDSNotReady:       "Fluent Bit DaemonSet is not ready",
+	ReasonFluentBitDSReady:          "Fluent Bit DaemonSet is ready",
+	ReasonSelfMonAllDataDropped:     "All logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity: incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
+	ReasonSelfMonNoLogsDelivered:    "No logs delivered to backend. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+	ReasonSelfMonSomeDataDropped:    "Some logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
+	ReasonSelfMonConfigNotGenerated: "No logs delivered to backend because the configuration for Fluent Bit was not generated. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonUnsupportedLokiOutput:     "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 }
 
 var tracePipelineMessages = map[string]string{
