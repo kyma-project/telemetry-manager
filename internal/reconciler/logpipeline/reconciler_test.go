@@ -195,8 +195,48 @@ func TestUpdateStatus(t *testing.T) {
 		)
 
 		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-			conditions.ReasonFluentBitDSReady,
 			"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+		require.NoError(t, err, "sections configmap must exist")
+		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
+	})
+
+	t.Run("log agent prober fails", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		proberStub := &mocks.DaemonSetProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+
+		sut := Reconciler{
+			Client:             fakeClient,
+			config:             testConfig,
+			prober:             proberStub,
+			overridesHandler:   overridesHandlerStub,
+			istioStatusChecker: istioStatusCheckerStub,
+			syncer: syncer{
+				Client: fakeClient,
+				config: testConfig,
+			},
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonAgentNotReady,
+			"Fluent Bit agent DaemonSet is not ready",
+		)
+
+		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
+			conditions.ReasonFluentBitDSNotReady,
+			"[NOTE: The \"Pending\" type is deprecated] Fluent Bit DaemonSet is not ready")
 
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
@@ -299,7 +339,6 @@ func TestUpdateStatus(t *testing.T) {
 		)
 
 		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-			conditions.ReasonFluentBitDSReady,
 			"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
 
 		var cm corev1.ConfigMap
@@ -485,7 +524,6 @@ func TestUpdateStatus(t *testing.T) {
 				)
 
 				requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-					conditions.ReasonFluentBitDSReady,
 					"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
 
 				var cm corev1.ConfigMap
@@ -571,62 +609,70 @@ func TestUpdateStatus(t *testing.T) {
 
 	t.Run("tls conditions", func(t *testing.T) {
 		tests := []struct {
-			name                  string
-			tlsCertErr            error
-			expectedStatus        metav1.ConditionStatus
-			expectedReason        string
-			expectedMessage       string
-			expectAgentConfigured bool
+			name                    string
+			tlsCertErr              error
+			expectedStatus          metav1.ConditionStatus
+			expectedReason          string
+			expectedMessage         string
+			expectedLegacyCondition string
+			expectAgentConfigured   bool
 		}{
 			{
-				name:            "cert expired",
-				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateExpired,
-				expectedMessage: "TLS certificate expired on 2020-11-01",
+				name:                    "cert expired",
+				tlsCertErr:              &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:          metav1.ConditionFalse,
+				expectedReason:          conditions.ReasonTLSCertificateExpired,
+				expectedMessage:         "TLS certificate expired on 2020-11-01",
+				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
-				name:                  "cert about to expire",
-				tlsCertErr:            &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC)},
-				expectedStatus:        metav1.ConditionTrue,
-				expectedReason:        conditions.ReasonTLSCertificateAboutToExpire,
-				expectedMessage:       "TLS certificate is about to expire, configured certificate is valid until 2024-11-01",
-				expectAgentConfigured: true,
+				name:                    "cert about to expire",
+				tlsCertErr:              &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:          metav1.ConditionTrue,
+				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage:         "TLS certificate is about to expire, configured certificate is valid until 2024-11-01",
+				expectedLegacyCondition: conditions.TypeRunning,
+				expectAgentConfigured:   true,
 			},
 			{
-				name:            "cert decode failed",
-				tlsCertErr:      tlscert.ErrCertDecodeFailed,
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: failed to decode PEM block containing cert",
+				name:                    "cert decode failed",
+				tlsCertErr:              tlscert.ErrCertDecodeFailed,
+				expectedStatus:          metav1.ConditionFalse,
+				expectedReason:          conditions.ReasonTLSCertificateInvalid,
+				expectedMessage:         "TLS certificate invalid: failed to decode PEM block containing cert",
+				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
-				name:            "key decode failed",
-				tlsCertErr:      tlscert.ErrKeyDecodeFailed,
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: failed to decode PEM block containing private key",
+				name:                    "key decode failed",
+				tlsCertErr:              tlscert.ErrKeyDecodeFailed,
+				expectedStatus:          metav1.ConditionFalse,
+				expectedReason:          conditions.ReasonTLSCertificateInvalid,
+				expectedMessage:         "TLS certificate invalid: failed to decode PEM block containing private key",
+				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
-				name:            "key parse failed",
-				tlsCertErr:      tlscert.ErrKeyParseFailed,
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: failed to parse private key",
+				name:                    "key parse failed",
+				tlsCertErr:              tlscert.ErrKeyParseFailed,
+				expectedStatus:          metav1.ConditionFalse,
+				expectedReason:          conditions.ReasonTLSCertificateInvalid,
+				expectedMessage:         "TLS certificate invalid: failed to parse private key",
+				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
-				name:            "cert parse failed",
-				tlsCertErr:      tlscert.ErrCertParseFailed,
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: failed to parse certificate",
+				name:                    "cert parse failed",
+				tlsCertErr:              tlscert.ErrCertParseFailed,
+				expectedStatus:          metav1.ConditionFalse,
+				expectedReason:          conditions.ReasonTLSCertificateInvalid,
+				expectedMessage:         "TLS certificate invalid: failed to parse certificate",
+				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
-				name:            "cert and key mismatch",
-				tlsCertErr:      tlscert.ErrInvalidCertificateKeyPair,
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: certificate and private key do not match",
+				name:                    "cert and key mismatch",
+				tlsCertErr:              tlscert.ErrInvalidCertificateKeyPair,
+				expectedStatus:          metav1.ConditionFalse,
+				expectedReason:          conditions.ReasonTLSCertificateInvalid,
+				expectedMessage:         "TLS certificate invalid: certificate and private key do not match",
+				expectedLegacyCondition: conditions.TypePending,
 			},
 		}
 		for _, tt := range tests {
@@ -672,6 +718,14 @@ func TestUpdateStatus(t *testing.T) {
 					tt.expectedMessage,
 				)
 
+				if tt.expectedLegacyCondition == conditions.TypePending {
+					expectedLegacyMessage := conditions.PendingTypeDeprecationMsg + tt.expectedMessage
+					requireEndsWithLegacyPendingCondition(t, updatedPipeline, tt.expectedReason, expectedLegacyMessage)
+				} else {
+					expectedLegacyMessage := conditions.RunningTypeDeprecationMsg + conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady)
+					requireEndsWithLegacyRunningCondition(t, updatedPipeline, expectedLegacyMessage)
+				}
+
 				var cm corev1.ConfigMap
 				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 				require.NoError(t, err, "sections configmap must exist")
@@ -711,14 +765,14 @@ func requireEndsWithLegacyPendingCondition(t *testing.T, pipeline telemetryv1alp
 	require.NotEmpty(t, lastCond.LastTransitionTime)
 }
 
-func requireEndsWithLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, reason, message string) {
+func requireEndsWithLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, message string) {
 	require.Greater(t, len(pipeline.Status.Conditions), 1)
 
 	condLen := len(pipeline.Status.Conditions)
 	lastCond := pipeline.Status.Conditions[condLen-1]
 	require.Equal(t, conditions.TypeRunning, lastCond.Type)
 	require.Equal(t, metav1.ConditionTrue, lastCond.Status)
-	require.Equal(t, reason, lastCond.Reason)
+	require.Equal(t, conditions.ReasonFluentBitDSReady, lastCond.Reason)
 	require.Equal(t, message, lastCond.Message)
 	require.Equal(t, pipeline.Generation, lastCond.ObservedGeneration)
 	require.NotEmpty(t, lastCond.LastTransitionTime)
