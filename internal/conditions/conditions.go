@@ -100,6 +100,7 @@ var tracePipelineMessages = map[string]string{
 	ReasonSelfMonBufferFillingUp:         "Buffer nearing capacity: incoming trace rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up",
 	ReasonSelfMonGatewayThrottling:       "Trace gateway experiencing high influx: unable to receive traces at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
 	ReasonSelfMonSomeDataDropped:         "Some traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
+	ReasonSelfMonConfigNotGenerated:      "No traces delivered to backend because the configuration for the Trace gateway was not generated. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 }
