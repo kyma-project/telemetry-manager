@@ -82,6 +82,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 				{Reason: conditions.ReasonSelfMonNoLogsDelivered, Status: metav1.ConditionFalse},
 				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
 			})
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   conditions.TypeLogComponentsHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonAllDataDropped,
+			})
 		})
 	})
 })

@@ -84,6 +84,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonBufferFillingUp, Status: metav1.ConditionFalse},
 			})
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   conditions.TypeMetricComponentsHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonBufferFillingUp,
+			})
 		})
 
 		It("Should stop sending metrics from telemetrygen", func() {
@@ -99,6 +104,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 		It("Should wait for the trace flow to report dropped metrics", func() {
 			assert.TracePipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
+			})
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   conditions.TypeTraceComponentsHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonAllDataDropped,
 			})
 		})
 	})
