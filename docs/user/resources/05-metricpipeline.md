@@ -169,7 +169,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 <!-- TABLE-END -->
 ### MetricPipeline Status
 
-The status of the MetricPipeline is determined by the condition types `GatewayHealthy`, `AgentHealthy` and `ConfigurationGenerated`:
+The status of the MetricPipeline is determined by the condition types `GatewayHealthy`, `AgentHealthy`, `ConfigurationGenerated`, and `TelemetryFlowHealthy`:
 
 | Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                    |
 | ---------------------- | ---------------- | --------------------------- | ------------------------------------------------------------------------------------ |

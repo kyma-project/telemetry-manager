@@ -143,7 +143,7 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 
 ### TracePipeline Status
 
-The status of the TracePipeline is determined by the condition types `GatewayHealthy` and `ConfigurationGenerated`:
+The status of the TracePipeline is determined by the condition types `GatewayHealthy`, `ConfigurationGenerated`, and `TelemetryFlowHealthy`:
 
 > **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 

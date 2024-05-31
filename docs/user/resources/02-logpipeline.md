@@ -195,7 +195,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 
 ### LogPipeline Status
 
-The status of the LogPipeline is determined by the condition types `AgentHealthy` and `ConfigurationGenerated`:
+The status of the LogPipeline is determined by the condition types `AgentHealthy`, `ConfigurationGenerated`, and `TelemetryFlowHealthy`:
 
 > **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
