@@ -261,7 +261,7 @@ spec:
           secretKeyRef:
               name: backend
               namespace: default
-              key: token 
+              key: token
 ```
 
 <!-- tabs:end -->
@@ -301,12 +301,12 @@ To activate the constructed TracePipeline, follow these steps:
 
 ### Result
 
-You activated a TracePipeline and traces start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
+You activated a TracePipeline and traces start streaming to your backend. To verify that the pipeline is running, wait until all status conditions of the TracePipeline in your cluster have status `True`:
 
   ```bash
   kubectl get tracepipeline
-  NAME              STATUS    AGE
-  backend           Ready     44s
+  NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   FLOW HEALTHY   AGE
+  backend   True                      True              True           2m
   ```
 
 ## Kyma Modules With Tracing Capabilities
@@ -384,7 +384,7 @@ spec:
 ```
 
 #### **Trace Context Without Spans**
-  
+
 To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs) without any active trace reporting.
 
   ```yaml
@@ -508,12 +508,12 @@ System-related spans reported by Istio are filtered out without the opt-out opti
   Cause: The backend ingestion rate is too small for the data influx.
 
   Remedy:
-  
+
   - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
 
   - Option 2: Decrease data influx, that is, re-configure the trace pipeline.
 
-### Gateway Throttling 
+### Gateway Throttling
 
   Cause: Gateway cannot receive traces at the given rate.
 
