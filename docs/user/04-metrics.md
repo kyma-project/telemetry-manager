@@ -78,7 +78,7 @@ spec:
 #### **HTTP**
 
 To use the HTTP protocol, use the `protocol` attribute:
-  
+
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -99,7 +99,7 @@ spec:
 To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
 
 <!-- tabs:start -->
-  
+
 #### **Mutual TLS**
 
 ```yaml
@@ -248,7 +248,7 @@ spec:
             secretKeyRef:
                 name: backend
                 namespace: default
-                key: token 
+                key: token
 ```
 
 <!-- tabs:end -->
@@ -492,11 +492,11 @@ To activate the constructed MetricPipeline, follow these steps:
 
 ### Result
 
-You activated a MetricPipeline and metrics start streaming to your backend. To verify that the pipeline is running, verify that the status of the MetricPipeline in your cluster is `Ready`:
+You activated a MetricPipeline and metrics start streaming to your backend. To verify that the pipeline is running, wait until all status conditions of the MetricPipeline in your cluster have status `True`::
     ```bash
     kubectl get metricpipeline
-    NAME              STATUS    AGE
-    backend           Ready     44s
+    NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   AGENT HEALTHY   FLOW HEALTHY   AGE
+    backend   True                      True              True            True           2m
     ```
 
 ## Operations
@@ -600,12 +600,12 @@ Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotat
   Cause: The backend ingestion rate is too small for the data influx.
 
   Remedy:
-  
+
   - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
 
   - Option 2: Decrease data influx, that is, re-configure the metric pipeline.
 
-### Gateway Throttling 
+### Gateway Throttling
 
   Cause: Gateway cannot receive metrics at the given rate.
 
