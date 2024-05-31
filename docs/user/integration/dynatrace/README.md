@@ -189,12 +189,12 @@ Use this setup when your application pushes metrics to the telemetry metric serv
                     path: v2/otlp/v1/metrics
                     headers:
                         - name: Authorization
-                        prefix: Api-Token
-                        valueFrom:
+                          prefix: Api-Token
+                          valueFrom:
                             secretKeyRef:
-                                name: dynakube
-                                namespace: ${DYNATRACE_NS}
-                                key: dataIngestToken
+                              name: dynakube
+                              namespace: ${DYNATRACE_NS}
+                              key: dataIngestToken
                     protocol: http
         EOF
         ```
