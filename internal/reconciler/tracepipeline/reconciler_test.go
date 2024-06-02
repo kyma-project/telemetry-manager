@@ -197,6 +197,13 @@ func TestReconcile(t *testing.T) {
 			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing",
 		)
 
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No traces delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
 

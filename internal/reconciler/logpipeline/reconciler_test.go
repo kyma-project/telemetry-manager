@@ -290,6 +290,13 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonReferencedSecretMissing,
 			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing")
 
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
