@@ -320,12 +320,12 @@ To activate the constructed LogPipeline, follow these steps:
 
 ### Result
 
-You activated a LogPipeline and logs start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
+You activated a LogPipeline and logs start streaming to your backend. To verify that the pipeline is running, wait until all status conditions of the LogPipeline in your cluster have status `True`:
 
   ```bash
   kubectl get logpipeline
-  NAME              STATUS    AGE
-  backend           Ready     44s
+  NAME      CONFIGURATION GENERATED   AGENT HEALTHY   FLOW HEALTHY   UNSUPPORTED MODE   AGE
+  backend   True                      True            True                              2m
   ```
 
 ## Log Record Processing
@@ -492,5 +492,5 @@ The maximum amount of LogPipelines is 5.
   - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
 
   - Option 2: Decrease data influx, that is, re-configure the log pipeline.
- 
+
   - Option 3: Reduce emitted logs by application (e.g. by changing log-level).

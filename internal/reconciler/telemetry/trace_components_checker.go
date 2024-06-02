@@ -14,8 +14,7 @@ import (
 )
 
 type traceComponentsChecker struct {
-	client                   client.Client
-	flowHealthProbingEnabled bool
+	client client.Client
 }
 
 func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
@@ -67,10 +66,7 @@ func (t *traceComponentsChecker) firstUnhealthyPipelineReason(pipelines []teleme
 	condTypes := []string{
 		conditions.TypeConfigurationGenerated,
 		conditions.TypeGatewayHealthy,
-	}
-
-	if t.flowHealthProbingEnabled {
-		condTypes = append(condTypes, conditions.TypeFlowHealthy)
+		conditions.TypeFlowHealthy,
 	}
 
 	for _, condType := range condTypes {

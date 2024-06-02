@@ -23,8 +23,11 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="AgentHealthy")].status
       name: Agent Healthy
       type: string
+    - jsonPath: .status.conditions[?(@.type=="TelemetryFlowHealthy")].status
+      name: Flow Healthy
+      type: string
     - jsonPath: .status.unsupportedMode
-      name: Unsupported-Mode
+      name: Unsupported Mode
       type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age

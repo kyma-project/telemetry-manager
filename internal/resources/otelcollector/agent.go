@@ -38,14 +38,7 @@ type AgentApplyOptions struct {
 func (aa *AgentApplier) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aa.Config.Namespace, Name: aa.Config.BaseName}
 
-	if err := applyCommonResources(
-		ctx,
-		c,
-		name,
-		aa.makeAgentClusterRole(),
-		opts.AllowedPorts,
-		aa.Config.ObserveBySelfMonitoring,
-	); err != nil {
+	if err := applyCommonResources(ctx, c, name, aa.makeAgentClusterRole(), opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 

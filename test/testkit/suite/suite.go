@@ -43,23 +43,22 @@ const (
 	LabelTraces                = "traces"
 	LabelMetrics               = "metrics"
 	LabelTelemetry             = "telemetry"
-	LabelSelfMonitoringLogs    = "self-mon-logs"
-	LabelSelfMonitoringTraces  = "self-mon-traces"
-	LabelSelfMonitoringMetrics = "self-mon-metrics"
 	LabelV1Beta1               = "v1beta1"
 	LabelTelemetryLogsAnalysis = "telemetry-logs-analysis"
 	LabelMaxPipeline           = "max-pipeline"
 
-	// Istio test labels
-	LabelIntegration                    = "integration"
-	LabelSelfMonitoringLogsBackpressure = "self-mon-logs-backpressure"
-	LabelSelfMonitoringLogsOutage       = "self-mon-logs-outage"
-
-	LabelSelfMonitoringTracesBackpressure = "self-mon-traces-backpressure"
-	LabelSelfMonitoringTracesOutage       = "self-mon-traces-outage"
-
+	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
+	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"
+	LabelSelfMonitoringLogsOutage          = "self-mon-logs-outage"
+	LabelSelfMonitoringTracesHealthy       = "self-mon-traces-healthy"
+	LabelSelfMonitoringTracesBackpressure  = "self-mon-traces-backpressure"
+	LabelSelfMonitoringTracesOutage        = "self-mon-traces-outage"
+	LabelSelfMonitoringMetricsHealthy      = "self-mon-metrics-healthy"
 	LabelSelfMonitoringMetricsBackpressure = "self-mon-metrics-backpressure"
 	LabelSelfMonitoringMetricsOutage       = "self-mon-metrics-outage"
+
+	// Istio test label
+	LabelIntegration = "integration"
 
 	// Operational tests preserve K8s objects between test runs.
 	LabelOperational = "operational"
