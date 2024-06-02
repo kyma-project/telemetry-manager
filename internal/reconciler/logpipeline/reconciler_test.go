@@ -397,6 +397,13 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonUnsupportedLokiOutput,
 			"[NOTE: The \"Pending\" type is deprecated] grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README")
 
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
@@ -728,6 +735,15 @@ func TestReconcile(t *testing.T) {
 					tt.expectedReason,
 					tt.expectedMessage,
 				)
+
+				if tt.expectedStatus == metav1.ConditionFalse {
+					requireHasStatusCondition(t, updatedPipeline,
+						conditions.TypeFlowHealthy,
+						metav1.ConditionFalse,
+						conditions.ReasonSelfMonConfigNotGenerated,
+						"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+					)
+				}
 
 				if tt.expectedLegacyCondition == conditions.TypePending {
 					expectedLegacyMessage := conditions.PendingTypeDeprecationMsg + tt.expectedMessage
