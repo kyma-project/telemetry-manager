@@ -147,16 +147,16 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 
 > **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
-| Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                    |
-| ---------------------- | ---------------- | --------------------------- | ------------------------------------------------------------------------------------ |
-| GatewayHealthy         | True             | GatewayReady                | Trace gateway Deployment is ready                                                    |
-| GatewayHealthy         | False            | GatewayNotReady             | Trace gateway Deployment is not ready                                                |
-| ConfigurationGenerated | True             | GatewayConfigured           | Trace gateway successfully configured                                                |
-| ConfigurationGenerated | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |
-| ConfigurationGenerated | False            | MaxPipelinesExceeded        | Maximum pipeline count limit exceeded                                                |
-| ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                           |
-| ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                |
-| ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                              |
+| Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                         |
+| ---------------------- | ---------------- | --------------------------- |-------------------------------------------------------------------------------------------|
+| GatewayHealthy         | True             | GatewayReady                | Trace gateway Deployment is ready                                                         |
+| GatewayHealthy         | False            | GatewayNotReady             | Trace gateway Deployment is not ready                                                     |
+| ConfigurationGenerated | True             | GatewayConfigured           | TracePipeline specification is successfully applied to the configuration of Trace gateway |
+| ConfigurationGenerated | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD      |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded        | Maximum pipeline count limit exceeded                                                     |
+| ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                |
+| ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                     |
+| ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                                   |
 
 Reflecting the TracePipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
 

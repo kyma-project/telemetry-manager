@@ -368,8 +368,8 @@ func TestReconcile(t *testing.T) {
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
-			conditions.ReasonAgentGatewayConfigured,
-			"Metric agent and gateway successfully configured")
+			conditions.ReasonGatewayConfigured,
+			"MetricPipeline specification is successfully applied to the configuration of Metric gateway")
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})

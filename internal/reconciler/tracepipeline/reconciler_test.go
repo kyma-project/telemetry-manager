@@ -233,7 +233,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
 			conditions.ReasonGatewayConfigured,
-			"Trace gateway successfully configured",
+			"TracePipeline specification is successfully applied to the configuration of Trace gateway",
 		)
 
 		requireEndsWithLegacyRunningCondition(t, updatedPipeline,

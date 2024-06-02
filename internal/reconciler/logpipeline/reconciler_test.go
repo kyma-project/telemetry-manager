@@ -311,7 +311,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
 			conditions.ReasonAgentConfigured,
-			"Fluent Bit agent successfully configured",
+			"LogPipeline specification is successfully applied to the configuration of Fluent Bit agent",
 		)
 
 		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
