@@ -62,7 +62,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		return objs
 	}
 
-	Context("When a log pipeline is configured TLS Cert that does not match the Key", Ordered, func() {
+	Context("When a log pipeline with TLS Cert that does not match the Key is created", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -72,14 +72,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a tls certificate key pair invalid condition set in pipeline conditions", func() {
+		It("Should set ConfigurationGenerated condition to False in pipeline", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSCertificateInvalid,
 			})
+		})
 
-			// legacy
+		It("Should set Pending condition to True in pipeline", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypePending,
 				Status: metav1.ConditionTrue,
@@ -87,7 +88,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 		})
 
-		It("Should have telemetryCR showing tls certificate key pair invalid condition for log component in its status", func() {
+		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeFlowHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonConfigNotGenerated,
+			})
+		})
+
+		It("Should set LogComponentsHealthy condition to False in Telemetry", func() {
 			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
