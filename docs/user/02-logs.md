@@ -476,21 +476,30 @@ The maximum amount of LogPipelines is 5.
 
 ## Troubleshooting
 
-### Logs Not Arriving at the Destination
+### No Logs Arrive at the Backend
 
-   Cause: Wrong backend endpoint configuration or authentication credentials are used.
+Cause: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
+Note that logs will be buffered initially, allowing a chance to fix the issue before they are dropped.
 
-   Remedy: Investigate the cause with the following steps:
-   1. Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+Remedy: 
+- Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+- Check if the backend is up and reachable.
 
-### Influx Capacity Reaching Its Limit
+### Not All Logs Arrive at the Backend
 
-  Cause: The backend ingestion rate is too small for the data influx.
+Cause: The backend is reachable and the connection is properly configured, but some logs are refused.
 
-  Remedy:
+Remedy:
+- Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is refusing logs limiting the rate, try the options desribed in [Agent Buffer Filling Up](#agent-buffer-filling-up)
 
-  - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
+### Agent Buffer Filling Up
 
-  - Option 2: Decrease data influx, that is, re-configure the log pipeline.
+Cause: The backend export rate is too low compared to the log colection rate.
 
-  - Option 3: Reduce emitted logs by application (e.g. by changing log-level).
+Remedy:
+
+- Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
+
+- Option 2: Decrease the log ingestion rate (e.g., by applying namespace or container filters in your LogPipeline).
+
+- Option 3: Reduce emitted logs by application (e.g. by changing log-level).

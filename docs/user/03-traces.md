@@ -513,11 +513,11 @@ The following example sets the value to `60`, which means 60% of the requests ar
 
 ### Gateway Buffer Filling Up
 
-Cause: The backend exporting rate is too small compared to the span ingestion rate.
+Cause: The backend export rate is too low compared to the gateway ingestion rate.
 
 Remedy:
 
-- Option 1: Upgrade backend capabilities. For instance, SAP Cloud Logging can be scaled out, if used as a backend.
+- Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
 
 - Option 2: Decrease the amount of spans sent to the gateway.
 
