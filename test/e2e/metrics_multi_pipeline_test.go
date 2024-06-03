@@ -112,7 +112,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(Not(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
-					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
+					ContainScope(
+						SatisfyAll(
+							WithScopeName(ContainSubstring(InstrumentationScopeRuntime)),
+							WithScopeVersion(
+								SatisfyAny(
+									ContainSubstring("main"),
+									ContainSubstring("1."),
+									ContainSubstring("PR-"),
+								),
+							),
+						),
+					),
 				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -124,7 +135,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
-					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopePrometheus))),
+					ContainScope(
+						SatisfyAll(
+							WithScopeName(ContainSubstring(InstrumentationScopePrometheus)),
+							WithScopeVersion(
+								SatisfyAny(
+									ContainSubstring("main"),
+									ContainSubstring("1."),
+									ContainSubstring("PR-"),
+								),
+							),
+						),
+					),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -136,7 +158,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(Not(SatisfyAll(
 					ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
-					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopePrometheus))),
+					ContainScope(
+						SatisfyAll(
+							WithScopeName(ContainSubstring(InstrumentationScopePrometheus)),
+							WithScopeVersion(
+								SatisfyAny(
+									ContainSubstring("main"),
+									ContainSubstring("1."),
+									ContainSubstring("PR-"),
+								),
+							),
+						),
+					),
 				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

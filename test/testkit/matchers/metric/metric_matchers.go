@@ -70,6 +70,12 @@ func WithScopeName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
+func WithScopeVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(sm pmetric.ScopeMetrics) (string, error) {
+		return sm.Scope().Version(), nil
+	}, matcher)
+}
+
 func WithName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(m pmetric.Metric) (string, error) {
 		return m.Name(), nil
