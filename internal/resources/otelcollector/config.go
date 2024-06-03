@@ -5,9 +5,8 @@ import (
 )
 
 type Config struct {
-	BaseName                string
-	Namespace               string
-	ObserveBySelfMonitoring bool
+	BaseName  string
+	Namespace string
 }
 
 type GatewayConfig struct {

@@ -14,8 +14,7 @@ import (
 )
 
 type metricComponentsChecker struct {
-	client                   client.Client
-	flowHealthProbingEnabled bool
+	client client.Client
 }
 
 func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
@@ -67,10 +66,7 @@ func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telem
 		conditions.TypeConfigurationGenerated,
 		conditions.TypeGatewayHealthy,
 		conditions.TypeAgentHealthy,
-	}
-
-	if m.flowHealthProbingEnabled {
-		condTypes = append(condTypes, conditions.TypeFlowHealthy)
+		conditions.TypeFlowHealthy,
 	}
 
 	for _, condType := range condTypes {

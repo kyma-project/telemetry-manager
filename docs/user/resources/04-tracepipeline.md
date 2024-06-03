@@ -143,7 +143,7 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 
 ### TracePipeline Status
 
-The status of the TracePipeline is determined by the condition types `GatewayHealthy` and `ConfigurationGenerated`:
+The status of the TracePipeline is determined by the condition types `GatewayHealthy`, `ConfigurationGenerated`, and `TelemetryFlowHealthy`:
 
 > **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
@@ -157,14 +157,9 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 | ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                           |
 | ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                |
 | ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                              |
-
-Reflecting the TracePipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
-
-| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                                                                                                                                                          |
-| -------------------- | ---------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the telemetry flow                                                                                                                                                                                 |
-| TelemetryFlowHealthy | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting. See troubleshooting: [Traces Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination)  |
-| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate. See troubleshooting: [Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up)                            |
-| TelemetryFlowHealthy | False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive metrics at the current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)         |
-| TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting. See troubleshooting: [Traces Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination) |
-| TelemetryFlowHealthy | Unknown          | ProbingFailed     | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                               |
+| TelemetryFlowHealthy   | True             | FlowHealthy                 | No problems detected in the telemetry flow                                                                                                                                                                                 |
+| TelemetryFlowHealthy   | False            | AllDataDropped              | All traces dropped: backend unreachable or rejecting. See troubleshooting: [Traces Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination)  |
+| TelemetryFlowHealthy   | False            | BufferFillingUp             | Buffer nearing capacity: incoming trace rate exceeds the export rate. See troubleshooting: [Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up)                            |
+| TelemetryFlowHealthy   | False            | GatewayThrottling           | Trace gateway experiencing high influx: unable to receive metrics at the current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)         |
+| TelemetryFlowHealthy   | False            | SomeDataDropped             | Some traces dropped: backend unreachable or rejecting. See troubleshooting: [Traces Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination) |
+| TelemetryFlowHealthy   | Unknown          | ProbingFailed               | Could not determine the health of the telemetry flow because the self monitor probing failed                                                                                                                               |

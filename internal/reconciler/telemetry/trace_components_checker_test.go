@@ -21,11 +21,10 @@ func TestTraceComponentsCheck(t *testing.T) {
 	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady}
 
 	tests := []struct {
-		name                     string
-		pipelines                []telemetryv1alpha1.TracePipeline
-		telemetryInDeletion      bool
-		flowHealthProbingEnabled bool
-		expectedCondition        *metav1.Condition
+		name                string
+		pipelines           []telemetryv1alpha1.TracePipeline
+		telemetryInDeletion bool
+		expectedCondition   *metav1.Condition
 	}{
 		{
 			name:                "should be healthy if no pipelines deployed",
@@ -174,7 +173,6 @@ func TestTraceComponentsCheck(t *testing.T) {
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonSelfMonFlowHealthy}).
 					Build(),
 			},
-			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "True",
@@ -190,7 +188,6 @@ func TestTraceComponentsCheck(t *testing.T) {
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonSelfMonGatewayThrottling}).
 					Build(),
 			},
-			flowHealthProbingEnabled: true,
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
@@ -233,8 +230,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			fakeClient := b.Build()
 
 			m := &traceComponentsChecker{
-				client:                   fakeClient,
-				flowHealthProbingEnabled: test.flowHealthProbingEnabled,
+				client: fakeClient,
 			}
 
 			condition, err := m.Check(context.Background(), test.telemetryInDeletion)

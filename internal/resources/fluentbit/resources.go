@@ -265,11 +265,9 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func MakeMetricsService(name types.NamespacedName, observeBySelfMonitoring bool) *corev1.Service {
+func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 	serviceLabels := Labels()
-	if observeBySelfMonitoring {
-		serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
-	}
+	serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-metrics", name.Name),
@@ -297,11 +295,9 @@ func MakeMetricsService(name types.NamespacedName, observeBySelfMonitoring bool)
 	}
 }
 
-func MakeExporterMetricsService(name types.NamespacedName, observeBySelfMonitoring bool) *corev1.Service {
+func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 	serviceLabels := Labels()
-	if observeBySelfMonitoring {
-		serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
-	}
+	serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

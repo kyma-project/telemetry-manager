@@ -42,18 +42,17 @@ import (
 )
 
 type Config struct {
-	DaemonSet               types.NamespacedName
-	SectionsConfigMap       types.NamespacedName
-	FilesConfigMap          types.NamespacedName
-	LuaConfigMap            types.NamespacedName
-	ParsersConfigMap        types.NamespacedName
-	EnvSecret               types.NamespacedName
-	OutputTLSConfigSecret   types.NamespacedName
-	OverrideConfigMap       types.NamespacedName
-	PipelineDefaults        builder.PipelineDefaults
-	Overrides               overrides.Config
-	DaemonSetConfig         fluentbit.DaemonSetConfig
-	ObserveBySelfMonitoring bool
+	DaemonSet             types.NamespacedName
+	SectionsConfigMap     types.NamespacedName
+	FilesConfigMap        types.NamespacedName
+	LuaConfigMap          types.NamespacedName
+	ParsersConfigMap      types.NamespacedName
+	EnvSecret             types.NamespacedName
+	OutputTLSConfigSecret types.NamespacedName
+	OverrideConfigMap     types.NamespacedName
+	PipelineDefaults      builder.PipelineDefaults
+	Overrides             overrides.Config
+	DaemonSetConfig       fluentbit.DaemonSetConfig
 }
 
 //go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
@@ -91,27 +90,24 @@ type Reconciler struct {
 	config                     Config
 	pipelinesConditionsCleared bool
 
-	prober                   DaemonSetProber
-	flowHealthProbingEnabled bool
-	flowHealthProber         FlowHealthProber
-	tlsCertValidator         TLSCertValidator
-	syncer                   syncer
-	overridesHandler         OverridesHandler
-	istioStatusChecker       IstioStatusChecker
+	prober             DaemonSetProber
+	flowHealthProber   FlowHealthProber
+	tlsCertValidator   TLSCertValidator
+	syncer             syncer
+	overridesHandler   OverridesHandler
+	istioStatusChecker IstioStatusChecker
 }
 
 func NewReconciler(
 	client client.Client,
 	config Config,
 	agentProber DaemonSetProber,
-	flowHealthProbingEnabled bool,
 	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.config = config
 	r.prober = agentProber
-	r.flowHealthProbingEnabled = flowHealthProbingEnabled
 	r.flowHealthProber = flowHealthProber
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
@@ -201,12 +197,12 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
-	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet, r.config.ObserveBySelfMonitoring)
+	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
-	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet, r.config.ObserveBySelfMonitoring)
+	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}

@@ -27,7 +27,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()
@@ -39,23 +39,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, f
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		backend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := testutils.NewMetricPipelineBuilder().
+		tracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
 		objs = append(objs,
-			telemetrygen.NewPod(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
-			&pipeline,
+			&tracePipeline,
+			telemetrygen.NewPod(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeTraces).K8sObject(),
 		)
 
 		return objs
 	}
 
-	Context("When a metric pipeline exists", Ordered, func() {
+	Context("When a trace pipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -92,22 +92,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetrics), Ordered, f
 			Expect(k8sClient.Get(ctx, kitkyma.SelfMonitorName, &service)).To(Succeed())
 		})
 
-		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-		})
-
 		It("Should have a running pipeline", func() {
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
+			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen metrics", func() {
-			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
+		It("Should deliver telemetrygen traces", func() {
+			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
 		})
 
-		It("Should have TypeFlowHealthy condition set to True", func() {
-			// TODO: add the conditions.TypeFlowHealthy check to assert.MetricPipelineHealthy after self monitor is released
+		It("The telemetryFlowHealthy condition should be true", func() {
+			// TODO: add the conditions.TypeFlowHealthy check to assert.TracePipelineHealthy after self monitor is released
 			Eventually(func(g Gomega) {
-				var pipeline telemetryv1alpha1.MetricPipeline
+				var pipeline telemetryv1alpha1.TracePipeline
 				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
