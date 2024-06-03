@@ -461,62 +461,70 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
 ## Troubleshooting
 
-### Traces Not Arriving at the Destination
+### No Spans Arrive at the Backend
 
-   Cause: Wrong backend endpoint configuration or authentication credentials are used.
+Cause: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
 
-   Remedy: Investigate the cause with the following steps:
-   1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+Remedy: 
+- Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+- Check if the backend is up and reachable.
 
-### Custom Spans don't Arrive at the Destination, but Istio Spans do
+### Not All Spans Arrive at the Backend
 
-   Cause: Your SDK version is incompatible with the OTel collector version.
+Cause: The backend is reachable and the connection is configured, but some spans are refused.
 
-   Remedy:
-   1. Check which SDK version you are using for instrumentation.
-   1. Investigate whether it is compatible with the OTel collector version.
-   1. If required, upgrade to a supported SDK version.
+Remedy:
+- Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is refusing spans limiting the rate, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up)
+
+### Custom Spans don't Arrive at the Backend, but Istio Spans do
+
+Cause: Your SDK version is incompatible with the OTel collector version.
+
+Remedy:
+1. Check which SDK version you are using for instrumentation.
+2. Investigate whether it is compatible with the OTel collector version.
+3. If required, upgrade to a supported SDK version.
 
 ### Trace Backend Shows Fewer Traces than Expected
 
-   Cause: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
+Cause: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
 
-   Remedy:
+Remedy:
 
-   To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
-   If you just want to see traces for one particular request, you can manually force sampling.
+To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
+If you just want to see traces for one particular request, you can manually force sampling.
 
-   To override the default percentage, you deploy a YAML file to an existing Kyma installation.
-   To set the value for the **randomSamplingPercentage** attribute, create a values YAML file.
-   The following example sets the value to `60`, which means 60% of the requests are sent to tracing backend.
+To override the default percentage, you deploy a YAML file to an existing Kyma installation.
+To set the value for the **randomSamplingPercentage** attribute, create a values YAML file.
+The following example sets the value to `60`, which means 60% of the requests are sent to tracing backend.
 
-    ```yaml
-      apiVersion: telemetry.istio.io/v1alpha1
-      kind: Telemetry
-      metadata:
-        name: kyma-traces
-        namespace: istio-system
-      spec:
-        tracing:
-        - providers:
-          - name: "kyma-traces"
-          randomSamplingPercentage: 60
-    ```
+```yaml
+  apiVersion: telemetry.istio.io/v1alpha1
+  kind: Telemetry
+  metadata:
+    name: kyma-traces
+    namespace: istio-system
+  spec:
+    tracing:
+    - providers:
+      - name: "kyma-traces"
+      randomSamplingPercentage: 60
+```
 
-### Buffer Filling Up
+### Gateway Buffer Filling Up
 
-  Cause: The backend ingestion rate is too small for the data influx.
+Cause: The backend exporting rate is too small compared to the data ingestion rate.
 
-  Remedy:
+Remedy:
 
-  - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
+- Option 1: Upgrade backend capabilities. For instance, SAP Cloud Logging can be scaled out, if used as a backend.
 
-  - Option 2: Decrease data influx, that is, re-configure the trace pipeline.
+- Option 2: Decrease gateway data ingestion.
 
 ### Gateway Throttling
 
-  Cause: Gateway cannot receive traces at the given rate.
+Cause: Gateway cannot receive spans at the given rate.
 
-  Remedy:
+Remedy:
 
-  - Manually scale out the gateway by increasing the number of replicas for the `telemetry-trace-gateway`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+- Manually scale out the gateway by increasing the number of replicas for the `telemetry-trace-collector`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
