@@ -68,7 +68,7 @@ type DaemonSetAnnotator interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
+	ValidateCertificate(ctx context.Context, config tlscert.TLSConfig) error
 }
 
 //go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
@@ -318,10 +318,13 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		cert := pipeline.Spec.Output.HTTP.TLSConfig.Cert
-		key := pipeline.Spec.Output.HTTP.TLSConfig.Key
+		tlsConfig := tlscert.TLSConfig{
+			Cert: pipeline.Spec.Output.HTTP.TLSConfig.Cert,
+			Key:  pipeline.Spec.Output.HTTP.TLSConfig.Key,
+			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,
+		}
 
-		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+		if err := r.tlsCertValidator.ValidateCertificate(ctx, tlsConfig); err != nil {
 			if !tlscert.IsCertAboutToExpireError(err) {
 				return false
 			}

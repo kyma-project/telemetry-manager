@@ -527,7 +527,7 @@ func TestReconcile(t *testing.T) {
 				tlsCertErr:              tlscert.ErrCertDecodeFailed,
 				expectedStatus:          metav1.ConditionFalse,
 				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to decode PEM block containing cert",
+				expectedMessage:         "TLS certificate invalid: failed to decode PEM block containing certificate",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{

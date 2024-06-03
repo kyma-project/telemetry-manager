@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -113,10 +114,13 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		cert := pipeline.Spec.Output.HTTP.TLSConfig.Cert
-		key := pipeline.Spec.Output.HTTP.TLSConfig.Key
+		tlsConfig := tlscert.TLSConfig{
+			Cert: pipeline.Spec.Output.HTTP.TLSConfig.Cert,
+			Key:  pipeline.Spec.Output.HTTP.TLSConfig.Key,
+			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,
+		}
 
-		err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
+		err := r.tlsCertValidator.ValidateCertificate(ctx, tlsConfig)
 		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured))
 	}
 

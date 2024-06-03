@@ -79,7 +79,7 @@ type FlowHealthProber interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
+	ValidateCertificate(ctx context.Context, config tlscert.TLSConfig) error
 }
 
 //go:generate mockery --name OverridesHandler --filename overrides_handler.go
@@ -246,10 +246,13 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		cert := pipeline.Spec.Output.Otlp.TLS.Cert
-		key := pipeline.Spec.Output.Otlp.TLS.Key
+		tlsConfig := tlscert.TLSConfig{
+			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
+			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
+			CA:   pipeline.Spec.Output.Otlp.TLS.CA,
+		}
 
-		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+		if err := r.tlsCertValidator.ValidateCertificate(ctx, tlsConfig); err != nil {
 			if !tlscert.IsCertAboutToExpireError(err) {
 				return false, nil
 			}

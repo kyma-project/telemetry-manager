@@ -11,11 +11,10 @@ import (
 )
 
 func EvaluateTLSCertCondition(errValidation error, configuredReason string, configuredMessage string) (status metav1.ConditionStatus, reason, message string) {
-	if errors.Is(errValidation, tlscert.ErrCertDecodeFailed) || errors.Is(errValidation, tlscert.ErrCertParseFailed) {
-		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], errValidation)
-	}
-
-	if errors.Is(errValidation, tlscert.ErrKeyDecodeFailed) || errors.Is(errValidation, tlscert.ErrKeyParseFailed) {
+	if errors.Is(errValidation, tlscert.ErrCertDecodeFailed) || errors.Is(errValidation, tlscert.ErrCertParseFailed) || // validate certificate
+		errors.Is(errValidation, tlscert.ErrKeyDecodeFailed) || errors.Is(errValidation, tlscert.ErrKeyParseFailed) || // validate key
+		errors.Is(errValidation, tlscert.ErrInvalidCertificateKeyPair) || // validate certificate-key pair
+		errors.Is(errValidation, tlscert.ErrCertIsNotCA) { // validate CA
 		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], errValidation)
 	}
 
@@ -27,10 +26,6 @@ func EvaluateTLSCertCondition(errValidation error, configuredReason string, conf
 	var errCertAboutToExpire *tlscert.CertAboutToExpireError
 	if errors.As(errValidation, &errCertAboutToExpire) {
 		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, fmt.Sprintf(commonMessages[ReasonTLSCertificateAboutToExpire], errCertAboutToExpire.Expiry.Format(time.DateOnly))
-	}
-
-	if errors.Is(errValidation, tlscert.ErrInvalidCertificateKeyPair) {
-		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], errValidation)
 	}
 
 	return metav1.ConditionTrue, configuredReason, configuredMessage
