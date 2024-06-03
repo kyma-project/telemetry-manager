@@ -87,7 +87,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonBufferFillingUp,
+				Reason: conditions.ReasonSelfMonSomeDataDropped,
 			})
 		})
 	})
