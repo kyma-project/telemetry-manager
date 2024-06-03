@@ -21,7 +21,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 					Context: "scope",
 					Statements: []string{
 						"set(version, \"main\") where name == \"otelcol/kubeletstatsreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"\" or name == \"otelcol/kubeletstatsreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"otelcol/kubeletstatsreceiver\"",
 					},
 				}},
 			},
@@ -34,7 +34,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 					Context: "scope",
 					Statements: []string{
 						"set(version, \"main\") where name == \"otelcol/prometheusreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"\" or name == \"otelcol/prometheusreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"otelcol/prometheusreceiver\"",
 					},
 				}},
 			},
@@ -47,7 +47,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 					Context: "scope",
 					Statements: []string{
 						"set(version, \"main\") where name == \"otelcol/prometheusreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/istio\") where name == \"\" or name == \"otelcol/prometheusreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/istio\") where name == \"otelcol/prometheusreceiver\"",
 					},
 				}},
 			},

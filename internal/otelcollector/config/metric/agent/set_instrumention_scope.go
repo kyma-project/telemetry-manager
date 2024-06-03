@@ -29,6 +29,6 @@ func makeInstrumentationScopeProcessor(inputSource metric.InputSourceType) *Tran
 func makeInstrumentationStatement(inputSource metric.InputSourceType) []string {
 	return []string{
 		fmt.Sprintf("set(version, \"%s\") where name == \"%s\"", version.Version, upstreamInstrumentationScopeName[inputSource]),
-		fmt.Sprintf("set(name, \"%s\") where name == \"\" or name == \"%s\"", metric.InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
+		fmt.Sprintf("set(name, \"%s\") where name == \"%s\"", metric.InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
 	}
 }
