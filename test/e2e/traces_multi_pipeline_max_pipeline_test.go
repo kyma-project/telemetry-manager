@@ -64,7 +64,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			}
 		})
 
-		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
+		It("Should set ConfigurationGenerated condition to False, Pending condition to True and TelemetryFlowHealthy condition to False", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := suite.IDWithSuffix("limit-exceeding")
 				pipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
@@ -83,6 +83,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 					Type:   conditions.TypePending,
 					Status: metav1.ConditionTrue,
 					Reason: conditions.ReasonMaxPipelinesExceeded,
+				})
+
+				assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+					Type:   conditions.TypeFlowHealthy,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonSelfMonConfigNotGenerated,
 				})
 			})
 		})
