@@ -27,7 +27,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
-func TestUpdateStatus(t *testing.T) {
+func TestReconcile(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
@@ -290,6 +290,13 @@ func TestUpdateStatus(t *testing.T) {
 			conditions.ReasonReferencedSecretMissing,
 			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing")
 
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
@@ -339,7 +346,7 @@ func TestUpdateStatus(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
 			conditions.ReasonAgentConfigured,
-			"Fluent Bit agent successfully configured",
+			"LogPipeline specification is successfully applied to the configuration of Fluent Bit agent",
 		)
 
 		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
@@ -389,6 +396,13 @@ func TestUpdateStatus(t *testing.T) {
 		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
 			conditions.ReasonUnsupportedLokiOutput,
 			"[NOTE: The \"Pending\" type is deprecated] grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README")
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+		)
 
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
@@ -721,6 +735,15 @@ func TestUpdateStatus(t *testing.T) {
 					tt.expectedReason,
 					tt.expectedMessage,
 				)
+
+				if tt.expectedStatus == metav1.ConditionFalse {
+					requireHasStatusCondition(t, updatedPipeline,
+						conditions.TypeFlowHealthy,
+						metav1.ConditionFalse,
+						conditions.ReasonSelfMonConfigNotGenerated,
+						"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+					)
+				}
 
 				if tt.expectedLegacyCondition == conditions.TypePending {
 					expectedLegacyMessage := conditions.PendingTypeDeprecationMsg + tt.expectedMessage

@@ -93,10 +93,13 @@ var _ = Describe("WithDataPointAttrs", func() {
 var _ = Describe("Contain Instrumentation Scope", func() {
 	It("should apply matcher", func() {
 		md := pmetric.NewMetrics()
-		md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Scope().SetName("container")
+		scope := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Scope()
+		scope.SetName("container")
+		scope.SetVersion("1.0")
 
 		Expect(mustMarshalMetrics(md)).Should(ContainMd(WithScope(HaveLen(1))))
 		Expect(mustMarshalMetrics(md)).Should(ContainMd(WithScope(ContainElement(WithScopeName(ContainSubstring("container"))))))
+		Expect(mustMarshalMetrics(md)).Should(ContainMd(WithScope(ContainElement(WithScopeVersion(ContainSubstring("1.0"))))))
 	})
 })
 

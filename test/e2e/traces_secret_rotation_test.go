@@ -37,16 +37,35 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			})
 		})
 
-		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
+		It("Should set ConfigurationGenerated condition to False", func() {
 			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
+		})
 
+		It("Should set Pending condition to True", func() {
 			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypePending,
 				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
+		})
+
+		It("Should set TelemetryFlowHealthy condition to False", func() {
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeFlowHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonConfigNotGenerated,
+			})
+		})
+
+		It("Should set TraceComponentsHealthy condition to False in Telemetry", func() {
+			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   conditions.TypeTraceComponentsHealthy,
+				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})
 		})

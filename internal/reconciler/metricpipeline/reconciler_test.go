@@ -396,8 +396,8 @@ func TestReconcile(t *testing.T) {
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
-			conditions.ReasonAgentGatewayConfigured,
-			"Metric agent and gateway successfully configured")
+			conditions.ReasonGatewayConfigured,
+			"MetricPipeline specification is successfully applied to the configuration of Metric gateway")
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -441,6 +441,13 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonReferencedSecretMissing,
 			"One or more referenced Secrets are missing")
 
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
 
@@ -481,6 +488,13 @@ func TestReconcile(t *testing.T) {
 			metav1.ConditionFalse,
 			conditions.ReasonMaxPipelinesExceeded,
 			"Maximum pipeline count limit exceeded",
+		)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
 		)
 
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
@@ -625,6 +639,7 @@ func TestReconcile(t *testing.T) {
 			})
 		}
 	})
+
 	t.Run("tls conditions", func(t *testing.T) {
 		tests := []struct {
 			name                    string
@@ -730,6 +745,15 @@ func TestReconcile(t *testing.T) {
 					tt.expectedReason,
 					tt.expectedMessage,
 				)
+
+				if tt.expectedStatus == metav1.ConditionFalse {
+					requireHasStatusCondition(t, updatedPipeline,
+						conditions.TypeFlowHealthy,
+						metav1.ConditionFalse,
+						conditions.ReasonSelfMonConfigNotGenerated,
+						"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+					)
+				}
 
 				if !tt.expectGatewayConfigured {
 					gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
