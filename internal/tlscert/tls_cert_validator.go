@@ -34,7 +34,6 @@ var (
 
 	ErrCertIsNotCA   = errors.New("not a CA certificate")
 	ErrCASubject     = errors.New("CA subject does not match certificate issuer")
-	ErrCAChainFailed = errors.New("failed to verify certificate chain")
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
@@ -181,16 +180,6 @@ func validateCA(cert *x509.Certificate, ca *x509.Certificate) error {
 
 	if cert.Issuer.String() != ca.Subject.String() {
 		return ErrCASubject
-	}
-
-	roots := x509.NewCertPool()
-	roots.AddCert(ca)
-	opts := x509.VerifyOptions{
-		Roots: roots,
-	}
-
-	if _, err := cert.Verify(opts); err != nil {
-		return ErrCAChainFailed
 	}
 
 	return nil
