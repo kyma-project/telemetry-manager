@@ -563,7 +563,7 @@ Symptom: The backend is reachable and the connection is properly configured, but
 Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
 Remedy:
-- Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is refusing metrics limiting the rate, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up)
+- Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is limiting the rate by refusing metrics, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up)
 
 ### Only Istio Metrics Arrive at the Backend
 

@@ -491,7 +491,7 @@ Symptom: The backend is reachable and the connection is properly configured, but
 Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
 Remedy:
-- Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is refusing logs limiting the rate, try the options desribed in [Agent Buffer Filling Up](#agent-buffer-filling-up)
+- Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is limiting the rate by refusing logs, try the options desribed in [Agent Buffer Filling Up](#agent-buffer-filling-up)
 
 ### Agent Buffer Filling Up
 

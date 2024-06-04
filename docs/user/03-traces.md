@@ -476,7 +476,7 @@ Symptom: The backend is reachable and the connection is properly configured, but
 Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
 Remedy:
-- Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is refusing spans limiting the rate, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up)
+- Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is limiting the rate by refusing spans, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up)
 
 ### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
