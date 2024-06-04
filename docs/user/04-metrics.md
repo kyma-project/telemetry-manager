@@ -550,7 +550,7 @@ Up to three MetricPipeline resources at a time are supported.
 
 ### No Metrics Arrive at the Backend
 
-Symptom: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
+Cause: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
 
 Remedy: 
 - Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
@@ -563,7 +563,9 @@ Symptom: The backend is reachable and the connection is properly configured, but
 Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
 Remedy:
-- Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is limiting the rate by refusing metrics, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up)
+1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+2. If backend is limiting the rate by refusing metrics, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
 ### Only Istio Metrics Arrive at the Backend
 
@@ -603,7 +605,7 @@ Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotat
 
 ### Gateway Buffer Filling Up
 
-Symptom: The backend export rate is too low compared to the gateway ingestion rate.
+Cause: The backend export rate is too low compared to the gateway ingestion rate.
 
 Remedy:
 
@@ -615,7 +617,7 @@ Remedy:
 
 ### Gateway Throttling
 
-Symptom: Gateway cannot receive metrics at the given rate.
+Cause: Gateway cannot receive metrics at the given rate.
 
 Remedy:
 
