@@ -197,6 +197,13 @@ func TestReconcile(t *testing.T) {
 			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing",
 		)
 
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No traces delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
 
@@ -249,7 +256,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
 			conditions.ReasonGatewayConfigured,
-			"Trace gateway successfully configured",
+			"TracePipeline specification is successfully applied to the configuration of Trace gateway",
 		)
 
 		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
@@ -301,6 +308,13 @@ func TestReconcile(t *testing.T) {
 		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
 			conditions.ReasonMaxPipelinesExceeded,
 			"[NOTE: The \"Pending\" type is deprecated] Maximum pipeline count limit exceeded",
+		)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No traces delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 		)
 
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
@@ -631,6 +645,15 @@ func TestReconcile(t *testing.T) {
 					tt.expectedReason,
 					tt.expectedMessage,
 				)
+
+				if tt.expectedStatus == metav1.ConditionFalse {
+					requireHasStatusCondition(t, updatedPipeline,
+						conditions.TypeFlowHealthy,
+						metav1.ConditionFalse,
+						conditions.ReasonSelfMonConfigNotGenerated,
+						"No traces delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
+					)
+				}
 
 				if tt.expectedLegacyCondition == conditions.TypePending {
 					expectedLegacyMessage := conditions.PendingTypeDeprecationMsg + tt.expectedMessage

@@ -37,9 +37,26 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			})
 		})
 
-		It("Should set ConfigurationGenerated condition to false", func() {
+		It("Should set ConfigurationGenerated condition to False", func() {
 			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonReferencedSecretMissing,
+			})
+		})
+
+		It("Should set TelemetryFlowHealthy condition to False", func() {
+			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeFlowHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonConfigNotGenerated,
+			})
+		})
+
+		It("Should set MetricComponentsHealthy condition to False in Telemetry", func() {
+			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
 			})

@@ -21,11 +21,6 @@ const (
 )
 
 const (
-	// Telemetry reasons
-	ReasonComponentsRunning      = "ComponentsRunning"
-	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
-	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
-
 	// Common reasons
 	ReasonAgentNotReady               = "AgentNotReady"
 	ReasonAgentReady                  = "AgentReady"
@@ -39,20 +34,23 @@ const (
 	ReasonSelfMonGatewayThrottling    = "GatewayThrottling"
 	ReasonSelfMonProbingFailed        = "ProbingFailed"
 	ReasonSelfMonSomeDataDropped      = "SomeTelemetryDataDropped"
+	ReasonSelfMonConfigNotGenerated   = "ConfigurationNotGenerated"
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
+	ReasonGatewayConfigured           = "GatewayConfigured"
+
+	// Telemetry reasons
+	ReasonComponentsRunning      = "ComponentsRunning"
+	ReasonNoPipelineDeployed     = "NoPipelineDeployed"
+	ReasonResourceBlocksDeletion = "ResourceBlocksDeletion"
 
 	// LogPipeline reasons
 	ReasonAgentConfigured        = "AgentConfigured"
 	ReasonSelfMonNoLogsDelivered = "NoLogsDelivered"
 	ReasonUnsupportedLokiOutput  = "UnsupportedLokiOutput"
 
-	// TracePipeline reasons
-	ReasonGatewayConfigured = "GatewayConfigured"
-
 	// MetricPipeline reasons
-	ReasonAgentGatewayConfigured = "AgentGatewayConfigured"
 	ReasonMetricAgentNotRequired = "AgentNotRequired"
 
 	// NOTE: The "FluentBitDaemonSetNotReady", "FluentBitDaemonSetReady", "TraceGatewayDeploymentNotReady" and "TraceGatewayDeploymentReady" reasons are deprecated.
@@ -76,21 +74,22 @@ var commonMessages = map[string]string{
 }
 
 var logPipelineMessages = map[string]string{
-	ReasonAgentConfigured:        "Fluent Bit agent successfully configured",
-	ReasonAgentNotReady:          "Fluent Bit agent DaemonSet is not ready",
-	ReasonAgentReady:             "Fluent Bit agent DaemonSet is ready",
-	ReasonComponentsRunning:      "All log components are running",
-	ReasonFluentBitDSNotReady:    "Fluent Bit DaemonSet is not ready",
-	ReasonFluentBitDSReady:       "Fluent Bit DaemonSet is ready",
-	ReasonSelfMonAllDataDropped:  "All logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
-	ReasonSelfMonBufferFillingUp: "Buffer nearing capacity: incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
-	ReasonSelfMonNoLogsDelivered: "No logs delivered to backend. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
-	ReasonSelfMonSomeDataDropped: "Some logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
-	ReasonUnsupportedLokiOutput:  "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
+	ReasonAgentConfigured:           "LogPipeline specification is successfully applied to the configuration of Fluent Bit agent",
+	ReasonAgentNotReady:             "Fluent Bit agent DaemonSet is not ready",
+	ReasonAgentReady:                "Fluent Bit agent DaemonSet is ready",
+	ReasonComponentsRunning:         "All log components are running",
+	ReasonFluentBitDSNotReady:       "Fluent Bit DaemonSet is not ready",
+	ReasonFluentBitDSReady:          "Fluent Bit DaemonSet is ready",
+	ReasonSelfMonAllDataDropped:     "All logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity: incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
+	ReasonSelfMonNoLogsDelivered:    "No logs delivered to backend. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+	ReasonSelfMonSomeDataDropped:    "Some logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
+	ReasonSelfMonConfigNotGenerated: "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonUnsupportedLokiOutput:     "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 }
 
 var tracePipelineMessages = map[string]string{
-	ReasonGatewayConfigured:              "Trace gateway successfully configured",
+	ReasonGatewayConfigured:              "TracePipeline specification is successfully applied to the configuration of Trace gateway",
 	ReasonComponentsRunning:              "All trace components are running",
 	ReasonGatewayNotReady:                "Trace gateway Deployment is not ready",
 	ReasonGatewayReady:                   "Trace gateway Deployment is ready",
@@ -98,21 +97,23 @@ var tracePipelineMessages = map[string]string{
 	ReasonSelfMonBufferFillingUp:         "Buffer nearing capacity: incoming trace rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up",
 	ReasonSelfMonGatewayThrottling:       "Trace gateway experiencing high influx: unable to receive traces at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
 	ReasonSelfMonSomeDataDropped:         "Some traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
+	ReasonSelfMonConfigNotGenerated:      "No traces delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 }
 
 var metricPipelineMessages = map[string]string{
-	ReasonAgentGatewayConfigured:   "Metric agent and gateway successfully configured",
-	ReasonAgentNotReady:            "Metric agent DaemonSet is not ready",
-	ReasonAgentReady:               "Metric agent DaemonSet is ready",
-	ReasonComponentsRunning:        "All metric components are running",
-	ReasonGatewayNotReady:          "Metric gateway Deployment is not ready",
-	ReasonGatewayReady:             "Metric gateway Deployment is ready",
-	ReasonSelfMonAllDataDropped:    "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
-	ReasonSelfMonBufferFillingUp:   "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
-	ReasonSelfMonGatewayThrottling: "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
-	ReasonSelfMonSomeDataDropped:   "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+	ReasonGatewayConfigured:         "MetricPipeline specification is successfully applied to the configuration of Metric gateway",
+	ReasonAgentNotReady:             "Metric agent DaemonSet is not ready",
+	ReasonAgentReady:                "Metric agent DaemonSet is ready",
+	ReasonComponentsRunning:         "All metric components are running",
+	ReasonGatewayNotReady:           "Metric gateway Deployment is not ready",
+	ReasonGatewayReady:              "Metric gateway Deployment is ready",
+	ReasonSelfMonAllDataDropped:     "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
+	ReasonSelfMonGatewayThrottling:  "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
+	ReasonSelfMonSomeDataDropped:    "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+	ReasonSelfMonConfigNotGenerated: "No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
 }
 
 func MessageForLogPipeline(reason string) string {

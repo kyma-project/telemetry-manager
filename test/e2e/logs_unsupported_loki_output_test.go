@@ -28,7 +28,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline)).Should(Succeed())
 		})
 
-		It("Should have ConfigurationGenerated condition set to False in pipeline", func() {
+		It("Should set ConfigurationGenerated condition to False in pipeline", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
@@ -36,7 +36,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 		})
 
-		It("Should have Pending condition set to True in pipeline", func() {
+		It("Should set Pending condition to True in pipeline", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypePending,
 				Status: metav1.ConditionTrue,
@@ -44,7 +44,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 		})
 
-		It("Should have LogComponentsHealthy condition set to False in Telemetry", func() {
+		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeFlowHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonConfigNotGenerated,
+			})
+		})
+
+		It("Should set LogComponentsHealthy condition to False in Telemetry", func() {
+			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
