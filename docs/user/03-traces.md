@@ -476,7 +476,7 @@ Cause: The backend is reachable and the connection is properly configured, but s
 Remedy:
 - Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is refusing spans limiting the rate, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up)
 
-### Custom Spans don't Arrive at the Backend, but Istio Spans do
+### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
 Cause: Your SDK version is incompatible with the OTel collector version.
 
