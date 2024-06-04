@@ -478,7 +478,7 @@ The maximum amount of LogPipelines is 5.
 
 ### No Logs Arrive at the Backend
 
-Cause: Incorrect backend endpoint configuration (for example, using the wrong authentication credentials) or the backend being unreachable.
+Symptom: Incorrect backend endpoint configuration (for example, using the wrong authentication credentials) or the backend being unreachable.
 
 Remedy: 
 - Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
@@ -486,19 +486,21 @@ Remedy:
 
 ### Not All Logs Arrive at the Backend
 
-Cause: The backend is reachable and the connection is properly configured, but some logs are refused.
+Symptom: The backend is reachable and the connection is properly configured, but some logs are refused.
+
+Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
 Remedy:
 - Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is refusing logs limiting the rate, try the options desribed in [Agent Buffer Filling Up](#agent-buffer-filling-up)
 
 ### Agent Buffer Filling Up
 
-Cause: The backend export rate is too low compared to the log colection rate.
+Symptom: The backend export rate is too low compared to the log colection rate.
 
 Remedy:
 
-- Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
+- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
 
-- Option 2: Decrease the log ingestion rate (e.g., by applying namespace or container filters in your LogPipeline).
+- Option 2: Reduce emitted logs by re-configuring the LogPipeline (for example, by applying namespace or container filters).
 
-- Option 3: Reduce emitted logs by application (e.g. by changing log-level).
+- Option 3: Reduce emitted logs in your applications (for example, by changing log-level).

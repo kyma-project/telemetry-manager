@@ -463,7 +463,7 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
 ### No Spans Arrive at the Backend
 
-Cause: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
+Symptom: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
 
 Remedy: 
 - Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
@@ -471,7 +471,9 @@ Remedy:
 
 ### Not All Spans Arrive at the Backend
 
-Cause: The backend is reachable and the connection is properly configured, but some spans are refused.
+Symptom: The backend is reachable and the connection is properly configured, but some spans are refused.
+
+Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
 Remedy:
 - Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. If backend is refusing spans limiting the rate, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up)
@@ -513,17 +515,17 @@ The following example sets the value to `60`, which means 60% of the requests ar
 
 ### Gateway Buffer Filling Up
 
-Cause: The backend export rate is too low compared to the gateway ingestion rate.
+Symptom: The backend export rate is too low compared to the gateway ingestion rate.
 
 Remedy:
 
-- Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
+- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
 
-- Option 2: Decrease the amount of spans sent to the gateway.
+- Option 3: Reduce emitted spans in your applications.
 
 ### Gateway Throttling
 
-Cause: Gateway cannot receive spans at the given rate.
+Symptom: Gateway cannot receive spans at the given rate.
 
 Remedy:
 
