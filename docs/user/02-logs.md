@@ -478,7 +478,7 @@ The maximum amount of LogPipelines is 5.
 
 ### No Logs Arrive at the Backend
 
-Cause: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
+Cause: Incorrect backend endpoint configuration (for example, using the wrong authentication credentials) or the backend being unreachable.
 
 Remedy: 
 - Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
