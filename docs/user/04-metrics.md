@@ -607,7 +607,7 @@ Remedy:
 
 - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
 
-- Option 2: Decrease the amount of metrics sent to the gateway (e.g., by disabling certain inputs or applying namespace filters in your MetricPipeline).
+- Option 2: Decrease the amount of metrics sent to the gateway (for example, by disabling certain inputs or applying namespace filters in your MetricPipeline).
 
 ### Gateway Throttling
 
