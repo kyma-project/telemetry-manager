@@ -602,7 +602,7 @@ func TestReconcile(t *testing.T) {
 				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 				tlsStub := &mocks.TLSCertValidator{}
-				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
+				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything).Return(tt.tlsCertErr)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)

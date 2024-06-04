@@ -32,8 +32,8 @@ var (
 
 	ErrInvalidCertificateKeyPair = errors.New("certificate and private key do not match")
 
-	ErrCertIsNotCA   = errors.New("not a CA certificate")
-	ErrCASubject     = errors.New("CA subject does not match certificate issuer")
+	ErrCertIsNotCA = errors.New("not a CA certificate")
+	ErrCASubject   = errors.New("CA subject does not match certificate issuer")
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
