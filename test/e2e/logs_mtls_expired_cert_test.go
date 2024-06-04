@@ -54,7 +54,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		return objs
 	}
 
-	Context("When a log pipeline with TLS Cert is expired", Ordered, func() {
+	Context("When a log pipeline with an expired TLS Cert is created", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -64,14 +64,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a tls certificate expired Condition set in pipeline conditions", func() {
+		It("Should set ConfigurationGenerated condition to False in pipeline", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSCertificateExpired,
 			})
+		})
 
-			// legacy
+		It("Should set Pending condition to True in pipeline", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypePending,
 				Status: metav1.ConditionTrue,
@@ -79,7 +80,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 		})
 
-		It("Should have telemetryCR showing tls certificate expired for log component in its status", func() {
+		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypeFlowHealthy,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonSelfMonConfigNotGenerated,
+			})
+		})
+
+		It("Should set LogComponentsHealthy condition to False in Telemetry", func() {
 			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,

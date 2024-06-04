@@ -65,7 +65,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			}
 		})
 
-		It("Should set ConfigurationGenerated condition to false", func() {
+		It("Should set ConfigurationGenerated condition to False and TelemetryFlowHealthy condition to False", func() {
 			By("Creating an additional pipeline", func() {
 				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
 				pipeline := testutils.NewMetricPipelineBuilder().WithName(pipelineName).Build()
@@ -73,10 +73,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline)).Should(Succeed())
+
 				assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 					Type:   conditions.TypeConfigurationGenerated,
 					Status: metav1.ConditionFalse,
 					Reason: conditions.ReasonMaxPipelinesExceeded,
+				})
+
+				assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+					Type:   conditions.TypeFlowHealthy,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonSelfMonConfigNotGenerated,
 				})
 			})
 		})
