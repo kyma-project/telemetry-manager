@@ -476,21 +476,33 @@ The maximum amount of LogPipelines is 5.
 
 ## Troubleshooting
 
-### Logs Not Arriving at the Destination
+### No Logs Arrive at the Backend
 
-   Cause: Wrong backend endpoint configuration or authentication credentials are used.
+Cause: Incorrect backend endpoint configuration (for example, using the wrong authentication credentials) or the backend being unreachable.
 
-   Remedy: Investigate the cause with the following steps:
-   1. Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+Remedy: 
+- Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+- Check if the backend is up and reachable.
 
-### Influx Capacity Reaching Its Limit
+### Not All Logs Arrive at the Backend
 
-  Cause: The backend ingestion rate is too small for the data influx.
+Symptom: The backend is reachable and the connection is properly configured, but some logs are refused.
 
-  Remedy:
+Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
-  - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
+Remedy:
+1. Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
+2. If backend is limiting the rate by refusing logs, try the options described in [Agent Buffer Filling Up](#agent-buffer-filling-up).
+3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
-  - Option 2: Decrease data influx, that is, re-configure the log pipeline.
+### Agent Buffer Filling Up
 
-  - Option 3: Reduce emitted logs by application (e.g. by changing log-level).
+Cause: The backend export rate is too low compared to the log collection rate.
+
+Remedy:
+
+- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
+
+- Option 2: Reduce emitted logs by re-configuring the LogPipeline (for example, by applying namespace or container filters).
+
+- Option 3: Reduce emitted logs in your applications (for example, by changing log-level).
