@@ -11,6 +11,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/internal/version"
 )
 
 func TestBuildAgentConfig(t *testing.T) {
@@ -248,6 +249,9 @@ func TestBuildAgentConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
+		// To make the test passing in release branches
+		version.Version = "main"
+
 		tests := []struct {
 			name                string
 			goldenFileName      string
