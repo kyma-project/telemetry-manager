@@ -308,21 +308,21 @@ processors:
         metric_statements:
             - context: scope
               statements:
-                - set(version, "main") where name == "otelcol/kubeletstatsreceiver"
+                - set(version, "1.17.0") where name == "otelcol/kubeletstatsreceiver"
                 - set(name, "io.kyma-project.telemetry/runtime") where name == "otelcol/kubeletstatsreceiver"
     transform/set-instrumentation-scope-prometheus:
         error_mode: ignore
         metric_statements:
             - context: scope
               statements:
-                - set(version, "main") where name == "otelcol/prometheusreceiver"
+                - set(version, "1.17.0") where name == "otelcol/prometheusreceiver"
                 - set(name, "io.kyma-project.telemetry/prometheus") where name == "otelcol/prometheusreceiver"
     transform/set-instrumentation-scope-istio:
         error_mode: ignore
         metric_statements:
             - context: scope
               statements:
-                - set(version, "main") where name == "otelcol/prometheusreceiver"
+                - set(version, "1.17.0") where name == "otelcol/prometheusreceiver"
                 - set(name, "io.kyma-project.telemetry/istio") where name == "otelcol/prometheusreceiver"
 exporters:
     otlp:
