@@ -132,7 +132,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			CA:   pipeline.Spec.Output.Otlp.TLS.CA,
 		}
 
-		err := r.tlsCertValidator.ValidateCertificate(ctx, tlsConfig)
+		err := r.tlsCertValidator.Validate(ctx, tlsConfig)
 		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonGatewayConfigured, conditions.MessageForMetricPipeline(conditions.ReasonGatewayConfigured))
 	}
 

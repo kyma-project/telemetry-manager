@@ -82,7 +82,7 @@ func New(client client.Client) *Validator {
 	}
 }
 
-func (v *Validator) ValidateCertificate(ctx context.Context, config TLSBundle) error {
+func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	certPEM, err := resolveValue(ctx, v.client, *config.Cert)
 	if err != nil {
 		return err

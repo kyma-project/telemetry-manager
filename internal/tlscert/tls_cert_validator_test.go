@@ -119,7 +119,7 @@ func TestExpiredCertificate(t *testing.T) {
 		now:    func() time.Time { return oneDayAfterExpiry },
 	}
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, defaultCaData))
+	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, defaultCaData))
 	require.Error(t, err)
 	require.True(t, IsCertExpiredError(err))
 
@@ -163,7 +163,7 @@ func TestAboutToExpireCertificate(t *testing.T) {
 				now:    func() time.Time { return test.now },
 			}
 
-			err := validator.ValidateCertificate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, defaultCaData))
+			err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, defaultCaData))
 			if test.expectValid {
 				require.NoError(t, err)
 				return
@@ -189,7 +189,7 @@ func TestValidCertificatesAndPrivateKey(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, defaultCaData))
+	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, defaultCaData))
 	require.NoError(t, err)
 }
 
@@ -216,7 +216,7 @@ WxZIBPi0z6MoiZxVKSY8EBeVYCHWS9A2l1J6gAHptihe7y1j8I2ffS
 		now:    func() time.Time { return certExpiry.Add(-24 * time.Hour) },
 	}
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfig(certData, defaultKeyData, defaultCaData))
+	err := validator.Validate(context.Background(), getTLSConfig(certData, defaultKeyData, defaultCaData))
 	require.ErrorIs(t, err, ErrCertDecodeFailed)
 }
 
@@ -242,7 +242,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfig(defaultCertData, keyData, defaultCaData))
+	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, keyData, defaultCaData))
 	require.ErrorIs(t, err, ErrKeyDecodeFailed)
 }
 
@@ -271,7 +271,7 @@ WWL1dEpm9rYQvcflxENRpp9SpyG2bJliRexjmHYwFg==
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, caData))
+	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, caData))
 	require.ErrorIs(t, err, ErrCADecodeFailed)
 }
 
@@ -283,7 +283,7 @@ func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfigStr(certData, keyData, caData))
+	err := validator.Validate(context.Background(), getTLSConfigStr(certData, keyData, caData))
 	require.NoError(t, err)
 }
 
@@ -295,7 +295,7 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfigStr(certData, keyData, caData))
+	err := validator.Validate(context.Background(), getTLSConfigStr(certData, keyData, caData))
 	require.NoError(t, err)
 }
 
@@ -437,7 +437,7 @@ func TestResolveValue(t *testing.T) {
 				Key:  &tt.inputKey,
 				CA:   &tt.inputCa,
 			}
-			err := validator.ValidateCertificate(context.TODO(), tlsConfig)
+			err := validator.Validate(context.TODO(), tlsConfig)
 			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}
@@ -456,7 +456,7 @@ func TestInvalidCertificateKeyPair(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	err = validator.ValidateCertificate(context.Background(), getTLSConfigStr(certData, keyData, caData))
+	err = validator.Validate(context.Background(), getTLSConfigStr(certData, keyData, caData))
 	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
 }
 
@@ -474,7 +474,7 @@ func TestInvalidCertPair_WithExpiredCert(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	err = validator.ValidateCertificate(context.Background(), getTLSConfigStr(certData, keyData, caData))
+	err = validator.Validate(context.Background(), getTLSConfigStr(certData, keyData, caData))
 	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
 }
 
@@ -538,7 +538,7 @@ hhEW5poLfUe8MIvCQoO1GrDpnNZOn7tMjg==
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfig(certData, keyData, caData))
+	err := validator.Validate(context.Background(), getTLSConfig(certData, keyData, caData))
 	require.ErrorIs(t, err, ErrCertIsNotCA)
 }
 
@@ -601,6 +601,6 @@ AxqL0VLrc1Vi9CnyzI5clJS65C6ING1l4QAUQ3XBgQ==
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	err := validator.ValidateCertificate(context.Background(), getTLSConfig(certData, keyData, caData))
+	err := validator.Validate(context.Background(), getTLSConfig(certData, keyData, caData))
 	require.ErrorIs(t, err, ErrCASubject)
 }

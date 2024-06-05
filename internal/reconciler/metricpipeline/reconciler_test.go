@@ -719,7 +719,7 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 				tlsStub := &mocks.TLSCertValidator{}
-				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything).Return(tt.tlsCertErr)
+				tlsStub.On("Validate", mock.Anything, mock.Anything).Return(tt.tlsCertErr)
 
 				sut := Reconciler{
 					Client:               fakeClient,

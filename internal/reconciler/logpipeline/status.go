@@ -116,7 +116,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,
 		}
 
-		err := r.tlsCertValidator.ValidateCertificate(ctx, tlsConfig)
+		err := r.tlsCertValidator.Validate(ctx, tlsConfig)
 		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured))
 	}
 

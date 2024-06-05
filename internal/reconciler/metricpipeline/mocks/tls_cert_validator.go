@@ -15,12 +15,12 @@ type TLSCertValidator struct {
 	mock.Mock
 }
 
-// ValidateCertificate provides a mock function with given fields: ctx, config
-func (_m *TLSCertValidator) ValidateCertificate(ctx context.Context, config tlscert.TLSBundle) error {
+// Validate provides a mock function with given fields: ctx, config
+func (_m *TLSCertValidator) Validate(ctx context.Context, config tlscert.TLSBundle) error {
 	ret := _m.Called(ctx, config)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ValidateCertificate")
+		panic("no return value specified for Validate")
 	}
 
 	var r0 error
