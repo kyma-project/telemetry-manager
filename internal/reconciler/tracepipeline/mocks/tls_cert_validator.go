@@ -15,7 +15,7 @@ type TLSCertValidator struct {
 }
 
 // ValidateCertificate provides a mock function with given fields: ctx, config
-func (_m *TLSCertValidator) ValidateCertificate(ctx context.Context, config tlscert.TLSConfig) error {
+func (_m *TLSCertValidator) ValidateCertificate(ctx context.Context, config tlscert.TLSBundle) error {
 	ret := _m.Called(ctx, config)
 
 	if len(ret) == 0 {
@@ -23,7 +23,7 @@ func (_m *TLSCertValidator) ValidateCertificate(ctx context.Context, config tlsc
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, tlscert.TLSConfig) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, tlscert.TLSBundle) error); ok {
 		r0 = rf(ctx, config)
 	} else {
 		r0 = ret.Error(0)

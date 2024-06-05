@@ -126,7 +126,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSConfig{
+		tlsConfig := tlscert.TLSBundle{
 			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
 			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
 			CA:   pipeline.Spec.Output.Otlp.TLS.CA,

@@ -67,7 +67,7 @@ type DaemonSetAnnotator interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(ctx context.Context, config tlscert.TLSConfig) error
+	ValidateCertificate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
 //go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
@@ -314,7 +314,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSConfig{
+		tlsConfig := tlscert.TLSBundle{
 			Cert: pipeline.Spec.Output.HTTP.TLSConfig.Cert,
 			Key:  pipeline.Spec.Output.HTTP.TLSConfig.Key,
 			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,

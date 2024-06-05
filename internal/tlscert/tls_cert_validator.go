@@ -42,7 +42,7 @@ type CertExpiredError struct {
 	Expiry time.Time
 }
 
-type TLSConfig struct {
+type TLSBundle struct {
 	Cert *telemetryv1alpha1.ValueType
 	Key  *telemetryv1alpha1.ValueType
 	CA   *telemetryv1alpha1.ValueType
@@ -82,7 +82,7 @@ func New(client client.Client) *Validator {
 	}
 }
 
-func (v *Validator) ValidateCertificate(ctx context.Context, config TLSConfig) error {
+func (v *Validator) ValidateCertificate(ctx context.Context, config TLSBundle) error {
 	certPEM, err := resolveValue(ctx, v.client, *config.Cert)
 	if err != nil {
 		return err

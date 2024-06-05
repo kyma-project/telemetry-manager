@@ -71,7 +71,7 @@ WWL1dEpm9rYQvcflxENRpp9SpyG2bJliRexjmHYwFg==
 -----END CERTIFICATE-----`)
 )
 
-func getTLSConfig(certData, keyData, caData []byte) TLSConfig {
+func getTLSConfig(certData, keyData, caData []byte) TLSBundle {
 	cert := telemetryv1alpha1.ValueType{
 		Value: string(certData),
 	}
@@ -84,14 +84,14 @@ func getTLSConfig(certData, keyData, caData []byte) TLSConfig {
 		Value: string(caData),
 	}
 
-	return TLSConfig{
+	return TLSBundle{
 		Cert: &cert,
 		Key:  &key,
 		CA:   &ca,
 	}
 }
 
-func getTLSConfigStr(certData, keyData, caData string) TLSConfig {
+func getTLSConfigStr(certData, keyData, caData string) TLSBundle {
 	cert := telemetryv1alpha1.ValueType{
 		Value: certData,
 	}
@@ -104,7 +104,7 @@ func getTLSConfigStr(certData, keyData, caData string) TLSConfig {
 		Value: caData,
 	}
 
-	return TLSConfig{
+	return TLSBundle{
 		Cert: &cert,
 		Key:  &key,
 		CA:   &ca,
@@ -432,7 +432,7 @@ func TestResolveValue(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			tt := test
-			tlsConfig := TLSConfig{
+			tlsConfig := TLSBundle{
 				Cert: &tt.inputCert,
 				Key:  &tt.inputKey,
 				CA:   &tt.inputCa,
