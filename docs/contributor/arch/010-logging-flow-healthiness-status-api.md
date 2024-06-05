@@ -32,7 +32,7 @@ For the pipeline health condition type, the **reason** field can show a value th
    AllTelemetryDataDropped > SomeTelemetryDataDropped > NoLogsDelivered > BufferFillingUp > Healthy
    ```
 
-Note that the `NoLogsDelivered` reason is unique to LogPipelines and does not apply to Metric and Trace Pipelines. This is because a log chunk can remain in the Fluent Bit buffer for a few  days while being retried, giving customers time to rectify issues before logs are dropped. In contrast, with the OTel Collector, data is retried for only a few minutes before being immediately dropped. Thus, customers have no opportunity to react, making a special reason unnecessary.
+Note that the `NoLogsDelivered` reason is unique to LogPipeline custom resource and does not apply to MetricPipeline and Trace Pipeline resources. This is because a log chunk can remain in the Fluent Bit buffer for a few  days while being retried, giving customers time to rectify issues before logs are dropped. In contrast, with the OTel Collector, data is retried for only a few minutes before being immediately dropped. Thus, customers have no opportunity to react, making a special reason unnecessary.
 
 The reasons are based on the following alert rules:
 
