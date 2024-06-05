@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/telemetry-manager/internal/version"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -310,8 +311,9 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
-		IstioEnabled:  isIstioActive,
-		IstioCertPath: otelcollector.IstioCertPath,
+		IstioEnabled:                isIstioActive,
+		IstioCertPath:               otelcollector.IstioCertPath,
+		InstrumentationScopeVersion: version.Version,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)

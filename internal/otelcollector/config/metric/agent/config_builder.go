@@ -25,8 +25,9 @@ type inputSources struct {
 }
 
 type BuildOptions struct {
-	IstioEnabled  bool
-	IstioCertPath string
+	IstioEnabled                bool
+	IstioCertPath               string
+	InstrumentationScopeVersion string
 }
 
 func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {
@@ -42,7 +43,7 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(inputs, opts),
-		Processors: makeProcessorsConfig(inputs),
+		Processors: makeProcessorsConfig(inputs, opts),
 		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
 	}
 }
