@@ -1,6 +1,6 @@
 module-name: telemetry
 protecode:
-  - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
+  - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.17.0
   - europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.100.0-3d875949
   - europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.4-5d3fb7b6
   - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240404-fd3588ce
