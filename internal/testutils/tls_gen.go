@@ -16,7 +16,7 @@ type CertBuilder struct {
 	clientNotBefore time.Time
 	clientNotAfter  time.Time
 	clientInvalid   bool
-	caInvalid   bool
+	caInvalid       bool
 }
 
 func NewCertBuilder(serverName, serverNamespace string) *CertBuilder {
