@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -615,9 +616,6 @@ func TestReconcile(t *testing.T) {
 				proberStub := &mocks.DeploymentProber{}
 				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
-				tlsStub := &mocks.TLSCertValidator{}
-				tlsStub.On("Validate", mock.Anything, mock.Anything).Return(tt.tlsCertErr)
-
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
@@ -629,7 +627,7 @@ func TestReconcile(t *testing.T) {
 					pipelineLock:         pipelineLockStub,
 					prober:               proberStub,
 					flowHealthProber:     flowHealthProberStub,
-					tlsCertValidator:     tlsStub,
+					tlsCertValidator:     stubs.NewTLSCertValidator(tt.tlsCertErr),
 					overridesHandler:     overridesHandlerStub,
 					istioStatusChecker:   istioStatusCheckerStub,
 				}

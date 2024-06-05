@@ -11,10 +11,7 @@ import (
 )
 
 func EvaluateTLSCertCondition(errValidation error, configuredReason string, configuredMessage string) (status metav1.ConditionStatus, reason, message string) {
-	if errors.Is(errValidation, tlscert.ErrCertDecodeFailed) || errors.Is(errValidation, tlscert.ErrCertParseFailed) || // validate certificate
-		errors.Is(errValidation, tlscert.ErrKeyDecodeFailed) || errors.Is(errValidation, tlscert.ErrKeyParseFailed) || // validate key
-		errors.Is(errValidation, tlscert.ErrInvalidCertificateKeyPair) || // validate certificate-key pair
-		errors.Is(errValidation, tlscert.ErrCertIsNotCA) { // validate CA
+	if isInvalidTLSError(errValidation) {
 		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], errValidation)
 	}
 
@@ -29,4 +26,23 @@ func EvaluateTLSCertCondition(errValidation error, configuredReason string, conf
 	}
 
 	return metav1.ConditionTrue, configuredReason, configuredMessage
+}
+
+func isInvalidTLSError(err error) bool {
+	invalidErrors := []error{
+		tlscert.ErrCertDecodeFailed,
+		tlscert.ErrCertParseFailed,
+		tlscert.ErrKeyDecodeFailed,
+		tlscert.ErrKeyParseFailed,
+		tlscert.ErrInvalidCertificateKeyPair,
+		tlscert.ErrCertIsNotCA,
+	}
+
+	for _, e := range invalidErrors {
+		if errors.Is(err, e) {
+			return true
+		}
+	}
+
+	return false
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
@@ -707,15 +708,12 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-				tlsStub := &mocks.TLSCertValidator{}
-				tlsStub.On("Validate", mock.Anything, mock.Anything).Return(tt.tlsCertErr)
-
 				sut := Reconciler{
 					Client:             fakeClient,
 					config:             testConfig,
 					prober:             proberStub,
 					flowHealthProber:   flowHealthProberStub,
-					tlsCertValidator:   tlsStub,
+					tlsCertValidator:   stubs.NewTLSCertValidator(tt.tlsCertErr),
 					overridesHandler:   overridesHandlerStub,
 					istioStatusChecker: istioStatusCheckerStub,
 					syncer: syncer{
