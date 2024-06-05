@@ -52,6 +52,56 @@ func TestReconcile(t *testing.T) {
 		OTLPServiceName: "otlp",
 	}}
 
+	t.Run("trace gateway probing failed", func(t *testing.T) {
+		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		proberStub := &mocks.DeploymentProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, assert.AnError)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		sut := Reconciler{
+			Client:               fakeClient,
+			config:               testConfig,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			prober:               proberStub,
+			flowHealthProber:     flowHealthProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.TracePipeline
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		require.NoError(t, err)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeGatewayHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonGatewayNotReady,
+			"Trace gateway Deployment is not ready",
+		)
+
+		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
+			conditions.ReasonTraceGatewayDeploymentNotReady,
+			"[NOTE: The \"Pending\" type is deprecated] Trace gateway Deployment is not ready",
+		)
+
+		gatewayConfigBuilderMock.AssertExpectations(t)
+	})
+
 	t.Run("trace gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
