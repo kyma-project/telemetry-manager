@@ -16,6 +16,7 @@ type CertBuilder struct {
 	clientNotBefore time.Time
 	clientNotAfter  time.Time
 	clientInvalid   bool
+	caInvalid   bool
 }
 
 func NewCertBuilder(serverName, serverNamespace string) *CertBuilder {
@@ -54,6 +55,10 @@ func (c *CertBuilder) WithInvalidClientCert() *CertBuilder {
 	return &CertBuilder{clientInvalid: true}
 }
 
+func (c *CertBuilder) WithInvalidCA() *CertBuilder {
+	return &CertBuilder{caInvalid: true}
+}
+
 func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
 	// CA Certificate
 	caPrivateKey, err := rsa.GenerateKey(crand.Reader, 2048)
@@ -72,9 +77,13 @@ func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
 	}
 
 	caCertPem := bytes.Buffer{}
-	err = pem.Encode(&caCertPem, &pem.Block{Type: "CERTIFICATE", Bytes: caCertBytes})
-	if err != nil {
-		return nil, nil, err
+	if !c.caInvalid {
+		err = pem.Encode(&caCertPem, &pem.Block{Type: "CERTIFICATE", Bytes: caCertBytes})
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		caCertPem.WriteString("invalid")
 	}
 
 	// Server Certificate (signed by CA certificate)
