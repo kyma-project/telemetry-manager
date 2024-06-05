@@ -20,7 +20,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"otelcol/kubeletstatsreceiver\"",
+						"set(version, \"1.17.0\") where name == \"otelcol/kubeletstatsreceiver\"",
 						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"otelcol/kubeletstatsreceiver\"",
 					},
 				}},
@@ -33,7 +33,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"otelcol/prometheusreceiver\"",
+						"set(version, \"1.17.0\") where name == \"otelcol/prometheusreceiver\"",
 						"set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"otelcol/prometheusreceiver\"",
 					},
 				}},
@@ -46,7 +46,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"otelcol/prometheusreceiver\"",
+						"set(version, \"1.17.0\") where name == \"otelcol/prometheusreceiver\"",
 						"set(name, \"io.kyma-project.telemetry/istio\") where name == \"otelcol/prometheusreceiver\"",
 					},
 				}},
