@@ -342,7 +342,7 @@ func tlsCertValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 	if http == nil {
 		return false
 	}
-	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil
+	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
 }
 
 // clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation

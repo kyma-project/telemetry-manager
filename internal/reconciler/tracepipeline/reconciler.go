@@ -323,7 +323,7 @@ func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
 		return false
 	}
 
-	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil
+	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil || otlp.TLS.CA != nil
 }
 
 // clearPipelinesConditions clears the status conditions for all TracePipelines only in the 1st reconciliation
