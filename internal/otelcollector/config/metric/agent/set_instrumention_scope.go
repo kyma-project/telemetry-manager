@@ -5,7 +5,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
-	"github.com/kyma-project/telemetry-manager/internal/version"
 )
 
 var upstreamInstrumentationScopeName = map[metric.InputSourceType]string{
@@ -14,21 +13,21 @@ var upstreamInstrumentationScopeName = map[metric.InputSourceType]string{
 	metric.InputSourceIstio:      "otelcol/prometheusreceiver",
 }
 
-func makeInstrumentationScopeProcessor(inputSource metric.InputSourceType) *TransformProcessor {
+func makeInstrumentationScopeProcessor(inputSource metric.InputSourceType, opts BuildOptions) *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
 			{
 				Context:    "scope",
-				Statements: makeInstrumentationStatement(inputSource),
+				Statements: makeInstrumentationStatement(inputSource, opts),
 			},
 		},
 	}
 }
 
-func makeInstrumentationStatement(inputSource metric.InputSourceType) []string {
+func makeInstrumentationStatement(inputSource metric.InputSourceType, opts BuildOptions) []string {
 	return []string{
-		fmt.Sprintf("set(version, \"%s\") where name == \"%s\"", version.Version, upstreamInstrumentationScopeName[inputSource]),
+		fmt.Sprintf("set(version, \"%s\") where name == \"%s\"", opts.InstrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
 		fmt.Sprintf("set(name, \"%s\") where name == \"%s\"", metric.InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
 	}
 }

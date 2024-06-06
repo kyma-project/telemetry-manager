@@ -65,7 +65,9 @@ func TestProcessors(t *testing.T) {
 	t.Run("set instrumentation scope runtime", func(t *testing.T) {
 		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, BuildOptions{})
+		}, BuildOptions{
+			InstrumentationScopeVersion: "main",
+		})
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeRuntime.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements, 1)
@@ -78,7 +80,9 @@ func TestProcessors(t *testing.T) {
 	t.Run("set instrumentation scope prometheus", func(t *testing.T) {
 		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, BuildOptions{})
+		}, BuildOptions{
+			InstrumentationScopeVersion: "main",
+		})
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopePrometheus.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements, 1)
@@ -91,7 +95,9 @@ func TestProcessors(t *testing.T) {
 	t.Run("set instrumentation scope istio", func(t *testing.T) {
 		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithIstioInput(true).Build(),
-		}, BuildOptions{})
+		}, BuildOptions{
+			InstrumentationScopeVersion: "main",
+		})
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeIstio.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements, 1)
