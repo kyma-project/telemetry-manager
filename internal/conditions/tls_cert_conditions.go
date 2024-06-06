@@ -34,8 +34,11 @@ func isInvalidTLSError(err error) bool {
 		tlscert.ErrCertParseFailed,
 		tlscert.ErrKeyDecodeFailed,
 		tlscert.ErrKeyParseFailed,
+		tlscert.ErrCADecodeFailed,
+		tlscert.ErrCAParseFailed,
 		tlscert.ErrInvalidCertificateKeyPair,
 		tlscert.ErrCertIsNotCA,
+		tlscert.ErrCASubject,
 	}
 
 	for _, e := range invalidErrors {
