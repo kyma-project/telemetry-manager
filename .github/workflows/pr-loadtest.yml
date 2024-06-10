@@ -98,10 +98,12 @@ jobs:
             type: "self-monitor"
             backpressure: "false"
             multi: "false"
-            image: "prometheus"
+            shouldRun: "${{ github.event.inputs.image }} == prometheus"
+        exclude:
+          - argument.shouldRun: false
+
     runs-on: ubuntu-latest
 
-    if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
