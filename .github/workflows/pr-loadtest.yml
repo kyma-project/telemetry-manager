@@ -98,9 +98,7 @@ jobs:
             type: "self-monitor"
             backpressure: "false"
             multi: "false"
-            shouldRun: "${{ github.event.inputs.image }} == prometheus"
-        exclude:
-          - argument.shouldRun: false
+            image: "prometheus"
 
     runs-on: ubuntu-latest
 
@@ -110,13 +108,16 @@ jobs:
         with:
           ref: 'refs/pull/${{ github.event.inputs.pr_number }}/head'
           repository: ${{ github.repository }}
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
 
       # Generate the cluster name to be used for cluster creation. The cluster-name should be `ci-traces`
       - name: Setup gardener cluster name
         run:  echo "GARDENER_CLUSTER_NAME=${{ matrix.argument.name }}" >> $GITHUB_ENV
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
       - name: Save service account to file
@@ -124,6 +125,7 @@ jobs:
         run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
         env:
           GARDENER_SA: ${{ secrets.GARDENER_SA }}
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
 
       # provision cluster
       - name: Provision Gardener
@@ -134,21 +136,24 @@ jobs:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
           GARDENER_MIN_NODES: 2
           GARDENER_MAX_NODES: 2
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
 
       - name: Deploy Telemetry
         run: hack/deploy-telemetry.sh
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
 
       - name: Deploy Istio Module
         run: hack/deploy-istio.sh
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
 
       # Run the load test
       - name: Run Load test
         run: hack/load-tests/run-load-test.sh -n ${{ matrix.argument.name }} -t ${{ matrix.argument.type }} -m ${{ matrix.argument.multi }} -b ${{ matrix.argument.backpressure }}
-        
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
 
       - name: Deprovision Gardener
         run: make deprovision-gardener
         # Delete the cluster in case one of the steps is cancelled/failed/success.
-        if: always()
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }} && always()
         env:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
