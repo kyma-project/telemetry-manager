@@ -103,6 +103,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Test
+        run:  echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.argument.image }}"
+        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
+
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
