@@ -71,7 +71,7 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements, 1)
 		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Context)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"1.17.0\") where name == \"otelcol/kubeletstatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(version, \"1.17.1\") where name == \"otelcol/kubeletstatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(name, \"io.kyma-project.telemetry/runtime\") where name == \"otelcol/kubeletstatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[1])
 	})
 
@@ -84,7 +84,7 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements, 1)
 		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Context)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"1.17.0\") where name == \"otelcol/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(version, \"1.17.1\") where name == \"otelcol/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"otelcol/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[1])
 	})
 
@@ -97,7 +97,7 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements, 1)
 		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Context)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"1.17.0\") where name == \"otelcol/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(version, \"1.17.1\") where name == \"otelcol/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(name, \"io.kyma-project.telemetry/istio\") where name == \"otelcol/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[1])
 	})
 
