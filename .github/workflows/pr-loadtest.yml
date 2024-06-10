@@ -93,6 +93,7 @@ jobs:
             backpressure: "true"
             multi: "true"
             image: "fluent-bit"
+
           - name: "ci-self-monitor"
             type: "self-monitor"
             backpressure: "false"
@@ -100,6 +101,7 @@ jobs:
             image: "prometheus"
     runs-on: ubuntu-latest
 
+    if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -139,7 +141,6 @@ jobs:
 
       # Run the load test
       - name: Run Load test
-        if: ${{ github.event.inputs.image }} == ${{ matrix.argument.image }}
         run: hack/load-tests/run-load-test.sh -n ${{ matrix.argument.name }} -t ${{ matrix.argument.type }} -m ${{ matrix.argument.multi }} -b ${{ matrix.argument.backpressure }}
         
 
