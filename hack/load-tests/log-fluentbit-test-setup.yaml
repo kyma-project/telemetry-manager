@@ -67,7 +67,7 @@ metadata:
   name: log-load-generator
   namespace: log-load-test
 spec:
-  replicas: 20
+  replicas: 10
   selector:
     matchLabels:
       app: logs-load-generator
