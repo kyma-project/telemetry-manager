@@ -36,7 +36,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setFlowHealthCondition(ctx, &pipeline)
+	r.setFlowHealthCondition(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)
@@ -139,8 +139,8 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForMetricPipeline(conditions.ReasonGatewayConfigured)
 }
 
-func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, withinPipelineCountLimit bool) {
+	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline, withinPipelineCountLimit)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeFlowHealthy,
@@ -153,8 +153,9 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) (metav1.ConditionStatus, string) {
-	if meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated) {
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, withinPipelineCountLimit bool) (metav1.ConditionStatus, string) {
+	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline, withinPipelineCountLimit)
+	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
 	}
 
