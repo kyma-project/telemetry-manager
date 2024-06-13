@@ -48,6 +48,20 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateInvalid), tlscert.ErrKeyParseFailed),
 		},
 		{
+			name:            "ca decode failed",
+			given:           tlscert.ErrCADecodeFailed,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  ReasonTLSCertificateInvalid,
+			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateInvalid), tlscert.ErrCADecodeFailed),
+		},
+		{
+			name:            "ca parse failed",
+			given:           tlscert.ErrCAParseFailed,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  ReasonTLSCertificateInvalid,
+			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateInvalid), tlscert.ErrCAParseFailed),
+		},
+		{
 			name:            "cert expired",
 			given:           &tlscert.CertExpiredError{Expiry: time.Date(2000, 2, 1, 0, 0, 0, 0, time.UTC)},
 			expectedStatus:  metav1.ConditionFalse,

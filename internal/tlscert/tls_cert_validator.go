@@ -33,7 +33,6 @@ var (
 	ErrInvalidCertificateKeyPair = errors.New("certificate and private key do not match")
 
 	ErrCertIsNotCA = errors.New("not a CA certificate")
-	ErrCASubject   = errors.New("CA subject does not match certificate issuer")
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
@@ -176,10 +175,6 @@ func parsePrivateKey(keyPEM []byte) error {
 func validateCA(cert *x509.Certificate, ca *x509.Certificate) error {
 	if !ca.IsCA {
 		return ErrCertIsNotCA
-	}
-
-	if cert.Issuer.String() != ca.Subject.String() {
-		return ErrCASubject
 	}
 
 	return nil
