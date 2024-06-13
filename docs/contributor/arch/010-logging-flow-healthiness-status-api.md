@@ -32,6 +32,8 @@ For the pipeline health condition type, the **reason** field can show a value th
    AllTelemetryDataDropped > SomeTelemetryDataDropped > NoLogsDelivered > BufferFillingUp > Healthy
    ```
 
+Note that the `NoLogsDelivered` reason is unique to LogPipeline custom resource and does not apply to MetricPipeline and Trace Pipeline resources. This is because a log chunk can remain in the Fluent Bit buffer for a few  days while being retried, giving customers time to rectify issues before logs are dropped. In contrast, with the OTel Collector, data is retried for only a few minutes before being immediately dropped. Thus, customers have no opportunity to react, making a special reason unnecessary.
+
 The reasons are based on the following alert rules:
 
 | Alert Rule | Expression |
@@ -51,7 +53,5 @@ Then, we map the alert rules to the reasons as follows:
 | NoLogsDelivered                   | **not** AgentExporterSendsLogs **and** AgentReceiverReadsLogs |
 | BufferFillingUp                   | AgentBufferInUse |
 | Healthy                           | **not** (AgentBufferInUse **or** AgentBufferFull) **and** (**not** AgentReceiverReadsLogs **or** AgentExporterSendsLogs) |
-
-> **NOTE:** `BufferFillingUp` should not result in a negative condition status. This reason would be aggregated as warning in the Telemetry module status.
 
 The metrics related to file-system buffer are not mappable to a particular LogPipeline. Thus, Telemetry Manager must set the condition on all pipelines if file-system buffer usage is indicated by the metrics.

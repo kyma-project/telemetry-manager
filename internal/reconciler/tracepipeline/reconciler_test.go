@@ -252,7 +252,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeFlowHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonSelfMonConfigNotGenerated,
-			"No traces delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
+			"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 		)
 
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
@@ -365,7 +365,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeFlowHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonSelfMonConfigNotGenerated,
-			"No traces delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
+			"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 		)
 
 		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
@@ -403,7 +403,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-				expectedMessage: "Trace gateway experiencing high influx: unable to receive traces at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
+				expectedMessage: "Trace gateway is unable to receive spans at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
 			},
 			{
 				name: "buffer filling up",
@@ -412,7 +412,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity: incoming trace rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up",
+				expectedMessage: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "buffer filling up shadows other problems",
@@ -422,7 +422,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity: incoming trace rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up",
+				expectedMessage: "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
@@ -431,7 +431,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
-				expectedMessage: "Some traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -441,7 +441,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
-				expectedMessage: "Some traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
@@ -450,7 +450,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
-				expectedMessage: "All traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
+				expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -460,7 +460,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
-				expectedMessage: "All traces dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination",
+				expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
 			},
 		}
 
@@ -699,7 +699,7 @@ func TestReconcile(t *testing.T) {
 						conditions.TypeFlowHealthy,
 						metav1.ConditionFalse,
 						conditions.ReasonSelfMonConfigNotGenerated,
-						"No traces delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
+						"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 					)
 				}
 

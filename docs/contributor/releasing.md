@@ -29,8 +29,8 @@ This release process covers the steps to release new major and minor versions fo
      For the images listed in the `protecode` field:
       - Update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
       - Ensure that all other images have the same versions as those used in the `main.go` file.
-   - `internal/version/version.go`:
-      Update the `Version` variable with the new module version following the `x.y.z` pattern.
+   - `main.go`:
+      Update the `version` variable with the new module version following the `x.y.z` pattern.
 
 6. Merge the PR.
    

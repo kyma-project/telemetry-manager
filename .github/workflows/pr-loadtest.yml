@@ -5,7 +5,10 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'Pull Request Number'
+        description: 'Pull Request Number without "PR-" prefix'
+        required: true
+      image:
+        description: 'Image to test, either otel-collector, fluent-bit or prometheus'
         required: true
 
 env:
@@ -17,36 +20,108 @@ jobs:
       max-parallel: 3
       matrix:
         argument:
-          - "-n ci-traces -t traces"
-          - "-n ci-traces-m -t traces -m true"
-          - "-n ci-traces-b -t traces -b true"
-          - "-n ci-traces-mb -t traces -m true -b true"
-          - "-n ci-metrics -t metrics"
-          - "-n ci-metrics-m -t metrics -m true"
-          - "-n ci-metrics-b -t metrics -b true"
-          - "-n ci-metrics-mb -t metrics -m true -b true"
-          - "-n ci-metric-ag -t metricagent"
-          - "-n ci-metric-ag-b -t metricagent -b true"
-          - "-n ci-logs -t logs-fluentbit"
-          - "-n ci-logs-m -t logs-fluentbit -m true"
-          - "-n ci-logs-b -t logs-fluentbit -b true"
-          - "-n ci-logs-mb -t logs-fluentbit -m true -b true"
-          - "-n ci-self-monitor -t self-monitor"
+          - name: "ci-traces"
+            type: "traces"
+            backpressure: "false"
+            multi: "false"
+            image: "otel-collector"
+          - name: "ci-traces-m"
+            type: "traces"
+            backpressure: "false"
+            multi: "true"
+            image: "otel-collector"
+          - name: "ci-traces-b"
+            type: "traces"
+            backpressure: "true"
+            multi: "false"
+            image: "otel-collector"
+          - name: "ci-traces-b"
+            type: "traces"
+            backpressure: "true"
+            multi: "true"
+            image: "otel-collector"
+
+          - name: "ci-metrics"
+            type: "metrics"
+            backpressure: "false"
+            multi: "false"
+            image: "otel-collector"
+          - name: "ci-metrics-m"
+            type: "metrics"
+            backpressure: "false"
+            multi: "true"
+            image: "otel-collector"
+          - name: "ci-metrics-b"
+            type: "metrics"
+            backpressure: "true"
+            multi: "false"
+            image: "otel-collector"
+          - name: "ci-metrics-mb"
+            type: "metrics"
+            backpressure: "true"
+            multi: "true"
+            image: "otel-collector"
+
+          - name: "ci-metrics-ag"
+            type: "metricagent"
+            backpressure: "false"
+            multi: "false"
+            image: "otel-collector"
+          - name: "ci-metrics-ag-b"
+            type: "metricagent"
+            backpressure: "true"
+            multi: "false"
+            image: "otel-collector"
+
+          - name: "ci-logs"
+            type: "logs-fluentbit"
+            backpressure: "false"
+            multi: "false"
+            image: "fluent-bit"
+          - name: "ci-logs-m"
+            type: "logs-fluentbit"
+            backpressure: "false"
+            multi: "true"
+            image: "fluent-bit"
+          - name: "ci-logs-b"
+            type: "logs-fluentbit"
+            backpressure: "true"
+            multi: "false"
+            image: "fluent-bit"
+          - name: "ci-logs-mb"
+            type: "logs-fluentbit"
+            backpressure: "true"
+            multi: "true"
+            image: "fluent-bit"
+
+          - name: "ci-self-monitor"
+            type: "self-monitor"
+            backpressure: "false"
+            multi: "false"
+            image: "prometheus"
+
     runs-on: ubuntu-latest
 
     steps:
+      - name: Test
+        run:  echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.argument.image }}"
+        if: github.event.inputs.image == matrix.argument.image
+
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           ref: 'refs/pull/${{ github.event.inputs.pr_number }}/head'
           repository: ${{ github.repository }}
+        if: github.event.inputs.image == matrix.argument.image
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
+        if: github.event.inputs.image == matrix.argument.image
 
       # Generate the cluster name to be used for cluster creation. The cluster-name should be `ci-traces`
       - name: Setup gardener cluster name
-        run:  echo "GARDENER_CLUSTER_NAME=$(echo '${{ matrix.argument }}' | awk '{print $2}')" >> $GITHUB_ENV
+        run:  echo "GARDENER_CLUSTER_NAME=${{ matrix.argument.name }}" >> $GITHUB_ENV
+        if: github.event.inputs.image == matrix.argument.image
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
       - name: Save service account to file
@@ -54,6 +129,7 @@ jobs:
         run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
         env:
           GARDENER_SA: ${{ secrets.GARDENER_SA }}
+        if: github.event.inputs.image == matrix.argument.image
 
       # provision cluster
       - name: Provision Gardener
@@ -64,20 +140,24 @@ jobs:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
           GARDENER_MIN_NODES: 2
           GARDENER_MAX_NODES: 2
+        if: github.event.inputs.image == matrix.argument.image
 
       - name: Deploy Telemetry
         run: hack/deploy-telemetry.sh
+        if: github.event.inputs.image == matrix.argument.image
 
       - name: Deploy Istio Module
         run: hack/deploy-istio.sh
+        if: github.event.inputs.image == matrix.argument.image
 
       # Run the load test
       - name: Run Load test
-        run: hack/load-tests/run-load-test.sh ${{ matrix.argument }}
+        run: hack/load-tests/run-load-test.sh -n ${{ matrix.argument.name }} -t ${{ matrix.argument.type }} -m ${{ matrix.argument.multi }} -b ${{ matrix.argument.backpressure }}
+        if: github.event.inputs.image == matrix.argument.image
 
       - name: Deprovision Gardener
         run: make deprovision-gardener
         # Delete the cluster in case one of the steps is cancelled/failed/success.
-        if: always()
+        if: github.event.inputs.image == matrix.argument.image && always()
         env:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml

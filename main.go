@@ -66,7 +66,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
-	"github.com/kyma-project/telemetry-manager/internal/version"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -130,11 +129,13 @@ var (
 
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
+
+	version = "main"
 )
 
 const (
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.100.0-3d875949"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.4-5d3fb7b6"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.102.1-fbfb6cdc"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.7-1e5449d3"
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240404-fd3588ce"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.45.5-4f1be411"
 
@@ -387,7 +388,7 @@ func main() {
 }
 
 func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) {
-	setupLog.WithValues("version", version.Version).Info("Starting with telemetry manager controller")
+	setupLog.WithValues("version", version).Info("Starting with telemetry manager controller")
 
 	if err := createTelemetryController(mgr.GetClient(), mgr.GetScheme(), webhookConfig, selfMonitorConfig).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
@@ -624,6 +625,7 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxMetricPipelines,
+		ModuleVersion:          version,
 	}
 
 	return telemetrycontrollers.NewMetricPipelineController(

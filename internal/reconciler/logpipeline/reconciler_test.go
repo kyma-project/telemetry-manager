@@ -443,7 +443,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity: incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
+				expectedMessage: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
 			},
 			{
 				name: "no logs delivered",
@@ -452,7 +452,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonNoLogsDelivered,
-				expectedMessage: "No logs delivered to backend. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+				expectedMessage: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "no logs delivered shadows other problems",
@@ -462,7 +462,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonNoLogsDelivered,
-				expectedMessage: "No logs delivered to backend. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+				expectedMessage: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped",
@@ -471,7 +471,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
-				expectedMessage: "Some logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -481,7 +481,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
-				expectedMessage: "Some logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=influx-capacity-reaching-its-limit",
+				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped",
@@ -490,7 +490,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
-				expectedMessage: "All logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -502,7 +502,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
-				expectedMessage: "All logs dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=logs-not-arriving-at-the-destination",
+				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 			},
 		}
 

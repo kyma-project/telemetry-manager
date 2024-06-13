@@ -533,7 +533,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-				expectedMessage: "Metric gateway experiencing high influx: unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
+				expectedMessage: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling",
 			},
 			{
 				name: "buffer filling up",
@@ -542,7 +542,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
+				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "buffer filling up shadows other problems",
@@ -552,7 +552,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonBufferFillingUp,
-				expectedMessage: "Buffer nearing capacity: incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up",
+				expectedMessage: "Buffer nearing capacity. Incoming metric rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up",
 			},
 			{
 				name: "some data dropped",
@@ -561,7 +561,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
-				expectedMessage: "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -571,7 +571,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonSomeDataDropped,
-				expectedMessage: "Some metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 			},
 			{
 				name: "all data dropped",
@@ -580,7 +580,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
-				expectedMessage: "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -590,7 +590,7 @@ func TestReconcile(t *testing.T) {
 				},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonSelfMonAllDataDropped,
-				expectedMessage: "All metrics dropped: backend unreachable or rejecting. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
+				expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend",
 			},
 		}
 

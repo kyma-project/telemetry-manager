@@ -34,6 +34,7 @@ type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
+	ModuleVersion          string
 }
 
 //go:generate mockery --name AgentConfigBuilder --filename agent_config_builder.go
@@ -312,8 +313,9 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
-		IstioEnabled:  isIstioActive,
-		IstioCertPath: otelcollector.IstioCertPath,
+		IstioEnabled:                isIstioActive,
+		IstioCertPath:               otelcollector.IstioCertPath,
+		InstrumentationScopeVersion: r.config.ModuleVersion,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)

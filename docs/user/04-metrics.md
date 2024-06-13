@@ -548,20 +548,28 @@ Up to three MetricPipeline resources at a time are supported.
 
 ## Troubleshooting
 
-### Metrics Not Arriving at the Destination
+### No Metrics Arrive at the Backend
 
-Symptom: No metrics arrive at the destination.
+Cause: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
 
-Cause: Wrong backend endpoint configuration or authentication credentials are used.
+Remedy: 
+- Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+- Check if the backend is up and reachable.
+
+### Not All Metrics Arrive at the Backend
+
+Symptom: The backend is reachable and the connection is properly configured, but some metrics are refused.
+
+Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
 Remedy:
+1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
+2. If backend is limiting the rate by refusing metrics, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
-1. To check the `telemetry-metric-gateway` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
-2. Fix the errors.
+### Only Istio Metrics Arrive at the Backend
 
-### Only Istio Metrics Arrive at the Destination
-
-Symptom: Custom metrics don't arrive at the destination, but Istio metrics do.
+Symptom: Custom metrics don't arrive at the backend, but Istio metrics do.
 
 Cause: Your SDK version is incompatible with the OTel collector version.
 
@@ -595,20 +603,22 @@ Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotat
 
 <!-- tabs:end -->
 
-### Buffer Filling Up
+### Gateway Buffer Filling Up
 
-  Cause: The backend ingestion rate is too small for the data influx.
+Cause: The backend export rate is too low compared to the gateway ingestion rate.
 
-  Remedy:
+Remedy:
 
-  - Option 1: Increase ingestion rate capabilities in your backend. For example, by scaling out the SAP Cloud Logging instances.
+- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
 
-  - Option 2: Decrease data influx, that is, re-configure the metric pipeline.
+- Option 2: Reduce emitted metrics by re-configuring the MetricPipeline (for example, by disabling certain inputs or applying namespace filters).
+ 
+- Option 3: Reduce emitted metrics in your applications.
 
 ### Gateway Throttling
 
-  Cause: Gateway cannot receive metrics at the given rate.
+Cause: Gateway cannot receive metrics at the given rate.
 
-  Remedy:
+Remedy:
 
-  - Manually scale out the gateway by increasing the number of replicas for the `telemetry-metric-gateway`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+- Manually scale out the gateway by increasing the number of replicas for the `telemetry-metric-gateway`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).

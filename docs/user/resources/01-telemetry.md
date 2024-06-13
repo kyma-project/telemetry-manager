@@ -116,10 +116,10 @@ The state of the log components is determined by the status condition of type `L
 | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                                                                                                                                                                                     |
 | False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                                                                                                                                   |
 | False            | UnsupportedLokiOutput       | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README). |
-| False            | AllDataDropped              | All logs dropped: backend unreachable or rejecting                                           |
-| False            | BufferFillingUp             | Buffer nearing capacity: incoming log rate exceeds the export rate                           |
-| False            | NoLogsDelivered             | No logs delivered to backend                                                                 |
-| False            | SomeDataDropped             | Some logs dropped: backend unreachable or rejecting                                          |
+| False            | AllDataDropped              | Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                                         |
+| False            | BufferFillingUp             | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Agent Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up)                                                       |
+| False            | NoLogsDelivered             | Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                        |
+| False            | SomeDataDropped             | Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: [No All Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend)                                 |
 
 ### Trace Components State
 
@@ -136,10 +136,10 @@ The state of the trace components is determined by the status condition of type 
 | False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (resource-1, resource-2,...) |
 | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                                                                       |
 | False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                     |
-| False            | AllDataDropped              | All traces dropped: backend unreachable or rejecting. See troubleshooting: [Traces Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination)  |
-| False            | BufferFillingUp             | Buffer nearing capacity: incoming trace rate exceeds the export rate. See troubleshooting: [Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=buffer-filling-up)                            |
-| False            | GatewayThrottling           | Trace gateway experiencing high influx: unable to receive traces at the current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)          |
-| False            | SomeDataDropped             | Some traces dropped: backend unreachable or rejecting. See troubleshooting: [Traces Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=traces-not-arriving-at-the-destination) |
+| False            | AllDataDropped              | Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: [No Spans Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend) |
+| False            | BufferFillingUp             | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Gateway Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up)               |
+| False            | GatewayThrottling           | Trace gateway is unable to receive spans at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)                                   |
+| False            | SomeDataDropped             | Backend is reachable, but rejecting spans. Some spans are dropped. [No All Spans Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend)              |
 
 ### Metric Components State
 
@@ -157,10 +157,10 @@ The state of the metric components is determined by the status condition of type
 | False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
 | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                                                                        |
 | False            | TLSCertificateInvalid       | TLS certificate invalid                                                                                                                      |
-| False            | AllDataDropped              | All metrics dropped: backend unreachable or rejecting. See troubleshooting: [Metrics Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination)  |
-| False            | BufferFillingUp             | Buffer nearing capacity: incoming metric rate exceeds the export rate. See troubleshooting: [Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=buffer-filling-up)                              |
-| False            | GatewayThrottling           | Metric gateway experiencing high influx: unable to receive metrics at the current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)           |
-| False            | SomeDataDropped             | Some metrics dropped: backend unreachable or rejecting. See troubleshooting: [Metrics Not Arriving at the Destination](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination) |
+| False            | AllDataDropped              | Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: [No Metrics Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend)         |
+| False            | BufferFillingUp             | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Gateway Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-buffer-filling-up)                               |
+| False            | GatewayThrottling           | Metric gateway is unable to receive metrics at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)                                                |
+| False            | SomeDataDropped             | Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: [No All Metrics Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend) |
 
 ### Telemetry CR State
 
