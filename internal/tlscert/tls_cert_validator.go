@@ -32,7 +32,9 @@ var (
 
 	ErrInvalidCertificateKeyPair = errors.New("certificate and private key do not match")
 
-	ErrCertIsNotCA = errors.New("not a CA certificate")
+	ErrCertIsNotCA     = errors.New("not a CA certificate")
+	ErrCAExpired       = errors.New("CA certificate expired on %s")
+	ErrCAAboutToExpire = errors.New("CA certificate is about to expire, it is valid until %s")
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
@@ -126,7 +128,7 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	}
 
 	// Validate the CA
-	if err = validateCA(parsedCert, parsedCA); err != nil {
+	if err = validateCA(parsedCA); err != nil {
 		return err
 	}
 
@@ -172,7 +174,7 @@ func parsePrivateKey(keyPEM []byte) error {
 	return nil
 }
 
-func validateCA(cert *x509.Certificate, ca *x509.Certificate) error {
+func validateCA(ca *x509.Certificate) error {
 	if !ca.IsCA {
 		return ErrCertIsNotCA
 	}

@@ -37,7 +37,7 @@ const (
 	ReasonSelfMonConfigNotGenerated   = "ConfigurationNotGenerated"
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
-	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
+	ReasonTLSConfigurationInvalid     = "TLSConfigurationInvalid"
 	ReasonGatewayConfigured           = "GatewayConfigured"
 
 	// Telemetry reasons
@@ -70,7 +70,7 @@ var commonMessages = map[string]string{
 	ReasonSelfMonProbingFailed:        "Could not determine the health of the telemetry flow because the self monitor probing failed",
 	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
 	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
-	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
+	ReasonTLSConfigurationInvalid:     "TLS configuration invalid: %s",
 }
 
 var logPipelineMessages = map[string]string{

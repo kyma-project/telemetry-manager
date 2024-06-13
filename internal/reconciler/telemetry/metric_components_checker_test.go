@@ -224,14 +224,14 @@ func TestMetricComponentsCheck(t *testing.T) {
 					Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateInvalid, Message: "TLS certificate invalid: unable to decode pem blocks"}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSConfigurationInvalid, Message: "TLS configuration invalid: unable to decode pem blocks"}).
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
-				Reason:  "TLSCertificateInvalid",
-				Message: "TLS certificate invalid: unable to decode pem blocks",
+				Reason:  "TLSConfigurationInvalid",
+				Message: "TLS configuration invalid: unable to decode pem blocks",
 			},
 		},
 	}
