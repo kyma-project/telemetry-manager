@@ -2,6 +2,7 @@ package secretref
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -16,16 +17,21 @@ type Getter interface {
 	GetSecretRefs() []telemetryv1alpha1.SecretKeyRef
 }
 
-func ReferencesNonExistentSecret(ctx context.Context, client client.Reader, getter Getter) bool {
+var (
+	ErrSecretKeyNotFound = errors.New("One or more keys in a referenced secret are missing")
+	ErrSecretRefNotFound = errors.New("One or more referenced Secrets are missing")
+)
+
+func VerifySecretReference(ctx context.Context, client client.Reader, getter Getter) error {
 	refs := getter.GetSecretRefs()
 	for _, ref := range refs {
-		hasKey := checkIfSecretHasKey(ctx, client, ref)
-		if !hasKey {
-			return true
+		err := verifySecretHasKey(ctx, client, ref)
+		if err {
+			return err
 		}
 	}
 
-	return false
+	return nil
 }
 
 func ReferencesSecret(secretName, secretNamespace string, getter Getter) bool {
@@ -51,16 +57,16 @@ func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.S
 	return nil, fmt.Errorf("referenced key not found in secret")
 }
 
-func checkIfSecretHasKey(ctx context.Context, client client.Reader, ref telemetryv1alpha1.SecretKeyRef) bool {
+func verifySecretHasKey(ctx context.Context, client client.Reader, ref telemetryv1alpha1.SecretKeyRef) error {
 	var secret corev1.Secret
 	if err := client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, &secret); err != nil {
 		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", ref.Name, ref.Namespace))
-		return false
+		return fmt.Errorf("%w, first finding is: secret '%s' of namespace '%s'", ErrSecretRefNotFound, ref.Name, ref.Namespace)
 	}
 	if _, ok := secret.Data[ref.Key]; !ok {
-		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", ref.Key, ref.Name))
-		return false
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s' from namespace '%s'", ref.Key, ref.Name, ref.Namespace))
+		return fmt.Errorf("%w, first finding is: key '%s' in secret '%s' of namespace '%s'", ErrSecretKeyNotFound, ref.Key, ref.Name, ref.Namespace)
 	}
 
-	return true
+	return nil
 }
