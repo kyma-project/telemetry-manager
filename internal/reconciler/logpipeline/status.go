@@ -134,7 +134,8 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 }
 
 func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (metav1.ConditionStatus, string) {
-	if meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated) {
+	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
+	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
 	}
 
@@ -170,11 +171,9 @@ func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
 }
 
 func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	if meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated) {
-		evaluatedCondition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
-			evaluatedCondition.Reason,
-			evaluatedCondition.Message)
+	configGeneratedStatus, configGeneratedReason, configGeneratedMsg := r.evaluateConfigGeneratedCondition(ctx, pipeline)
+	if configGeneratedStatus == metav1.ConditionFalse {
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, configGeneratedReason, configGeneratedMsg)
 		return
 	}
 

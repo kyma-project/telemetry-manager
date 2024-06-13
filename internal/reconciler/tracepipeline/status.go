@@ -34,8 +34,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setFlowHealthCondition(ctx, &pipeline)
-	r.setLegacyConditions(ctx, &pipeline)
+	r.setFlowHealthCondition(ctx, &pipeline, withinPipelineCountLimit)
+	r.setLegacyConditions(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -93,20 +93,18 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		if tlsCertValidationRequired(pipeline) {
-			cert := pipeline.Spec.Output.Otlp.TLS.Cert
-			key := pipeline.Spec.Output.Otlp.TLS.Key
+		cert := pipeline.Spec.Output.Otlp.TLS.Cert
+		key := pipeline.Spec.Output.Otlp.TLS.Key
 
-			err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
-			return conditions.EvaluateTLSCertCondition(err, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured))
-		}
+		err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
+		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured))
 	}
 
 	return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured)
 }
 
-func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
-	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
+	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline, withinPipelineCountLimit)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeFlowHealthy,
@@ -119,8 +117,9 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) (metav1.ConditionStatus, string) {
-	if meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated) {
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) (metav1.ConditionStatus, string) {
+	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline, withinPipelineCountLimit)
+	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
 	}
 
@@ -157,12 +156,10 @@ func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 	return conditions.ReasonSelfMonFlowHealthy
 }
 
-func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
-	if meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated) {
-		evaluatedCondition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
-			evaluatedCondition.Reason,
-			evaluatedCondition.Message)
+func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
+	configGeneratedStatus, configGeneratedReason, configGeneratedMsg := r.evaluateConfigGeneratedCondition(ctx, pipeline, withinPipelineCountLimit)
+	if configGeneratedStatus == metav1.ConditionFalse {
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, configGeneratedReason, configGeneratedMsg)
 		return
 	}
 
