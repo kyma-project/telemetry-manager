@@ -35,6 +35,18 @@ spec:
         app: metric-load-generator
         sidecar.istio.io/inject: "true"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - metric-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
         - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.100.0
           args:

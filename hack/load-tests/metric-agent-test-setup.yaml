@@ -44,6 +44,18 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - metric-agent-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
         - name: metric-agent-load-generator
           image: quay.io/freshtracks.io/avalanche
