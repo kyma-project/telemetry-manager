@@ -8,25 +8,25 @@
 
 ## Overview
 
-[Telemetry Manager](docs/user/01-manager.md) is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that fulfils the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [usage](docs/user/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
+[Telemetry Manager](docs/user/01-manager.md) is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that fulfils the [Kyma module interface](https://kyma-project.io/#/06-modules/README.md). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [manager](./docs/user/01-manager.md) itself or the general [usage](docs/user/README.md) of the module.
 
 ### Logs
 
 The logging controllers generate a Fluent Bit DaemonSet and configuration from one or more LogPipeline and LogParser custom resources. The controllers ensure that all Fluent Bit Pods run the current configuration by restarting Pods after the configuration has changed. See all [CRD attributes](apis/telemetry/v1alpha1/logpipeline_types.go) and some [examples](config/samples).
 
-For more information, see [Dynamic Logging Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-logging).
+For more information, see the [Logs](./docs/user/02-logs.md) documentation.
 
 ### Traces
 
 The trace controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) deployment and related Kubernetes objects from a `TracePipeline` custom resource. The collector is configured to receive traces using the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), and forwards the received traces to a configurable OTLP backend.
 
-For more information, see [Dynamic Trace Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-tracing).
+For more information, see the [Traces](./docs/user/03-traces.md) documentation.
 
 ### Metrics
 
 The metric controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) and related Kubernetes objects from a `MetricPipeline` custom resource. The collector is deployed as a [Gateway](https://opentelemetry.io/docs/collector/deployment/#gateway). The controller is configured to receive metrics in the OTLP protocol and forward them to a configurable OTLP backend.
 
-For more information, see [Dynamic Monitoring Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-monitoring).
+For more information, see the [Metrics](./docs/user/04-metrics.md) documentation.
 
 ## Installation
 
