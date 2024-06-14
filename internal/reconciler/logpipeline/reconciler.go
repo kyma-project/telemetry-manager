@@ -312,7 +312,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false
 	}
 
-	if tlsCertValidationRequired(pipeline) {
+	if tlsValidationRequired(pipeline) {
 		tlsConfig := tlscert.TLSBundle{
 			Cert: pipeline.Spec.Output.HTTP.TLSConfig.Cert,
 			Key:  pipeline.Spec.Output.HTTP.TLSConfig.Key,
@@ -336,7 +336,7 @@ func getFluentBitPorts() []int32 {
 	}
 }
 
-func tlsCertValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 	http := pipeline.Spec.Output.HTTP
 	if http == nil {
 		return false

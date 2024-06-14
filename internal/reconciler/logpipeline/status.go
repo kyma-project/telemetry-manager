@@ -109,7 +109,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(conditions.ReasonReferencedSecretMissing)
 	}
 
-	if tlsCertValidationRequired(pipeline) {
+	if tlsValidationRequired(pipeline) {
 		tlsConfig := tlscert.TLSBundle{
 			Cert: pipeline.Spec.Output.HTTP.TLSConfig.Cert,
 			Key:  pipeline.Spec.Output.HTTP.TLSConfig.Key,

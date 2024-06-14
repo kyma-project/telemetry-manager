@@ -222,7 +222,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	if tlsCertValidationRequired(pipeline) {
+	if tlsValidationRequired(pipeline) {
 		tlsConfig := tlscert.TLSBundle{
 			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
 			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
@@ -313,7 +313,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	return defaultReplicaCount
 }
 
-func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
 	otlp := pipeline.Spec.Output.Otlp
 	if otlp == nil {
 		return false

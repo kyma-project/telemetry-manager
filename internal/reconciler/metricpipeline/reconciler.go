@@ -242,7 +242,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	if tlsCertValidationRequired(pipeline) {
+	if tlsValidationRequired(pipeline) {
 		tlsConfig := tlscert.TLSBundle{
 			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
 			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
@@ -383,7 +383,7 @@ func getGatewayPorts() []int32 {
 	}
 }
 
-func tlsCertValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	otlp := pipeline.Spec.Output.Otlp
 	if otlp == nil {
 		return false
