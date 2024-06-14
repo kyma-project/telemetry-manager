@@ -17,7 +17,7 @@ import (
 
 var (
 	// certExpiry is a time when the certificate expires
-	certExpiry = time.Date(2024, time.March, 19, 14, 24, 14, 0, time.UTC)
+	certExpiry   = time.Date(2024, time.March, 19, 14, 24, 14, 0, time.UTC)
 	pastCaExpiry = time.Date(2023, time.June, 15, 9, 48, 37, 0, time.UTC)
 )
 
@@ -143,7 +143,7 @@ func TestExpiredCertificate(t *testing.T) {
 	var certExpiredErr *CertExpiredError
 	require.True(t, errors.As(err, &certExpiredErr))
 	require.Equal(t, certExpiry, certExpiredErr.Expiry)
-	require.EqualError(t, err, "cert expired on 2024-03-19 14:24:14 +0000 UTC")
+	require.EqualError(t, err, "TLS certificate expired on 2024-03-19")
 }
 
 func TestAboutToExpireCertificate(t *testing.T) {
@@ -192,7 +192,7 @@ func TestAboutToExpireCertificate(t *testing.T) {
 			var certAboutToExpireErr *CertAboutToExpireError
 			require.True(t, errors.As(err, &certAboutToExpireErr))
 			require.Equal(t, certExpiry, certAboutToExpireErr.Expiry)
-			require.EqualError(t, err, "cert is about to expire, it is valid until 2024-03-19 14:24:14 +0000 UTC")
+			require.EqualError(t, err, "TLS certificate is about to expire, configured certificate is valid until 2024-03-19")
 		})
 	}
 }
