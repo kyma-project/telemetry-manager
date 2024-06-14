@@ -46,8 +46,8 @@ const twoWeeks = time.Hour * 24 * 7 * 2
 const (
 	CertExpiredErrorMessage  = "TLS certificate expired on %s"
 	CertAboutToExpireMessage = "TLS certificate is about to expire, configured certificate is valid until %s"
-	CaExpiredErrorMessage    = "TLS CA expired on %s"
-	CaAboutToExpireMessage   = "TLS CA is about to expire, configured CA is valid until %s"
+	CaExpiredErrorMessage    = "TLS CA certificate expired on %s"
+	CaAboutToExpireMessage   = "TLS CA certificate is about to expire, configured certificate is valid until %s"
 )
 
 type CertExpiredError struct {

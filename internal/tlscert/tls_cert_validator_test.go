@@ -308,7 +308,7 @@ func TestExpiredCA(t *testing.T) {
 	var caExpiredErr *CertExpiredError
 	require.True(t, errors.As(err, &caExpiredErr))
 	require.Equal(t, pastCaExpiry, caExpiredErr.Expiry)
-	require.EqualError(t, err, "TLS CA expired on 2023-06-15")
+	require.EqualError(t, err, "TLS CA certificate expired on 2023-06-15")
 }
 
 func TestAboutToExpireCA(t *testing.T) {
@@ -357,7 +357,7 @@ func TestAboutToExpireCA(t *testing.T) {
 			var caAboutToExpireErr *CertAboutToExpireError
 			require.True(t, errors.As(err, &caAboutToExpireErr))
 			require.Equal(t, pastCaExpiry, caAboutToExpireErr.Expiry)
-			require.EqualError(t, err, "TLS CA is about to expire, configured CA is valid until 2023-06-15")
+			require.EqualError(t, err, "TLS CA certificate is about to expire, configured certificate is valid until 2023-06-15")
 		})
 	}
 }
