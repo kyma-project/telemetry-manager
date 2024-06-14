@@ -666,6 +666,21 @@ func TestReconcile(t *testing.T) {
 				expectGatewayConfigured: true,
 			},
 			{
+				name:            "ca expired",
+				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateExpired,
+				expectedMessage: "TLS CA expired on 2020-11-01",
+			},
+			{
+				name:                    "ca about to expire",
+				tlsCertErr:              &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:          metav1.ConditionTrue,
+				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage:         "TLS CA is about to expire, configured CA is valid until 2024-11-01",
+				expectGatewayConfigured: true,
+			},
+			{
 				name:            "cert decode failed",
 				tlsCertErr:      tlscert.ErrCertDecodeFailed,
 				expectedStatus:  metav1.ConditionFalse,

@@ -32,16 +32,8 @@ var (
 
 	ErrInvalidCertificateKeyPair = errors.New("certificate and private key do not match")
 
-	ErrCertIsNotCA     = errors.New("not a CA certificate")
-	ErrCAExpired       = errors.New("CA certificate expired on %s")
-	ErrCAAboutToExpire = errors.New("CA certificate is about to expire, it is valid until %s")
+	ErrCertIsNotCA = errors.New("not a CA certificate")
 )
-
-const twoWeeks = time.Hour * 24 * 7 * 2
-
-type CertExpiredError struct {
-	Expiry time.Time
-}
 
 type TLSBundle struct {
 	Cert *telemetryv1alpha1.ValueType
@@ -49,8 +41,26 @@ type TLSBundle struct {
 	CA   *telemetryv1alpha1.ValueType
 }
 
+const twoWeeks = time.Hour * 24 * 7 * 2
+
+const (
+	CertExpiredErrorMessage = "TLS certificate expired on %s"
+	CertAboutToExpireMessage = "TLS certificate is about to expire, configured certificate is valid until %s"
+	CaExpiredErrorMessage = "TLS CA expired on %s"
+	CaAboutToExpireMessage = "TLS CA is about to expire, configured CA is valid until %s"
+)
+
+type CertExpiredError struct {
+	Expiry time.Time
+	IsCa   bool
+}
+
 func (cee *CertExpiredError) Error() string {
-	return fmt.Sprintf("cert expired on %s", cee.Expiry)
+	if cee.IsCa {
+		return fmt.Sprintf(CaExpiredErrorMessage, cee.Expiry.Format(time.DateOnly))
+	}
+
+	return fmt.Sprintf(CertExpiredErrorMessage, cee.Expiry.Format(time.DateOnly))
 }
 
 func IsCertExpiredError(err error) bool {
@@ -60,10 +70,15 @@ func IsCertExpiredError(err error) bool {
 
 type CertAboutToExpireError struct {
 	Expiry time.Time
+	IsCa   bool
 }
 
 func (cate *CertAboutToExpireError) Error() string {
-	return fmt.Sprintf("cert is about to expire, it is valid until %s", cate.Expiry)
+	if cate.IsCa {
+		return fmt.Sprintf(CaAboutToExpireMessage, cate.Expiry.Format(time.DateOnly))
+	}
+
+	return fmt.Sprintf(CertAboutToExpireMessage, cate.Expiry.Format(time.DateOnly))
 }
 
 func IsCertAboutToExpireError(err error) bool {
@@ -128,17 +143,18 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	}
 
 	// Validate the CA
-	if err = validateCA(parsedCA); err != nil {
+	now := v.now()
+	if err = validateCA(parsedCA, now); err != nil {
 		return err
 	}
 
 	// Validate certificate expiry
 	certExpiry := parsedCert.NotAfter
-	if v.now().After(certExpiry) {
-		return &CertExpiredError{Expiry: certExpiry}
+	if now.After(certExpiry) {
+		return &CertExpiredError{Expiry: certExpiry, IsCa: false}
 	}
-	if certExpiry.Sub(v.now()) <= twoWeeks {
-		return &CertAboutToExpireError{Expiry: certExpiry}
+	if certExpiry.Sub(now) <= twoWeeks {
+		return &CertAboutToExpireError{Expiry: certExpiry, IsCa: false}
 	}
 
 	return nil
@@ -174,9 +190,19 @@ func parsePrivateKey(keyPEM []byte) error {
 	return nil
 }
 
-func validateCA(ca *x509.Certificate) error {
+func validateCA(ca *x509.Certificate, now time.Time) error {
+	// Validate CA flag
 	if !ca.IsCA {
 		return ErrCertIsNotCA
+	}
+
+	// Validate CA expiry
+	caExpiry := ca.NotAfter
+	if now.After(caExpiry) {
+		return &CertExpiredError{Expiry: caExpiry, IsCa: true}
+	}
+	if caExpiry.Sub(now) <= twoWeeks {
+		return &CertAboutToExpireError{Expiry: caExpiry, IsCa: true}
 	}
 
 	return nil

@@ -18,6 +18,7 @@ import (
 var (
 	// certExpiry is a time when the certificate expires
 	certExpiry = time.Date(2024, time.March, 19, 14, 24, 14, 0, time.UTC)
+	pastCaExpiry = time.Date(2023, time.June, 15, 9, 48, 37, 0, time.UTC)
 )
 
 var (
@@ -68,6 +69,22 @@ AwEAAaMWMBQwEgYDVR0TAQH/BAgwBgEB/wIBADANBgkqhkiG9w0BAQsFAAOBgQBf
 48rRd5wDlX+/0xgQcPLs0igSd87WuLBlLsjX8CNhiO8f6Vh+P+NFxi8LvcA1gKeU
 CpCqzRkDXfFEyHPMNVOSTuR10NLaEcAbJo5dIFfbUdX9cViW26XfISydI7zgDuno
 WWL1dEpm9rYQvcflxENRpp9SpyG2bJliRexjmHYwFg==
+-----END CERTIFICATE-----`)
+
+	pastCaData = []byte(`-----BEGIN CERTIFICATE-----
+MIICWzCCAcSgAwIBAgIUee6vIOPHP601JHnmFvyptWNyProwDQYJKoZIhvcNAQEL
+BQAwXjELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk5ZMREwDwYDVQQHDAhOZXcgWW9y
+azEdMBsGA1UECgwUTW9jayBDQSBPcmdhbml6YXRpb24xEDAOBgNVBAMMB01vY2sg
+Q0EwHhcNMTQwNjE3MDk0ODM3WhcNMjMwNjE1MDk0ODM3WjBeMQswCQYDVQQGEwJV
+UzELMAkGA1UECAwCTlkxETAPBgNVBAcMCE5ldyBZb3JrMR0wGwYDVQQKDBRNb2Nr
+IENBIE9yZ2FuaXphdGlvbjEQMA4GA1UEAwwHTW9jayBDQTCBnzANBgkqhkiG9w0B
+AQEFAAOBjQAwgYkCgYEApZp1OcH38tohYNYnu/MbWhdfg8/oZ70d/UGBw/lDnh+z
+eqj6fPSFL0taBiirMUHco+8BlRwNWzwSMnndyBiibLoO/HGItBh2Z7lgvUgETAea
+1aPMu15BLeJKbQ9szOYyYsbuZC9X8Hch0QBP25gYJ9PApfTMSWUyoN7XlDbNIwMC
+AwEAAaMWMBQwEgYDVR0TAQH/BAgwBgEB/wIBADANBgkqhkiG9w0BAQsFAAOBgQBM
+dwv38Fw+YyhjvAbKxf5+208FQDrC2dOJUCDBLE75VxKwj0IXIjxp5cjGsni4GWYy
+RtWX6wkDF7yTSEfW0CAfbXCmxp9ln2PNQCF2kB90XPkeXxXum/uAZAIk3GGgxRN8
+rZ3xPLf7G+fObmeO7XuIoDfJHH6HDrdhhWi3F918KQ==
 -----END CERTIFICATE-----`)
 )
 
@@ -273,6 +290,76 @@ WWL1dEpm9rYQvcflxENRpp9SpyG2bJliRexjmHYwFg==
 
 	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, caData))
 	require.ErrorIs(t, err, ErrCADecodeFailed)
+}
+
+func TestExpiredCA(t *testing.T) {
+
+	oneMonthBeforeExpiry := certExpiry.Add(-30 * 24 * time.Hour)
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := Validator{
+		client: fakeClient,
+		now:    func() time.Time { return oneMonthBeforeExpiry },
+	}
+
+	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, pastCaData))
+	require.Error(t, err)
+	require.True(t, IsCertExpiredError(err))
+
+	var caExpiredErr *CertExpiredError
+	require.True(t, errors.As(err, &caExpiredErr))
+	require.Equal(t, pastCaExpiry, caExpiredErr.Expiry)
+	require.EqualError(t, err, "TLS CA expired on 2023-06-15")
+}
+
+func TestAboutToExpireCA(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		now         time.Time
+		expectValid bool
+	}{
+		{
+			name: "expiry day",
+			now:  pastCaExpiry,
+		},
+		{
+			name: "one day before expiry",
+			now:  pastCaExpiry.Add(-24 * time.Hour),
+		},
+		{
+			name: "two weeks before expiry",
+			now:  pastCaExpiry.Add(-twoWeeks),
+		},
+		{
+			name:        "two weeks and one day before expiry",
+			now:         pastCaExpiry.Add(-twoWeeks - 24*time.Hour),
+			expectValid: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fakeClient := fake.NewClientBuilder().Build()
+			validator := Validator{
+				client: fakeClient,
+				now:    func() time.Time { return test.now },
+			}
+
+			err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, pastCaData))
+			if test.expectValid {
+				require.NoError(t, err)
+				return
+			}
+
+			require.Error(t, err)
+			require.True(t, IsCertAboutToExpireError(err))
+
+			var caAboutToExpireErr *CertAboutToExpireError
+			require.True(t, errors.As(err, &caAboutToExpireErr))
+			require.Equal(t, pastCaExpiry, caAboutToExpireErr.Expiry)
+			require.EqualError(t, err, "TLS CA is about to expire, configured CA is valid until 2023-06-15")
+		})
+	}
 }
 
 func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {

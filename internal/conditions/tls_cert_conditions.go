@@ -3,7 +3,6 @@ package conditions
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -15,14 +14,16 @@ func EvaluateTLSCertCondition(errValidation error, configuredReason string, conf
 		return metav1.ConditionFalse, ReasonTLSConfigurationInvalid, fmt.Sprintf(commonMessages[ReasonTLSConfigurationInvalid], errValidation)
 	}
 
+	// Cert expired
 	var errCertExpired *tlscert.CertExpiredError
 	if errors.As(errValidation, &errCertExpired) {
-		return metav1.ConditionFalse, ReasonTLSCertificateExpired, fmt.Sprintf(commonMessages[ReasonTLSCertificateExpired], errCertExpired.Expiry.Format(time.DateOnly))
+		return metav1.ConditionFalse, ReasonTLSCertificateExpired, errCertExpired.Error()
 	}
 
+	// Cert about to expire
 	var errCertAboutToExpire *tlscert.CertAboutToExpireError
 	if errors.As(errValidation, &errCertAboutToExpire) {
-		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, fmt.Sprintf(commonMessages[ReasonTLSCertificateAboutToExpire], errCertAboutToExpire.Expiry.Format(time.DateOnly))
+		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, errCertAboutToExpire.Error()
 	}
 
 	return metav1.ConditionTrue, configuredReason, configuredMessage
