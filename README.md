@@ -14,19 +14,19 @@
 
 The logging controllers generate a Fluent Bit DaemonSet and configuration from one or more LogPipeline and LogParser custom resources. The controllers ensure that all Fluent Bit Pods run the current configuration by restarting Pods after the configuration has changed. See all [CRD attributes](apis/telemetry/v1alpha1/logpipeline_types.go) and some [examples](config/samples).
 
-For more information, see the [Logs](./docs/user/02-logs.md) documentation.
+For more information, see [Logs](./docs/user/02-logs.md).
 
 ### Traces
 
 The trace controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) deployment and related Kubernetes objects from a `TracePipeline` custom resource. The collector is configured to receive traces using the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otel/protocol/), and forwards the received traces to a configurable OTLP backend.
 
-For more information, see the [Traces](./docs/user/03-traces.md) documentation.
+For more information, see [Traces](./docs/user/03-traces.md).
 
 ### Metrics
 
 The metric controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) and related Kubernetes objects from a `MetricPipeline` custom resource. The collector is deployed as a [Gateway](https://opentelemetry.io/docs/collector/deployment/#gateway). The controller is configured to receive metrics in the OTLP protocol and forward them to a configurable OTLP backend.
 
-For more information, see the [Metrics](./docs/user/04-metrics.md) documentation.
+For more information, see [Metrics](./docs/user/04-metrics.md).
 
 ## Installation
 
