@@ -28,7 +28,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
-			WithInvalidClientCert().
+			WithInvalidCA().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
@@ -55,7 +55,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		return objs
 	}
 
-	Context("When a metric pipeline with an invalid TLS Cert is created", Ordered, func() {
+	Context("When a metric pipeline with an invalid CA Cert is created", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 

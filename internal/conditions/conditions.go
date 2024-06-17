@@ -37,7 +37,7 @@ const (
 	ReasonSelfMonConfigNotGenerated   = "ConfigurationNotGenerated"
 	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
-	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
+	ReasonTLSConfigurationInvalid     = "TLSConfigurationInvalid"
 	ReasonGatewayConfigured           = "GatewayConfigured"
 
 	// Telemetry reasons
@@ -63,14 +63,12 @@ const (
 )
 
 var commonMessages = map[string]string{
-	ReasonMaxPipelinesExceeded:        "Maximum pipeline count limit exceeded",
-	ReasonNoPipelineDeployed:          "No pipelines have been deployed",
-	ReasonReferencedSecretMissing:     "One or more referenced Secrets are missing",
-	ReasonSelfMonFlowHealthy:          "No problems detected in the telemetry flow",
-	ReasonSelfMonProbingFailed:        "Could not determine the health of the telemetry flow because the self monitor probing failed",
-	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
-	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
-	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
+	ReasonMaxPipelinesExceeded:    "Maximum pipeline count limit exceeded",
+	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
+	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
+	ReasonSelfMonFlowHealthy:      "No problems detected in the telemetry flow",
+	ReasonSelfMonProbingFailed:    "Could not determine the health of the telemetry flow because the self monitor probing failed",
+	ReasonTLSConfigurationInvalid: "TLS configuration invalid: %s",
 }
 
 var logPipelineMessages = map[string]string{

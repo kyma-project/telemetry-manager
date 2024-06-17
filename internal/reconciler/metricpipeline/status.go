@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
@@ -124,11 +125,14 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(conditions.ReasonReferencedSecretMissing)
 	}
 
-	if tlsCertValidationRequired(pipeline) {
-		cert := pipeline.Spec.Output.Otlp.TLS.Cert
-		key := pipeline.Spec.Output.Otlp.TLS.Key
+	if tlsValidationRequired(pipeline) {
+		tlsConfig := tlscert.TLSBundle{
+			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
+			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
+			CA:   pipeline.Spec.Output.Otlp.TLS.CA,
+		}
 
-		err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
+		err := r.tlsCertValidator.Validate(ctx, tlsConfig)
 		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonGatewayConfigured, conditions.MessageForMetricPipeline(conditions.ReasonGatewayConfigured))
 	}
 

@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
@@ -653,43 +654,60 @@ func TestReconcile(t *testing.T) {
 				expectAgentConfigured:   true,
 			},
 			{
+				name:                    "ca expired",
+				tlsCertErr:              &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:          metav1.ConditionFalse,
+				expectedReason:          conditions.ReasonTLSCertificateExpired,
+				expectedMessage:         "TLS CA certificate expired on 2020-11-01",
+				expectedLegacyCondition: conditions.TypePending,
+			},
+			{
+				name:                    "ca about to expire",
+				tlsCertErr:              &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:          metav1.ConditionTrue,
+				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage:         "TLS CA certificate is about to expire, configured certificate is valid until 2024-11-01",
+				expectedLegacyCondition: conditions.TypeRunning,
+				expectAgentConfigured:   true,
+			},
+			{
 				name:                    "cert decode failed",
 				tlsCertErr:              tlscert.ErrCertDecodeFailed,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to decode PEM block containing cert",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: failed to decode PEM block containing certificate",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
 				name:                    "key decode failed",
 				tlsCertErr:              tlscert.ErrKeyDecodeFailed,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to decode PEM block containing private key",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: failed to decode PEM block containing private key",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
 				name:                    "key parse failed",
 				tlsCertErr:              tlscert.ErrKeyParseFailed,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to parse private key",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: failed to parse private key",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
 				name:                    "cert parse failed",
 				tlsCertErr:              tlscert.ErrCertParseFailed,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to parse certificate",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: failed to parse certificate",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
 				name:                    "cert and key mismatch",
 				tlsCertErr:              tlscert.ErrInvalidCertificateKeyPair,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: certificate and private key do not match",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: certificate and private key do not match",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 		}
@@ -707,15 +725,12 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-				tlsStub := &mocks.TLSCertValidator{}
-				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
-
 				sut := Reconciler{
 					Client:             fakeClient,
 					config:             testConfig,
 					prober:             proberStub,
 					flowHealthProber:   flowHealthProberStub,
-					tlsCertValidator:   tlsStub,
+					tlsCertValidator:   stubs.NewTLSCertValidator(tt.tlsCertErr),
 					overridesHandler:   overridesHandlerStub,
 					istioStatusChecker: istioStatusCheckerStub,
 					syncer: syncer{
