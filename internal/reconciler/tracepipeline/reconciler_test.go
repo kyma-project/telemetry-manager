@@ -173,6 +173,7 @@ func TestReconcile(t *testing.T) {
 			Client:               fakeClient,
 			config:               testConfig,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			prober:               proberStub,
 			flowHealthProber:     flowHealthProberStub,
