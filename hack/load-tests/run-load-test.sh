@@ -233,15 +233,15 @@ function cleanup() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_trace() {
-    RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_spans{service="telemetry-trace-collector-metrics"}[1m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_spans{service="telemetry-trace-collector-metrics"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-    EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_spans{exporter=~"otlp/load-test.*"}[1m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_spans{exporter=~"otlp/load-test.*"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
     QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-collector-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[1m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}[1m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-    CPU=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[1m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}[1m])) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    CPU=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}[20m])) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
     kill %1
 
@@ -266,15 +266,15 @@ function get_result_and_cleanup_trace() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_metric() {
-    RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-gateway-metrics"}[1m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-gateway-metrics"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-    EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_metric_points{exporter=~"otlp/load-test.*"}[1m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_metric_points{exporter=~"otlp/load-test.*"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
     QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-gateway-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[1m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-gateway"}[1m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-gateway"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-    CPU=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[1m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-gateway"}[1m])) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    CPU=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-gateway"}[20m])) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
     kill %1
 
     restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
@@ -296,15 +296,15 @@ function get_result_and_cleanup_metric() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_metricagent() {
-   RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-agent-metrics"}[1m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-agent-metrics"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_metric_points{service=~"telemetry-metric-agent-metrics"}[1m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_metric_points{service=~"telemetry-metric-agent-metrics"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[1m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[1m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   CPU=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[1m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[1m])) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   CPU=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    kill %1
 
@@ -366,7 +366,7 @@ function get_result_and_cleanup_selfmonitor() {
 
    HEADSTORAGESIZE=$(curl -fs --data-urlencode 'query=prometheus_tsdb_head_chunks_storage_size_bytes{service="telemetry-self-monitor-metrics"}' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="self-monitor"}[1m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}[1m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="self-monitor"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
