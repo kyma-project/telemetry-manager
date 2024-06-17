@@ -126,7 +126,7 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	}
 
 	// Parse the private key
-	if err = parsePrivateKey(sanitizedKey); err != nil {
+	if err := parsePrivateKey(sanitizedKey); err != nil {
 		return err
 	}
 
@@ -136,27 +136,16 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 		return err
 	}
 
-	// Validate the certificate-key pair
-	_, err = tls.X509KeyPair(sanitizedCert, sanitizedKey)
-	if err != nil {
-		return ErrInvalidCertificateKeyPair
+	// Validate certificate
+	if err := validateCertificate(parsedCert, sanitizedCert, sanitizedKey, v.now()); err != nil {
+		return err
 	}
 
 	// Validate CA(s)
-	now := v.now()
 	for _, ca := range parsedCAs {
-		if err = validateCA(ca, now); err != nil {
+		if err := validateCA(ca, v.now()); err != nil {
 			return err
 		}
-	}
-
-	// Validate certificate expiry
-	certExpiry := parsedCert.NotAfter
-	if now.After(certExpiry) {
-		return &CertExpiredError{Expiry: certExpiry, IsCa: false}
-	}
-	if certExpiry.Sub(now) <= twoWeeks {
-		return &CertAboutToExpireError{Expiry: certExpiry, IsCa: false}
 	}
 
 	return nil
@@ -201,6 +190,25 @@ func parsePrivateKey(keyPEM []byte) error {
 		if _, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
 			return ErrKeyParseFailed
 		}
+	}
+
+	return nil
+}
+
+func validateCertificate(cert *x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
+	// Validate the certificate-key pair
+	_, err := tls.X509KeyPair(sanitizedCert, sanitizedKey)
+	if err != nil {
+		return ErrInvalidCertificateKeyPair
+	}
+
+	// Validate certificate expiry
+	certExpiry := cert.NotAfter
+	if now.After(certExpiry) {
+		return &CertExpiredError{Expiry: certExpiry, IsCa: false}
+	}
+	if certExpiry.Sub(now) <= twoWeeks {
+		return &CertAboutToExpireError{Expiry: certExpiry, IsCa: false}
 	}
 
 	return nil
