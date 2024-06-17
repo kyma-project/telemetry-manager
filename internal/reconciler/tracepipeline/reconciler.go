@@ -193,6 +193,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		if err = r.gatewayApplier.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
+		return nil
 	}
 
 	if err = r.reconcileTraceGateway(ctx, pipeline, reconcilablePipelines); err != nil {
