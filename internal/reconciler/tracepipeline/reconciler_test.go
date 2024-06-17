@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -50,6 +51,56 @@ func TestReconcile(t *testing.T) {
 		},
 		OTLPServiceName: "otlp",
 	}}
+
+	t.Run("trace gateway probing failed", func(t *testing.T) {
+		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+
+		proberStub := &mocks.DeploymentProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, assert.AnError)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		sut := Reconciler{
+			Client:               fakeClient,
+			config:               testConfig,
+			gatewayConfigBuilder: gatewayConfigBuilderMock,
+			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			pipelineLock:         pipelineLockStub,
+			prober:               proberStub,
+			flowHealthProber:     flowHealthProberStub,
+			overridesHandler:     overridesHandlerStub,
+			istioStatusChecker:   istioStatusCheckerStub,
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.TracePipeline
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		require.NoError(t, err)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeGatewayHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonGatewayNotReady,
+			"Trace gateway Deployment is not ready",
+		)
+
+		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
+			conditions.ReasonTraceGatewayDeploymentNotReady,
+			"[NOTE: The \"Pending\" type is deprecated] Trace gateway Deployment is not ready",
+		)
+
+		gatewayConfigBuilderMock.AssertExpectations(t)
+	})
 
 	t.Run("trace gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
@@ -561,43 +612,60 @@ func TestReconcile(t *testing.T) {
 				expectGatewayConfigured: true,
 			},
 			{
+				name:                    "ca expired",
+				tlsCertErr:              &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:          metav1.ConditionFalse,
+				expectedReason:          conditions.ReasonTLSCertificateExpired,
+				expectedMessage:         "TLS CA certificate expired on 2020-11-01",
+				expectedLegacyCondition: conditions.TypePending,
+			},
+			{
+				name:                    "ca about to expire",
+				tlsCertErr:              &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:          metav1.ConditionTrue,
+				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage:         "TLS CA certificate is about to expire, configured certificate is valid until 2024-11-01",
+				expectedLegacyCondition: conditions.TypeRunning,
+				expectGatewayConfigured: true,
+			},
+			{
 				name:                    "cert decode failed",
 				tlsCertErr:              tlscert.ErrCertDecodeFailed,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to decode PEM block containing cert",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: failed to decode PEM block containing certificate",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
 				name:                    "key decode failed",
 				tlsCertErr:              tlscert.ErrKeyDecodeFailed,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to decode PEM block containing private key",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: failed to decode PEM block containing private key",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
 				name:                    "key parse failed",
 				tlsCertErr:              tlscert.ErrKeyParseFailed,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to parse private key",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: failed to parse private key",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
 				name:                    "cert parse failed",
 				tlsCertErr:              tlscert.ErrCertParseFailed,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: failed to parse certificate",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: failed to parse certificate",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 			{
 				name:                    "cert and key mismatch",
 				tlsCertErr:              tlscert.ErrInvalidCertificateKeyPair,
 				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateInvalid,
-				expectedMessage:         "TLS certificate invalid: certificate and private key do not match",
+				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage:         "TLS configuration invalid: certificate and private key do not match",
 				expectedLegacyCondition: conditions.TypePending,
 			},
 		}
@@ -616,23 +684,20 @@ func TestReconcile(t *testing.T) {
 				proberStub := &mocks.DeploymentProber{}
 				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
-				tlsStub := &mocks.TLSCertValidator{}
-				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
-
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 				sut := Reconciler{
-					Client:                  fakeClient,
-					config:                  testConfig,
-					gatewayConfigBuilder:    gatewayConfigBuilderMock,
+					Client:               fakeClient,
+					config:               testConfig,
+					gatewayConfigBuilder: gatewayConfigBuilderMock,
 					gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-					pipelineLock:            pipelineLockStub,
-					prober:                  proberStub,
-					flowHealthProber:        flowHealthProberStub,
-					tlsCertValidator:        tlsStub,
-					overridesHandler:        overridesHandlerStub,
-					istioStatusChecker:      istioStatusCheckerStub,
+					pipelineLock:         pipelineLockStub,
+					prober:               proberStub,
+					flowHealthProber:     flowHealthProberStub,
+					tlsCertValidator:     stubs.NewTLSCertValidator(tt.tlsCertErr),
+					overridesHandler:     overridesHandlerStub,
+					istioStatusChecker:   istioStatusCheckerStub,
 				}
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)

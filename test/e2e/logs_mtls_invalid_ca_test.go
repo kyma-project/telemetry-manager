@@ -13,11 +13,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
 		mockNs       = suite.ID()
 		pipelineName = suite.ID()
@@ -28,34 +28,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
-			WithInvalidClientCert().
+			WithInvalidCA().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
 		objs = append(objs, backend.K8sObjects()...)
 
-		metricPipeline := testutils.NewMetricPipelineBuilder().
+		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithOTLPOutput(
-				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(
+			WithHTTPOutput(
+				testutils.HTTPHost(backend.Host()),
+				testutils.HTTPPort(backend.Port()),
+				testutils.HTTPClientTLS(
 					clientCerts.CaCertPem.String(),
 					clientCerts.ClientCertPem.String(),
 					clientCerts.ClientKeyPem.String(),
-				),
-			).
+				)).
 			Build()
 
-		objs = append(objs,
-			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
-			&metricPipeline,
-		)
+		logProducer := loggen.New(mockNs)
+		objs = append(objs, logProducer.K8sObject())
+		objs = append(objs, &logPipeline)
 
 		return objs
 	}
 
-	Context("When a metric pipeline with an invalid TLS Cert is created", Ordered, func() {
+	Context("When a log pipeline with an invalid CA Cert is created", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -66,29 +65,36 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipeline", func() {
-			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 		})
 
+		It("Should set Pending condition to True in pipeline", func() {
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+				Type:   conditions.TypePending,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonTLSConfigurationInvalid,
+			})
+		})
+
 		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
-			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 		})
 
-		It("Should set MetricComponentsHealthy condition to False in Telemetry", func() {
+		It("Should set LogComponentsHealthy condition to False in Telemetry", func() {
 			assert.TelemetryHasWarningState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
-				Type:   conditions.TypeMetricComponentsHealthy,
+				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 		})
-
 	})
 })
