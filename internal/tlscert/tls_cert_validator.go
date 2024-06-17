@@ -131,7 +131,7 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	}
 
 	// Parse the CA
-	parsedCA, err := parseCertificate(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
+	parsedCAs, err := parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
 	if err != nil {
 		return err
 	}
@@ -142,10 +142,12 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 		return ErrInvalidCertificateKeyPair
 	}
 
-	// Validate the CA
+	// Validate CA(s)
 	now := v.now()
-	if err = validateCA(parsedCA, now); err != nil {
-		return err
+	for _, ca := range parsedCAs {
+		if err = validateCA(ca, now); err != nil {
+			return err
+		}
 	}
 
 	// Validate certificate expiry
@@ -172,6 +174,20 @@ func parseCertificate(certPEM []byte, errDecode error, errParse error) (*x509.Ce
 	}
 
 	return cert, nil
+}
+
+func parseCertificates(certPEM []byte, errDecode error, errParse error) ([]*x509.Certificate, error) {
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		return nil, errDecode
+	}
+
+	certs, err := x509.ParseCertificates(block.Bytes)
+	if err != nil {
+		return certs, errParse
+	}
+
+	return certs, nil
 }
 
 func parsePrivateKey(keyPEM []byte) error {
