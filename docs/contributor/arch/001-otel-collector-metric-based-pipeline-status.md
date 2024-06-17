@@ -54,7 +54,7 @@ However, this setup does come with its drawbacks:
 
 #### Standalone Prometheus Deployment
 
-An alternative approach would involve embedding Prometheus in the code of Telemetry Manager, similar to how we deploy Fluent Bit or Otel Collector.
+An alternative approach would involve embedding Prometheus in the code of Telemetry Manager, similar to how we deploy Fluent Bit or OTel Collector.
 This approach grants you complete control and maximum flexibility in managing Prometheus.
 It's equally important to communicate to the end user that this internal Prometheus is intended exclusively for internal purposes and should not be utilized for monitoring user workloads.
 Clear communication regarding its internal nature is crucial to avoid any misuses or misunderstandings.
