@@ -81,6 +81,47 @@ func (ga *GatewayApplier) ApplyResources(ctx context.Context, c client.Client, o
 	return nil
 }
 
+func (ga *GatewayApplier) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
+	name := types.NamespacedName{Name: ga.Config.BaseName, Namespace: ga.Config.Namespace}
+	if err := deleteCommonResources(ctx, c, name); err != nil {
+		return fmt.Errorf("failed to delete common resource: %w", err)
+	}
+
+	objectMeta := metav1.ObjectMeta{
+		Name:      ga.Config.BaseName,
+		Namespace: ga.Config.Namespace,
+	}
+
+	secret := corev1.Secret{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &secret); err != nil {
+		return fmt.Errorf("failed to delete env secret: %w", err)
+	}
+
+	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil {
+		return fmt.Errorf("failed to delete configmap: %w", err)
+	}
+
+	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil {
+		return fmt.Errorf("failed to delete deployment: %w", err)
+	}
+
+	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: ga.Config.OTLPServiceName, Namespace: ga.Config.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
+		return fmt.Errorf("failed to delete otlp service: %w", err)
+	}
+
+	if isIstioActive {
+		peerAuthentication := istiosecurityclientv1beta.PeerAuthentication{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil {
+			return fmt.Errorf("failed to delete peerauthentication: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (ga *GatewayApplier) makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{

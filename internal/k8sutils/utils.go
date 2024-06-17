@@ -344,3 +344,8 @@ func GetOrCreateSecret(ctx context.Context, c client.Client, name types.Namespac
 	}
 	return corev1.Secret{}, err
 }
+
+func DeleteObject(ctx context.Context, c client.Client, obj client.Object) error {
+	err := c.Delete(ctx, obj)
+	return client.IgnoreNotFound(err)
+}

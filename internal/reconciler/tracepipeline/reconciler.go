@@ -58,6 +58,7 @@ type GatewayConfigBuilder interface {
 //go:generate mockery --name GatewayApplier --filename gateway_applier.go
 type GatewayApplier interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
+	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
 
 //go:generate mockery --name PipelineLock --filename pipeline_lock.go
@@ -186,9 +187,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
+
 	if len(reconcilablePipelines) == 0 {
-		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no trace pipeline ready for deployment")
-		return nil
+		logf.FromContext(ctx).V(1).Info("cleaning up trace pipeline resources: all trace pipelines are non-reconcilable")
+		if err = r.gatewayApplier.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+			return fmt.Errorf("failed to delete gateway resources: %w", err)
+		}
 	}
 
 	if err = r.reconcileTraceGateway(ctx, pipeline, reconcilablePipelines); err != nil {

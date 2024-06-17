@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
@@ -38,7 +39,41 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 	}
 
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, defaultLabels(name.Name))); err != nil {
-		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
+		return fmt.Errorf("failed to create network policy: %w", err)
+	}
+
+	return nil
+}
+
+func deleteCommonResources(ctx context.Context, c client.Client, name types.NamespacedName) error {
+	objectMeta := metav1.ObjectMeta{
+		Name:      name.Name,
+		Namespace: name.Namespace,
+	}
+
+	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil {
+		return fmt.Errorf("failed to delete service account: %w", err)
+	}
+
+	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil {
+		return fmt.Errorf("failed to delete cluster role: %w", err)
+	}
+
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
+		return fmt.Errorf("failed to delete cluster role binding: %w", err)
+	}
+
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: name.Name + "-metrics", Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
+		return fmt.Errorf("failed to delete metrics service: %w", err)
+	}
+
+	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
+		return fmt.Errorf("failed to delete network policy: %w", err)
 	}
 
 	return nil
