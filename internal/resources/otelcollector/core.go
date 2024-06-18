@@ -54,9 +54,9 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
-	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete service account: %w", err))
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role binding: %w", err))
 	}
 
 	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
@@ -64,9 +64,9 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role: %w", err))
 	}
 
-	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role binding: %w", err))
+	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete service account: %w", err))
 	}
 
 	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: name.Name + "-metrics", Namespace: name.Namespace}}
