@@ -25,8 +25,7 @@ var (
 func VerifySecretReference(ctx context.Context, client client.Reader, getter Getter) error {
 	refs := getter.GetSecretRefs()
 	for _, ref := range refs {
-		err := verifySecretHasKey(ctx, client, ref)
-		if err {
+		if err := verifySecretHasKey(ctx, client, ref); err != nil {
 			return err
 		}
 	}

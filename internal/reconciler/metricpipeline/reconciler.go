@@ -245,8 +245,8 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return false, nil
+	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
+		return false, err
 	}
 
 	if tlsValidationRequired(pipeline) {

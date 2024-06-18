@@ -20,7 +20,7 @@ func (m mockGetter) GetSecretRefs() []telemetryv1alpha1.SecretKeyRef {
 	return m.refs
 }
 
-func TestReferencesNonExistentSecret_Success(t *testing.T) {
+func TestVerifySecretReference_Success(t *testing.T) {
 	existingSecret1 := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-secret1",
@@ -49,11 +49,11 @@ func TestReferencesNonExistentSecret_Success(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithObjects(&existingSecret1).WithObjects(&existingSecret2).Build()
 
-	referencesNonExistentSecret := ReferencesNonExistentSecret(context.TODO(), client, getter)
-	require.False(t, referencesNonExistentSecret)
+	err := VerifySecretReference(context.TODO(), client, getter)
+	require.Nil(t, err)
 }
 
-func TestReferencesNonExistentSecret_SecretNotPresent(t *testing.T) {
+func TestVerifySecretReference_SecretNotPresent(t *testing.T) {
 	existingSecret1 := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-secret1",
@@ -73,11 +73,11 @@ func TestReferencesNonExistentSecret_SecretNotPresent(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithObjects(&existingSecret1).Build()
 
-	referencesNonExistentSecret := ReferencesNonExistentSecret(context.TODO(), client, getter)
-	require.True(t, referencesNonExistentSecret)
+	err := VerifySecretReference(context.TODO(), client, getter)
+	require.EqualError(t, err, ErrSecretRefNotFound.Error())
 }
 
-func TestReferencesNonExistentSecret_KeyNotPresent(t *testing.T) {
+func TestTestVerifySecretReference_KeyNotPresent(t *testing.T) {
 	existingSecret1 := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-secret1",
@@ -96,8 +96,8 @@ func TestReferencesNonExistentSecret_KeyNotPresent(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithObjects(&existingSecret1).Build()
 
-	referencesNonExistentSecret := ReferencesNonExistentSecret(context.TODO(), client, getter)
-	require.True(t, referencesNonExistentSecret)
+	err := VerifySecretReference(context.TODO(), client, getter)
+	require.EqualError(t, err, ErrSecretKeyNotFound.Error())
 }
 
 func TestReferencesSecret_Success(t *testing.T) {

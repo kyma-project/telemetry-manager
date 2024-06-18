@@ -405,7 +405,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false
 	}
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
 		return false
 	}
 	if pipeline.Spec.Output.IsLokiDefined() {
