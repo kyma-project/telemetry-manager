@@ -59,7 +59,7 @@ spec:
                   can be defined per pipeline.
                 properties:
                   otlp:
-                    description: Configures the underlying Otel Collector with an
+                    description: Configures the underlying OTel Collector with an
                       [OTLP exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md).
                       If you switch `protocol`to `http`, an [OTLP HTTP exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter)
                       is used.
@@ -470,7 +470,7 @@ spec:
                   can be defined per pipeline.
                 properties:
                   otlp:
-                    description: Configures the underlying Otel Collector with an
+                    description: Configures the underlying OTel Collector with an
                       [OTLP exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md).
                       If you switch `protocol`to `http`, an [OTLP HTTP exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter)
                       is used.
