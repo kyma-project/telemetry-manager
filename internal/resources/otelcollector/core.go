@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"errors"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -51,32 +52,34 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 		Namespace: name.Namespace,
 	}
 
+	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
+	var allErrors error = nil
 	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil {
-		return fmt.Errorf("failed to delete service account: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete service account: %w", err))
 	}
 
 	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil {
-		return fmt.Errorf("failed to delete cluster role: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role: %w", err))
 	}
 
 	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
-		return fmt.Errorf("failed to delete cluster role binding: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role binding: %w", err))
 	}
 
 	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: name.Name + "-metrics", Namespace: name.Namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
-		return fmt.Errorf("failed to delete metrics service: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metrics service: %w", err))
 	}
 
 	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
-		return fmt.Errorf("failed to delete network policy: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
-	return nil
+	return allErrors
 }
 
 func defaultLabels(baseName string) map[string]string {

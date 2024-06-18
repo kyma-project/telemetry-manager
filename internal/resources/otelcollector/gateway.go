@@ -19,6 +19,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"errors"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
@@ -82,9 +83,12 @@ func (grh *GatewayResourcesHandler) ApplyResources(ctx context.Context, c client
 }
 
 func (grh *GatewayResourcesHandler) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
+	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
+	var allErrors error = nil
+
 	name := types.NamespacedName{Name: grh.Config.BaseName, Namespace: grh.Config.Namespace}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
-		return fmt.Errorf("failed to delete common resource: %w", err)
+		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
@@ -94,32 +98,32 @@ func (grh *GatewayResourcesHandler) DeleteResources(ctx context.Context, c clien
 
 	secret := corev1.Secret{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &secret); err != nil {
-		return fmt.Errorf("failed to delete env secret: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete env secret: %w", err))
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil {
-		return fmt.Errorf("failed to delete configmap: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
 	}
 
 	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil {
-		return fmt.Errorf("failed to delete deployment: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
 	}
 
 	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: grh.Config.OTLPServiceName, Namespace: grh.Config.Namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
-		return fmt.Errorf("failed to delete otlp service: %w", err)
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
 	if isIstioActive {
 		peerAuthentication := istiosecurityclientv1beta.PeerAuthentication{ObjectMeta: objectMeta}
 		if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil {
-			return fmt.Errorf("failed to delete peerauthentication: %w", err)
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
 		}
 	}
 
-	return nil
+	return allErrors
 }
 
 func (grh *GatewayResourcesHandler) makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
