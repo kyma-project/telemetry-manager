@@ -233,9 +233,9 @@ function cleanup() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_trace() {
-    RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_spans{service="telemetry-trace-collector-metrics"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_spans{service="telemetry-trace-collector-metrics"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-    EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_spans{exporter=~"otlp/load-test.*"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_spans{exporter=~"otlp/load-test.*"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
     QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-collector-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
@@ -266,9 +266,9 @@ function get_result_and_cleanup_trace() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_metric() {
-    RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-gateway-metrics"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-gateway-metrics"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-    EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_metric_points{exporter=~"otlp/load-test.*"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_metric_points{exporter=~"otlp/load-test.*"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
     QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-gateway-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
@@ -296,9 +296,9 @@ function get_result_and_cleanup_metric() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_metricagent() {
-   RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-agent-metrics"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-agent-metrics"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_metric_points{service=~"telemetry-metric-agent-metrics"}[5m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_metric_points{service=~"telemetry-metric-agent-metrics"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
@@ -327,9 +327,9 @@ function get_result_and_cleanup_metricagent() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_fluentbit() {
-   RECEIVED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   RECEIVED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   EXPORTED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   EXPORTED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    QUEUE=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[20m])) / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
@@ -360,7 +360,7 @@ function get_result_and_cleanup_fluentbit() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_selfmonitor() {
-   SCRAPESAMPLES=$(curl -fs --data-urlencode 'query=sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor-metrics"}[5m]) / 300' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   SCRAPESAMPLES=$(curl -fs --data-urlencode 'query=sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor-metrics"}[20m]) / 300' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    SERIESCREATED=$(curl -fs --data-urlencode 'query=prometheus_tsdb_head_series{service="telemetry-self-monitor-metrics"}' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
@@ -368,7 +368,7 @@ function get_result_and_cleanup_selfmonitor() {
 
    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="self-monitor"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   CPU=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}[20m])) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    kill %1
 
