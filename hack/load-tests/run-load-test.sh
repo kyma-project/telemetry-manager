@@ -331,7 +331,7 @@ function get_result_and_cleanup_fluentbit() {
 
    EXPORTED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   QUEUE=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[5m])) / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   QUEUE=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[20m])) / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="fluent-bit"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
