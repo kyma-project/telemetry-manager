@@ -130,7 +130,7 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	version = "main"
+	version = "1.18.0"
 )
 
 const (
