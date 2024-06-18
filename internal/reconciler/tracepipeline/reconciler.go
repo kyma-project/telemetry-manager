@@ -55,11 +55,6 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
-//go:generate mockery --name GatewayApplier --filename gateway_applier.go
-type GatewayApplier interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-}
-
 //go:generate mockery --name PipelineLock --filename pipeline_lock.go
 type PipelineLock interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
@@ -76,9 +71,8 @@ type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
-//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
+	Validate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
 //go:generate mockery --name OverridesHandler --filename overrides_handler.go
@@ -96,14 +90,14 @@ type Reconciler struct {
 	config                     Config
 	pipelinesConditionsCleared bool
 
-	gatewayConfigBuilder GatewayConfigBuilder
-	gatewayApplier       GatewayApplier
-	pipelineLock         PipelineLock
-	prober               DeploymentProber
-	flowHealthProber     FlowHealthProber
-	tlsCertValidator     TLSCertValidator
-	overridesHandler     OverridesHandler
-	istioStatusChecker   IstioStatusChecker
+	gatewayConfigBuilder    GatewayConfigBuilder
+	gatewayResourcesHandler *otelcollector.GatewayResourcesHandler
+	pipelineLock            PipelineLock
+	prober                  DeploymentProber
+	flowHealthProber        FlowHealthProber
+	tlsCertValidator        TLSCertValidator
+	overridesHandler        OverridesHandler
+	istioStatusChecker      IstioStatusChecker
 }
 
 func NewReconciler(client client.Client,
@@ -117,7 +111,7 @@ func NewReconciler(client client.Client,
 		gatewayConfigBuilder: &gateway.Builder{
 			Reader: client,
 		},
-		gatewayApplier: &otelcollector.GatewayApplier{
+		gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{
 			Config: config.Gateway,
 		},
 		pipelineLock: resourcelock.New(client,
@@ -186,8 +180,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
+
 	if len(reconcilablePipelines) == 0 {
-		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no trace pipeline ready for deployment")
+		logf.FromContext(ctx).V(1).Info("cleaning up trace pipeline resources: all trace pipelines are non-reconcilable")
+		if err = r.gatewayResourcesHandler.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+			return fmt.Errorf("failed to delete gateway resources: %w", err)
+		}
 		return nil
 	}
 
@@ -223,11 +221,14 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	if tlsCertValidationRequired(pipeline) {
-		cert := pipeline.Spec.Output.Otlp.TLS.Cert
-		key := pipeline.Spec.Output.Otlp.TLS.Key
+	if tlsValidationRequired(pipeline) {
+		tlsConfig := tlscert.TLSBundle{
+			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
+			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
+			CA:   pipeline.Spec.Output.Otlp.TLS.CA,
+		}
 
-		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
 			if !tlscert.IsCertAboutToExpireError(err) {
 				return false, nil
 			}
@@ -275,7 +276,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayApplier.ApplyResources(
+	if err := r.gatewayResourcesHandler.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,
@@ -311,7 +312,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	return defaultReplicaCount
 }
 
-func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
 	otlp := pipeline.Spec.Output.Otlp
 	if otlp == nil {
 		return false
@@ -320,7 +321,7 @@ func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
 		return false
 	}
 
-	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil
+	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil || otlp.TLS.CA != nil
 }
 
 // clearPipelinesConditions clears the status conditions for all TracePipelines only in the 1st reconciliation

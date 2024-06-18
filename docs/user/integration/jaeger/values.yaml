@@ -9,7 +9,7 @@ allInOne:
   podLabels:
     sidecar.istio.io/inject: "false"
 storage:
-  type: none
+  type: memory
 agent:
   enabled: false
 collector:

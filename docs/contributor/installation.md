@@ -29,4 +29,5 @@ make deploy-dev
 ```sh
 kubectl create ns kyma-system
 kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/latest/download/telemetry-manager.yaml
+kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/latest/download/telemetry-default-cr.yaml -n kyma-system
 ```

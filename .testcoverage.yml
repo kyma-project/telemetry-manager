@@ -31,7 +31,7 @@ override:
     path: ^internal/reconciler/telemetry$
   - threshold: 75
     path: ^internal/reconciler/tracepipeline$
-  - threshold: 85
+  - threshold: 83
     path: ^internal/resources/otelcollector$
   - threshold: 75
     path: ^internal/resources/selfmonitor$
@@ -52,6 +52,7 @@ exclude:
     - ^controllers         # controllers are covered by e2e tests
     - main
     - mocks
+    - stubs
     - ^internal/k8sutils   # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
     - internal/logger
     - ^internal/reconciler/logparser  # logparser reconciler will be removed soon

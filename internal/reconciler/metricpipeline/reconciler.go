@@ -78,9 +78,8 @@ type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
-//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error
+	Validate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
 //go:generate mockery --name OverridesHandler --filename overrides_handler.go
@@ -132,7 +131,7 @@ func NewReconciler(
 				},
 			},
 		},
-		gatewayApplier: &otelcollector.GatewayApplier{
+		gatewayApplier: &otelcollector.GatewayResourcesHandler{
 			Config: config.Gateway,
 		},
 		agentApplier: &otelcollector.AgentApplier{
@@ -243,11 +242,14 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	if tlsCertValidationRequired(pipeline) {
-		cert := pipeline.Spec.Output.Otlp.TLS.Cert
-		key := pipeline.Spec.Output.Otlp.TLS.Key
+	if tlsValidationRequired(pipeline) {
+		tlsConfig := tlscert.TLSBundle{
+			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
+			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
+			CA:   pipeline.Spec.Output.Otlp.TLS.CA,
+		}
 
-		if err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key); err != nil {
+		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
 			if !tlscert.IsCertAboutToExpireError(err) {
 				return false, nil
 			}
@@ -381,7 +383,7 @@ func getGatewayPorts() []int32 {
 	}
 }
 
-func tlsCertValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	otlp := pipeline.Spec.Output.Otlp
 	if otlp == nil {
 		return false
@@ -389,5 +391,5 @@ func tlsCertValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool 
 	if otlp.TLS == nil {
 		return false
 	}
-	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil
+	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil || otlp.TLS.CA != nil
 }

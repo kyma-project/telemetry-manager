@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -84,7 +85,7 @@ func TestReconcile(t *testing.T) {
 			Client:               fakeClient,
 			config:               testConfig,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			flowHealthProber:     flowHealthProberStub,
@@ -127,7 +128,7 @@ func TestReconcile(t *testing.T) {
 			Client:               fakeClient,
 			config:               testConfig,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			flowHealthProber:     flowHealthProberStub,
@@ -170,7 +171,7 @@ func TestReconcile(t *testing.T) {
 			Client:               fakeClient,
 			config:               testConfig,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			flowHealthProber:     flowHealthProberStub,
@@ -221,7 +222,7 @@ func TestReconcile(t *testing.T) {
 			agentConfigBuilder:   agentConfigBuilderMock,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
 			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			agentProber:          agentProberStub,
@@ -274,7 +275,7 @@ func TestReconcile(t *testing.T) {
 			agentConfigBuilder:   agentConfigBuilderMock,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
 			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			agentProber:          agentProberMock,
@@ -327,7 +328,7 @@ func TestReconcile(t *testing.T) {
 			agentConfigBuilder:   agentConfigBuilderMock,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
 			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			agentProber:          agentProberMock,
@@ -380,7 +381,7 @@ func TestReconcile(t *testing.T) {
 			Client:               fakeClient,
 			config:               testConfig,
 			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 			pipelineLock:         pipelineLockStub,
 			gatewayProber:        gatewayProberStub,
 			flowHealthProber:     flowHealthProberStub,
@@ -615,7 +616,7 @@ func TestReconcile(t *testing.T) {
 					Client:               fakeClient,
 					config:               testConfig,
 					gatewayConfigBuilder: gatewayConfigBuilderMock,
-					gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+					gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 					pipelineLock:         pipelineLockStub,
 					gatewayProber:        gatewayProberStub,
 					flowHealthProber:     flowHealthProberStub,
@@ -665,39 +666,54 @@ func TestReconcile(t *testing.T) {
 				expectGatewayConfigured: true,
 			},
 			{
+				name:            "ca expired",
+				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateExpired,
+				expectedMessage: "TLS CA certificate expired on 2020-11-01",
+			},
+			{
+				name:                    "ca about to expire",
+				tlsCertErr:              &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:          metav1.ConditionTrue,
+				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage:         "TLS CA certificate is about to expire, configured certificate is valid until 2024-11-01",
+				expectGatewayConfigured: true,
+			},
+			{
 				name:            "cert decode failed",
 				tlsCertErr:      tlscert.ErrCertDecodeFailed,
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: failed to decode PEM block containing cert",
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to decode PEM block containing certificate",
 			},
 			{
 				name:            "key decode failed",
 				tlsCertErr:      tlscert.ErrKeyDecodeFailed,
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: failed to decode PEM block containing private key",
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to decode PEM block containing private key",
 			},
 			{
 				name:            "key parse failed",
 				tlsCertErr:      tlscert.ErrKeyParseFailed,
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: failed to parse private key",
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to parse private key",
 			},
 			{
 				name:            "cert parse failed",
 				tlsCertErr:      tlscert.ErrCertParseFailed,
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: failed to parse certificate",
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to parse certificate",
 			},
 			{
 				name:            "cert and key mismatch",
 				tlsCertErr:      tlscert.ErrInvalidCertificateKeyPair,
 				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSCertificateInvalid,
-				expectedMessage: "TLS certificate invalid: certificate and private key do not match",
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: certificate and private key do not match",
 			},
 		}
 		for _, tt := range tests {
@@ -718,18 +734,15 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-				tlsStub := &mocks.TLSCertValidator{}
-				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
-
 				sut := Reconciler{
 					Client:               fakeClient,
 					config:               testConfig,
 					gatewayConfigBuilder: gatewayConfigBuilderMock,
-					gatewayApplier:       &otelcollector.GatewayApplier{Config: testConfig.Gateway},
+					gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
 					pipelineLock:         pipelineLockStub,
 					gatewayProber:        gatewayProberStub,
 					flowHealthProber:     flowHealthProberStub,
-					tlsCertValidator:     tlsStub,
+					tlsCertValidator:     stubs.NewTLSCertValidator(tt.tlsCertErr),
 					overridesHandler:     overridesHandlerStub,
 					istioStatusChecker:   istioStatusCheckerStub,
 				}

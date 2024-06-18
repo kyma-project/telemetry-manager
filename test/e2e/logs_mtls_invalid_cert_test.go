@@ -68,7 +68,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSCertificateInvalid,
+				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 		})
 
@@ -76,7 +76,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypePending,
 				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTLSCertificateInvalid,
+				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 		})
 
@@ -93,7 +93,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSCertificateInvalid,
+				Reason: conditions.ReasonTLSConfigurationInvalid,
 			})
 		})
 	})
