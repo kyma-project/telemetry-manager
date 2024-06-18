@@ -2,11 +2,13 @@ package otelcollector
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,10 +40,46 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 	}
 
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, defaultLabels(name.Name))); err != nil {
-		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
+		return fmt.Errorf("failed to create network policy: %w", err)
 	}
 
 	return nil
+}
+
+func deleteCommonResources(ctx context.Context, c client.Client, name types.NamespacedName) error {
+	objectMeta := metav1.ObjectMeta{
+		Name:      name.Name,
+		Namespace: name.Namespace,
+	}
+
+	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
+	var allErrors error = nil
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role binding: %w", err))
+	}
+
+	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role: %w", err))
+	}
+
+	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete service account: %w", err))
+	}
+
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: name.Name + "-metrics", Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metrics service: %w", err))
+	}
+
+	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
+	}
+
+	return allErrors
 }
 
 func defaultLabels(baseName string) map[string]string {

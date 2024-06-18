@@ -131,7 +131,7 @@ func NewReconciler(
 				},
 			},
 		},
-		gatewayApplier: &otelcollector.GatewayApplier{
+		gatewayApplier: &otelcollector.GatewayResourcesHandler{
 			Config: config.Gateway,
 		},
 		agentApplier: &otelcollector.AgentApplier{

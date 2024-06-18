@@ -55,11 +55,6 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
-//go:generate mockery --name GatewayApplier --filename gateway_applier.go
-type GatewayApplier interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-}
-
 //go:generate mockery --name PipelineLock --filename pipeline_lock.go
 type PipelineLock interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
@@ -95,14 +90,14 @@ type Reconciler struct {
 	config                     Config
 	pipelinesConditionsCleared bool
 
-	gatewayConfigBuilder GatewayConfigBuilder
-	gatewayApplier       GatewayApplier
-	pipelineLock         PipelineLock
-	prober               DeploymentProber
-	flowHealthProber     FlowHealthProber
-	tlsCertValidator     TLSCertValidator
-	overridesHandler     OverridesHandler
-	istioStatusChecker   IstioStatusChecker
+	gatewayConfigBuilder    GatewayConfigBuilder
+	gatewayResourcesHandler *otelcollector.GatewayResourcesHandler
+	pipelineLock            PipelineLock
+	prober                  DeploymentProber
+	flowHealthProber        FlowHealthProber
+	tlsCertValidator        TLSCertValidator
+	overridesHandler        OverridesHandler
+	istioStatusChecker      IstioStatusChecker
 }
 
 func NewReconciler(client client.Client,
@@ -116,7 +111,7 @@ func NewReconciler(client client.Client,
 		gatewayConfigBuilder: &gateway.Builder{
 			Reader: client,
 		},
-		gatewayApplier: &otelcollector.GatewayApplier{
+		gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{
 			Config: config.Gateway,
 		},
 		pipelineLock: resourcelock.New(client,
@@ -185,8 +180,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
+
 	if len(reconcilablePipelines) == 0 {
-		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no trace pipeline ready for deployment")
+		logf.FromContext(ctx).V(1).Info("cleaning up trace pipeline resources: all trace pipelines are non-reconcilable")
+		if err = r.gatewayResourcesHandler.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+			return fmt.Errorf("failed to delete gateway resources: %w", err)
+		}
 		return nil
 	}
 
@@ -277,7 +276,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayApplier.ApplyResources(
+	if err := r.gatewayResourcesHandler.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,
