@@ -26,7 +26,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
@@ -279,7 +278,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		require.ErrorIs(t, err, secretref.ErrSecretRefNotFound)
+		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)

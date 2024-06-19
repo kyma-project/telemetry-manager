@@ -223,7 +223,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
-		return false, err
+		return false, nil
 	}
 
 	if tlsValidationRequired(pipeline) {
