@@ -269,7 +269,43 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should return show tlsCertInvalid if one of the pipelines has invalid tls cert",
+			name: "should show tlsCertExpert if one pipeline has invalid tls cert and the other pipeline has an about to expire cert",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
+					}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypeConfigurationGenerated,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonTLSCertificateAboutToExpire,
+					}).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonTLSCertificateExpired,
+						Message: "TLS certificate is expired",
+					}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeTraceComponentsHealthy,
+				Status:  "False",
+				Reason:  "TLSCertificateExpired",
+				Message: "TLS certificate is expired",
+			},
+		},
+		{
+			name: "should show tlsCert is about to expire if one of the pipelines has tls cert which is about to expire",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
@@ -286,14 +322,15 @@ func TestTraceComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionTrue,
 						Reason:  conditions.ReasonTLSCertificateAboutToExpire,
-						Message: "TLS certificate is about to expire, configured certificate is valid until 22.04.2024"}).
+						Message: "TLS certificate is about to expire",
+					}).
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "True",
 				Reason:  "TLSCertificateAboutToExpire",
-				Message: "TLS certificate is about to expire, configured certificate is valid until 22.04.2024",
+				Message: "TLS certificate is about to expire",
 			},
 		},
 	}

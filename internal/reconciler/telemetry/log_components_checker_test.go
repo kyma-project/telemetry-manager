@@ -304,7 +304,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should return show tlsCertificateExpired if one of the pipelines has expired tls cert",
+			name: "should show tlsCertExpert if one pipeline has invalid tls cert and the other pipeline has an about to expire cert",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
@@ -322,7 +322,15 @@ func TestLogComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonTLSCertificateExpired,
-						Message: "TLS certificate expired on 20.01.2023",
+						Message: "TLS certificate is expired",
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypeConfigurationGenerated,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonTLSCertificateAboutToExpire,
 					}).
 					Build(),
 			},
@@ -330,7 +338,37 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "TLSCertificateExpired",
-				Message: "TLS certificate expired on 20.01.2023",
+				Message: "TLS certificate is expired",
+			},
+		},
+		{
+			name: "should show tlsCert is about to expire if one of the pipelines has tls cert which is about to expire",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionTrue,
+						Reason:  conditions.ReasonTLSCertificateAboutToExpire,
+						Message: "TLS certificate is about to expire",
+					}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeLogComponentsHealthy,
+				Status:  "True",
+				Reason:  "TLSCertificateAboutToExpire",
+				Message: "TLS certificate is about to expire",
 			},
 		},
 	}
