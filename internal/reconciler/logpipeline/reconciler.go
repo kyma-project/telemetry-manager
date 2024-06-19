@@ -163,10 +163,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	reconcilablePipelines := r.getReconcilablePipelines(ctx, allPipelines.Items)
-	if len(reconcilablePipelines) == 0 {
-		logf.FromContext(ctx).V(1).Info("Cleaning up log pipeline resources: all log pipelines are non-reconcilable")
-		return nil
-	}
 	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, reconcilablePipelines); err != nil {
 		return err
 	}
