@@ -54,7 +54,7 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 	}, nil
 }
 
-func (t *logComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pipelines []telemetryv1alpha1.LogPipeline) *metav1.Condition {
+func (l *logComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pipelines []telemetryv1alpha1.LogPipeline) *metav1.Condition {
 	for _, pipeline := range pipelines {
 		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		if cond != nil && cond.Reason == conditions.ReasonTLSCertificateAboutToExpire {
