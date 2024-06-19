@@ -133,7 +133,8 @@ The state of the trace components is determined by the status condition of type 
 | True             | TLSCertificateAboutToExpire | TLS (CA) certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                        |
 | False            | GatewayNotReady             | Trace gateway Deployment is not ready                                                                                                       |
 | False            | MaxPipelinesExceeded        | Maximum pipeline count exceeded                                                                                                             |
-| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                  |
+| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing, first finding is: secret 'my-secret' of namespace 'my-namespace'                                                                  |
+| False            | ReferencedSecretMissing     | One or more keys in a referenced secret are missing, first finding is: key 'my-key' in secret 'my-secret' of namespace 'my-namespace'"                                                                  |
 | False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (resource-1, resource-2,...) |
 | False            | TLSCertificateExpired       | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                       |
 | False            | TLSConfigurationInvalid     | TLS configuration invalid                                                                                                                     |
@@ -154,7 +155,8 @@ The state of the metric components is determined by the status condition of type
 | False            | AgentNotReady               | Metric agent DaemonSet is not ready                                                                                                          |
 | False            | GatewayNotReady             | Metric gateway deployment is not ready                                                                                                       |
 | False            | MaxPipelinesExceeded        | Maximum pipeline count exceeded                                                                                                              |
-| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                                                                                   |
+| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing, first finding is: secret 'my-secret' of namespace 'my-namespace'                                                                  |
+| False            | ReferencedSecretMissing     | One or more keys in a referenced secret are missing, first finding is: key 'my-key' in secret 'my-secret' of namespace 'my-namespace'"                                                                  |
 | False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
 | False            | TLSCertificateExpired       | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                        |
 | False            | TLSConfigurationInvalid     | TLS configuration invalid                                                                                                                      |
