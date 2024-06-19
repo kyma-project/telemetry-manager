@@ -99,20 +99,17 @@ func New(client client.Client) *Validator {
 }
 
 func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
-	certPEM, err := resolveValue(ctx, v.client, *config.Cert)
+	certPEM, err := resolveValue(ctx, v.client, *config.Cert, ErrValueResolveFailed)
 	if err != nil {
 		return err
 	}
 
-	keyPEM, err := resolveValue(ctx, v.client, *config.Key)
+	keyPEM, err := resolveValue(ctx, v.client, *config.Key, ErrValueResolveFailed)
 	if err != nil {
 		return err
 	}
 
-	caPEM, err := resolveValue(ctx, v.client, *config.CA)
-	if err != nil {
-		return err
-	}
+	caPEM, _ := resolveValue(ctx, v.client, *config.CA, nil)
 
 	// Make the best effort replacement of linebreaks in cert/key if present.
 	sanitizedCert := bytes.ReplaceAll(certPEM, []byte("\\n"), []byte("\n"))
@@ -131,9 +128,12 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	}
 
 	// Parse the CA
-	parsedCAs, err := parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
-	if err != nil {
-		return err
+	var parsedCAs []*x509.Certificate
+	if caPEM != nil {
+		parsedCAs, err = parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Validate certificate
@@ -232,7 +232,24 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 	return nil
 }
 
-func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+// func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType, errResolve error) ([]byte, error) {
+// 	if value.Value != "" {
+// 		return []byte(value.Value), nil
+// 	}
+
+// 	if value.ValueFrom == nil || !value.ValueFrom.IsSecretKeyRef() {
+// 		return nil, errResolve
+// 	}
+
+// 	valueFromSecret, err := secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
+// 	if err != nil {
+// 		return nil, errResolve
+// 	}
+
+// 	return valueFromSecret, nil
+// }
+
+func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType, errResolve error) ([]byte, error) {
 	if value.Value != "" {
 		return []byte(value.Value), nil
 	}
