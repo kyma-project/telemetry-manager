@@ -26,6 +26,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
@@ -433,7 +434,7 @@ func TestReconcile(t *testing.T) {
 			istioStatusChecker:      istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		require.NoError(t, err)
+		require.ErrorIs(t, err, secretref.ErrSecretRefNotFound)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
@@ -442,7 +443,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonReferencedSecretMissing,
-			"One or more referenced Secrets are missing")
+			"One or more referenced Secrets are missing, first finding is: secret 'some-secret' of namespace 'some-namespace'")
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeFlowHealthy,

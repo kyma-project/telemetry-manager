@@ -74,7 +74,7 @@ func TestVerifySecretReference_SecretNotPresent(t *testing.T) {
 	client := fake.NewClientBuilder().WithObjects(&existingSecret1).Build()
 
 	err := VerifySecretReference(context.TODO(), client, getter)
-	require.EqualError(t, err, ErrSecretRefNotFound.Error())
+	require.ErrorIs(t, err, ErrSecretRefNotFound)
 }
 
 func TestTestVerifySecretReference_KeyNotPresent(t *testing.T) {
@@ -97,7 +97,7 @@ func TestTestVerifySecretReference_KeyNotPresent(t *testing.T) {
 	client := fake.NewClientBuilder().WithObjects(&existingSecret1).Build()
 
 	err := VerifySecretReference(context.TODO(), client, getter)
-	require.EqualError(t, err, ErrSecretKeyNotFound.Error())
+	require.ErrorIs(t, err, ErrSecretKeyNotFound)
 }
 
 func TestReferencesSecret_Success(t *testing.T) {
