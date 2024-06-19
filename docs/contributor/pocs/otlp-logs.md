@@ -124,7 +124,7 @@ We split the OpenTelemetry Collector for log processing to an agent (DaemonSet) 
 
 The following figure shows the different plugins that are configured in the processing pipeline. Note the use of the batch processor in the gateway, which introduces asynchronicity to the pipeline and causes that backpressure is not propagated back to the agent. To minimize the risk of log loss due to the batch processors properties, a persistent exporter queue was introduced in the gateway, which uses a persistent volume to buffer logs in case of a backend failure.
 
-![Otel Collector Setup](./assets/otlp-logs.drawio.svg)
+![OTel Collector Setup](./assets/otlp-logs.drawio.svg)
 
 To deploy the OpenTelemetry Collector agent and gateway, perform the following steps:
 
