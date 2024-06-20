@@ -20,7 +20,7 @@ func TestApplyAgentResources(t *testing.T) {
 	name := "my-agent"
 	cfg := "dummy otel collector config"
 
-	sut := AgentApplier{
+	sut := AgentResourcesHandler{
 		Config: AgentConfig{
 			Config: Config{
 				BaseName:  name,

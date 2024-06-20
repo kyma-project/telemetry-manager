@@ -96,17 +96,17 @@ type Reconciler struct {
 	client.Client
 	config Config
 
-	agentConfigBuilder   AgentConfigBuilder
-	gatewayConfigBuilder GatewayConfigBuilder
-	agentApplier         AgentApplier
-	gatewayApplier       GatewayApplier
-	pipelineLock         PipelineLock
-	gatewayProber        DeploymentProber
-	agentProber          DaemonSetProber
-	flowHealthProber     FlowHealthProber
-	tlsCertValidator     TLSCertValidator
-	overridesHandler     OverridesHandler
-	istioStatusChecker   IstioStatusChecker
+	agentConfigBuilder      AgentConfigBuilder
+	gatewayConfigBuilder    GatewayConfigBuilder
+	agentResourcesHandler   *otelcollector.AgentResourcesHandler
+	gatewayResourcesHandler *otelcollector.GatewayResourcesHandler
+	pipelineLock            PipelineLock
+	gatewayProber           DeploymentProber
+	agentProber             DaemonSetProber
+	flowHealthProber        FlowHealthProber
+	tlsCertValidator        TLSCertValidator
+	overridesHandler        OverridesHandler
+	istioStatusChecker      IstioStatusChecker
 }
 
 func NewReconciler(
@@ -131,10 +131,10 @@ func NewReconciler(
 				},
 			},
 		},
-		gatewayApplier: &otelcollector.GatewayResourcesHandler{
+		gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{
 			Config: config.Gateway,
 		},
-		agentApplier: &otelcollector.AgentApplier{
+		agentResourcesHandler: &otelcollector.AgentResourcesHandler{
 			Config: config.Agent,
 		},
 		pipelineLock: resourcelock.New(client, types.NamespacedName{
@@ -199,8 +199,17 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
+
 	if len(reconcilablePipelines) == 0 {
-		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no metric pipeline ready for deployment")
+		logf.FromContext(ctx).V(1).Info("cleaning up metric pipeline resources: all metric pipelines are non-reconcilable")
+		if err = r.gatewayResourcesHandler.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+			return fmt.Errorf("failed to delete gateway resources: %w", err)
+		}
+		if isMetricAgentRequired(pipeline) {
+			if err = r.agentResourcesHandler.DeleteResources(ctx, r.Client); err != nil {
+				return fmt.Errorf("failed to delete agent resources: %w", err)
+			}
+		}
 		return nil
 	}
 
@@ -299,7 +308,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayApplier.ApplyResources(
+	if err := r.gatewayResourcesHandler.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,
@@ -328,7 +337,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	if err := r.agentApplier.ApplyResources(
+	if err := r.agentResourcesHandler.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{

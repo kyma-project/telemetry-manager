@@ -82,15 +82,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:               fakeClient,
-			config:               testConfig,
-			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:         pipelineLockStub,
-			gatewayProber:        gatewayProberStub,
-			flowHealthProber:     flowHealthProberStub,
-			overridesHandler:     overridesHandlerStub,
-			istioStatusChecker:   istioStatusCheckerStub,
+			Client:                  fakeClient,
+			config:                  testConfig,
+			gatewayConfigBuilder:    gatewayConfigBuilderMock,
+			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+			pipelineLock:            pipelineLockStub,
+			gatewayProber:           gatewayProberStub,
+			flowHealthProber:        flowHealthProberStub,
+			overridesHandler:        overridesHandlerStub,
+			istioStatusChecker:      istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -125,15 +125,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:               fakeClient,
-			config:               testConfig,
-			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:         pipelineLockStub,
-			gatewayProber:        gatewayProberStub,
-			flowHealthProber:     flowHealthProberStub,
-			overridesHandler:     overridesHandlerStub,
-			istioStatusChecker:   istioStatusCheckerStub,
+			Client:                  fakeClient,
+			config:                  testConfig,
+			gatewayConfigBuilder:    gatewayConfigBuilderMock,
+			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+			pipelineLock:            pipelineLockStub,
+			gatewayProber:           gatewayProberStub,
+			flowHealthProber:        flowHealthProberStub,
+			overridesHandler:        overridesHandlerStub,
+			istioStatusChecker:      istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -168,15 +168,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:               fakeClient,
-			config:               testConfig,
-			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:         pipelineLockStub,
-			gatewayProber:        gatewayProberStub,
-			flowHealthProber:     flowHealthProberStub,
-			overridesHandler:     overridesHandlerStub,
-			istioStatusChecker:   istioStatusCheckerStub,
+			Client:                  fakeClient,
+			config:                  testConfig,
+			gatewayConfigBuilder:    gatewayConfigBuilderMock,
+			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+			pipelineLock:            pipelineLockStub,
+			gatewayProber:           gatewayProberStub,
+			flowHealthProber:        flowHealthProberStub,
+			overridesHandler:        overridesHandlerStub,
+			istioStatusChecker:      istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -217,18 +217,18 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:               fakeClient,
-			config:               testConfig,
-			agentConfigBuilder:   agentConfigBuilderMock,
-			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:         pipelineLockStub,
-			gatewayProber:        gatewayProberStub,
-			agentProber:          agentProberStub,
-			flowHealthProber:     flowHealthProberStub,
-			overridesHandler:     overridesHandlerStub,
-			istioStatusChecker:   istioStatusCheckerStub,
+			Client:                  fakeClient,
+			config:                  testConfig,
+			agentConfigBuilder:      agentConfigBuilderMock,
+			gatewayConfigBuilder:    gatewayConfigBuilderMock,
+			agentResourcesHandler:   &otelcollector.AgentResourcesHandler{Config: testConfig.Agent},
+			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+			pipelineLock:            pipelineLockStub,
+			gatewayProber:           gatewayProberStub,
+			agentProber:             agentProberStub,
+			flowHealthProber:        flowHealthProberStub,
+			overridesHandler:        overridesHandlerStub,
+			istioStatusChecker:      istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -270,18 +270,18 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:               fakeClient,
-			config:               testConfig,
-			agentConfigBuilder:   agentConfigBuilderMock,
-			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:         pipelineLockStub,
-			gatewayProber:        gatewayProberStub,
-			agentProber:          agentProberMock,
-			flowHealthProber:     flowHealthProberStub,
-			overridesHandler:     overridesHandlerStub,
-			istioStatusChecker:   istioStatusCheckerStub,
+			Client:                  fakeClient,
+			config:                  testConfig,
+			agentConfigBuilder:      agentConfigBuilderMock,
+			gatewayConfigBuilder:    gatewayConfigBuilderMock,
+			agentResourcesHandler:   &otelcollector.AgentResourcesHandler{Config: testConfig.Agent},
+			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+			pipelineLock:            pipelineLockStub,
+			gatewayProber:           gatewayProberStub,
+			agentProber:             agentProberMock,
+			flowHealthProber:        flowHealthProberStub,
+			overridesHandler:        overridesHandlerStub,
+			istioStatusChecker:      istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -323,18 +323,18 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:               fakeClient,
-			config:               testConfig,
-			agentConfigBuilder:   agentConfigBuilderMock,
-			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			agentApplier:         &otelcollector.AgentApplier{Config: testConfig.Agent},
-			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:         pipelineLockStub,
-			gatewayProber:        gatewayProberStub,
-			agentProber:          agentProberMock,
-			flowHealthProber:     flowHealthProberStub,
-			overridesHandler:     overridesHandlerStub,
-			istioStatusChecker:   istioStatusCheckerStub,
+			Client:                  fakeClient,
+			config:                  testConfig,
+			agentConfigBuilder:      agentConfigBuilderMock,
+			gatewayConfigBuilder:    gatewayConfigBuilderMock,
+			agentResourcesHandler:   &otelcollector.AgentResourcesHandler{Config: testConfig.Agent},
+			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+			pipelineLock:            pipelineLockStub,
+			gatewayProber:           gatewayProberStub,
+			agentProber:             agentProberMock,
+			flowHealthProber:        flowHealthProberStub,
+			overridesHandler:        overridesHandlerStub,
+			istioStatusChecker:      istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -378,15 +378,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:               fakeClient,
-			config:               testConfig,
-			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:         pipelineLockStub,
-			gatewayProber:        gatewayProberStub,
-			flowHealthProber:     flowHealthProberStub,
-			overridesHandler:     overridesHandlerStub,
-			istioStatusChecker:   istioStatusCheckerStub,
+			Client:                  fakeClient,
+			config:                  testConfig,
+			gatewayConfigBuilder:    gatewayConfigBuilderMock,
+			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+			pipelineLock:            pipelineLockStub,
+			gatewayProber:           gatewayProberStub,
+			flowHealthProber:        flowHealthProberStub,
+			overridesHandler:        overridesHandlerStub,
+			istioStatusChecker:      istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -613,15 +613,15 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
 				sut := Reconciler{
-					Client:               fakeClient,
-					config:               testConfig,
-					gatewayConfigBuilder: gatewayConfigBuilderMock,
-					gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-					pipelineLock:         pipelineLockStub,
-					gatewayProber:        gatewayProberStub,
-					flowHealthProber:     flowHealthProberStub,
-					overridesHandler:     overridesHandlerStub,
-					istioStatusChecker:   istioStatusCheckerStub,
+					Client:                  fakeClient,
+					config:                  testConfig,
+					gatewayConfigBuilder:    gatewayConfigBuilderMock,
+					gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+					pipelineLock:            pipelineLockStub,
+					gatewayProber:           gatewayProberStub,
+					flowHealthProber:        flowHealthProberStub,
+					overridesHandler:        overridesHandlerStub,
+					istioStatusChecker:      istioStatusCheckerStub,
 				}
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
@@ -735,16 +735,16 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 				sut := Reconciler{
-					Client:               fakeClient,
-					config:               testConfig,
-					gatewayConfigBuilder: gatewayConfigBuilderMock,
-					gatewayApplier:       &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-					pipelineLock:         pipelineLockStub,
-					gatewayProber:        gatewayProberStub,
-					flowHealthProber:     flowHealthProberStub,
-					tlsCertValidator:     stubs.NewTLSCertValidator(tt.tlsCertErr),
-					overridesHandler:     overridesHandlerStub,
-					istioStatusChecker:   istioStatusCheckerStub,
+					Client:                  fakeClient,
+					config:                  testConfig,
+					gatewayConfigBuilder:    gatewayConfigBuilderMock,
+					gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
+					pipelineLock:            pipelineLockStub,
+					gatewayProber:           gatewayProberStub,
+					flowHealthProber:        flowHealthProberStub,
+					tlsCertValidator:        stubs.NewTLSCertValidator(tt.tlsCertErr),
+					overridesHandler:        overridesHandlerStub,
+					istioStatusChecker:      istioStatusCheckerStub,
 				}
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
