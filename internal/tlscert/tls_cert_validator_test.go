@@ -407,6 +407,32 @@ rZ3xPLf7G+fObmeO7XuIoDfJHH6HDrdhhWi3F918KQ==
 	require.NoError(t, err)
 }
 
+func TestEmptyCA(t *testing.T) {
+
+	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := Validator{
+		client: fakeClient,
+		now:    func() time.Time { return oneMonthBeforeExpiry },
+	}
+
+	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, []byte(``)))
+	require.ErrorIs(t, err, ErrValueResolveFailed)
+}
+
+func TestNilCA(t *testing.T) {
+
+	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := Validator{
+		client: fakeClient,
+		now:    func() time.Time { return oneMonthBeforeExpiry },
+	}
+
+	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, nil))
+	require.ErrorIs(t, err, ErrValueResolveFailed)
+}
+
 func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
 	certData := "-----BEGIN CERTIFICATE-----\\nMIICgTCCAeqgAwIBAgIUcejYeiQzytrNkJ9G+V9mxRYZ4rQwDQYJKoZIhvcNAQEL\nBQAwXjELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk5ZMREwDwYDVQQHDAhOZXcgWW9y\nazEdMBsGA1UECgwUTW9jayBDQSBPcmdhbml6YXRpb24xEDAOBgNVBAMMB01vY2sg\nQ0EwIBcNMjQwMjE5MTQyNDE0WhgPNTAyNDAzMTkxNDI0MTRaMGAxCzAJBgNVBAYT\nAlVTMQswCQYDVQQIDAJOWTERMA8GA1UEBwwITmV3IFlvcmsxGjAYBgNVBAoMEU1v\nY2sgT3JnYW5pemF0aW9uMRUwEwYDVQQDDAx3d3cubW9jay5jb20wgZ8wDQYJKoZI\nhvcNAQEBBQADgY0AMIGJAoGBAN2iJZKzxmxXE8fzw5L45N1xqK1+CTCt5j12fJRT\nzruRxPH5IG1XOiN0vkJUmac3E7o0nsrUaxwP+kb68zZU4mExFVYTI1aVZHQdLXyC\noNBxAtk6Fy9P5fLfRFcovf4t8Frfdn8B4uCwBv5ywV9519kvKUdh0cfW8ZxSXloS\n4hdzAgMBAAGjODA2MAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgWgMBYGA1Ud\nJQEB/wQMMAoGCCsGAQUFBwMBMA0GCSqGSIb3DQEBCwUAA4GBAJVp4gGV2o1ZHSoR\nrS+Yq4u3eOqA6/nZtKzXq5cSfD4gyzkK/KnFxWZDElMPOrbXUtMVZvoxdyBbmrI8\nPsKzeS+TESxjIQvtIUYxZgbIDePQcXsJSpAjb+QoV0xOonfRtgKTd+s+/KNohDWs\nGWyZ1VBE/Yt3zH4DHhwXChzhUco7\\n-----END CERTIFICATE-----\n"
 	keyData := "-----BEGIN PRIVATE KEY-----\\nMIICXQIBAAKBgQDdoiWSs8ZsVxPH88OS+OTdcaitfgkwreY9dnyUU867kcTx+SBt\nVzojdL5CVJmnNxO6NJ7K1GscD/pG+vM2VOJhMRVWEyNWlWR0HS18gqDQcQLZOhcv\nT+Xy30RXKL3+LfBa33Z/AeLgsAb+csFfedfZLylHYdHH1vGcUl5aEuIXcwIDAQAB\nAoGANts0S4w9l4Ex/zKhfJYoJ3tDUbW5VpgkPaA/E4NuztQ0l+OemBGX7UCu+sHv\nygiC1HrDttY+sJJv0vO4EQGPiiLiGzgcuMV96wmRIHw1C3AJvZ9m71/ZoWb9ijIy\nGxe7SBD6Vw2Whyl3K25Wu9ZGAdKFeCbTeY0Dlm7lXw2Ch6kCQQD1QPDxdGjWIaru\n6DX6OwE+IlqwPwb9IdKpKdJzMYLnKmFxfLH5/LxzpKZrxsMZQ+PAFySQWc/ZVXpv\np9QhXLhvAkEA51hAi6D+uaW7EGB7nkNg7bOZjhS3dCkohMcfkQI19uUJWXv8eQPp\nDa4RTM/OqJwJoGKQ+NW5Q+aZwhQwtOirPQJBANMI64tJWQCQ/e4PwIquhTY7B4BK\n66+bkBLiGuXmf7Z8oFawLtFmqZ502oM5CB5QbcSX5W2U6qYfyHgVmRKQH18CQQDa\nrPT2BwxAd4PHCyxOgOoSRf4T60ktp+oA+CfCbhCMfBrGVwhja2rT34HC1XtGrZf7\n3q+iRoOEx2j3pxYTKwsRAkBG4hHXdRZ1a5RnTKi+qeVx5WPtOGuJa1hezGFs6l2p\nstp1Bpl+MQVzbPrhmc2O21g1CRhHDw75iRieVj04dYPP\\n-----END PRIVATE KEY-----\n"
@@ -440,6 +466,7 @@ func TestResolveValue(t *testing.T) {
 		Data: map[string][]byte{
 			"cert": []byte("cert"),
 			"key":  []byte("key"),
+			"ca":   []byte("ca"),
 		},
 	}
 
@@ -473,7 +500,7 @@ func TestResolveValue(t *testing.T) {
 				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 					Name:      "test",
 					Namespace: "default",
-					Key:       "cert",
+					Key:       "ca",
 				}},
 			},
 			expectedErr: ErrValueResolveFailed,
@@ -498,7 +525,7 @@ func TestResolveValue(t *testing.T) {
 				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 					Name:      "test",
 					Namespace: "default",
-					Key:       "cert",
+					Key:       "ca",
 				}},
 			},
 			expectedErr: ErrValueResolveFailed,
@@ -523,9 +550,28 @@ func TestResolveValue(t *testing.T) {
 				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 					Name:      "unknown",
 					Namespace: "default",
+					Key:       "ca",
+				}},
+			},
+			expectedErr: ErrValueResolveFailed,
+		},
+		{
+			name: "ca empty",
+			inputCert: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "test",
+					Namespace: "default",
 					Key:       "cert",
 				}},
 			},
+			inputKey: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "test",
+					Namespace: "default",
+					Key:       "key",
+				}},
+			},
+			inputCa:     telemetryv1alpha1.ValueType{Value: ""},
 			expectedErr: ErrValueResolveFailed,
 		},
 		{
@@ -548,7 +594,7 @@ func TestResolveValue(t *testing.T) {
 				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 					Name:      "test",
 					Namespace: "default",
-					Key:       "cert",
+					Key:       "ca",
 				}},
 			},
 			expectedErr: ErrCertDecodeFailed,
