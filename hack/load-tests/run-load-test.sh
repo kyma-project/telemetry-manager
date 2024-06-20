@@ -360,6 +360,7 @@ function get_result_and_cleanup_fluentbit() {
 
 # shellcheck disable=SC2112
 function get_result_and_cleanup_selfmonitor() {
+   # ingestion rate per second for scrape samples https://valyala.medium.com/prometheus-storage-technical-terms-for-humans-4ab4de6c3d48
    SCRAPESAMPLES=$(curl -fs --data-urlencode 'query=sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor-metrics"}[20m]) / 1200' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    SERIESCREATED=$(curl -fs --data-urlencode 'query=max(prometheus_tsdb_head_series{service="telemetry-self-monitor-metrics"})' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
