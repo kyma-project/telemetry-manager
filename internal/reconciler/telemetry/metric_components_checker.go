@@ -102,7 +102,7 @@ func (m *metricComponentsChecker) checkForNoPipelineDeployedCondition(pipelines 
 }
 
 func (m *metricComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.MetricPipeline, telemetryInDeletion bool) *metav1.Condition {
-	if telemetryInDeletion {
+	if telemetryInDeletion && len(pipelines) != 0 {
 		return &metav1.Condition{
 			Type:   conditions.TypeMetricComponentsHealthy,
 			Status: metav1.ConditionFalse,

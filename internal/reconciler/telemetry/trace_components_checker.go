@@ -101,7 +101,7 @@ func (t *traceComponentsChecker) checkForNoPipelineDeployedCondition(pipelines [
 }
 
 func (t *traceComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.TracePipeline, telemetryInDeletion bool) *metav1.Condition {
-	if telemetryInDeletion {
+	if telemetryInDeletion && len(pipelines) != 0 {
 		return &metav1.Condition{
 			Type:   conditions.TypeTraceComponentsHealthy,
 			Status: metav1.ConditionFalse,

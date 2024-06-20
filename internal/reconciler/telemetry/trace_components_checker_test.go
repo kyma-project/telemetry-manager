@@ -23,6 +23,8 @@ func TestTraceComponentsCheck(t *testing.T) {
 	tests := []struct {
 		name                string
 		pipelines           []telemetryv1alpha1.TracePipeline
+		metricPipelines     []telemetryv1alpha1.MetricPipeline
+		logPipelines        []telemetryv1alpha1.LogPipeline
 		telemetryInDeletion bool
 		expectedCondition   *metav1.Condition
 	}{
@@ -216,7 +218,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should block deletion if there are existing pipelines",
+			name: "should block deletion if there are existing trace pipelines",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithName("foo").Build(),
 				testutils.NewTracePipelineBuilder().WithName("bar").Build(),
@@ -227,6 +229,32 @@ func TestTraceComponentsCheck(t *testing.T) {
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (bar,foo)",
+			},
+		},
+		{
+			name: "should not block deletion if there are existing metric pipelines",
+			metricPipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("foo").Build(),
+			},
+			telemetryInDeletion: true,
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeTraceComponentsHealthy,
+				Status:  "True",
+				Reason:  "NoPipelineDeployed",
+				Message: "No pipelines have been deployed",
+			},
+		},
+		{
+			name: "should not block deletion if there are existing log pipelines",
+			logPipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("foo").Build(),
+			},
+			telemetryInDeletion: true,
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeTraceComponentsHealthy,
+				Status:  "True",
+				Reason:  "NoPipelineDeployed",
+				Message: "No pipelines have been deployed",
 			},
 		},
 		{
