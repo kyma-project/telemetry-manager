@@ -136,7 +136,7 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 
 	caPEM, err := resolveValue(ctx, v.client, *config.CA)
 	if err != nil {
-		return nil
+		return nil //nolint:nilerr // ErrValueResolveFailed irrelevant since CA is optional
 	}
 
 	// Make the best effort to replace linebreaks in CA if present.
