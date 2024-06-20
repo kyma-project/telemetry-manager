@@ -19,14 +19,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label("123"), Ordered, func() {
 	var pipelineName = suite.ID()
 	const ownerReferenceKind = "LogPipeline"
 
 	Context("When a LogPipeline exists", Ordered, func() {
 		endpointKey := "logs-endpoint"
-		secretName := "logs-resources"
-		secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:123"))
+		secret := kitk8s.NewOpaqueSecret("logs-resources", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:123"))
 		pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), kitkyma.DefaultNamespaceName, endpointKey)).Build()
 
 		BeforeAll(func() {
