@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs, "test"), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()
@@ -71,6 +71,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		It("Should have a running pipeline", Label(suite.LabelOperational), func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have unsupportedMode set to false", func() {
+			assert.LogPipelineUnsupportedMode(ctx, k8sClient, pipelineName, false)
 		})
 
 		It("Should have a pipeline with legacy condition types at the end of the conditions list", Label(suite.LabelOperational), func() {
