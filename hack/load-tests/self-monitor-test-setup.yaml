@@ -346,6 +346,18 @@ spec:
         app: metric-load-generator
         sidecar.istio.io/inject: "true"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - metric-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
         - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.100.0
           args:
@@ -412,6 +424,19 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - metric-agent-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+
       containers:
         - name: metric-agent-load-generator
           image: quay.io/freshtracks.io/avalanche
@@ -449,6 +474,18 @@ spec:
         app: trace-load-generator
         sidecar.istio.io/inject: "true"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - trace-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
         - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.100.0
           args:
