@@ -523,8 +523,6 @@ spec:
                 description: Is active when the LogPipeline uses a `custom` output
                   or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
                 type: boolean
-            required:
-            - unsupportedMode
             type: object
         type: object
     served: true
