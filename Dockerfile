@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.22.3-bookworm as builder
+FROM golang:1.22.4-bookworm as builder
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
