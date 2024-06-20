@@ -47,16 +47,6 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
-//go:generate mockery --name AgentApplier --filename agent_applier.go
-type AgentApplier interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
-}
-
-//go:generate mockery --name GatewayApplier --filename gateway_applier.go
-type GatewayApplier interface {
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-}
-
 //go:generate mockery --name PipelineLock --filename pipeline_lock.go
 type PipelineLock interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
