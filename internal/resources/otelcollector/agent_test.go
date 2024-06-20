@@ -9,6 +9,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -236,5 +238,74 @@ func TestApplyAgentResources(t *testing.T) {
 		require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
 		require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
 	})
+}
 
+func TestDeleteAgentResources(t *testing.T) {
+	ctx := context.Background()
+	client := fake.NewClientBuilder().Build()
+	namespace := "my-namespace"
+	name := "my-agent"
+	cfg := "dummy otel collector config"
+
+	sut := AgentResourcesHandler{
+		Config: AgentConfig{
+			Config: Config{
+				BaseName:  name,
+				Namespace: namespace,
+			},
+		},
+	}
+
+	// Create agent resources before testing deletion
+	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
+		AllowedPorts:        []int32{5555, 6666},
+		CollectorConfigYAML: cfg,
+	})
+	require.NoError(t, err)
+
+	// Delete agent resources
+	err = sut.DeleteResources(ctx, client)
+	require.NoError(t, err)
+
+	t.Run("should delete service account", func(t *testing.T) {
+		var serviceAccount corev1.ServiceAccount
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &serviceAccount)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete cluster role", func(t *testing.T) {
+		var clusterRole rbacv1.ClusterRole
+		err := client.Get(ctx, types.NamespacedName{Name: name}, &clusterRole)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete cluster role binding", func(t *testing.T) {
+		var clusterRoleBinding rbacv1.ClusterRoleBinding
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &clusterRoleBinding)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete metrics service", func(t *testing.T) {
+		var service corev1.Service
+		err := client.Get(ctx, types.NamespacedName{Name: name + "-metrics", Namespace: namespace}, &service)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete network policy", func(t *testing.T) {
+		var networkPolicy networkingv1.NetworkPolicy
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &networkPolicy)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete collector config configmap", func(t *testing.T) {
+		var configMap corev1.ConfigMap
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &configMap)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete daemonset", func(t *testing.T) {
+		var daemonSet appsv1.DaemonSet
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &daemonSet)
+		require.True(t, apierrors.IsNotFound(err))
+	})
 }
