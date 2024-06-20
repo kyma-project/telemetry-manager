@@ -556,6 +556,25 @@ func TestResolveValue(t *testing.T) {
 			expectedErr: ErrCertDecodeFailed,
 		},
 		{
+			name: "ca empty",
+			inputCert: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "test",
+					Namespace: "default",
+					Key:       "cert",
+				}},
+			},
+			inputKey: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "test",
+					Namespace: "default",
+					Key:       "key",
+				}},
+			},
+			inputCa:     telemetryv1alpha1.ValueType{Value: ""},
+			expectedErr: ErrCertDecodeFailed,
+		},
+		{
 			name: "certs and key are present",
 			inputCert: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
