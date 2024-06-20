@@ -417,7 +417,7 @@ func TestEmptyCA(t *testing.T) {
 	}
 
 	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, []byte(``)))
-	require.NoError(t, err)
+	require.ErrorIs(t, err, ErrValueResolveFailed)
 }
 
 func TestNilCA(t *testing.T) {
@@ -430,7 +430,7 @@ func TestNilCA(t *testing.T) {
 	}
 
 	err := validator.Validate(context.Background(), getTLSConfig(defaultCertData, defaultKeyData, nil))
-	require.NoError(t, err)
+	require.ErrorIs(t, err, ErrValueResolveFailed)
 }
 
 func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
@@ -553,7 +553,7 @@ func TestResolveValue(t *testing.T) {
 					Key:       "ca",
 				}},
 			},
-			expectedErr: ErrCertDecodeFailed,
+			expectedErr: ErrValueResolveFailed,
 		},
 		{
 			name: "ca empty",
@@ -572,7 +572,7 @@ func TestResolveValue(t *testing.T) {
 				}},
 			},
 			inputCa:     telemetryv1alpha1.ValueType{Value: ""},
-			expectedErr: ErrCertDecodeFailed,
+			expectedErr: ErrValueResolveFailed,
 		},
 		{
 			name: "certs and key are present",
