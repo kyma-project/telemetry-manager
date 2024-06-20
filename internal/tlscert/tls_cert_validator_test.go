@@ -407,7 +407,7 @@ rZ3xPLf7G+fObmeO7XuIoDfJHH6HDrdhhWi3F918KQ==
 	require.NoError(t, err)
 }
 
-func TestMissingCA(t *testing.T) {
+func TestEmptyCA(t *testing.T) {
 
 	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
