@@ -333,8 +333,8 @@ All test scenarios also have a test backend deployed to simulate end-to-end beha
 This test measures the ingestion rate and resource usage of Self Monitor. The measured ingestion rate is based on pipelines deployed with this test case with 4 Trace Gateway, 4 Metric Gateway, 2 Fluent Bit, and 2 Metric Agent Pods.
 
 The average measured values with these 12 target Pods in total, must be the following:
-- Scrape Samples/sec: 48 - 72 samples/sec
-- Total Series Created: 150 - 200 series
+- Scrape Samples/sec: 15 - 22 samples/sec
+- Total Series Created: 150 - 250 series
 - Head Chunk Storage Size/bytes: 130 - 350 KB
 
 Configured memory, CPU limits, and storage are based on this base value and will work up to max scrape 120 targets.
@@ -356,7 +356,7 @@ Configured memory, CPU limits, and storage are based on this base value and will
 |-------------:|:------------------:|:--------------------:|:-----------------------------:|:--------------------:|:-------------:|
 |              | Scrape Samples/sec | Total Series Created | Head Chunk Storage Size/bytes | Pod Memory Usage(MB) | Pod CPU Usage | 
 |       2.45.5 |        15.4        |         157          |            131072             |          62          |       0       | 
-|  2.45.5(new) |         61         |         213          |            131072             |          44          |       0       | 
+|  2.45.5(new) |        15.4        |         239          |            131072             |          42          |       0       | 
 
 
 </div>
