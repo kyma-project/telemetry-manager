@@ -263,7 +263,7 @@ func (r *Reconciler) deleteResources(ctx context.Context) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: r.config.DaemonSet.Name, Namespace: r.config.DaemonSet.Name}
+	name := types.NamespacedName{Name: r.config.DaemonSet.Name, Namespace: r.config.DaemonSet.Namespace}
 
 	objectMeta := metav1.ObjectMeta{
 		Name:      name.Name,

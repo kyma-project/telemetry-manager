@@ -27,7 +27,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		endpointKey := "logs-endpoint"
 		secretName := "logs-resources"
 		secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:123"))
-		pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput(testutils.HTTPHostFromSecret(secretName, kitkyma.DefaultNamespaceName, endpointKey)).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), kitkyma.DefaultNamespaceName, endpointKey)).Build()
 
 		BeforeAll(func() {
 
