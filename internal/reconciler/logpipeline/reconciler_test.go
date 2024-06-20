@@ -81,7 +81,7 @@ func TestReconcile(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		require.True(t, updatedPipeline.Status.UnsupportedMode)
+		require.True(t, *updatedPipeline.Status.UnsupportedMode)
 	})
 
 	t.Run("should set status UnsupportedMode false if does not contains custom plugin", func(t *testing.T) {
@@ -112,7 +112,7 @@ func TestReconcile(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		require.False(t, updatedPipeline.Status.UnsupportedMode)
+		require.False(t, *updatedPipeline.Status.UnsupportedMode)
 	})
 
 	t.Run("log agent is not ready", func(t *testing.T) {

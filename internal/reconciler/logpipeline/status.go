@@ -51,13 +51,12 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	desiredUnsupportedMode := pipeline.ContainsCustomPlugin()
-	if pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
-		pipeline.Status.UnsupportedMode = desiredUnsupportedMode
+	if pipeline.Status.UnsupportedMode == nil || *pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
+		pipeline.Status.UnsupportedMode = &desiredUnsupportedMode
 		if err := r.Status().Update(ctx, pipeline); err != nil {
 			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %w", err)
 		}
 	}
-
 	return nil
 }
 
