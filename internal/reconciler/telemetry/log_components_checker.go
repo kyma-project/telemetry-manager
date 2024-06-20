@@ -30,7 +30,7 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogParsers: %w", err)
 	}
 
-	if result := l.checkForResourseBlocksDeletionCondition(logPipelines.Items, logParsers.Items, telemetryInDeletion); result != nil {
+	if result := l.checkForResourceBlocksDeletionCondition(logPipelines.Items, logParsers.Items, telemetryInDeletion); result != nil {
 		return result, nil
 	}
 
@@ -106,7 +106,7 @@ func (l *logComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []t
 	return nil
 }
 
-func (l *logComponentsChecker) checkForResourseBlocksDeletionCondition(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, telemetryInDeletion bool) *metav1.Condition {
+func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, telemetryInDeletion bool) *metav1.Condition {
 	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
 		return &metav1.Condition{
 			Type:   conditions.TypeLogComponentsHealthy,

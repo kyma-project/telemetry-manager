@@ -24,7 +24,7 @@ func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion 
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of TracePipelines: %w", err)
 	}
 
-	if result := t.checkForResourseBlocksDeletionCondition(tracePipelines.Items, telemetryInDeletion); result != nil {
+	if result := t.checkForResourceBlocksDeletionCondition(tracePipelines.Items, telemetryInDeletion); result != nil {
 		return result, nil
 	}
 
@@ -100,7 +100,7 @@ func (t *traceComponentsChecker) checkForNoPipelineDeployedCondition(pipelines [
 	return nil
 }
 
-func (t *traceComponentsChecker) checkForResourseBlocksDeletionCondition(pipelines []telemetryv1alpha1.TracePipeline, telemetryInDeletion bool) *metav1.Condition {
+func (t *traceComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.TracePipeline, telemetryInDeletion bool) *metav1.Condition {
 	if telemetryInDeletion {
 		return &metav1.Condition{
 			Type:   conditions.TypeTraceComponentsHealthy,

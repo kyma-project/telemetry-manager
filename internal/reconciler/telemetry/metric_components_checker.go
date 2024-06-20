@@ -25,7 +25,7 @@ func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of MetricPipelines: %w", err)
 	}
 
-	if result := m.checkForResourseBlocksDeletionCondition(metricPipelines.Items, telemetryInDeletion); result != nil {
+	if result := m.checkForResourceBlocksDeletionCondition(metricPipelines.Items, telemetryInDeletion); result != nil {
 		return result, nil
 	}
 
@@ -101,7 +101,7 @@ func (m *metricComponentsChecker) checkForNoPipelineDeployedCondition(pipelines 
 	return nil
 }
 
-func (m *metricComponentsChecker) checkForResourseBlocksDeletionCondition(pipelines []telemetryv1alpha1.MetricPipeline, telemetryInDeletion bool) *metav1.Condition {
+func (m *metricComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.MetricPipeline, telemetryInDeletion bool) *metav1.Condition {
 	if telemetryInDeletion {
 		return &metav1.Condition{
 			Type:   conditions.TypeMetricComponentsHealthy,
