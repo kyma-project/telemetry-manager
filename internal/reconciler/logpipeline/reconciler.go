@@ -18,9 +18,12 @@ package logpipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
-
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -163,6 +166,13 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	reconcilablePipelines := r.getReconcilablePipelines(ctx, allPipelines.Items)
+	if len(reconcilablePipelines) == 0 {
+		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
+		if err = r.deleteResources(ctx); err != nil {
+			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
+		}
+		return nil
+	}
 	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, reconcilablePipelines); err != nil {
 		return err
 	}
@@ -246,6 +256,76 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	}
 
 	return nil
+}
+
+func (r *Reconciler) deleteResources(ctx context.Context) error {
+	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
+	var allErrors error = nil
+
+	name := types.NamespacedName{Name: r.config.DaemonSet.Name, Namespace: r.config.DaemonSet.Name}
+
+	objectMeta := metav1.ObjectMeta{
+		Name:      name.Name,
+		Namespace: name.Namespace,
+	}
+
+	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &serviceAccount); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete serviceaccount: %w", err))
+	}
+
+	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &clusterRole); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterole: %w", err))
+	}
+
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &clusterRoleBinding); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterolebinding: %w", err))
+	}
+
+	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", name.Name), Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &exporterMetricsService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete exporter metric service: %w", err))
+	}
+
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", name.Name), Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &metricsService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metric service: %w", err))
+	}
+
+	cm := corev1.ConfigMap{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &cm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
+	}
+
+	luaCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      r.config.LuaConfigMap.Name,
+		Namespace: r.config.LuaConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &luaCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete lua configmap: %w", err))
+	}
+
+	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      r.config.ParsersConfigMap.Name,
+		Namespace: r.config.ParsersConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &parserCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete parser configmap: %w", err))
+	}
+
+	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &daemonSet); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
+	}
+
+	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &networkPolicy); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
+	}
+
+	return allErrors
 }
 
 func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
