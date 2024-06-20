@@ -136,26 +136,26 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 		return err
 	}
 
+	// Parse the CA(s)
+	var parsedCAs []*x509.Certificate
+	if !missingCA {
+		parsedCAs, err = parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Validate certificate
 	if err := validateCertificate(parsedCert, sanitizedCert, sanitizedKey, v.now()); err != nil {
 		return err
 	}
 
-	// CA is optional (don't parse and validate if missing)
-	if missingCA {
-		return nil
-	}
-
-	// Parse the CA(s)
-	parsedCAs, err := parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
-	if err != nil {
-		return err
-	}
-
 	// Validate CA(s)
-	for _, ca := range parsedCAs {
-		if err := validateCA(ca, v.now()); err != nil {
-			return err
+	if !missingCA {
+		for _, ca := range parsedCAs {
+			if err := validateCA(ca, v.now()); err != nil {
+				return err
+			}
 		}
 	}
 
