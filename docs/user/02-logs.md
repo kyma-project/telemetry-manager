@@ -325,7 +325,7 @@ You activated a LogPipeline and logs start streaming to your backend. To verify 
   ```bash
   kubectl get logpipeline
   NAME      CONFIGURATION GENERATED   AGENT HEALTHY   FLOW HEALTHY   UNSUPPORTED MODE   AGE
-  backend   True                      True            True                              2m
+  backend   True                      True            True           false              2m
   ```
 
 ## Log Record Processing
