@@ -430,10 +430,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		}
 
 		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
-			if !tlscert.IsCertAboutToExpireError(err) {
-				return false, nil
-			}
-			return false, nil
+			return tlscert.IsCertAboutToExpireError(err), nil
 		}
 	}
 
