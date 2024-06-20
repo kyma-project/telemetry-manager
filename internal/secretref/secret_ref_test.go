@@ -77,7 +77,7 @@ func TestVerifySecretReference_SecretNotPresent(t *testing.T) {
 	require.ErrorIs(t, err, ErrSecretRefNotFound)
 }
 
-func TestTestVerifySecretReference_KeyNotPresent(t *testing.T) {
+func TestVerifySecretReference_KeyNotPresent(t *testing.T) {
 	existingSecret1 := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-secret1",
@@ -98,48 +98,6 @@ func TestTestVerifySecretReference_KeyNotPresent(t *testing.T) {
 
 	err := VerifySecretReference(context.TODO(), client, getter)
 	require.ErrorIs(t, err, ErrSecretKeyNotFound)
-}
-
-func TestReferencesSecret_Success(t *testing.T) {
-	getter := mockGetter{
-		refs: []telemetryv1alpha1.SecretKeyRef{
-			{Name: "my-secret1", Namespace: "default", Key: "myKey"},
-		},
-	}
-
-	referencesSecret := ReferencesSecret("my-secret1", "default", getter)
-	require.True(t, referencesSecret)
-}
-
-func TestReferencesSecret_WrongName(t *testing.T) {
-	getter := mockGetter{
-		refs: []telemetryv1alpha1.SecretKeyRef{
-			{Name: "my-secret1", Namespace: "default", Key: "myKey"},
-		},
-	}
-
-	referencesSecret := ReferencesSecret("wrong-secret-name", "default", getter)
-	require.False(t, referencesSecret)
-}
-
-func TestReferencesSecret_WrongNamespace(t *testing.T) {
-	getter := mockGetter{
-		refs: []telemetryv1alpha1.SecretKeyRef{
-			{Name: "my-secret1", Namespace: "default", Key: "myKey"},
-		},
-	}
-
-	referencesSecret := ReferencesSecret("my-secret1", "wrong-namespace", getter)
-	require.False(t, referencesSecret)
-}
-
-func TestReferencesSecret_NoRefs(t *testing.T) {
-	getter := mockGetter{
-		refs: []telemetryv1alpha1.SecretKeyRef{},
-	}
-
-	referencesSecret := ReferencesSecret("my-secret1", "default", getter)
-	require.False(t, referencesSecret)
 }
 
 func TestGetValue_Success(t *testing.T) {
@@ -173,11 +131,42 @@ func TestGetValue_Success(t *testing.T) {
 	require.Equal(t, "myValue1", string(result))
 }
 
-func TestGetValue_SecretDoesNotExist(t *testing.T) {
-	client := fake.NewClientBuilder().Build()
+func TestGetValue_SecretDoesNotExistForNamespace(t *testing.T) {
+	existingSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-secret1",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"myKey1": []byte("myValue1"),
+		},
+	}
+	client := fake.NewClientBuilder().WithObjects(&existingSecret).Build()
 
 	result, err := GetValue(context.TODO(), client, telemetryv1alpha1.SecretKeyRef{
 		Name:      "my-secret1",
+		Namespace: "notExist",
+		Key:       "myKey1",
+	})
+
+	require.Error(t, err)
+	require.Empty(t, result)
+}
+
+func TestGetValue_SecretDoesNotExistForName(t *testing.T) {
+	existingSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-secret1",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"myKey1": []byte("myValue1"),
+		},
+	}
+	client := fake.NewClientBuilder().WithObjects(&existingSecret).Build()
+
+	result, err := GetValue(context.TODO(), client, telemetryv1alpha1.SecretKeyRef{
+		Name:      "notExist",
 		Namespace: "default",
 		Key:       "myKey1",
 	})
