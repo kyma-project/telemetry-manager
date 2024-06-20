@@ -37,12 +37,12 @@ func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.S
 	var secret corev1.Secret
 	if err := client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, &secret); err != nil {
 		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", ref.Name, ref.Namespace))
-		return nil, fmt.Errorf("%w, first finding is: secret '%s' of namespace '%s'", ErrSecretRefNotFound, ref.Name, ref.Namespace)
+		return nil, fmt.Errorf("%w: secret '%s' of namespace '%s'", ErrSecretRefNotFound, ref.Name, ref.Namespace)
 	}
 
 	if secretValue, found := secret.Data[ref.Key]; found {
 		return secretValue, nil
 	}
 	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s' from namespace '%s'", ref.Key, ref.Name, ref.Namespace))
-	return nil, fmt.Errorf("%w, first finding is: key '%s' in secret '%s' of namespace '%s'", ErrSecretKeyNotFound, ref.Key, ref.Name, ref.Namespace)
+	return nil, fmt.Errorf("%w: key '%s' in secret '%s' of namespace '%s'", ErrSecretKeyNotFound, ref.Key, ref.Name, ref.Namespace)
 }
