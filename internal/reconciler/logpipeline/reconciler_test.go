@@ -300,8 +300,7 @@ func TestReconcile(t *testing.T) {
 
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.NotContains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must not contain pipeline name")
+		require.Error(t, err, "sections configmap should not exist")
 	})
 
 	t.Run("referenced secret exists", func(t *testing.T) {
@@ -407,8 +406,7 @@ func TestReconcile(t *testing.T) {
 
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.NotContains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must not contain pipeline name")
+		require.Error(t, err, "sections configmap should not exist")
 	})
 
 	t.Run("flow healthy", func(t *testing.T) {
@@ -770,10 +768,10 @@ func TestReconcile(t *testing.T) {
 
 				var cm corev1.ConfigMap
 				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
-				require.NoError(t, err, "sections configmap must exist")
 				if !tt.expectAgentConfigured {
-					require.NotContains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must not contain pipeline name")
+					require.Error(t, err, "sections configmap should not exist")
 				} else {
+					require.NoError(t, err, "sections configmap must exist")
 					require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 				}
 			})
