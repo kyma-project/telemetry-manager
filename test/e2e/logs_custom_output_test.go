@@ -68,6 +68,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
+		It("Should have unsupportedMode set to true", func() {
+			assert.LogPipelineUnsupportedMode(ctx, k8sClient, pipelineName, true)
+		})
+
 		It("Should have a log backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
