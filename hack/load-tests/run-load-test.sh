@@ -361,11 +361,11 @@ function get_result_and_cleanup_fluentbit() {
 # shellcheck disable=SC2112
 function get_result_and_cleanup_selfmonitor() {
    # ingestion rate per second for scrape samples https://valyala.medium.com/prometheus-storage-technical-terms-for-humans-4ab4de6c3d48
-   SCRAPESAMPLES=$(curl -fs --data-urlencode 'query=sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor-metrics"}[20m]) / 1200' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   SCRAPESAMPLES=$(curl -fs --data-urlencode 'query=round(sum(sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor-metrics"}[20m]) / 1200))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   SERIESCREATED=$(curl -fs --data-urlencode 'query=max(prometheus_tsdb_head_series{service="telemetry-self-monitor-metrics"})' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   SERIESCREATED=$(curl -fs --data-urlencode 'query=round(sum(max_over_time(prometheus_tsdb_head_series{service="telemetry-self-monitor-metrics"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   HEADSTORAGESIZE=$(curl -fs --data-urlencode 'query=max(prometheus_tsdb_head_chunks_storage_size_bytes{service="telemetry-self-monitor-metrics"})' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   HEADSTORAGESIZE=$(curl -fs --data-urlencode 'query=round(sum(max_over_time(prometheus_tsdb_head_chunks_storage_size_bytes{service="telemetry-self-monitor-metrics"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="self-monitor"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 

@@ -307,6 +307,7 @@ Each test scenario has its own test scripts responsible for preparing the test s
 | 3.0.7 (new metrics) |                  4036                   |                   7173                   |              31689              |       825,852        |    0.1,0.1    |                  2481                   |                   1852                   |             104689              |       747,395        |     0.1,0     |                   1520                   |                   484                    |              37907              |       561,731        |    0.1,0.1    |                   807                    |                    58                    |              94365              |       544,211        |      0,0      |
 |         3.0.7 (new) |                  9514                   |                  30273                   |              30263              |       105, 113       |     1, 1      |                  9027                   |                  23850                   |             1521511             |       186, 552       |    1, 0.7     |                   7285                   |                   8357                   |             1891569             |       662, 668       |   0.8, 0.8    |                   5602                   |                   2619                   |             5249308             |       680, 713       |   0.5, 0.5    |
 
+
 </div>
 
 ## Self Monitor
@@ -352,11 +353,12 @@ Configured memory, CPU limits, and storage are based on this base value and will
 
 <div class="table-wrapper" markdown="block">
 
-| Version/Test |      Default       |                      |                               |                      |               | 
-|-------------:|:------------------:|:--------------------:|:-----------------------------:|:--------------------:|:-------------:|
-|              | Scrape Samples/sec | Total Series Created | Head Chunk Storage Size/bytes | Pod Memory Usage(MB) | Pod CPU Usage | 
-|       2.45.5 |        15.4        |         157          |            131072             |          62          |       0       | 
-|  2.45.5(new) |        15.4        |         239          |            131072             |          42          |       0       | 
+| Version/Test |Default (ci-self-monitor)|                 |                                  |                      |               | 
+|-------------:|:------------------:|:--------------------:|:--------------------------------:|:--------------------:|:-------------:|
+|              | Scrape Samples/sec | Total Series Created | Head Chunk Storage Size in bytes | Pod Memory Usage(MB) | Pod CPU Usage | 
+|       2.45.5 |        15.4        |         157          |            131072                |          62          |       0       | 
+|  2.45.5(new) |        15.4        |         239          |            131072                |          42          |       0       | 
+|       2.53.0 |        20.4        |         210          |                 0                |          36          |       0       |
 
 
 </div>
