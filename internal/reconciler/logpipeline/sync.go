@@ -54,14 +54,24 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 	return nil
 }
 
-func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployablePipelines []telemetryv1alpha1.LogPipeline) error {
+func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
+	cmKey := pipeline.Name + ".conf"
 
+	if !isLogPipelineDeployable(deployableLogPipelines, pipeline) {
+
+		cm, err := k8sutils.GetConfigMap(ctx, s, s.config.SectionsConfigMap)
+		if err == nil {
+			delete(cm.Data, cmKey)
+			if err = s.Update(ctx, &cm); err != nil {
+				return fmt.Errorf("unable to update section configmap: %w", err)
+			}
+		}
+		return nil
+	}
 	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.config.SectionsConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
-
-	cmKey := pipeline.Name + ".conf"
 
 	builderConfig := builder.BuilderConfig{
 		PipelineDefaults: s.config.PipelineDefaults,

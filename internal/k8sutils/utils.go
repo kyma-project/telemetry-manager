@@ -330,6 +330,15 @@ func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.Names
 	return corev1.ConfigMap{}, err
 }
 
+func GetConfigMap(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.ConfigMap, error) {
+	cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace}}
+	err := c.Get(ctx, client.ObjectKeyFromObject(&cm), &cm)
+	if err == nil {
+		return cm, nil
+	}
+	return corev1.ConfigMap{}, err
+}
+
 func GetOrCreateSecret(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.Secret, error) {
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace}}
 	err := c.Get(ctx, client.ObjectKeyFromObject(&secret), &secret)
