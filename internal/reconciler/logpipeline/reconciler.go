@@ -190,6 +190,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, pipelines []telemetryv1alpha1.LogPipeline) error {
+	includeSections := true
+	if len(pipelines) == 0 {
+		includeSections = false
+		return nil
+	}
 	ownerRefSetter := k8sutils.NewOwnerReferenceSetter(r.Client, pipeline)
 
 	serviceAccount := commonresources.MakeServiceAccount(r.config.DaemonSet)
@@ -217,10 +222,6 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	includeSections := true
-	if len(pipelines) == 0 {
-		includeSections = false
-	}
 	cm := fluentbit.MakeConfigMap(r.config.DaemonSet, includeSections)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, ownerRefSetter, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
@@ -314,6 +315,22 @@ func (r *Reconciler) deleteResources(ctx context.Context) error {
 	}}
 	if err := k8sutils.DeleteObject(ctx, r.Client, &parserCm); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete parser configmap: %w", err))
+	}
+
+	sectionCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      r.config.SectionsConfigMap.Name,
+		Namespace: r.config.SectionsConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &sectionCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete section configmap: %w", err))
+	}
+
+	filesCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      r.config.FilesConfigMap.Name,
+		Namespace: r.config.FilesConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &filesCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete files configmap: %w", err))
 	}
 
 	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}

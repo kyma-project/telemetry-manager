@@ -159,6 +159,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 
 			Eventually(func(g Gomega) bool {
+				var configMap corev1.ConfigMap
+				err := k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var configMap corev1.ConfigMap
+				err := k8sClient.Get(ctx, kitkyma.FluentBitFilesConfigMap, &configMap)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
 				var daemonSet appsv1.DaemonSet
 				err := k8sClient.Get(ctx, kitkyma.FluentBitDaemonSet, &daemonSet)
 				return apierrors.IsNotFound(err)
