@@ -357,7 +357,7 @@ Another metrics to track are CPU and memory usage of the self-monitor pods, both
 |-------------:|:----------------------:|:------------------------:|:----------------------:|:-----------------------------:|:------------------------:|:-----------------:|
 |              | **Scrape Samples/sec** | **Total Series Created** | WAL Storage Size/bytes | Head Chunk Storage Size/bytes | **Pod Memory Usage(MB)** | **Pod CPU Usage** | 
 |       2.45.5 |          15.4          |           157            |           -            |            131072             |            62            |         0         | 
-|  2.45.5(new) |          15.4          |           239            |         131072         |            131072             |            42            |         0         | 
+|  2.45.5(new) |   15.395833333333334   |           325            |         127633         |               0               |            43            |         0         |   | 
 
 
 </div>
