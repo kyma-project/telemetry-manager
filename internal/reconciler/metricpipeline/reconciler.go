@@ -47,6 +47,16 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
+type AgentResourcesHandler interface {
+	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
+	DeleteResources(ctx context.Context, c client.Client) error
+}
+
+type GatewayResourcesHandler interface {
+	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
+	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+}
+
 //go:generate mockery --name PipelineLock --filename pipeline_lock.go
 type PipelineLock interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
@@ -88,8 +98,8 @@ type Reconciler struct {
 
 	agentConfigBuilder      AgentConfigBuilder
 	gatewayConfigBuilder    GatewayConfigBuilder
-	agentResourcesHandler   *otelcollector.AgentResourcesHandler
-	gatewayResourcesHandler *otelcollector.GatewayResourcesHandler
+	agentResourcesHandler   AgentResourcesHandler
+	gatewayResourcesHandler GatewayResourcesHandler
 	pipelineLock            PipelineLock
 	gatewayProber           DeploymentProber
 	agentProber             DaemonSetProber
