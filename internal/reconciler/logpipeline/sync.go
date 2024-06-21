@@ -54,37 +54,30 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 	return nil
 }
 
-func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
-	cmKey := pipeline.Name + ".conf"
-
-	if !isLogPipelineDeployable(deployableLogPipelines, pipeline) {
-
-		cm, err := k8sutils.GetConfigMap(ctx, s, s.config.SectionsConfigMap)
-		if err == nil {
-			delete(cm.Data, cmKey)
-			if err = s.Update(ctx, &cm); err != nil {
-				return fmt.Errorf("unable to update section configmap: %w", err)
-			}
-		}
-		return nil
-	}
+func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployablePipelines []telemetryv1alpha1.LogPipeline) error {
 	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.config.SectionsConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
 
-	builderConfig := builder.BuilderConfig{
-		PipelineDefaults: s.config.PipelineDefaults,
-		CollectAgentLogs: s.config.Overrides.Logging.CollectAgentLogs,
-	}
-	newConfig, err := builder.BuildFluentBitConfig(pipeline, builderConfig)
-	if err != nil {
-		return fmt.Errorf("unable to build section: %w", err)
-	}
-	if cm.Data == nil {
-		cm.Data = map[string]string{cmKey: newConfig}
-	} else if oldConfig, hasKey := cm.Data[cmKey]; !hasKey || oldConfig != newConfig {
-		cm.Data[cmKey] = newConfig
+	cmKey := pipeline.Name + ".conf"
+
+	if !isLogPipelineDeployable(deployablePipelines, pipeline) {
+		delete(cm.Data, cmKey)
+	} else {
+		builderConfig := builder.BuilderConfig{
+			PipelineDefaults: s.config.PipelineDefaults,
+			CollectAgentLogs: s.config.Overrides.Logging.CollectAgentLogs,
+		}
+		newConfig, err := builder.BuildFluentBitConfig(pipeline, builderConfig)
+		if err != nil {
+			return fmt.Errorf("unable to build section: %w", err)
+		}
+		if cm.Data == nil {
+			cm.Data = map[string]string{cmKey: newConfig}
+		} else if oldConfig, hasKey := cm.Data[cmKey]; !hasKey || oldConfig != newConfig {
+			cm.Data[cmKey] = newConfig
+		}
 	}
 
 	if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {

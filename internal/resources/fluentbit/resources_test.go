@@ -128,7 +128,7 @@ func TestMakeExporterMetricsService(t *testing.T) {
 
 func TestMakeConfigMap(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	cm := MakeConfigMap(name)
+	cm := MakeConfigMap(name, true)
 
 	require.NotNil(t, cm)
 	require.Equal(t, cm.Name, name.Name)
