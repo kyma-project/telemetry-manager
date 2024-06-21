@@ -334,7 +334,7 @@ This test measures the ingestion rate and resource usage of Self Monitor. The me
 
 The average measured values with these 12 target Pods in total, must be the following:
 - Scrape Samples/sec: 15 - 22 samples/sec
-- Total Series Created: 150 - 250 series
+- Total Series Created: 200 - 350 series
 
 
 Configured memory, CPU limits, and storage are based on this base value and will work up to max scrape 120 targets.
@@ -349,7 +349,7 @@ Configured memory, CPU limits, and storage are based on this base value and will
 
 
 #### Test Results
-The main KPIs to tracks performance changes are Scrape Samples/sec and Total Series Created, this values should be in the range of 15-22 samples/sec and 150-250 series respectively. 
+The main KPIs to tracks performance changes are Scrape Samples/sec and Total Series Created, this values should be in the range of 15-22 samples/sec and 200-350 series respectively. 
 Another metrics to track are CPU and memory usage of the self-monitor pods, both are directly influenced by the number of series created and the scrape samples/sec, more samples and series created will increase the memory and CPU usage of the self-monitor pods.
 <div class="table-wrapper" markdown="block">
 
