@@ -9,6 +9,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -20,7 +22,7 @@ func TestApplyAgentResources(t *testing.T) {
 	name := "my-agent"
 	cfg := "dummy otel collector config"
 
-	sut := AgentApplier{
+	sut := AgentResourcesHandler{
 		Config: AgentConfig{
 			Config: Config{
 				BaseName:  name,
@@ -34,6 +36,132 @@ func TestApplyAgentResources(t *testing.T) {
 		CollectorConfigYAML: cfg,
 	})
 	require.NoError(t, err)
+
+	t.Run("should create service account", func(t *testing.T) {
+		var sas corev1.ServiceAccountList
+		require.NoError(t, client.List(ctx, &sas))
+		require.Len(t, sas.Items, 1)
+
+		sa := sas.Items[0]
+		require.NotNil(t, sa)
+		require.Equal(t, name, sa.Name)
+		require.Equal(t, namespace, sa.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, sa.Labels)
+	})
+
+	t.Run("should create cluster role", func(t *testing.T) {
+		var crs rbacv1.ClusterRoleList
+		require.NoError(t, client.List(ctx, &crs))
+		require.Len(t, crs.Items, 1)
+
+		cr := crs.Items[0]
+		expectedRules := []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"nodes", "nodes/metrics", "nodes/stats", "services", "endpoints", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
+				Verbs:           []string{"get"},
+			},
+		}
+
+		require.NotNil(t, cr)
+		require.Equal(t, cr.Name, name)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, cr.Labels)
+		require.Equal(t, cr.Rules, expectedRules)
+	})
+
+	t.Run("should create cluster role binding", func(t *testing.T) {
+		var crbs rbacv1.ClusterRoleBindingList
+		require.NoError(t, client.List(ctx, &crbs))
+		require.Len(t, crbs.Items, 1)
+
+		crb := crbs.Items[0]
+		require.NotNil(t, crb)
+		require.Equal(t, name, crb.Name)
+		require.Equal(t, namespace, crb.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, crb.Labels)
+		require.Equal(t, name, crb.RoleRef.Name)
+	})
+
+	t.Run("should create metrics service", func(t *testing.T) {
+		var svcs corev1.ServiceList
+		require.NoError(t, client.List(ctx, &svcs))
+		require.Len(t, svcs.Items, 1)
+
+		svc := svcs.Items[0]
+		require.NotNil(t, svc)
+		require.Equal(t, name+"-metrics", svc.Name)
+		require.Equal(t, namespace, svc.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name":                 name,
+			"telemetry.kyma-project.io/self-monitor": "enabled",
+		}, svc.Labels)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, svc.Spec.Selector)
+		require.Equal(t, map[string]string{
+			"prometheus.io/port":   "8888",
+			"prometheus.io/scheme": "http",
+			"prometheus.io/scrape": "true",
+		}, svc.Annotations)
+		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
+		require.Len(t, svc.Spec.Ports, 1)
+		require.Equal(t, corev1.ServicePort{
+			Name:       "http-metrics",
+			Protocol:   corev1.ProtocolTCP,
+			Port:       8888,
+			TargetPort: intstr.FromInt32(8888),
+		}, svc.Spec.Ports[0])
+	})
+
+	t.Run("should create network policy", func(t *testing.T) {
+		var nps networkingv1.NetworkPolicyList
+		require.NoError(t, client.List(ctx, &nps))
+		require.Len(t, nps.Items, 1)
+
+		np := nps.Items[0]
+		require.NotNil(t, np)
+		require.Equal(t, name, np.Name)
+		require.Equal(t, namespace, np.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, np.Labels)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, np.Spec.PodSelector.MatchLabels)
+		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, np.Spec.PolicyTypes)
+		require.Len(t, np.Spec.Ingress, 1)
+		require.Len(t, np.Spec.Ingress[0].From, 2)
+		require.Equal(t, "0.0.0.0/0", np.Spec.Ingress[0].From[0].IPBlock.CIDR)
+		require.Equal(t, "::/0", np.Spec.Ingress[0].From[1].IPBlock.CIDR)
+		require.Len(t, np.Spec.Ingress[0].Ports, 2)
+		tcpProtocol := corev1.ProtocolTCP
+		port5555 := intstr.FromInt32(5555)
+		port6666 := intstr.FromInt32(6666)
+		require.Equal(t, []networkingv1.NetworkPolicyPort{
+			{
+				Protocol: &tcpProtocol,
+				Port:     &port5555,
+			},
+			{
+				Protocol: &tcpProtocol,
+				Port:     &port6666,
+			},
+		}, np.Spec.Ingress[0].Ports)
+		require.Len(t, np.Spec.Egress, 1)
+		require.Len(t, np.Spec.Egress[0].To, 2)
+		require.Equal(t, "0.0.0.0/0", np.Spec.Egress[0].To[0].IPBlock.CIDR)
+		require.Equal(t, "::/0", np.Spec.Egress[0].To[1].IPBlock.CIDR)
+	})
 
 	t.Run("should create collector config configmap", func(t *testing.T) {
 		var cms corev1.ConfigMapList
@@ -110,130 +238,74 @@ func TestApplyAgentResources(t *testing.T) {
 		require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
 		require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
 	})
+}
 
-	t.Run("should create clusterrole", func(t *testing.T) {
-		var crs rbacv1.ClusterRoleList
-		require.NoError(t, client.List(ctx, &crs))
-		require.Len(t, crs.Items, 1)
+func TestDeleteAgentResources(t *testing.T) {
+	ctx := context.Background()
+	client := fake.NewClientBuilder().Build()
+	namespace := "my-namespace"
+	name := "my-agent"
+	cfg := "dummy otel collector config"
 
-		cr := crs.Items[0]
-		expectedRules := []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/metrics", "nodes/stats", "services", "endpoints", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
+	sut := AgentResourcesHandler{
+		Config: AgentConfig{
+			Config: Config{
+				BaseName:  name,
+				Namespace: namespace,
 			},
-			{
-				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
-				Verbs:           []string{"get"},
-			},
-		}
+		},
+	}
 
-		require.NotNil(t, cr)
-		require.Equal(t, cr.Name, name)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, cr.Labels)
-		require.Equal(t, cr.Rules, expectedRules)
+	// Create agent resources before testing deletion
+	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
+		AllowedPorts:        []int32{5555, 6666},
+		CollectorConfigYAML: cfg,
+	})
+	require.NoError(t, err)
+
+	// Delete agent resources
+	err = sut.DeleteResources(ctx, client)
+	require.NoError(t, err)
+
+	t.Run("should delete service account", func(t *testing.T) {
+		var serviceAccount corev1.ServiceAccount
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &serviceAccount)
+		require.True(t, apierrors.IsNotFound(err))
 	})
 
-	t.Run("should create clusterrolebinding", func(t *testing.T) {
-		var crbs rbacv1.ClusterRoleBindingList
-		require.NoError(t, client.List(ctx, &crbs))
-		require.Len(t, crbs.Items, 1)
-
-		crb := crbs.Items[0]
-		require.NotNil(t, crb)
-		require.Equal(t, name, crb.Name)
-		require.Equal(t, namespace, crb.Namespace)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, crb.Labels)
-		require.Equal(t, name, crb.RoleRef.Name)
+	t.Run("should delete cluster role", func(t *testing.T) {
+		var clusterRole rbacv1.ClusterRole
+		err := client.Get(ctx, types.NamespacedName{Name: name}, &clusterRole)
+		require.True(t, apierrors.IsNotFound(err))
 	})
 
-	t.Run("should create serviceaccount", func(t *testing.T) {
-		var sas corev1.ServiceAccountList
-		require.NoError(t, client.List(ctx, &sas))
-		require.Len(t, sas.Items, 1)
-
-		sa := sas.Items[0]
-		require.NotNil(t, sa)
-		require.Equal(t, name, sa.Name)
-		require.Equal(t, namespace, sa.Namespace)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, sa.Labels)
+	t.Run("should delete cluster role binding", func(t *testing.T) {
+		var clusterRoleBinding rbacv1.ClusterRoleBinding
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &clusterRoleBinding)
+		require.True(t, apierrors.IsNotFound(err))
 	})
 
-	t.Run("should create networkpolicy", func(t *testing.T) {
-		var nps networkingv1.NetworkPolicyList
-		require.NoError(t, client.List(ctx, &nps))
-		require.Len(t, nps.Items, 1)
-
-		np := nps.Items[0]
-		require.NotNil(t, np)
-		require.Equal(t, name, np.Name)
-		require.Equal(t, namespace, np.Namespace)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, np.Labels)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, np.Spec.PodSelector.MatchLabels)
-		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, np.Spec.PolicyTypes)
-		require.Len(t, np.Spec.Ingress, 1)
-		require.Len(t, np.Spec.Ingress[0].From, 2)
-		require.Equal(t, "0.0.0.0/0", np.Spec.Ingress[0].From[0].IPBlock.CIDR)
-		require.Equal(t, "::/0", np.Spec.Ingress[0].From[1].IPBlock.CIDR)
-		require.Len(t, np.Spec.Ingress[0].Ports, 2)
-		tcpProtocol := corev1.ProtocolTCP
-		port5555 := intstr.FromInt32(5555)
-		port6666 := intstr.FromInt32(6666)
-		require.Equal(t, []networkingv1.NetworkPolicyPort{
-			{
-				Protocol: &tcpProtocol,
-				Port:     &port5555,
-			},
-			{
-				Protocol: &tcpProtocol,
-				Port:     &port6666,
-			},
-		}, np.Spec.Ingress[0].Ports)
-		require.Len(t, np.Spec.Egress, 1)
-		require.Len(t, np.Spec.Egress[0].To, 2)
-		require.Equal(t, "0.0.0.0/0", np.Spec.Egress[0].To[0].IPBlock.CIDR)
-		require.Equal(t, "::/0", np.Spec.Egress[0].To[1].IPBlock.CIDR)
+	t.Run("should delete metrics service", func(t *testing.T) {
+		var service corev1.Service
+		err := client.Get(ctx, types.NamespacedName{Name: name + "-metrics", Namespace: namespace}, &service)
+		require.True(t, apierrors.IsNotFound(err))
 	})
 
-	t.Run("should create metrics service", func(t *testing.T) {
-		var svcs corev1.ServiceList
-		require.NoError(t, client.List(ctx, &svcs))
-		require.Len(t, svcs.Items, 1)
+	t.Run("should delete network policy", func(t *testing.T) {
+		var networkPolicy networkingv1.NetworkPolicy
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &networkPolicy)
+		require.True(t, apierrors.IsNotFound(err))
+	})
 
-		svc := svcs.Items[0]
-		require.NotNil(t, svc)
-		require.Equal(t, name+"-metrics", svc.Name)
-		require.Equal(t, namespace, svc.Namespace)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                 name,
-			"telemetry.kyma-project.io/self-monitor": "enabled",
-		}, svc.Labels)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, svc.Spec.Selector)
-		require.Equal(t, map[string]string{
-			"prometheus.io/port":   "8888",
-			"prometheus.io/scheme": "http",
-			"prometheus.io/scrape": "true",
-		}, svc.Annotations)
-		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
-		require.Len(t, svc.Spec.Ports, 1)
-		require.Equal(t, corev1.ServicePort{
-			Name:       "http-metrics",
-			Protocol:   corev1.ProtocolTCP,
-			Port:       8888,
-			TargetPort: intstr.FromInt32(8888),
-		}, svc.Spec.Ports[0])
+	t.Run("should delete collector config configmap", func(t *testing.T) {
+		var configMap corev1.ConfigMap
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &configMap)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete daemonset", func(t *testing.T) {
+		var daemonSet appsv1.DaemonSet
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &daemonSet)
+		require.True(t, apierrors.IsNotFound(err))
 	})
 }

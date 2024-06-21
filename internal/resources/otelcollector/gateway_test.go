@@ -369,7 +369,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// delete gateway resources
+	// Delete gateway resources
 	err = sut.DeleteResources(ctx, client, true)
 	require.NoError(t, err)
 

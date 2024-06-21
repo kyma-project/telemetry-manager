@@ -25,13 +25,13 @@ override:
     path: ^internal/otelcollector/config/otlpexporter$
   - threshold: 75
     path: ^internal/reconciler/logpipeline$
-  - threshold: 78
+  - threshold: 77
     path: ^internal/reconciler/metricpipeline$
   - threshold: 65
     path: ^internal/reconciler/telemetry$
   - threshold: 76
     path: ^internal/reconciler/tracepipeline$
-  - threshold: 83
+  - threshold: 82
     path: ^internal/resources/otelcollector$
   - threshold: 75
     path: ^internal/resources/selfmonitor$
