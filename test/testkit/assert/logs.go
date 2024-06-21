@@ -97,11 +97,11 @@ func LogPipelineConditionReasonsTransition(ctx context.Context, k8sClient client
 	}
 }
 
-func LogPipelineUnsupportedMode(ctx context.Context, k8sClient client.Client, pipelineName string, unsupportedModeBool bool) {
+func LogPipelineUnsupportedMode(ctx context.Context, k8sClient client.Client, pipelineName string, isUnsupportedMode bool) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(*pipeline.Status.UnsupportedMode).To(Equal(unsupportedModeBool))
+		g.Expect(*pipeline.Status.UnsupportedMode).To(Equal(isUnsupportedMode))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
