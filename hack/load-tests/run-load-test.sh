@@ -365,7 +365,9 @@ function get_result_and_cleanup_selfmonitor() {
 
    SERIESCREATED=$(curl -fs --data-urlencode 'query=max(prometheus_tsdb_head_series{service="telemetry-self-monitor-metrics"})' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
-   HEADSTORAGESIZE=$(curl -fs --data-urlencode 'query=max(prometheus_tsdb_wal_storage_size_bytes{service="telemetry-self-monitor-metrics"})' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+   WALSTORAGESIZE=$(curl -fs --data-urlencode 'query=max(prometheus_tsdb_wal_storage_size_bytes{service="telemetry-self-monitor-metrics"})' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   HEADSTORAGESIZE=$(curl -fs --data-urlencode 'query=max(prometheus_tsdb_head_chunks_storage_size_bytes{service="telemetry-self-monitor-metrics"})' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="self-monitor"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-self-monitor"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
@@ -380,8 +382,8 @@ function get_result_and_cleanup_selfmonitor() {
    echo "\Self Monitor Pods got $restarts time restarted\n"
 
    echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET\n"
-   printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Scrape Samples/sec" "Total Series Created" "Wal Storage Size/bytes" "Pod Memory Usage(MB)" "Pod CPU Usage"
-   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$SCRAPESAMPLES" "$SERIESCREATED" "$HEADSTORAGESIZE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+   printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Scrape Samples/sec" "Total Series Created" "WAL Storage Size/bytes" "Head Chunk Storage Size/bytes" "Pod Memory Usage(MB)" "Pod CPU Usage"
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$SCRAPESAMPLES" "$SERIESCREATED" "$WALSTORAGESIZE" "$HEADSTORAGESIZE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
 }
 
 function print_metric_result(){
