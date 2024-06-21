@@ -109,12 +109,18 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 		return err
 	}
 
-	caPEM, err := resolveValue(ctx, v.client, *config.CA)
-	if err != nil {
-		return err
+	// CA is optional (check if missing)
+	missingCA := config.CA == nil
+
+	var caPEM []byte
+	if !missingCA {
+		caPEM, err = resolveValue(ctx, v.client, *config.CA)
+		if err != nil {
+			return err
+		}
 	}
 
-	// Make the best effort replacement of linebreaks in cert/key if present.
+	// Make the best effort to replace linebreaks in cert/key/ca if present.
 	sanitizedCert := bytes.ReplaceAll(certPEM, []byte("\\n"), []byte("\n"))
 	sanitizedKey := bytes.ReplaceAll(keyPEM, []byte("\\n"), []byte("\n"))
 	sanitizedCA := bytes.ReplaceAll(caPEM, []byte("\\n"), []byte("\n"))
@@ -130,10 +136,13 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 		return err
 	}
 
-	// Parse the CA
-	parsedCAs, err := parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
-	if err != nil {
-		return err
+	// Parse the CA(s)
+	var parsedCAs []*x509.Certificate
+	if !missingCA {
+		parsedCAs, err = parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Validate certificate
@@ -142,9 +151,11 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	}
 
 	// Validate CA(s)
-	for _, ca := range parsedCAs {
-		if err := validateCA(ca, v.now()); err != nil {
-			return err
+	if !missingCA {
+		for _, ca := range parsedCAs {
+			if err := validateCA(ca, v.now()); err != nil {
+				return err
+			}
 		}
 	}
 

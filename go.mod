@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager
 
-go 1.22.3
+go 1.22.4
 
 require (
 	github.com/go-logr/logr v1.4.2
@@ -22,7 +22,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.30.2
 	k8s.io/apimachinery v0.30.2
 	k8s.io/client-go v0.30.2
-	k8s.io/klog/v2 v2.130.0
+	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/controller-runtime v0.18.4
 )
