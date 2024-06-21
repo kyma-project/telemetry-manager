@@ -2,8 +2,10 @@ package stubs
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 type GatewayResourcesHandler struct {

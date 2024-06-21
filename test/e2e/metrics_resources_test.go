@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -16,7 +17,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
