@@ -2,16 +2,16 @@ package logpipeline
 
 import (
 	"context"
-	appsv1 "k8s.io/api/apps/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -317,15 +317,15 @@ func TestReconcile(t *testing.T) {
 
 		var serviceAccount corev1.ServiceAccount
 		err = fakeClient.Get(context.Background(), name, &serviceAccount)
-		require.Error(t, err, "service account  should not exist")
+		require.Error(t, err, "service account should not exist")
 
 		var clusterRole rbacv1.ClusterRole
 		err = fakeClient.Get(context.Background(), name, &clusterRole)
-		require.Error(t, err, "clusterrole  should not exist")
+		require.Error(t, err, "clusterrole should not exist")
 
 		var clusterRoleBinding rbacv1.ClusterRoleBinding
 		err = fakeClient.Get(context.Background(), name, &clusterRoleBinding)
-		require.Error(t, err, "clusterrolebinding  should not exist")
+		require.Error(t, err, "clusterrolebinding should not exist")
 
 		var daemonSet appsv1.DaemonSet
 		err = fakeClient.Get(context.Background(), name, &daemonSet)
