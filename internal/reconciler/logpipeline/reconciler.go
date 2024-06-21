@@ -190,9 +190,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, pipelines []telemetryv1alpha1.LogPipeline) error {
-	includeSections := true
+
 	if len(pipelines) == 0 {
-		includeSections = false
 		return nil
 	}
 	ownerRefSetter := k8sutils.NewOwnerReferenceSetter(r.Client, pipeline)
@@ -222,7 +221,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	cm := fluentbit.MakeConfigMap(r.config.DaemonSet, includeSections)
+	cm := fluentbit.MakeConfigMap(r.config.DaemonSet, true)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, ownerRefSetter, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
