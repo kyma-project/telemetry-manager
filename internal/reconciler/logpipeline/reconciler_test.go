@@ -2,6 +2,9 @@ package logpipeline
 
 import (
 	"context"
+	appsv1 "k8s.io/api/apps/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"testing"
 	"time"
 
@@ -298,9 +301,39 @@ func TestReconcile(t *testing.T) {
 			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
 		)
 
+		name := types.NamespacedName{Name: testConfig.DaemonSet.Name, Namespace: testConfig.DaemonSet.Namespace}
+
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 		require.Error(t, err, "sections configmap should not exist")
+
+		var cmLua corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), testConfig.LuaConfigMap, &cmLua)
+		require.Error(t, err, "lua configmap should not exist")
+
+		var cmParser corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), testConfig.ParsersConfigMap, &cmParser)
+		require.Error(t, err, "parser configmap should not exist")
+
+		var serviceAccount corev1.ServiceAccount
+		err = fakeClient.Get(context.Background(), name, &serviceAccount)
+		require.Error(t, err, "service account  should not exist")
+
+		var clusterRole rbacv1.ClusterRole
+		err = fakeClient.Get(context.Background(), name, &clusterRole)
+		require.Error(t, err, "clusterrole  should not exist")
+
+		var clusterRoleBinding rbacv1.ClusterRoleBinding
+		err = fakeClient.Get(context.Background(), name, &clusterRoleBinding)
+		require.Error(t, err, "clusterrolebinding  should not exist")
+
+		var daemonSet appsv1.DaemonSet
+		err = fakeClient.Get(context.Background(), name, &daemonSet)
+		require.Error(t, err, "daemonset should not exist")
+
+		var networkPolicy networkingv1.NetworkPolicy
+		err = fakeClient.Get(context.Background(), name, &networkPolicy)
+		require.Error(t, err, "network policy should not exist")
 	})
 
 	t.Run("referenced secret exists", func(t *testing.T) {
