@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -23,14 +24,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	const ownerReferenceKind = "LogPipeline"
 
 	Context("When a LogPipeline exists", Ordered, func() {
+		endpointKey := "logs-endpoint"
+		secret := kitk8s.NewOpaqueSecret("logs-resources", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:123"))
+		pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), kitkyma.DefaultNamespaceName, endpointKey)).Build()
 
 		BeforeAll(func() {
-			pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &pipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &pipeline, secret.K8sObject())).Should(Succeed())
 		})
 
 		It("Should have a ServiceAccount owned by the LogPipeline", func() {
@@ -96,6 +99,88 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				g.Expect(daemonSet.Spec.Template.Spec.PriorityClassName).To(Equal("telemetry-priority-class-high"))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
+		It("Should clean up log pipeline resources when pipeline becomes non-reconcilable", func() {
+			By("Deleting referenced secret", func() {
+				Expect(k8sClient.Delete(ctx, secret.K8sObject())).Should(Succeed())
+			})
 
+			Eventually(func(g Gomega) bool {
+				var serviceAccount corev1.ServiceAccount
+				err := k8sClient.Get(ctx, kitkyma.FluentBitServiceAccount, &serviceAccount)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var clusterRole rbacv1.ClusterRole
+				err := k8sClient.Get(ctx, kitkyma.FluentBitClusterRole, &clusterRole)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var clusterRoleBinding rbacv1.ClusterRoleBinding
+				err := k8sClient.Get(ctx, kitkyma.FluentBitClusterRoleBinding, &clusterRoleBinding)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var service corev1.Service
+				err := k8sClient.Get(ctx, kitkyma.FluentBitExporterMetricsService, &service)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var service corev1.Service
+				err := k8sClient.Get(ctx, kitkyma.FluentBitMetricsService, &service)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var networkPolicy networkingv1.NetworkPolicy
+				err := k8sClient.Get(ctx, kitkyma.FluentBitNetworkPolicy, &networkPolicy)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var configMap corev1.ConfigMap
+				err := k8sClient.Get(ctx, kitkyma.FluentBitConfigMap, &configMap)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var configMap corev1.ConfigMap
+				err := k8sClient.Get(ctx, kitkyma.FluentBitLuaConfigMap, &configMap)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var configMap corev1.ConfigMap
+				err := k8sClient.Get(ctx, kitkyma.FluentBitParserConfigMap, &configMap)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var configMap corev1.ConfigMap
+				err := k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var configMap corev1.ConfigMap
+				err := k8sClient.Get(ctx, kitkyma.FluentBitFilesConfigMap, &configMap)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var daemonSet appsv1.DaemonSet
+				err := k8sClient.Get(ctx, kitkyma.FluentBitDaemonSet, &daemonSet)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+
+			Eventually(func(g Gomega) bool {
+				var service corev1.Service
+				err := k8sClient.Get(ctx, kitkyma.TraceGatewayOTLPService, &service)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+		})
 	})
 })
