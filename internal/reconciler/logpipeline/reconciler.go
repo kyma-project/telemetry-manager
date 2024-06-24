@@ -223,11 +223,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	includeSections := true
-	if len(pipelines) == 0 {
-		includeSections = false
-	}
-	cm := fluentbit.MakeConfigMap(r.config.DaemonSet, includeSections)
+	cm := fluentbit.MakeConfigMap(r.config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, ownerRefSetter, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
