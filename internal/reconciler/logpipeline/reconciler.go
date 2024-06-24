@@ -166,7 +166,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	reconcilablePipelines := r.getReconcilablePipelines(ctx, allPipelines.Items)
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines.Items)
+	if err != nil {
+		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
+	}
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 		if err = r.deleteResources(ctx); err != nil {
@@ -389,27 +392,34 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 
 // getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
 // A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) ([]telemetryv1alpha1.LogPipeline, error) {
 	var reconcilableLogPipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
-		isReconcilable := r.isReconcilable(ctx, &allPipelines[i])
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
+		if err != nil {
+			return nil, err
+		}
 		if isReconcilable {
 			reconcilableLogPipelines = append(reconcilableLogPipelines, allPipelines[i])
 		}
 	}
 
-	return reconcilableLogPipelines
+	return reconcilableLogPipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) bool {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
-		return false
+		return false, nil
 	}
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return false
+	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
+		if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
+			return false, nil
+		}
+		return false, err
 	}
+
 	if pipeline.Spec.Output.IsLokiDefined() {
-		return false
+		return false, nil
 	}
 
 	if tlsValidationRequired(pipeline) {
@@ -420,13 +430,11 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		}
 
 		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
-			if !tlscert.IsCertAboutToExpireError(err) {
-				return false
-			}
+			return tlscert.IsCertAboutToExpireError(err), nil
 		}
 	}
 
-	return true
+	return true, nil
 }
 
 func getFluentBitPorts() []int32 {

@@ -246,9 +246,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(telemetry.Status.Conditions).Should(HaveLen(3))
 				for _, actualCond := range telemetry.Status.Conditions {
 					expectedCond := expectedConditions[actualCond.Type]
-					g.Expect(expectedCond.Status).Should(Equal(actualCond.Status))
-					g.Expect(expectedCond.Reason).Should(Equal(actualCond.Reason))
-					g.Expect(expectedCond.Message).Should(Equal(actualCond.Message))
+					g.Expect(expectedCond.Status).Should(Equal(actualCond.Status), "Condition: %+v", actualCond)
+					g.Expect(expectedCond.Reason).Should(Equal(actualCond.Reason), "Condition: %+v", actualCond)
+					g.Expect(expectedCond.Message).Should(Equal(actualCond.Message), "Condition: %+v", actualCond)
 					g.Expect(actualCond.LastTransitionTime).NotTo(BeZero())
 				}
 

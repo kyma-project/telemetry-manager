@@ -18,6 +18,7 @@ package tracepipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gopkg.in/yaml.v3"
@@ -222,8 +223,11 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return false, nil
+	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
+		if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
+			return false, nil
+		}
+		return false, err
 	}
 
 	if tlsValidationRequired(pipeline) {
@@ -234,9 +238,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		}
 
 		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
-			if !tlscert.IsCertAboutToExpireError(err) {
-				return false, nil
-			}
+			return tlscert.IsCertAboutToExpireError(err), nil
 		}
 	}
 	hasLock, err := r.pipelineLock.IsLockHolder(ctx, pipeline)

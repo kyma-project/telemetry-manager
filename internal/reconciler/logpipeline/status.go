@@ -104,8 +104,8 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)
 	}
 
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(conditions.ReasonReferencedSecretMissing)
+	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, err.Error()
 	}
 
 	if tlsValidationRequired(pipeline) {

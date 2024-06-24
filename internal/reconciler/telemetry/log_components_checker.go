@@ -30,96 +30,100 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogParsers: %w", err)
 	}
 
-	reason := l.determineReason(logPipelines.Items, logParsers.Items, telemetryInDeletion)
-	status := l.determineConditionStatus(reason)
-	message := l.createMessageForReason(logPipelines.Items, logParsers.Items, reason)
+	if result := l.checkForResourceBlocksDeletionCondition(logPipelines.Items, logParsers.Items, telemetryInDeletion); result != nil {
+		return result, nil
+	}
 
-	conditionType := conditions.TypeLogComponentsHealthy
+	if result := l.checkForNoPipelineDeployedCondition(logPipelines.Items); result != nil {
+		return result, nil
+	}
+
+	if result := l.checkForFirstUnhealthyPipelineCondition(logPipelines.Items); result != nil {
+		return result, nil
+	}
+
+	if result := l.checkForFirstAboutToExpirePipelineCondition(logPipelines.Items); result != nil {
+		return result, nil
+	}
+
 	return &metav1.Condition{
-		Type:    conditionType,
-		Status:  status,
-		Reason:  reason,
-		Message: message,
+		Type:    conditions.TypeLogComponentsHealthy,
+		Status:  metav1.ConditionTrue,
+		Reason:  conditions.ReasonComponentsRunning,
+		Message: conditions.MessageForLogPipeline(conditions.ReasonComponentsRunning),
 	}, nil
 }
 
-func (l *logComponentsChecker) determineReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, telemetryInDeletion bool) string {
-	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
-		return conditions.ReasonResourceBlocksDeletion
-	}
-
-	if len(pipelines) == 0 {
-		return conditions.ReasonNoPipelineDeployed
-	}
-
-	if reason := l.firstUnhealthyPipelineReason(pipelines); reason != "" {
-		return reason
-	}
-
+func (l *logComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pipelines []telemetryv1alpha1.LogPipeline) *metav1.Condition {
 	for _, pipeline := range pipelines {
 		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		if cond != nil && cond.Reason == conditions.ReasonTLSCertificateAboutToExpire {
-			return cond.Reason
+			return &metav1.Condition{
+				Type:    conditions.TypeLogComponentsHealthy,
+				Status:  cond.Status,
+				Reason:  cond.Reason,
+				Message: cond.Message,
+			}
 		}
 	}
-
-	return conditions.ReasonComponentsRunning
+	return nil
 }
 
-func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.LogPipeline) string {
+func (l *logComponentsChecker) checkForFirstUnhealthyPipelineCondition(pipelines []telemetryv1alpha1.LogPipeline) *metav1.Condition {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
 		conditions.TypeConfigurationGenerated,
+		conditions.TypeGatewayHealthy,
 		conditions.TypeAgentHealthy,
 		conditions.TypeFlowHealthy,
 	}
+
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if cond != nil && cond.Status == metav1.ConditionFalse {
-				return cond.Reason
+				return &metav1.Condition{
+					Type:    conditions.TypeLogComponentsHealthy,
+					Status:  cond.Status,
+					Reason:  cond.Reason,
+					Message: cond.Message,
+				}
 			}
 		}
 	}
-	return ""
+	return nil
 }
 
-func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
-		return metav1.ConditionTrue
-	}
-	return metav1.ConditionFalse
-}
-
-func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {
-	tlsAboutExpireMassage := l.firstTLSCertificateMessage(pipelines)
-	if len(tlsAboutExpireMassage) > 0 {
-		return tlsAboutExpireMassage
-	}
-
-	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.MessageForLogPipeline(reason)
-	}
-
-	return generateDeletionBlockedMessage(blockingResources{
-		resourceType: "LogPipelines",
-		resourceNames: extslices.TransformFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) string {
-			return p.Name
-		}),
-	}, blockingResources{
-		resourceType: "LogParsers",
-		resourceNames: extslices.TransformFunc(parsers, func(p telemetryv1alpha1.LogParser) string {
-			return p.Name
-		}),
-	})
-}
-
-func (l *logComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.LogPipeline) string {
-	for _, p := range pipelines {
-		tlsCertMsg := determineTLSCertMsg(p.Status.Conditions)
-		if tlsCertMsg != "" {
-			return tlsCertMsg
+func (l *logComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []telemetryv1alpha1.LogPipeline) *metav1.Condition {
+	if len(pipelines) == 0 {
+		return &metav1.Condition{
+			Type:    conditions.TypeLogComponentsHealthy,
+			Status:  metav1.ConditionTrue,
+			Reason:  conditions.ReasonNoPipelineDeployed,
+			Message: conditions.MessageForLogPipeline(conditions.ReasonNoPipelineDeployed),
 		}
 	}
-	return ""
+	return nil
+}
+
+func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, telemetryInDeletion bool) *metav1.Condition {
+	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
+		return &metav1.Condition{
+			Type:   conditions.TypeLogComponentsHealthy,
+			Status: metav1.ConditionFalse,
+			Reason: conditions.ReasonResourceBlocksDeletion,
+			Message: generateDeletionBlockedMessage(blockingResources{
+				resourceType: "LogPipelines",
+				resourceNames: extslices.TransformFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) string {
+					return p.Name
+				}),
+			}, blockingResources{
+				resourceType: "LogParsers",
+				resourceNames: extslices.TransformFunc(parsers, func(p telemetryv1alpha1.LogParser) string {
+					return p.Name
+				}),
+			}),
+		}
+	}
+	return nil
 }
