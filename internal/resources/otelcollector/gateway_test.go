@@ -40,7 +40,7 @@ func TestApplyGatewayResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 
-	sut := GatewayResourcesHandler{
+	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
 	}
 
@@ -305,7 +305,7 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	sut := GatewayResourcesHandler{
+	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
 	}
 
@@ -355,7 +355,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	sut := GatewayResourcesHandler{
+	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
 	}
 

@@ -53,7 +53,7 @@ type AgentResourcesHandler interface {
 	DeleteResources(ctx context.Context, c client.Client) error
 }
 
-type GatewayResourcesHandler interface {
+type GatewayApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
@@ -100,7 +100,7 @@ type Reconciler struct {
 	agentConfigBuilder      AgentConfigBuilder
 	gatewayConfigBuilder    GatewayConfigBuilder
 	agentResourcesHandler   AgentResourcesHandler
-	gatewayResourcesHandler GatewayResourcesHandler
+	gatewayResourcesHandler GatewayApplierDeleter
 	pipelineLock            PipelineLock
 	gatewayProber           DeploymentProber
 	agentProber             DaemonSetProber
@@ -132,7 +132,7 @@ func NewReconciler(
 				},
 			},
 		},
-		gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{
+		gatewayResourcesHandler: &otelcollector.GatewayApplierDeleter{
 			Config: config.Gateway,
 		},
 		agentResourcesHandler: &otelcollector.AgentResourcesHandler{

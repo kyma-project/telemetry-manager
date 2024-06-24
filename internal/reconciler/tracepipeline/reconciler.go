@@ -56,7 +56,7 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
-type GatewayResourcesHandler interface {
+type GatewayApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
@@ -97,7 +97,7 @@ type Reconciler struct {
 	pipelinesConditionsCleared bool
 
 	gatewayConfigBuilder    GatewayConfigBuilder
-	gatewayResourcesHandler GatewayResourcesHandler
+	gatewayResourcesHandler GatewayApplierDeleter
 	pipelineLock            PipelineLock
 	prober                  DeploymentProber
 	flowHealthProber        FlowHealthProber
@@ -117,7 +117,7 @@ func NewReconciler(client client.Client,
 		gatewayConfigBuilder: &gateway.Builder{
 			Reader: client,
 		},
-		gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{
+		gatewayResourcesHandler: &otelcollector.GatewayApplierDeleter{
 			Config: config.Gateway,
 		},
 		pipelineLock: resourcelock.New(client,
