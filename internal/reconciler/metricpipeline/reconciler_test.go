@@ -442,7 +442,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonReferencedSecretMissing,
-			"One or more referenced Secrets are missing: secret 'some-secret' of namespace 'some-namespace'")
+			"One or more referenced Secrets are missing: Secret 'some-secret' of Namespace 'some-namespace'")
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeFlowHealthy,

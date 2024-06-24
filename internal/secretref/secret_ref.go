@@ -18,7 +18,7 @@ type Getter interface {
 }
 
 var (
-	ErrSecretKeyNotFound = errors.New("One or more keys in a referenced secret are missing") //nolint:stylecheck //Message will be used in condition message and must be capitalized
+	ErrSecretKeyNotFound = errors.New("One or more keys in a referenced Secret are missing") //nolint:stylecheck //Message will be used in condition message and must be capitalized
 	ErrSecretRefNotFound = errors.New("One or more referenced Secrets are missing")          //nolint:stylecheck //Message will be used in condition message and must be capitalized
 )
 
@@ -36,13 +36,13 @@ func VerifySecretReference(ctx context.Context, client client.Reader, getter Get
 func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.SecretKeyRef) ([]byte, error) {
 	var secret corev1.Secret
 	if err := client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, &secret); err != nil {
-		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", ref.Name, ref.Namespace))
-		return nil, fmt.Errorf("%w: secret '%s' of namespace '%s'", ErrSecretRefNotFound, ref.Name, ref.Namespace)
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to get Secret '%s' from Namespace '%s'", ref.Name, ref.Namespace))
+		return nil, fmt.Errorf("%w: Secret '%s' of Namespace '%s'", ErrSecretRefNotFound, ref.Name, ref.Namespace)
 	}
 
 	if secretValue, found := secret.Data[ref.Key]; found {
 		return secretValue, nil
 	}
-	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s' from namespace '%s'", ref.Key, ref.Name, ref.Namespace))
-	return nil, fmt.Errorf("%w: key '%s' in secret '%s' of namespace '%s'", ErrSecretKeyNotFound, ref.Key, ref.Name, ref.Namespace)
+	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to find key '%s' in Secret '%s' from Namespace '%s'", ref.Key, ref.Name, ref.Namespace))
+	return nil, fmt.Errorf("%w: Key '%s' in Secret '%s' of Namespace '%s'", ErrSecretKeyNotFound, ref.Key, ref.Name, ref.Namespace)
 }

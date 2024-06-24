@@ -241,12 +241,12 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonReferencedSecretMissing,
-			"One or more referenced Secrets are missing: secret 'non-existing' of namespace 'default'",
+			"One or more referenced Secrets are missing: Secret 'non-existing' of Namespace 'default'",
 		)
 
 		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
 			conditions.ReasonReferencedSecretMissing,
-			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing: secret 'non-existing' of namespace 'default'",
+			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing: Secret 'non-existing' of Namespace 'default'",
 		)
 
 		requireHasStatusCondition(t, updatedPipeline,
