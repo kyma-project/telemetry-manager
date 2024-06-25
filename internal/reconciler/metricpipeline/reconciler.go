@@ -48,7 +48,7 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
-type AgentResourcesHandler interface {
+type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client) error
 }
@@ -99,7 +99,7 @@ type Reconciler struct {
 
 	agentConfigBuilder      AgentConfigBuilder
 	gatewayConfigBuilder    GatewayConfigBuilder
-	agentResourcesHandler   AgentResourcesHandler
+	agentApplierDeleter     AgentApplierDeleter
 	gatewayResourcesHandler GatewayApplierDeleter
 	pipelineLock            PipelineLock
 	gatewayProber           DeploymentProber
@@ -135,7 +135,7 @@ func NewReconciler(
 		gatewayResourcesHandler: &otelcollector.GatewayApplierDeleter{
 			Config: config.Gateway,
 		},
-		agentResourcesHandler: &otelcollector.AgentResourcesHandler{
+		agentApplierDeleter: &otelcollector.AgentApplierDeleter{
 			Config: config.Agent,
 		},
 		pipelineLock: resourcelock.New(client, types.NamespacedName{
@@ -206,7 +206,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		if err = r.gatewayResourcesHandler.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
-		if err = r.agentResourcesHandler.DeleteResources(ctx, r.Client); err != nil {
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
 			return fmt.Errorf("failed to delete agent resources: %w", err)
 		}
 		return nil
@@ -337,7 +337,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	if err := r.agentResourcesHandler.ApplyResources(
+	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{

@@ -22,7 +22,7 @@ func TestApplyAgentResources(t *testing.T) {
 	name := "my-agent"
 	cfg := "dummy otel collector config"
 
-	sut := AgentResourcesHandler{
+	sut := AgentApplierDeleter{
 		Config: AgentConfig{
 			Config: Config{
 				BaseName:  name,
@@ -247,7 +247,7 @@ func TestDeleteAgentResources(t *testing.T) {
 	name := "my-agent"
 	cfg := "dummy otel collector config"
 
-	sut := AgentResourcesHandler{
+	sut := AgentApplierDeleter{
 		Config: AgentConfig{
 			Config: Config{
 				BaseName:  name,
