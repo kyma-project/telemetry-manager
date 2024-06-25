@@ -7,7 +7,7 @@ import (
 	"maps"
 	"strings"
 
-	istiosecurityv1beta "istio.io/api/security/v1beta1"
+	istiosecurityv1 "istio.io/api/security/v1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -289,18 +289,18 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 	}
 }
 
-func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1beta.PeerAuthentication {
+func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
 	labels := defaultLabels(gad.Config.BaseName)
 
-	return &istiosecurityclientv1beta.PeerAuthentication{
+	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.Config.BaseName,
 			Namespace: gad.Config.Namespace,
 			Labels:    labels,
 		},
-		Spec: istiosecurityv1beta.PeerAuthentication{
+		Spec: istiosecurityv1.PeerAuthentication{
 			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: labels},
-			Mtls:     &istiosecurityv1beta.PeerAuthentication_MutualTLS{Mode: istiosecurityv1beta.PeerAuthentication_MutualTLS_PERMISSIVE},
+			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
 }
