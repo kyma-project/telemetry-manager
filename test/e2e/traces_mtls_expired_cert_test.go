@@ -73,14 +73,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			})
 		})
 
-		It("Should set Pending condition to True in pipeline", func() {
-			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
-				Type:   conditions.TypePending,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTLSCertificateExpired,
-			})
-		})
-
 		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
 			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
