@@ -748,7 +748,8 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
 
-		gatewayResourcesHandlerStub := &stubs.GatewayResourcesHandler{}
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -764,7 +765,7 @@ func TestReconcile(t *testing.T) {
 			Client:                fakeClient,
 			config:                testConfig,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayResourcesHandlerStub,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			prober:                proberStub,
 			flowHealthProber:      flowHealthProberStub,
@@ -774,7 +775,7 @@ func TestReconcile(t *testing.T) {
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
-		require.True(t, gatewayResourcesHandlerStub.DeleteFuncCalled)
+		gatewayApplierDeleterMock.AssertExpectations(t)
 	})
 }
 
