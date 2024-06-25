@@ -24,7 +24,7 @@ data:
         highlights:
           positive:
             - 'false'
-          negative:
+          critical:
             - 'true'
     body:
       - source: $filter(status.conditions, function ($v) { $v.type != "Pending" and $v.type != "Running" })
@@ -37,9 +37,9 @@ data:
             name: Status
             widget: Badge
             highlights:
-              success:
+              positive:
                 - 'True'
-              error:
+              critical:
                 - 'False'
           - source: reason
             name: Reason
@@ -431,7 +431,7 @@ data:
       highlights:
         positive:
           - 'false'
-        negative:
+        critical:
           - 'true'
     - name: Status
       source: $filter(status.conditions, function ($v) { $v.type != "Pending" and $v.type != "Running" })
@@ -444,7 +444,7 @@ data:
           source: status
           widget: Badge
           highlights:
-            success:
+            positive:
               - 'True'
-            error:
+            critical:
               - 'False'
