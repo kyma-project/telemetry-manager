@@ -51,9 +51,9 @@ data:
             name: Status
             widget: Badge
             highlights:
-              success:
+              positive:
                 - 'True'
-              error:
+              critical:
                 - 'False'
           - source: reason
             name: Reason
