@@ -90,7 +90,8 @@ type IstioStatusChecker interface {
 
 type Reconciler struct {
 	client.Client
-	config Config
+	config                     Config
+	pipelinesConditionsCleared bool
 
 	prober             DaemonSetProber
 	flowHealthProber   FlowHealthProber
@@ -155,6 +156,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := r.List(ctx, &allPipelines); err != nil {
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
+	}
+
+	if err = r.clearPipelinesConditions(ctx, allPipelines.Items); err != nil {
+		return fmt.Errorf("failed to clear the conditions list for log pipelines: %w", err)
 	}
 
 	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
@@ -386,7 +391,7 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 }
 
 // getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
-// A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the grafana-loki output defined.
+// A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
 func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) ([]telemetryv1alpha1.LogPipeline, error) {
 	var reconcilableLogPipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
@@ -445,4 +450,24 @@ func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 		return false
 	}
 	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
+}
+
+// clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation
+// This is done to allow the legacy conditions ("Running" and "Pending") to be always appended at the end of the conditions list even if new condition types are added
+// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+// TODO: Remove this logic after the end of the deprecation period of the legacy conditions ("Running" and "Pending")
+func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) error {
+	if r.pipelinesConditionsCleared {
+		return nil
+	}
+
+	for i := range allPipelines {
+		allPipelines[i].Status.Conditions = []metav1.Condition{}
+		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
+			return fmt.Errorf("failed to update LogPipeline status: %w", err)
+		}
+	}
+	r.pipelinesConditionsCleared = true
+
+	return nil
 }
