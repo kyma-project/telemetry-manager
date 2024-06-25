@@ -24,7 +24,7 @@ import (
 
 const (
 	retentionTime = "2h"
-	retentionSize = "80MB"
+	retentionSize = "50MB"
 )
 
 var (
