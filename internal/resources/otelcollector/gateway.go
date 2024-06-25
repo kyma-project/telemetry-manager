@@ -9,7 +9,7 @@ import (
 
 	istiosecurityv1beta "istio.io/api/security/v1beta1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
-	istiosecurityclientv1beta "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -117,7 +117,7 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	}
 
 	if isIstioActive {
-		peerAuthentication := istiosecurityclientv1beta.PeerAuthentication{ObjectMeta: objectMeta}
+		peerAuthentication := istiosecurityclientv1.PeerAuthentication{ObjectMeta: objectMeta}
 		if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil {
 			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
 		}
