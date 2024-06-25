@@ -71,6 +71,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -85,7 +88,7 @@ func TestReconcile(t *testing.T) {
 			Client:                fakeClient,
 			config:                testConfig,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			gatewayProber:         gatewayProberStub,
 			flowHealthProber:      flowHealthProberStub,
@@ -114,6 +117,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -128,7 +134,7 @@ func TestReconcile(t *testing.T) {
 			Client:                fakeClient,
 			config:                testConfig,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			gatewayProber:         gatewayProberStub,
 			flowHealthProber:      flowHealthProberStub,
@@ -157,6 +163,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -171,7 +180,7 @@ func TestReconcile(t *testing.T) {
 			Client:                fakeClient,
 			config:                testConfig,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			gatewayProber:         gatewayProberStub,
 			flowHealthProber:      flowHealthProberStub,
@@ -203,6 +212,12 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -221,8 +236,8 @@ func TestReconcile(t *testing.T) {
 			config:                testConfig,
 			agentConfigBuilder:    agentConfigBuilderMock,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   &otelcollector.AgentApplierDeleter{Config: testConfig.Agent},
-			gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+			agentApplierDeleter:   agentApplierDeleterMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			gatewayProber:         gatewayProberStub,
 			agentProber:           agentProberStub,
@@ -256,6 +271,12 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -274,8 +295,8 @@ func TestReconcile(t *testing.T) {
 			config:                testConfig,
 			agentConfigBuilder:    agentConfigBuilderMock,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   &otelcollector.AgentApplierDeleter{Config: testConfig.Agent},
-			gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+			agentApplierDeleter:   agentApplierDeleterMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			gatewayProber:         gatewayProberStub,
 			agentProber:           agentProberMock,
@@ -309,6 +330,12 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -327,8 +354,8 @@ func TestReconcile(t *testing.T) {
 			config:                testConfig,
 			agentConfigBuilder:    agentConfigBuilderMock,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   &otelcollector.AgentApplierDeleter{Config: testConfig.Agent},
-			gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+			agentApplierDeleter:   agentApplierDeleterMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			gatewayProber:         gatewayProberStub,
 			agentProber:           agentProberMock,
@@ -367,6 +394,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -381,7 +411,7 @@ func TestReconcile(t *testing.T) {
 			Client:                fakeClient,
 			config:                testConfig,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			gatewayProber:         gatewayProberStub,
 			flowHealthProber:      flowHealthProberStub,
@@ -410,6 +440,12 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil)
 
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -424,8 +460,8 @@ func TestReconcile(t *testing.T) {
 			Client:                fakeClient,
 			config:                testConfig,
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   &otelcollector.AgentApplierDeleter{Config: testConfig.Agent},
-			gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+			agentApplierDeleter:   agentApplierDeleterMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
 			gatewayProber:         gatewayProberStub,
 			flowHealthProber:      flowHealthProberStub,
@@ -604,6 +640,9 @@ func TestReconcile(t *testing.T) {
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -618,7 +657,7 @@ func TestReconcile(t *testing.T) {
 					Client:                fakeClient,
 					config:                testConfig,
 					gatewayConfigBuilder:  gatewayConfigBuilderMock,
-					gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+					gatewayApplierDeleter: gatewayApplierDeleterMock,
 					pipelineLock:          pipelineLockStub,
 					gatewayProber:         gatewayProberStub,
 					flowHealthProber:      flowHealthProberStub,
@@ -726,6 +765,14 @@ func TestReconcile(t *testing.T) {
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
+
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -740,8 +787,8 @@ func TestReconcile(t *testing.T) {
 					Client:                fakeClient,
 					config:                testConfig,
 					gatewayConfigBuilder:  gatewayConfigBuilderMock,
-					agentApplierDeleter:   &otelcollector.AgentApplierDeleter{Config: testConfig.Agent},
-					gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{Config: testConfig.Gateway},
+					agentApplierDeleter:   agentApplierDeleterMock,
+					gatewayApplierDeleter: gatewayApplierDeleterMock,
 					pipelineLock:          pipelineLockStub,
 					gatewayProber:         gatewayProberStub,
 					flowHealthProber:      flowHealthProberStub,
