@@ -97,17 +97,17 @@ type Reconciler struct {
 	client.Client
 	config Config
 
-	agentConfigBuilder      AgentConfigBuilder
-	gatewayConfigBuilder    GatewayConfigBuilder
-	agentApplierDeleter     AgentApplierDeleter
-	gatewayResourcesHandler GatewayApplierDeleter
-	pipelineLock            PipelineLock
-	gatewayProber           DeploymentProber
-	agentProber             DaemonSetProber
-	flowHealthProber        FlowHealthProber
-	tlsCertValidator        TLSCertValidator
-	overridesHandler        OverridesHandler
-	istioStatusChecker      IstioStatusChecker
+	agentConfigBuilder    AgentConfigBuilder
+	gatewayConfigBuilder  GatewayConfigBuilder
+	agentApplierDeleter   AgentApplierDeleter
+	gatewayApplierDeleter GatewayApplierDeleter
+	pipelineLock          PipelineLock
+	gatewayProber         DeploymentProber
+	agentProber           DaemonSetProber
+	flowHealthProber      FlowHealthProber
+	tlsCertValidator      TLSCertValidator
+	overridesHandler      OverridesHandler
+	istioStatusChecker    IstioStatusChecker
 }
 
 func NewReconciler(
@@ -132,7 +132,7 @@ func NewReconciler(
 				},
 			},
 		},
-		gatewayResourcesHandler: &otelcollector.GatewayApplierDeleter{
+		gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{
 			Config: config.Gateway,
 		},
 		agentApplierDeleter: &otelcollector.AgentApplierDeleter{
@@ -203,7 +203,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up metric pipeline resources: all metric pipelines are non-reconcilable")
-		if err = r.gatewayResourcesHandler.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
 		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
@@ -308,7 +308,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayResourcesHandler.ApplyResources(
+	if err := r.gatewayApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,
