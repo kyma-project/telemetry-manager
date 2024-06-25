@@ -54,6 +54,7 @@ type AgentApplierDeleter interface {
 	DeleteResources(ctx context.Context, c client.Client) error
 }
 
+//go:generate mockery --name GatewayApplierDeleter --filename gateway_applier_deleter.go
 type GatewayApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
