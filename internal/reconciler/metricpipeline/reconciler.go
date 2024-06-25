@@ -48,6 +48,7 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
+//go:generate mockery --name AgentApplierDeleter --filename agent_applier_deleter.go
 type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client) error
