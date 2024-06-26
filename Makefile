@@ -47,8 +47,9 @@ $(TOOLS_BIN_DIR):
 $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 	cd $(TOOLS_MOD_DIR) && go build -o $@ -trimpath $(filter $(filter %/$(notdir $@),$(TOOLS_PKG_NAMES_CLEAN))%,$(TOOLS_PKG_NAMES))
 
-LINT                := $(TOOLS_BIN_DIR)/golangci-lint
-GO_TEST_COVERAGE    := $(TOOLS_BIN_DIR)/go-test-coverage
+GOLANGCI_LINT    := $(TOOLS_BIN_DIR)/golangci-lint
+GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
+CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
 
 ##@ General
 # The help target prints out all targets with their descriptions organized
@@ -68,13 +69,13 @@ help: ## Display this help.
 
 
 ##@ Development
-lint-autofix: $(LINT)
-	$(LINT) run --fix
+lint-autofix: $(GOLANGCI_LINT)
+	$(GOLANGCI_LINT) run --fix
 
-lint: $(LINT)
+lint: $(GOLANGCI_LINT)
 	go version
-	$(LINT) version
-	GO111MODULE=on $(LINT) run
+	$(GOLANGCI_LINT) version
+	GO111MODULE=on $(GOLANGCI_LINT) run
 
 .PHONY: crd-docs-gen
 crd-docs-gen: tablegen manifests## Generates CRD spec into docs folder
@@ -85,17 +86,17 @@ crd-docs-gen: tablegen manifests## Generates CRD spec into docs folder
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
+manifests: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
 	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=config/crd/bases
 	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=config/crd/bases
 
 .PHONY: manifests-dev
-manifests-dev: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
+manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 
 .PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
