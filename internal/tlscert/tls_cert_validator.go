@@ -19,6 +19,9 @@ import (
 )
 
 var (
+	ErrMissingAll     = errors.New("no TLS configuration provided, missing certificate, private key, and CA")
+	ErrMissingCertKey = errors.New("missing certificate or/and private key, and CA was not provided")
+
 	ErrCertDecodeFailed = errors.New("failed to decode PEM block containing certificate")
 	ErrCertParseFailed  = errors.New("failed to parse certificate")
 
@@ -99,25 +102,37 @@ func New(client client.Client) *Validator {
 }
 
 func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
-	certPEM, err := resolveValue(ctx, v.client, *config.Cert)
+	// Check for missing configuration
+	missingCert, missingKey, missingCA, err := checkForMissingConfig(config)
 	if err != nil {
 		return err
 	}
 
-	keyPEM, err := resolveValue(ctx, v.client, *config.Key)
+	// Resolve cert value (if not missing)
+	var certPEM []byte
+	if !missingCert {
+		certPEM, err = resolveValue(ctx, v.client, *config.Cert)
+	}
 	if err != nil {
 		return err
 	}
 
-	// CA is optional (check if missing)
-	missingCA := config.CA == nil
+	// Resolve key value (if not missing)
+	var keyPEM []byte
+	if !missingKey {
+		keyPEM, err = resolveValue(ctx, v.client, *config.Key)
+	}
+	if err != nil {
+		return err
+	}
 
+	// Resolve CA value (if not missing)
 	var caPEM []byte
 	if !missingCA {
 		caPEM, err = resolveValue(ctx, v.client, *config.CA)
-		if err != nil {
-			return err
-		}
+	}
+	if err != nil {
+		return err
 	}
 
 	// Make the best effort to replace linebreaks in cert/key/ca if present.
@@ -125,41 +140,67 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	sanitizedKey := bytes.ReplaceAll(keyPEM, []byte("\\n"), []byte("\n"))
 	sanitizedCA := bytes.ReplaceAll(caPEM, []byte("\\n"), []byte("\n"))
 
-	// Parse the certificate
-	parsedCert, err := parseCertificate(sanitizedCert, ErrCertDecodeFailed, ErrCertParseFailed)
+	// Parse the certificate (if not missing)
+	var parsedCert *x509.Certificate
+	if !missingCert {
+		parsedCert, err = parseCertificate(sanitizedCert, ErrCertDecodeFailed, ErrCertParseFailed)
+	}
 	if err != nil {
 		return err
 	}
 
-	// Parse the private key
-	if err := parsePrivateKey(sanitizedKey); err != nil {
+	// Parse the private key (if not missing)
+	if !missingKey {
+		err = parsePrivateKey(sanitizedKey)
+	}
+	if err != nil {
 		return err
 	}
 
-	// Parse the CA(s)
+	// Parse the CA(s) (if not missing)
 	var parsedCAs []*x509.Certificate
 	if !missingCA {
 		parsedCAs, err = parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
-		if err != nil {
+	}
+	if err != nil {
+		return err
+	}
+
+	// Validate certificate (if not missing)
+	if !missingCert && !missingKey {
+		err = validateCertificate(parsedCert, sanitizedCert, sanitizedKey, v.now())
+	}
+	if err != nil {
+		return err
+	}
+
+	// Validate CA(s) (if not missing)
+	if missingCA {
+		return nil
+	}
+	for _, ca := range parsedCAs {
+		if err := validateCA(ca, v.now()); err != nil {
 			return err
 		}
 	}
 
-	// Validate certificate
-	if err := validateCertificate(parsedCert, sanitizedCert, sanitizedKey, v.now()); err != nil {
-		return err
-	}
-
-	// Validate CA(s)
-	if !missingCA {
-		for _, ca := range parsedCAs {
-			if err := validateCA(ca, v.now()); err != nil {
-				return err
-			}
-		}
-	}
-
+	// Validation successful
 	return nil
+}
+
+func checkForMissingConfig(config TLSBundle) bool, bool, bool, error {
+	missingCert := config.Cert == nil
+	missingKey := config.Key == nil
+	missingCA := config.CA == nil
+
+	if missingCert && missingKey && missingCA {
+		return missingCert, missingKey, missingCA, ErrMissingAll
+	}
+	if (missingCert && !missingKey) || (!missingCert && missingKey) {
+		return missingCert, missingKey, missingCA, ErrMissingCertKey
+	}
+
+	return missingCert, missingKey, missingCA, nil
 }
 
 func parseCertificate(certPEM []byte, errDecode error, errParse error) (*x509.Certificate, error) {

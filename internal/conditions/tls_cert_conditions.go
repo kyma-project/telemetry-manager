@@ -10,42 +10,23 @@ import (
 )
 
 func EvaluateTLSCertCondition(errValidation error, configuredReason string, configuredMessage string) (status metav1.ConditionStatus, reason, message string) {
-	if isInvalidTLSError(errValidation) {
-		return metav1.ConditionFalse, ReasonTLSConfigurationInvalid, fmt.Sprintf(commonMessages[ReasonTLSConfigurationInvalid], errValidation)
+	// No Error
+	if errValidation == nil {
+		return metav1.ConditionTrue, configuredReason, configuredMessage
 	}
 
-	// Cert expired
+	// Cert/CA Expired Error
 	var errCertExpired *tlscert.CertExpiredError
 	if errors.As(errValidation, &errCertExpired) {
 		return metav1.ConditionFalse, ReasonTLSCertificateExpired, errCertExpired.Error()
 	}
 
-	// Cert about to expire
+	// Cert/CA About to Expire Error
 	var errCertAboutToExpire *tlscert.CertAboutToExpireError
 	if errors.As(errValidation, &errCertAboutToExpire) {
 		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, errCertAboutToExpire.Error()
 	}
 
-	return metav1.ConditionTrue, configuredReason, configuredMessage
-}
-
-func isInvalidTLSError(err error) bool {
-	invalidErrors := []error{
-		tlscert.ErrCertDecodeFailed,
-		tlscert.ErrCertParseFailed,
-		tlscert.ErrKeyDecodeFailed,
-		tlscert.ErrKeyParseFailed,
-		tlscert.ErrCADecodeFailed,
-		tlscert.ErrCAParseFailed,
-		tlscert.ErrInvalidCertificateKeyPair,
-		tlscert.ErrCertIsNotCA,
-	}
-
-	for _, e := range invalidErrors {
-		if errors.Is(err, e) {
-			return true
-		}
-	}
-
-	return false
+	// Invalid TLS Error
+	return metav1.ConditionFalse, ReasonTLSConfigurationInvalid, fmt.Sprintf(commonMessages[ReasonTLSConfigurationInvalid], errValidation)
 }
