@@ -325,7 +325,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 }
 
-func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.ConfigMap {
+func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	parserConfig := `
 [PARSER]
     Name docker_no_time
@@ -348,11 +348,9 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     storage.path /data/flb-storage/
     storage.metrics on
 
+@INCLUDE dynamic/*.conf
 `
 	fluentBitConfig = strings.Replace(fluentBitConfig, "{{ HTTP_PORT }}", strconv.Itoa(ports.HTTP), 1)
-	if includeSections {
-		fluentBitConfig = fluentBitConfig + "@INCLUDE dynamic/*.conf" + "\n"
-	}
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
