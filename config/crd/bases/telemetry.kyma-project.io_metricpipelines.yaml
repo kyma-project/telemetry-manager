@@ -182,8 +182,8 @@ spec:
                     description: Configures runtime scraping.
                     properties:
                       enabled:
-                        description: If enabled, workload-related Kubernetes metrics
-                          are scraped. The default is `false`.
+                        description: If enabled, runtime metrics are scraped. The
+                          default is `false`.
                         type: boolean
                       namespaces:
                         default:
@@ -192,9 +192,9 @@ spec:
                           - kube-system
                           - istio-system
                           - compass-system
-                        description: Describes whether workload-related Kubernetes
-                          metrics from specific Namespaces are selected. System Namespaces
-                          are disabled by default.
+                        description: Describes whether runtime metrics from specific
+                          Namespaces are selected. System Namespaces are disabled
+                          by default.
                         properties:
                           exclude:
                             description: Exclude metrics from the specified Namespace
@@ -214,6 +214,38 @@ spec:
                             'include' or 'exclude'
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
+                      resources:
+                        default:
+                          container:
+                            enabled: true
+                          pod:
+                            enabled: true
+                        description: Describes the Kubernetes resources for which
+                          runtime metrics are scraped.
+                        properties:
+                          container:
+                            default:
+                              enabled: true
+                            description: Configures container runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: true
+                                description: If enabled, container runtime metrics
+                                  are scraped. The default is `true`.
+                                type: boolean
+                            type: object
+                          pod:
+                            default:
+                              enabled: true
+                            description: Configures pod runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: true
+                                description: If enabled, pod runtime metrics are scraped.
+                                  The default is `true`.
+                                type: boolean
+                            type: object
+                        type: object
                     type: object
                 type: object
               output:
