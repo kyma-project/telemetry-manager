@@ -88,8 +88,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		It("Should set ConfigurationGenerated condition accordingly in pipelines", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSConfigurationInvalid,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonAgentConfigured,
 			})
 
 			assert.LogPipelineHasCondition(ctx, k8sClient, missingCertPipelineName, metav1.Condition{
@@ -125,11 +125,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 		})
 
-		It("Should set Pending condition accordingly in pipelines", func() {
+		It("Should set Pending/Running condition accordingly in pipelines", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
-				Type:   conditions.TypePending,
+				Type:   conditions.TypeRunning,
 				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTLSConfigurationInvalid,
+				Reason: conditions.ReasonFluentBitDSReady,
 			})
 
 			assert.LogPipelineHasCondition(ctx, k8sClient, missingCertPipelineName, metav1.Condition{
@@ -148,8 +148,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		It("Should set TelemetryFlowHealthy condition accordingly in pipelines", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonConfigNotGenerated,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 
 			assert.LogPipelineHasCondition(ctx, k8sClient, missingCertPipelineName, metav1.Condition{
