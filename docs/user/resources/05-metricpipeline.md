@@ -89,10 +89,15 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
 | **input.&#x200b;runtime**  | object | Configures runtime scraping. |
-| **input.&#x200b;runtime.&#x200b;enabled**  | boolean | If enabled, workload-related Kubernetes metrics are scraped. The default is `false`. |
-| **input.&#x200b;runtime.&#x200b;namespaces**  | object | Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
+| **input.&#x200b;runtime.&#x200b;enabled**  | boolean | If enabled, runtime metrics are scraped. The default is `false`. |
+| **input.&#x200b;runtime.&#x200b;namespaces**  | object | Describes whether runtime metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
 | **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
+| **input.&#x200b;runtime.&#x200b;resources**  | object | Describes the Kubernetes resources for which runtime metrics are scraped. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container**  | object | Configures container runtime metrics scraping. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container.&#x200b;enabled**  | boolean | If enabled, container runtime metrics are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod**  | object | Configures pod runtime metrics scraping. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod.&#x200b;enabled**  | boolean | If enabled, pod runtime metrics are scraped. The default is `true`. |
 | **output**  | object | Configures the metric gateway. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
