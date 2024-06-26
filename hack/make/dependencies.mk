@@ -9,7 +9,6 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 TABLE_GEN ?= $(LOCALBIN)/table-gen
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GINKGO ?= $(LOCALBIN)/ginkgo
-GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 K3D ?= $(LOCALBIN)/k3d
 KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
@@ -20,7 +19,6 @@ TABLE_GEN_VERSION ?= $(ENV_TABLE_GEN_VERSION)
 CONTROLLER_TOOLS_VERSION ?= $(ENV_CONTROLLER_TOOLS_VERSION)
 K3D_VERSION ?= $(ENV_K3D_VERSION)
 GINKGO_VERSION ?= $(ENV_GINKGO_VERSION)
-GOLANGCI_LINT_VERSION ?= $(ENV_GOLANGCI_LINT_VERSION)
 GO_TEST_COVERAGE_VERSION ?= $(ENV_GO_TEST_COVERAGE_VERSION)
 
 
@@ -30,7 +28,7 @@ YELLOW='\033[0;33m'
 NC='\033[0m'
 
 .PHONY: dependencies
-dependencies: kustomize tablegen controller-gen golangci-lint ginkgo k3d kyma ## Download and install all build dependencies.
+dependencies: kustomize tablegen controller-gen ginkgo k3d kyma ## Download and install all build dependencies.
 
 ## kustomize
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
@@ -55,19 +53,6 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 tablegen: $(TABLE_GEN) ## Download table-gen locally if necessary.
 $(TABLE_GEN): $(LOCALBIN)
 	test -s $(TABLE_GEN) || GOBIN=$(LOCALBIN) go install github.com/kyma-project/kyma/hack/table-gen@$(TABLE_GEN_VERSION)
-
-## golangci-lint
-.PHONY: golangci-lint $(GOLANGCI_LINT)
-golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
-$(GOLANGCI_LINT): GOLANGCI_LINT_LATEST = $(shell curl -sL https://api.github.com/repos/golangci/golangci-lint/releases/latest | jq -r ".tag_name" )
-$(GOLANGCI_LINT): $(LOCALBIN)
-	@if [ "$(GOLANGCI_LINT_VERSION)" != "$(GOLANGCI_LINT_LATEST)" ]; then \
-		echo -e ${RED}########################################################################################${NC}; \
-		echo -e ${RED}A new version of GolangCI-Lint is available: ${GOLANG_CI_LINT_LATEST}${NC}; \
-		echo -e ${RED}Update the version for golangci-lint in the ${YELLOW}.env${RED} file and the ${YELLOW}github workflow definition${NC}; \
-		echo -e ${RED}########################################################################################${NC}; \
-    fi
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) $(GOLANGCI_LINT_VERSION)
 
 ## ginkgo
 .PHONY: ginkgo
