@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -45,43 +44,34 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 		Namespace: ad.Config.Namespace,
 	}
 
-	if err := deleteObj(ctx, c, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
 		return err
 	}
 
-	if err := deleteObj(ctx, c, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
 		return err
 	}
 
-	if err := deleteObj(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
 		return err
 	}
 
-	if err := deleteObj(ctx, c, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
 		return err
 	}
 
-	if err := deleteObj(ctx, c, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
 		return err
 	}
 
-	if err := deleteObj(ctx, c, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
 		return err
 	}
 
-	if err := deleteObj(ctx, c, &corev1.Service{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &corev1.Service{ObjectMeta: objectMeta}); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func deleteObj(ctx context.Context, c client.Client, object client.Object) error {
-	if err := c.Delete(ctx, object); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -240,6 +230,7 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigYAML, alertRulesYAML str
 		},
 	}
 }
+
 func (ad *ApplierDeleter) makeDeployment(configChecksum string) *appsv1.Deployment {
 	var replicas int32 = 1
 	selectorLabels := ad.defaultLabels()

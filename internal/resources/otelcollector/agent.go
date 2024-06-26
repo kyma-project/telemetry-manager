@@ -27,7 +27,7 @@ const (
 	IstioCertPath       = "/etc/istio-output-certs"
 )
 
-type AgentResourcesHandler struct {
+type AgentApplierDeleter struct {
 	Config AgentConfig
 }
 
@@ -36,10 +36,10 @@ type AgentApplyOptions struct {
 	CollectorConfigYAML string
 }
 
-func (arh *AgentResourcesHandler) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	name := types.NamespacedName{Namespace: arh.Config.Namespace, Name: arh.Config.BaseName}
+func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
+	name := types.NamespacedName{Namespace: aad.Config.Namespace, Name: aad.Config.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, arh.makeAgentClusterRole(), opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, aad.makeAgentClusterRole(), opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -49,25 +49,25 @@ func (arh *AgentResourcesHandler) ApplyResources(ctx context.Context, c client.C
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, arh.makeAgentDaemonSet(configChecksum)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
 	return nil
 }
 
-func (arh *AgentResourcesHandler) DeleteResources(ctx context.Context, c client.Client) error {
+func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: arh.Config.BaseName, Namespace: arh.Config.Namespace}
+	name := types.NamespacedName{Name: aad.Config.BaseName, Namespace: aad.Config.Namespace}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
-		Name:      arh.Config.BaseName,
-		Namespace: arh.Config.Namespace,
+		Name:      aad.Config.BaseName,
+		Namespace: aad.Config.Namespace,
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
@@ -83,12 +83,12 @@ func (arh *AgentResourcesHandler) DeleteResources(ctx context.Context, c client.
 	return allErrors
 }
 
-func (arh *AgentResourcesHandler) makeAgentClusterRole() *rbacv1.ClusterRole {
+func (aad *AgentApplierDeleter) makeAgentClusterRole() *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      arh.Config.BaseName,
-			Namespace: arh.Config.Namespace,
-			Labels:    defaultLabels(arh.Config.BaseName),
+			Name:      aad.Config.BaseName,
+			Namespace: aad.Config.Namespace,
+			Labels:    defaultLabels(aad.Config.BaseName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -105,18 +105,18 @@ func (arh *AgentResourcesHandler) makeAgentClusterRole() *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func (arh *AgentResourcesHandler) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
-	selectorLabels := defaultLabels(arh.Config.BaseName)
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
+	selectorLabels := defaultLabels(aad.Config.BaseName)
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "true"
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))
 
-	dsConfig := arh.Config.DaemonSet
-	resources := arh.makeAgentResourceRequirements()
+	dsConfig := aad.Config.DaemonSet
+	resources := aad.makeAgentResourceRequirements()
 	podSpec := makePodSpec(
-		arh.Config.BaseName,
+		aad.Config.BaseName,
 		dsConfig.Image,
 		commonresources.WithPriorityClass(dsConfig.PriorityClassName),
 		commonresources.WithResources(resources),
@@ -135,8 +135,8 @@ func (arh *AgentResourcesHandler) makeAgentDaemonSet(configChecksum string) *app
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      arh.Config.BaseName,
-			Namespace: arh.Config.Namespace,
+			Name:      aad.Config.BaseName,
+			Namespace: aad.Config.Namespace,
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -154,8 +154,8 @@ func (arh *AgentResourcesHandler) makeAgentDaemonSet(configChecksum string) *app
 	}
 }
 
-func (arh *AgentResourcesHandler) makeAgentResourceRequirements() corev1.ResourceRequirements {
-	dsConfig := arh.Config.DaemonSet
+func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceRequirements {
+	dsConfig := aad.Config.DaemonSet
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    dsConfig.CPULimit,
