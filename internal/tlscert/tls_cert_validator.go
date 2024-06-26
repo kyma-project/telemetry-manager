@@ -44,6 +44,10 @@ type TLSBundle struct {
 	CA   *telemetryv1alpha1.ValueType
 }
 
+func (b *TLSBundle) GetMissing() (bool, bool, bool) {
+	return b.Cert == nil, b.Key == nil, b.CA == nil
+}
+
 const twoWeeks = time.Hour * 24 * 7 * 2
 
 const (
@@ -103,34 +107,13 @@ func New(client client.Client) *Validator {
 
 func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	// Check for missing configuration
-	missingCert, missingKey, missingCA, err := checkForMissingConfig(config)
+	err := checkForMissingConfig(config)
 	if err != nil {
 		return err
 	}
 
-	// Resolve cert value (if not missing)
-	var certPEM []byte
-	if !missingCert {
-		certPEM, err = resolveValue(ctx, v.client, *config.Cert)
-	}
-	if err != nil {
-		return err
-	}
-
-	// Resolve key value (if not missing)
-	var keyPEM []byte
-	if !missingKey {
-		keyPEM, err = resolveValue(ctx, v.client, *config.Key)
-	}
-	if err != nil {
-		return err
-	}
-
-	// Resolve CA value (if not missing)
-	var caPEM []byte
-	if !missingCA {
-		caPEM, err = resolveValue(ctx, v.client, *config.CA)
-	}
+	// Resolve values
+	certPEM, keyPEM, caPEM, err := resolveValues(ctx, v.client, config)
 	if err != nil {
 		return err
 	}
@@ -140,67 +123,64 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	sanitizedKey := bytes.ReplaceAll(keyPEM, []byte("\\n"), []byte("\n"))
 	sanitizedCA := bytes.ReplaceAll(caPEM, []byte("\\n"), []byte("\n"))
 
-	// Parse the certificate (if not missing)
-	var parsedCert *x509.Certificate
-	if !missingCert {
-		parsedCert, err = parseCertificate(sanitizedCert, ErrCertDecodeFailed, ErrCertParseFailed)
-	}
+	// Parse values
+	parsedCert, parsedCAs, err := parseValues(sanitizedCert, sanitizedKey, sanitizedCA)
 	if err != nil {
 		return err
 	}
 
-	// Parse the private key (if not missing)
-	if !missingKey {
-		err = parsePrivateKey(sanitizedKey)
-	}
+	// Validate values
+	err = validateValues(config, parsedCert, parsedCAs, sanitizedCert, sanitizedKey, v.now())
 	if err != nil {
 		return err
 	}
 
-	// Parse the CA(s) (if not missing)
-	var parsedCAs []*x509.Certificate
-	if !missingCA {
-		parsedCAs, err = parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
-	}
-	if err != nil {
-		return err
-	}
-
-	// Validate certificate (if not missing)
-	if !missingCert && !missingKey {
-		err = validateCertificate(parsedCert, sanitizedCert, sanitizedKey, v.now())
-	}
-	if err != nil {
-		return err
-	}
-
-	// Validate CA(s) (if not missing)
-	if missingCA {
-		return nil
-	}
-	for _, ca := range parsedCAs {
-		if err := validateCA(ca, v.now()); err != nil {
-			return err
-		}
-	}
-
-	// Validation successful
 	return nil
 }
 
-func checkForMissingConfig(config TLSBundle) bool, bool, bool, error {
-	missingCert := config.Cert == nil
-	missingKey := config.Key == nil
-	missingCA := config.CA == nil
+func checkForMissingConfig(config TLSBundle) error {
+	missingCert, missingKey, missingCA := config.GetMissing()
 
 	if missingCert && missingKey && missingCA {
-		return missingCert, missingKey, missingCA, ErrMissingAll
+		return ErrMissingAll
 	}
 	if (missingCert && !missingKey) || (!missingCert && missingKey) {
-		return missingCert, missingKey, missingCA, ErrMissingCertKey
+		return ErrMissingCertKey
 	}
 
-	return missingCert, missingKey, missingCA, nil
+	return nil
+}
+
+func parseValues(sanitizedCert, sanitizedKey, sanitizedCA []byte) (*x509.Certificate, []*x509.Certificate, error) {
+	var parsedCert *x509.Certificate
+	var parsedCAs []*x509.Certificate
+	var err error
+
+	// Parse the certificate (if not missing)
+	if sanitizedCert != nil {
+		parsedCert, err = parseCertificate(sanitizedCert, ErrCertDecodeFailed, ErrCertParseFailed)
+	}
+	if err != nil {
+		return parsedCert, parsedCAs, err
+	}
+
+	// Parse the private key (if not missing)
+	if sanitizedKey != nil {
+		err = parsePrivateKey(sanitizedKey)
+	}
+	if err != nil {
+		return parsedCert, parsedCAs, err
+	}
+
+	// Parse the CA(s) (if not missing)
+	if sanitizedCA != nil {
+		parsedCAs, err = parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
+	}
+	if err != nil {
+		return parsedCert, parsedCAs, err
+	}
+
+	return parsedCert, parsedCAs, nil
 }
 
 func parseCertificate(certPEM []byte, errDecode error, errParse error) (*x509.Certificate, error) {
@@ -247,6 +227,31 @@ func parsePrivateKey(keyPEM []byte) error {
 	return nil
 }
 
+func validateValues(config TLSBundle, parsedCert *x509.Certificate, parsedCAs []*x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
+	missingCert, missingKey, missingCA := config.GetMissing()
+	var err error
+
+	// Validate certificate (if not missing)
+	if !missingCert && !missingKey {
+		err = validateCertificate(parsedCert, sanitizedCert, sanitizedKey, now)
+	}
+	if err != nil {
+		return err
+	}
+
+	// Validate CA(s) (if not missing)
+	if missingCA {
+		return nil
+	}
+	for _, ca := range parsedCAs {
+		if err := validateCA(ca, now); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func validateCertificate(cert *x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
 	// Validate the certificate-key pair
 	_, err := tls.X509KeyPair(sanitizedCert, sanitizedKey)
@@ -282,6 +287,37 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 	}
 
 	return nil
+}
+
+func resolveValues(ctx context.Context, c client.Reader, config TLSBundle) ([]byte, []byte, []byte, error) {
+	var certPEM, keyPEM, caPEM []byte
+	var err error
+
+	// Resolve cert value (if not missing)
+	if config.Cert != nil {
+		certPEM, err = resolveValue(ctx, c, *config.Cert)
+	}
+	if err != nil {
+		return certPEM, keyPEM, caPEM, err
+	}
+
+	// Resolve key value (if not missing)
+	if config.Key != nil {
+		keyPEM, err = resolveValue(ctx, c, *config.Key)
+	}
+	if err != nil {
+		return certPEM, keyPEM, caPEM, err
+	}
+
+	// Resolve CA value (if not missing)
+	if config.CA != nil {
+		caPEM, err = resolveValue(ctx, c, *config.CA)
+	}
+	if err != nil {
+		return certPEM, keyPEM, caPEM, err
+	}
+
+	return certPEM, keyPEM, caPEM, nil
 }
 
 func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
