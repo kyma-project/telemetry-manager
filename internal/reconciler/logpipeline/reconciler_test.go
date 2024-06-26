@@ -8,7 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -81,7 +84,7 @@ func TestReconcile(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		require.True(t, updatedPipeline.Status.UnsupportedMode)
+		require.True(t, *updatedPipeline.Status.UnsupportedMode)
 	})
 
 	t.Run("should set status UnsupportedMode false if does not contains custom plugin", func(t *testing.T) {
@@ -112,7 +115,7 @@ func TestReconcile(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		require.False(t, updatedPipeline.Status.UnsupportedMode)
+		require.False(t, *updatedPipeline.Status.UnsupportedMode)
 	})
 
 	t.Run("log agent is not ready", func(t *testing.T) {
@@ -284,12 +287,12 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonReferencedSecretMissing,
-			"One or more referenced Secrets are missing",
+			"One or more referenced Secrets are missing: Secret 'some-secret' of Namespace 'some-namespace'",
 		)
 
 		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
 			conditions.ReasonReferencedSecretMissing,
-			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing")
+			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing: Secret 'some-secret' of Namespace 'some-namespace'")
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeFlowHealthy,
@@ -298,10 +301,39 @@ func TestReconcile(t *testing.T) {
 			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
 		)
 
+		name := types.NamespacedName{Name: testConfig.DaemonSet.Name, Namespace: testConfig.DaemonSet.Namespace}
+
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.NotContains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must not contain pipeline name")
+		require.Error(t, err, "sections configmap should not exist")
+
+		var cmLua corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), testConfig.LuaConfigMap, &cmLua)
+		require.Error(t, err, "lua configmap should not exist")
+
+		var cmParser corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), testConfig.ParsersConfigMap, &cmParser)
+		require.Error(t, err, "parser configmap should not exist")
+
+		var serviceAccount corev1.ServiceAccount
+		err = fakeClient.Get(context.Background(), name, &serviceAccount)
+		require.Error(t, err, "service account should not exist")
+
+		var clusterRole rbacv1.ClusterRole
+		err = fakeClient.Get(context.Background(), name, &clusterRole)
+		require.Error(t, err, "clusterrole should not exist")
+
+		var clusterRoleBinding rbacv1.ClusterRoleBinding
+		err = fakeClient.Get(context.Background(), name, &clusterRoleBinding)
+		require.Error(t, err, "clusterrolebinding should not exist")
+
+		var daemonSet appsv1.DaemonSet
+		err = fakeClient.Get(context.Background(), name, &daemonSet)
+		require.Error(t, err, "daemonset should not exist")
+
+		var networkPolicy networkingv1.NetworkPolicy
+		err = fakeClient.Get(context.Background(), name, &networkPolicy)
+		require.Error(t, err, "network policy should not exist")
 	})
 
 	t.Run("referenced secret exists", func(t *testing.T) {
@@ -407,8 +439,7 @@ func TestReconcile(t *testing.T) {
 
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.NotContains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must not contain pipeline name")
+		require.Error(t, err, "sections configmap should not exist")
 	})
 
 	t.Run("flow healthy", func(t *testing.T) {
@@ -770,10 +801,10 @@ func TestReconcile(t *testing.T) {
 
 				var cm corev1.ConfigMap
 				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
-				require.NoError(t, err, "sections configmap must exist")
 				if !tt.expectAgentConfigured {
-					require.NotContains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must not contain pipeline name")
+					require.Error(t, err, "sections configmap should not exist")
 				} else {
+					require.NoError(t, err, "sections configmap must exist")
 					require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 				}
 			})

@@ -21,14 +21,18 @@ import (
 )
 
 var (
-	namespace         = "my-namespace"
-	name              = "my-gateway"
-	cfg               = "dummy otel collector config"
-	baseCPURequest    = resource.MustParse("150m")
-	baseCPULimit      = resource.MustParse("300m")
-	baseMemoryRequest = resource.MustParse("150m")
-	baseMemoryLimit   = resource.MustParse("300m")
-	envVars           = map[string][]byte{
+	namespace            = "my-namespace"
+	name                 = "my-gateway"
+	cfg                  = "dummy otel collector config"
+	baseCPURequest       = resource.MustParse("150m")
+	dynamicCPURequest    = resource.MustParse("75m")
+	baseCPULimit         = resource.MustParse("300m")
+	dynamicCPULimit      = resource.MustParse("150m")
+	baseMemoryRequest    = resource.MustParse("150m")
+	dynamicMemoryRequest = resource.MustParse("75m")
+	baseMemoryLimit      = resource.MustParse("300m")
+	dynamicMemoryLimit   = resource.MustParse("150m")
+	envVars              = map[string][]byte{
 		"BASIC_AUTH_HEADER": []byte("basicAuthHeader"),
 		"OTLP_ENDPOINT":     []byte("otlpEndpoint"),
 	}
@@ -40,15 +44,16 @@ func TestApplyGatewayResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 
-	sut := GatewayResourcesHandler{
+	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
 	}
 
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
-		AllowedPorts:        []int32{5555, 6666},
-		CollectorConfigYAML: cfg,
-		CollectorEnvVars:    envVars,
-		Replicas:            replicas,
+		AllowedPorts:                   []int32{5555, 6666},
+		CollectorConfigYAML:            cfg,
+		CollectorEnvVars:               envVars,
+		Replicas:                       replicas,
+		ResourceRequirementsMultiplier: 1,
 	})
 	require.NoError(t, err)
 
@@ -240,10 +245,19 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.NotNil(t, container.LivenessProbe, "liveness probe must be defined")
 		require.NotNil(t, container.ReadinessProbe, "readiness probe must be defined")
 		resources := container.Resources
-		require.Equal(t, baseCPURequest, *resources.Requests.Cpu(), "cpu requests should be defined")
-		require.Equal(t, baseMemoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
-		require.Equal(t, baseCPULimit, *resources.Limits.Cpu(), "cpu limit should be defined")
-		require.Equal(t, baseMemoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
+
+		CPURequest := baseCPURequest
+		CPURequest.Add(dynamicCPURequest)
+		require.Equal(t, CPURequest.String(), resources.Requests.Cpu().String(), "cpu requests should be calculated correctly")
+		memoryRequest := baseMemoryRequest
+		memoryRequest.Add(dynamicMemoryRequest)
+		require.Equal(t, memoryRequest.String(), resources.Requests.Memory().String(), "memory requests should be calculated correctly")
+		CPULimit := baseCPULimit
+		CPULimit.Add(dynamicCPULimit)
+		require.Equal(t, CPULimit.String(), resources.Limits.Cpu().String(), "cpu limit should be calculated correctly")
+		memoryLimit := baseMemoryLimit
+		memoryLimit.Add(dynamicMemoryLimit)
+		require.Equal(t, memoryLimit.String(), resources.Limits.Memory().String(), "memory limit should be calculated correctly")
 
 		envVars := container.Env
 		require.Len(t, envVars, 3)
@@ -305,7 +319,7 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	sut := GatewayResourcesHandler{
+	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
 	}
 
@@ -355,7 +369,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	sut := GatewayResourcesHandler{
+	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
 	}
 
@@ -369,7 +383,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// delete gateway resources
+	// Delete gateway resources
 	err = sut.DeleteResources(ctx, client, true)
 	require.NoError(t, err)
 
@@ -441,11 +455,16 @@ func createGatewayConfig() GatewayConfig {
 			Namespace: namespace,
 		},
 		OTLPServiceName: otlpServiceName,
+
 		Deployment: DeploymentConfig{
-			BaseCPURequest:    baseCPURequest,
-			BaseCPULimit:      baseCPULimit,
-			BaseMemoryRequest: baseMemoryRequest,
-			BaseMemoryLimit:   baseMemoryLimit,
+			BaseCPURequest:       baseCPURequest,
+			DynamicCPURequest:    dynamicCPURequest,
+			BaseCPULimit:         baseCPULimit,
+			DynamicCPULimit:      dynamicCPULimit,
+			BaseMemoryRequest:    baseMemoryRequest,
+			DynamicMemoryRequest: dynamicMemoryRequest,
+			BaseMemoryLimit:      baseMemoryLimit,
+			DynamicMemoryLimit:   dynamicMemoryLimit,
 		},
 	}
 }

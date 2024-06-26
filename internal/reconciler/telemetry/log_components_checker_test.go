@@ -24,6 +24,8 @@ func TestLogComponentsCheck(t *testing.T) {
 		name                     string
 		pipelines                []telemetryv1alpha1.LogPipeline
 		parsers                  []telemetryv1alpha1.LogParser
+		tracePipelines           []telemetryv1alpha1.TracePipeline
+		metricPipelines          []telemetryv1alpha1.MetricPipeline
 		telemetryInDeletion      bool
 		flowHealthProbingEnabled bool
 		expectedCondition        *metav1.Condition
@@ -44,13 +46,21 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
 					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
 					WithStatusCondition(runningCondition).
 					Build(),
 			},
@@ -68,13 +78,26 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
 					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonReferencedSecretMissing}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonReferencedSecretMissing}).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonReferencedSecretMissing,
+						Message: "One or more referenced Secrets are missing",
+					}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonReferencedSecretMissing,
+					}).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -91,13 +114,26 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
 					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeAgentHealthy,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonAgentNotReady,
+						Message: conditions.MessageForLogPipeline(conditions.ReasonAgentNotReady),
+					}).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -114,13 +150,26 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
 					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonUnsupportedLokiOutput}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonUnsupportedLokiOutput}).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonUnsupportedLokiOutput,
+						Message: conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput),
+					}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonUnsupportedLokiOutput,
+					}).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -135,14 +184,31 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should prioritize unready ConfigGenerated reason over AgentHealthy reason",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypeAgentHealthy,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonAgentNotReady,
+					}).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonReferencedSecretMissing}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonReferencedSecretMissing}).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonReferencedSecretMissing,
+						Message: "One or more referenced Secrets are missing",
+					}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonReferencedSecretMissing,
+					}).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -154,7 +220,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should block deletion if there are existing pipelines",
+			name: "should block deletion if there are existing log pipelines",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("foo").Build(),
 				testutils.NewLogPipelineBuilder().WithName("bar").Build(),
@@ -165,6 +231,32 @@ func TestLogComponentsCheck(t *testing.T) {
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (bar,foo)",
+			},
+		},
+		{
+			name: "should not block deletion if there are existing trace pipelines",
+			tracePipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithName("foo").Build(),
+			},
+			telemetryInDeletion: true,
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeLogComponentsHealthy,
+				Status:  "True",
+				Reason:  "NoPipelineDeployed",
+				Message: "No pipelines have been deployed",
+			},
+		},
+		{
+			name: "should not block deletion if there are existing metric pipelines",
+			metricPipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("foo").Build(),
+			},
+			telemetryInDeletion: true,
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeLogComponentsHealthy,
+				Status:  "True",
+				Reason:  "NoPipelineDeployed",
+				Message: "No pipelines have been deployed",
 			},
 		},
 		{
@@ -203,7 +295,11 @@ func TestLogComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonSelfMonFlowHealthy}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypeFlowHealthy,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonSelfMonFlowHealthy,
+					}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,
@@ -219,7 +315,12 @@ func TestLogComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonSelfMonNoLogsDelivered}).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeFlowHealthy,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonSelfMonNoLogsDelivered,
+						Message: conditions.MessageForLogPipeline(conditions.ReasonSelfMonNoLogsDelivered),
+					}).
 					Build(),
 			},
 			flowHealthProbingEnabled: true,
@@ -231,24 +332,71 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should return show tlsCertificateExpired if one of the pipelines has expired tls cert",
+			name: "should show tlsCertExpert if one pipeline has invalid tls cert and the other pipeline has an about to expire cert",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
 					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateExpired, Message: "TLS certificate expired on 20.01.2023"}).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionFalse,
+						Reason:  conditions.ReasonTLSCertificateExpired,
+						Message: "TLS certificate is expired",
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypeConfigurationGenerated,
+						Status: metav1.ConditionTrue,
+						Reason: conditions.ReasonTLSCertificateAboutToExpire,
+					}).
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "TLSCertificateExpired",
-				Message: "TLS certificate expired on 20.01.2023",
+				Message: "TLS certificate is expired",
+			},
+		},
+		{
+			name: "should show tlsCert is about to expire if one of the pipelines has tls cert which is about to expire",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{
+						Type:   conditions.TypePending,
+						Status: metav1.ConditionFalse,
+						Reason: conditions.ReasonFluentBitDSNotReady,
+					}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionTrue,
+						Reason:  conditions.ReasonTLSCertificateAboutToExpire,
+						Message: "TLS certificate is about to expire",
+					}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeLogComponentsHealthy,
+				Status:  "True",
+				Reason:  "TLSCertificateAboutToExpire",
+				Message: "TLS certificate is about to expire",
 			},
 		},
 	}

@@ -18,6 +18,7 @@ package tracepipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gopkg.in/yaml.v3"
@@ -55,6 +56,12 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
+//go:generate mockery --name GatewayApplierDeleter --filename gateway_applier_deleter.go
+type GatewayApplierDeleter interface {
+	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
+	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+}
+
 //go:generate mockery --name PipelineLock --filename pipeline_lock.go
 type PipelineLock interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
@@ -90,14 +97,14 @@ type Reconciler struct {
 	config                     Config
 	pipelinesConditionsCleared bool
 
-	gatewayConfigBuilder    GatewayConfigBuilder
-	gatewayResourcesHandler *otelcollector.GatewayResourcesHandler
-	pipelineLock            PipelineLock
-	prober                  DeploymentProber
-	flowHealthProber        FlowHealthProber
-	tlsCertValidator        TLSCertValidator
-	overridesHandler        OverridesHandler
-	istioStatusChecker      IstioStatusChecker
+	gatewayConfigBuilder  GatewayConfigBuilder
+	gatewayApplierDeleter GatewayApplierDeleter
+	pipelineLock          PipelineLock
+	prober                DeploymentProber
+	flowHealthProber      FlowHealthProber
+	tlsCertValidator      TLSCertValidator
+	overridesHandler      OverridesHandler
+	istioStatusChecker    IstioStatusChecker
 }
 
 func NewReconciler(client client.Client,
@@ -111,7 +118,7 @@ func NewReconciler(client client.Client,
 		gatewayConfigBuilder: &gateway.Builder{
 			Reader: client,
 		},
-		gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{
+		gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{
 			Config: config.Gateway,
 		},
 		pipelineLock: resourcelock.New(client,
@@ -183,7 +190,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up trace pipeline resources: all trace pipelines are non-reconcilable")
-		if err = r.gatewayResourcesHandler.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
 		return nil
@@ -217,8 +224,11 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return false, nil
+	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
+		if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
+			return false, nil
+		}
+		return false, err
 	}
 
 	if tlsValidationRequired(pipeline) {
@@ -229,9 +239,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		}
 
 		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
-			if !tlscert.IsCertAboutToExpireError(err) {
-				return false, nil
-			}
+			return tlscert.IsCertAboutToExpireError(err), nil
 		}
 	}
 	hasLock, err := r.pipelineLock.IsLockHolder(ctx, pipeline)
@@ -276,7 +284,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayResourcesHandler.ApplyResources(
+	if err := r.gatewayApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,

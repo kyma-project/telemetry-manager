@@ -51,13 +51,12 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	desiredUnsupportedMode := pipeline.ContainsCustomPlugin()
-	if pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
-		pipeline.Status.UnsupportedMode = desiredUnsupportedMode
+	if pipeline.Status.UnsupportedMode == nil || *pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
+		pipeline.Status.UnsupportedMode = &desiredUnsupportedMode
 		if err := r.Status().Update(ctx, pipeline); err != nil {
 			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %w", err)
 		}
 	}
-
 	return nil
 }
 
@@ -105,8 +104,8 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)
 	}
 
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(conditions.ReasonReferencedSecretMissing)
+	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, err.Error()
 	}
 
 	if tlsValidationRequired(pipeline) {

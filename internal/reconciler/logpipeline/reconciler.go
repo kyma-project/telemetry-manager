@@ -18,9 +18,13 @@ package logpipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -162,7 +166,17 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	reconcilablePipelines := r.getReconcilablePipelines(ctx, allPipelines.Items)
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines.Items)
+	if err != nil {
+		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
+	}
+	if len(reconcilablePipelines) == 0 {
+		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
+		if err = r.deleteResources(ctx); err != nil {
+			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
+		}
+	}
+
 	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, reconcilablePipelines); err != nil {
 		return err
 	}
@@ -179,6 +193,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, pipelines []telemetryv1alpha1.LogPipeline) error {
+	if len(pipelines) == 0 {
+		return nil
+	}
 	ownerRefSetter := k8sutils.NewOwnerReferenceSetter(r.Client, pipeline)
 
 	serviceAccount := commonresources.MakeServiceAccount(r.config.DaemonSet)
@@ -206,11 +223,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	includeSections := true
-	if len(pipelines) == 0 {
-		includeSections = false
-	}
-	cm := fluentbit.MakeConfigMap(r.config.DaemonSet, includeSections)
+	cm := fluentbit.MakeConfigMap(r.config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, ownerRefSetter, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
@@ -246,6 +259,92 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	}
 
 	return nil
+}
+
+func (r *Reconciler) deleteResources(ctx context.Context) error {
+	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
+	var allErrors error = nil
+
+	name := types.NamespacedName{Name: r.config.DaemonSet.Name, Namespace: r.config.DaemonSet.Namespace}
+
+	objectMeta := metav1.ObjectMeta{
+		Name:      name.Name,
+		Namespace: name.Namespace,
+	}
+
+	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &serviceAccount); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete serviceaccount: %w", err))
+	}
+
+	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &clusterRole); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterole: %w", err))
+	}
+
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &clusterRoleBinding); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterolebinding: %w", err))
+	}
+
+	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", name.Name), Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &exporterMetricsService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete exporter metric service: %w", err))
+	}
+
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", name.Name), Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &metricsService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metric service: %w", err))
+	}
+
+	cm := corev1.ConfigMap{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &cm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
+	}
+
+	luaCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      r.config.LuaConfigMap.Name,
+		Namespace: r.config.LuaConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &luaCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete lua configmap: %w", err))
+	}
+
+	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      r.config.ParsersConfigMap.Name,
+		Namespace: r.config.ParsersConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &parserCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete parser configmap: %w", err))
+	}
+
+	sectionCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      r.config.SectionsConfigMap.Name,
+		Namespace: r.config.SectionsConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &sectionCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete section configmap: %w", err))
+	}
+
+	filesCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      r.config.FilesConfigMap.Name,
+		Namespace: r.config.FilesConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &filesCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete files configmap: %w", err))
+	}
+
+	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &daemonSet); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
+	}
+
+	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, r.Client, &networkPolicy); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
+	}
+
+	return allErrors
 }
 
 func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
@@ -289,27 +388,34 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 
 // getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
 // A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) ([]telemetryv1alpha1.LogPipeline, error) {
 	var reconcilableLogPipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
-		isReconcilable := r.isReconcilable(ctx, &allPipelines[i])
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
+		if err != nil {
+			return nil, err
+		}
 		if isReconcilable {
 			reconcilableLogPipelines = append(reconcilableLogPipelines, allPipelines[i])
 		}
 	}
 
-	return reconcilableLogPipelines
+	return reconcilableLogPipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) bool {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
-		return false
+		return false, nil
 	}
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return false
+	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
+		if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
+			return false, nil
+		}
+		return false, err
 	}
+
 	if pipeline.Spec.Output.IsLokiDefined() {
-		return false
+		return false, nil
 	}
 
 	if tlsValidationRequired(pipeline) {
@@ -320,13 +426,11 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		}
 
 		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
-			if !tlscert.IsCertAboutToExpireError(err) {
-				return false
-			}
+			return tlscert.IsCertAboutToExpireError(err), nil
 		}
 	}
 
-	return true
+	return true, nil
 }
 
 func getFluentBitPorts() []int32 {

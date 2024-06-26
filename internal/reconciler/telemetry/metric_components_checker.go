@@ -20,47 +20,51 @@ type metricComponentsChecker struct {
 func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var metricPipelines telemetryv1alpha1.MetricPipelineList
 	err := m.client.List(ctx, &metricPipelines)
+
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of MetricPipelines: %w", err)
 	}
 
-	reason := m.determineReason(metricPipelines.Items, telemetryInDeletion)
-	status := m.determineConditionStatus(reason)
-	message := m.createMessageForReason(metricPipelines.Items, reason)
+	if result := m.checkForResourceBlocksDeletionCondition(metricPipelines.Items, telemetryInDeletion); result != nil {
+		return result, nil
+	}
 
-	conditionType := conditions.TypeMetricComponentsHealthy
+	if result := m.checkForNoPipelineDeployedCondition(metricPipelines.Items); result != nil {
+		return result, nil
+	}
+
+	if result := m.checkForFirstUnhealthyPipelineCondition(metricPipelines.Items); result != nil {
+		return result, nil
+	}
+
+	if result := m.checkForFirstAboutToExpirePipelineCondition(metricPipelines.Items); result != nil {
+		return result, nil
+	}
+
 	return &metav1.Condition{
-		Type:    conditionType,
-		Status:  status,
-		Reason:  reason,
-		Message: message,
+		Type:    conditions.TypeMetricComponentsHealthy,
+		Status:  metav1.ConditionTrue,
+		Reason:  conditions.ReasonComponentsRunning,
+		Message: conditions.MessageForMetricPipeline(conditions.ReasonComponentsRunning),
 	}, nil
 }
 
-func (m *metricComponentsChecker) determineReason(pipelines []telemetryv1alpha1.MetricPipeline, telemetryInDeletion bool) string {
-	if len(pipelines) == 0 {
-		return conditions.ReasonNoPipelineDeployed
-	}
-
-	if telemetryInDeletion {
-		return conditions.ReasonResourceBlocksDeletion
-	}
-
-	if reason := m.firstUnhealthyPipelineReason(pipelines); reason != "" {
-		return reason
-	}
-
+func (m *metricComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pipelines []telemetryv1alpha1.MetricPipeline) *metav1.Condition {
 	for _, pipeline := range pipelines {
 		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		if cond != nil && cond.Reason == conditions.ReasonTLSCertificateAboutToExpire {
-			return cond.Reason
+			return &metav1.Condition{
+				Type:    conditions.TypeMetricComponentsHealthy,
+				Status:  cond.Status,
+				Reason:  cond.Reason,
+				Message: cond.Message,
+			}
 		}
 	}
-
-	return conditions.ReasonComponentsRunning
+	return nil
 }
 
-func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.MetricPipeline) string {
+func (m *metricComponentsChecker) checkForFirstUnhealthyPipelineCondition(pipelines []telemetryv1alpha1.MetricPipeline) *metav1.Condition {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
 		conditions.TypeConfigurationGenerated,
@@ -73,43 +77,43 @@ func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telem
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if cond != nil && cond.Status == metav1.ConditionFalse {
-				return cond.Reason
+				return &metav1.Condition{
+					Type:    conditions.TypeMetricComponentsHealthy,
+					Status:  cond.Status,
+					Reason:  cond.Reason,
+					Message: cond.Message,
+				}
 			}
 		}
 	}
-	return ""
+	return nil
 }
 
-func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
-		return metav1.ConditionTrue
-	}
-	return metav1.ConditionFalse
-}
-
-func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.MetricPipeline, reason string) string {
-	tlsAboutExpireMessage := m.firstTLSCertificateMessage(pipelines)
-	if len(tlsAboutExpireMessage) > 0 {
-		return tlsAboutExpireMessage
-	}
-	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.MessageForMetricPipeline(reason)
-	}
-
-	return generateDeletionBlockedMessage(blockingResources{
-		resourceType: "MetricPipelines",
-		resourceNames: extslices.TransformFunc(pipelines, func(p telemetryv1alpha1.MetricPipeline) string {
-			return p.Name
-		}),
-	})
-}
-
-func (m *metricComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.MetricPipeline) string {
-	for _, p := range pipelines {
-		tlsCertMsg := determineTLSCertMsg(p.Status.Conditions)
-		if tlsCertMsg != "" {
-			return tlsCertMsg
+func (m *metricComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []telemetryv1alpha1.MetricPipeline) *metav1.Condition {
+	if len(pipelines) == 0 {
+		return &metav1.Condition{
+			Type:    conditions.TypeMetricComponentsHealthy,
+			Status:  metav1.ConditionTrue,
+			Reason:  conditions.ReasonNoPipelineDeployed,
+			Message: conditions.MessageForMetricPipeline(conditions.ReasonNoPipelineDeployed),
 		}
 	}
-	return ""
+	return nil
+}
+
+func (m *metricComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines []telemetryv1alpha1.MetricPipeline, telemetryInDeletion bool) *metav1.Condition {
+	if telemetryInDeletion && len(pipelines) != 0 {
+		return &metav1.Condition{
+			Type:   conditions.TypeMetricComponentsHealthy,
+			Status: metav1.ConditionFalse,
+			Reason: conditions.ReasonResourceBlocksDeletion,
+			Message: generateDeletionBlockedMessage(blockingResources{
+				resourceType: "MetricPipelines",
+				resourceNames: extslices.TransformFunc(pipelines, func(p telemetryv1alpha1.MetricPipeline) string {
+					return p.Name
+				}),
+			}),
+		}
+	}
+	return nil
 }

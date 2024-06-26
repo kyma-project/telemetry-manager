@@ -349,15 +349,16 @@ Configured memory, CPU limits, and storage are based on this base value and will
 
 
 #### Test Results
-The main KPIs to tracks performance changes are Scrape Samples/sec and Total Series Created, this values should be in the range of 15-22 samples/sec and 200-350 series respectively. 
-Another metrics to track are CPU and memory usage of the self-monitor pods, both are directly influenced by the number of series created and the scrape samples/sec, more samples and series created will increase the memory and CPU usage of the self-monitor pods.
+The main KPIs to track performance changes are **scrape samples per sec** and _total series created_. These values should be in the range of 15-22 samples/sec and 200-350 series, respectively.
+Other metrics to track are _CPU_ and _memory usage_ of the self-monitor Pods. Both are directly influenced by the number of series created and the scrape samples/sec: more samples and series created increase the memory and CPU usage of the self-monitor Pods.
+
 <div class="table-wrapper" markdown="block">
 
-| Version/Test |        Default         |                          |                        |                               |                          |                   | 
-|-------------:|:----------------------:|:------------------------:|:----------------------:|:-----------------------------:|:------------------------:|:-----------------:|
-|              | **Scrape Samples/sec** | **Total Series Created** | WAL Storage Size/bytes | Head Chunk Storage Size/bytes | **Pod Memory Usage(MB)** | **Pod CPU Usage** | 
-|       2.45.5 |          15.4          |           157            |           -            |            131072             |            62            |         0         | 
-|  2.45.5(new) |   15.395833333333334   |           325            |         127633         |               0               |            43            |         0         |   | 
-
+| Version/Test | Default (ci-self-monitor) |                      |                        |                                  |                      |               | 
+|-------------:|:-------------------------:|:--------------------:|:----------------------:|:--------------------------------:|:--------------------:|:-------------:|
+|              |    Scrape Samples/sec     | Total Series Created | WAL Storage Size/bytes | Head Chunk Storage Size in bytes | Pod Memory Usage(MB) | Pod CPU Usage | 
+|       2.45.5 |           15.4            |         157          |           -            |              131072              |          62          |       0       | 
+|  2.45.5(new) |           15.4            |         325          |         127633         |                0                 |          43          |       0       |   
+|       2.53.0 |           20.4            |         210          |           -            |                0                 |          36          |       0       |
 
 </div>
