@@ -25,10 +25,13 @@ function prepare_release_artefacts() {
 
 get_previous_release_version() {
     TAG_LIST=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$"))
-    if [[ "${TAG_LIST[0]}" =~ ^[0-9]+.[0-9]+.[1-9]$ ]]
+
+    if [[ ${TAG_LIST[0]} =~ ^[0-9]+.[0-9]+.[1-9]$ ]]
     then
-          TAG_LIST_WITH_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$"))
-          export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH[1]}
+          # get list of tags in a reverse chronological order excluding dev tags, 
+          # sort them based on major, minor, patch numerically, grab the first release before the current one
+          TAG_LIST_WITH_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$" | sort -t "." -k1,1n -k2,2n -k3,3n | grep -B 1 ${TAG_LIST[0]} | head -1))
+          export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH[0]}
     else
           # get the list of tags in a reverse chronological order excluding patch tags
           TAG_LIST_WITHOUT_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0]$"))
