@@ -20,113 +20,41 @@ env:
   IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.inputs.pr_number }}
 
 jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+      - id: set-matrix
+        run: |
+          image=${{ github.event.inputs.image }}
+          matrix=$(jq --arg image "fluent-bit" 'map( . | select (.image==$image) )' hack/load-tests/matrix_includes.json)                
+          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
   load-test:
+    needs: prepare-matrix
     strategy:
-      max-parallel: 3
-      matrix:
-        argument:
-          - name: "ci-traces"
-            type: "traces"
-            backpressure: "false"
-            multi: "false"
-            image: "otel-collector"
-          - name: "ci-traces-m"
-            type: "traces"
-            backpressure: "false"
-            multi: "true"
-            image: "otel-collector"
-          - name: "ci-traces-b"
-            type: "traces"
-            backpressure: "true"
-            multi: "false"
-            image: "otel-collector"
-          - name: "ci-traces-mb"
-            type: "traces"
-            backpressure: "true"
-            multi: "true"
-            image: "otel-collector"
-
-          - name: "ci-metrics"
-            type: "metrics"
-            backpressure: "false"
-            multi: "false"
-            image: "otel-collector"
-          - name: "ci-metrics-m"
-            type: "metrics"
-            backpressure: "false"
-            multi: "true"
-            image: "otel-collector"
-          - name: "ci-metrics-b"
-            type: "metrics"
-            backpressure: "true"
-            multi: "false"
-            image: "otel-collector"
-          - name: "ci-metrics-mb"
-            type: "metrics"
-            backpressure: "true"
-            multi: "true"
-            image: "otel-collector"
-
-          - name: "ci-metrics-ag"
-            type: "metricagent"
-            backpressure: "false"
-            multi: "false"
-            image: "otel-collector"
-          - name: "ci-metrics-ag-b"
-            type: "metricagent"
-            backpressure: "true"
-            multi: "false"
-            image: "otel-collector"
-
-          - name: "ci-logs"
-            type: "logs-fluentbit"
-            backpressure: "false"
-            multi: "false"
-            image: "fluent-bit"
-          - name: "ci-logs-m"
-            type: "logs-fluentbit"
-            backpressure: "false"
-            multi: "true"
-            image: "fluent-bit"
-          - name: "ci-logs-b"
-            type: "logs-fluentbit"
-            backpressure: "true"
-            multi: "false"
-            image: "fluent-bit"
-          - name: "ci-logs-mb"
-            type: "logs-fluentbit"
-            backpressure: "true"
-            multi: "true"
-            image: "fluent-bit"
-
-          - name: "ci-self-monitor"
-            type: "self-monitor"
-            backpressure: "false"
-            multi: "false"
-            image: "prometheus"
-
+      max-parallel: 4
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Test
-        run:  echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.argument.image }}"
-        if: github.event.inputs.image == matrix.argument.image
+        run:  echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.image }}"
 
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           ref: 'refs/pull/${{ github.event.inputs.pr_number }}/head'
           repository: ${{ github.repository }}
-        if: github.event.inputs.image == matrix.argument.image
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
-        if: github.event.inputs.image == matrix.argument.image
 
       # Generate the cluster name to be used for cluster creation. The cluster-name should be `ci-traces`
       - name: Setup gardener cluster name
-        run:  echo "GARDENER_CLUSTER_NAME=${{ matrix.argument.name }}" >> $GITHUB_ENV
-        if: github.event.inputs.image == matrix.argument.image
+        run:  echo "GARDENER_CLUSTER_NAME=${{ matrix.name }}" >> $GITHUB_ENV
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
       - name: Save service account to file
@@ -134,7 +62,6 @@ jobs:
         run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
         env:
           GARDENER_SA: ${{ secrets.GARDENER_SA }}
-        if: github.event.inputs.image == matrix.argument.image
 
       # provision cluster
       - name: Provision Gardener
@@ -145,31 +72,26 @@ jobs:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
           GARDENER_MIN_NODES: 2
           GARDENER_MAX_NODES: 2
-        if: github.event.inputs.image == matrix.argument.image
 
       - name: Deploy Telemetry
         run: hack/deploy-telemetry.sh
-        if: github.event.inputs.image == matrix.argument.image
 
       - name: Deploy Istio Module
         run: hack/deploy-istio.sh
-        if: github.event.inputs.image == matrix.argument.image
 
       # Run the load test
       - name: Run Load test
-        run: hack/load-tests/run-load-test.sh -n ${{ matrix.argument.name }} -t ${{ matrix.argument.type }} -m ${{ matrix.argument.multi }} -b ${{ matrix.argument.backpressure }}
-        if: github.event.inputs.image == matrix.argument.image
+        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }}
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
         with:
-          name: Results-${{ matrix.argument.name }}
+          name: Results-${{ matrix.name }}
           path: tests/*.md
 
       - name: Deprovision Gardener
         run: make deprovision-gardener
         # Delete the cluster in case one of the steps is cancelled/failed/success.
-        if: github.event.inputs.image == matrix.argument.image && always()
         env:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
 
