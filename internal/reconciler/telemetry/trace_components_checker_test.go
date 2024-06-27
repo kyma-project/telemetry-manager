@@ -18,7 +18,6 @@ import (
 func TestTraceComponentsCheck(t *testing.T) {
 	healthyGatewayCond := metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonGatewayReady}
 	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonGatewayConfigured}
-	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady}
 
 	tests := []struct {
 		name                string
@@ -44,22 +43,10 @@ func TestTraceComponentsCheck(t *testing.T) {
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -75,27 +62,15 @@ func TestTraceComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
-					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
-					WithStatusCondition(runningCondition).
-					Build(),
-				testutils.NewTracePipelineBuilder().
-					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonReferencedSecretMissing,
 						Message: "One or more referenced Secrets are missing",
 					}).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonReferencedSecretMissing,
-					}).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -112,12 +87,6 @@ func TestTraceComponentsCheck(t *testing.T) {
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(metav1.Condition{
@@ -127,11 +96,6 @@ func TestTraceComponentsCheck(t *testing.T) {
 						Message: conditions.MessageForTracePipeline(conditions.ReasonGatewayNotReady),
 					}).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -147,27 +111,15 @@ func TestTraceComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
-					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
-					WithStatusCondition(runningCondition).
-					Build(),
-				testutils.NewTracePipelineBuilder().
-					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonMaxPipelinesExceeded,
 						Message: conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded),
 					}).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonMaxPipelinesExceeded,
-					}).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -188,11 +140,6 @@ func TestTraceComponentsCheck(t *testing.T) {
 						Reason: conditions.ReasonGatewayNotReady,
 					}).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
 					Build(),
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
@@ -201,11 +148,6 @@ func TestTraceComponentsCheck(t *testing.T) {
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonReferencedSecretMissing,
 						Message: "One or more referenced Secrets are missing",
-					}).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonReferencedSecretMissing,
 					}).
 					Build(),
 			},
@@ -302,12 +244,6 @@ func TestTraceComponentsCheck(t *testing.T) {
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(metav1.Condition{
@@ -338,12 +274,6 @@ func TestTraceComponentsCheck(t *testing.T) {
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(metav1.Condition{

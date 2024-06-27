@@ -173,10 +173,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a pipeline with legacy condition types at the end of the conditions list", Label(suite.LabelOperational), func() {
-			assert.TracePipelineHasLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
-		})
-
 		It("Should deliver telemetrygen traces", Label(suite.LabelOperational), func() {
 			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
 		})

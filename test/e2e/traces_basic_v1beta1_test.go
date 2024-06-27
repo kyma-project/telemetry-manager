@@ -28,9 +28,8 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelV1Beta1), func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
@@ -40,7 +39,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelV1Beta1), func(
 
 		backend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(proxyClient)
 
 		// creating a trace pipeline explicitly since the testutils.TracePipelineBuilder is not available in the v1beta1 API
 		tracePipeline := telemetryv1beta1.TracePipeline{
@@ -175,14 +173,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces, suite.LabelV1Beta1), func(
 
 		It("Should have a running pipeline", func() {
 			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
-		})
-
-		It("Should have a pipeline with legacy condition types at the end of the conditions list", func() {
-			assert.TracePipelineHasLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
-		})
-
-		It("Should deliver telemetrygen traces", func() {
-			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", func() {
