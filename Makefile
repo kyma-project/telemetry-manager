@@ -35,7 +35,7 @@ TOOLS_MOD_DIR    := $(SRC_ROOT)/internal/tools
 TOOLS_MOD_REGEX  := "\s+_\s+\".*\""
 TOOLS_PKG_NAMES  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/tools.go | tr -d " _\"")
 TOOLS_BIN_DIR    := $(SRC_ROOT)/bin
-TOOLS_PKG_NAMES_CLEAN := $(TOOLS_PKG_NAMES:/v2=)
+TOOLS_PKG_NAMES_CLEAN  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/tools.go | tr -d " _\"" | sed "s/\/v[0-9].*//")
 TOOLS_BIN_NAMES  := $(addprefix $(TOOLS_BIN_DIR)/, $(notdir $(TOOLS_PKG_NAMES_CLEAN)))
 
 .PHONY: install-tools
@@ -50,6 +50,7 @@ $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 GOLANGCI_LINT    := $(TOOLS_BIN_DIR)/golangci-lint
 GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
 CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
+KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
 
 ##@ General
 # The help target prints out all targets with their descriptions organized
@@ -165,15 +166,15 @@ ifndef ignore-not-found
 endif
 
 .PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+install: manifests $(KUSTOMIZE) ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
+deploy: manifests $(KUSTOMIZE) ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
@@ -182,7 +183,7 @@ undeploy: ## Undeploy resources based on the release (default) variant from the 
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-dev
-deploy-dev: manifests-dev kustomize ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
+deploy-dev: manifests-dev $(KUSTOMIZE) ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/development | kubectl apply -f -
 
