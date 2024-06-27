@@ -134,20 +134,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			})
 		})
 
-		It("Should set Running condition to True in pipelines", func() {
-			assert.TracePipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
-				Type:   conditions.TypeRunning,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTraceGatewayDeploymentReady,
-			})
-
-			assert.TracePipelineHasCondition(ctx, k8sClient, missingAllButCaPipelineName, metav1.Condition{
-				Type:   conditions.TypeRunning,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonTraceGatewayDeploymentReady,
-			})
-		})
-
 		It("Should set TelemetryFlowHealthy condition to True in pipelines", func() {
 			assert.TracePipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,

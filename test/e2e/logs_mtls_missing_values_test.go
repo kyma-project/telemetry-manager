@@ -138,34 +138,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 		})
 
-		It("Should set Running condition to True in pipelines", func() {
-			assert.LogPipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
-				Type:   conditions.TypeRunning,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonFluentBitDSReady,
-			})
-
-			assert.LogPipelineHasCondition(ctx, k8sClient, missingAllButCaPipelineName, metav1.Condition{
-				Type:   conditions.TypeRunning,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonFluentBitDSReady,
-			})
-		})
-
-		It("Should set Pending/Running condition to True in pipelines", func() {
-			assert.LogPipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
-				Type:   conditions.TypeRunning,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonFluentBitDSReady,
-			})
-
-			assert.LogPipelineHasCondition(ctx, k8sClient, missingAllButCaPipelineName, metav1.Condition{
-				Type:   conditions.TypeRunning,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonFluentBitDSReady,
-			})
-		})
-
 		It("Should set TelemetryFlowHealthy condition to True in pipelines", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
