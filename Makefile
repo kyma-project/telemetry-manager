@@ -119,7 +119,7 @@ tidy: ## Check if there any dirty change for go mod tidy.
 
 ##@ Testing
 .PHONY: test
-test: ginkgo manifests generate fmt vet tidy ## Run tests.
+test: $(GINKGO) manifests generate fmt vet tidy ## Run tests.
 	$(GINKGO) run test/testkit/matchers/...
 	go test ./... -coverprofile cover.out
 
