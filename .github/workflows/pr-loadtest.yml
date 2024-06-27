@@ -155,9 +155,17 @@ jobs:
         run: hack/load-tests/run-load-test.sh -n ${{ matrix.argument.name }} -t ${{ matrix.argument.type }} -m ${{ matrix.argument.multi }} -b ${{ matrix.argument.backpressure }}
         if: github.event.inputs.image == matrix.argument.image
 
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Results
+          path: tests/*.md
+
       - name: Deprovision Gardener
         run: make deprovision-gardener
         # Delete the cluster in case one of the steps is cancelled/failed/success.
         if: github.event.inputs.image == matrix.argument.image && always()
         env:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+
+
