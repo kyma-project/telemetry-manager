@@ -334,6 +334,11 @@ spec:
                                 type: object
                             type: object
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can define either 'cert', 'key', and optionally
+                            'ca', or 'ca' only
+                          rule: (has(self.cert) && has(self.key)) || (has(self.ca)
+                            && !has(self.cert) && !has(self.key))
                     required:
                     - endpoint
                     type: object
@@ -744,6 +749,11 @@ spec:
                                 type: object
                             type: object
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can define either 'cert', 'key', and optionally
+                            'ca', or 'ca' only
+                          rule: (has(self.cert) && has(self.key)) || (has(self.ca)
+                            && !has(self.cert) && !has(self.key))
                     required:
                     - endpoint
                     type: object
