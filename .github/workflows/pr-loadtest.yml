@@ -30,7 +30,7 @@ jobs:
       - id: set-matrix
         run: |
           image=${{ github.event.inputs.image }}
-          matrix=$(jq --arg image "fluent-bit" 'map( . | select (.image==$image) )' hack/load-tests/matrix_includes.json)                
+          matrix=$(jq --arg image "$image" 'map( . | select (.image==$image) )' hack/load-tests/matrix_includes.json)                
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
   load-test:
     needs: prepare-matrix
