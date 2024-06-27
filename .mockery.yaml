@@ -1,5 +1,6 @@
 with-expecter: false
 disable-version-string: true
+log-level: "warn"
 outpkg: "mocks"
 dir: "{{.InterfaceDir}}/mocks/"
 mockname: "{{.InterfaceName}}"
