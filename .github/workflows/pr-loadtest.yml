@@ -8,7 +8,12 @@ on:
         description: 'Pull Request Number without "PR-" prefix'
         required: true
       image:
-        description: 'Image to test, either otel-collector, fluent-bit or prometheus'
+        type: choice
+        options:
+          - otel-collector
+          - fluent-bit
+          - prometheus
+        description: 'Image to test'
         required: true
 
 env:
