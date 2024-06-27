@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
-//go:generate mockery --name fileWriter --filename file_writer.go --exported
 type fileWriter interface {
 	PreparePipelineDryRun(ctx context.Context, workDir string, pipeline *telemetryv1alpha1.LogPipeline) (func(), error)
 	PrepareParserDryRun(ctx context.Context, workDir string, pipeline *telemetryv1alpha1.LogParser) (func(), error)

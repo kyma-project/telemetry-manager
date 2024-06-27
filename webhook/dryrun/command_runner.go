@@ -5,7 +5,6 @@ import (
 	"os/exec"
 )
 
-//go:generate mockery --name commandRunner --filename command_runner.go --exported
 type commandRunner interface {
 	Run(ctx context.Context, command string, args ...string) ([]byte, error)
 }
