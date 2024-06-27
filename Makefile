@@ -23,9 +23,6 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-.PHONY: all
-all: build
-
 # Sub-makefiles
 MAKE_DEPS ?= hack/make
 include ${MAKE_DEPS}/provision.mk
@@ -35,7 +32,8 @@ TOOLS_MOD_DIR    := $(SRC_ROOT)/internal/tools
 TOOLS_MOD_REGEX  := "\s+_\s+\".*\""
 TOOLS_PKG_NAMES  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/tools.go | tr -d " _\"")
 TOOLS_BIN_DIR    := $(SRC_ROOT)/bin
-TOOLS_PKG_NAMES_CLEAN  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/tools.go | tr -d " _\"" | sed "s/\/v[0-9].*//")
+# Strip off versions (e.g. /v2) from pkg names
+TOOLS_PKG_NAMES_CLEAN  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/tools.go | tr -d " _\"" | sed "s/\/v[0-9].*$$//")
 TOOLS_BIN_NAMES  := $(addprefix $(TOOLS_BIN_DIR)/, $(notdir $(TOOLS_PKG_NAMES_CLEAN)))
 
 .PHONY: install-tools
@@ -53,6 +51,9 @@ GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
 CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
 KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
+
+.PHONY: all
+all: build
 
 ##@ General
 # The help target prints out all targets with their descriptions organized
