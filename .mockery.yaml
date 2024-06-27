@@ -7,4 +7,8 @@ filename: "{{.InterfaceName | snakecase}}.go"
 packages:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline:
     interfaces:
+      DaemonSetAnnotator:
       DaemonSetProber:
+      FlowHealthProber:
+      IstioStatusChecker:
+      OverridesHandler:
