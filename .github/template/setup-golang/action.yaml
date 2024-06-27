@@ -11,7 +11,7 @@ runs:
       uses: actions/setup-go@v5
       with:
         go-version-file: "go.mod"
-      cache: true
+        cache: true
     - name: Install Tools
       shell: bash
       run: make install-tools
