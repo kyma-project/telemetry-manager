@@ -22,4 +22,16 @@ packages:
       IstioStatusChecker:
       OverridesHandler:
       PipelineLock:
+  github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline:
+    interfaces:
+      AgentApplierDeleter:
+      AgentConfigBuilder:
+      DaemonSetProber:
+      DeploymentProber:
+      FlowHealthProber:
+      GatewayApplierDeleter:
+      GatewayConfigBuilder:
+      IstioStatusChecker:
+      OverridesHandler:
+      PipelineLock:
 
