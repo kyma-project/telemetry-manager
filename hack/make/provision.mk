@@ -61,6 +61,6 @@ provision-gardener: ## Provision gardener cluster with latest k8s version
 	mv ${GARDENER_CLUSTER_NAME}_kubeconfig.yaml ~/.kube/config
 
 .PHONY: deprovision-gardener
-deprovision-gardener: kyma ## Deprovision gardener cluster
+deprovision-gardener:## Deprovision gardener cluster
 	kubectl --kubeconfig=${GARDENER_SA_PATH} annotate shoot ${GARDENER_CLUSTER_NAME} confirmation.gardener.cloud/deletion=true
 	kubectl --kubeconfig=${GARDENER_SA_PATH} delete shoot ${GARDENER_CLUSTER_NAME} --wait=false
