@@ -2,9 +2,9 @@ package conditions
 
 const (
 	TypeAgentHealthy            = "AgentHealthy"
-	TypeGatewayHealthy          = "GatewayHealthy"
 	TypeConfigurationGenerated  = "ConfigurationGenerated"
 	TypeFlowHealthy             = "TelemetryFlowHealthy"
+	TypeGatewayHealthy          = "GatewayHealthy"
 	TypeLogComponentsHealthy    = "LogComponentsHealthy"
 	TypeMetricComponentsHealthy = "MetricComponentsHealthy"
 	TypeTraceComponentsHealthy  = "TraceComponentsHealthy"
