@@ -30,7 +30,8 @@ while getopts m:b:n:t:d: flag; do
 done
 
 image_clean=$(basename $OTEL_IMAGE | tr ":" "." )
-RESULTS_FILE=results/$(echo ${TEST_NAME}-${TEST_TARGET}-${image_clean}-${BACKPRESSURE_TEST}-${MAX_PIPELINE}-${TEST_DURATION} | tr -cd '[[:alnum:]]._-').md
+mkdir tests
+RESULTS_FILE=tests/$(echo ${TEST_NAME}-${TEST_TARGET}-${image_clean}-${BACKPRESSURE_TEST}-${MAX_PIPELINE}-${TEST_DURATION} | tr -cd '[[:alnum:]]._-').md
 
 # shellcheck disable=SC2112
 function setup() {
