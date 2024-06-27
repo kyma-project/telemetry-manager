@@ -1,0 +1,10 @@
+with-expecter: false
+disable-version-string: true
+outpkg: "mocks"
+dir: "{{.InterfaceDir}}/mocks/"
+mockname: "{{.InterfaceName}}"
+filename: "{{.InterfaceName | snakecase}}.go"
+packages:
+  github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline:
+    interfaces:
+      DaemonSetProber:

@@ -101,7 +101,7 @@ manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole a
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(MOCKERY) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	PATH=$$PATH:$(TOOLS_BIN_DIR) go generate ./...
+	$(MOCKERY)
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
