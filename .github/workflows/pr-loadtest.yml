@@ -163,7 +163,7 @@ jobs:
       - name: Upload Results
         uses: actions/upload-artifact@v4
         with:
-          name: Results
+          name: Results-${{ matrix.argument.name }}
           path: tests/*.md
 
       - name: Deprovision Gardener
