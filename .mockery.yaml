@@ -6,6 +6,9 @@ dir: "{{.InterfaceDir}}/mocks/"
 mockname: "{{.InterfaceName}}"
 filename: "{{.InterfaceName | snakecase}}.go"
 packages:
+  github.com/kyma-project/telemetry-manager/internal/reconciler/logparser:
+    interfaces:
+      DaemonSetProber:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline:
     interfaces:
       DaemonSetAnnotator:
