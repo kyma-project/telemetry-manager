@@ -349,8 +349,8 @@ Configured memory, CPU limits, and storage are based on this base value and will
 
 
 #### Test Results
-The main KPIs to track performance changes are **scrape samples per sec** and _total series created_. These values should be in the range of 15-22 samples/sec and 200-350 series, respectively.
-Other metrics to track are _CPU_ and _memory usage_ of the self-monitor Pods. Both are directly influenced by the number of series created and the scrape samples/sec: more samples and series created increase the memory and CPU usage of the self-monitor Pods.
+The main KPIs to track performance changes are **scrape samples per sec** and **total series created**. These values should be in the range of 15-22 samples/sec and 200-350 series, respectively.
+Other metrics to track are **CPU** and **memory usage** of the self-monitor Pods. Both are directly influenced by the number of series created and the scrape samples/sec: more samples and series created increase the memory and CPU usage of the self-monitor Pods.
 
 <div class="table-wrapper" markdown="block">
 
