@@ -57,7 +57,7 @@ type Header struct {
 	Prefix string `json:"prefix,omitempty"`
 }
 
-// +kubebuilder:validation:XValidation:rule="(has(self.cert) && has(self.key)) || (has(self.ca) && !has(self.cert) && !has(self.key))", message="Can define either 'cert', 'key', and optionally 'ca', or 'ca' only"
+// +kubebuilder:validation:XValidation:rule="((has(self.cert) && has(self.key)) || (has(self.ca) && !has(self.cert) && !has(self.key))) || (has(self.insecureSkipVerify) && self.insecureSkipVerify == true && has(self.insecure) && self.insecure == true)", message="Can define either 'cert', 'key', and optionally 'ca', or 'ca' only"
 type OTLPTLS struct {
 	// Defines whether to send requests using plaintext instead of TLS.
 	Insecure bool `json:"insecure,omitempty"`

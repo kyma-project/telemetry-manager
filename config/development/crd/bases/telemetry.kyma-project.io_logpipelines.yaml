@@ -378,8 +378,10 @@ spec:
                         x-kubernetes-validations:
                         - message: Can define either 'cert', 'key', and optionally
                             'ca', or 'ca' only
-                          rule: (has(self.cert) && has(self.key)) || (has(self.ca)
-                            && !has(self.cert) && !has(self.key))
+                          rule: ((has(self.cert) && has(self.key)) || (has(self.ca)
+                            && !has(self.cert) && !has(self.key))) || (has(self.skipCertificateValidation)
+                            && self.skipCertificateValidation == true && has(self.disabled)
+                            && self.disabled == true)
                       uri:
                         description: Defines the URI of the HTTP receiver. Default
                           is "/".
@@ -896,8 +898,10 @@ spec:
                         x-kubernetes-validations:
                         - message: Can define either 'cert', 'key', and optionally
                             'ca', or 'ca' only
-                          rule: (has(self.cert) && has(self.key)) || (has(self.ca)
-                            && !has(self.cert) && !has(self.key))
+                          rule: ((has(self.cert) && has(self.key)) || (has(self.ca)
+                            && !has(self.cert) && !has(self.key))) || (has(self.skipCertificateValidation)
+                            && self.skipCertificateValidation == true && has(self.disabled)
+                            && self.disabled == true)
                       uri:
                         description: Defines the URI of the HTTP receiver. Default
                           is "/".

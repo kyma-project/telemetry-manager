@@ -337,8 +337,10 @@ spec:
                         x-kubernetes-validations:
                         - message: Can define either 'cert', 'key', and optionally
                             'ca', or 'ca' only
-                          rule: (has(self.cert) && has(self.key)) || (has(self.ca)
-                            && !has(self.cert) && !has(self.key))
+                          rule: ((has(self.cert) && has(self.key)) || (has(self.ca)
+                            && !has(self.cert) && !has(self.key))) || (has(self.insecureSkipVerify)
+                            && self.insecureSkipVerify == true && has(self.insecure)
+                            && self.insecure == true)
                     required:
                     - endpoint
                     type: object
