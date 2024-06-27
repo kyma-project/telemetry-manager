@@ -23,10 +23,6 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-# Sub-makefiles
-MAKE_DEPS ?= hack/make
-include ${MAKE_DEPS}/provision.mk
-
 SRC_ROOT := $(shell git rev-parse --show-toplevel)
 TOOLS_MOD_DIR    := $(SRC_ROOT)/internal/tools
 TOOLS_MOD_REGEX  := "\s+_\s+\".*\""
@@ -51,6 +47,9 @@ GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
 CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
 KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
+
+# Sub-makefile
+include hack/make/provision.mk
 
 .PHONY: all
 all: build
@@ -182,7 +181,7 @@ deploy: manifests $(KUSTOMIZE) ## Deploy resources based on the release (default
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
-undeploy: ## Undeploy resources based on the release (default) variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+undeploy: $(KUSTOMIZE) ## Undeploy resources based on the release (default) variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-dev
@@ -191,5 +190,5 @@ deploy-dev: manifests-dev $(KUSTOMIZE) ## Deploy resources based on the developm
 	$(KUSTOMIZE) build config/development | kubectl apply -f -
 
 .PHONY: undeploy-dev
-undeploy-dev: ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+undeploy-dev: $(KUSTOMIZE) ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/development | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
