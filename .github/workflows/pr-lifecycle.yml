@@ -78,6 +78,7 @@ jobs:
       - name: Run test on current version
         shell: bash
         run: |
+          make install-tools # delete after the tools via go modules are released 
           bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Finalize test
