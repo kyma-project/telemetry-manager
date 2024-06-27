@@ -28,19 +28,6 @@ status:
     reason: DaemonSetReady
     status: "True"
     type: AgentHealthy
-  - lastTransitionTime: "2024-02-29T01:27:08Z"
-    message: '[NOTE: The "Pending" type is deprecated] Fluent Bit DaemonSet is not
-      ready'
-    observedGeneration: 1
-    reason: FluentBitDaemonSetNotReady
-    status: "False"
-    type: Pending
-  - lastTransitionTime: "2024-02-29T01:27:08Z"
-    message: '[NOTE: The "Running" type is deprecated] Fluent Bit DaemonSet is ready'
-    observedGeneration: 1
-    reason: FluentBitDaemonSetReady
-    status: "True"
-    type: Running
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
@@ -81,8 +68,6 @@ For details, see the [LogParser specification file](https://github.com/kyma-proj
 ### LogParser Status
 
 The status of the LogParser is determined by the condition type `AgentHealthy`:
-
-> **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
 | Condition Type | Condition Status | Condition Reason  | Condition Message                 |
 |----------------|------------------|-------------------|-----------------------------------|

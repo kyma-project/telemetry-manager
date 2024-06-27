@@ -35,18 +35,6 @@ status:
     reason: ConfigurationGenerated
     status: "True"
     type: ConfigurationGenerated
-  - lastTransitionTime: "2024-02-29T01:18:28Z"
-    message: '[NOTE: The "Pending" type is deprecated] Trace gateway Deployment is not ready'
-    observedGeneration: 1
-    reason: TraceGatewayDeploymentNotReady
-    status: "False"
-    type: Pending
-  - lastTransitionTime: "2024-02-29T01:18:28Z"
-    message: '[NOTE: The "Running" type is deprecated] Trace gateway Deployment is ready'
-    observedGeneration: 1
-    reason: TraceGatewayDeploymentReady
-    status: "True"
-    type: Running
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
@@ -144,8 +132,6 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 ### TracePipeline Status
 
 The status of the TracePipeline is determined by the condition types `GatewayHealthy`, `ConfigurationGenerated`, and `TelemetryFlowHealthy`:
-
-> **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
 | Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                                                                                                                                                          |
 | ---------------------- | ---------------- |-----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

@@ -36,7 +36,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
 	r.setFlowHealthCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setLegacyConditions(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -158,31 +157,4 @@ func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 		return conditions.ReasonSelfMonGatewayThrottling
 	}
 	return conditions.ReasonSelfMonFlowHealthy
-}
-
-func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
-	configGeneratedStatus, configGeneratedReason, configGeneratedMsg := r.evaluateConfigGeneratedCondition(ctx, pipeline, withinPipelineCountLimit)
-	if configGeneratedStatus == metav1.ConditionFalse {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, configGeneratedReason, configGeneratedMsg)
-		return
-	}
-
-	gatewayReady, err := r.prober.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe trace gateway")
-		gatewayReady = false
-	}
-
-	if !gatewayReady {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
-			conditions.ReasonTraceGatewayDeploymentNotReady,
-			conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
-		return
-	}
-
-	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
-		conditions.ReasonTraceGatewayDeploymentReady,
-		conditions.ReasonTraceGatewayDeploymentNotReady,
-		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
-		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
 }

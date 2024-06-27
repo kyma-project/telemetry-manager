@@ -40,7 +40,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
 	r.setFlowHealthCondition(ctx, &pipeline)
-	r.setLegacyConditions(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update LogPipeline status: %w", err)
@@ -171,31 +170,4 @@ func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
 	default:
 		return conditions.ReasonSelfMonFlowHealthy
 	}
-}
-
-func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	configGeneratedStatus, configGeneratedReason, configGeneratedMsg := r.evaluateConfigGeneratedCondition(ctx, pipeline)
-	if configGeneratedStatus == metav1.ConditionFalse {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, configGeneratedReason, configGeneratedMsg)
-		return
-	}
-
-	fluentBitReady, err := r.prober.IsReady(ctx, r.config.DaemonSet)
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset")
-		fluentBitReady = false
-	}
-
-	if !fluentBitReady {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
-			conditions.ReasonFluentBitDSNotReady,
-			conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
-		return
-	}
-
-	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
-		conditions.ReasonFluentBitDSReady,
-		conditions.ReasonFluentBitDSNotReady,
-		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady),
-		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 }
