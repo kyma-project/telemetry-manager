@@ -140,6 +140,7 @@ type LokiOutput struct {
 	RemoveKeys []string `json:"removeKeys,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:rule="(has(self.cert) && has(self.key)) || (has(self.ca) && !has(self.cert) && !has(self.key))", message="Can define either 'cert', 'key', and optionally 'ca', or 'ca' only"
 type TLSConfig struct {
 	// Indicates if TLS is disabled or enabled. Default is `false`.
 	Disabled bool `json:"disabled,omitempty"`

@@ -19,9 +19,6 @@ import (
 )
 
 var (
-	ErrMissingAll     = errors.New("no TLS configuration provided, missing certificate, private key, and CA")
-	ErrMissingCertKey = errors.New("missing certificate or/and private key, and CA was not provided")
-
 	ErrCertDecodeFailed = errors.New("failed to decode PEM block containing certificate")
 	ErrCertParseFailed  = errors.New("failed to parse certificate")
 
@@ -30,6 +27,8 @@ var (
 
 	ErrCADecodeFailed = errors.New("failed to decode PEM block containing CA certificate")
 	ErrCAParseFailed  = errors.New("failed to parse CA certificate")
+
+	ErrMissingValues = errors.New("missing value(s)")
 
 	ErrValueResolveFailed = errors.New("failed to resolve value")
 
@@ -106,8 +105,8 @@ func New(client client.Client) *Validator {
 }
 
 func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
-	// Check for missing configuration
-	err := checkForMissingConfig(config)
+	// Check for missing TLS configuration values
+	err := checkForMissingValues(config)
 	if err != nil {
 		return err
 	}
@@ -138,14 +137,14 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	return nil
 }
 
-func checkForMissingConfig(config TLSBundle) error {
+func checkForMissingValues(config TLSBundle) error {
 	missingCert, missingKey, missingCA := config.GetMissing()
 
 	if missingCert && missingKey && missingCA {
-		return ErrMissingAll
+		return ErrMissingValues
 	}
 	if (missingCert && !missingKey) || (!missingCert && missingKey) {
-		return ErrMissingCertKey
+		return ErrMissingValues
 	}
 
 	return nil

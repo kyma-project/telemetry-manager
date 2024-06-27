@@ -18,22 +18,30 @@ import (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
-	var (
-		mockNs                  = suite.ID()
-		missingCaPipelineName   = suite.ID() + "-missing-ca"
-		missingCertPipelineName = suite.ID() + "-missing-cert"
-		missingKeyPipelineName  = suite.ID() + "-missing-key"
+	const (
+		missingValuesValidationError = "Can define either 'cert', 'key', and optionally 'ca', or 'ca' only"
+		notFoundError                = "not found"
 	)
 
-	makeResources := func() []client.Object {
-		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+	var (
+		mockNs                      = suite.ID()
+		missingCaPipelineName       = suite.ID() + "-missing-ca"
+		missingCertPipelineName     = suite.ID() + "-missing-cert"
+		missingKeyPipelineName      = suite.ID() + "-missing-key"
+		missingAllPipelineName      = suite.ID() + "-missing-all"
+		missingAllButCaPipelineName = suite.ID() + "-missing-all-but-ca"
+	)
+
+	makeResources := func() ([]client.Object, []client.Object) {
+		var succeedingObjs []client.Object
+		var failingObjs []client.Object
+		succeedingObjs = append(succeedingObjs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
 		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
-		objs = append(objs, backend.K8sObjects()...)
+		succeedingObjs = append(succeedingObjs, backend.K8sObjects()...)
 
 		metricPipelineMissingCa := testutils.NewMetricPipelineBuilder().
 			WithName(missingCaPipelineName).
@@ -68,70 +76,84 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			).
 			Build()
 
-		objs = append(objs,
+		metricPipelineMissingAll := testutils.NewMetricPipelineBuilder().
+			WithName(missingAllPipelineName).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(backend.Endpoint()),
+				testutils.OTLPClientTLSMissingAll(),
+			).
+			Build()
+
+		metricPipelineMissingAllButCa := testutils.NewMetricPipelineBuilder().
+			WithName(missingAllButCaPipelineName).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(backend.Endpoint()),
+				testutils.OTLPClientTLSMissingAllButCA(
+					clientCerts.CaCertPem.String(),
+				),
+			).
+			Build()
+
+		succeedingObjs = append(succeedingObjs,
 			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeMetrics).K8sObject(),
-			&metricPipelineMissingCa, &metricPipelineMissingCert, &metricPipelineMissingKey,
+			&metricPipelineMissingCa, &metricPipelineMissingAllButCa,
 		)
 
-		return objs
+		failingObjs = append(failingObjs,
+			&metricPipelineMissingKey, &metricPipelineMissingCert, &metricPipelineMissingAll,
+		)
+
+		return succeedingObjs, failingObjs
 	}
 
 	Context("When a metric pipeline with missing TLS configuration parameters is created", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects := makeResources()
+			k8sSucceedingObjects, k8sFailingObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sSucceedingObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sFailingObjects...)).
+					Should(MatchError(ContainSubstring(notFoundError)))
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sSucceedingObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sFailingObjects...)).
+				Should(MatchError(ContainSubstring(missingValuesValidationError)))
 		})
 
-		It("Should set ConfigurationGenerated condition accordingly in pipelines", func() {
+		It("Should set ConfigurationGenerated condition to True in pipelines", func() {
 			assert.MetricPipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,
 			})
 
-			assert.MetricPipelineHasCondition(ctx, k8sClient, missingCertPipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(ctx, k8sClient, missingAllButCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSConfigurationInvalid,
-			})
-
-			assert.MetricPipelineHasCondition(ctx, k8sClient, missingKeyPipelineName, metav1.Condition{
-				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSConfigurationInvalid,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonGatewayConfigured,
 			})
 		})
 
-		It("Should set TelemetryFlowHealthy condition accordingly in pipelines", func() {
+		It("Should set TelemetryFlowHealthy condition to True in pipelines", func() {
 			assert.MetricPipelineHasCondition(ctx, k8sClient, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 
-			assert.MetricPipelineHasCondition(ctx, k8sClient, missingCertPipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(ctx, k8sClient, missingAllButCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonConfigNotGenerated,
-			})
-
-			assert.MetricPipelineHasCondition(ctx, k8sClient, missingKeyPipelineName, metav1.Condition{
-				Type:   conditions.TypeFlowHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonSelfMonConfigNotGenerated,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 		})
 
-		It("Should set MetricComponentsHealthy condition to False in Telemetry", func() {
-			assert.TelemetryHasWarningState(ctx, k8sClient)
+		It("Should set MetricComponentsHealthy condition to True in Telemetry", func() {
+			assert.TelemetryHasReadyState(ctx, k8sClient)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonTLSConfigurationInvalid,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonComponentsRunning,
 			})
 		})
 	})
