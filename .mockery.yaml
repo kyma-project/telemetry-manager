@@ -37,4 +37,7 @@ packages:
       IstioStatusChecker:
       OverridesHandler:
       PipelineLock:
-
+  github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry:
+    interfaces:
+      ComponentHealthChecker:
+      OverridesHandler:
