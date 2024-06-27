@@ -124,7 +124,7 @@ test: $(GINKGO) manifests generate fmt vet tidy ## Run tests.
 	go test ./... -coverprofile cover.out
 
 .PHONY: check-coverage
-check-coverage: go-test-coverage ## Check tests coverage.
+check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
 	go test ./... -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
