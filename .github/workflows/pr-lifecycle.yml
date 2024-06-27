@@ -43,7 +43,6 @@ jobs:
       - name: Run test on latest tag
         shell: bash
         run: |
-          make ginkgo
           bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Wait for cleanup of test run
@@ -79,7 +78,7 @@ jobs:
       - name: Run test on current version
         shell: bash
         run: |
-          make ginkgo
+          make install-tools # delete after the tools via go modules are released 
           bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Finalize test

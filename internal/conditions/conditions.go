@@ -8,16 +8,6 @@ const (
 	TypeLogComponentsHealthy    = "LogComponentsHealthy"
 	TypeMetricComponentsHealthy = "MetricComponentsHealthy"
 	TypeTraceComponentsHealthy  = "TraceComponentsHealthy"
-
-	// NOTE: The "Running" and "Pending" types are deprecated
-	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	TypeRunning = "Running"
-	TypePending = "Pending"
-)
-
-const (
-	RunningTypeDeprecationMsg = "[NOTE: The \"Running\" type is deprecated] "
-	PendingTypeDeprecationMsg = "[NOTE: The \"Pending\" type is deprecated] "
 )
 
 const (
@@ -52,14 +42,6 @@ const (
 
 	// MetricPipeline reasons
 	ReasonMetricAgentNotRequired = "AgentNotRequired"
-
-	// NOTE: The "FluentBitDaemonSetNotReady", "FluentBitDaemonSetReady", "TraceGatewayDeploymentNotReady" and "TraceGatewayDeploymentReady" reasons are deprecated.
-	// They will be removed when the "Running" and "Pending" types are removed
-	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	ReasonFluentBitDSNotReady            = "FluentBitDaemonSetNotReady"
-	ReasonFluentBitDSReady               = "FluentBitDaemonSetReady"
-	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
-	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
 )
 
 var commonMessages = map[string]string{
@@ -75,8 +57,6 @@ var logPipelineMessages = map[string]string{
 	ReasonAgentNotReady:             "Fluent Bit agent DaemonSet is not ready",
 	ReasonAgentReady:                "Fluent Bit agent DaemonSet is ready",
 	ReasonComponentsRunning:         "All log components are running",
-	ReasonFluentBitDSNotReady:       "Fluent Bit DaemonSet is not ready",
-	ReasonFluentBitDSReady:          "Fluent Bit DaemonSet is ready",
 	ReasonSelfMonAllDataDropped:     "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
 	ReasonSelfMonNoLogsDelivered:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
@@ -86,17 +66,15 @@ var logPipelineMessages = map[string]string{
 }
 
 var tracePipelineMessages = map[string]string{
-	ReasonGatewayConfigured:              "TracePipeline specification is successfully applied to the configuration of Trace gateway",
-	ReasonComponentsRunning:              "All trace components are running",
-	ReasonGatewayNotReady:                "Trace gateway Deployment is not ready",
-	ReasonGatewayReady:                   "Trace gateway Deployment is ready",
-	ReasonSelfMonAllDataDropped:          "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
-	ReasonSelfMonBufferFillingUp:         "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
-	ReasonSelfMonGatewayThrottling:       "Trace gateway is unable to receive spans at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
-	ReasonSelfMonSomeDataDropped:         "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
-	ReasonSelfMonConfigNotGenerated:      "No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
-	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
-	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
+	ReasonGatewayConfigured:         "TracePipeline specification is successfully applied to the configuration of Trace gateway",
+	ReasonComponentsRunning:         "All trace components are running",
+	ReasonGatewayNotReady:           "Trace gateway Deployment is not ready",
+	ReasonGatewayReady:              "Trace gateway Deployment is ready",
+	ReasonSelfMonAllDataDropped:     "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend",
+	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity. Incoming span rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-buffer-filling-up",
+	ReasonSelfMonGatewayThrottling:  "Trace gateway is unable to receive spans at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling",
+	ReasonSelfMonSomeDataDropped:    "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend",
+	ReasonSelfMonConfigNotGenerated: "No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
 }
 
 var metricPipelineMessages = map[string]string{

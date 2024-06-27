@@ -153,10 +153,6 @@ func TestReconcile(t *testing.T) {
 			"Fluent Bit agent DaemonSet is not ready",
 		)
 
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonFluentBitDSNotReady,
-			"[NOTE: The \"Pending\" type is deprecated] Fluent Bit DaemonSet is not ready")
-
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
@@ -198,9 +194,6 @@ func TestReconcile(t *testing.T) {
 			"Fluent Bit agent DaemonSet is ready",
 		)
 
-		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-			"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
-
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
@@ -241,10 +234,6 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentNotReady,
 			"Fluent Bit agent DaemonSet is not ready",
 		)
-
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonFluentBitDSNotReady,
-			"[NOTE: The \"Pending\" type is deprecated] Fluent Bit DaemonSet is not ready")
 
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
@@ -289,10 +278,6 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonReferencedSecretMissing,
 			"One or more referenced Secrets are missing: Secret 'some-secret' of Namespace 'some-namespace'",
 		)
-
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonReferencedSecretMissing,
-			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing: Secret 'some-secret' of Namespace 'some-namespace'")
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeFlowHealthy,
@@ -382,9 +367,6 @@ func TestReconcile(t *testing.T) {
 			"LogPipeline specification is successfully applied to the configuration of Fluent Bit agent",
 		)
 
-		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-			"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
-
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
@@ -425,10 +407,6 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonUnsupportedLokiOutput,
 			"grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 		)
-
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonUnsupportedLokiOutput,
-			"[NOTE: The \"Pending\" type is deprecated] grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README")
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeFlowHealthy,
@@ -573,9 +551,6 @@ func TestReconcile(t *testing.T) {
 					tt.expectedMessage,
 				)
 
-				requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-					"[NOTE: The \"Running\" type is deprecated] Fluent Bit DaemonSet is ready")
-
 				var cm corev1.ConfigMap
 				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 				require.NoError(t, err, "sections configmap must exist")
@@ -584,162 +559,79 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 
-	t.Run("should remove running condition and set pending condition to true if fluent bit becomes not ready again", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).
-			WithStatusConditions(
-				metav1.Condition{
-					Type:               conditions.TypeAgentHealthy,
-					Status:             metav1.ConditionTrue,
-					Reason:             conditions.ReasonAgentReady,
-					LastTransitionTime: metav1.Now(),
-				},
-				metav1.Condition{
-					Type:               conditions.TypeConfigurationGenerated,
-					Status:             metav1.ConditionTrue,
-					Reason:             conditions.ReasonAgentConfigured,
-					LastTransitionTime: metav1.Now(),
-				},
-				metav1.Condition{
-					Type:               conditions.TypePending,
-					Status:             metav1.ConditionFalse,
-					Reason:             conditions.ReasonFluentBitDSNotReady,
-					LastTransitionTime: metav1.Now(),
-				},
-				metav1.Condition{
-					Type:               conditions.TypeRunning,
-					Status:             metav1.ConditionTrue,
-					Reason:             conditions.ReasonFluentBitDSReady,
-					LastTransitionTime: metav1.Now(),
-				}).
-			Build()
-		secret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "some-secret",
-				Namespace: "some-namespace",
-			},
-			Data: map[string][]byte{"host": nil},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
-
-		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
-
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
-
-		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			prober:             proberStub,
-			flowHealthProber:   flowHealthProberStub,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
-			syncer: syncer{
-				Client: fakeClient,
-				config: testConfig,
-			},
-		}
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
-		require.Nil(t, runningCond)
-
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonFluentBitDSNotReady,
-			"[NOTE: The \"Pending\" type is deprecated] Fluent Bit DaemonSet is not ready",
-		)
-	})
-
 	t.Run("tls conditions", func(t *testing.T) {
 		tests := []struct {
-			name                    string
-			tlsCertErr              error
-			expectedStatus          metav1.ConditionStatus
-			expectedReason          string
-			expectedMessage         string
-			expectedLegacyCondition string
-			expectAgentConfigured   bool
+			name                  string
+			tlsCertErr            error
+			expectedStatus        metav1.ConditionStatus
+			expectedReason        string
+			expectedMessage       string
+			expectAgentConfigured bool
 		}{
 			{
-				name:                    "cert expired",
-				tlsCertErr:              &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateExpired,
-				expectedMessage:         "TLS certificate expired on 2020-11-01",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "cert expired",
+				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateExpired,
+				expectedMessage: "TLS certificate expired on 2020-11-01",
 			},
 			{
-				name:                    "cert about to expire",
-				tlsCertErr:              &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC)},
-				expectedStatus:          metav1.ConditionTrue,
-				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
-				expectedMessage:         "TLS certificate is about to expire, configured certificate is valid until 2024-11-01",
-				expectedLegacyCondition: conditions.TypeRunning,
-				expectAgentConfigured:   true,
+				name:                  "cert about to expire",
+				tlsCertErr:            &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:        metav1.ConditionTrue,
+				expectedReason:        conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage:       "TLS certificate is about to expire, configured certificate is valid until 2024-11-01",
+				expectAgentConfigured: true,
 			},
 			{
-				name:                    "ca expired",
-				tlsCertErr:              &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateExpired,
-				expectedMessage:         "TLS CA certificate expired on 2020-11-01",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "ca expired",
+				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateExpired,
+				expectedMessage: "TLS CA certificate expired on 2020-11-01",
 			},
 			{
-				name:                    "ca about to expire",
-				tlsCertErr:              &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
-				expectedStatus:          metav1.ConditionTrue,
-				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
-				expectedMessage:         "TLS CA certificate is about to expire, configured certificate is valid until 2024-11-01",
-				expectedLegacyCondition: conditions.TypeRunning,
-				expectAgentConfigured:   true,
+				name:                  "ca about to expire",
+				tlsCertErr:            &tlscert.CertAboutToExpireError{Expiry: time.Date(2024, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:        metav1.ConditionTrue,
+				expectedReason:        conditions.ReasonTLSCertificateAboutToExpire,
+				expectedMessage:       "TLS CA certificate is about to expire, configured certificate is valid until 2024-11-01",
+				expectAgentConfigured: true,
 			},
 			{
-				name:                    "cert decode failed",
-				tlsCertErr:              tlscert.ErrCertDecodeFailed,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: failed to decode PEM block containing certificate",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "cert decode failed",
+				tlsCertErr:      tlscert.ErrCertDecodeFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to decode PEM block containing certificate",
 			},
 			{
-				name:                    "key decode failed",
-				tlsCertErr:              tlscert.ErrKeyDecodeFailed,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: failed to decode PEM block containing private key",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "key decode failed",
+				tlsCertErr:      tlscert.ErrKeyDecodeFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to decode PEM block containing private key",
 			},
 			{
-				name:                    "key parse failed",
-				tlsCertErr:              tlscert.ErrKeyParseFailed,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: failed to parse private key",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "key parse failed",
+				tlsCertErr:      tlscert.ErrKeyParseFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to parse private key",
 			},
 			{
-				name:                    "cert parse failed",
-				tlsCertErr:              tlscert.ErrCertParseFailed,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: failed to parse certificate",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "cert parse failed",
+				tlsCertErr:      tlscert.ErrCertParseFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to parse certificate",
 			},
 			{
-				name:                    "cert and key mismatch",
-				tlsCertErr:              tlscert.ErrInvalidCertificateKeyPair,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: certificate and private key do not match",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "cert and key mismatch",
+				tlsCertErr:      tlscert.ErrInvalidCertificateKeyPair,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: certificate and private key do not match",
 			},
 		}
 		for _, tt := range tests {
@@ -791,14 +683,6 @@ func TestReconcile(t *testing.T) {
 					)
 				}
 
-				if tt.expectedLegacyCondition == conditions.TypePending {
-					expectedLegacyMessage := conditions.PendingTypeDeprecationMsg + tt.expectedMessage
-					requireEndsWithLegacyPendingCondition(t, updatedPipeline, tt.expectedReason, expectedLegacyMessage)
-				} else {
-					expectedLegacyMessage := conditions.RunningTypeDeprecationMsg + conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady)
-					requireEndsWithLegacyRunningCondition(t, updatedPipeline, expectedLegacyMessage)
-				}
-
 				var cm corev1.ConfigMap
 				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 				if !tt.expectAgentConfigured {
@@ -820,39 +704,6 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipel
 	require.Equal(t, message, cond.Message)
 	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
 	require.NotEmpty(t, cond.LastTransitionTime)
-}
-
-func requireEndsWithLegacyPendingCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, reason, message string) {
-	cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning)
-	require.Nil(t, cond, "running condition should not be present")
-
-	require.NotEmpty(t, pipeline.Status.Conditions)
-
-	condLen := len(pipeline.Status.Conditions)
-	lastCond := pipeline.Status.Conditions[condLen-1]
-	require.Equal(t, conditions.TypePending, lastCond.Type)
-	require.Equal(t, metav1.ConditionTrue, lastCond.Status)
-	require.Equal(t, reason, lastCond.Reason)
-	require.Equal(t, message, lastCond.Message)
-	require.Equal(t, pipeline.Generation, lastCond.ObservedGeneration)
-	require.NotEmpty(t, lastCond.LastTransitionTime)
-}
-
-func requireEndsWithLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, message string) {
-	require.Greater(t, len(pipeline.Status.Conditions), 1)
-
-	condLen := len(pipeline.Status.Conditions)
-	lastCond := pipeline.Status.Conditions[condLen-1]
-	require.Equal(t, conditions.TypeRunning, lastCond.Type)
-	require.Equal(t, metav1.ConditionTrue, lastCond.Status)
-	require.Equal(t, conditions.ReasonFluentBitDSReady, lastCond.Reason)
-	require.Equal(t, message, lastCond.Message)
-	require.Equal(t, pipeline.Generation, lastCond.ObservedGeneration)
-	require.NotEmpty(t, lastCond.LastTransitionTime)
-
-	prevCond := pipeline.Status.Conditions[condLen-2]
-	require.Equal(t, conditions.TypePending, prevCond.Type)
-	require.Equal(t, metav1.ConditionFalse, prevCond.Status)
 }
 
 func TestCalculateChecksum(t *testing.T) {

@@ -146,10 +146,9 @@ func (r *Reconciler) calculateConfigChecksum(ctx context.Context) (string, error
 	return configchecksum.Calculate([]corev1.ConfigMap{cm}, nil), nil
 }
 
-// clearParsersConditions clears the status conditions for all LogParsers only in the 1st reconciliation
-// This is done to allow the legacy conditions ("Running" and "Pending") to be always appended at the end of the conditions list even if new condition types are added
-// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-// TODO: Remove this logic after the end of the deprecation period of the legacy conditions ("Running" and "Pending")
+// clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation
+// This is done to clear the legacy conditions ("Running" and "Pending") at the end of the conditions list
+// TODO: Remove this logic after the legacy conditions ("Running" and "Pending") are cleaned up
 func (r *Reconciler) clearParsersConditions(ctx context.Context, allParsers []telemetryv1alpha1.LogParser) error {
 	if r.parsersConditionsCleared {
 		return nil

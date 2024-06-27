@@ -7,16 +7,6 @@ linters:
   enable-all: true
   disable:
   # Depreacted linters
-    - deadcode
-    - exhaustivestruct
-    - golint
-    - ifshort
-    - interfacer
-    - maligned
-    - nosnakecase
-    - scopelint
-    - structcheck
-    - varcheck
     - gomnd
     - execinquery
   # Linters to be enabled after fixing the issues
