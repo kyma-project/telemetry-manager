@@ -90,7 +90,8 @@ jobs:
 
       - name: Deprovision Gardener
         run: make deprovision-gardener
-        # Delete the cluster in case one of the steps is cancelled/failed/success.
+        # always run the deprovision step, even if the previous steps failed
+        if: always()
         env:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
 
