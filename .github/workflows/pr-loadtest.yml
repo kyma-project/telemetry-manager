@@ -25,7 +25,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Check out code into the Go module directory
+      - name: Checkout repo
         uses: actions/checkout@v4
       - id: set-matrix
         run: |
@@ -52,7 +52,6 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      # Generate the cluster name to be used for cluster creation. The cluster-name should be `ci-traces`
       - name: Setup gardener cluster name
         run:  echo "GARDENER_CLUSTER_NAME=${{ matrix.name }}" >> $GITHUB_ENV
 
@@ -94,5 +93,17 @@ jobs:
         # Delete the cluster in case one of the steps is cancelled/failed/success.
         env:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+
+  print-results:
+    needs: load-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Results
+        uses: actions/download-artifact@v4
+        with:
+          name: Results-${{ matrix.name }}
+      - name: Print Results
+        run: cat tests/*.md
+
 
 
