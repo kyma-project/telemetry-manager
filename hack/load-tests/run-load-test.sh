@@ -31,7 +31,15 @@ done
 
 image_clean=$(basename $OTEL_IMAGE | tr ":" "." )
 mkdir tests
-RESULTS_FILE=tests/$(echo ${TEST_NAME}-${TEST_TARGET}-${image_clean}-${BACKPRESSURE_TEST}-${MAX_PIPELINE}-${TEST_DURATION} | tr -cd '[[:alnum:]]._-').md
+NAME=${TEST_TARGET}
+if [ "$MAX_PIPELINE" == "true" ]; then
+    NAME=$NAME-MultiPipeline
+fi
+if [ "$BACKPRESSURE_TEST" == "true" ]; then
+    NAME=$NAME-BackPressure
+fi
+
+RESULTS_FILE=tests/$(echo ${NAME}-${image_clean} | tr -cd '[[:alnum:]]._-').md
 
 # shellcheck disable=SC2112
 function setup() {
