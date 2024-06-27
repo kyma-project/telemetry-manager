@@ -21,18 +21,3 @@ $(K3D): $(LOCALBIN)
 		rm -rf $(K3D); \
 	fi
 	test -s $(K3D) || curl -s $(K3D_INSTALL_SCRIPT) | PATH="$(PATH):$(LOCALBIN)" USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash
-
-## Kyma
-define os_error
-$(error Error: unsupported platform OS_TYPE:$1, OS_ARCH:$2; to mitigate this problem set variable KYMA with absolute path to kyma-cli binary compatible with your operating system and architecture)
-endef
-
-KYMA_FILENAME ?=  $(shell hack/get-kyma-filename.sh ${OS_TYPE} ${OS_ARCH})
-KYMA_STABILITY ?= unstable
-
-.PHONY: kyma
-kyma: $(LOCALBIN) $(KYMA) ## Download Kyma cli locally if necessary.
-$(KYMA):
-	$(if $(KYMA_FILENAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
-	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILENAME)
-	chmod 0100 $(KYMA)
