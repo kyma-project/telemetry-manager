@@ -5,68 +5,11 @@ $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
 ## Tool Binaries
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
-TABLE_GEN ?= $(LOCALBIN)/table-gen
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-GINKGO ?= $(LOCALBIN)/ginkgo
-GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 K3D ?= $(LOCALBIN)/k3d
 KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= $(ENV_KUSTOMIZE_VERSION)
-TABLE_GEN_VERSION ?= $(ENV_TABLE_GEN_VERSION)
-CONTROLLER_TOOLS_VERSION ?= $(ENV_CONTROLLER_TOOLS_VERSION)
 K3D_VERSION ?= $(ENV_K3D_VERSION)
-GINKGO_VERSION ?= $(ENV_GINKGO_VERSION)
-GO_TEST_COVERAGE_VERSION ?= $(ENV_GO_TEST_COVERAGE_VERSION)
-
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
-
-.PHONY: dependencies
-dependencies: kustomize tablegen controller-gen ginkgo k3d kyma ## Download and install all build dependencies.
-
-## kustomize
-KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
-.PHONY: kustomize
-kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
-$(KUSTOMIZE): $(LOCALBIN)
-	@if test -x $(KUSTOMIZE) && ! $(KUSTOMIZE) version | grep -q $(KUSTOMIZE_VERSION); then \
-		echo "$(KUSTOMIZE) version is not expected $(KUSTOMIZE_VERSION). Removing it before installing."; \
-		rm -rf $(KUSTOMIZE); \
-	fi
-	test -s $(KUSTOMIZE) || { curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) --output install_kustomize.sh && bash install_kustomize.sh $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); rm install_kustomize.sh; }
-
-## controller-gen
-.PHONY: controller-gen
-controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(CONTROLLER_GEN) && $(CONTROLLER_GEN) --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
-
-## tablegen
-.PHONY: tablegen
-tablegen: $(TABLE_GEN) ## Download table-gen locally if necessary.
-$(TABLE_GEN): $(LOCALBIN)
-	test -s $(TABLE_GEN) || GOBIN=$(LOCALBIN) go install github.com/kyma-project/kyma/hack/table-gen@$(TABLE_GEN_VERSION)
-
-## ginkgo
-.PHONY: ginkgo
-ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
-$(GINKGO): $(LOCALBIN)
-	test -s $(GINKGO) && $(GINKGO) version | grep -q $(GINKGO_VERSION) || \
-	GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
-
-## go-test-coverage
-.PHONY: go-test-coverage
-go-test-coverage: $(GO_TEST_COVERAGE) ## Download go-test-coverage locally if necessary.
-$(GO_TEST_COVERAGE): $(LOCALBIN)
-	test -s $(GO_TEST_COVERAGE) && $(GO_TEST_COVERAGE) --version | grep -q $(GO_TEST_COVERAGE_VERSION) || \
-	GOBIN=$(LOCALBIN) go install github.com/vladopajic/go-test-coverage/v2@$(GO_TEST_COVERAGE_VERSION)
 
 ## k3d
 K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh"
