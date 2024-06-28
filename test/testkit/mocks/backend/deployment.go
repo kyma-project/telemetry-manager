@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.102.1-0.1.16"
+	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.102.1-fbfb6cdc"
 	nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
 	fluentDImage       = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
 )
