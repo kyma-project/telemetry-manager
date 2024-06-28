@@ -110,7 +110,9 @@ jobs:
         with:
           merge-multiple: true
       - name: Print Results
-        run: cat tests/*.md
+        run: |
+          ls -la
+          cat tests/*.md
 
 
 
