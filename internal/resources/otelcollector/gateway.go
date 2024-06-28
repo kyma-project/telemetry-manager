@@ -27,7 +27,7 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
-type GatewayResourcesHandler struct {
+type GatewayApplierDeleter struct {
 	Config GatewayConfig
 }
 
@@ -47,10 +47,10 @@ type GatewayApplyOptions struct {
 	ResourceRequirementsMultiplier int
 }
 
-func (grh *GatewayResourcesHandler) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
-	name := types.NamespacedName{Namespace: grh.Config.Namespace, Name: grh.Config.BaseName}
+func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
+	name := types.NamespacedName{Namespace: gad.Config.Namespace, Name: gad.Config.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, grh.makeGatewayClusterRole(name), opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, gad.makeGatewayClusterRole(name), opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -65,16 +65,16 @@ func (grh *GatewayResourcesHandler) ApplyResources(ctx context.Context, c client
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, grh.makeGatewayDeployment(configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, grh.makeOTLPService()); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService()); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
 	if opts.IstioEnabled {
-		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, grh.makePeerAuthentication()); err != nil {
+		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
@@ -82,18 +82,18 @@ func (grh *GatewayResourcesHandler) ApplyResources(ctx context.Context, c client
 	return nil
 }
 
-func (grh *GatewayResourcesHandler) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
+func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: grh.Config.BaseName, Namespace: grh.Config.Namespace}
+	name := types.NamespacedName{Name: gad.Config.BaseName, Namespace: gad.Config.Namespace}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
-		Name:      grh.Config.BaseName,
-		Namespace: grh.Config.Namespace,
+		Name:      gad.Config.BaseName,
+		Namespace: gad.Config.Namespace,
 	}
 
 	secret := corev1.Secret{ObjectMeta: objectMeta}
@@ -111,7 +111,7 @@ func (grh *GatewayResourcesHandler) DeleteResources(ctx context.Context, c clien
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
 	}
 
-	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: grh.Config.OTLPServiceName, Namespace: grh.Config.Namespace}}
+	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.Config.OTLPServiceName, Namespace: gad.Config.Namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
@@ -126,7 +126,7 @@ func (grh *GatewayResourcesHandler) DeleteResources(ctx context.Context, c clien
 	return allErrors
 }
 
-func (grh *GatewayResourcesHandler) makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+func (gad *GatewayApplierDeleter) makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -149,8 +149,8 @@ func (grh *GatewayResourcesHandler) makeGatewayClusterRole(name types.Namespaced
 	return &clusterRole
 }
 
-func (grh *GatewayResourcesHandler) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	selectorLabels := defaultLabels(grh.Config.BaseName)
+func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
+	selectorLabels := defaultLabels(gad.Config.BaseName)
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", opts.IstioEnabled)
 
@@ -166,12 +166,12 @@ func (grh *GatewayResourcesHandler) makeGatewayDeployment(configChecksum string,
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
 		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
 	}
-	resources := grh.makeGatewayResourceRequirements(opts)
+	resources := gad.makeGatewayResourceRequirements(opts)
 	affinity := makePodAffinity(selectorLabels)
 
-	deploymentConfig := grh.Config.Deployment
+	deploymentConfig := gad.Config.Deployment
 	podSpec := makePodSpec(
-		grh.Config.BaseName,
+		gad.Config.BaseName,
 		deploymentConfig.Image,
 		commonresources.WithPriorityClass(deploymentConfig.PriorityClassName),
 		commonresources.WithResources(resources),
@@ -183,8 +183,8 @@ func (grh *GatewayResourcesHandler) makeGatewayDeployment(configChecksum string,
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      grh.Config.BaseName,
-			Namespace: grh.Config.Namespace,
+			Name:      gad.Config.BaseName,
+			Namespace: gad.Config.Namespace,
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -203,8 +203,8 @@ func (grh *GatewayResourcesHandler) makeGatewayDeployment(configChecksum string,
 	}
 }
 
-func (grh *GatewayResourcesHandler) makeGatewayResourceRequirements(opts GatewayApplyOptions) corev1.ResourceRequirements {
-	deploymentConfig := grh.Config.Deployment
+func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayApplyOptions) corev1.ResourceRequirements {
+	deploymentConfig := gad.Config.Deployment
 
 	memoryRequest := deploymentConfig.BaseMemoryRequest.DeepCopy()
 	memoryLimit := deploymentConfig.BaseMemoryLimit.DeepCopy()
@@ -259,13 +259,13 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 	}
 }
 
-func (grh *GatewayResourcesHandler) makeOTLPService() *corev1.Service {
-	labels := defaultLabels(grh.Config.BaseName)
+func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
+	labels := defaultLabels(gad.Config.BaseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      grh.Config.OTLPServiceName,
-			Namespace: grh.Config.Namespace,
+			Name:      gad.Config.OTLPServiceName,
+			Namespace: gad.Config.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -289,13 +289,13 @@ func (grh *GatewayResourcesHandler) makeOTLPService() *corev1.Service {
 	}
 }
 
-func (grh *GatewayResourcesHandler) makePeerAuthentication() *istiosecurityclientv1beta.PeerAuthentication {
-	labels := defaultLabels(grh.Config.BaseName)
+func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1beta.PeerAuthentication {
+	labels := defaultLabels(gad.Config.BaseName)
 
 	return &istiosecurityclientv1beta.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      grh.Config.BaseName,
-			Namespace: grh.Config.Namespace,
+			Name:      gad.Config.BaseName,
+			Namespace: gad.Config.Namespace,
 			Labels:    labels,
 		},
 		Spec: istiosecurityv1beta.PeerAuthentication{

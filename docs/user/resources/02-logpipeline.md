@@ -60,18 +60,6 @@ status:
     reason: ConfigurationGenerated
     status: "True"
     type: ConfigurationGenerated
-  - lastTransitionTime: "2024-02-28T22:48:24Z"
-    message: '[NOTE: The "Pending" type is deprecated] Fluent Bit DaemonSet is not ready'
-    observedGeneration: 2
-    reason: FluentBitDaemonSetNotReady
-    status: "False"
-    type: Pending
-  - lastTransitionTime: "2024-02-28T22:48:24Z"
-    message: '[NOTE: The "Running" type is deprecated] Fluent Bit DaemonSet is ready'
-    observedGeneration: 2
-    reason: FluentBitDaemonSetReady
-    status: "True"
-    type: Running
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
@@ -196,8 +184,6 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 ### LogPipeline Status
 
 The status of the LogPipeline is determined by the condition types `AgentHealthy`, `ConfigurationGenerated`, and `TelemetryFlowHealthy`:
-
-> **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
 | Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                                                                                                                                                                   |
 |------------------------|------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

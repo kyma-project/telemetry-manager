@@ -24,3 +24,12 @@ updates:
       prefix: "chore(dependabot)"
     labels:
       - "area/dependency"
+
+  - package-ecosystem: "gomod"
+    directory: "/internal/tools"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "chore(dependabot)"
+    labels:
+      - "area/ci"

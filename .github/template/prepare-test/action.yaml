@@ -16,10 +16,6 @@ runs:
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
 
-    - name: Setup Ginkgo
-      shell: bash
-      run: make ginkgo
-
     - name: Provision K3D
       shell: bash
       run: make provision-k3d

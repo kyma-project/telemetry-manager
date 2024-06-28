@@ -48,12 +48,14 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
-type AgentResourcesHandler interface {
+//go:generate mockery --name AgentApplierDeleter --filename agent_applier_deleter.go
+type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client) error
 }
 
-type GatewayResourcesHandler interface {
+//go:generate mockery --name GatewayApplierDeleter --filename gateway_applier_deleter.go
+type GatewayApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
@@ -97,17 +99,17 @@ type Reconciler struct {
 	client.Client
 	config Config
 
-	agentConfigBuilder      AgentConfigBuilder
-	gatewayConfigBuilder    GatewayConfigBuilder
-	agentResourcesHandler   AgentResourcesHandler
-	gatewayResourcesHandler GatewayResourcesHandler
-	pipelineLock            PipelineLock
-	gatewayProber           DeploymentProber
-	agentProber             DaemonSetProber
-	flowHealthProber        FlowHealthProber
-	tlsCertValidator        TLSCertValidator
-	overridesHandler        OverridesHandler
-	istioStatusChecker      IstioStatusChecker
+	agentConfigBuilder    AgentConfigBuilder
+	gatewayConfigBuilder  GatewayConfigBuilder
+	agentApplierDeleter   AgentApplierDeleter
+	gatewayApplierDeleter GatewayApplierDeleter
+	pipelineLock          PipelineLock
+	gatewayProber         DeploymentProber
+	agentProber           DaemonSetProber
+	flowHealthProber      FlowHealthProber
+	tlsCertValidator      TLSCertValidator
+	overridesHandler      OverridesHandler
+	istioStatusChecker    IstioStatusChecker
 }
 
 func NewReconciler(
@@ -132,10 +134,10 @@ func NewReconciler(
 				},
 			},
 		},
-		gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{
+		gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{
 			Config: config.Gateway,
 		},
-		agentResourcesHandler: &otelcollector.AgentResourcesHandler{
+		agentApplierDeleter: &otelcollector.AgentApplierDeleter{
 			Config: config.Agent,
 		},
 		pipelineLock: resourcelock.New(client, types.NamespacedName{
@@ -203,10 +205,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up metric pipeline resources: all metric pipelines are non-reconcilable")
-		if err = r.gatewayResourcesHandler.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
-		if err = r.agentResourcesHandler.DeleteResources(ctx, r.Client); err != nil {
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
 			return fmt.Errorf("failed to delete agent resources: %w", err)
 		}
 		return nil
@@ -308,7 +310,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayResourcesHandler.ApplyResources(
+	if err := r.gatewayApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,
@@ -337,7 +339,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	if err := r.agentResourcesHandler.ApplyResources(
+	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{

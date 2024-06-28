@@ -85,14 +85,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelV1Beta1), Ordered
 			assert.LogPipelineUnsupportedMode(ctx, k8sClient, pipelineName, false)
 		})
 
-		It("Should have a pipeline with legacy condition types at the end of the conditions list", func() {
-			assert.LogPipelineHasLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
-		})
-
-		It("Should have a log backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
-		})
-
 		It("Should have a log producer running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})

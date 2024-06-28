@@ -18,7 +18,6 @@ import (
 func TestLogComponentsCheck(t *testing.T) {
 	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonAgentReady}
 	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonAgentConfigured}
-	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady}
 
 	tests := []struct {
 		name                     string
@@ -46,22 +45,10 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -78,12 +65,6 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
@@ -92,11 +73,6 @@ func TestLogComponentsCheck(t *testing.T) {
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonReferencedSecretMissing,
 						Message: "One or more referenced Secrets are missing",
-					}).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonReferencedSecretMissing,
 					}).
 					Build(),
 			},
@@ -114,12 +90,6 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(metav1.Condition{
@@ -129,11 +99,6 @@ func TestLogComponentsCheck(t *testing.T) {
 						Message: conditions.MessageForLogPipeline(conditions.ReasonAgentNotReady),
 					}).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -150,12 +115,6 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
@@ -164,11 +123,6 @@ func TestLogComponentsCheck(t *testing.T) {
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonUnsupportedLokiOutput,
 						Message: conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput),
-					}).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonUnsupportedLokiOutput,
 					}).
 					Build(),
 			},
@@ -190,11 +144,6 @@ func TestLogComponentsCheck(t *testing.T) {
 						Reason: conditions.ReasonAgentNotReady,
 					}).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
@@ -203,11 +152,6 @@ func TestLogComponentsCheck(t *testing.T) {
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonReferencedSecretMissing,
 						Message: "One or more referenced Secrets are missing",
-					}).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionTrue,
-						Reason: conditions.ReasonReferencedSecretMissing,
 					}).
 					Build(),
 			},
@@ -337,12 +281,6 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
@@ -375,12 +313,6 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(configGeneratedCond).
-					WithStatusCondition(metav1.Condition{
-						Type:   conditions.TypePending,
-						Status: metav1.ConditionFalse,
-						Reason: conditions.ReasonFluentBitDSNotReady,
-					}).
-					WithStatusCondition(runningCondition).
 					Build(),
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(healthyAgentCond).

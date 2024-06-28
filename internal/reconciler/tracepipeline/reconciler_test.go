@@ -59,6 +59,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -70,15 +73,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:                  fakeClient,
-			config:                  testConfig,
-			gatewayConfigBuilder:    gatewayConfigBuilderMock,
-			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:            pipelineLockStub,
-			prober:                  proberStub,
-			flowHealthProber:        flowHealthProberStub,
-			overridesHandler:        overridesHandlerStub,
-			istioStatusChecker:      istioStatusCheckerStub,
+			Client:                fakeClient,
+			config:                testConfig,
+			gatewayConfigBuilder:  gatewayConfigBuilderMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
+			pipelineLock:          pipelineLockStub,
+			prober:                proberStub,
+			flowHealthProber:      flowHealthProberStub,
+			overridesHandler:      overridesHandlerStub,
+			istioStatusChecker:    istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -92,11 +95,6 @@ func TestReconcile(t *testing.T) {
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
 			"Trace gateway Deployment is not ready",
-		)
-
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonTraceGatewayDeploymentNotReady,
-			"[NOTE: The \"Pending\" type is deprecated] Trace gateway Deployment is not ready",
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -109,6 +107,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -120,15 +121,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:                  fakeClient,
-			config:                  testConfig,
-			gatewayConfigBuilder:    gatewayConfigBuilderMock,
-			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:            pipelineLockStub,
-			prober:                  proberStub,
-			flowHealthProber:        flowHealthProberStub,
-			overridesHandler:        overridesHandlerStub,
-			istioStatusChecker:      istioStatusCheckerStub,
+			Client:                fakeClient,
+			config:                testConfig,
+			gatewayConfigBuilder:  gatewayConfigBuilderMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
+			pipelineLock:          pipelineLockStub,
+			prober:                proberStub,
+			flowHealthProber:      flowHealthProberStub,
+			overridesHandler:      overridesHandlerStub,
+			istioStatusChecker:    istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -144,11 +145,6 @@ func TestReconcile(t *testing.T) {
 			"Trace gateway Deployment is not ready",
 		)
 
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonTraceGatewayDeploymentNotReady,
-			"[NOTE: The \"Pending\" type is deprecated] Trace gateway Deployment is not ready",
-		)
-
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
@@ -158,6 +154,9 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -170,15 +169,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:                  fakeClient,
-			config:                  testConfig,
-			gatewayConfigBuilder:    gatewayConfigBuilderMock,
-			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:            pipelineLockStub,
-			prober:                  proberStub,
-			flowHealthProber:        flowHealthProberStub,
-			overridesHandler:        overridesHandlerStub,
-			istioStatusChecker:      istioStatusCheckerStub,
+			Client:                fakeClient,
+			config:                testConfig,
+			gatewayConfigBuilder:  gatewayConfigBuilderMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
+			pipelineLock:          pipelineLockStub,
+			prober:                proberStub,
+			flowHealthProber:      flowHealthProberStub,
+			overridesHandler:      overridesHandlerStub,
+			istioStatusChecker:    istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -191,10 +190,6 @@ func TestReconcile(t *testing.T) {
 			metav1.ConditionTrue,
 			conditions.ReasonGatewayReady,
 			"Trace gateway Deployment is ready",
-		)
-
-		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-			"[NOTE: The \"Running\" type is deprecated] Trace gateway Deployment is ready",
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -210,6 +205,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
 
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -221,15 +219,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:                  fakeClient,
-			config:                  testConfig,
-			gatewayConfigBuilder:    gatewayConfigBuilderMock,
-			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:            pipelineLockStub,
-			prober:                  proberStub,
-			flowHealthProber:        flowHealthProberStub,
-			overridesHandler:        overridesHandlerStub,
-			istioStatusChecker:      istioStatusCheckerStub,
+			Client:                fakeClient,
+			config:                testConfig,
+			gatewayConfigBuilder:  gatewayConfigBuilderMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
+			pipelineLock:          pipelineLockStub,
+			prober:                proberStub,
+			flowHealthProber:      flowHealthProberStub,
+			overridesHandler:      overridesHandlerStub,
+			istioStatusChecker:    istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -242,11 +240,6 @@ func TestReconcile(t *testing.T) {
 			metav1.ConditionFalse,
 			conditions.ReasonReferencedSecretMissing,
 			"One or more referenced Secrets are missing: Secret 'non-existing' of Namespace 'default'",
-		)
-
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonReferencedSecretMissing,
-			"[NOTE: The \"Pending\" type is deprecated] One or more referenced Secrets are missing: Secret 'non-existing' of Namespace 'default'",
 		)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -277,6 +270,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -288,15 +284,15 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:                  fakeClient,
-			config:                  testConfig,
-			gatewayConfigBuilder:    gatewayConfigBuilderMock,
-			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:            pipelineLockStub,
-			prober:                  proberStub,
-			flowHealthProber:        flowHealthProberStub,
-			overridesHandler:        overridesHandlerStub,
-			istioStatusChecker:      istioStatusCheckerStub,
+			Client:                fakeClient,
+			config:                testConfig,
+			gatewayConfigBuilder:  gatewayConfigBuilderMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
+			pipelineLock:          pipelineLockStub,
+			prober:                proberStub,
+			flowHealthProber:      flowHealthProberStub,
+			overridesHandler:      overridesHandlerStub,
+			istioStatusChecker:    istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
@@ -309,10 +305,6 @@ func TestReconcile(t *testing.T) {
 			metav1.ConditionTrue,
 			conditions.ReasonGatewayConfigured,
 			"TracePipeline specification is successfully applied to the configuration of Trace gateway",
-		)
-
-		requireEndsWithLegacyRunningCondition(t, updatedPipeline,
-			"[NOTE: The \"Running\" type is deprecated] Trace gateway Deployment is ready",
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -355,11 +347,6 @@ func TestReconcile(t *testing.T) {
 			metav1.ConditionFalse,
 			conditions.ReasonMaxPipelinesExceeded,
 			"Maximum pipeline count limit exceeded",
-		)
-
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonMaxPipelinesExceeded,
-			"[NOTE: The \"Pending\" type is deprecated] Maximum pipeline count limit exceeded",
 		)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -473,6 +460,9 @@ func TestReconcile(t *testing.T) {
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
@@ -484,15 +474,15 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
 				sut := Reconciler{
-					Client:                  fakeClient,
-					config:                  testConfig,
-					gatewayConfigBuilder:    gatewayConfigBuilderMock,
-					gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-					pipelineLock:            pipelineLockStub,
-					prober:                  gatewayProberStub,
-					flowHealthProber:        flowHealthProberStub,
-					overridesHandler:        overridesHandlerStub,
-					istioStatusChecker:      istioStatusCheckerStub,
+					Client:                fakeClient,
+					config:                testConfig,
+					gatewayConfigBuilder:  gatewayConfigBuilderMock,
+					gatewayApplierDeleter: gatewayApplierDeleterMock,
+					pipelineLock:          pipelineLockStub,
+					prober:                gatewayProberStub,
+					flowHealthProber:      flowHealthProberStub,
+					overridesHandler:      overridesHandlerStub,
+					istioStatusChecker:    istioStatusCheckerStub,
 				}
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
@@ -512,78 +502,6 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 
-	t.Run("should remove running condition and set pending condition to true if trace gateway deployment becomes not ready again", func(t *testing.T) {
-		pipeline := testutils.NewTracePipelineBuilder().
-			WithOTLPOutput(testutils.OTLPEndpoint("localhost")).
-			WithStatusConditions(
-				metav1.Condition{
-					Type:               conditions.TypeGatewayHealthy,
-					Status:             metav1.ConditionTrue,
-					Reason:             conditions.ReasonGatewayReady,
-					LastTransitionTime: metav1.Now(),
-				},
-				metav1.Condition{
-					Type:               conditions.TypeConfigurationGenerated,
-					Status:             metav1.ConditionTrue,
-					Reason:             conditions.TypeConfigurationGenerated,
-					LastTransitionTime: metav1.Now(),
-				},
-				metav1.Condition{
-					Type:               conditions.TypePending,
-					Status:             metav1.ConditionFalse,
-					Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
-					LastTransitionTime: metav1.Now(),
-				},
-				metav1.Condition{
-					Type:               conditions.TypeRunning,
-					Status:             metav1.ConditionTrue,
-					Reason:             conditions.ReasonTraceGatewayDeploymentReady,
-					LastTransitionTime: metav1.Now(),
-				}).
-			Build()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
-
-		pipelineLockStub := &mocks.PipelineLock{}
-		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
-
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
-
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-
-		sut := Reconciler{
-			Client:                  fakeClient,
-			config:                  testConfig,
-			gatewayConfigBuilder:    gatewayConfigBuilderMock,
-			gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-			pipelineLock:            pipelineLockStub,
-			prober:                  proberStub,
-			flowHealthProber:        flowHealthProberStub,
-			overridesHandler:        overridesHandlerStub,
-			istioStatusChecker:      istioStatusCheckerStub,
-		}
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
-		require.Nil(t, runningCond)
-
-		requireEndsWithLegacyPendingCondition(t, updatedPipeline,
-			conditions.ReasonTraceGatewayDeploymentNotReady,
-			"[NOTE: The \"Pending\" type is deprecated] Trace gateway Deployment is not ready",
-		)
-
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
-
 	t.Run("tls conditions", func(t *testing.T) {
 		tests := []struct {
 			name                    string
@@ -591,16 +509,14 @@ func TestReconcile(t *testing.T) {
 			expectedStatus          metav1.ConditionStatus
 			expectedReason          string
 			expectedMessage         string
-			expectedLegacyCondition string
 			expectGatewayConfigured bool
 		}{
 			{
-				name:                    "cert expired",
-				tlsCertErr:              &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateExpired,
-				expectedMessage:         "TLS certificate expired on 2020-11-01",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "cert expired",
+				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC)},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateExpired,
+				expectedMessage: "TLS certificate expired on 2020-11-01",
 			},
 			{
 				name:                    "cert about to expire",
@@ -608,16 +524,14 @@ func TestReconcile(t *testing.T) {
 				expectedStatus:          metav1.ConditionTrue,
 				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
 				expectedMessage:         "TLS certificate is about to expire, configured certificate is valid until 2024-11-01",
-				expectedLegacyCondition: conditions.TypeRunning,
 				expectGatewayConfigured: true,
 			},
 			{
-				name:                    "ca expired",
-				tlsCertErr:              &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSCertificateExpired,
-				expectedMessage:         "TLS CA certificate expired on 2020-11-01",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "ca expired",
+				tlsCertErr:      &tlscert.CertExpiredError{Expiry: time.Date(2020, time.November, 1, 0, 0, 0, 0, time.UTC), IsCa: true},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSCertificateExpired,
+				expectedMessage: "TLS CA certificate expired on 2020-11-01",
 			},
 			{
 				name:                    "ca about to expire",
@@ -625,48 +539,42 @@ func TestReconcile(t *testing.T) {
 				expectedStatus:          metav1.ConditionTrue,
 				expectedReason:          conditions.ReasonTLSCertificateAboutToExpire,
 				expectedMessage:         "TLS CA certificate is about to expire, configured certificate is valid until 2024-11-01",
-				expectedLegacyCondition: conditions.TypeRunning,
 				expectGatewayConfigured: true,
 			},
 			{
-				name:                    "cert decode failed",
-				tlsCertErr:              tlscert.ErrCertDecodeFailed,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: failed to decode PEM block containing certificate",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "cert decode failed",
+				tlsCertErr:      tlscert.ErrCertDecodeFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to decode PEM block containing certificate",
 			},
 			{
-				name:                    "key decode failed",
-				tlsCertErr:              tlscert.ErrKeyDecodeFailed,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: failed to decode PEM block containing private key",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "key decode failed",
+				tlsCertErr:      tlscert.ErrKeyDecodeFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to decode PEM block containing private key",
 			},
 			{
-				name:                    "key parse failed",
-				tlsCertErr:              tlscert.ErrKeyParseFailed,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: failed to parse private key",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "key parse failed",
+				tlsCertErr:      tlscert.ErrKeyParseFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to parse private key",
 			},
 			{
-				name:                    "cert parse failed",
-				tlsCertErr:              tlscert.ErrCertParseFailed,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: failed to parse certificate",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "cert parse failed",
+				tlsCertErr:      tlscert.ErrCertParseFailed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: failed to parse certificate",
 			},
 			{
-				name:                    "cert and key mismatch",
-				tlsCertErr:              tlscert.ErrInvalidCertificateKeyPair,
-				expectedStatus:          metav1.ConditionFalse,
-				expectedReason:          conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage:         "TLS configuration invalid: certificate and private key do not match",
-				expectedLegacyCondition: conditions.TypePending,
+				name:            "cert and key mismatch",
+				tlsCertErr:      tlscert.ErrInvalidCertificateKeyPair,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
+				expectedMessage: "TLS configuration invalid: certificate and private key do not match",
 			},
 		}
 		for _, tt := range tests {
@@ -676,6 +584,10 @@ func TestReconcile(t *testing.T) {
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 				gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -688,16 +600,16 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 				sut := Reconciler{
-					Client:                  fakeClient,
-					config:                  testConfig,
-					gatewayConfigBuilder:    gatewayConfigBuilderMock,
-					gatewayResourcesHandler: &otelcollector.GatewayResourcesHandler{Config: testConfig.Gateway},
-					pipelineLock:            pipelineLockStub,
-					prober:                  proberStub,
-					flowHealthProber:        flowHealthProberStub,
-					tlsCertValidator:        stubs.NewTLSCertValidator(tt.tlsCertErr),
-					overridesHandler:        overridesHandlerStub,
-					istioStatusChecker:      istioStatusCheckerStub,
+					Client:                fakeClient,
+					config:                testConfig,
+					gatewayConfigBuilder:  gatewayConfigBuilderMock,
+					gatewayApplierDeleter: gatewayApplierDeleterMock,
+					pipelineLock:          pipelineLockStub,
+					prober:                proberStub,
+					flowHealthProber:      flowHealthProberStub,
+					tlsCertValidator:      stubs.NewTLSCertValidator(tt.tlsCertErr),
+					overridesHandler:      overridesHandlerStub,
+					istioStatusChecker:    istioStatusCheckerStub,
 				}
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
@@ -721,14 +633,6 @@ func TestReconcile(t *testing.T) {
 					)
 				}
 
-				if tt.expectedLegacyCondition == conditions.TypePending {
-					expectedLegacyMessage := conditions.PendingTypeDeprecationMsg + tt.expectedMessage
-					requireEndsWithLegacyPendingCondition(t, updatedPipeline, tt.expectedReason, expectedLegacyMessage)
-				} else {
-					expectedLegacyMessage := conditions.RunningTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady)
-					requireEndsWithLegacyRunningCondition(t, updatedPipeline, expectedLegacyMessage)
-				}
-
 				if !tt.expectGatewayConfigured {
 					gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 				} else {
@@ -748,7 +652,8 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
 
-		gatewayResourcesHandlerStub := &stubs.GatewayResourcesHandler{}
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -761,20 +666,20 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		sut := Reconciler{
-			Client:                  fakeClient,
-			config:                  testConfig,
-			gatewayConfigBuilder:    gatewayConfigBuilderMock,
-			gatewayResourcesHandler: gatewayResourcesHandlerStub,
-			pipelineLock:            pipelineLockStub,
-			prober:                  proberStub,
-			flowHealthProber:        flowHealthProberStub,
-			overridesHandler:        overridesHandlerStub,
-			istioStatusChecker:      istioStatusCheckerStub,
+			Client:                fakeClient,
+			config:                testConfig,
+			gatewayConfigBuilder:  gatewayConfigBuilderMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
+			pipelineLock:          pipelineLockStub,
+			prober:                proberStub,
+			flowHealthProber:      flowHealthProberStub,
+			overridesHandler:      overridesHandlerStub,
+			istioStatusChecker:    istioStatusCheckerStub,
 		}
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
-		require.True(t, gatewayResourcesHandlerStub.DeleteFuncCalled)
+		gatewayApplierDeleterMock.AssertExpectations(t)
 	})
 }
 
@@ -786,39 +691,6 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.TracePip
 	require.Equal(t, message, cond.Message)
 	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
 	require.NotEmpty(t, cond.LastTransitionTime)
-}
-
-func requireEndsWithLegacyPendingCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, reason, message string) {
-	cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning)
-	require.Nil(t, cond, "running condition should not be present")
-
-	require.NotEmpty(t, pipeline.Status.Conditions)
-
-	condLen := len(pipeline.Status.Conditions)
-	lastCond := pipeline.Status.Conditions[condLen-1]
-	require.Equal(t, conditions.TypePending, lastCond.Type)
-	require.Equal(t, metav1.ConditionTrue, lastCond.Status)
-	require.Equal(t, reason, lastCond.Reason)
-	require.Equal(t, message, lastCond.Message)
-	require.Equal(t, pipeline.Generation, lastCond.ObservedGeneration)
-	require.NotEmpty(t, lastCond.LastTransitionTime)
-}
-
-func requireEndsWithLegacyRunningCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, message string) {
-	require.Greater(t, len(pipeline.Status.Conditions), 1)
-
-	condLen := len(pipeline.Status.Conditions)
-	lastCond := pipeline.Status.Conditions[condLen-1]
-	require.Equal(t, conditions.TypeRunning, lastCond.Type)
-	require.Equal(t, metav1.ConditionTrue, lastCond.Status)
-	require.Equal(t, conditions.ReasonTraceGatewayDeploymentReady, lastCond.Reason)
-	require.Equal(t, message, lastCond.Message)
-	require.Equal(t, pipeline.Generation, lastCond.ObservedGeneration)
-	require.NotEmpty(t, lastCond.LastTransitionTime)
-
-	prevCond := pipeline.Status.Conditions[condLen-2]
-	require.Equal(t, conditions.TypePending, prevCond.Type)
-	require.Equal(t, metav1.ConditionFalse, prevCond.Status)
 }
 
 func containsPipeline(p telemetryv1alpha1.TracePipeline) any {

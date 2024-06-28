@@ -53,8 +53,6 @@ func TracePipelineHealthy(ctx context.Context, k8sClient client.Client, pipeline
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrue())
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeTrue())
-		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypePending)).To(BeTrue())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -67,22 +65,6 @@ func TracePipelineHasCondition(ctx context.Context, k8sClient client.Client, pip
 		g.Expect(condition).NotTo(BeNil())
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
 		g.Expect(condition.Status).To(Equal(expectedCond.Status))
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
-func TracePipelineHasLegacyConditionsAtEnd(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.TracePipeline
-		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-
-		conditionsSize := len(pipeline.Status.Conditions)
-
-		pendingCond := pipeline.Status.Conditions[conditionsSize-2]
-		g.Expect(pendingCond.Type).To(Equal(conditions.TypePending))
-
-		runningCond := pipeline.Status.Conditions[conditionsSize-1]
-		g.Expect(runningCond.Type).To(Equal(conditions.TypeRunning))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

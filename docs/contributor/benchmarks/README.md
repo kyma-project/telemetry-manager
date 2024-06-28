@@ -307,7 +307,6 @@ Each test scenario has its own test scripts responsible for preparing the test s
 | 3.0.7 (new metrics) |                  4036                   |                   7173                   |              31689              |       825,852        |    0.1,0.1    |                  2481                   |                   1852                   |             104689              |       747,395        |     0.1,0     |                   1520                   |                   484                    |              37907              |       561,731        |    0.1,0.1    |                   807                    |                    58                    |              94365              |       544,211        |      0,0      |
 |         3.0.7 (new) |                  9514                   |                  30273                   |              30263              |       105, 113       |     1, 1      |                  9027                   |                  23850                   |             1521511             |       186, 552       |    1, 0.7     |                   7285                   |                   8357                   |             1891569             |       662, 668       |   0.8, 0.8    |                   5602                   |                   2619                   |             5249308             |       680, 713       |   0.5, 0.5    |
 
-
 </div>
 
 ## Self Monitor
@@ -335,8 +334,8 @@ This test measures the ingestion rate and resource usage of Self Monitor. The me
 
 The average measured values with these 12 target Pods in total, must be the following:
 - Scrape Samples/sec: 15 - 22 samples/sec
-- Total Series Created: 150 - 250 series
-- Head Chunk Storage Size/bytes: 130 - 350 KB
+- Total Series Created: 200 - 350 series
+
 
 Configured memory, CPU limits, and storage are based on this base value and will work up to max scrape 120 targets.
 
@@ -350,15 +349,16 @@ Configured memory, CPU limits, and storage are based on this base value and will
 
 
 #### Test Results
+The main KPIs to track performance changes are **scrape samples per sec** and **total series created**. These values should be in the range of 15-22 samples/sec and 200-350 series, respectively.
+Other metrics to track are **CPU** and **memory usage** of the self-monitor Pods. Both are directly influenced by the number of series created and the scrape samples/sec: more samples and series created increase the memory and CPU usage of the self-monitor Pods.
 
 <div class="table-wrapper" markdown="block">
 
-| Version/Test |Default (ci-self-monitor)|                 |                                  |                      |               | 
-|-------------:|:------------------:|:--------------------:|:--------------------------------:|:--------------------:|:-------------:|
-|              | Scrape Samples/sec | Total Series Created | Head Chunk Storage Size in bytes | Pod Memory Usage(MB) | Pod CPU Usage | 
-|       2.45.5 |        15.4        |         157          |            131072                |          62          |       0       | 
-|  2.45.5(new) |        15.4        |         239          |            131072                |          42          |       0       | 
-|       2.53.0 |        20.4        |         210          |                 0                |          36          |       0       |
-
+| Version/Test | Default (ci-self-monitor) |                      |                        |                                  |                      |               | 
+|-------------:|:-------------------------:|:--------------------:|:----------------------:|:--------------------------------:|:--------------------:|:-------------:|
+|              |    Scrape Samples/sec     | Total Series Created | WAL Storage Size/bytes | Head Chunk Storage Size in bytes | Pod Memory Usage(MB) | Pod CPU Usage | 
+|       2.45.5 |           15.4            |         157          |           -            |              131072              |          62          |       0       | 
+|  2.45.5(new) |           15.4            |         325          |         127633         |                0                 |          43          |       0       |   
+|       2.53.0 |           20.4            |         210          |           -            |                0                 |          36          |       0       |
 
 </div>
