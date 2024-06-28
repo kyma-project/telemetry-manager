@@ -28,7 +28,7 @@ var (
 	ErrCADecodeFailed = errors.New("failed to decode PEM block containing CA certificate")
 	ErrCAParseFailed  = errors.New("failed to parse CA certificate")
 
-	ErrMissingValues = errors.New("missing value(s)")
+	ErrMissingCertKeyPair = errors.New("a certificate and private key must either both be provided or both be missing")
 
 	ErrValueResolveFailed = errors.New("failed to resolve value")
 
@@ -138,13 +138,10 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 }
 
 func checkForMissingValues(config TLSBundle) error {
-	missingCert, missingKey, missingCA := config.GetMissing()
+	missingCert, missingKey, _ := config.GetMissing()
 
-	if missingCert && missingKey && missingCA {
-		return ErrMissingValues
-	}
-	if (missingCert && !missingKey) || (!missingCert && missingKey) {
-		return ErrMissingValues
+	if missingCert != missingKey {
+		return ErrMissingCertKeyPair
 	}
 
 	return nil

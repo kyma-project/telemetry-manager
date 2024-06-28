@@ -144,7 +144,7 @@ func TestMissingCert(t *testing.T) {
 		"ca":  defaultCaData,
 	})
 	err := validator.Validate(context.Background(), tlsConfig)
-	require.ErrorIs(t, err, ErrMissingValues)
+	require.ErrorIs(t, err, ErrMissingCertKeyPair)
 }
 
 func TestMissingKey(t *testing.T) {
@@ -161,7 +161,7 @@ func TestMissingKey(t *testing.T) {
 		"ca":   defaultCaData,
 	})
 	err := validator.Validate(context.Background(), tlsConfig)
-	require.ErrorIs(t, err, ErrMissingValues)
+	require.ErrorIs(t, err, ErrMissingCertKeyPair)
 }
 
 func TestMissingCA(t *testing.T) {
@@ -208,7 +208,7 @@ func TestMissingAll(t *testing.T) {
 
 	tlsConfig := getTLSConfig(map[string]interface{}{})
 	err := validator.Validate(context.Background(), tlsConfig)
-	require.ErrorIs(t, err, ErrMissingValues)
+	require.NoError(t, err)
 }
 
 func TestExpiredCertificate(t *testing.T) {

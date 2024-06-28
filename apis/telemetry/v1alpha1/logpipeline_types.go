@@ -109,7 +109,7 @@ type HTTPOutput struct {
 	Dedot bool `json:"dedot,omitempty"`
 }
 
-// +kubebuilder:validation:XValidation:rule="((has(self.cert) && has(self.key)) || (has(self.ca) && !has(self.cert) && !has(self.key))) || (has(self.skipCertificateValidation) && self.skipCertificateValidation == true && has(self.disabled) && self.disabled == true)", message="Can define either 'cert', 'key', and optionally 'ca', or 'ca' only"
+// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type TLSConfig struct {
 	// Indicates if TLS is disabled or enabled. Default is `false`.
 	Disabled bool `json:"disabled,omitempty"`

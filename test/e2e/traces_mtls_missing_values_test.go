@@ -19,8 +19,8 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	const (
-		missingValuesValidationError = "Can define either 'cert', 'key', and optionally 'ca', or 'ca' only"
-		notFoundError                = "not found"
+		tlsCrdValidationError = "Can define either both 'cert' and 'key', or neither"
+		notFoundError         = "not found"
 	)
 
 	var (
@@ -117,7 +117,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sSucceedingObjects...)).Should(Succeed())
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sFailingObjects...)).
-				Should(MatchError(ContainSubstring(missingValuesValidationError)))
+				Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 		})
 
 		It("Should set ConfigurationGenerated condition to True in pipelines", func() {
