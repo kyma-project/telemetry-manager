@@ -36,11 +36,11 @@ spec:
     services: 100.64.0.0/13
   kubernetes:
     version: "${GARDENER_K8S_VERSION_FULL}"
-  hibernation:
-    enabled: false
-    schedules:
-      - start: "00 ${HIBERNATION_HOUR} * * ?"
-        location: "Europe/Berlin"
+      #  hibernation:
+      #    enabled: false
+      #    schedules:
+      #      - start: "00 ${HIBERNATION_HOUR} * * ?"
+      #        location: "Europe/Berlin"
   addons:
     nginxIngress:
       enabled: false
