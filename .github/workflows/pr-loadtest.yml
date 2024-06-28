@@ -109,7 +109,10 @@ jobs:
         uses: actions/download-artifact@v4
       - name: Print Results
         run: |
-          cat Results-*/*.md
+          for i in Results-*/*.md; do
+            echo "Results from $i"
+            cat $i
+          done
 
 
 
