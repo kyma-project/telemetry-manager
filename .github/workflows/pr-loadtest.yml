@@ -103,7 +103,7 @@ jobs:
       - name: Download Results
         uses: actions/download-artifact@v4
         with:
-          name: Results-${{ matrix.name }}
+          merge-multiple: true
       - name: Print Results
         run: cat tests/*.md
 
