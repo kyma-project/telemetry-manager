@@ -376,12 +376,8 @@ spec:
                             type: boolean
                         type: object
                         x-kubernetes-validations:
-                        - message: Can define either 'cert', 'key', and optionally
-                            'ca', or 'ca' only
-                          rule: ((has(self.cert) && has(self.key)) || (has(self.ca)
-                            && !has(self.cert) && !has(self.key))) || (has(self.skipCertificateValidation)
-                            && self.skipCertificateValidation == true && has(self.disabled)
-                            && self.disabled == true)
+                        - message: Can define either both 'cert' and 'key', or neither
+                          rule: has(self.cert) == has(self.key)
                       uri:
                         description: Defines the URI of the HTTP receiver. Default
                           is "/".
