@@ -100,11 +100,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		succeedingObjs = append(succeedingObjs, logProducer.K8sObject())
 
 		succeedingObjs = append(succeedingObjs,
-			&logPipelineMissingCa, &logPipelineMissingAllButCa,
+			&logPipelineMissingCa, &logPipelineMissingAllButCa, &logPipelineMissingAll,
 		)
 
 		failingObjs = append(failingObjs,
-			&logPipelineMissingKey, &logPipelineMissingCert, &logPipelineMissingAll,
+			&logPipelineMissingKey, &logPipelineMissingCert,
 		)
 
 		return succeedingObjs, failingObjs
@@ -136,6 +136,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonAgentConfigured,
 			})
+
+			assert.LogPipelineHasCondition(ctx, k8sClient, missingAllPipelineName, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonAgentConfigured,
+			})
 		})
 
 		It("Should set TelemetryFlowHealthy condition to True in pipelines", func() {
@@ -146,6 +152,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			})
 
 			assert.LogPipelineHasCondition(ctx, k8sClient, missingAllButCaPipelineName, metav1.Condition{
+				Type:   conditions.TypeFlowHealthy,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonSelfMonFlowHealthy,
+			})
+
+			assert.LogPipelineHasCondition(ctx, k8sClient, missingAllPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,

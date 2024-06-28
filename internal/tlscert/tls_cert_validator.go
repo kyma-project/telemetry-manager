@@ -286,11 +286,12 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 }
 
 func resolveValues(ctx context.Context, c client.Reader, config TLSBundle) ([]byte, []byte, []byte, error) {
+	missingCert, missingKey, missingCA := config.GetMissing()
 	var certPEM, keyPEM, caPEM []byte
 	var err error
 
 	// Resolve cert value (if not missing)
-	if config.Cert != nil {
+	if !missingCert {
 		certPEM, err = resolveValue(ctx, c, *config.Cert)
 	}
 	if err != nil {
@@ -298,7 +299,7 @@ func resolveValues(ctx context.Context, c client.Reader, config TLSBundle) ([]by
 	}
 
 	// Resolve key value (if not missing)
-	if config.Key != nil {
+	if !missingKey {
 		keyPEM, err = resolveValue(ctx, c, *config.Key)
 	}
 	if err != nil {
@@ -306,7 +307,7 @@ func resolveValues(ctx context.Context, c client.Reader, config TLSBundle) ([]by
 	}
 
 	// Resolve CA value (if not missing)
-	if config.CA != nil {
+	if !missingCA {
 		caPEM, err = resolveValue(ctx, c, *config.CA)
 	}
 	if err != nil {
