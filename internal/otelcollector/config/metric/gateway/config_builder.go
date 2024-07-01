@@ -174,13 +174,6 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}
 
-	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
-		processors = append(processors, "filter/drop-runtime-pod-metrics")
-	}
-	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
-		processors = append(processors, "filter/drop-runtime-container-metrics")
-	}
-
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processors = append(processors, makeNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime))
 	}
@@ -192,6 +185,13 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	}
 	if isOtlpInputEnabled(input) && input.Otlp != nil && shouldFilterByNamespace(input.Otlp.Namespaces) {
 		processors = append(processors, makeNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp))
+	}
+
+	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-pod-metrics")
+	}
+	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-container-metrics")
 	}
 
 	processors = append(processors, makeDiagnosticMetricFilters(input)...)
