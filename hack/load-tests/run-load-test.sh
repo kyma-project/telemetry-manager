@@ -394,8 +394,9 @@ function get_result_and_cleanup_selfmonitor() {
    echo -e "Self Monitor Pods got $restarts time restarted\n"| tee -a $RESULTS_FILE
 
    echo -e "\nPrinting Test Results for $TEST_NAME $TEST_TARGET\n"| tee -a $RESULTS_FILE
-   printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Scrape Samples/sec" "Total Series Created" "Head Chunk Storage Size/bytes" "Pod Memory Usage(MB)" "Pod CPU Usage"| tee -a $RESULTS_FILE
-   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$SCRAPESAMPLES" "$SERIESCREATED" "$HEADSTORAGESIZE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"| tee -a $RESULTS_FILE
+
+   printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Scrape Samples/sec" "Total Series Created" "WAL Storage Size/bytes" "Head Chunk Storage Size/bytes" "Pod Memory Usage(MB)" "Pod CPU Usage"| tee -a $RESULTS_FILE
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$SCRAPESAMPLES" "$SERIESCREATED" "$WALSTORAGESIZE" "$HEADSTORAGESIZE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"| tee -a $RESULTS_FILE
 }
 
 function print_metric_result(){
