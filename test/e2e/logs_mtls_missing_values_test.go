@@ -86,7 +86,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientCustomTLS(telemetryv1alpha1.TLSConfig{}),
+				testutils.HTTPClientCustomTLS(telemetryv1alpha1.TLSConfig{
+					Disabled:                  true,
+					SkipCertificateValidation: true,
+				}),
 			).
 			Build()
 

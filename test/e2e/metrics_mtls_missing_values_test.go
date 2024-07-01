@@ -82,7 +82,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			WithName(missingAllPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientCustomTLS(&telemetryv1alpha1.OtlpTLS{}),
+				testutils.OTLPClientCustomTLS(&telemetryv1alpha1.OtlpTLS{
+					Insecure:           true,
+					InsecureSkipVerify: true,
+				}),
 			).
 			Build()
 
