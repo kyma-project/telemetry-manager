@@ -25,11 +25,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 	var (
 		mockNs                      = suite.ID()
-		missingCaPipelineName       = suite.ID() + "-missing-ca"
-		missingCertPipelineName     = suite.ID() + "-missing-cert"
-		missingKeyPipelineName      = suite.ID() + "-missing-key"
-		missingAllPipelineName      = suite.ID() + "-missing-all"
-		missingAllButCaPipelineName = suite.ID() + "-missing-all-but-ca"
+		missingCaPipelineName       = suite.IDWithSuffix("-missing-ca")
+		missingCertPipelineName     = suite.IDWithSuffix("-missing-cert")
+		missingKeyPipelineName      = suite.IDWithSuffix("-missing-key")
+		missingAllPipelineName      = suite.IDWithSuffix("-missing-all")
+		missingAllButCaPipelineName = suite.IDWithSuffix("-missing-all-but-ca")
 	)
 
 	makeResources := func() ([]client.Object, []client.Object) {
