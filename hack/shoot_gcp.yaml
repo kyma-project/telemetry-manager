@@ -2,8 +2,6 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: ${GARDENER_CLUSTER_NAME}
-  annotations:
-    dashboard.garden.sapcloud.io/no-hibernation-schedule: 'true'
 spec:
   secretBindingName: ${GARDENER_SECRET_NAME}
   cloudProfileName: gcp
@@ -38,6 +36,11 @@ spec:
     services: 100.64.0.0/13
   kubernetes:
     version: "${GARDENER_K8S_VERSION_FULL}"
+  hibernation:
+    enabled: false
+    schedules:
+      - start: "00 ${HIBERNATION_HOUR} * * * * *"
+        location: "Europe/Berlin"
   addons:
     nginxIngress:
       enabled: false
