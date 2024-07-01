@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -48,10 +49,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			WithName(missingCaPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLSMissingCA(
-					clientCerts.ClientCertPem.String(),
-					clientCerts.ClientKeyPem.String(),
-				),
+				testutils.OTLPClientCustomTLS(&telemetryv1alpha1.OtlpTLS{
+					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+					Key:  &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
+				}),
 			).
 			Build()
 
@@ -59,10 +60,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			WithName(missingCertPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLSMissingCert(
-					clientCerts.CaCertPem.String(),
-					clientCerts.ClientKeyPem.String(),
-				),
+				testutils.OTLPClientCustomTLS(&telemetryv1alpha1.OtlpTLS{
+					CA:  &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
+					Key: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
+				}),
 			).
 			Build()
 
@@ -70,10 +71,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			WithName(missingKeyPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLSMissingKey(
-					clientCerts.CaCertPem.String(),
-					clientCerts.ClientCertPem.String(),
-				),
+				testutils.OTLPClientCustomTLS(&telemetryv1alpha1.OtlpTLS{
+					CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
+					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+				}),
 			).
 			Build()
 
@@ -81,7 +82,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			WithName(missingAllPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLSMissingAll(),
+				testutils.OTLPClientCustomTLS(&telemetryv1alpha1.OtlpTLS{}),
 			).
 			Build()
 
@@ -89,9 +90,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			WithName(missingAllButCaPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLSMissingAllButCA(
-					clientCerts.CaCertPem.String(),
-				),
+				testutils.OTLPClientCustomTLS(&telemetryv1alpha1.OtlpTLS{
+					CA: &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
+				}),
 			).
 			Build()
 

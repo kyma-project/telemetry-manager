@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -49,10 +50,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLSMissingCA(
-					clientCerts.ClientCertPem.String(),
-					clientCerts.ClientKeyPem.String(),
-				)).
+				testutils.HTTPClientCustomTLS(telemetryv1alpha1.TLSConfig{
+					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+					Key:  &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
+				}),
+			).
 			Build()
 
 		logPipelineMissingCert := testutils.NewLogPipelineBuilder().
@@ -60,10 +62,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLSMissingCert(
-					clientCerts.CaCertPem.String(),
-					clientCerts.ClientKeyPem.String(),
-				)).
+				testutils.HTTPClientCustomTLS(telemetryv1alpha1.TLSConfig{
+					CA:  &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
+					Key: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
+				}),
+			).
 			Build()
 
 		logPipelineMissingKey := testutils.NewLogPipelineBuilder().
@@ -71,10 +74,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLSMissingKey(
-					clientCerts.CaCertPem.String(),
-					clientCerts.ClientCertPem.String(),
-				)).
+				testutils.HTTPClientCustomTLS(telemetryv1alpha1.TLSConfig{
+					CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
+					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
+				}),
+			).
 			Build()
 
 		logPipelineMissingAll := testutils.NewLogPipelineBuilder().
@@ -82,7 +86,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLSMissingAll(),
+				testutils.HTTPClientCustomTLS(telemetryv1alpha1.TLSConfig{}),
 			).
 			Build()
 
@@ -91,9 +95,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLSMissingAllButCA(
-					clientCerts.CaCertPem.String(),
-				),
+				testutils.HTTPClientCustomTLS(telemetryv1alpha1.TLSConfig{
+					CA: &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
+				}),
 			).
 			Build()
 

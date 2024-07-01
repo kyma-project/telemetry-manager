@@ -88,47 +88,9 @@ func OTLPClientTLS(ca, cert, key string) OTLPOutputOption {
 	}
 }
 
-func OTLPClientTLSMissingCA(cert, key string) OTLPOutputOption {
+func OTLPClientCustomTLS(tls *telemetryv1alpha1.OtlpTLS) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OtlpOutput) {
-		output.TLS = &telemetryv1alpha1.OtlpTLS{
-			Cert: &telemetryv1alpha1.ValueType{Value: cert},
-			Key:  &telemetryv1alpha1.ValueType{Value: key},
-		}
-	}
-}
-
-func OTLPClientTLSMissingCert(ca, key string) OTLPOutputOption {
-	return func(output *telemetryv1alpha1.OtlpOutput) {
-		output.TLS = &telemetryv1alpha1.OtlpTLS{
-			CA:  &telemetryv1alpha1.ValueType{Value: ca},
-			Key: &telemetryv1alpha1.ValueType{Value: key},
-		}
-	}
-}
-
-func OTLPClientTLSMissingKey(ca, cert string) OTLPOutputOption {
-	return func(output *telemetryv1alpha1.OtlpOutput) {
-		output.TLS = &telemetryv1alpha1.OtlpTLS{
-			CA:   &telemetryv1alpha1.ValueType{Value: ca},
-			Cert: &telemetryv1alpha1.ValueType{Value: cert},
-		}
-	}
-}
-
-func OTLPClientTLSMissingAll() OTLPOutputOption {
-	return func(output *telemetryv1alpha1.OtlpOutput) {
-		output.TLS = &telemetryv1alpha1.OtlpTLS{
-			Insecure:           true,
-			InsecureSkipVerify: true,
-		}
-	}
-}
-
-func OTLPClientTLSMissingAllButCA(ca string) OTLPOutputOption {
-	return func(output *telemetryv1alpha1.OtlpOutput) {
-		output.TLS = &telemetryv1alpha1.OtlpTLS{
-			CA: &telemetryv1alpha1.ValueType{Value: ca},
-		}
+		output.TLS = tls
 	}
 }
 
@@ -156,47 +118,9 @@ func HTTPClientTLS(ca, cert, key string) HTTPOutputOption {
 	}
 }
 
-func HTTPClientTLSMissingCA(cert, key string) HTTPOutputOption {
+func HTTPClientCustomTLS(tls telemetryv1alpha1.TLSConfig) HTTPOutputOption {
 	return func(output *telemetryv1alpha1.HTTPOutput) {
-		output.TLSConfig = telemetryv1alpha1.TLSConfig{
-			Cert: &telemetryv1alpha1.ValueType{Value: cert},
-			Key:  &telemetryv1alpha1.ValueType{Value: key},
-		}
-	}
-}
-
-func HTTPClientTLSMissingCert(ca, key string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
-		output.TLSConfig = telemetryv1alpha1.TLSConfig{
-			CA:  &telemetryv1alpha1.ValueType{Value: ca},
-			Key: &telemetryv1alpha1.ValueType{Value: key},
-		}
-	}
-}
-
-func HTTPClientTLSMissingKey(ca, cert string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
-		output.TLSConfig = telemetryv1alpha1.TLSConfig{
-			CA:   &telemetryv1alpha1.ValueType{Value: ca},
-			Cert: &telemetryv1alpha1.ValueType{Value: cert},
-		}
-	}
-}
-
-func HTTPClientTLSMissingAll() HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
-		output.TLSConfig = telemetryv1alpha1.TLSConfig{
-			Disabled:                  true,
-			SkipCertificateValidation: true,
-		}
-	}
-}
-
-func HTTPClientTLSMissingAllButCA(ca string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
-		output.TLSConfig = telemetryv1alpha1.TLSConfig{
-			CA: &telemetryv1alpha1.ValueType{Value: ca},
-		}
+		output.TLSConfig = tls
 	}
 }
 
