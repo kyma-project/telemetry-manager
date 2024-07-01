@@ -114,34 +114,29 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	sanitizedKey := sanitizeValue(keyPEM)
 	sanitizedCA := sanitizeValue(caPEM)
 
-	// Parse the certificate (if not missing)
 	var parsedCert *x509.Certificate
 	if sanitizedCert != nil {
 		parsedCert, err = parseCertificate(sanitizedCert, ErrCertDecodeFailed, ErrCertParseFailed)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
-	// Parse the private key (if not missing)
 	if sanitizedKey != nil {
-		err = parsePrivateKey(sanitizedKey)
-	}
-	if err != nil {
-		return err
+		if err := parsePrivateKey(sanitizedKey); err != nil {
+			return err
+		}
 	}
 
-	// Parse the CA(s) (if not missing)
 	var parsedCAs []*x509.Certificate
 	if sanitizedCA != nil {
 		parsedCAs, err = parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
-	err = validateValues(config, parsedCert, parsedCAs, sanitizedCert, sanitizedKey, v.now())
-	if err != nil {
+	if err := validateValues(config, parsedCert, parsedCAs, sanitizedCert, sanitizedKey, v.now()); err != nil {
 		return err
 	}
 
@@ -160,7 +155,7 @@ func parseCertificate(certPEM []byte, errDecode error, errParse error) (*x509.Ce
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return cert, errParse
+		return nil, errParse
 	}
 
 	return cert, nil
@@ -174,7 +169,7 @@ func parseCertificates(certPEM []byte, errDecode error, errParse error) ([]*x509
 
 	certs, err := x509.ParseCertificates(block.Bytes)
 	if err != nil {
-		return certs, errParse
+		return nil, errParse
 	}
 
 	return certs, nil
@@ -197,17 +192,12 @@ func parsePrivateKey(keyPEM []byte) error {
 }
 
 func validateValues(config TLSBundle, parsedCert *x509.Certificate, parsedCAs []*x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
-	var err error
-
-	// Validate certificate (if cert and key not missing)
 	if config.Cert != nil && config.Key != nil {
-		err = validateCertificate(parsedCert, sanitizedCert, sanitizedKey, now)
-	}
-	if err != nil {
-		return err
+		if err := validateCertificate(parsedCert, sanitizedCert, sanitizedKey, now); err != nil {
+			return err
+		}
 	}
 
-	// Validate CA(s) (if not missing)
 	if config.CA == nil {
 		return nil
 	}
@@ -221,13 +211,11 @@ func validateValues(config TLSBundle, parsedCert *x509.Certificate, parsedCAs []
 }
 
 func validateCertificate(cert *x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
-	// Validate the certificate-key pair
 	_, err := tls.X509KeyPair(sanitizedCert, sanitizedKey)
 	if err != nil {
 		return ErrInvalidCertificateKeyPair
 	}
 
-	// Validate certificate expiry
 	certExpiry := cert.NotAfter
 	if now.After(certExpiry) {
 		return &CertExpiredError{Expiry: certExpiry, IsCa: false}
@@ -240,12 +228,10 @@ func validateCertificate(cert *x509.Certificate, sanitizedCert, sanitizedKey []b
 }
 
 func validateCA(ca *x509.Certificate, now time.Time) error {
-	// Validate CA flag
 	if !ca.IsCA {
 		return ErrCertIsNotCA
 	}
 
-	// Validate CA expiry
 	caExpiry := ca.NotAfter
 	if now.After(caExpiry) {
 		return &CertExpiredError{Expiry: caExpiry, IsCa: true}
@@ -261,28 +247,25 @@ func resolveValues(ctx context.Context, c client.Reader, config TLSBundle) ([]by
 	var certPEM, keyPEM, caPEM []byte
 	var err error
 
-	// Resolve cert value (if not missing)
 	if config.Cert != nil {
 		certPEM, err = resolveValue(ctx, c, *config.Cert)
-	}
-	if err != nil {
-		return certPEM, keyPEM, caPEM, err
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
-	// Resolve key value (if not missing)
 	if config.Key != nil {
 		keyPEM, err = resolveValue(ctx, c, *config.Key)
-	}
-	if err != nil {
-		return certPEM, keyPEM, caPEM, err
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
-	// Resolve CA value (if not missing)
 	if config.CA != nil {
 		caPEM, err = resolveValue(ctx, c, *config.CA)
-	}
-	if err != nil {
-		return certPEM, keyPEM, caPEM, err
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
 	return certPEM, keyPEM, caPEM, nil
