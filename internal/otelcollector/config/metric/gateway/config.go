@@ -27,6 +27,7 @@ type Processors struct {
 	DropIfInputSourcePrometheus                  *FilterProcessor               `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
 	DropIfInputSourceIstio                       *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
 	DropIfInputSourceOtlp                        *FilterProcessor               `yaml:"filter/drop-if-input-source-otlp,omitempty"`
+	DropRuntimePodMetrics                        *FilterProcessor               `yaml:"filter/drop-runtime-pod-metrics,omitempty"`
 	ResolveServiceName                           *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
