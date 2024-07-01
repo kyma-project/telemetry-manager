@@ -6,7 +6,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-//go:generate mockery --name FilesValidator --filename files_validator.go
 type FilesValidator interface {
 	Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error
 }

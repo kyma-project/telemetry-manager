@@ -9,7 +9,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-//go:generate mockery --name alertGetter --filename=alert_getter.go --exported
 type alertGetter interface {
 	Alerts(ctx context.Context) (promv1.AlertsResult, error)
 }

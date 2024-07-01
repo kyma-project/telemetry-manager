@@ -59,12 +59,10 @@ type Config struct {
 	DaemonSetConfig       fluentbit.DaemonSetConfig
 }
 
-//go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
 type DaemonSetProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
-//go:generate mockery --name DaemonSetAnnotator --filename daemon_set_annotator.go
 type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
 }
@@ -73,17 +71,14 @@ type TLSCertValidator interface {
 	Validate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
-//go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
 type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
 }
 
-//go:generate mockery --name OverridesHandler --filename overrides_handler.go
 type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
-//go:generate mockery --name IstioStatusChecker --filename istio_status_checker.go
 type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
