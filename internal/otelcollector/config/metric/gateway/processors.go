@@ -98,6 +98,19 @@ func makeDropRuntimePodMetricsConfig() *FilterProcessor {
 	}
 }
 
+func makeDropRuntimeContainerMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
+				),
+			},
+		},
+	}
+}
+
 func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
 }

@@ -114,6 +114,9 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
 		cfg.Processors.DropRuntimePodMetrics = makeDropRuntimePodMetricsConfig()
 	}
+	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
+		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
+	}
 }
 
 func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
@@ -173,6 +176,9 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 
 	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-pod-metrics")
+	}
+	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-container-metrics")
 	}
 
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
@@ -250,4 +256,8 @@ func isIstioDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput
 
 func isRuntimePodMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Runtime.Resources != nil && input.Runtime.Resources.Pod != nil && input.Runtime.Resources.Pod.Enabled
+}
+
+func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Container != nil && input.Runtime.Resources.Container.Enabled
 }
