@@ -113,7 +113,7 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	sanitizedCert := sanitizeValue(certPEM)
 	sanitizedKey := sanitizeValue(keyPEM)
 	sanitizedCA := sanitizeValue(caPEM)
-	
+
 	// Parse the certificate (if not missing)
 	var parsedCert *x509.Certificate
 	if sanitizedCert != nil {
@@ -122,7 +122,7 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Parse the private key (if not missing)
 	if sanitizedKey != nil {
 		err = parsePrivateKey(sanitizedKey)
@@ -130,7 +130,7 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Parse the CA(s) (if not missing)
 	var parsedCAs []*x509.Certificate
 	if sanitizedCA != nil {
@@ -200,7 +200,7 @@ func validateValues(config TLSBundle, parsedCert *x509.Certificate, parsedCAs []
 	var err error
 
 	// Validate certificate (if cert and key not missing)
-	if config.Cert != nil && config.Key != nil{
+	if config.Cert != nil && config.Key != nil {
 		err = validateCertificate(parsedCert, sanitizedCert, sanitizedKey, now)
 	}
 	if err != nil {
@@ -208,7 +208,7 @@ func validateValues(config TLSBundle, parsedCert *x509.Certificate, parsedCAs []
 	}
 
 	// Validate CA(s) (if not missing)
-	if config.CA == nil{
+	if config.CA == nil {
 		return nil
 	}
 	for _, ca := range parsedCAs {
@@ -270,7 +270,7 @@ func resolveValues(ctx context.Context, c client.Reader, config TLSBundle) ([]by
 	}
 
 	// Resolve key value (if not missing)
-	if config.Key != nil{
+	if config.Key != nil {
 		keyPEM, err = resolveValue(ctx, c, *config.Key)
 	}
 	if err != nil {
@@ -278,7 +278,7 @@ func resolveValues(ctx context.Context, c client.Reader, config TLSBundle) ([]by
 	}
 
 	// Resolve CA value (if not missing)
-	if config.CA != nil{
+	if config.CA != nil {
 		caPEM, err = resolveValue(ctx, c, *config.CA)
 	}
 	if err != nil {
