@@ -47,7 +47,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			WithName(pipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(
+				testutils.OTLPClientTLSFromString(
 					invalidClientCerts.CaCertPem.String(),
 					invalidClientCerts.ClientCertPem.String(),
 					invalidClientCerts.ClientKeyPem.String(),

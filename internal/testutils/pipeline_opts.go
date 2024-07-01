@@ -78,7 +78,7 @@ func OTLPCustomHeader(name, value, prefix string) OTLPOutputOption {
 	}
 }
 
-func OTLPClientTLS(ca, cert, key string) OTLPOutputOption {
+func OTLPClientTLSFromString(ca, cert, key string) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OtlpOutput) {
 		output.TLS = &telemetryv1alpha1.OtlpTLS{
 			CA:   &telemetryv1alpha1.ValueType{Value: ca},
@@ -88,7 +88,7 @@ func OTLPClientTLS(ca, cert, key string) OTLPOutputOption {
 	}
 }
 
-func OTLPClientCustomTLS(tls *telemetryv1alpha1.OtlpTLS) OTLPOutputOption {
+func OTLPClientTLS(tls *telemetryv1alpha1.OtlpTLS) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OtlpOutput) {
 		output.TLS = tls
 	}
@@ -108,7 +108,7 @@ func OTLPEndpointPath(path string) OTLPOutputOption {
 
 type HTTPOutputOption func(output *telemetryv1alpha1.HTTPOutput)
 
-func HTTPClientTLS(ca, cert, key string) HTTPOutputOption {
+func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
 	return func(output *telemetryv1alpha1.HTTPOutput) {
 		output.TLSConfig = telemetryv1alpha1.TLSConfig{
 			CA:   &telemetryv1alpha1.ValueType{Value: ca},
@@ -118,7 +118,7 @@ func HTTPClientTLS(ca, cert, key string) HTTPOutputOption {
 	}
 }
 
-func HTTPClientCustomTLS(tls telemetryv1alpha1.TLSConfig) HTTPOutputOption {
+func HTTPClientTLS(tls telemetryv1alpha1.TLSConfig) HTTPOutputOption {
 	return func(output *telemetryv1alpha1.HTTPOutput) {
 		output.TLSConfig = tls
 	}
