@@ -24,6 +24,11 @@ type inputSources struct {
 	istio      bool
 }
 
+type runtimeResources struct {
+	pod       bool
+	container bool
+}
+
 type BuildOptions struct {
 	IstioEnabled                bool
 	IstioCertPath               string
@@ -36,13 +41,17 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 		prometheus: enablePrometheusMetricScraping(pipelines),
 		istio:      enableIstioMetricScraping(pipelines),
 	}
+	runtime := runtimeResources{
+		pod:       enableRuntimePodMetricsScraping(pipelines),
+		container: enableRuntimeContainerMetricsScraping(pipelines),
+	}
 
 	return &Config{
 		Base: config.Base{
 			Service:    config.DefaultService(makePipelinesConfig(inputs)),
 			Extensions: config.DefaultExtensions(),
 		},
-		Receivers:  makeReceiversConfig(inputs, opts),
+		Receivers:  makeReceiversConfig(inputs, runtime, opts),
 		Processors: makeProcessorsConfig(inputs, opts),
 		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
 	}
@@ -72,6 +81,32 @@ func enableIstioMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) boo
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if input.Istio != nil && input.Istio.Enabled {
+			return true
+		}
+	}
+	return false
+}
+
+func enableRuntimePodMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if input.Runtime != nil &&
+			input.Runtime.Resources != nil &&
+			input.Runtime.Resources.Pod != nil &&
+			input.Runtime.Resources.Pod.Enabled {
+			return true
+		}
+	}
+	return false
+}
+
+func enableRuntimeContainerMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if input.Runtime != nil &&
+			input.Runtime.Resources != nil &&
+			input.Runtime.Resources.Container != nil &&
+			input.Runtime.Resources.Container.Enabled {
 			return true
 		}
 	}
