@@ -9,5 +9,7 @@ whitesource:
   language: golang-mod
   subprojects: false
   exclude:
+    - "**/mocks/**"
+    - "**/stubs/**"
     - "**/test/**"
     - "**/*_test.go"
