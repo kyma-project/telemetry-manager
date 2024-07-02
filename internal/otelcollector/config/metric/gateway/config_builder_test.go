@@ -234,7 +234,14 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with runtime input enabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).Build()})
+				// Simulate the default scenario for runtime input by enabling both pod and container metrics
+				// NOTE: the pod and container metrics are enabled by default on the CRD level when the runtime input is defined
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(true).
+					WithRuntimeInputContainerMetrics(true).
+					Build()})
 			require.NoError(t, err)
 
 			require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -246,6 +253,48 @@ func TestMakeConfig(t *testing.T) {
 				"k8sattributes",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with runtime input enabled and only pod metrics enabled", func(t *testing.T) {
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).WithRuntimeInputPodMetrics(true).Build()})
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"filter/drop-runtime-container-metrics",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with runtime input enabled and only container metrics enabled", func(t *testing.T) {
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).WithRuntimeInputContainerMetrics(true).Build()})
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"filter/drop-runtime-pod-metrics",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"batch",
@@ -359,9 +408,23 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-1").WithRuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test-2").WithPrometheusInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test-3").WithIstioInput(true).Build()})
+			// Simulate the default scenario for runtime input by enabling both pod and container metrics
+			// NOTE: the pod and container metrics are enabled by default on the CRD level when the runtime input is defined
+			testutils.NewMetricPipelineBuilder().
+				WithName("test-1").
+				WithRuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).
+				WithRuntimeInputPodMetrics(true).
+				WithRuntimeInputContainerMetrics(true).
+				Build(),
+			testutils.NewMetricPipelineBuilder().
+				WithName("test-2").
+				WithPrometheusInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).
+				Build(),
+			testutils.NewMetricPipelineBuilder().
+				WithName("test-3").
+				WithIstioInput(true).
+				Build(),
+		})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-1")
