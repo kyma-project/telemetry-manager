@@ -11,7 +11,7 @@ import (
 const scrapeInterval = 30 * time.Second
 const sampleLimit = 50000
 
-func makeReceiversConfig(inputs inputSources, runtime runtimeResources, opts BuildOptions) Receivers {
+func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 	var receiversConfig Receivers
 
 	if inputs.prometheus {
@@ -20,7 +20,7 @@ func makeReceiversConfig(inputs inputSources, runtime runtimeResources, opts Bui
 	}
 
 	if inputs.runtime {
-		receiversConfig.KubeletStats = makeKubeletStatsConfig(runtime)
+		receiversConfig.KubeletStats = makeKubeletStatsConfig()
 	}
 
 	if inputs.istio {
@@ -30,22 +30,15 @@ func makeReceiversConfig(inputs inputSources, runtime runtimeResources, opts Bui
 	return receiversConfig
 }
 
-func makeKubeletStatsConfig(runtime runtimeResources) *KubeletStatsReceiver {
+func makeKubeletStatsConfig() *KubeletStatsReceiver {
 	const collectionInterval = "30s"
 	const portKubelet = 10250
-	var metricGroups []MetricGroupType
-	if runtime.container {
-		metricGroups = append(metricGroups, MetricGroupTypeContainer)
-	}
-	if runtime.pod {
-		metricGroups = append(metricGroups, MetricGroupTypePod)
-	}
 	return &KubeletStatsReceiver{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
-		MetricGroups:       metricGroups,
+		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod},
 		Metrics: KubeletMetricsConfig{
 			ContainerCPUUsage:       KubeletMetricConfig{Enabled: true},
 			ContainerCPUUtilization: KubeletMetricConfig{Enabled: false},
