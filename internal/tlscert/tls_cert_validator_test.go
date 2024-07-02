@@ -88,48 +88,6 @@ rZ3xPLf7G+fObmeO7XuIoDfJHH6HDrdhhWi3F918KQ==
 -----END CERTIFICATE-----`)
 )
 
-func getTLSConfig(data map[string]interface{}) TLSBundle {
-	convertToString := func(data interface{}) string {
-		switch v := data.(type) {
-		case []byte:
-			return string(v)
-		case string:
-			return v
-		default:
-			return ""
-		}
-	}
-
-	var cert, key, ca *telemetryv1alpha1.ValueType
-
-	certData, ok := data["cert"]
-	if ok {
-		cert = &telemetryv1alpha1.ValueType{
-			Value: convertToString(certData),
-		}
-	}
-
-	keyData, ok := data["key"]
-	if ok {
-		key = &telemetryv1alpha1.ValueType{
-			Value: convertToString(keyData),
-		}
-	}
-
-	caData, ok := data["ca"]
-	if ok {
-		ca = &telemetryv1alpha1.ValueType{
-			Value: convertToString(caData),
-		}
-	}
-
-	return TLSBundle{
-		Cert: cert,
-		Key:  key,
-		CA:   ca,
-	}
-}
-
 func TestMissingCert(t *testing.T) {
 
 	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
@@ -139,11 +97,10 @@ func TestMissingCert(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"key": defaultKeyData,
-		"ca":  defaultCaData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Key: &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+		CA:  &telemetryv1alpha1.ValueType{Value: string(defaultCaData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrMissingCertKeyPair)
 }
 
@@ -156,11 +113,10 @@ func TestMissingKey(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"ca":   defaultCaData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(defaultCaData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrMissingCertKeyPair)
 }
 
@@ -173,11 +129,10 @@ func TestMissingCA(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"key":  defaultKeyData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.NoError(t, err)
 }
 
@@ -190,10 +145,9 @@ func TestMissingCertAndKey(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"ca": defaultCaData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		CA: &telemetryv1alpha1.ValueType{Value: string(defaultCaData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.NoError(t, err)
 }
 
@@ -206,8 +160,7 @@ func TestMissingAll(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{})
-	err := validator.Validate(context.Background(), tlsConfig)
+	err := validator.Validate(context.Background(), TLSBundle{})
 	require.NoError(t, err)
 }
 
@@ -220,12 +173,11 @@ func TestExpiredCertificate(t *testing.T) {
 		now:    func() time.Time { return oneDayAfterExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"key":  defaultKeyData,
-		"ca":   defaultCaData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(defaultCaData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.Error(t, err)
 	require.True(t, IsCertExpiredError(err))
 
@@ -269,12 +221,11 @@ func TestAboutToExpireCertificate(t *testing.T) {
 				now:    func() time.Time { return test.now },
 			}
 
-			tlsConfig := getTLSConfig(map[string]interface{}{
-				"cert": defaultCertData,
-				"key":  defaultKeyData,
-				"ca":   defaultCaData,
+			err := validator.Validate(context.Background(), TLSBundle{
+				Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+				Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+				CA:   &telemetryv1alpha1.ValueType{Value: string(defaultCaData)},
 			})
-			err := validator.Validate(context.Background(), tlsConfig)
 			if test.expectValid {
 				require.NoError(t, err)
 				return
@@ -300,12 +251,11 @@ func TestValidCertificatesAndPrivateKey(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"key":  defaultKeyData,
-		"ca":   defaultCaData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(defaultCaData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.NoError(t, err)
 }
 
@@ -332,12 +282,11 @@ WxZIBPi0z6MoiZxVKSY8EBeVYCHWS9A2l1J6gAHptihe7y1j8I2ffS
 		now:    func() time.Time { return certExpiry.Add(-24 * time.Hour) },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": certData,
-		"key":  defaultKeyData,
-		"ca":   defaultCaData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(certData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(defaultCaData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrCertDecodeFailed)
 }
 
@@ -363,12 +312,11 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"key":  keyData,
-		"ca":   defaultCaData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(keyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(defaultCaData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrKeyDecodeFailed)
 }
 
@@ -397,12 +345,11 @@ WWL1dEpm9rYQvcflxENRpp9SpyG2bJliRexjmHYwFg==
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"key":  defaultKeyData,
-		"ca":   caData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(caData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrCADecodeFailed)
 }
 
@@ -415,12 +362,11 @@ func TestExpiredCA(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"key":  defaultKeyData,
-		"ca":   pastCaData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(pastCaData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.Error(t, err)
 	require.True(t, IsCertExpiredError(err))
 
@@ -464,12 +410,11 @@ func TestAboutToExpireCA(t *testing.T) {
 				now:    func() time.Time { return test.now },
 			}
 
-			tlsConfig := getTLSConfig(map[string]interface{}{
-				"cert": defaultCertData,
-				"key":  defaultKeyData,
-				"ca":   pastCaData,
+			err := validator.Validate(context.Background(), TLSBundle{
+				Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+				Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+				CA:   &telemetryv1alpha1.ValueType{Value: string(pastCaData)},
 			})
-			err := validator.Validate(context.Background(), tlsConfig)
 			if test.expectValid {
 				require.NoError(t, err)
 				return
@@ -527,12 +472,11 @@ rZ3xPLf7G+fObmeO7XuIoDfJHH6HDrdhhWi3F918KQ==
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"key":  defaultKeyData,
-		"ca":   caData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(caData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.NoError(t, err)
 }
 
@@ -545,12 +489,11 @@ func TestEmptyCA(t *testing.T) {
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": defaultCertData,
-		"key":  defaultKeyData,
-		"ca":   []byte(``),
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(defaultCertData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(defaultKeyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string([]byte(``))},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrValueResolveFailed)
 }
 
@@ -562,12 +505,11 @@ func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": certData,
-		"key":  keyData,
-		"ca":   caData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: certData},
+		Key:  &telemetryv1alpha1.ValueType{Value: keyData},
+		CA:   &telemetryv1alpha1.ValueType{Value: caData},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.NoError(t, err)
 }
 
@@ -579,12 +521,11 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": certData,
-		"key":  keyData,
-		"ca":   caData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: certData},
+		Key:  &telemetryv1alpha1.ValueType{Value: keyData},
+		CA:   &telemetryv1alpha1.ValueType{Value: caData},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.NoError(t, err)
 }
 
@@ -765,12 +706,11 @@ func TestInvalidCertificateKeyPair(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": certData,
-		"key":  keyData,
-		"ca":   caData,
+	err = validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: certData},
+		Key:  &telemetryv1alpha1.ValueType{Value: keyData},
+		CA:   &telemetryv1alpha1.ValueType{Value: caData},
 	})
-	err = validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
 }
 
@@ -788,12 +728,11 @@ func TestInvalidCertPair_WithExpiredCert(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": certData,
-		"key":  keyData,
-		"ca":   caData,
+	err = validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: certData},
+		Key:  &telemetryv1alpha1.ValueType{Value: keyData},
+		CA:   &telemetryv1alpha1.ValueType{Value: caData},
 	})
-	err = validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
 }
 
@@ -857,11 +796,10 @@ hhEW5poLfUe8MIvCQoO1GrDpnNZOn7tMjg==
 		now:    func() time.Time { return oneMonthBeforeExpiry },
 	}
 
-	tlsConfig := getTLSConfig(map[string]interface{}{
-		"cert": certData,
-		"key":  keyData,
-		"ca":   caData,
+	err := validator.Validate(context.Background(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(certData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(keyData)},
+		CA:   &telemetryv1alpha1.ValueType{Value: string(caData)},
 	})
-	err := validator.Validate(context.Background(), tlsConfig)
 	require.ErrorIs(t, err, ErrCertIsNotCA)
 }

@@ -100,12 +100,12 @@ func New(client client.Client) *Validator {
 	}
 }
 
-func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
-	if (config.Cert == nil) != (config.Key == nil) {
+func (v *Validator) Validate(ctx context.Context, tls TLSBundle) error {
+	if (tls.Cert == nil) != (tls.Key == nil) {
 		return ErrMissingCertKeyPair
 	}
 
-	certPEM, keyPEM, caPEM, err := resolveValues(ctx, v.client, config)
+	certPEM, keyPEM, caPEM, err := resolveValues(ctx, v.client, tls)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
 		}
 	}
 
-	if err := validateValues(config, parsedCert, parsedCAs, sanitizedCert, sanitizedKey, v.now()); err != nil {
+	if err := validateValues(tls, parsedCert, parsedCAs, sanitizedCert, sanitizedKey, v.now()); err != nil {
 		return err
 	}
 
@@ -191,14 +191,14 @@ func parsePrivateKey(keyPEM []byte) error {
 	return nil
 }
 
-func validateValues(config TLSBundle, parsedCert *x509.Certificate, parsedCAs []*x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
-	if config.Cert != nil && config.Key != nil {
+func validateValues(tls TLSBundle, parsedCert *x509.Certificate, parsedCAs []*x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
+	if tls.Cert != nil && tls.Key != nil {
 		if err := validateCertificate(parsedCert, sanitizedCert, sanitizedKey, now); err != nil {
 			return err
 		}
 	}
 
-	if config.CA == nil {
+	if tls.CA == nil {
 		return nil
 	}
 	for _, ca := range parsedCAs {
@@ -243,26 +243,26 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 	return nil
 }
 
-func resolveValues(ctx context.Context, c client.Reader, config TLSBundle) ([]byte, []byte, []byte, error) {
+func resolveValues(ctx context.Context, c client.Reader, tls TLSBundle) ([]byte, []byte, []byte, error) {
 	var certPEM, keyPEM, caPEM []byte
 	var err error
 
-	if config.Cert != nil {
-		certPEM, err = resolveValue(ctx, c, *config.Cert)
+	if tls.Cert != nil {
+		certPEM, err = resolveValue(ctx, c, *tls.Cert)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 	}
 
-	if config.Key != nil {
-		keyPEM, err = resolveValue(ctx, c, *config.Key)
+	if tls.Key != nil {
+		keyPEM, err = resolveValue(ctx, c, *tls.Key)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 	}
 
-	if config.CA != nil {
-		caPEM, err = resolveValue(ctx, c, *config.CA)
+	if tls.CA != nil {
+		caPEM, err = resolveValue(ctx, c, *tls.CA)
 		if err != nil {
 			return nil, nil, nil, err
 		}
