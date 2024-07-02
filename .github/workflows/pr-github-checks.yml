@@ -1,7 +1,8 @@
 name: PR Github Checks
 
 on:
-  pull_request_target:
+  #  pull_request_target:
+  pull_request:
     branches:
       - "main"
       - "release-*"
