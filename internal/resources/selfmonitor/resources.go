@@ -22,8 +22,15 @@ import (
 )
 
 const (
-	retentionTime = "2h"
-	retentionSize = "50MB"
+	retentionTime       = "2h"
+	retentionSize       = "50MB"
+	logFormat           = "json"
+	configFileMountName = "prometheus-config-volume"
+	ConfigPath          = "/etc/prometheus/"
+	ConfigFileName      = "prometheus.yml"
+	AlertRuleFileName   = "alerting_rules.yml"
+	storageMountName    = "prometheus-storage-volume"
+	storagePath         = "/prometheus/"
 )
 
 var (
@@ -225,8 +232,8 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigYAML, alertRulesYAML str
 			Labels:    ad.defaultLabels(),
 		},
 		Data: map[string]string{
-			"prometheus.yml":     prometheusConfigYAML,
-			"alerting_rules.yml": alertRulesYAML,
+			ConfigFileName:    prometheusConfigYAML,
+			AlertRuleFileName: alertRulesYAML,
 		},
 	}
 }
@@ -285,8 +292,9 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 				Args: []string{
 					"--storage.tsdb.retention.time=" + retentionTime,
 					"--storage.tsdb.retention.size=" + retentionSize,
-					"--config.file=/etc/prometheus/prometheus.yml",
-					"--storage.tsdb.path=/prometheus/",
+					"--config.file=" + ConfigPath + ConfigFileName,
+					"--storage.tsdb.path=" + storagePath,
+					"--log.format=" + logFormat,
 				},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged:               ptr.To(false),
@@ -301,7 +309,7 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 						Drop: []corev1.Capability{"ALL"},
 					},
 				},
-				VolumeMounts: []corev1.VolumeMount{{Name: "prometheus-config-volume", MountPath: "/etc/prometheus/"}, {Name: "prometheus-storage-volume", MountPath: "/prometheus/"}},
+				VolumeMounts: []corev1.VolumeMount{{Name: configFileMountName, MountPath: ConfigPath}, {Name: storageMountName, MountPath: storagePath}},
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "http-web",
@@ -333,7 +341,7 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 		},
 		Volumes: []corev1.Volume{
 			{
-				Name: "prometheus-config-volume",
+				Name: configFileMountName,
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						DefaultMode: &defaultMode,
@@ -344,7 +352,7 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 				},
 			},
 			{
-				Name: "prometheus-storage-volume",
+				Name: storageMountName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						SizeLimit: &storageVolumeSize,
