@@ -224,7 +224,7 @@ To enable OpenTelemetry based access logs in Istio, execute the following steps:
 3. Using the Telemetry API, activate the extension provider:
 
    ```yaml
-   apiVersion: telemetry.istio.io/v1alpha1
+   apiVersion: telemetry.istio.io/v1
    kind: Telemetry
    metadata:
      name: access-config

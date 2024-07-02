@@ -5,7 +5,7 @@ readonly ISTIO_VERSION=${ISTIO_VERSION:-$ENV_ISTIO_VERSION}
 
 function apply_istio_telemetry() {
   kubectl apply -f - <<EOF
-apiVersion: telemetry.istio.io/v1alpha1
+apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
   name: access-config
@@ -52,7 +52,7 @@ function apply_peer_authentication() {
   local mtlsMode=$3
 
   kubectl apply -f - <<EOF
-apiVersion: security.istio.io/v1beta1
+apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
   name: $name

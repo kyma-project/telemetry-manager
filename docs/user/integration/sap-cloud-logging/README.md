@@ -113,9 +113,6 @@ To analyze access logs of your workload in the default SAP Cloud Logging dashboa
 
 1. Enable Istio access logs for your workload following [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
 
-   > [!WARNING]
-   > The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
-
 2. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
 
    <div tabs name="accesslogs">
@@ -180,7 +177,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 
    ```bash
     kubectl apply -n istio-system -f - <<EOF
-    apiVersion: telemetry.istio.io/v1alpha1
+    apiVersion: telemetry.istio.io/v1
     kind: Telemetry
     metadata:
       name: tracing-default

@@ -109,7 +109,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 
     ```bash
     kubectl apply -n istio-system -f - <<EOF
-    apiVersion: telemetry.istio.io/v1alpha1
+    apiVersion: telemetry.istio.io/v1
     kind: Telemetry
     metadata:
       name: tracing-default

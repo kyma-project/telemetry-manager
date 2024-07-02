@@ -94,7 +94,7 @@ To [enable Istio](../../03-traces.md#step-2-enable-istio-tracing) to report span
 
 ```bash
 cat <<EOF | kubectl apply -f -
-apiVersion: telemetry.istio.io/v1alpha1
+apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
   name: tracing-default
