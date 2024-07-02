@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -42,7 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			WithName(pipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(
+				testutils.OTLPClientTLSFromString(
 					clientCerts.CaCertPem.String(),
 					clientCerts.ClientCertPem.String(),
 					clientCerts.ClientKeyPem.String(),
@@ -81,7 +82,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		})
 
 		It("Should have telemetryCR showing correct condition in its status", func() {
-			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasState(ctx, k8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionTrue,

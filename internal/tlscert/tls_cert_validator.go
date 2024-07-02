@@ -28,6 +28,8 @@ var (
 	ErrCADecodeFailed = errors.New("failed to decode PEM block containing CA certificate")
 	ErrCAParseFailed  = errors.New("failed to parse CA certificate")
 
+	ErrMissingCertKeyPair = errors.New("a certificate and private key must either both be provided or both be missing")
+
 	ErrValueResolveFailed = errors.New("failed to resolve value")
 
 	ErrInvalidCertificateKeyPair = errors.New("certificate and private key do not match")
@@ -98,68 +100,51 @@ func New(client client.Client) *Validator {
 	}
 }
 
-func (v *Validator) Validate(ctx context.Context, config TLSBundle) error {
-	certPEM, err := resolveValue(ctx, v.client, *config.Cert)
+func (v *Validator) Validate(ctx context.Context, tls TLSBundle) error {
+	if (tls.Cert == nil) != (tls.Key == nil) {
+		return ErrMissingCertKeyPair
+	}
+
+	certPEM, keyPEM, caPEM, err := resolveValues(ctx, v.client, tls)
 	if err != nil {
 		return err
 	}
 
-	keyPEM, err := resolveValue(ctx, v.client, *config.Key)
-	if err != nil {
-		return err
-	}
+	sanitizedCert := sanitizeValue(certPEM)
+	sanitizedKey := sanitizeValue(keyPEM)
+	sanitizedCA := sanitizeValue(caPEM)
 
-	// CA is optional (check if missing)
-	missingCA := config.CA == nil
-
-	var caPEM []byte
-	if !missingCA {
-		caPEM, err = resolveValue(ctx, v.client, *config.CA)
+	var parsedCert *x509.Certificate
+	if sanitizedCert != nil {
+		parsedCert, err = parseCertificate(sanitizedCert, ErrCertDecodeFailed, ErrCertParseFailed)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Make the best effort to replace linebreaks in cert/key/ca if present.
-	sanitizedCert := bytes.ReplaceAll(certPEM, []byte("\\n"), []byte("\n"))
-	sanitizedKey := bytes.ReplaceAll(keyPEM, []byte("\\n"), []byte("\n"))
-	sanitizedCA := bytes.ReplaceAll(caPEM, []byte("\\n"), []byte("\n"))
-
-	// Parse the certificate
-	parsedCert, err := parseCertificate(sanitizedCert, ErrCertDecodeFailed, ErrCertParseFailed)
-	if err != nil {
-		return err
+	if sanitizedKey != nil {
+		if err := parsePrivateKey(sanitizedKey); err != nil {
+			return err
+		}
 	}
 
-	// Parse the private key
-	if err := parsePrivateKey(sanitizedKey); err != nil {
-		return err
-	}
-
-	// Parse the CA(s)
 	var parsedCAs []*x509.Certificate
-	if !missingCA {
+	if sanitizedCA != nil {
 		parsedCAs, err = parseCertificates(sanitizedCA, ErrCADecodeFailed, ErrCAParseFailed)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Validate certificate
-	if err := validateCertificate(parsedCert, sanitizedCert, sanitizedKey, v.now()); err != nil {
+	if err := validateValues(tls, parsedCert, parsedCAs, sanitizedCert, sanitizedKey, v.now()); err != nil {
 		return err
 	}
 
-	// Validate CA(s)
-	if !missingCA {
-		for _, ca := range parsedCAs {
-			if err := validateCA(ca, v.now()); err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
+}
+
+func sanitizeValue(valuePEM []byte) []byte {
+	return bytes.ReplaceAll(valuePEM, []byte("\\n"), []byte("\n"))
 }
 
 func parseCertificate(certPEM []byte, errDecode error, errParse error) (*x509.Certificate, error) {
@@ -170,7 +155,7 @@ func parseCertificate(certPEM []byte, errDecode error, errParse error) (*x509.Ce
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return cert, errParse
+		return nil, errParse
 	}
 
 	return cert, nil
@@ -184,7 +169,7 @@ func parseCertificates(certPEM []byte, errDecode error, errParse error) ([]*x509
 
 	certs, err := x509.ParseCertificates(block.Bytes)
 	if err != nil {
-		return certs, errParse
+		return nil, errParse
 	}
 
 	return certs, nil
@@ -206,14 +191,31 @@ func parsePrivateKey(keyPEM []byte) error {
 	return nil
 }
 
+func validateValues(tls TLSBundle, parsedCert *x509.Certificate, parsedCAs []*x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
+	if tls.Cert != nil && tls.Key != nil {
+		if err := validateCertificate(parsedCert, sanitizedCert, sanitizedKey, now); err != nil {
+			return err
+		}
+	}
+
+	if tls.CA == nil {
+		return nil
+	}
+	for _, ca := range parsedCAs {
+		if err := validateCA(ca, now); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func validateCertificate(cert *x509.Certificate, sanitizedCert, sanitizedKey []byte, now time.Time) error {
-	// Validate the certificate-key pair
 	_, err := tls.X509KeyPair(sanitizedCert, sanitizedKey)
 	if err != nil {
 		return ErrInvalidCertificateKeyPair
 	}
 
-	// Validate certificate expiry
 	certExpiry := cert.NotAfter
 	if now.After(certExpiry) {
 		return &CertExpiredError{Expiry: certExpiry, IsCa: false}
@@ -226,12 +228,10 @@ func validateCertificate(cert *x509.Certificate, sanitizedCert, sanitizedKey []b
 }
 
 func validateCA(ca *x509.Certificate, now time.Time) error {
-	// Validate CA flag
 	if !ca.IsCA {
 		return ErrCertIsNotCA
 	}
 
-	// Validate CA expiry
 	caExpiry := ca.NotAfter
 	if now.After(caExpiry) {
 		return &CertExpiredError{Expiry: caExpiry, IsCa: true}
@@ -241,6 +241,34 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 	}
 
 	return nil
+}
+
+func resolveValues(ctx context.Context, c client.Reader, tls TLSBundle) ([]byte, []byte, []byte, error) {
+	var certPEM, keyPEM, caPEM []byte
+	var err error
+
+	if tls.Cert != nil {
+		certPEM, err = resolveValue(ctx, c, *tls.Cert)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	}
+
+	if tls.Key != nil {
+		keyPEM, err = resolveValue(ctx, c, *tls.Key)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	}
+
+	if tls.CA != nil {
+		caPEM, err = resolveValue(ctx, c, *tls.CA)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	}
+
+	return certPEM, keyPEM, caPEM, nil
 }
 
 func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
