@@ -13,6 +13,55 @@ on:
   workflow_dispatch:
 
 jobs:
+  pr-label-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for area label
+        if: always()
+        uses: actions/github-script@0.9.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = context.payload.pull_request.labels.map(label => label.name);
+            const areaLabel = labels.find(label => label.startsWith('area/'));
+            if (!areaLabel) {
+              core.setFailed('Please add an area label to your PR');
+            }
+
+      - name: Check for kind label
+        if: always()
+        uses: actions/github-script@0.9.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = context.payload.pull_request.labels.map(label => label.name);
+            const kindLabel = labels.find(label => label.startsWith('kind/'));
+            if (!kindLabel) {
+              core.setFailed('Please add a kind label to your PR');
+            }
+
+      - name: Check if kind label matches pr title prefix
+        if: always()
+        uses: actions/github-script@0.9.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = context.payload.pull_request.labels.map(label => label.name);
+            const kindLabel = labels.find(label => label.startsWith('kind/'));
+            const kindLabelToPrTitlePrefix = {
+              'kind/bug': 'fix',
+              'kind/feature': 'feat',
+              'kind/docs': 'docs',
+              'kind/chore': 'chore',
+              'kind/test': 'test',
+              'kind/deps': 'deps',
+            };
+            const prefix = kindLabelToPrTitlePrefix[kindLabel];
+            
+            if (!context.payload.pull_request.title.startsWith(prefix)) {
+              core.setFailed(`PR title should start with "${prefix}"`);
+            }
+
   pr-title-check:
     runs-on: ubuntu-latest
     steps:
