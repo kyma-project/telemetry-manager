@@ -27,11 +27,12 @@ jobs:
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "telemetry-manager"
 
-      - name: Install kustomize
-        run: make kustomize
+      - name: Install tools
+        shell: bash
+        run: make install-tools
 
       - name: Release
-        run: hack/release.sh
+        run: hack/release.sh ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GORELEASER_CURRENT_TAG: "${{ github.ref_name }}" # Explicitly set release tag to do not use -dev tag
