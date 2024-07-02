@@ -122,7 +122,7 @@ config:
   service:
     telemetry:
       metrics:
-        address: ${env:MY_POD_IP}:8888
+        address: ${MY_POD_IP}:8888
     pipelines:
       logs:
         processors: {}
