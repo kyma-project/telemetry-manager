@@ -74,7 +74,7 @@ func makeReceiversConfig() Receivers {
 // declareComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func declareComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
-	declareDropFilters(pipeline, cfg)
+	declareInputSourceFilters(pipeline, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
@@ -91,7 +91,7 @@ func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipel
 	}
 }
 
-func declareDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
 
 	if !isRuntimeInputEnabled(input) {
@@ -161,6 +161,24 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	processors := []string{"memory_limiter", "k8sattributes"}
 
 	input := pipeline.Spec.Input
+
+	processors = append(processors, makeInputSourceFilters(input)...)
+	processors = append(processors, makeNamespaceFilters(input, pipeline)...)
+	processors = append(processors, makeRuntimeResourcesFilters(input)...)
+	processors = append(processors, makeDiagnosticMetricFilters(input)...)
+
+	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
+
+	return config.Pipeline{
+		Receivers:  []string{"otlp"},
+		Processors: processors,
+		Exporters:  []string{makeOTLPExporterID(pipeline)},
+	}
+}
+
+func makeInputSourceFilters(input telemetryv1alpha1.MetricPipelineInput) []string {
+	var processors []string
+
 	if !isRuntimeInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
@@ -173,6 +191,12 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	if !isOtlpInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}
+
+	return processors
+}
+
+func makeNamespaceFilters(input telemetryv1alpha1.MetricPipelineInput, pipeline *telemetryv1alpha1.MetricPipeline) []string {
+	var processors []string
 
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processors = append(processors, makeNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime))
@@ -187,6 +211,12 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 		processors = append(processors, makeNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp))
 	}
 
+	return processors
+}
+
+func makeRuntimeResourcesFilters(input telemetryv1alpha1.MetricPipelineInput) []string {
+	var processors []string
+
 	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-pod-metrics")
 	}
@@ -194,15 +224,7 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 		processors = append(processors, "filter/drop-runtime-container-metrics")
 	}
 
-	processors = append(processors, makeDiagnosticMetricFilters(input)...)
-
-	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
-
-	return config.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: processors,
-		Exporters:  []string{makeOTLPExporterID(pipeline)},
-	}
+	return processors
 }
 
 func makeDiagnosticMetricFilters(input telemetryv1alpha1.MetricPipelineInput) []string {
