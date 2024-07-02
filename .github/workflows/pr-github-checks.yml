@@ -21,7 +21,7 @@ jobs:
       - name: Check for area label
         if: always()
         run: |
-          gh api --jq '.labels.[].name' /repos/{owner}/{repo}/pulls/${{ github.event.number }} | \
+          gh api --jq '.labels.[].name' /repos/${{ github.repo.name }}/pulls/${{ github.event.number }} | \
           grep -q '^area/' || exit 1
         env:
           GH_TOKEN: ${{ github.token }}
@@ -29,7 +29,7 @@ jobs:
       - name: Check for kind label
         if: always()
         run: |
-          gh api --jq '.labels.[].name' /repos/{owner}/{repo}/pulls/${{ github.event.number }} | \
+          gh api --jq '.labels.[].name' /repos/${{ github.repo.name }}/pulls/${{ github.event.number }} | \
           grep -q '^kind/' || exit 1
         env:
           GH_TOKEN: ${{ github.token }}
@@ -37,7 +37,7 @@ jobs:
       - name: Check if kind label matches pr title prefix
         if: always()
         run: |
-          kind_label=$( gh api --jq '.labels.[].name' /repos/{owner}/{repo}/pulls/${{ github.event.number }} | grep '^kind/')
+          kind_label=$( gh api --jq '.labels.[].name' /repos/${{ github.repo.name }}/pulls/${{ github.event.number }} | grep '^kind/')
           kind_label_to_pr_title_prefix='{"kind/bug":"fix","kind/feature":"feat","kind/docs":"docs","kind/chore":"chore","kind/test":"test","kind/deps":"deps"}'
           prefix=$(echo $kind_label_to_pr_title_prefix | jq -r ".$kind_label")
           if [[ ! ${{ github.event.pull_request.title }} =~ ^$prefix ]]; then
