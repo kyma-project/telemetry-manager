@@ -23,6 +23,8 @@ jobs:
           gh pr list --json number,title,labels --state open --limit 1 | \
           jq '.[] | select(.number == ${{ github.event.pull_request.number }}) | .labels[].name' | \
           grep -q '^area/' || exit 1
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Check for kind label
         if: always()
@@ -30,6 +32,8 @@ jobs:
           gh pr list --json number,title,labels --state open --limit 1 | \
           jq '.[] | select(.number == ${{ github.event.pull_request.number }}) | .labels[].name' | \
           grep -q '^kind/' || exit 1
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Check if kind label matches pr title prefix
         if: always()
@@ -43,7 +47,9 @@ jobs:
             echo "PR title should start with $prefix"
             exit 1
           fi
-        
+        env:
+          GH_TOKEN: ${{ github.token }}
+
 
   pr-title-check:
     runs-on: ubuntu-latest
