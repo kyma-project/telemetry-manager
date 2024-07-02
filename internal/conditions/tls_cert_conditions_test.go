@@ -20,6 +20,13 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 		expectedMessage string
 	}{
 		{
+			name:            "missing cert key pair",
+			given:           tlscert.ErrMissingCertKeyPair,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  ReasonTLSConfigurationInvalid,
+			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSConfigurationInvalid), tlscert.ErrMissingCertKeyPair),
+		},
+		{
 			name:            "cert decode failed",
 			given:           tlscert.ErrCertDecodeFailed,
 			expectedStatus:  metav1.ConditionFalse,

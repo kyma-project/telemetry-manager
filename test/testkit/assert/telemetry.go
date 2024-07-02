@@ -14,11 +14,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func TelemetryHasWarningState(ctx context.Context, k8sClient client.Client) {
+func TelemetryHasState(ctx context.Context, k8sClient client.Client, expectedState operatorv1alpha1.State) {
 	Eventually(func(g Gomega) {
 		var telemetryCR operatorv1alpha1.Telemetry
 		g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetryCR)).To(Succeed())
-		g.Expect(telemetryCR.Status.State).To(Equal(operatorv1alpha1.StateWarning))
+		g.Expect(telemetryCR.Status.State).To(Equal(expectedState))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

@@ -638,7 +638,7 @@ func TestReconcile(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().
 					WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-					WithHTTPOutput(testutils.HTTPClientTLS("ca", "fooCert", "fooKey")).
+					WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "fooCert", "fooKey")).
 					Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 

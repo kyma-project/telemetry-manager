@@ -375,6 +375,9 @@ spec:
                               is skipped. Default is `false`.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can define either both 'cert' and 'key', or neither
+                          rule: has(self.cert) == has(self.key)
                       uri:
                         description: Defines the URI of the HTTP receiver. Default
                           is "/".
@@ -888,6 +891,9 @@ spec:
                               is skipped. Default is `false`.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can define either both 'cert' and 'key', or neither
+                          rule: has(self.cert) == has(self.key)
                       uri:
                         description: Defines the URI of the HTTP receiver. Default
                           is "/".

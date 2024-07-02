@@ -97,7 +97,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		It("Should have Telemetry with warning state", func() {
-			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasState(ctx, k8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,
