@@ -10,6 +10,7 @@ on:
       - reopened
       - edited
       - synchronize
+      - labeled
   workflow_dispatch:
 
 jobs:
