@@ -40,10 +40,7 @@ jobs:
           kind_label=$( gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | grep '^kind/')
           kind_label_to_pr_title_prefix='{"kind/bug":"fix","kind/feature":"feat","kind/docs":"docs","kind/chore":"chore","kind/test":"test","kind/deps":"deps"}'
           prefix=$(echo $kind_label_to_pr_title_prefix | jq -r ".\"$kind_label\"")
-          if [[ ! ${{ github.event.pull_request.title }} =~ ^$prefix ]]; then
-            echo "PR title should start with $prefix"
-            exit 1
-          fi
+          echo ${{ github.event.pull_request.title }} | grep '^'$prefix || (echo "PR title should start with $prefix"; exit 1)
         env:
           GH_TOKEN: ${{ github.token }}
 
