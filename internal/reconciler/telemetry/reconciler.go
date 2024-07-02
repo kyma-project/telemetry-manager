@@ -64,7 +64,6 @@ type healthCheckers struct {
 	logs, metrics, traces ComponentHealthChecker
 }
 
-//go:generate mockery --name OverridesHandler --filename overrides_handler.go
 type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }

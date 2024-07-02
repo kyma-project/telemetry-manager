@@ -103,7 +103,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 				{Reason: conditions.ReasonSelfMonBufferFillingUp, Status: metav1.ConditionFalse},
 			})
 
-			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasState(ctx, k8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,
@@ -127,7 +127,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
 			})
 
-			assert.TelemetryHasWarningState(ctx, k8sClient)
+			assert.TelemetryHasState(ctx, k8sClient, operatorv1alpha1.StateWarning)
 			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,

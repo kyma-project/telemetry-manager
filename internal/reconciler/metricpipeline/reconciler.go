@@ -38,45 +38,37 @@ type Config struct {
 	ModuleVersion          string
 }
 
-//go:generate mockery --name AgentConfigBuilder --filename agent_config_builder.go
 type AgentConfigBuilder interface {
 	Build(pipelines []telemetryv1alpha1.MetricPipeline, options agent.BuildOptions) *agent.Config
 }
 
-//go:generate mockery --name GatewayConfigBuilder --filename gateway_config_builder.go
 type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
-//go:generate mockery --name AgentApplierDeleter --filename agent_applier_deleter.go
 type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client) error
 }
 
-//go:generate mockery --name GatewayApplierDeleter --filename gateway_applier_deleter.go
 type GatewayApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
 
-//go:generate mockery --name PipelineLock --filename pipeline_lock.go
 type PipelineLock interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
 	IsLockHolder(ctx context.Context, owner metav1.Object) (bool, error)
 }
 
-//go:generate mockery --name DeploymentProber --filename deployment_prober.go
 type DeploymentProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
-//go:generate mockery --name DaemonSetProber --filename daemonset_prober.go
 type DaemonSetProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
-//go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
 type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
@@ -85,12 +77,10 @@ type TLSCertValidator interface {
 	Validate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
-//go:generate mockery --name OverridesHandler --filename overrides_handler.go
 type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
-//go:generate mockery --name IstioStatusChecker --filename istio_status_checker.go
 type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }

@@ -524,6 +524,9 @@ spec:
                                 type: object
                             type: object
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can define either both 'cert' and 'key', or neither
+                          rule: has(self.cert) == has(self.key)
                     required:
                     - endpoint
                     type: object

@@ -16,7 +16,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-//go:generate mockery --name ComponentHealthChecker --filename component_health_checker.go
 type ComponentHealthChecker interface {
 	Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error)
 }

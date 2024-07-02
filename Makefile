@@ -41,11 +41,12 @@ $(TOOLS_BIN_DIR):
 $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 	cd $(TOOLS_MOD_DIR) && go build -o $@ -trimpath $(filter $(filter %/$(notdir $@),$(TOOLS_PKG_NAMES_CLEAN))%,$(TOOLS_PKG_NAMES))
 
+CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
 GINKGO           := $(TOOLS_BIN_DIR)/ginkgo
 GOLANGCI_LINT    := $(TOOLS_BIN_DIR)/golangci-lint
 GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
-CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
 KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
+MOCKERY          := $(TOOLS_BIN_DIR)/mockery
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
 
 # Sub-makefile
@@ -99,7 +100,8 @@ manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole a
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(MOCKERY)
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt

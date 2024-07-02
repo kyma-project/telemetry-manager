@@ -38,7 +38,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			WithName(pipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(
+				testutils.OTLPClientTLSFromString(
 					clientCerts.CaCertPem.String(),
 					clientCerts.ClientCertPem.String(),
 					clientCerts.ClientKeyPem.String(),

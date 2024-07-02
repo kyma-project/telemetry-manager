@@ -8,7 +8,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-//go:generate mockery --name VariablesValidator --filename variables_validator.go
 type VariablesValidator interface {
 	Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error
 }

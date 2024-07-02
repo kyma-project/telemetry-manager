@@ -31,7 +31,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 )
 
-//go:generate mockery --name DryRunner --filename dryrun.go
 type DryRunner interface {
 	RunPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
 }

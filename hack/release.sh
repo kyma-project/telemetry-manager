@@ -11,10 +11,11 @@ readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
 readonly KUSTOMIZE=${KUSTOMIZE:-$LOCALBIN/kustomize}
 readonly GORELEASER_VERSION="${GORELEASER_VERSION:-$ENV_GORELEASER_VERSION}"
 readonly IMG="${IMG:-$ENV_IMG}"
+readonly CURRENT_VERSION="$1"
 
 function prepare_release_artefacts() {
      echo "Preparing release artefacts"
-     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
+     cd config/manager && ${KUSTOMIZE} edit set image controller="${IMG}" && cd ../..
      # Create the resources file that is used for creating the ModuleTemplate for fast and regular channels
      ${KUSTOMIZE} build config/default > telemetry-manager.yaml
      # Create the resources file that is used for creating the ModuleTemplate for experimental channel
@@ -24,16 +25,10 @@ function prepare_release_artefacts() {
 }
 
 get_previous_release_version() {
-    TAG_LIST=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$"))
-    if [[ "${TAG_LIST[0]}" =~ ^[0-9]+.[0-9]+.[1-9]$ ]]
-    then
-          TAG_LIST_WITH_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$"))
-          export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH[1]}
-    else
-          # get the list of tags in a reverse chronological order excluding patch tags
-          TAG_LIST_WITHOUT_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0]$"))
-          export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITHOUT_PATCH[1]}
-    fi
+          # get list of tags in a reverse chronological order excluding dev tags, 
+          # sort them based on major, minor, patch numerically, grab the first release before the current one
+          TAG_LIST_WITH_PATCH=$(git tag --sort=-creatordate | grep -E "^[0-9]+.[0-9]+.[0-9]$" | sort -t "." -k1,1n -k2,2n -k3,3n | grep -B 1 "${CURRENT_VERSION}" | head -1)
+          export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH}
 }
 
 function create_github_release() {
