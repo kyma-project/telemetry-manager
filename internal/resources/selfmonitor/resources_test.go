@@ -176,6 +176,17 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.False(t, *containerSecurityContext.Privileged, "must not be privileged")
 	require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
 	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
+
+	//command args
+
+	expectedArgs := []string{
+		"--storage.tsdb.retention.time=" + retentionTime,
+		"--storage.tsdb.retention.size=" + retentionSize,
+		"--config.file=" + ConfigPath + ConfigFileName,
+		"--storage.tsdb.path=" + storagePath,
+		"--log.format=" + logFormat,
+	}
+	require.Equal(t, container.Args, expectedArgs)
 }
 
 func verifyConfigMapIsPresent(ctx context.Context, t *testing.T, client client.Client) {
@@ -189,7 +200,7 @@ func verifyConfigMapIsPresent(ctx context.Context, t *testing.T, client client.C
 	require.Equal(t, map[string]string{
 		"app.kubernetes.io/name": name,
 	}, cm.Labels)
-	require.Equal(t, prometheusConfigYAML, cm.Data["prometheus.yml"])
+	require.Equal(t, prometheusConfigYAML, cm.Data[ConfigFileName])
 }
 
 func verifyRoleIsPresent(ctx context.Context, t *testing.T, client client.Client) {

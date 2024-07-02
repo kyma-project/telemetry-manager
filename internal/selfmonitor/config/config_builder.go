@@ -3,6 +3,8 @@ package config
 import (
 	"strings"
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 )
 
 type BuilderConfig struct {
@@ -15,7 +17,7 @@ func MakeConfig(builderCfg BuilderConfig) Config {
 	promConfig := Config{}
 	promConfig.GlobalConfig = makeGlobalConfig()
 	promConfig.AlertingConfig = makeAlertConfig(builderCfg.WebhookURL, builderCfg.WebhookScheme)
-	promConfig.RuleFiles = []string{"/etc/prometheus/alerting_rules.yml"}
+	promConfig.RuleFiles = []string{selfmonitor.ConfigPath + selfmonitor.AlertRuleFileName}
 	promConfig.ScrapeConfigs = makeScrapeConfig(builderCfg.ScrapeNamespace)
 	return promConfig
 }
