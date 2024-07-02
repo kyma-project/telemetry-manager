@@ -29,6 +29,18 @@ while getopts m:b:n:t:d: flag; do
     esac
 done
 
+image_clean=$(basename $OTEL_IMAGE | tr ":" "." )
+mkdir tests
+NAME=${TEST_TARGET}
+if [ "$MAX_PIPELINE" == "true" ]; then
+    NAME=$NAME-MultiPipeline
+fi
+if [ "$BACKPRESSURE_TEST" == "true" ]; then
+    NAME=$NAME-BackPressure
+fi
+
+RESULTS_FILE=tests/$(echo ${NAME}-${image_clean} | tr -cd '[[:alnum:]]._-').md
+
 # shellcheck disable=SC2112
 function setup() {
 
@@ -150,7 +162,7 @@ function wait_for_resources() {
       wait_for_selfmonitor_resources
   fi
 
-  echo "\nRunning Tests\n"
+  echo -e "\nRunning Tests\n"
 }
 
 # shellcheck disable=SC2112
@@ -204,7 +216,7 @@ function cleanup() {
     kubectl -n ${PROMETHEUS_NAMESPACE} port-forward $(kubectl -n ${PROMETHEUS_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -oname) 9090 &
     sleep 3
 
-    echo "Test results collecting"
+    echo -e "Test results collecting"
     if [ "$TEST_TARGET" = "traces" ]; then
         get_result_and_cleanup_trace
     fi
@@ -257,11 +269,11 @@ function get_result_and_cleanup_trace() {
 
     kubectl delete -f hack/load-tests/trace-load-test-setup.yaml
 
-    echo "\nTrace Gateway got $restarts time restarted\n"
+    echo -e "\nTrace Gateway got $restarts time restarted\n"| tee -a $RESULTS_FILE
 
-    echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
-    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Span/sec" "Exporter Exported Span/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
-    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+    echo -e "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n" | tee -a $RESULTS_FILE
+    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Span/sec" "Exporter Exported Span/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage" | tee -a $RESULTS_FILE
+    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}" | tee -a $RESULTS_FILE
 }
 
 # shellcheck disable=SC2112
@@ -289,7 +301,7 @@ function get_result_and_cleanup_metric() {
 
     kubectl delete -f hack/load-tests/metric-load-test-setup.yaml
 
-    echo "\nMetric Gateway got $restarts time restarted\n"
+    echo -e "\nMetric Gateway got $restarts time restarted\n"| tee -a $RESULTS_FILE
 
     print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
 }
@@ -318,9 +330,9 @@ function get_result_and_cleanup_metricagent() {
 
    kubectl delete -f hack/load-tests/metric-agent-test-setup.yaml
 
-   echo "\nTest run for $TEST_DURATION seconds\n"
-   echo "\nMetric Gateway got $restartsGateway time restarted\n"
-   echo "\nMetric Agent got $restartsAgent time restarted\n"
+   echo -e "\nTest run for $TEST_DURATION seconds\n"| tee -a $RESULTS_FILE
+   echo -e "\nMetric Gateway got $restartsGateway time restarted\n"| tee -a $RESULTS_FILE
+   echo -e "\nMetric Agent got $restartsAgent time restarted\n"| tee -a $RESULTS_FILE
 
    print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
 }
@@ -351,11 +363,11 @@ function get_result_and_cleanup_fluentbit() {
 
    kubectl delete -f hack/load-tests/log-fluentbit-test-setup.yaml
 
-   echo "\nLogPipeline Pods got $restarts time restarted\n"
+   echo -e "\nLogPipeline Pods got $restarts time restarted\n"| tee -a $RESULTS_FILE
 
-   echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
-   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "" "Input Bytes Processing Rate/sec" "Output Bytes Processing Rate/sec" "Filesystem Buffer Usage" "Pod Memory Usage(MB)" "Pod CPU Usage"
-   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+   echo -e "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"| tee -a $RESULTS_FILE
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "" "Input Bytes Processing Rate/sec" "Output Bytes Processing Rate/sec" "Filesystem Buffer Usage" "Pod Memory Usage(MB)" "Pod CPU Usage"| tee -a $RESULTS_FILE
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"| tee -a $RESULTS_FILE
 }
 
 # shellcheck disable=SC2112
@@ -379,21 +391,21 @@ function get_result_and_cleanup_selfmonitor() {
 
    kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
 
-   echo "\Self Monitor Pods got $restarts time restarted\n"
+   echo -e "Self Monitor Pods got $restarts time restarted\n"| tee -a $RESULTS_FILE
 
-   echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET\n"
-   printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Scrape Samples/sec" "Total Series Created" "WAL Storage Size/bytes" "Head Chunk Storage Size/bytes" "Pod Memory Usage(MB)" "Pod CPU Usage"
-   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$SCRAPESAMPLES" "$SERIESCREATED" "$WALSTORAGESIZE" "$HEADSTORAGESIZE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+   echo -e "\nPrinting Test Results for $TEST_NAME $TEST_TARGET\n"| tee -a $RESULTS_FILE
+   printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Scrape Samples/sec" "Total Series Created" "WAL Storage Size/bytes" "Head Chunk Storage Size/bytes" "Pod Memory Usage(MB)" "Pod CPU Usage"| tee -a $RESULTS_FILE
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$SCRAPESAMPLES" "$SERIESCREATED" "$WALSTORAGESIZE" "$HEADSTORAGESIZE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"| tee -a $RESULTS_FILE
 }
 
 function print_metric_result(){
-    echo "\nPrinting Test Results for $1 $2, Multi Pipeline $3, Backpressure $4\n"
-    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Metric/sec" "Exporter Exported Metric/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
-    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$1" "$5" "$6" "$7" "${8//$'\n'/,}" "${9//$'\n'/,}"
+    echo -e "\nPrinting Test Results for $1 $2, Multi Pipeline $3, Backpressure $4\n"| tee -a $RESULTS_FILE
+    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Metric/sec" "Exporter Exported Metric/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"| tee -a $RESULTS_FILE
+    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$1" "$5" "$6" "$7" "${8//$'\n'/,}" "${9//$'\n'/,}"| tee -a $RESULTS_FILE
 }
 
-echo "$TEST_NAME Load Test for $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST, test duration $TEST_DURATION seconds"
-echo "--------------------------------------------"
+echo -e "$TEST_NAME Load Test for $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST, test duration $TEST_DURATION seconds"| tee -a $RESULTS_FILE
+echo -e "--------------------------------------------"
 
 trap cleanup EXIT
 setup

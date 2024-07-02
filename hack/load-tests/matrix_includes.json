@@ -1,0 +1,107 @@
+[
+  {
+    "name": "ci-traces",
+    "type": "traces",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-traces-m",
+    "type": "traces",
+    "backpressure": "false",
+    "multi": "true",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-traces-b",
+    "type": "traces",
+    "backpressure": "true",
+    "multi": "false",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-traces-mb",
+    "type": "traces",
+    "backpressure": "true",
+    "multi": "true",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-metrics",
+    "type": "metrics",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-metrics-m",
+    "type": "metrics",
+    "backpressure": "false",
+    "multi": "true",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-metrics-b",
+    "type": "metrics",
+    "backpressure": "true",
+    "multi": "false",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-metrics-mb",
+    "type": "metrics",
+    "backpressure": "true",
+    "multi": "true",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-metrics-ag",
+    "type": "metricagent",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-metrics-ag-b",
+    "type": "metricagent",
+    "backpressure": "true",
+    "multi": "false",
+    "image": "otel-collector"
+  },
+  {
+    "name": "ci-logs",
+    "type": "logs-fluentbit",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "fluent-bit"
+  },
+  {
+    "name": "ci-logs-m",
+    "type": "logs-fluentbit",
+    "backpressure": "false",
+    "multi": "true",
+    "image": "fluent-bit"
+  },
+  {
+    "name": "ci-logs-b",
+    "type": "logs-fluentbit",
+    "backpressure": "true",
+    "multi": "false",
+    "image": "fluent-bit"
+  },
+  {
+    "name": "ci-logs-mb",
+    "type": "logs-fluentbit",
+    "backpressure": "true",
+    "multi": "true",
+    "image": "fluent-bit"
+  },
+  {
+    "name": "ci-self-monitor",
+    "type": "self-monitor",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "prometheus"
+  }
+]
