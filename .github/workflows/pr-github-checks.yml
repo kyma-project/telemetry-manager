@@ -1,8 +1,7 @@
 name: PR Github Checks
 
 on:
-  #  pull_request_target:
-  pull_request:
+  pull_request_target:
     branches:
       - "main"
       - "release-*"
@@ -11,7 +10,6 @@ on:
       - reopened
       - edited
       - synchronize
-      - labeled
   workflow_dispatch:
 
 jobs:
@@ -35,7 +33,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Check if kind label matches pr title prefix
-        if: always()
         run: |
           kind_label=$( gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | grep '^kind/')
           kind_label_to_pr_title_prefix='{"kind/bug":"fix","kind/feature":"feat","kind/docs":"docs","kind/chore":"chore","kind/test":"test","kind/deps":"deps"}'
