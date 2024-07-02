@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Check for area label
         if: always()
-        uses: actions/github-script@0.9.0
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -31,7 +31,7 @@ jobs:
 
       - name: Check for kind label
         if: always()
-        uses: actions/github-script@0.9.0
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -43,7 +43,7 @@ jobs:
 
       - name: Check if kind label matches pr title prefix
         if: always()
-        uses: actions/github-script@0.9.0
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
