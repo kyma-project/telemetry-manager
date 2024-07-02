@@ -82,12 +82,42 @@ type MetricPipelinePrometheusInput struct {
 
 // MetricPipelineRuntimeInput defines the runtime scraping section.
 type MetricPipelineRuntimeInput struct {
-	// If enabled, workload-related Kubernetes metrics are scraped. The default is `false`.
+	// If enabled, runtime metrics are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
-	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	// Describes whether runtime metrics from specific Namespaces are selected. System Namespaces are disabled by default.
 	// +optional
 	// +kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	// Describes the Kubernetes resources for which runtime metrics are scraped.
+	// +optional
+	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}}
+	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
+}
+
+// MetricPipelineRuntimeInputResources describes the Kubernetes resources for which runtime metrics are scraped.
+type MetricPipelineRuntimeInputResources struct {
+	// Configures pod runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: true}
+	Pod *MetricPipelineRuntimeInputPod `json:"pod,omitempty"`
+	// Configures container runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: true}
+	Container *MetricPipelineRuntimeInputContainer `json:"container,omitempty"`
+}
+
+// MetricPipelineRuntimeInputPod configures pod runtime metrics scraping.
+type MetricPipelineRuntimeInputPod struct {
+	// If enabled, pod runtime metrics are scraped. The default is `true`.
+	// +kubebuilder:default:=true
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// MetricPipelineRuntimeInputContainer configures container runtime metrics scraping.
+type MetricPipelineRuntimeInputContainer struct {
+	// If enabled, container runtime metrics are scraped. The default is `true`.
+	// +kubebuilder:default:=true
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.

@@ -38,6 +38,13 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	}
 }
 
+func makeResolveServiceNameConfig() *TransformProcessor {
+	return &TransformProcessor{
+		ErrorMode:        "ignore",
+		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
+	}
+}
+
 func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
@@ -78,10 +85,29 @@ func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
 	}
 }
 
-func makeResolveServiceNameConfig() *TransformProcessor {
-	return &TransformProcessor{
-		ErrorMode:        "ignore",
-		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
+func makeDropRuntimePodMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "^k8s.pod.*"),
+				),
+			},
+		},
+	}
+}
+
+func makeDropRuntimeContainerMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
+				),
+			},
+		},
 	}
 }
 

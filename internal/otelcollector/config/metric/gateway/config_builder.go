@@ -74,12 +74,24 @@ func makeReceiversConfig() Receivers {
 // declareComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func declareComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
-	declareDropFilters(pipeline, cfg)
+	declareInputSourceFilters(pipeline, cfg)
+	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
 
-func declareDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+	input := pipeline.Spec.Input
+
+	if isPrometheusInputEnabled(input) && !isPrometheusDiagnosticMetricsEnabled(input) {
+		cfg.Processors.DropDiagnosticMetricsIfInputSourcePrometheus = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourcePrometheus))
+	}
+	if isIstioInputEnabled(input) && !isIstioDiagnosticMetricsEnabled(input) {
+		cfg.Processors.DropDiagnosticMetricsIfInputSourceIstio = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourceIstio))
+	}
+}
+
+func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
 
 	if !isRuntimeInputEnabled(input) {
@@ -96,14 +108,14 @@ func declareDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config)
 	}
 }
 
-func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
 
-	if isPrometheusInputEnabled(input) && !isPrometheusDiagnosticMetricsEnabled(input) {
-		cfg.Processors.DropDiagnosticMetricsIfInputSourcePrometheus = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourcePrometheus))
+	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
+		cfg.Processors.DropRuntimePodMetrics = makeDropRuntimePodMetricsConfig()
 	}
-	if isIstioInputEnabled(input) && !isIstioDiagnosticMetricsEnabled(input) {
-		cfg.Processors.DropDiagnosticMetricsIfInputSourceIstio = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourceIstio))
+	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
+		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
 	}
 }
 
@@ -149,6 +161,24 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	processors := []string{"memory_limiter", "k8sattributes"}
 
 	input := pipeline.Spec.Input
+
+	processors = append(processors, makeInputSourceFilters(input)...)
+	processors = append(processors, makeNamespaceFilters(input, pipeline)...)
+	processors = append(processors, makeRuntimeResourcesFilters(input)...)
+	processors = append(processors, makeDiagnosticMetricFilters(input)...)
+
+	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
+
+	return config.Pipeline{
+		Receivers:  []string{"otlp"},
+		Processors: processors,
+		Exporters:  []string{makeOTLPExporterID(pipeline)},
+	}
+}
+
+func makeInputSourceFilters(input telemetryv1alpha1.MetricPipelineInput) []string {
+	var processors []string
+
 	if !isRuntimeInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
@@ -161,6 +191,12 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	if !isOtlpInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}
+
+	return processors
+}
+
+func makeNamespaceFilters(input telemetryv1alpha1.MetricPipelineInput, pipeline *telemetryv1alpha1.MetricPipeline) []string {
+	var processors []string
 
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processors = append(processors, makeNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime))
@@ -175,15 +211,20 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 		processors = append(processors, makeNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp))
 	}
 
-	processors = append(processors, makeDiagnosticMetricFilters(input)...)
+	return processors
+}
 
-	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
+func makeRuntimeResourcesFilters(input telemetryv1alpha1.MetricPipelineInput) []string {
+	var processors []string
 
-	return config.Pipeline{
-		Receivers:  []string{"otlp"},
-		Processors: processors,
-		Exporters:  []string{makeOTLPExporterID(pipeline)},
+	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-pod-metrics")
 	}
+	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-container-metrics")
+	}
+
+	return processors
 }
 
 func makeDiagnosticMetricFilters(input telemetryv1alpha1.MetricPipelineInput) []string {
@@ -198,6 +239,7 @@ func makeDiagnosticMetricFilters(input telemetryv1alpha1.MetricPipelineInput) []
 
 	return processors
 }
+
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
@@ -232,4 +274,12 @@ func isPrometheusDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipeline
 
 func isIstioDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio.DiagnosticMetrics != nil && input.Istio.DiagnosticMetrics.Enabled
+}
+
+func isRuntimePodMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Pod != nil && input.Runtime.Resources.Pod.Enabled
+}
+
+func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Container != nil && input.Runtime.Resources.Container.Enabled
 }
