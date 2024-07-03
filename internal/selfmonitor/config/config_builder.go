@@ -3,21 +3,21 @@ package config
 import (
 	"strings"
 	"time"
-
-	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 )
 
 type BuilderConfig struct {
-	ScrapeNamespace string
-	WebhookURL      string
-	WebhookScheme   string
+	ScrapeNamespace   string
+	WebhookURL        string
+	WebhookScheme     string
+	ConfigPath        string
+	AlertRuleFileName string
 }
 
 func MakeConfig(builderCfg BuilderConfig) Config {
 	promConfig := Config{}
 	promConfig.GlobalConfig = makeGlobalConfig()
 	promConfig.AlertingConfig = makeAlertConfig(builderCfg.WebhookURL, builderCfg.WebhookScheme)
-	promConfig.RuleFiles = []string{selfmonitor.ConfigPath + selfmonitor.AlertRuleFileName}
+	promConfig.RuleFiles = []string{builderCfg.ConfigPath + builderCfg.AlertRuleFileName}
 	promConfig.ScrapeConfigs = makeScrapeConfig(builderCfg.ScrapeNamespace)
 	return promConfig
 }

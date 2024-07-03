@@ -19,6 +19,9 @@ const (
 	name                 = "my-self-monitor"
 	prometheusConfigYAML = "dummy prometheus Config"
 	alertRulesYAML       = "dummy alert rules"
+	configPath           = "/dummy/"
+	configFileName       = "dummy-config.yaml"
+	alertRulesFileName   = "dummy-alerts.yaml"
 )
 
 func TestDeleteSelfMonitorResources(t *testing.T) {
@@ -32,7 +35,7 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 		},
 	}
 
-	err := sut.ApplyResources(ctx, client, prometheusConfigYAML, alertRulesYAML)
+	err := sut.ApplyResources(ctx, client, configPath, configFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML)
 	require.NoError(t, err)
 
 	t.Run("It should create all resources", func(t *testing.T) {
@@ -93,7 +96,7 @@ func TestApplySelfMonitorResources(t *testing.T) {
 		},
 	}
 
-	err := sut.ApplyResources(ctx, client, prometheusConfigYAML, alertRulesYAML)
+	err := sut.ApplyResources(ctx, client, configPath, configFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML)
 	require.NoError(t, err)
 
 	t.Run("should create collector Config configmap", func(t *testing.T) {
@@ -182,7 +185,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	expectedArgs := []string{
 		"--storage.tsdb.retention.time=" + retentionTime,
 		"--storage.tsdb.retention.size=" + retentionSize,
-		"--config.file=" + ConfigPath + ConfigFileName,
+		"--config.file=" + configPath + configFileName,
 		"--storage.tsdb.path=" + storagePath,
 		"--log.format=" + logFormat,
 	}
@@ -200,7 +203,8 @@ func verifyConfigMapIsPresent(ctx context.Context, t *testing.T, client client.C
 	require.Equal(t, map[string]string{
 		"app.kubernetes.io/name": name,
 	}, cm.Labels)
-	require.Equal(t, prometheusConfigYAML, cm.Data[ConfigFileName])
+	require.Equal(t, prometheusConfigYAML, cm.Data[configFileName])
+	require.Equal(t, alertRulesYAML, cm.Data[alertRulesFileName])
 }
 
 func verifyRoleIsPresent(ctx context.Context, t *testing.T, client client.Client) {
