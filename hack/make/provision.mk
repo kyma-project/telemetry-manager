@@ -71,7 +71,3 @@ provision-gardener: ## Provision gardener cluster with latest k8s version
 deprovision-gardener:## Deprovision gardener cluster
 	kubectl --kubeconfig=${GARDENER_SA_PATH} annotate shoot ${GARDENER_CLUSTER_NAME} confirmation.gardener.cloud/deletion=true
 	kubectl --kubeconfig=${GARDENER_SA_PATH} delete shoot ${GARDENER_CLUSTER_NAME} --wait=false
-
-.PHONY: env
-env:
-	env
