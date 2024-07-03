@@ -51,7 +51,9 @@ endif
 .PHONY: provision-gardener
 provision-gardener: ## Provision gardener cluster with latest k8s version
 	env
-	envsubst < hack/shoot_gcp.yaml | kubectl --kubeconfig "${GARDENER_SA_PATH}" apply -f -
+	envsubst < hack/shoot_gcp.yaml > /tmp/shoot.yaml 
+	cat /tmp/shoot.yaml
+	cat /tmp/shoot.yaml | kubectl --kubeconfig "${GARDENER_SA_PATH}" apply -f -
 
 	echo "waiting fo cluster to be ready..."
 	kubectl wait --kubeconfig "${GARDENER_SA_PATH}" --for=condition=EveryNodeReady shoot/${GARDENER_CLUSTER_NAME} --timeout=17m
