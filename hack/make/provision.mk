@@ -31,10 +31,10 @@ provision-k3d-istio: provision-k3d
 # GARDENER_SECRET_NAME=
 GIT_COMMIT_SHA=$(shell git rev-parse --short=8 HEAD)
 UNAME=$(shell uname -s)
-ifeq ($UNAME,Linux)
+ifeq ($(UNAME),Linux)
 	export HIBERNATION_HOUR=$(shell date -d5H +%-H)
 endif
-ifeq ($UNAME,Darwin)
+ifeq ($(UNAME),Darwin)
 	export HIBERNATION_HOUR=$(shell date -v+5H +%-H)
 endif
 GARDENER_K8S_VERSION ?= $(ENV_GARDENER_K8S_VERSION)
@@ -50,6 +50,7 @@ endif
 
 .PHONY: provision-gardener
 provision-gardener: ## Provision gardener cluster with latest k8s version
+	env
 	envsubst < hack/shoot_gcp.yaml | kubectl --kubeconfig "${GARDENER_SA_PATH}" apply -f -
 
 	echo "waiting fo cluster to be ready..."
