@@ -30,7 +30,13 @@ provision-k3d-istio: provision-k3d
 # GARDENER_PROJECT=
 # GARDENER_SECRET_NAME=
 GIT_COMMIT_SHA=$(shell git rev-parse --short=8 HEAD)
-export HIBERNATION_HOUR=$(shell date -d5H +%-H)
+UNAME=$(shell uname -s)
+ifeq ($UNAME,Linux)
+	export HIBERNATION_HOUR=$(shell date -d5H +%-H)
+endif
+ifeq ($UNAME,Darwin)
+	export HIBERNATION_HOUR=$(shell date -v+5H +%-H)
+endif
 GARDENER_K8S_VERSION ?= $(ENV_GARDENER_K8S_VERSION)
 # Cluster name is also set via load test. If its set then use that else use ci-XX
 export GARDENER_CLUSTER_NAME ?= $(shell echo "ci-${GIT_COMMIT_SHA}-${GARDENER_K8S_VERSION}" | sed 's/\.//g')
