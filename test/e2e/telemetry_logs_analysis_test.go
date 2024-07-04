@@ -25,7 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, func() {
 	const (
 		otelCollectorNs             = "tlogs-otelcollector"
 		fluentBitNs                 = "tlogs-fluentbit"
