@@ -160,7 +160,7 @@ func sanitizeValue(valuePEM []byte) []byte {
 
 func parseCertificate(certPEM []byte) (*x509.Certificate, error) {
 	if certPEM == nil {
-		return nil, nil
+		return &x509.Certificate{}, nil
 	}
 
 	block, _ := pem.Decode(certPEM)
@@ -198,7 +198,7 @@ func parsePrivateKey(keyPEM []byte) error {
 
 func parseCA(caPEM []byte) ([]*x509.Certificate, error) {
 	if caPEM == nil {
-		return nil, nil
+		return []*x509.Certificate{}, nil
 	}
 
 	block, _ := pem.Decode(caPEM)
