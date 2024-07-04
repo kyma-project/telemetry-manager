@@ -65,7 +65,7 @@ receivers:
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
-                      regex: $MY_NODE_NAME
+                      regex: ${MY_NODE_NAME}
                       action: keep
                     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
                       regex: "true"
@@ -110,7 +110,7 @@ receivers:
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_endpoint_node_name]
-                      regex: $MY_NODE_NAME
+                      regex: ${MY_NODE_NAME}
                       action: keep
                     - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
                       regex: "true"
