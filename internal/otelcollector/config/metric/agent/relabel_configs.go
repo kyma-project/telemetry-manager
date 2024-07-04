@@ -93,7 +93,7 @@ func inferAddressFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 		SourceLabels: []string{"__address__", fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_port", annotated)},
 		Action:       Replace,
 		Regex:        "([^:]+)(?::\\d+)?;(\\d+)",
-		Replacement:  "$$1:$$2",
+		Replacement:  "${$1}:${$2}",
 		TargetLabel:  "__address__",
 	}
 }
