@@ -269,17 +269,27 @@ func isOtlpInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 }
 
 func isPrometheusDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Prometheus.DiagnosticMetrics != nil && input.Prometheus.DiagnosticMetrics.Enabled
+	return input.Prometheus != nil &&
+		input.Prometheus.DiagnosticMetrics != nil &&
+		input.Prometheus.DiagnosticMetrics.Enabled
 }
 
 func isIstioDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Istio.DiagnosticMetrics != nil && input.Istio.DiagnosticMetrics.Enabled
+	return input.Istio != nil &&
+		input.Istio.DiagnosticMetrics != nil &&
+		input.Istio.DiagnosticMetrics.Enabled
 }
 
 func isRuntimePodMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.Pod != nil && input.Runtime.Resources.Pod.Enabled
+	return input.Runtime.Resources != nil &&
+		input.Runtime.Resources.Pod != nil &&
+		input.Runtime.Resources.Pod.Enabled != nil &&
+		*input.Runtime.Resources.Pod.Enabled
 }
 
 func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.Container != nil && input.Runtime.Resources.Container.Enabled
+	return input.Runtime.Resources != nil &&
+		input.Runtime.Resources.Container != nil &&
+		input.Runtime.Resources.Container.Enabled != nil &&
+		*input.Runtime.Resources.Container.Enabled
 }

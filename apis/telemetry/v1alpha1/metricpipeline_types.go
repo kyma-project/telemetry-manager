@@ -122,15 +122,17 @@ type MetricPipelineRuntimeInputResources struct {
 // MetricPipelineRuntimeInputPod configures pod runtime metrics scraping.
 type MetricPipelineRuntimeInputPod struct {
 	// If enabled, pod runtime metrics are scraped. The default is `true`.
+	// +optional
 	// +kubebuilder:default:=true
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineRuntimeInputContainer configures container runtime metrics scraping.
 type MetricPipelineRuntimeInputContainer struct {
 	// If enabled, container runtime metrics are scraped. The default is `true`.
+	// +optional
 	// +kubebuilder:default:=true
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.

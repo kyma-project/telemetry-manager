@@ -177,7 +177,7 @@ func (b *MetricPipelineBuilder) WithRuntimeInputPodMetrics(enable bool) *MetricP
 		b.inRuntime.Resources.Pod = &telemetryv1alpha1.MetricPipelineRuntimeInputPod{}
 	}
 
-	b.inRuntime.Resources.Pod.Enabled = enable
+	b.inRuntime.Resources.Pod.Enabled = &enable
 
 	return b
 }
@@ -195,7 +195,7 @@ func (b *MetricPipelineBuilder) WithRuntimeInputContainerMetrics(enable bool) *M
 		b.inRuntime.Resources.Container = &telemetryv1alpha1.MetricPipelineRuntimeInputContainer{}
 	}
 
-	b.inRuntime.Resources.Container.Enabled = enable
+	b.inRuntime.Resources.Container.Enabled = &enable
 
 	return b
 }
