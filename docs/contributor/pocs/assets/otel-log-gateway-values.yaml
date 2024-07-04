@@ -17,7 +17,7 @@ config:
     otlp: {}
   extensions:
     health_check:
-      endpoint: ${env:MY_POD_IP}:13133
+      endpoint: ${MY_POD_IP}:13133
     file_storage/queue:
   exporters:
     otlp:
@@ -31,7 +31,7 @@ config:
   service:
     telemetry:
       metrics:
-        address: ${env:MY_POD_IP}:8888
+        address: ${MY_POD_IP}:8888
     extensions:
       - file_storage/queue
       - health_check
