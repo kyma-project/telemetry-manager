@@ -101,7 +101,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		// verify metrics from apps1Ns delivered to backend1
 		It("Should deliver Runtime metrics from app1Ns to backend1", func() {
-			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, kubeletstats.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, kubeletstats.DefaultMetricsNames)
 		})
 
 		It("Should deliver Prometheus metrics from app1Ns to backend1", func() {
@@ -118,7 +118,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		// verify metrics from apps2Ns delivered to backend2
 		It("Should deliver Runtime metrics from app2Ns to backend2", func() {
-			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, kubeletstats.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, kubeletstats.DefaultMetricsNames)
 		})
 
 		It("Should deliver Prometheus metrics from app2Ns to backend2", func() {
