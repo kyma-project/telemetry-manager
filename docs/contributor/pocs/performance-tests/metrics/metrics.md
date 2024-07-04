@@ -221,7 +221,7 @@ For the test environment, the following setup was used:
                           scrape_interval: 30s
                           relabel_configs:
                             - source_labels: [__meta_kubernetes_pod_node_name]
-                              regex: $MY_NODE_NAME
+                              regex: ${MY_NODE_NAME}
                               action: keep
                             - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
                               regex: "true"
@@ -265,7 +265,7 @@ For the test environment, the following setup was used:
                           scrape_interval: 30s
                           relabel_configs:
                             - source_labels: [__meta_kubernetes_endpoint_node_name]
-                              regex: $MY_NODE_NAME
+                              regex: ${MY_NODE_NAME}
                               action: keep
                             - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
                               regex: "true"
@@ -613,7 +613,7 @@ Metric agent scrape job configuration:
                         scrape_interval: 30s
                         relabel_configs:
                           - source_labels: [__meta_kubernetes_pod_node_name]
-                            regex: $MY_NODE_NAME
+                            regex: ${MY_NODE_NAME}
                             action: keep
   ```
 
@@ -716,7 +716,7 @@ data:
                       scrape_interval: 30s
                       relabel_configs:
                         - source_labels: [__meta_kubernetes_pod_node_name]
-                          regex: $MY_NODE_NAME
+                          regex: ${MY_NODE_NAME}
                           action: keep
                         - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
                           regex: "true"
@@ -761,7 +761,7 @@ data:
                       scrape_interval: 30s
                       relabel_configs:
                         - source_labels: [__meta_kubernetes_endpoint_node_name]
-                          regex: $MY_NODE_NAME
+                          regex: ${MY_NODE_NAME}
                           action: keep
                         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
                           regex: "true"
