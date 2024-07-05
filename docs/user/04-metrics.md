@@ -314,7 +314,7 @@ Put the following annotations either to a Service that resolves your metrics por
 
 ### Step 5: Activate Runtime Metrics
 
-To enable collection of runtime metrics for your Pods, define a MetricPipeline that has the `runtime` section enabled as input:
+To enable collection of runtime metrics, define a MetricPipeline that has the `runtime` section enabled as input:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -331,7 +331,49 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and pods get collected.
+The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and pods get collected by default.
+
+It is possible to selectively disable the collection of the pod or container metrics by defining the `resources` section in the `runtime` input.
+
+The following example drops the runtime pod metrics and only collects runtime container metrics:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    runtime:
+      enabled: true
+      resources:
+        pod:
+          enabled: false
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+The following example drops the runtime container metrics and only collects runtime pod metrics:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    runtime:
+      enabled: true
+      resources:
+        container:
+          enabled: false
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
 
 ### Step 6: Activate Istio Metrics
 
