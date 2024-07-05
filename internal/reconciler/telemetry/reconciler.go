@@ -150,9 +150,11 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	}
 
 	prometheusConfig := config.MakeConfig(config.BuilderConfig{
-		ScrapeNamespace: r.config.SelfMonitor.Config.Namespace,
-		WebhookURL:      r.config.SelfMonitor.WebhookURL,
-		WebhookScheme:   r.config.SelfMonitor.WebhookScheme,
+		ScrapeNamespace:   r.config.SelfMonitor.Config.Namespace,
+		WebhookURL:        r.config.SelfMonitor.WebhookURL,
+		WebhookScheme:     r.config.SelfMonitor.WebhookScheme,
+		ConfigPath:        selfMonitorConfigPath,
+		AlertRuleFileName: selfMonitorAlertRuleFileName,
 	})
 	prometheusConfigYAML, err := yaml.Marshal(prometheusConfig)
 	if err != nil {
