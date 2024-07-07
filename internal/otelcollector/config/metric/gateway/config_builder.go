@@ -269,27 +269,31 @@ func isOtlpInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 }
 
 func isPrometheusDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Prometheus != nil &&
-		input.Prometheus.DiagnosticMetrics != nil &&
-		input.Prometheus.DiagnosticMetrics.Enabled
+	return input.Prometheus.DiagnosticMetrics != nil && input.Prometheus.DiagnosticMetrics.Enabled
 }
 
 func isIstioDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Istio != nil &&
-		input.Istio.DiagnosticMetrics != nil &&
-		input.Istio.DiagnosticMetrics.Enabled
+	return input.Istio.DiagnosticMetrics != nil && input.Istio.DiagnosticMetrics.Enabled
 }
 
 func isRuntimePodMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil &&
+	// Define first isRuntimePodMetricsDisabled to ensure that the runtime pod metrics will be enabled by default
+	// in case any of the fields (Resources, Pod or Enabled) is nil
+	isRuntimePodMetricsDisabled := input.Runtime.Resources != nil &&
 		input.Runtime.Resources.Pod != nil &&
 		input.Runtime.Resources.Pod.Enabled != nil &&
-		*input.Runtime.Resources.Pod.Enabled
+		!*input.Runtime.Resources.Pod.Enabled
+
+	return !isRuntimePodMetricsDisabled
 }
 
 func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil &&
+	// Define first isRuntimeContainerMetricsDisabled to ensure that the runtime container metrics will be enabled by default
+	// in case any of the fields (Resources, Pod or Enabled) is nil
+	isRuntimeContainerMetricsDisabled := input.Runtime.Resources != nil &&
 		input.Runtime.Resources.Container != nil &&
 		input.Runtime.Resources.Container.Enabled != nil &&
-		*input.Runtime.Resources.Container.Enabled
+		!*input.Runtime.Resources.Container.Enabled
+
+	return !isRuntimeContainerMetricsDisabled
 }
