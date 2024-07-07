@@ -94,10 +94,10 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
 | **input.&#x200b;runtime.&#x200b;resources**  | object | Describes the Kubernetes resources for which runtime metrics are scraped. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container**  | object | Configures container runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container.&#x200b;enabled**  | boolean | If enabled, container runtime metrics are scraped. The default is `true`. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod**  | object | Configures pod runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod.&#x200b;enabled**  | boolean | If enabled, pod runtime metrics are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container**  | object | Configures container runtime metrics scraping. By default, container runtime metrics  are scraped when runtime input is enabled. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;container.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod**  | object | Configures pod runtime metrics scraping. By default, pod runtime metrics are scraped when runtime input is enabled. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. |
 | **output**  | object | Configures the metric gateway. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
