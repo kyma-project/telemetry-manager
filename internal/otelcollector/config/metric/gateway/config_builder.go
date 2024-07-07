@@ -126,19 +126,19 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 
 	input := pipeline.Spec.Input
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
-		processorID := namespaceFilterID(pipeline.Name, metric.InputSourceRuntime)
+		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
 	}
 	if isPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
-		processorID := namespaceFilterID(pipeline.Name, metric.InputSourcePrometheus)
+		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespacePrometheusInputConfig(pipeline.Spec.Input.Prometheus.Namespaces)
 	}
 	if isIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
-		processorID := namespaceFilterID(pipeline.Name, metric.InputSourceIstio)
+		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceIstioInputConfig(pipeline.Spec.Input.Istio.Namespaces)
 	}
 	if isOtlpInputEnabled(input) && input.Otlp != nil && shouldFilterByNamespace(input.Otlp.Namespaces) {
-		processorID := namespaceFilterID(pipeline.Name, metric.InputSourceOtlp)
+		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)
 	}
 }
@@ -199,16 +199,16 @@ func makeNamespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeli
 	var processors []string
 
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
-		processors = append(processors, namespaceFilterID(pipeline.Name, metric.InputSourceRuntime))
+		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime))
 	}
 	if isPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
-		processors = append(processors, namespaceFilterID(pipeline.Name, metric.InputSourcePrometheus))
+		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus))
 	}
 	if isIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
-		processors = append(processors, namespaceFilterID(pipeline.Name, metric.InputSourceIstio))
+		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio))
 	}
 	if isOtlpInputEnabled(input) && input.Otlp != nil && shouldFilterByNamespace(input.Otlp.Namespaces) {
-		processors = append(processors, namespaceFilterID(pipeline.Name, metric.InputSourceOtlp))
+		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp))
 	}
 
 	return processors
@@ -244,7 +244,7 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.MetricPipeline
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
-func namespaceFilterID(pipelineName string, inputSourceType metric.InputSourceType) string {
+func formatNamespaceFilterID(pipelineName string, inputSourceType metric.InputSourceType) string {
 	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
 }
 
