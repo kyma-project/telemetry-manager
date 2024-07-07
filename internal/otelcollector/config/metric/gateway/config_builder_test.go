@@ -261,7 +261,12 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with runtime input enabled and only pod metrics enabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).WithRuntimeInputPodMetrics(true).Build()})
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(false).
+					Build(),
+			})
 			require.NoError(t, err)
 
 			require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -282,7 +287,12 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with runtime input enabled and only container metrics enabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).WithRuntimeInputContainerMetrics(true).Build()})
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					Build(),
+			})
 			require.NoError(t, err)
 
 			require.Contains(t, collectorConfig.Exporters, "otlp/test")
