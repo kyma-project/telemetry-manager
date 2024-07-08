@@ -1,5 +1,9 @@
 # Traces
 
+The Telemetry module supports you in collecting all relevant trace data in a Kyma cluster, enriches them and ships them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently. You can choose among multiple vendors for [OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
+
+## Overview
+
 Observability tools aim to show the big picture, no matter if you're monitoring just a few or many components. In a cloud-native microservice architecture, a user request often flows through dozens of different microservices. Logging and monitoring tools help to track the request's path. However, they treat each component or microservice in isolation. This individual treatment results in operational issues.
 
 [Distributed tracing](https://opentelemetry.io/docs/concepts/observability-primer/#understanding-distributed-tracing) charts out the transactions in cloud-native systems, helping you to understand the application behavior and relations between the frontend actions and backend implementation.
@@ -8,43 +12,45 @@ The diagram shows how distributed tracing helps to track the request path:
 
 ![Distributed tracing](./assets/traces-intro.drawio.svg)
 
-The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
-
 ## Prerequisites
 
-For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol gaining more and more support by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
+For the recording of a distributed trace, every involved component must propagate at least the trace context. For details, see [Trace Context](https://www.w3.org/TR/trace-context/#problem-statement).
 
-With that, your application must also propagate the W3C Trace Context for any user-related activity. This can be achieved easily using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) available for all common programming languages. If an application follows that guidance and is part of the Istio Service Mesh, it's already outlined with dedicated span data in the trace data collected by the Kyma telemetry setup.
-
-Furthermore, an application should enrich a trace with additional span data and send these data to the cluster-central telemetry services. That can also be achieved with the help of the mentioned [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/).
+- In Kyma, all modules involved in users’ requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context). The involved Kyma modules are, for example, Istio, Serverless, and Eventing.
+- Your application must also propagate the W3C Trace Context for any user-related activity. This can be achieved easily using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) available for all common programming languages. If your application follows that guidance and is part of the Istio Service Mesh, it's already outlined with dedicated span data in the trace data collected by the Kyma telemetry setup.
+- Furthermore, your application must enrich a trace with additional span data and send these data to the cluster-central telemetry services. That can also be achieved with [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/).
 
 ## Architecture
 
-The Telemetry module provides an in-cluster central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints for the OTLP protocol for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-traces` service, where all Kyma components and users' applications should send the trace data to.
+In the Kyma cluster, the Telemetry module provides a central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints to which all Kyma components and users' applications should send the trace data to.
 
 ![Architecture](./assets/traces-arch.drawio.svg)
 
 1. An end-to-end request is triggered and populates across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
-2. The involved components that have contributed a new span to the trace send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) protocol either using GRPC or HTTP.
-3. The trace gateway enriches the span data with relevant metadata, typical for sources running on Kubernetes, like Pod identifiers.
+2. After contributing a new span to the trace, the involved components send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) protocol either using GRPC or HTTP.
+3. The trace gateway enriches the span data with metadata that's typical for sources running on Kubernetes, like Pod identifiers.
 4. With the `TracePipeline` resource, the trace gateway is configured with a target backend.
-5. The backend can run in-cluster.
-6. The backend can also run out-cluster, if authentication has been set up.
-7. The trace data can be consumed using the backend system.
+5. The backend can run within the cluster.
+6. If authentication has been set up, the backend can also run outside the cluster.
+7. You can analyze the trace data with your preferred backend system.
 8. The self monitor observes the trace flow to the backend and reports problems in the TracePipeline status.
 
 ### Trace Gateway
 
-In a Kyma cluster, the trace gateway is the central component to which all components can send their individual spans. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see the [Gateway documentation](./gateways.md).
+In a Kyma cluster, the trace gateway is the central component to which all components can send their individual spans. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see the [Telemetry Gateways](./gateways.md).
 
 ### Telemetry Manager
 
-The TracePipeline resource is managed by Telemetry Manager, a typical Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) responsible for managing the custom parts of the OTel Collector configuration.
+The TracePipeline resource is managed by Telemetry Manager, which is responsible for managing the custom parts of the OTel Collector configuration.
 
 ![Manager resources](./assets/traces-resources.drawio.svg)
 
-Telemetry Manager watches all TracePipeline resources and related Secrets. Whenever the configuration changes, it validates the configuration and generates a new configuration for OTel Collector, where a ConfigMap for the configuration is generated. Referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
-Furthermore, the manager takes care of the full lifecycle of the OTel Collector Deployment itself. Only if there is a TracePipeline defined, the collector is deployed. At anytime, you can opt out of using the tracing feature by not specifying a TracePipeline.
+- Telemetry Manager watches all TracePipeline resources and related Secrets.
+- Whenever the configuration changes, it validates the configuration and generates a new configuration for OTel Collector, where a ConfigMap for the configuration is generated.
+- Referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
+- Furthermore, Telemetry Manager takes care of the full lifecycle of the OTel Collector Deployment itself. Only if there is a TracePipeline defined, the collector is deployed.
+
+If you don't want to use the tracing feature, simply don't specify a TracePipeline.
 
 ## Setting up a TracePipeline
 
@@ -52,38 +58,39 @@ In the following steps, you can see how to construct and deploy a typical TraceP
 
 ### Step 1a. Create a TracePipeline With an OTLP GRPC Output
 
-To ship traces to a new OTLP output, create a resource of the kind `TracePipeline`:
+To ship traces to a new OTLP output, create a resource of the kind `TracePipeline` and save the file (named, for example, `tracepipeline.yaml`).
 
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: backend
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
-```
+This configures the underlying OTel Collector with a pipeline for traces. It defines that the receiver of the pipeline is of the OTLP type and is accessible with the `telemetry-otlp-traces` service.
 
-This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
+The default protocol is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used.  Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 
-### Step 1b. Create a TracePipeline With an OTLP HTTP Output
+- For GRPC, use:
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: TracePipeline
+  metadata:
+    name: backend
+  spec:
+    output:
+      otlp:
+        endpoint:
+          value: https://backend.example.com:4317
+  ```
 
-To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
+- For HTTP protocol, use the `protocol` attribute:
 
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: backend
-spec:
-  output:
-    otlp:
-      protocol: http
-      endpoint:
-        value: https://backend.example.com:4318
-```
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: TracePipeline
+  metadata:
+    name: backend
+  spec:
+   output:
+      otlp:
+        protocol: http
+        endpoint:
+          value: https://backend.example.com:4318
+  ```
 
 ### Step 2. Enable Istio Tracing
 
@@ -91,7 +98,7 @@ spec:
 > The provided Istio feature uses an API in alpha state, which may change in future releases.
 
 By default, the tracing feature of the Istio module is disabled to avoid increased network utilization if there is no TracePipeline.
-To activate the Istio tracing feature with a sampling rate of 5% (for recommendations, see [Istio](#istio)), use a resource similar to the following:
+To activate the Istio tracing feature with a sampling rate of 5% (for recommendations, see [Istio](#istio)), use a resource similar to the following example:
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
@@ -108,7 +115,7 @@ spec:
 
 ### Step 3a: Add Authentication Details From Plain Text
 
-To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
+To integrate with external systems, you must configure authentication  details. You can use mutual TLS (mTLS), Basic Authentication, or custom headers:
 
 <!-- tabs:start -->
 
@@ -177,9 +184,11 @@ spec:
 
 ### Step 3b: Add Authentication Details From Secrets
 
-Integrations into external systems usually require authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
+Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
 
-Use the **valueFrom** attribute to map Secret keys as in the following examples:
+Using the **valueFrom** attribute, you can map Secret keys for mutual TLS (mTLS), Basic Authentication, or with custom headers.
+
+You can store the value of the token in the referenced Secret without any prefix or scheme, and you can configure it in the `headers` section of the TracePipeline. In the following example, the token has the prefix "Bearer".
 
 <!-- tabs:start -->
 
@@ -266,7 +275,7 @@ spec:
 
 <!-- tabs:end -->
 
-The related Secret must have the referenced name and needs to be located in the referenced namespace, and contain the mapped key as in the following example:
+The related Secret must have the referenced name, be located in the referenced namespace, and contain the mapped key. See the following example:
 
 ```yaml
 kind: Secret
@@ -281,46 +290,46 @@ stringData:
   token: YYY
 ```
 
-The value of the token can be stored in the referenced Secret without any prefix or scheme, and it can be configured in the headers section of the TracePipeline. In this example, the token has the prefix Bearer.
-
 ### Step 4: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
-If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
+
+> [!TIP]
+> If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
 ### Step 5: Deploy the Pipeline
 
-To activate the constructed TracePipeline, follow these steps:
+To activate the TracePipeline, apply the `tracepipeline.yaml`  resource file in your cluster:
 
-1. Place the snippet in a file named for example `tracepipeline.yaml`.
-2. Apply the resource file in your cluster:
-
-  ```bash
-  kubectl apply -f tracepipeline.yaml
-  ```
+```bash
+kubectl apply -f tracepipeline.yaml
+```
 
 ### Result
 
-You activated a TracePipeline and traces start streaming to your backend. To verify that the pipeline is running, wait until all status conditions of the TracePipeline in your cluster have status `True`:
+You activated a TracePipeline and traces start streaming to your backend.
+To check that the pipeline is running, verify that the status of the TracePipeline in your cluster have status `True`:
 
-  ```bash
-  kubectl get tracepipeline
-  NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   FLOW HEALTHY   AGE
-  backend   True                      True              True           2m
-  ```
+```bash
+kubectl get tracepipeline
+NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   FLOW HEALTHY   AGE
+backend   True                      True              True           2m
+```
 
 ## Kyma Modules With Tracing Capabilities
 
-Kyma bundles several modules which are potentially involved in user flows. Applications involved in a distributed trace must propagate the trace context to keep the trace complete. Optionally, they can enrich the trace with custom spans, which requires reporting them to the backend.
+Kyma bundles several modules that can be involved in user flows. Applications involved in a distributed trace must propagate the trace context to keep the trace complete. Optionally, they can enrich the trace with custom spans, which requires reporting them to the backend.
 
 ### Istio
 
-The Istio module is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Usually, this is where external requests enter the cluster scope and are enriched with trace context if it hasn't happened yet. Furthermore, every component that's part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data. If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [w3c-tracecontext](https://www.w3.org/TR/trace-context/) protocol.
+The Istio module is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope and are enriched with trace context if it hasn't happened earlier. Furthermore, every component that's part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data.
+
+If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [w3c-tracecontext](https://www.w3.org/TR/trace-context/) protocol.
 
 > [!WARNING]
 > The provided Istio feature uses an API in alpha state, which may change in future releases.
 
- The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` namespace. The following snippets help setting up the Istio tracing feature:
+The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` namespace. The following snippets help setting up the Istio tracing feature:
 
 <!-- tabs:start -->
 
@@ -404,31 +413,27 @@ To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-
 
 ### Eventing
 
-The Kyma [Eventing](https://kyma-project.io/#/eventing-manager/user/README) module dispatches events from an in- or out-cluster backend to your workload. It leverages the [CloudEvents](https://cloudevents.io/) protocol, which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation. That said, the Eventing component already propagates trace context properly but does not enrich a trace with more advanced span data.
+The Kyma [Eventing](https://kyma-project.io/#/eventing-manager/user/README) module uses the [CloudEvents](https://cloudevents.io/) protocol (which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation). Because of that, it propagates trace context properly. However, it doesn't enrich a trace with more advanced span data.
 
 ### Serverless
 
-By default, all engines for the [Serverless](https://kyma-project.io/#/serverless-manager/user/README) module integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/). With that, trace propagation no longer is your concern, because the used middlewares are configured to automatically propagate the context for chained calls. Because the Telemetry endpoints are configured by default, Serverless also reports custom spans for incoming and outgoing requests. You can [customize Function traces](https://kyma-project.io/#/serverless-manager/user/tutorials/01-100-customize-function-traces) to add more spans as part of your Serverless source code.
+By default, all engines for the [Serverless](https://kyma-project.io/#/serverless-manager/user/README) module integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/). Thus, the used middlewares are configured to automatically propagate the trace context for chained calls.
+
+Because the Telemetry endpoints are configured by default, Serverless also reports custom spans for incoming and outgoing requests. You can [customize Function traces](https://kyma-project.io/#/serverless-manager/user/tutorials/01-100-customize-function-traces) to add more spans as part of your Serverless source code.
 
 ## Operations
 
-A TracePipeline creates a Deployment running OTel Collector instances in your cluster. That Deployment serves OTLP endpoints and ships received data to the configured backend. The Telemetry module assures that the OTel Collector instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop traces because the backend is either not reachable for some duration, or cannot handle the traces load and is causing back pressure.
+A TracePipeline creates a Deployment running OTel Collector instances in your cluster. That Deployment serves OTLP endpoints and ships received data to the configured backend.
 
-To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, a service `telemetry-trace-collector-metrics` is located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
+The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time. Buffering and retries help preventing that the instances drop traces because the backend is either not reachable for some duration, or cannot handle the trace load and is causing backpressure. However, there are situations (see [Limitations](#limitations)) when you should react.
 
-The relevant metrics are:
-
-| Name | Threshold | Description |
-|---|---|---|
-| otelcol_exporter_enqueue_failed_spans | total[5m] > 0 | Indicates that new or retried items could not be added to the exporter buffer because the buffer is exhausted. Typically, that happens when the configured backend cannot handle the load on time and is causing back pressure. |
-| otelcol_exporter_send_failed_spans | total[5m] > 0 | Indicates that items are refused in an non-retryable way like a 400 status |
-| otelcol_processor_refused_spans | total[5m] > 0 | Indicates that items cannot be received anymore because a processor refuses them. Typically, that happens when memory of the collector is exhausted because too much data arrived and throttling started. |
+To avoid and detect these scenarios, check the module status.
 
 ## Limitations
 
 The trace gateway setup is designed using the following assumptions:
 
-- The collector has no autoscaling options yet and has a limited resource setup of 1 CPU and 1 GiB memory.
+- The collector has a limited resource setup for CPU and memory, and no autoscaling.
 - Batching is enabled, and a batch will contain up to 512 Spans/batch.
 - An unavailability of a destination must be survived for 5 minutes without direct loss of trace data.
 - An average span consists of 40 attributes with 64 character length.
@@ -449,25 +454,26 @@ The used buffers are volatile. If the OTel collector instance crashes, trace dat
 
 ### Multiple TracePipeline Support
 
-Up to 3 TracePipelines at a time are supported at the moment.
+Up to 3 TracePipelines at a time are supported.
 
 ### System Span Filtering
 
-System-related spans reported by Istio are filtered out without the opt-out option. Here are a few examples of such spans:
+System-related spans reported by Istio are filtered out without the opt-out option, for example:
 
-- `/healthz` endpoint of a component deployed in the `kyma-system` namespace
-- `/metrics` endpoint of a component deployed in the `kyma-system` namespace
-- All outgoing spans reported by Grafana
+- Any communication of applications to the Telemetry gateways
+- Any communication from the gateways to backends
 
 ## Troubleshooting
 
 ### No Spans Arrive at the Backend
 
-Cause: Incorrect backend endpoint configuration (e.g., using the wrong authentication credentials) or the backend being unreachable.
+Cause: Incorrect backend endpoint configuration (such as using the wrong authentication credentials), or the backend is unreachable.
 
-Remedy: 
-- Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
-- Check if the backend is up and reachable.
+Remedy:
+
+1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+2. Check if the backend is up and reachable.
+3. Fix the errors.
 
 ### Not All Spans Arrive at the Backend
 
@@ -476,8 +482,9 @@ Symptom: The backend is reachable and the connection is properly configured, but
 Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
 
 Remedy:
+
 1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
-2. If backend is limiting the rate by refusing spans, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+2. If the backend is limiting the rate by refusing spans, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
 ### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
@@ -485,6 +492,7 @@ Remedy:
 Cause: Your SDK version is incompatible with the OTel collector version.
 
 Remedy:
+
 1. Check which SDK version you are using for instrumentation.
 2. Investigate whether it is compatible with the OTel collector version.
 3. If required, upgrade to a supported SDK version.
@@ -496,11 +504,13 @@ Cause: By [default](#istio), only 1% of the requests are sent to the trace backe
 Remedy:
 
 To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
-If you just want to see traces for one particular request, you can manually force sampling.
+If you just want to see traces for one particular request, you can manually force sampling:
 
-To override the default percentage, you deploy a YAML file to an existing Kyma installation.
-To set the value for the **randomSamplingPercentage** attribute, create a values YAML file.
-The following example sets the value to `60`, which means 60% of the requests are sent to tracing backend.
+1. Create a `values.yaml` file  
+2. To override the default percentage, change the value for the **randomSamplingPercentage** attribute.
+3. Deploy the `values.yaml` to your existing Kyma installation.
+
+The following example sets the value to `60`, which means 60% of the requests are sent to the tracing backend.
 
 ```yaml
   apiVersion: telemetry.istio.io/v1alpha1
@@ -521,9 +531,8 @@ Cause: The backend export rate is too low compared to the gateway ingestion rate
 
 Remedy:
 
-- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
-
-- Option 3: Reduce emitted spans in your applications.
+- Option 1: Increase the maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
+- Option 2: Reduce the emitted spans in your applications.
 
 ### Gateway Throttling
 
@@ -531,4 +540,4 @@ Cause: Gateway cannot receive spans at the given rate.
 
 Remedy:
 
-- Manually scale out the gateway by increasing the number of replicas for the `telemetry-trace-collector`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+Manually scale out the gateway by increasing the number of replicas for the `telemetry-trace-collector`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
