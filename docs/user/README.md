@@ -25,13 +25,13 @@ To support telemetry for your applications, the Telemetry module provides the fo
 - Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/) and [Fluent Bit](https://fluentbit.io/), you can configure basic pipelines to filter and ship telemetry data.
 - Integration in a vendor-neutral way to a vendor-specific observability system (traces and metrics only): Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
 - Guidance for the instrumentation (traces and metrics only): Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
-- Enriching telemetry data by automatically adding common attributes (traces and metrics only). This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](gateways.md#data-enrichment).
+- Enriching telemetry data by automatically adding common attributes. This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](gateways.md#data-enrichment).
 - Opt-out of features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
 - SAP BTP as first-class integration: Integration into BTP Observability services, such as SAP Cloud Logging is prioritized. For more information, see [SAP Cloud Logging](integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
 
 ## Scope
 
-The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, logs like audit logs or operational logs are not in scope.  For audit and application logs, see [Auditing and Logging Information in Kyma](https://help.sap.com/docs/btp/sap-business-technology-platform/auditing-and-logging-information-in-kyma?locale=en-US&version=Cloud).
+The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, audit logs are not in scope.  For audit logs, see [Auditing and Logging Information in Kyma](https://help.sap.com/docs/btp/sap-business-technology-platform/auditing-and-logging-information-in-kyma?locale=en-US&version=Cloud).
 
 Supported integration scenarios are neutral to the vendor of the target system.
 
@@ -48,7 +48,7 @@ For more information, see [Telemetry Manager](01-manager.md).
 
 ### Self Monitor
 
-The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed gateways and agents. It provides insights about the telemetry data flow health and the module and pipeline status.
+The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed gateways and agents. Based on the collected data, it provides insights about the telemetry data flow health and the module and pipeline status.
 
 ### Gateways
 
