@@ -118,6 +118,25 @@ func (b *MetricPipelineBuilder) WithIstioInput(enable bool, opts ...InputOptions
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithOTLPInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	if b.inOTLP == nil {
+		b.inOTLP = &telemetryv1alpha1.MetricPipelineOtlpInput{}
+	}
+	b.inOTLP.Disabled = !enable
+
+	if len(opts) == 0 {
+		return b
+	}
+
+	if b.inOTLP.Namespaces == nil {
+		b.inOTLP.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	}
+	for _, opt := range opts {
+		opt(b.inOTLP.Namespaces)
+	}
+	return b
+}
+
 func (b *MetricPipelineBuilder) WithPrometheusInputDiagnosticMetrics(enable bool) *MetricPipelineBuilder {
 	if b.inPrometheus == nil {
 		b.inPrometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
@@ -145,22 +164,39 @@ func (b *MetricPipelineBuilder) WithIstioInputDiagnosticMetrics(enable bool) *Me
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithOTLPInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	if b.inOTLP == nil {
-		b.inOTLP = &telemetryv1alpha1.MetricPipelineOtlpInput{}
-	}
-	b.inOTLP.Disabled = !enable
-
-	if len(opts) == 0 {
-		return b
+func (b *MetricPipelineBuilder) WithRuntimeInputPodMetrics(enable bool) *MetricPipelineBuilder {
+	if b.inRuntime == nil {
+		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
 	}
 
-	if b.inOTLP.Namespaces == nil {
-		b.inOTLP.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	if b.inRuntime.Resources == nil {
+		b.inRuntime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
 	}
-	for _, opt := range opts {
-		opt(b.inOTLP.Namespaces)
+
+	if b.inRuntime.Resources.Pod == nil {
+		b.inRuntime.Resources.Pod = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
 	}
+
+	b.inRuntime.Resources.Pod.Enabled = &enable
+
+	return b
+}
+
+func (b *MetricPipelineBuilder) WithRuntimeInputContainerMetrics(enable bool) *MetricPipelineBuilder {
+	if b.inRuntime == nil {
+		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
+	}
+
+	if b.inRuntime.Resources == nil {
+		b.inRuntime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
+	}
+
+	if b.inRuntime.Resources.Container == nil {
+		b.inRuntime.Resources.Container = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+	}
+
+	b.inRuntime.Resources.Container.Enabled = &enable
+
 	return b
 }
 

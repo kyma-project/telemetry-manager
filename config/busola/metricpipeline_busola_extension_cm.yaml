@@ -99,6 +99,16 @@ data:
                 visibility: $exists(spec.input.runtime.namespaces.exclude)
                 source: spec.input.runtime.namespaces.exclude
                 separator: ', '
+              - name: Resources
+                widget: Panel
+                visibility: $exists(spec.input.runtime.resources)
+                children:
+                  - name: Pod
+                    visibility: $exists(spec.input.runtime.resources.pod)
+                    source: spec.input.runtime.resources.pod.enabled
+                  - name: Container
+                    visibility: $exists(spec.input.runtime.resources.container)
+                    source: spec.input.runtime.resources.container.enabled
           - name: OTLP
             widget: Panel
             visibility: $exists(spec.input.otlp)
@@ -317,6 +327,17 @@ data:
               defaultExpanded: true
               children:
                 - path: '[]'
+            - name: Resources
+              path: resources
+              widget: FormGroup
+              simple: true
+              children:
+              - name: Enable Pod Metrics
+                path: pod.enabled
+                simple: true
+              - name: Enable Container Metrics
+                path: container.enabled
+                simple: true
         - name: OTLP
           path: otlp
           widget: FormGroup

@@ -1,7 +1,11 @@
 package kubeletstats
 
+import "slices"
+
 var (
-	MetricNames = []string{
+	DefaultMetricsNames = slices.Concat(ContainerMetricsNames, PodMetricsNames)
+
+	ContainerMetricsNames = []string{
 		"container.cpu.time",
 		"container.cpu.usage",
 		"container.filesystem.available",
@@ -13,6 +17,9 @@ var (
 		"container.memory.rss",
 		"container.memory.usage",
 		"container.memory.working_set",
+	}
+
+	PodMetricsNames = []string{
 		"k8s.pod.cpu.time",
 		"k8s.pod.cpu.usage",
 		"k8s.pod.filesystem.available",

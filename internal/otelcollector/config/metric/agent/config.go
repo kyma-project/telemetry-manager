@@ -131,8 +131,7 @@ type FilterProcessor struct {
 }
 
 type FilterProcessorMetrics struct {
-	DataPoint []string `yaml:"datapoint,omitempty"`
-	Metric    []string `yaml:"metric,omitempty"`
+	Metric []string `yaml:"metric,omitempty"`
 }
 
 type TransformProcessor struct {
