@@ -109,20 +109,21 @@ type MetricPipelineRuntimeInput struct {
 
 // MetricPipelineRuntimeInputResources describes the Kubernetes resources for which runtime metrics are scraped.
 type MetricPipelineRuntimeInputResources struct {
-	// Configures pod runtime metrics scraping. By default, pod runtime metrics are scraped when runtime input is enabled.
+	// Configures pod runtime metrics scraping.
 	// +optional
 	// +kubebuilder:default={enabled: true}
-	Pod *MetricPipelineRuntimeInputResourceEnabled `json:"pod,omitempty"`
-	// Configures container runtime metrics scraping. By default, container runtime metrics  are scraped when runtime input is enabled.
+	Pod *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"pod,omitempty"`
+	// Configures container runtime metrics scraping.
 	// +optional
 	// +kubebuilder:default={enabled: true}
-	Container *MetricPipelineRuntimeInputResourceEnabled `json:"container,omitempty"`
+	Container *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"container,omitempty"`
 }
 
-// MetricPipelineRuntimeInputResourceEnabled defines if the scraping of runtime metrics is enabled for a specific resource.
-type MetricPipelineRuntimeInputResourceEnabled struct {
-	// If enabled, the runtime metrics for the resource are scraped.
+// MetricPipelineRuntimeInputResourceEnabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
+type MetricPipelineRuntimeInputResourceEnabledByDefault struct {
+	// If enabled, the runtime metrics for the resource are scraped. The default is `true`.
 	// +optional
+	// +kubebuilder:default=true
 	Enabled *bool `json:"enabled,omitempty"`
 }
 

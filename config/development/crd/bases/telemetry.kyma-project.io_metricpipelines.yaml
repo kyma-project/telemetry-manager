@@ -227,24 +227,22 @@ spec:
                             default:
                               enabled: true
                             description: Configures container runtime metrics scraping.
-                              By default, container runtime metrics  are scraped when
-                              runtime input is enabled.
                             properties:
                               enabled:
+                                default: true
                                 description: If enabled, the runtime metrics for the
-                                  resource are scraped.
+                                  resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           pod:
                             default:
                               enabled: true
                             description: Configures pod runtime metrics scraping.
-                              By default, pod runtime metrics are scraped when runtime
-                              input is enabled.
                             properties:
                               enabled:
+                                default: true
                                 description: If enabled, the runtime metrics for the
-                                  resource are scraped.
+                                  resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                         type: object
@@ -831,23 +829,22 @@ spec:
                             default:
                               enabled: true
                             description: Configures container runtime metrics scraping.
-                              By default, scraping of container runtime metrics is
-                              enabled.
                             properties:
                               enabled:
+                                default: true
                                 description: If enabled, the runtime metrics for the
-                                  resource are scraped.
+                                  resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           pod:
                             default:
                               enabled: true
                             description: Configures pod runtime metrics scraping.
-                              By default, scraping of pod runtime metrics is enabled.
                             properties:
                               enabled:
+                                default: true
                                 description: If enabled, the runtime metrics for the
-                                  resource are scraped.
+                                  resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                         type: object
