@@ -442,13 +442,6 @@ A LogPipeline creates a DaemonSet running one Fluent Bit instance per Node in yo
 
 To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, two Services `telemetry-fluent-bit-metrics` and `telemetry-fluent-bit-exporter-metrics` are located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
 
-The relevant metrics are:
-
-| Name                                   | Threshold                     | Description                                                                                                                                                                                                          |
-| -------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| telemetry_fsbuffer_usage_bytes         | (bytes/1000000000) * 100 > 90 | The metric indicates the current size (in bytes) of the persistent log buffer running on each instance. If the size reaches 1GB, logs are dropped at that instance. At 90% buffer size, an alert should be raised.   |
-| fluentbit_output_dropped_records_total | total[5m] > 0                 | The metric indicates that the instance is actively dropping logs. That typically happens when a log message was rejected with a un-retryable status code like a 400. If logs are dropped, an alert should be raised. |
-
 ## Limitations
 
 Currently, there are the following limitations for LogPipelines that are served by Fluent Bit:
@@ -458,7 +451,7 @@ Currently, there are the following limitations for LogPipelines that are served 
 The `unsupportedMode` attribute of a LogPipeline indicates that you are using a `custom` filter and/or `custom` output. The Kyma team does not provide support for a custom configuration.
 
 ### Fluent Bit Plugins
-
+<!--- Fluent Bit Plugins is not part of Help Portal docs --->
 You cannot enable the following plugins, because they potentially harm the stability:
 
 - Multiline Filter
@@ -475,7 +468,7 @@ Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs
 
 ### Throughput
 
-Each Fluent Bit Pod can process up to 10 MB/s of logs for a single LogPipeline. With multiple pipelines, the throughput per pipeline is reduced. The used logging backend or performance characteristics of the output plugin might limit the throughput earlier.
+Each Fluent Bit Pod (each running on a dedicated Node) can process up to 10 MB/s of logs for a single LogPipeline. With multiple pipelines, the throughput per pipeline is reduced. The used logging backend or performance characteristics of the output plugin might limit the throughput earlier.
 
 ### Max Amount of Pipelines
 
