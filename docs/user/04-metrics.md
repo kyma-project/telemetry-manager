@@ -331,11 +331,11 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and pods get collected by default.
+The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and Pods get collected by default.
 
-It is possible to selectively disable the collection of the pod or container metrics by defining the `resources` section in the `runtime` input.
+It is possible to selectively disable the collection of the Pod or container metrics by defining the `resources` section in the `runtime` input.
 
-The following example drops the runtime pod metrics and only collects runtime container metrics:
+The following example drops the runtime Pod metrics and only collects runtime container metrics:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -355,7 +355,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The following example drops the runtime container metrics and only collects runtime pod metrics:
+The following example drops the runtime container metrics and only collects runtime Pod metrics:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1

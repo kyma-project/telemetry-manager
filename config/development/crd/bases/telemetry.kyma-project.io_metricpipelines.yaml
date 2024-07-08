@@ -79,7 +79,7 @@ spec:
                         type: boolean
                       namespaces:
                         description: Describes whether istio-proxy metrics from specific
-                          Namespaces are selected. System Namespaces are enabled by
+                          namespaces are selected. System namespaces are enabled by
                           default.
                         properties:
                           exclude:
@@ -111,7 +111,7 @@ spec:
                         type: boolean
                       namespaces:
                         description: Describes whether push-based OTLP metrics from
-                          specific Namespaces are selected. System Namespaces are
+                          specific namespaces are selected. System namespaces are
                           enabled by default.
                         properties:
                           exclude:
@@ -156,7 +156,7 @@ spec:
                           - istio-system
                           - compass-system
                         description: Describes whether Prometheus metrics from specific
-                          Namespaces are selected. System Namespaces are disabled
+                          namespaces are selected. System namespaces are disabled
                           by default.
                         properties:
                           exclude:
@@ -193,7 +193,7 @@ spec:
                           - istio-system
                           - compass-system
                         description: Describes whether runtime metrics from specific
-                          Namespaces are selected. System Namespaces are disabled
+                          namespaces are selected. System namespaces are disabled
                           by default.
                         properties:
                           exclude:
@@ -237,7 +237,7 @@ spec:
                           pod:
                             default:
                               enabled: true
-                            description: Configures pod runtime metrics scraping.
+                            description: Configures Pod runtime metrics scraping.
                             properties:
                               enabled:
                                 default: true
@@ -681,7 +681,7 @@ spec:
                         type: boolean
                       namespaces:
                         description: Describes whether istio-proxy metrics from specific
-                          Namespaces are selected. System Namespaces are enabled by
+                          namespaces are selected. System namespaces are enabled by
                           default.
                         properties:
                           exclude:
@@ -713,7 +713,7 @@ spec:
                         type: boolean
                       namespaces:
                         description: Describes whether push-based OTLP metrics from
-                          specific Namespaces are selected. System Namespaces are
+                          specific namespaces are selected. System namespaces are
                           enabled by default.
                         properties:
                           exclude:
@@ -758,7 +758,7 @@ spec:
                           - istio-system
                           - compass-system
                         description: Describes whether Prometheus metrics from specific
-                          Namespaces are selected. System Namespaces are disabled
+                          namespaces are selected. System namespaces are disabled
                           by default.
                         properties:
                           exclude:
@@ -795,7 +795,7 @@ spec:
                           - istio-system
                           - compass-system
                         description: Describes whether runtime metrics from specific
-                          Namespaces are selected. System Namespaces are disabled
+                          namespaces are selected. System namespaces are disabled
                           by default.
                         properties:
                           exclude:
@@ -839,7 +839,7 @@ spec:
                           pod:
                             default:
                               enabled: true
-                            description: Configures pod runtime metrics scraping.
+                            description: Configures Pod runtime metrics scraping.
                             properties:
                               enabled:
                                 default: true
