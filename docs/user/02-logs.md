@@ -5,7 +5,7 @@ With application logs, you can debug an application and derive the internal stat
 The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent for the collection and shipment of application logs of any container running in the Kyma runtime. You can configure the log agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a [Fluentd integration](https://medium.com/hepsiburadatech/fluent-logging-architecture-fluent-bit-fluentd-elasticsearch-ca4a898e28aa).
 
 <!--- custom output/unsupported mode is not part of Help Portal docs --->
-To overcome the missing flexibility of the current proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), leveraging the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
+If you want more flexibility than provided by the proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), using the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
 
 ## Prerequisites
 
@@ -140,7 +140,7 @@ spec:
         exclude:
         - fluent-bit
 ```
-<!--- custom output/unsupported mode is not part of Help Portal docs --->
+<!--- custom filters/unsupported mode is not part of Help Portal docs --->
 
 Alternatively, add filters to enrich logs with attributes or drop whole lines.
 The following example contains three filters, which are executed in sequence.
