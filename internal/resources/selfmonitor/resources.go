@@ -22,8 +22,12 @@ import (
 )
 
 const (
-	retentionTime = "2h"
-	retentionSize = "50MB"
+	retentionTime       = "2h"
+	retentionSize       = "50MB"
+	logFormat           = "json"
+	configFileMountName = "prometheus-config-volume"
+	storageMountName    = "prometheus-storage-volume"
+	storagePath         = "/prometheus/"
 )
 
 var (
@@ -75,7 +79,7 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 	return nil
 }
 
-func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, prometheusConfigYAML, alertRulesYAML string) error {
+func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, prometheusConfigPath, prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, ad.makeServiceAccount()); err != nil {
 		return fmt.Errorf("failed to create self-monitor service account: %w", err)
@@ -93,13 +97,13 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, p
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
-	configMap := ad.makeConfigMap(prometheusConfigYAML, alertRulesYAML)
+	configMap := ad.makeConfigMap(prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, nil)
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, ad.makeDeployment(checksum)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, ad.makeDeployment(checksum, prometheusConfigPath, prometheusConfigFileName)); err != nil {
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
@@ -217,7 +221,7 @@ func (ad *ApplierDeleter) makeNetworkPolicyPorts(ports []int32) []networkingv1.N
 	return networkPolicyPorts
 }
 
-func (ad *ApplierDeleter) makeConfigMap(prometheusConfigYAML, alertRulesYAML string) *corev1.ConfigMap {
+func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
@@ -225,13 +229,13 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigYAML, alertRulesYAML str
 			Labels:    ad.defaultLabels(),
 		},
 		Data: map[string]string{
-			"prometheus.yml":     prometheusConfigYAML,
-			"alerting_rules.yml": alertRulesYAML,
+			prometheusConfigFileName: prometheusConfigYAML,
+			alertRulesFileName:       alertRulesYAML,
 		},
 	}
 }
 
-func (ad *ApplierDeleter) makeDeployment(configChecksum string) *appsv1.Deployment {
+func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 	selectorLabels := ad.defaultLabels()
 	podLabels := maps.Clone(selectorLabels)
@@ -239,7 +243,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum string) *appsv1.Deployme
 
 	annotations := map[string]string{"checksum/Config": configChecksum}
 	resources := makeResourceRequirements()
-	podSpec := makePodSpec(ad.Config.BaseName, ad.Config.Deployment.Image,
+	podSpec := makePodSpec(ad.Config.BaseName, ad.Config.Deployment.Image, configPath, configFile,
 		commonresources.WithPriorityClass(ad.Config.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
 		commonresources.WithGoMemLimitEnvVar(memoryLimit),
@@ -273,7 +277,7 @@ func (ad *ApplierDeleter) defaultLabels() map[string]string {
 	}
 }
 
-func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) corev1.PodSpec {
+func makePodSpec(baseName, image, configPath, configFile string, opts ...commonresources.PodSpecOption) corev1.PodSpec {
 	var defaultMode int32 = 420
 	var prometheusUser int64 = 10001
 	var containerName = "self-monitor"
@@ -285,8 +289,9 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 				Args: []string{
 					"--storage.tsdb.retention.time=" + retentionTime,
 					"--storage.tsdb.retention.size=" + retentionSize,
-					"--config.file=/etc/prometheus/prometheus.yml",
-					"--storage.tsdb.path=/prometheus/",
+					"--config.file=" + configPath + configFile,
+					"--storage.tsdb.path=" + storagePath,
+					"--log.format=" + logFormat,
 				},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged:               ptr.To(false),
@@ -301,7 +306,7 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 						Drop: []corev1.Capability{"ALL"},
 					},
 				},
-				VolumeMounts: []corev1.VolumeMount{{Name: "prometheus-config-volume", MountPath: "/etc/prometheus/"}, {Name: "prometheus-storage-volume", MountPath: "/prometheus/"}},
+				VolumeMounts: []corev1.VolumeMount{{Name: configFileMountName, MountPath: configPath}, {Name: storageMountName, MountPath: storagePath}},
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "http-web",
@@ -333,7 +338,7 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 		},
 		Volumes: []corev1.Volume{
 			{
-				Name: "prometheus-config-volume",
+				Name: configFileMountName,
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						DefaultMode: &defaultMode,
@@ -344,7 +349,7 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 				},
 			},
 			{
-				Name: "prometheus-storage-volume",
+				Name: storageMountName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						SizeLimit: &storageVolumeSize,
