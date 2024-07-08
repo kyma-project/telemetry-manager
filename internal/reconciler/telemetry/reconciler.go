@@ -27,7 +27,10 @@ import (
 )
 
 const (
-	finalizer = "telemetry.kyma-project.io/finalizer"
+	finalizer                    = "telemetry.kyma-project.io/finalizer"
+	selfMonitorConfigPath        = "/etc/prometheus/"
+	selfMonitorConfigFileName    = "prometheus.yml"
+	selfMonitorAlertRuleFileName = "alerting_rules.yml"
 )
 
 type Config struct {
@@ -147,9 +150,11 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	}
 
 	prometheusConfig := config.MakeConfig(config.BuilderConfig{
-		ScrapeNamespace: r.config.SelfMonitor.Config.Namespace,
-		WebhookURL:      r.config.SelfMonitor.WebhookURL,
-		WebhookScheme:   r.config.SelfMonitor.WebhookScheme,
+		ScrapeNamespace:   r.config.SelfMonitor.Config.Namespace,
+		WebhookURL:        r.config.SelfMonitor.WebhookURL,
+		WebhookScheme:     r.config.SelfMonitor.WebhookScheme,
+		ConfigPath:        selfMonitorConfigPath,
+		AlertRuleFileName: selfMonitorAlertRuleFileName,
 	})
 	prometheusConfigYAML, err := yaml.Marshal(prometheusConfig)
 	if err != nil {
@@ -165,7 +170,10 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
+		selfMonitorConfigPath,
+		selfMonitorConfigFileName,
 		string(prometheusConfigYAML),
+		selfMonitorAlertRuleFileName,
 		string(alertRulesYAML),
 	); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
