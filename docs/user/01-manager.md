@@ -14,26 +14,3 @@ The Telemetry module includes Telemetry Manager, a Kubernetes [operator](https:/
 ## Module Configuration and Status
 
 For configuration options and the overall status of the module, see the specification of the related [Telemetry resource](./resources/01-telemetry.md).
-
-<!--- This content differs from DITA, in clarification --->
-
-```yaml
-apiVersion: operator.kyma-project.io/v1alpha1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-spec:
-  trace:
-    gateway:
-      scaling:
-        type: Static
-        static:
-          replicas: 3
-  metric:
-    gateway:
-      scaling:
-        type: Static
-        static:
-          replicas: 4
-```
