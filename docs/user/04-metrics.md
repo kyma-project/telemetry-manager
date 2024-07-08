@@ -331,9 +331,9 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and Pods get collected by default.
+The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and Pods are collected by default.
 
-It is possible to selectively disable the collection of the Pod or container metrics by defining the `resources` section in the `runtime` input.
+If you want to disable the collection of the Pod or container metrics, define the `resources` section in the `runtime` input.
 
 The following example drops the runtime Pod metrics and only collects runtime container metrics:
 
