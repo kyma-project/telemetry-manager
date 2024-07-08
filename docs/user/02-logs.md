@@ -158,7 +158,7 @@ If filtering by namespace and container is not enough, use [Fluent Bit filters](
 
 The following example uses the filter types [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier), which are executed in sequence:
 
-- The first filter keeps all log records that have the **kubernetes.labels.app** attribute set with the value `my-deployment`; all other logs are discarded. The **kubernetes** attribute is available for every log record. For more details, see [Kubernetes filter (metadata)](#stage-3-kubernetes-filter-metadata).
+- The first filter keeps all log records that have the **kubernetes.labels.app** attribute set with the value `my-deployment`; all other logs are discarded. The **kubernetes** attribute is available for every log record. For more details, see [Kubernetes filter (metadata)](#kubernetes-filter-metadata).
 - The second filter drops all log records fulfilling the given rule. In the example, typical namespaces are dropped based on the **kubernetes** attribute.
 - Lastly, the record modifier adds a new attribute: Every log record is enriched with the cluster Node name as cluster identifier, for later filtering in the backend system. As the value, a placeholder refers to a Kubernetes-specific environment variable.
 
