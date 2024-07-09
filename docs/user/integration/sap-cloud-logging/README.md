@@ -26,7 +26,7 @@ Learn how to configure the Telemetry module to ingest application and access log
 ## Prerequisites
 
 - SAP BTP, Kyma runtime as the target deployment environment.
-- The [Telemetry module](../../README.md) is added. For details, see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install). <!--- This link differs for OS and SKR --->
+- The [Telemetry module](../../README.md) is added. For details, see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install). <!-- This link differs for OS and SKR -->
 - If you want to use Istio access logs, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added.
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces.
   > [!TIP]
