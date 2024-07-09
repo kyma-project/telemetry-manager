@@ -172,7 +172,7 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[0])
 	})
 
-	t.Run("diagnostic metric filter processor prometheus input using exclude", func(t *testing.T) {
+	t.Run("prometheus diagnostic metrics filter processor", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test").
 				WithPrometheusInput(true).
@@ -185,10 +185,10 @@ func TestProcessors(t *testing.T) {
 		require.Nil(t, collectorConfig.Processors.DropDiagnosticMetricsIfInputSourceIstio)
 		expectedCondition := "instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" and (name == \"up\" or name == \"scrape_duration_seconds\" or name == \"scrape_samples_scraped\" or name == \"scrape_samples_post_metric_relabeling\" or name == \"scrape_series_added\")"
 		require.Len(t, prometheusScrapeFilter.Metrics.Metric, 1)
-		require.Equal(t, prometheusScrapeFilter.Metrics.Metric[0], expectedCondition)
+		require.Equal(t, expectedCondition, prometheusScrapeFilter.Metrics.Metric[0])
 	})
 
-	t.Run("diagnostic metric filter processor prometheus input using exclude", func(t *testing.T) {
+	t.Run("istio diagnostic metrics filter processor", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test").
 				WithIstioInput(true).
@@ -203,6 +203,36 @@ func TestProcessors(t *testing.T) {
 
 		require.Len(t, istioScrapeFilter.Metrics.Metric, 1)
 		expectedCondition := "instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" and (name == \"up\" or name == \"scrape_duration_seconds\" or name == \"scrape_samples_scraped\" or name == \"scrape_samples_post_metric_relabeling\" or name == \"scrape_series_added\")"
-		require.Equal(t, istioScrapeFilter.Metrics.Metric[0], expectedCondition)
+		require.Equal(t, expectedCondition, istioScrapeFilter.Metrics.Metric[0])
+	})
+
+	t.Run("runtime pod metrics filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputPodMetrics(false).
+				Build()})
+		require.NoError(t, err)
+
+		runtimePodMetricsFilter := collectorConfig.Processors.DropRuntimePodMetrics
+		require.NotNil(t, runtimePodMetricsFilter)
+		require.Len(t, runtimePodMetricsFilter.Metrics.Metric, 1)
+		expectedCondition := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" and IsMatch(name, \"^k8s.pod.*\")"
+		require.Equal(t, expectedCondition, runtimePodMetricsFilter.Metrics.Metric[0])
+	})
+
+	t.Run("runtime container metrics filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputContainerMetrics(false).
+				Build()})
+		require.NoError(t, err)
+
+		runtimeContainerMetricsFilter := collectorConfig.Processors.DropRuntimeContainerMetrics
+		require.NotNil(t, runtimeContainerMetricsFilter)
+		require.Len(t, runtimeContainerMetricsFilter.Metrics.Metric, 1)
+		expectedCondition := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" and IsMatch(name, \"(^k8s.container.*)|(^container.*)\")"
+		require.Equal(t, expectedCondition, runtimeContainerMetricsFilter.Metrics.Metric[0])
 	})
 }
