@@ -31,7 +31,7 @@ To support telemetry for your applications, the Telemetry module provides the fo
 
 ## Scope
 
-The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, audit logs are not in scope.  For audit logs, see [Auditing and Logging Information in Kyma](https://help.sap.com/docs/btp/sap-business-technology-platform/auditing-and-logging-information-in-kyma?locale=en-US&version=Cloud).
+The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, audit logs are not in scope.
 
 Supported integration scenarios are neutral to the vendor of the target system.
 
