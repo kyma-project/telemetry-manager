@@ -1,38 +1,16 @@
 # Telemetry Manager
 
+As the core element of the Telemetry module, Telemetry Manager manages the lifecycle of other Telemetry module components by watching user-created resources.
+
 ## Module Lifecycle
 
-Kyma's Telemetry module ships Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that is described by a custom resource of type Telemetry. Telemetry Manager implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the Telemetry module.
-Telemetry Manager watches for the user-created Kubernetes resources: LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
-If Telemetry Manager detects a configuration, it rolls out the relevant components on demand.
+The Telemetry module includes Telemetry Manager, a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that's described by a custom resource of type Telemetry. Telemetry Manager has the following tasks:
+
+1. Watch for the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
+2. If it finds such a custom resource: Roll out the relevant components on demand and keep it in sync with the pipeline.
 
 ![Manager](assets/manager-lifecycle.drawio.svg)
 
-## Module Configuration
+## Module Configuration and Status
 
-In the [Telemetry resource](resources/01-telemetry.md), you can configure the number of replicas for the `telemetry-trace-gateway` and `telemetry-metric-gateway` deployments. The default value is 2.
-
-```yaml
-apiVersion: operator.kyma-project.io/v1alpha1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-spec:
-  trace:
-    gateway:
-      scaling:
-        type: Static
-        static:
-          replicas: 3
-  metric:
-    gateway:
-      scaling:
-        type: Static
-        static:
-          replicas: 4
-```
-
-## Module Status
-
-Telemetry Manager syncs the overall status of the module into the [Telemetry resource](resources/01-telemetry.md); it can be found in the `status` section. In future, the status will be enhanced with more runtime information.
+For configuration options and the overall status of the module, see the specification of the related [Telemetry resource](./resources/01-telemetry.md).

@@ -4,12 +4,12 @@ With application logs, you can debug an application and derive the internal stat
 
 ## Overview
 
-The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent for the collection and shipment of application logs of any container running in the Kyma runtime.
+The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent for the collection and shipment of application logs of any container running in the Kyma runtime. 
 
 You can configure the log agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a [Fluentd integration](https://medium.com/hepsiburadatech/fluent-logging-architecture-fluent-bit-fluentd-elasticsearch-ca4a898e28aa).
 
 <!--- custom output/unsupported mode is not part of Help Portal docs --->
-To overcome the missing flexibility of the current proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), leveraging the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
+If you want more flexibility than provided by the proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), using the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
 
 ## Prerequisites
 
@@ -88,7 +88,6 @@ spec:
 An output is a data destination configured by a [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) of the relevant type. The LogPipeline supports the following output types:
 
 - **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
-
 <!--- custom output/unsupported mode is not part of Help Portal docs --->
 - **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax.
   > [!WARNING]
@@ -149,7 +148,7 @@ spec:
         exclude:
         - fluent-bit
 ```
-<!--- custom output/unsupported mode is not part of Help Portal docs --->
+<!--- custom filters/unsupported mode is not part of Help Portal docs --->
 
 If filtering by namespace and container is not enough, use [Fluent Bit filters](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter) to enrich logs for filtering by attribute, or to drop whole lines.
 
@@ -183,6 +182,15 @@ spec:
   output:
     ...
 ```
+
+> [!WARNING]
+> If you use a `custom` filter, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+
+Telemetry Manager supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the filters [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier).
+
+- The first filter keeps all log records that have the **kubernetes.labels.app** attribute set with the value `my-deployment`; all other logs are discarded. The **kubernetes** attribute is available for every log record. For more details, see [Kubernetes filter (metadata)](#stage-3-kubernetes-filter-metadata).
+- The second filter drops all log records fulfilling the given rule. In the example, typical namespaces are dropped based on the **kubernetes** attribute.
+- A log record is modified by adding a new attribute. In the example, a constant attribute is added to every log record to record the actual cluster Node name at the record for later filtering in the backend system. As a value, a placeholder is used referring to a Kubernetes-specific environment variable.
 
 ### Step 3: Add Authentication Details From Secrets
 
