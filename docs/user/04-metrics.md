@@ -24,15 +24,15 @@ Optionally, the Telemetry module provides a DaemonSet of an OTel Collector actin
 ![Architecture](./assets/metrics-arch.drawio.svg)
 
 1. An application (exposing metrics in OTLP) pushes metrics to the central metric gateway service.
-2. Activate the agent to scrape the metrics of an application (exposing metrics in Prometheus protocol) with an annotation-based configuration.
-3. Additionally, you can configure the agent to pull metrics of each Istio sidecar.
-4. The agent converts and pushes all collected metric data to the gateway in OTLP.
-5. The gateway discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
-6. The `MetricPipeline` resource generates the config for the gateway, which specifies the target backend for the metric gateway.
-7. The backend can run within the cluster.
-8. If authentication has been set up, the backend can also run outside the cluster.
-9. You can analyze the metric data with your preferred backend system.
-10. The self monitor observes the metrics flow to the backend and reports problems in the MetricPipeline status.
+2. An application exposing metrics in Prometheus protocol, activates the agent to scrape the metrics with an annotation-based configuration.
+3. Additionally, you can activate the agent to pull metrics of each Istio sidecar.
+4. The agent supports collecting container metrics from the Kubelet and K8S APIServer
+5. The agent converts and pushes all collected metric data to the gateway in OTLP.
+6. The gateway discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
+7. The Telemetry manager configures the agent and gateway according to the `MetricPipeline` resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
+8. As specified in your `MetricPipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster.
+9. If authentication has been set up, the backend can also run outside the cluster.
+10. You can analyze the metric data with your preferred backend system.
 
 ### Metric Gateway
 
