@@ -6,7 +6,7 @@
 | Backend type | third-party remote |
 | OTLP-native | yes for traces and metrics, no for logs |
 
-Learn how to configure the Telemetry module to ingest application and access logs as well as distributed trace data and metrics in instances of [SAP Cloud Logging](https://help.sap.com/docs/cloud-logging?locale=en-US&version=Cloud).
+Learn how to configure the Telemetry module to ingest application and access logs as well as distributed trace data and metrics in instances of SAP Cloud Logging.
 
 ## Table of Content
 
@@ -28,10 +28,10 @@ Learn how to configure the Telemetry module to ingest application and access log
 - SAP BTP, Kyma runtime as the target deployment environment.
 - The [Telemetry module](../../README.md) is added. For details, see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install). <!-- This link differs for OS and SKR -->
 - If you want to use Istio access logs, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added.
-- An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces.
+- An instance of [SAP Cloud Logging](https://help.sap.com/docs/cloud-logging?locale=en-US&version=Cloud) with OpenTelemetry enabled to ingest distributed traces.
   > [!TIP]
   > Create the instance with the SAP BTP service operator (see [Create an SAP Cloud Logging Instance through SAP BTP Service Operator](https://help.sap.com/docs/cloud-logging/cloud-logging/create-sap-cloud-logging-instance-through-sap-btp-service-operator?locale=en-US&version=Cloud)), because it takes care of creation and rotation of the required Secret. However, you can choose any other method of creating the instance and the Secret, as long as the parameter for OTLP ingestion is enabled in the instance. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters?locale=en-US&version=Cloud).
-- A Secret in the respective namespace in the Kyma cluster, holding the credentials and endpoints for the instance. In this guide, the Secret is named `sap-cloud-logging` and the namespace `sap-cloud-logging-integration` as illustrated in the [secret-example.yaml](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/sap-cloud-logging/secret-example.yaml).
+- A Secret in the respective namespace in the Kyma cluster, holding the credentials and endpoints for the instance. In the following example, the Secret is named `sap-cloud-logging` and the namespace `sap-cloud-logging-integration`, as illustrated in the [secret-example.yaml](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/sap-cloud-logging/secret-example.yaml).
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
 <!-- markdown-link-check-enable -->
@@ -39,9 +39,9 @@ Learn how to configure the Telemetry module to ingest application and access log
 
 ## Overview
 
-The Telemetry module supports shipping logs, ingesting distributed traces as well as metrics from applications and the Istio service mesh to SAP Cloud Logging. Furthermore, you can set up Kyma dashboard integration and use SAP Cloud Logging alerts and dashboards.
+The Telemetry module supports shipping logs and ingesting distributed traces as well as metrics from applications and the Istio service mesh to SAP Cloud Logging. Furthermore, you can set up Kyma dashboard integration and use SAP Cloud Logging alerts and dashboards.
 
-SAP Cloud Logging is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces.
+SAP Cloud Logging is an instance-based and environment-agnostic observability service to store, visualize, and analyze logs, metrics, and traces.
 
 ![setup](./../assets/sap-cloud-logging.drawio.svg)
 
@@ -286,9 +286,10 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
     By default, the MetricPipeline assures that a gateway is running in the cluster to push OTLP metrics.
 
-1. If you want to use additional metric collection, configure the presets under `input`. For the available options, see [Metrics](./../../04-metrics.md).
+2. If you want to use additional metric collection, configure the presets under `input`.
+   For the available options, see [Metrics](./../../04-metrics.md).
 
-2. Wait for the MetricPipeline to be in the `Running` state. To check the state, run `kubectl get metricpipelines`.
+3. Wait for the MetricPipeline to be in the `Running` state. To check the state, run `kubectl get metricpipelines`.
 
 ## Set Up Kyma Dashboard Integration
 
@@ -300,7 +301,7 @@ For easier access from the Kyma dashboard, adjust the navigation under **Observa
     export DASHBOARD_URL=$(kubectl -n sap-cloud-logging-integration get secret sap-cloud-logging --template='{{index .data "dashboards-endpoint" | base64decode}}')
     ```
 
-2. Download the following configmaps containing the exemplaric configuration:
+2. Download the following configmaps containing the sample configuration:
 
     ```bash
     curl -o configmap-navigation.yaml https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/configmap-navigation.yaml
@@ -323,11 +324,11 @@ For easier access from the Kyma dashboard, adjust the navigation under **Observa
 
 ## Use SAP Cloud Logging Alerts
 
-SAP Cloud Logging provides an alerting mechanism based on the OpenSearch Dashboard's [alerting plugin](https://opensearch.org/docs/1.3/observing-your-data/alerting/index/). Learn how to define and import recommended alerts.
+Learn how to define and import recommended alerts for SAP Cloud Logging.
 
 The following alerts are based on JSON documents defining a `Monitor` for the alerting plugin, which works instantly after import. However, you must manually add a `destination` to the configured notification action. Also, adjust the intervals and thresholds to your specific needs.
 
-1. To import a monitor, go to `Management > Dev Tools` in the SAP Cloud Logging Dashboard.
+1. To import a monitor, go to `Management > Dev Tools` in the SAP Cloud Logging d ashboard.
 2. Execute `POST _plugins/_alerting/monitors`, followed by the contents of the respective JSON content.
 3. Verify that the new monitor definition is listed at **OpenSearch Plugins > Alerting**.
 4. Depending on the pipelines you are using, enable the some or all of the following alerts:
