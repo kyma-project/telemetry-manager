@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -25,117 +24,128 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, func() {
 	const (
-		otelCollectorNs             = "tlogs-otelcollector"
-		fluentBitNs                 = "tlogs-fluentbit"
-		otelCollectorLogBackendName = "tlogs-otelcollector-log"
-		fluentBitLogBackendName     = "tlogs-fluentbit-log"
-		metricBackendName           = "tlogs-metric"
-		traceBackendName            = "tlogs-trace"
-		pushMetricsDepName          = "push-metrics-istiofied"
 		consistentlyTimeout         = time.Second * 120
+		traceBackendName            = "trace-backend"
+		metricBackendName           = "metric-backend"
+		logBackendName              = "log-backend"
+		otelCollectorLogBackendName = "otel-collector-log-backend"
+		fluentBitLogBackendName     = "fluent-bit-log-backend"
+		selfMonitorLogBackendName   = "self-monitor-log-backend"
 	)
 
 	var (
-		otelCollectorLogPipelineName     string
-		fluentBitLogPipelineName         string
-		metricPipelineName               string
-		tracePipelineName                string
-		otelCollectorLogbackendExportURL string
-		fluentBitLogbackendExportURL     string
-		metricbackendExportURL           string
-		tracebackendExportURL            string
-		gomegaMaxLength                  = format.MaxLength
-		errorWarningLevels               = []string{
-			"ERROR", "error",
-			"WARNING", "warning",
-			"WARN", "warn"}
+		traceBackendURL            string
+		metricBackendURL           string
+		logBackendURL              string
+		otelCollectorLogBackendURL string
+		fluentBitLogBackendURL     string
+		selfMonitorLogBackendURL   string
+		namespace                  = suite.ID()
+		gomegaMaxLength            = format.MaxLength
+		logLevelsRegexp            = "ERROR|error|WARNING|warning|WARN|warn"
 	)
 
-	makeResourcesOtelCollector := func() []client.Object {
+	makeResourcesTracePipeline := func(backendName string) []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(otelCollectorNs).K8sObject())
 
-		// backends
-		otelCollectorLogBackend := backend.New(otelCollectorNs, backend.SignalTypeLogs, backend.WithName(otelCollectorLogBackendName))
-		objs = append(objs, otelCollectorLogBackend.K8sObjects()...)
-		otelCollectorLogbackendExportURL = otelCollectorLogBackend.ExportURL(proxyClient)
-		metricBackend := backend.New(otelCollectorNs, backend.SignalTypeMetrics, backend.WithName(metricBackendName))
-		metricbackendExportURL = metricBackend.ExportURL(proxyClient)
-		objs = append(objs, metricBackend.K8sObjects()...)
-		traceBackend := backend.New(otelCollectorNs, backend.SignalTypeTraces, backend.WithName(traceBackendName))
-		tracebackendExportURL = traceBackend.ExportURL(proxyClient)
+		//backend
+		traceBackend := backend.New(namespace, backend.SignalTypeTraces, backend.WithName(backendName))
+		traceBackendURL = traceBackend.ExportURL(proxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
-		// log pipeline
-		otelCollectorLogPipelineName = fmt.Sprintf("%s-pipeline", otelCollectorLogBackend.Name())
-		otelCollectorLogPipeline := testutils.NewLogPipelineBuilder().
-			WithName(otelCollectorLogPipelineName).
-			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
-			WithIncludeContainers("collector").
-			WithHTTPOutput(testutils.HTTPHost(otelCollectorLogBackend.Host()), testutils.HTTPPort(otelCollectorLogBackend.Port())).
-			Build()
-		objs = append(objs, &otelCollectorLogPipeline)
-
-		// metrics & traces
-		metricPipelineName = fmt.Sprintf("%s-pipeline", metricBackend.Name())
-		metricPipeline := testutils.NewMetricPipelineBuilder().
-			WithName(metricPipelineName).
-			WithPrometheusInput(true, testutils.IncludeNamespaces(otelCollectorNs)).
-			WithRuntimeInput(true, testutils.IncludeNamespaces(otelCollectorNs)).
-			WithIstioInput(true, testutils.IncludeNamespaces(otelCollectorNs)).
-			WithOTLPOutput(testutils.OTLPEndpoint(metricBackend.Endpoint())).
-			Build()
-		objs = append(objs, &metricPipeline)
-
-		tracePipelineName = fmt.Sprintf("%s-pipeline", traceBackend.Name())
+		//pipeline
 		tracePipeline := testutils.NewTracePipelineBuilder().
-			WithName(tracePipelineName).
+			WithName(backendName).
 			WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.Endpoint())).
 			Build()
 		objs = append(objs, &tracePipeline)
 
-		// metrics istio set-up (trafficgen & telemetrygen)
-		objs = append(objs, trafficgen.K8sObjects(otelCollectorNs)...)
-		objs = append(objs,
-			kitk8s.NewPod("telemetrygen-metrics", otelCollectorNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)).K8sObject(),
-			kitk8s.NewPod("telemetrygen-traces", otelCollectorNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces)).K8sObject(),
-		)
+		//client
+		objs = append(objs, kitk8s.NewPod("telemetrygen-traces", namespace).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces)).K8sObject())
+		return objs
+	}
+
+	makeResourcesMetricPipeline := func(backendName string) []client.Object {
+		var objs []client.Object
+
+		//backend
+		metricBackend := backend.New(namespace, backend.SignalTypeMetrics, backend.WithName(backendName))
+		metricBackendURL = metricBackend.ExportURL(proxyClient)
+		objs = append(objs, metricBackend.K8sObjects()...)
+
+		//pipeline
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(backendName).
+			WithPrometheusInput(true, testutils.IncludeNamespaces(namespace)).
+			WithRuntimeInput(true, testutils.IncludeNamespaces(namespace)).
+			WithIstioInput(true, testutils.IncludeNamespaces(namespace)).
+			WithOTLPOutput(testutils.OTLPEndpoint(metricBackend.Endpoint())).
+			Build()
+		objs = append(objs, &metricPipeline)
+
+		//client
+		objs = append(objs, trafficgen.K8sObjects(namespace)...)
+		objs = append(objs, kitk8s.NewPod("telemetrygen-metrics", namespace).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)).K8sObject())
 
 		return objs
 	}
 
-	makeResourcesFluentBit := func() []client.Object {
+	makeResourcesLogPipeline := func(backendName string) []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(fluentBitNs).K8sObject())
-
-		// logs overrides (include agent logs)
-		overrides := kitk8s.NewOverrides().WithPaused(false).WithCollectAgentLogs(true)
-		objs = append(objs, overrides.K8sObject())
 
 		// backend
-		fluentBitLogBackend := backend.New(fluentBitNs, backend.SignalTypeLogs, backend.WithName(fluentBitLogBackendName))
-		objs = append(objs, fluentBitLogBackend.K8sObjects()...)
-		fluentBitLogbackendExportURL = fluentBitLogBackend.ExportURL(proxyClient)
+		logBackend := backend.New(namespace, backend.SignalTypeLogs, backend.WithName(backendName))
+		logBackendURL = logBackend.ExportURL(proxyClient)
+		objs = append(objs, logBackend.K8sObjects()...)
 
 		// log pipeline
-		fluentBitLogPipelineName = fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())
-		fluentBitLogPipeline := testutils.NewLogPipelineBuilder().
-			WithName(fluentBitLogPipelineName).
-			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
-			WithIncludeContainers("fluent-bit", "exporter").
-			WithHTTPOutput(testutils.HTTPHost(fluentBitLogBackend.Host()), testutils.HTTPPort(fluentBitLogBackend.Port())).
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(backendName).
+			WithHTTPOutput(testutils.HTTPHost(logBackend.Host()), testutils.HTTPPort(logBackend.Port())).
 			Build()
-		objs = append(objs, &fluentBitLogPipeline)
+		objs = append(objs, &logPipeline)
 
+		//no client
 		return objs
 	}
 
-	Context("When OtelCollector-based components are deployed", func() {
+	makeResourcesToCollectLogs := func(backendName string, containers ...string) ([]client.Object, string) {
+		var objs []client.Object
+
+		// backends
+		logBackend := backend.New(namespace, backend.SignalTypeLogs, backend.WithName(backendName))
+		backendURL := logBackend.ExportURL(proxyClient)
+		objs = append(objs, logBackend.K8sObjects()...)
+
+		// log pipeline
+		logPipeline := testutils.NewLogPipelineBuilder().
+			WithName(backendName).
+			WithIncludeNamespaces(kitkyma.SystemNamespaceName).
+			WithIncludeContainers(containers...).
+			WithHTTPOutput(testutils.HTTPHost(logBackend.Host()), testutils.HTTPPort(logBackend.Port())).
+			Build()
+		objs = append(objs, &logPipeline)
+		return objs, backendURL
+	}
+
+	Context("When all components are deployed", func() {
 		BeforeAll(func() {
 			format.MaxLength = 0 // remove Gomega truncation
-			k8sObjects := makeResourcesOtelCollector()
+			var k8sObjects []client.Object
+			k8sObjects = append(k8sObjects, kitk8s.NewNamespace(namespace).K8sObject())
+			k8sObjects = append(k8sObjects, makeResourcesTracePipeline(traceBackendName)...)
+			k8sObjects = append(k8sObjects, makeResourcesMetricPipeline(metricBackendName)...)
+			k8sObjects = append(k8sObjects, makeResourcesLogPipeline(logBackendName)...)
+			var objs []client.Object
+			objs, otelCollectorLogBackendURL = makeResourcesToCollectLogs(otelCollectorLogBackendName, "collector")
+			k8sObjects = append(k8sObjects, objs...)
+			objs, fluentBitLogBackendURL = makeResourcesToCollectLogs(fluentBitLogBackendName, "fluent-bit", "exporter")
+			k8sObjects = append(k8sObjects, objs...)
+			objs, selfMonitorLogBackendURL = makeResourcesToCollectLogs(selfMonitorLogBackendName, "self-monitor")
+			k8sObjects = append(k8sObjects, objs...)
+
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -148,41 +158,69 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 		})
 
 		It("Should have running backends", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: otelCollectorLogBackendName})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: metricBackendName})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: traceBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: logBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: metricBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: traceBackendName})
+
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
+		})
+
+		It("Should have running agents", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(ctx, k8sClient, otelCollectorLogPipelineName)
-			assert.MetricPipelineHealthy(ctx, k8sClient, metricPipelineName)
-			assert.TracePipelineHealthy(ctx, k8sClient, tracePipelineName)
-		})
+			assert.LogPipelineHealthy(ctx, k8sClient, logBackendName)
+			assert.MetricPipelineHealthy(ctx, k8sClient, metricBackendName)
+			assert.TracePipelineHealthy(ctx, k8sClient, traceBackendName)
 
-		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.LogPipelineHealthy(ctx, k8sClient, otelCollectorLogBackendName)
+			assert.LogPipelineHealthy(ctx, k8sClient, fluentBitLogBackendName)
+			assert.LogPipelineHealthy(ctx, k8sClient, selfMonitorLogBackendName)
 		})
 
 		It("Should push metrics successfully", func() {
-			assert.MetricsFromNamespaceDelivered(proxyClient, metricbackendExportURL, otelCollectorNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, metricBackendURL, namespace, telemetrygen.MetricNames)
 		})
 
 		It("Should push traces successfully", func() {
-			assert.TracesFromNamespaceDelivered(proxyClient, tracebackendExportURL, otelCollectorNs)
+			assert.TracesFromNamespaceDelivered(proxyClient, traceBackendURL, namespace)
 		})
 
-		It("Should not have any ERROR/WARNING logs in the OtelCollector containers", func() {
+		It("Should collect logs successfully", func() {
+			assert.LogsDelivered(proxyClient, "", logBackendURL)
+		})
+
+		It("Should collect otel collector component logs successfully", func() {
+			assert.LogsDelivered(proxyClient, "telemetry-", otelCollectorLogBackendURL)
+		})
+
+		It("Should collect fluent-bit component logs successfully", func() {
+			assert.LogsDelivered(proxyClient, "telemetry-", fluentBitLogBackendURL)
+		})
+
+		It("Should collect self-monitor component logs successfully", func() {
+			assert.LogsDelivered(proxyClient, "telemetry-", selfMonitorLogBackendURL)
+		})
+
+		It("Should not have any error/warn logs in the otel collector component containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(otelCollectorLogbackendExportURL)
+				resp, err := proxyClient.Get(otelCollectorLogBackendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-")),
-						WithLevel(BeElementOf(errorWarningLevels)),
+						WithLevel(MatchRegexp(logLevelsRegexp)),
 						WithLogBody(Not( // whitelist possible (flaky/expected) errors
 							Or(
 								ContainSubstring("grpc: addrConn.createTransport failed to connect"),
+								ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
+								ContainSubstring("interrupted due to shutdown:"),
+								ContainSubstring("Variable substitution using $VAR will be deprecated"),
 							),
 						)),
 					)))),
@@ -190,38 +228,29 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, f
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		AfterAll(func() {
-			format.MaxLength = gomegaMaxLength // restore Gomega truncation
-		})
-	})
-
-	Context("When FluentBit-based components are deployed", func() {
-		BeforeAll(func() {
-			format.MaxLength = 0 // remove Gomega truncation
-			k8sObjects := makeResourcesFluentBit()
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-		})
-
-		It("Should have a running backend", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: fluentBitNs, Name: fluentBitLogBackendName})
-		})
-
-		It("Should have a running pipeline", func() {
-			assert.LogPipelineHealthy(ctx, k8sClient, fluentBitLogPipelineName)
-		})
-
-		It("Should not have any ERROR/WARNING logs in the FluentBit containers", func() {
+		It("Should not have any error/warn logs in the FluentBit containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(fluentBitLogbackendExportURL)
+				resp, err := proxyClient.Get(fluentBitLogBackendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-")),
-						WithLevel(BeElementOf(errorWarningLevels)),
+						WithLogBody(MatchRegexp(logLevelsRegexp)), // fluenbit does not log in JSON, so we need to check the body for errors
+					)))),
+				))
+			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should not have any error/warn logs in the self-monitor containers", func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(selfMonitorLogBackendURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainLd(ContainLogRecord(SatisfyAll(
+						WithPodName(ContainSubstring("telemetry-")),
+						WithLevel(MatchRegexp(logLevelsRegexp)),
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
