@@ -50,7 +50,7 @@ The TracePipeline resource is managed by Telemetry Manager, which is responsible
 - Referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
 - Furthermore, Telemetry Manager takes care of the full lifecycle of the OTel Collector Deployment itself. Only if there is a TracePipeline defined, the collector is deployed.
 
-If you don't want to use the tracing feature, simply don't specify a TracePipeline.
+If you don't want to use the Traces feature, simply don't set up a TracePipeline.
 
 ## Setting up a TracePipeline
 
@@ -506,24 +506,24 @@ Remedy:
 To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
 If you just want to see traces for one particular request, you can manually force sampling:
 
-1. Create a `values.yaml` file  
+1. Create a `values.yaml` file.
+   The following example sets the value to `60`, which means 60% of the requests are sent to the tracing backend.
+
+   ```yaml
+     apiVersion: telemetry.istio.io/v1alpha1
+     kind: Telemetry
+     metadata:
+       name: kyma-traces
+       namespace: istio-system
+     spec:
+       tracing:
+       - providers:
+         - name: "kyma-traces"
+         randomSamplingPercentage: 60
+   ```
+
 2. To override the default percentage, change the value for the **randomSamplingPercentage** attribute.
 3. Deploy the `values.yaml` to your existing Kyma installation.
-
-The following example sets the value to `60`, which means 60% of the requests are sent to the tracing backend.
-
-```yaml
-  apiVersion: telemetry.istio.io/v1alpha1
-  kind: Telemetry
-  metadata:
-    name: kyma-traces
-    namespace: istio-system
-  spec:
-    tracing:
-    - providers:
-      - name: "kyma-traces"
-      randomSamplingPercentage: 60
-```
 
 ### Gateway Buffer Filling Up
 
@@ -540,4 +540,4 @@ Cause: Gateway cannot receive spans at the given rate.
 
 Remedy:
 
-Manually scale out the gateway by increasing the number of replicas for the `telemetry-trace-collector`. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+Manually scale out the gateway by increasing the number of replicas for the Trace collector. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
