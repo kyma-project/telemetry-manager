@@ -52,7 +52,7 @@ The Telemetry module contains a self monitor, based on [Prometheus](https://prom
 
 ### Gateways
 
-The Traces and Metric feature share the common approach of providing a gateway based on the [OTel Collector](https://opentelemetry.io/docs/collector/). It acts as a central point in the cluster to push data in the OTLP format. From here, the data is enriched and filtered and then dispatched as defined in the individual pipeline resources.
+The Traces and Metrics features share the common approach of providing a gateway based on the [OTel Collector](https://opentelemetry.io/docs/collector/). It acts as a central point in the cluster to push data in the OTLP format. From here, the data is enriched and filtered and then dispatched as defined in the individual pipeline resources.
 
 For more information, see [Telemetry Gateways](gateways.md).
 

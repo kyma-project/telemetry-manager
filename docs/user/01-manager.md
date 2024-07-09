@@ -6,8 +6,8 @@ As the core element of the Telemetry module, Telemetry Manager manages the lifec
 
 The Telemetry module includes Telemetry Manager, a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that's described by a custom resource of type Telemetry. Telemetry Manager has the following tasks:
 
-- Watch for the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
-- If it finds such a custom resource: Roll out the relevant components on demand and keep it in sync with the pipeline.
+1. Watch for the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
+2. If it finds such a custom resource: Roll out the relevant components on demand and keep it in sync with the pipeline.
 
 ![Manager](assets/manager-lifecycle.drawio.svg)
 
