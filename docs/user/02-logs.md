@@ -441,6 +441,13 @@ A LogPipeline creates a DaemonSet running one Fluent Bit instance per Node in yo
 
 To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, two Services `telemetry-fluent-bit-metrics` and `telemetry-fluent-bit-exporter-metrics` are located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
 
+The relevant metrics are:
+
+| Name                                   | Threshold                     | Description                                                                                                                                                                                                          |
+| -------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| telemetry_fsbuffer_usage_bytes         | (bytes/1000000000) * 100 > 90 | The metric indicates the current size (in bytes) of the persistent log buffer running on each instance. If the size reaches 1GB, logs are dropped at that instance. At 90% buffer size, an alert should be raised.   |
+| fluentbit_output_dropped_records_total | total[5m] > 0                 | The metric indicates that the instance is actively dropping logs. That typically happens when a log message was rejected with a un-retryable status code like a 400. If logs are dropped, an alert should be raised. |
+
 ## Limitations
 
 Currently, there are the following limitations for LogPipelines that are served by Fluent Bit:
