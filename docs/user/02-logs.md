@@ -443,9 +443,9 @@ The record **after** applying the JSON parser:
 
 ## Operations
 
-The Telemetry module ensures that the Fluent Bit instances are operational and healthy at any time. Buffering and retries help preventing that the instances drop logs if the backend is either not reachable for some duration, or cannot handle the log load and is causing backpressure. However, there are situations (see [Limitations](#limitations)) when you should react.
+The Telemetry module ensures that the Fluent Bit instances are operational and healthy at any time. Buffering and retries help preventing that the instances drop logs if the backend is either not reachable for some duration, or cannot handle the log load and is causing backpressure. However, there are situations when you should react.
 
-To avoid and detect these scenarios, check the module status.
+To avoid and detect these situations, check the module status.
 
 ## Limitations
 
