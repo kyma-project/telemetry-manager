@@ -2,7 +2,10 @@
 
 With application logs, you can debug an application and derive the internal state of an application. They can be very useful if the logs are emitted with the correct severity level and context, and are essential for observing an application. However, they usually lack contextual information, such as where they were called from.
 
-The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent for the collection and shipment of application logs of any container running in the Kyma runtime. You can configure the log agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a [Fluentd integration](https://medium.com/hepsiburadatech/fluent-logging-architecture-fluent-bit-fluentd-elasticsearch-ca4a898e28aa). The support for the aimed vendor-neutral OTLP protocol will be [added in future](https://github.com/kyma-project/kyma/issues/16307). To overcome the missing flexibility of the current proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), leveraging the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
+The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent for the collection and shipment of application logs of any container running in the Kyma runtime. You can configure the log agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a [Fluentd integration](https://medium.com/hepsiburadatech/fluent-logging-architecture-fluent-bit-fluentd-elasticsearch-ca4a898e28aa).
+
+<!--- custom output/unsupported mode is not part of Help Portal docs --->
+If you want more flexibility than provided by the proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), using the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
 
 ## Prerequisites
 
@@ -77,6 +80,7 @@ spec:
 An output is a data destination configured by a [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) of the relevant type. The LogPipeline supports the following output types:
 
 - **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
+<!--- custom output/unsupported mode is not part of Help Portal docs --->
 - **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax.
   > [!WARNING]
   > If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
@@ -136,6 +140,7 @@ spec:
         exclude:
         - fluent-bit
 ```
+<!--- custom filters/unsupported mode is not part of Help Portal docs --->
 
 Alternatively, add filters to enrich logs with attributes or drop whole lines.
 The following example contains three filters, which are executed in sequence.
@@ -163,7 +168,7 @@ spec:
 ```
 
 > [!WARNING]
-> If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+> If you use a `custom` filter, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
 Telemetry Manager supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the filters [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier).
 
@@ -271,6 +276,7 @@ stringData:
   TLS_KEY: ...
 ```
 
+<!--- custom output/unsupported mode is not part of Help Portal docs --->
 To use data provided by the Kubernetes Secrets in a `custom` output definition, use placeholder expressions for the data provided by the Secret, then specify the actual mapping to the Secret keys in the **variables** section, like in the following example:
 
 ```yaml
@@ -447,11 +453,11 @@ The relevant metrics are:
 Currently, there are the following limitations for LogPipelines that are served by Fluent Bit:
 
 ### Unsupported Mode
-
+<!--- unsupported mode is not part of Help Portal docs --->
 The `unsupportedMode` attribute of a LogPipeline indicates that you are using a `custom` filter and/or `custom` output. The Kyma team does not provide support for a custom configuration.
 
 ### Fluent Bit Plugins
-
+<!--- Fluent Bit Plugins is not part of Help Portal docs --->
 You cannot enable the following plugins, because they potentially harm the stability:
 
 - Multiline Filter
@@ -468,7 +474,7 @@ Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs
 
 ### Throughput
 
-Each Fluent Bit Pod can process up to 10 MB/s of logs for a single LogPipeline. With multiple pipelines, the throughput per pipeline is reduced. The used logging backend or performance characteristics of the output plugin might limit the throughput earlier.
+Each Fluent Bit Pod (each running on a dedicated Node) can process up to 10 MB/s of logs for a single LogPipeline. With multiple pipelines, the throughput per pipeline is reduced. The used logging backend or performance characteristics of the output plugin might limit the throughput earlier.
 
 ### Max Amount of Pipelines
 
