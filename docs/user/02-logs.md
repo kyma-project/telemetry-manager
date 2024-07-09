@@ -454,7 +454,6 @@ The `unsupportedMode` attribute of a LogPipeline indicates that you are using a 
 
 You cannot enable the following plugins, because they potentially harm the stability:
 
-- Multiline Filter
 - Kubernetes Filter
 - Rewrite_Tag Filter
 
