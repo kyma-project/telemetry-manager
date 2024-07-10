@@ -467,7 +467,6 @@ The `unsupportedMode` attribute of a LogPipeline indicates that you are using a 
 <!--- Fluent Bit Plugins is not part of Help Portal docs --->
 You cannot enable the following plugins, because they potentially harm the stability:
 
-- Multiline Filter
 - Kubernetes Filter
 - Rewrite_Tag Filter
 
