@@ -1,8 +1,9 @@
 package builder
 
 import (
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -50,10 +51,8 @@ func TestCreateCustomFilters(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := createCustomFilters(tt.pipeline, tt.filterType)
-			if !strings.Contains(got, tt.want) {
-				t.Errorf("createCustomFilters() = %v, want %v", got, tt.want)
-			}
+			filterConf := createCustomFilters(tt.pipeline, tt.filterType)
+			require.Equal(t, filterConf, tt.want)
 		})
 	}
 }
