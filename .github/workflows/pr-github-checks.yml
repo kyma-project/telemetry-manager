@@ -21,8 +21,10 @@ jobs:
     steps:
       - name: Check for milestone
         env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"...
+          MILESTONE: ${{ toJSON(github.event.pull_request.milestone) }}
+        run: |
+          echo "${MILESTONE}" | jq -e '.!=null' || (echo "Milestone is not set"; exit 1)
+
 
   pr-label-check:
     runs-on: ubuntu-latest
