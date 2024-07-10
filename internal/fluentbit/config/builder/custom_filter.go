@@ -9,6 +9,11 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
+const (
+	multilineFilter = "multiline"
+	nonMultiline    = "non-multiline"
+)
+
 func createCustomFilters(pipeline *telemetryv1alpha1.LogPipeline, filterType string) string {
 	var filters []string
 
@@ -16,7 +21,7 @@ func createCustomFilters(pipeline *telemetryv1alpha1.LogPipeline, filterType str
 		customFilterParams := parseMultiline(filter.Custom)
 		isMultiline := isMultilineFilter(customFilterParams)
 
-		if (filterType == "multiline" && !isMultiline) || (filterType == "non-multiline" && isMultiline) {
+		if (filterType == multilineFilter && !isMultiline) || (filterType == nonMultiline && isMultiline) {
 			continue
 		}
 
