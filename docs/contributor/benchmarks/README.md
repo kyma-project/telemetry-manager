@@ -1,7 +1,6 @@
 # Telemetry KPIs and Limit Test
 
-This document describes a reproducible test setup to determine the limits and KPis of the Kyma TracePipeline and
-MetricPipeline.
+This document describes a reproducible test setup to determine the limits and KPis of the Kyma TracePipeline and MetricPipeline.
 
 ## Prerequisites
 
