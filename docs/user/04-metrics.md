@@ -19,12 +19,12 @@ While application logs and traces usually provide request-oriented data, metrics
 
 In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OTLP protocol](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma components and users' applications send the metrics data.
 
-Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. That agent pulls metrics of a workload in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
+Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can pull metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
 
 ![Architecture](./assets/metrics-arch.drawio.svg)
 
 1. An application (exposing metrics in OTLP) pushes metrics to the central metric gateway service.
-2. An application (exposing metrics in Prometheus protocol) activates the agent to scrape the metrics with an annotation-based configuration.
+2. Activate the agent to scrape the metrics of an application (exposing metrics in Prometheus protocol) with an annotation-based configuration.
 3. Additionally, you can configure the agent to pull metrics of each Istio sidecar.
 4. The agent converts and pushes all collected metric data to the gateway in OTLP.
 5. The gateway discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
@@ -44,7 +44,7 @@ If a MetricPipeline configures a feature in the `input` section, an additional D
 
 ### Telemetry Manager
 
-The MetricPipeline resource is managed by Telemetry Managr, which is responsible for managing the custom parts of the OTel Collector configuration.
+The MetricPipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the OTel Collector configuration.
 
 ![Manager resources](./assets/metrics-resources.drawio.svg)
 
@@ -65,7 +65,7 @@ To ship metrics to a new OTLP output, create a resource of the kind `MetricPipel
 
 This configures the underlying OTel Collector of the gateway with a pipeline for metrics. It defines that the receiver of the pipeline is of the OTLP type and is accessible with the `telemetry-otlp-metrics` service.
 
-he default protocol is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
+The default protocol is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 
 <!-- tabs:start -->
 
@@ -325,7 +325,7 @@ For metrics ingestion to start automatically, simply apply the following annotat
 
 ### 5. Activate Runtime Metrics
 
-To enable collection of runtime metrics for your containers and Pods, define a MetricPipeline that has the `runtime` section enabled as input:
+To enable collection of runtime metrics, define a MetricPipeline that has the `runtime` section enabled as input:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -388,7 +388,7 @@ If you want to disable the collection of the Pod or container metrics, define th
 
 ### 6. Activate Istio Metrics
 
-To enable collection of Istio metrics for your Pods, define a MetricPipeline that has the `istio` section enabled as input:
+To enable collection of Istio metrics, define a MetricPipeline that has the `istio` section enabled as input:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -554,7 +554,7 @@ To check that the pipeline is running, wait until all status conditions of the M
 
 ## Operations
 
-A MetricPipeline creates a Deployment running OTel Collector instances in your cluster. That instances serves OTLP endpoints and ships received data to the configured backend.
+A MetricPipeline runs several OTel Collector instances in your cluster. This Deployment serves OTLP endpoints and ships received data to the configured backend.
 
 The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop metrics, or cannot handle the metric load.
 

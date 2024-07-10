@@ -41,7 +41,7 @@ In a Kyma cluster, the trace gateway is the central component to which all compo
 
 ### Telemetry Manager
 
-The TracePipeline resource is managed by Telemetry Manager, which is responsible for managing the custom parts of the OTel Collector configuration.
+The TracePipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the OTel Collector configuration.
 
 ![Manager resources](./assets/traces-resources.drawio.svg)
 
@@ -423,7 +423,7 @@ Because the Telemetry endpoints are configured by default, Serverless also repor
 
 ## Operations
 
-A TracePipeline creates a Deployment running OTel Collector instances in your cluster. That Deployment serves OTLP endpoints and ships received data to the configured backend.
+A TracePipeline runs several OTel Collector instances in your cluster. This Deployment serves OTLP endpoints and ships received data to the configured backend.
 
 The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop traces, or cannot handle the trace load.
 
