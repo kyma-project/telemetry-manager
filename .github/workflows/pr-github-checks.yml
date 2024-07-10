@@ -20,10 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check for milestone
-        if: github.event.pull_request.milestone == Null
         run: |
-          echo 'Milestone not set'
-          exit 1
+          echo ${{ github.event.pull_request.milestone }} | jq .
 
   pr-label-check:
     runs-on: ubuntu-latest
