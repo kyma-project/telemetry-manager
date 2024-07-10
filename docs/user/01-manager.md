@@ -13,7 +13,7 @@ The Telemetry module includes Telemetry Manager, a Kubernetes [operator](https:/
 
 ### Self Monitor
 
-The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed gateways and agents. The manager retrieves the current pipeline healthiness from the self-monitor and enriches the status to the pipeline resources and the module status.
+The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed gateways and agents. The manager retrieves the current pipeline healthiness from the self-monitor and enriches the status of the pipeline resources and the module status.
 
 ![Manager](assets/manager-arch.drawio.svg)
 
