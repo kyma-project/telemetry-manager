@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	multilineFilter = "multiline"
-	nonMultiline    = "non-multiline"
+	multilineFilter    = "multiline"
+	nonMultilineFilter = "non-multiline"
 )
 
 func createCustomFilters(pipeline *telemetryv1alpha1.LogPipeline, filterType string) string {
@@ -21,7 +21,7 @@ func createCustomFilters(pipeline *telemetryv1alpha1.LogPipeline, filterType str
 		customFilterParams := parseMultiline(filter.Custom)
 		isMultiline := isMultilineFilter(customFilterParams)
 
-		if (filterType == multilineFilter && !isMultiline) || (filterType == nonMultiline && isMultiline) {
+		if (filterType == multilineFilter && !isMultiline) || (filterType == nonMultilineFilter && isMultiline) {
 			continue
 		}
 
