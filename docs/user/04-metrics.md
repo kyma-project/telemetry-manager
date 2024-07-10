@@ -556,9 +556,9 @@ To check that the pipeline is running, wait until all status conditions of the M
 
 A MetricPipeline creates a Deployment running OTel Collector instances in your cluster. That instances serves OTLP endpoints and ships received data to the configured backend.
 
-The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time. Buffering and retries help preventing that the instances drop metrics because the backend is either not reachable for some duration, or cannot handle the metric load and is causing backpressure. However, there are situations when you should react.
+The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop metrics, or cannot handle the metric load.
 
-To avoid and detect these scenarios, check the module status.
+To detect and fix such situations, check the pipeline status and check out [Troubleshooting](#troubleshooting).
 
 ## Limitations
 

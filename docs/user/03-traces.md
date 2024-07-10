@@ -425,9 +425,9 @@ Because the Telemetry endpoints are configured by default, Serverless also repor
 
 A TracePipeline creates a Deployment running OTel Collector instances in your cluster. That Deployment serves OTLP endpoints and ships received data to the configured backend.
 
-The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time. Buffering and retries help preventing that the instances drop traces because the backend is either not reachable for some duration, or cannot handle the trace load and is causing backpressure. However, there are situations when you should react.
+The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop traces, or cannot handle the trace load.
 
-To avoid and detect these situations, check the module status.
+To detect and fix such situations, check the pipeline status and check out [Troubleshooting](#troubleshooting).
 
 ## Limitations
 
