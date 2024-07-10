@@ -442,7 +442,7 @@ This leads to the following limitations:
 
 ### Throughput
 
-The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If more data must be ingested, it can result in a refusal of more data.
+The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceded, spans are refused. To increase the maximum throughput, use manual scaling.
 
 ### Unavailability of Output
 
