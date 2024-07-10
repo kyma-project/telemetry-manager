@@ -13,14 +13,6 @@ on:
       - labeled
       - milestoned
   workflow_dispatch:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - edited
-      - synchronize
-      - labeled
-      - milestoned
 
 jobs:
   pr-milestone-check:
