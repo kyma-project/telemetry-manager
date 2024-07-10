@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Check for milestone
         run: |
-          echo ${{ github.event.pull_request.milestone }} | jq .
+          echo ${{ github.event.pull_request }} | jq .
 
   pr-label-check:
     runs-on: ubuntu-latest
