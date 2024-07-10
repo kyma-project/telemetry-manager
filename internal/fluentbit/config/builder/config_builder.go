@@ -41,7 +41,7 @@ func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config Builde
 	sb.WriteString(createCustomMultilineFilters(pipeline))
 	sb.WriteString(createRecordModifierFilter(pipeline))
 	sb.WriteString(createKubernetesFilter(pipeline))
-	sb.WriteString(createCustomFilters(pipeline))
+	sb.WriteString(createNonMultilineCustomFilters(pipeline))
 	sb.WriteString(createLuaDedotFilter(pipeline))
 	sb.WriteString(createOutputSection(pipeline, config.PipelineDefaults))
 
