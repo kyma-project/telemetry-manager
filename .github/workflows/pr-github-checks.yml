@@ -20,8 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check for milestone
-        run: |
-          echo ${{ github.event.pull_request }} | jq .
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"...
 
   pr-label-check:
     runs-on: ubuntu-latest
