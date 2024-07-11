@@ -82,12 +82,17 @@ func TestMergeSectionsConfig(t *testing.T) {
     db               /data/flb_foo.db
     exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log,/var/log/containers/*_*_container1-*.log,/var/log/containers/*_*_container2-*.log
     mem_buf_limit    5MB
-    multiline.parser docker, cri, go, python, java
+    multiline.parser cri
     path             /var/log/containers/*_*_*-*.log
     read_from_head   true
     skip_long_lines  on
     storage.type     filesystem
     tag              foo.*
+
+[FILTER]
+    name             multiline
+    match            foo.*
+    multiline.parser java
 
 [FILTER]
     name   record_modifier
@@ -151,6 +156,12 @@ func TestMergeSectionsConfig(t *testing.T) {
 						regex log aa
 					`,
 				},
+				{
+					Custom: `
+						name multiline
+						multiline.parser java
+					`,
+				},
 			},
 			Output: telemetryv1alpha1.Output{
 				HTTP: &telemetryv1alpha1.HTTPOutput{
@@ -181,7 +192,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     alias            foo
     db               /data/flb_foo.db
     mem_buf_limit    5MB
-    multiline.parser docker, cri, go, python, java
+    multiline.parser cri
     path             /var/log/containers/*_*_*-*.log
     read_from_head   true
     skip_long_lines  on

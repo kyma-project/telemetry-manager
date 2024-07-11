@@ -17,6 +17,19 @@ metadata:
   name: default
   namespace: kyma-system
   generation: 2
+spec:
+  trace:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: 3
+  metric:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: 4
 Status:
   state: Ready
   endpoints:

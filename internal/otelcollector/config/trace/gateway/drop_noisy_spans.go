@@ -11,10 +11,9 @@ var (
 	methodIsPost            = spanAttributeEquals("http.method", "POST")
 	componentIsProxy        = spanAttributeEquals("component", "proxy")
 
-	urlIsIstioHealthz                  = urlMatches("https:\\\\/\\\\/healthz\\\\..+\\\\/healthz\\\\/ready")
-	urlIsTelemetryTraceService         = urlMatches("http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(4317|4318).*")
-	urlIsTelemetryTraceInternalService = urlMatches("http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*")
-	urlIsTelemetryMetricService        = urlMatches("http(s)?:\\\\/\\\\/telemetry-otlp-metrics\\\\.kyma-system(\\\\..*)?:(4317|4318).*")
+	urlIsIstioHealthz           = urlMatches("https:\\\\/\\\\/healthz\\\\..+\\\\/healthz\\\\/ready")
+	urlIsTelemetryTraceService  = urlMatches("http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(4317|4318).*")
+	urlIsTelemetryMetricService = urlMatches("http(s)?:\\\\/\\\\/telemetry-otlp-metrics\\\\.kyma-system(\\\\..*)?:(4317|4318).*")
 
 	operationIsIngress = ottlexpr.JoinWithOr(spanAttributeEquals("OperationName", "Ingress"), attributeMatches("name", "ingress.*"))
 	operationIsEgress  = ottlexpr.JoinWithOr(spanAttributeEquals("OperationName", "Egress"), attributeMatches("name", "egress.*"))
@@ -26,9 +25,8 @@ var (
 
 	toIstioGatewayWithHealthz = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsIstioSystem, methodIsGet, operationIsEgress, istioCanonicalNameEquals("istio-ingressgateway"), urlIsIstioHealthz)
 
-	toTelemetryTraceService         = ottlexpr.JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceService)
-	toTelemetryTraceInternalService = ottlexpr.JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceInternalService)
-	toTelemetryMetricService        = ottlexpr.JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryMetricService)
+	toTelemetryTraceService  = ottlexpr.JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceService)
+	toTelemetryMetricService = ottlexpr.JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryMetricService)
 
 	//TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
 	fromVMScrapeAgent        = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("vm_promscrape"))
@@ -45,7 +43,6 @@ func makeDropNoisySpansConfig() FilterProcessor {
 				toFromTelemetryMetricAgent,
 				toIstioGatewayWithHealthz,
 				toTelemetryTraceService,
-				toTelemetryTraceInternalService,
 				toTelemetryMetricService,
 				fromVMScrapeAgent,
 				fromTelemetryMetricAgent,

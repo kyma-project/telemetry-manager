@@ -9,7 +9,7 @@ alerting:
           tls_config:
             insecure_skip_verify: true
 rule_files:
-    - /etc/prometheus/alerting_rules.yml
+    - /dummy-configpath/dymma-alerts.yml
 scrape_configs:
     - job_name: kubernetes-service-endpoints
       relabel_configs:

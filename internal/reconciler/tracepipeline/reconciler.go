@@ -87,9 +87,8 @@ type IstioStatusChecker interface {
 
 type Reconciler struct {
 	client.Client
-	config                     Config
-	pipelinesConditionsCleared bool
 
+	config                Config
 	gatewayConfigBuilder  GatewayConfigBuilder
 	gatewayApplierDeleter GatewayApplierDeleter
 	pipelineLock          PipelineLock
@@ -170,10 +169,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var allPipelinesList telemetryv1alpha1.TracePipelineList
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
-	}
-
-	if err = r.clearPipelinesConditions(ctx, allPipelinesList.Items); err != nil {
-		return fmt.Errorf("failed to clear the conditions list for trace pipelines: %w", err)
 	}
 
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items)
@@ -323,23 +318,4 @@ func tlsValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
 	}
 
 	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil || otlp.TLS.CA != nil
-}
-
-// clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation
-// This is done to clear the legacy conditions ("Running" and "Pending") at the end of the conditions list
-// TODO: Remove this logic after the legacy conditions ("Running" and "Pending") are cleaned up
-func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline) error {
-	if r.pipelinesConditionsCleared {
-		return nil
-	}
-
-	for i := range allPipelines {
-		allPipelines[i].Status.Conditions = []metav1.Condition{}
-		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
-			return fmt.Errorf("failed to update TracePipeline status: %w", err)
-		}
-	}
-	r.pipelinesConditionsCleared = true
-
-	return nil
 }

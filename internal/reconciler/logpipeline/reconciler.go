@@ -85,9 +85,8 @@ type IstioStatusChecker interface {
 
 type Reconciler struct {
 	client.Client
-	config                     Config
-	pipelinesConditionsCleared bool
 
+	config             Config
 	prober             DaemonSetProber
 	flowHealthProber   FlowHealthProber
 	tlsCertValidator   TLSCertValidator
@@ -151,10 +150,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := r.List(ctx, &allPipelines); err != nil {
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
-	}
-
-	if err = r.clearPipelinesConditions(ctx, allPipelines.Items); err != nil {
-		return fmt.Errorf("failed to clear the conditions list for log pipelines: %w", err)
 	}
 
 	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
@@ -441,23 +436,4 @@ func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 		return false
 	}
 	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
-}
-
-// clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation
-// This is done to clear the legacy conditions ("Running" and "Pending") at the end of the conditions list
-// TODO: Remove this logic after the legacy conditions ("Running" and "Pending") are cleaned up
-func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) error {
-	if r.pipelinesConditionsCleared {
-		return nil
-	}
-
-	for i := range allPipelines {
-		allPipelines[i].Status.Conditions = []metav1.Condition{}
-		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
-			return fmt.Errorf("failed to update LogPipeline status: %w", err)
-		}
-	}
-	r.pipelinesConditionsCleared = true
-
-	return nil
 }

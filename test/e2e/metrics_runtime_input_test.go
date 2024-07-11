@@ -100,13 +100,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Ensures kubeletstats metrics are sent to backend", func() {
+		It("Ensures default runtime metrics are sent to backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				// By default, pod and container metrics are enabled for the runtime input
 				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-					ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))),
+					ContainMetric(WithName(BeElementOf(kubeletstats.PodMetricsNames))),
+					ContainMetric(WithName(BeElementOf(kubeletstats.ContainerMetricsNames))),
 					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
