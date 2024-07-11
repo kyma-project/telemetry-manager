@@ -236,6 +236,11 @@ spec:
                                 type: object
                             type: object
                         type: object
+                      keepBody:
+                        default: true
+                        description: Enables keeping of the log field from the incoming
+                          log record. Default is `true`
+                        type: boolean
                       password:
                         description: Defines the basic auth password.
                         properties:
@@ -752,6 +757,11 @@ spec:
                                 type: object
                             type: object
                         type: object
+                      keepBody:
+                        default: true
+                        description: Enables keeping of the log field from the incoming
+                          log record. Default is `true`
+                        type: boolean
                       password:
                         description: Defines the basic auth password.
                         properties:
