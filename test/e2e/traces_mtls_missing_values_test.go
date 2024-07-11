@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces, "test"), func() {
 	const (
 		tlsCrdValidationError = "Can define either both 'cert' and 'key', or neither"
 		notFoundError         = "not found"

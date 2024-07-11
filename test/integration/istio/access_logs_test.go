@@ -82,7 +82,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				}
 				ready, err := assert.PodsReady(ctx, k8sClient, listOptions)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
+				g.Expect(ready).To(BeTrueBecause("Pods not ready"))
 			}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 		})
 

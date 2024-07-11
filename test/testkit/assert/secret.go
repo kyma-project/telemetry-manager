@@ -18,7 +18,7 @@ func SecretHasKeyValue(ctx context.Context, k8sClient client.Client, name types.
 		g.Expect(err).NotTo(HaveOccurred())
 
 		secretValue, found := secret.Data[dataKey]
-		g.Expect(found).Should(BeTrue())
+		g.Expect(found).Should(BeTrueBecause("Secret does not contain key %s", dataKey))
 
 		g.Expect(string(secretValue)).Should(Equal(dataValue))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())

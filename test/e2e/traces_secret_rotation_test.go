@@ -68,7 +68,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Trace gateway deployment should not exist")
 		})
 
 		It("Should have running tracepipeline", func() {
