@@ -572,7 +572,7 @@ This leads to the following limitations:
 
 ### Throughput
 
-The default metric **gateway** setup has a maximum throughput of 34K metric data points/sec. If more data is sent to the gateway, it is refused. To increase the maximum throughput, use manual scaling.
+The default metric **gateway** setup has a maximum throughput of 34K metric data points/sec. If more data is sent to the gateway, it is refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas for the Metric gateway.
 
 The metric **agent** setup has a maximum throughput of 14K metric data points/sec per instance. If more data must be ingested, it is refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, the metric agent refuses all the data.
 
@@ -654,6 +654,8 @@ Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotat
 
 ### Gateway Buffer Filling Up
 
+Symptom: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+
 Cause: The backend export rate is too low compared to the gateway ingestion rate.
 
 Remedy:
@@ -665,6 +667,8 @@ Remedy:
 - Option 3: Reduce emitted metrics in your applications.
 
 ### Gateway Throttling
+
+Symptom: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
 
 Cause: Gateway cannot receive metrics at the given rate.
 

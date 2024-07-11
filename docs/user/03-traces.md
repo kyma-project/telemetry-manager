@@ -56,7 +56,7 @@ If you don't want to use the Traces feature, simply don't set up a TracePipeline
 
 In the following steps, you can see how to construct and deploy a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
 
-### Step 1a. Create a TracePipeline With an OTLP GRPC Output
+### 1a. Create a TracePipeline With an OTLP GRPC Output
 
 To ship traces to a new OTLP output, create a resource of the kind `TracePipeline` and save the file (named, for example, `tracepipeline.yaml`).
 
@@ -92,7 +92,7 @@ The default protocol is GRPC, but you can choose HTTP instead. Depending on the 
           value: https://backend.example.com:4318
   ```
 
-### Step 2. Enable Istio Tracing
+### 2. Enable Istio Tracing
 
 > [!WARNING]
 > The provided Istio feature uses an API in alpha state, which may change in future releases.
@@ -113,7 +113,7 @@ spec:
     randomSamplingPercentage: 5.00
 ```
 
-### Step 3a: Add Authentication Details From Plain Text
+### 3a: Add Authentication Details From Plain Text
 
 To integrate with external systems, you must configure authentication  details. You can use mutual TLS (mTLS), Basic Authentication, or custom headers:
 
@@ -182,7 +182,7 @@ spec:
 
 <!-- tabs:end -->
 
-### Step 3b: Add Authentication Details From Secrets
+### 3b: Add Authentication Details From Secrets
 
 Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
 
@@ -290,14 +290,14 @@ stringData:
   token: YYY
 ```
 
-### Step 4: Rotate the Secret
+### 4: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 
 > [!TIP]
 > If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### Step 5: Deploy the Pipeline
+### 5: Deploy the Pipeline
 
 To activate the TracePipeline, apply the `tracepipeline.yaml`  resource file in your cluster:
 
@@ -322,7 +322,7 @@ Kyma bundles several modules that can be involved in user flows. Applications in
 
 ### Istio
 
-The Istio module is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope and are enriched with trace context if it hasn't happened earlier. Furthermore, every component that's part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data.
+The [Istio module](https://kyma-project.io/#/istio/user/README) is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope and are enriched with trace context if it hasn't happened earlier. Furthermore, every component that's part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data.
 
 If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [w3c-tracecontext](https://www.w3.org/TR/trace-context/) protocol.
 
@@ -442,7 +442,7 @@ This leads to the following limitations:
 
 ### Throughput
 
-The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceded, spans are refused. To increase the maximum throughput, use manual scaling.
+The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceded, spans are refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas.
 
 ### Unavailability of Output
 
@@ -527,6 +527,8 @@ If you just want to see traces for one particular request, you can manually forc
 
 ### Gateway Buffer Filling Up
 
+Symptom: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+
 Cause: The backend export rate is too low compared to the gateway ingestion rate.
 
 Remedy:
@@ -535,6 +537,8 @@ Remedy:
 - Option 2: Reduce the emitted spans in your applications.
 
 ### Gateway Throttling
+
+Symptom: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
 
 Cause: Gateway cannot receive spans at the given rate.
 

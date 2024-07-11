@@ -101,18 +101,16 @@ You can set up shipment of applications and access logs to SAP Cloud Logging. Th
 
 ### Set Up Access Logs
 
-By default, Istio sidecar injection and Istio access logs are disabled in Kyma.
+By default, Istio sidecar injection and Istio access logs are disabled in Kyma. To analyze access logs of your workload in the default SAP Cloud Logging dashboards shipped for SAP BTP, Kyma runtime, you must enable them:
 
-To analyze access logs of your workload in the default SAP Cloud Logging dashboards shipped for SAP BTP, Kyma runtime, you must enable them:
+3. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection).
 
-1. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection).
-
-2. Enable Istio access logs for your workload. See [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
+4. Enable Istio access logs for your workload. See [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
 
    > [!WARNING]
    > The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-3. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma with the following script:
+5. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma with the following script:
 
    <div tabs name="accesslogs">
      <details><summary>Script: Access Logs</summary>
@@ -158,7 +156,7 @@ To analyze access logs of your workload in the default SAP Cloud Logging dashboa
       </details>
     </div>
 
-4. Wait for the LogPipeline to be in the `Running` state. To check the state, run `kubectl get logpipelines`.
+6. Wait for the LogPipeline to be in the `Running` state. To check the state, run `kubectl get logpipelines`.
 
 ## Ship Distributed Traces to SAP Cloud Logging
 
@@ -187,11 +185,6 @@ You can set up ingestion of distributed traces from applications and the Istio s
    </div>
 
    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
-
-   > [!WARNING]
-   > Be cautious when you configure the **randomSamplingPercentage**:
-   > - Traces might consume a significant storage volume in SAP Cloud Logging.
-   > - The Kyma trace collector component does not scale automatically.
 
 2. Deploy the TracePipeline with the following script:
 
