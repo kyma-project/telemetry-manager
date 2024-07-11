@@ -204,6 +204,8 @@ data:
                     placeholder: '443'
                   - name: URI
                     source: spec.output.http.uri
+                  - name: Keep Log Body
+                    source: spec.output.http.keepBody
   form: |
     - path: spec.input
       widget: FormGroup
@@ -404,6 +406,9 @@ data:
             - name: Dedot
               simple: true
               path: dedot
+            - name: Keep Log Body
+              simple: true
+              path: keepBody
   general: |-
     resource:
       kind: LogPipeline

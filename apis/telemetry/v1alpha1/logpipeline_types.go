@@ -107,6 +107,9 @@ type HTTPOutput struct {
 	TLSConfig TLSConfig `json:"tls,omitempty"`
 	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`
+	// Enables keeping of the log field from the incoming log record. Default is `true`
+	// +kubebuilder:default:=true
+	KeepBody bool `json:"keepBody,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"

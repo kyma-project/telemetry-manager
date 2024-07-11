@@ -7,7 +7,7 @@ import (
 )
 
 func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
-	return NewFilterSectionBuilder().
+	sb := NewFilterSectionBuilder().
 		AddConfigParam("name", "kubernetes").
 		AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name)).
 		AddConfigParam("merge_log", "on").
@@ -16,8 +16,11 @@ func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 		AddConfigParam("kube_tag_prefix", fmt.Sprintf("%s.var.log.containers.", pipeline.Name)).
 		AddConfigParam("annotations", fmt.Sprintf("%v", fluentBitFlag(pipeline.Spec.Input.Application.KeepAnnotations))).
 		AddConfigParam("labels", fmt.Sprintf("%v", fluentBitFlag(!pipeline.Spec.Input.Application.DropLabels))).
-		AddConfigParam("buffer_size", "1MB").
-		Build()
+		AddConfigParam("buffer_size", "1MB")
+	if dropLogBody(pipeline) {
+		sb.AddConfigParam("keep_log", "off")
+	}
+	return sb.Build()
 }
 
 func fluentBitFlag(b bool) string {
@@ -25,4 +28,11 @@ func fluentBitFlag(b bool) string {
 		return "on"
 	}
 	return "off"
+}
+
+func dropLogBody(pipeline *telemetryv1alpha1.LogPipeline) bool {
+	if pipeline.Spec.Output.HTTP != nil && !pipeline.Spec.Output.HTTP.KeepBody {
+		return true
+	}
+	return false
 }
