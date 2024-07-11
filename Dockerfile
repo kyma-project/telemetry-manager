@@ -20,7 +20,7 @@ COPY webhook/ webhook/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager main.go
 
 # Use the fluent-bit image because we need the fluent-bit binary
-FROM europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.7-1e5449d3
+FROM europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.1.1-c3f8684
 
 WORKDIR /
 COPY --from=builder /telemetry-manager-workspace/manager .
