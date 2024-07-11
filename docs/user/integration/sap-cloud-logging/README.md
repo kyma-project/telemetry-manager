@@ -13,7 +13,7 @@ Learn how to configure the Telemetry module to ingest application and access log
 - [Integrate with SAP Cloud Logging](#integrate-with-sap-cloud-logging)
   - [Table of Content](#table-of-content)
   - [Prerequisites](#prerequisites)
-  - [Overview](#overview)
+  - [Context](#context)
   - [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
     - [Set Up Application Logs](#set-up-application-logs)
     - [Set Up Access Logs](#set-up-access-logs)
@@ -37,7 +37,7 @@ Learn how to configure the Telemetry module to ingest application and access log
 <!-- markdown-link-check-enable -->
 - UNIX shell or Windows Subsystem for Linux (WSL) to execute commands.
 
-## Overview
+## Context
 
 The Telemetry module supports shipping logs and ingesting distributed traces as well as metrics from applications and the Istio service mesh to SAP Cloud Logging. Furthermore, you can set up Kyma dashboard integration and use SAP Cloud Logging alerts and dashboards.
 
@@ -280,6 +280,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
     By default, the MetricPipeline assures that a gateway is running in the cluster to push OTLP metrics.
 
 2. If you want to use additional metric collection, configure the presets under `input`.
+
    For the available options, see [Metrics](./../../04-metrics.md).
 
 3. Wait for the MetricPipeline to be in the `Running` state. To check the state, run `kubectl get metricpipelines`.

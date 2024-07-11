@@ -98,6 +98,7 @@ The default protocol is GRPC, but you can choose HTTP instead. Depending on the 
 > The provided Istio feature uses an API in alpha state, which may change in future releases.
 
 By default, the tracing feature of the Istio module is disabled to avoid increased network utilization if there is no TracePipeline.
+
 To activate the Istio tracing feature with a sampling rate of 5% (for recommendations, see [Istio](#istio)), use a resource similar to the following example:
 
 ```yaml
@@ -544,4 +545,4 @@ Cause: Gateway cannot receive spans at the given rate.
 
 Remedy:
 
-Manually scale out the gateway by increasing the number of replicas for the Trace collector. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+Manually scale out the gateway by increasing the number of replicas for the Trace collector. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).

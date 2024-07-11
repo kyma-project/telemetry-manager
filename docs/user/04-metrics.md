@@ -457,7 +457,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The following example collects runtime metrics from all namespaces except the `foo` and `bar` namespaces:
+The following example collects runtime metrics from all namespaces **except** the `foo` and `bar` namespaces:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -480,7 +480,9 @@ spec:
 
 > [!NOTE]
 > The default settings depend on the input:
+>
 > If no namespace selector is defined for the `prometheus` or `runtime` input, then metrics from system namespaces are excluded by default.
+>
 > However, if the namespace selector is not defined for the `istio` and `otlp` input, then metrics from system namespaces are included by default.
 
 ### 9. Activate Diagnostic Metrics
@@ -489,7 +491,7 @@ If you use the `prometheus` or `istio` input, for every metric source typical sc
 
 By default, they are disabled.
 
-If you want to use them for debugging and diagnostic purposes, you can activate them. To activate diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+If you want to use them for debugging and diagnostic purposes, you can activate them. To activate diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined.
 
 - The following example collects diagnostic metrics **only** for input `istio`:
 
