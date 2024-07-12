@@ -165,7 +165,8 @@ func TestMergeSectionsConfig(t *testing.T) {
 			},
 			Output: telemetryv1alpha1.Output{
 				HTTP: &telemetryv1alpha1.HTTPOutput{
-					Dedot: true,
+					Dedot:    true,
+					KeepBody: true,
 					Host: telemetryv1alpha1.ValueType{
 						Value: "localhost",
 					},
