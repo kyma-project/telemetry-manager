@@ -11,9 +11,20 @@ on:
       - edited
       - synchronize
       - labeled
+      - milestoned
   workflow_dispatch:
 
 jobs:
+  pr-milestone-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for milestone
+        env:
+          MILESTONE: ${{ toJSON(github.event.pull_request.milestone) }}
+        run: |
+          echo "${MILESTONE}" | jq -e '.!=null' || (echo "Milestone is not set"; exit 1)
+
+
   pr-label-check:
     runs-on: ubuntu-latest
     steps:
