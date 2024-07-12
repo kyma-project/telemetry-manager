@@ -118,7 +118,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
-| **output.&#x200b;http.&#x200b;keepBody**  | boolean | Enables keeping of the log field from the incoming log record. Default is `true` |
+| **output.&#x200b;http.&#x200b;keepBody**  | boolean | If `false`, after successfully parsing the field `log` is removed from the log record. Default is `true`. |
 | **output.&#x200b;http.&#x200b;password**  | object | Defines the basic auth password. |
 | **output.&#x200b;http.&#x200b;password.&#x200b;value**  | string | The value as plain text. |
 | **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom**  | object | The value as a reference to a resource. |

@@ -238,8 +238,8 @@ spec:
                         type: object
                       keepBody:
                         default: true
-                        description: Enables keeping of the log field from the incoming
-                          log record. Default is `true`
+                        description: If `false`, after successfully parsing the field
+                          `log` is removed from the log record. Default is `true`.
                         type: boolean
                       password:
                         description: Defines the basic auth password.
@@ -759,8 +759,8 @@ spec:
                         type: object
                       keepBody:
                         default: true
-                        description: Enables keeping of the log field from the incoming
-                          log record. Default is `true`
+                        description: If `false`, after successfully parsing the field
+                          `log` is removed from the log record. Default is `true`.
                         type: boolean
                       password:
                         description: Defines the basic auth password.
