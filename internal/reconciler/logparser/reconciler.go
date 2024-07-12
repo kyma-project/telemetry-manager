@@ -58,7 +58,7 @@ type Reconciler struct {
 	overridesHandler *overrides.Handler
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
+func New(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client:           client,
 		config:           config,

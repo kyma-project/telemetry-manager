@@ -501,7 +501,7 @@ func createLogParserController(client client.Client) *telemetrycontrollers.LogPa
 
 	return telemetrycontrollers.NewLogParserController(
 		client,
-		logparser.NewReconciler(
+		logparser.New(
 			client,
 			config,
 			&k8sutils.DaemonSetProber{Client: client},
@@ -558,7 +558,7 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 	return telemetrycontrollers.NewTracePipelineController(
 		client,
 		reconcileTriggerChan,
-		tracepipeline.NewReconciler(
+		tracepipeline.New(
 			client,
 			config,
 			&k8sutils.DeploymentProber{Client: client},
@@ -610,7 +610,7 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 	return telemetrycontrollers.NewMetricPipelineController(
 		client,
 		reconcileTriggerChan,
-		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, overridesHandler))
+		metricpipeline.New(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, overridesHandler))
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
@@ -663,7 +663,7 @@ func createTelemetryController(client client.Client, scheme *runtime.Scheme, web
 		SelfMonitor:            selfMonitorConfig,
 	}
 
-	return operator.NewTelemetryController(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)
+	return operator.NewTelemetryController(client, telemetry.New(client, scheme, config, overridesHandler), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

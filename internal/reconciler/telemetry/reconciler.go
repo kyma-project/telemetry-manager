@@ -81,7 +81,7 @@ type Reconciler struct {
 	selfMonitorApplierDeleter *selfmonitor.ApplierDeleter
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
+func New(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client: client,
 		Scheme: scheme,

@@ -73,7 +73,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		return nil, err
 	}
 
-	reconciler := logpipeline.NewReconciler(client, newReconcilerConfig(config), &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(client), overrides.New(client, atomicLevel, overrides.HandlerConfig{
+	reconciler := logpipeline.New(client, newReconcilerConfig(config), &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(client), overrides.New(client, atomicLevel, overrides.HandlerConfig{
 		ConfigMapName: types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
 		ConfigMapKey:  config.OverridesConfigMapKey,
 	}), tlscert.New(client))

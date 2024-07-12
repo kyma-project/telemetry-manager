@@ -96,7 +96,7 @@ type Reconciler struct {
 	tlsCertValidator   TLSCertValidator
 }
 
-func NewReconciler(
+func New(
 	client client.Client,
 	config *Config,
 	agentProber DaemonSetProber,
