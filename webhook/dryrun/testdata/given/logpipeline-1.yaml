@@ -8,6 +8,5 @@ spec:
       content: "dummy"
   output:
     http:
-      keepBody: true
       host:
         value: "127.0.0.1"

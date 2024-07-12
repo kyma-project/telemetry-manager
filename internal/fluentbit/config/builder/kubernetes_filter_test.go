@@ -17,6 +17,7 @@ func TestCreateKubernetesFilterKeepAll(t *testing.T) {
     buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
+    keep_log            on
     kube_tag_prefix     test-logpipeline.var.log.containers.
     labels              on
     merge_log           on
@@ -28,7 +29,8 @@ func TestCreateKubernetesFilterKeepAll(t *testing.T) {
 			Input: telemetryv1alpha1.Input{
 				Application: telemetryv1alpha1.ApplicationInput{
 					KeepAnnotations: true,
-					DropLabels:      false}}}}
+					DropLabels:      false,
+					KeepRawBody:     true}}}}
 
 	actual := createKubernetesFilter(logPipeline)
 	require.Equal(t, expected, actual)
@@ -42,6 +44,7 @@ func TestCreateKubernetesFilterDropAll(t *testing.T) {
     buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
+    keep_log            on
     kube_tag_prefix     test-logpipeline.var.log.containers.
     labels              off
     merge_log           on
@@ -53,7 +56,8 @@ func TestCreateKubernetesFilterDropAll(t *testing.T) {
 			Input: telemetryv1alpha1.Input{
 				Application: telemetryv1alpha1.ApplicationInput{
 					KeepAnnotations: false,
-					DropLabels:      true}}}}
+					DropLabels:      true,
+					KeepRawBody:     true}}}}
 
 	actual := createKubernetesFilter(logPipeline)
 	require.Equal(t, expected, actual)

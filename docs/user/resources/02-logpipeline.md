@@ -91,6 +91,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input.&#x200b;application.&#x200b;containers.&#x200b;include**  | \[\]string | Specifies to include only the container logs with the specified container names. |
 | **input.&#x200b;application.&#x200b;dropLabels**  | boolean | Defines whether to drop all Kubernetes labels. The default is `false`. |
 | **input.&#x200b;application.&#x200b;keepAnnotations**  | boolean | Defines whether to keep all Kubernetes annotations. The default is `false`. |
+| **input.&#x200b;application.&#x200b;keepRawBody**  | boolean | If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `keepRawBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. Default is `true`. |
 | **input.&#x200b;application.&#x200b;namespaces**  | object | Describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection. |
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude the container logs of the specified Namespace names. |
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include only the container logs of the specified Namespace names. |
@@ -118,7 +119,6 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
-| **output.&#x200b;http.&#x200b;keepBody**  | boolean | If `false`, after successfully parsing the field `log` is removed from the log record. Default is `true`. |
 | **output.&#x200b;http.&#x200b;password**  | object | Defines the basic auth password. |
 | **output.&#x200b;http.&#x200b;password.&#x200b;value**  | string | The value as plain text. |
 | **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom**  | object | The value as a reference to a resource. |

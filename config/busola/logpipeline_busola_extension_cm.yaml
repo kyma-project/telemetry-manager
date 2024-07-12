@@ -82,6 +82,8 @@ data:
                 source: spec.input.application.keepAnnotations
               - name: Drop Labels
                 source: spec.input.application.dropLabels
+              - name: Keep Raw Log Body
+                source: spec.input.application.keepRawBody
       - widget: Panel
         name: Output
         children:
@@ -204,8 +206,6 @@ data:
                     placeholder: '443'
                   - name: URI
                     source: spec.output.http.uri
-                  - name: Keep Log Body
-                    source: spec.output.http.keepBody
   form: |
     - path: spec.input
       widget: FormGroup
@@ -235,6 +235,8 @@ data:
           path: application.keepAnnotations
         - name: Drop Labels
           path: application.dropLabels
+        - name: Keep Raw Log Body
+          path: application.keepRawBody
     - name: Filters
       widget: SimpleList
       path: spec.filters
@@ -406,9 +408,6 @@ data:
             - name: Dedot
               simple: true
               path: dedot
-            - name: Keep Log Body
-              simple: true
-              path: keepBody
   general: |-
     resource:
       kind: LogPipeline

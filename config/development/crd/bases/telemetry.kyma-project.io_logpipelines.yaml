@@ -111,6 +111,14 @@ spec:
                         description: Defines whether to keep all Kubernetes annotations.
                           The default is `false`.
                         type: boolean
+                      keepRawBody:
+                        default: true
+                        description: If the `log` attribute contains a JSON payload
+                          and it is successfully parsed, the `log` attribute will
+                          be retained if `keepRawBody` is set to `true`. Otherwise,
+                          the log attribute will be removed from the log record. Default
+                          is `true`.
+                        type: boolean
                       namespaces:
                         description: Describes whether application logs from specific
                           Namespaces are selected. The options are mutually exclusive.
@@ -236,11 +244,6 @@ spec:
                                 type: object
                             type: object
                         type: object
-                      keepBody:
-                        default: true
-                        description: If `false`, after successfully parsing the field
-                          `log` is removed from the log record. Default is `true`.
-                        type: boolean
                       password:
                         description: Defines the basic auth password.
                         properties:
@@ -632,6 +635,14 @@ spec:
                         description: Defines whether to keep all Kubernetes annotations.
                           The default is `false`.
                         type: boolean
+                      keepRawBody:
+                        default: true
+                        description: If the `log` attribute contains a JSON payload
+                          and it is successfully parsed, the `log` attribute will
+                          be retained if `keepRawBody` is set to `true`. Otherwise,
+                          the log attribute will be removed from the log record. Default
+                          is `true`.
+                        type: boolean
                       namespaces:
                         description: Describes whether application logs from specific
                           Namespaces are selected. The options are mutually exclusive.
@@ -757,11 +768,6 @@ spec:
                                 type: object
                             type: object
                         type: object
-                      keepBody:
-                        default: true
-                        description: If `false`, after successfully parsing the field
-                          `log` is removed from the log record. Default is `true`.
-                        type: boolean
                       password:
                         description: Defines the basic auth password.
                         properties:

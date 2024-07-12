@@ -72,6 +72,9 @@ type ApplicationInput struct {
 	KeepAnnotations bool `json:"keepAnnotations,omitempty"`
 	// Defines whether to drop all Kubernetes labels. The default is `false`.
 	DropLabels bool `json:"dropLabels,omitempty"`
+	// If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `keepRawBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. Default is `true`.
+	// +kubebuilder:default:=true
+	KeepRawBody bool `json:"keepRawBody,omitempty"`
 }
 
 // InputNamespaces describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
@@ -128,9 +131,6 @@ type HTTPOutput struct {
 	TLSConfig TLSConfig `json:"tls,omitempty"`
 	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`
-	// If `false`, after successfully parsing the field `log` is removed from the log record. Default is `true`.
-	// +kubebuilder:default:=true
-	KeepBody bool `json:"keepBody,omitempty"`
 }
 
 // LokiOutput configures an output to the Kyma-internal Loki instance.
