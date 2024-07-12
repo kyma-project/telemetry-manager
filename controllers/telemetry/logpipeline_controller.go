@@ -52,7 +52,7 @@ type LogPipelineController struct {
 	reconciler           *logpipeline.Reconciler
 }
 
-type Config struct {
+type LogPipelineControllerConfig struct {
 	ExporterImage          string
 	FluentBitCPULimit      string
 	FluentBitCPURequest    string
@@ -67,26 +67,18 @@ type Config struct {
 	TelemetryNamespace     string
 }
 
-func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, atomicLevel zap.AtomicLevel, config *Config) (*LogPipelineController, error) {
+func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, atomicLevel zap.AtomicLevel, config *LogPipelineControllerConfig) (*LogPipelineController, error) {
 	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
 
-	reconciler := logpipeline.New(client, newReconcilerConfig(config), &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(client), overrides.New(client, atomicLevel, overrides.HandlerConfig{
+	overridesHandler := overrides.New(client, atomicLevel, overrides.HandlerConfig{
 		ConfigMapName: types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
 		ConfigMapKey:  config.OverridesConfigMapKey,
-	}), tlscert.New(client))
+	})
 
-	return &LogPipelineController{
-		Client:               client,
-		reconcileTriggerChan: reconcileTriggerChan,
-		reconciler:           reconciler,
-	}, nil
-}
-
-func newReconcilerConfig(config *Config) *logpipeline.Config {
-	return &logpipeline.Config{
+	reconcilerCfg := &logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
 		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: config.TelemetryNamespace},
@@ -107,6 +99,20 @@ func newReconcilerConfig(config *Config) *logpipeline.Config {
 		},
 	}
 
+	reconciler := logpipeline.New(
+		client,
+		reconcilerCfg,
+		&k8sutils.DaemonSetProber{Client: client},
+		flowHealthProber,
+		istiostatus.NewChecker(client),
+		overridesHandler,
+		tlscert.New(client))
+
+	return &LogPipelineController{
+		Client:               client,
+		reconcileTriggerChan: reconcileTriggerChan,
+		reconciler:           reconciler,
+	}, nil
 }
 
 func (r *LogPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

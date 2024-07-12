@@ -56,7 +56,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
@@ -403,7 +402,7 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		atomicLevel,
-		&telemetrycontrollers.Config{
+		&telemetrycontrollers.LogPipelineControllerConfig{
 			ExporterImage:          fluentBitExporterImage,
 			FluentBitCPULimit:      fluentBitCPULimit,
 			FluentBitCPURequest:    fluentBitCPURequest,
@@ -427,7 +426,15 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 		os.Exit(1)
 	}
 
-	if err := createLogParserController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	logParserController := telemetrycontrollers.NewLogParserController(
+		mgr.GetClient(),
+		atomicLevel,
+		&telemetrycontrollers.LogParserControllerConfig{
+			OverridesConfigMapKey:  overridesConfigMapKey,
+			OverridesConfigMapName: overridesConfigMapName,
+			TelemetryNamespace:     telemetryNamespace,
+		})
+	if err := logParserController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogParser")
 		os.Exit(1)
 	}
@@ -491,25 +498,6 @@ func validateFlags() error {
 		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")
 	}
 	return nil
-}
-
-func createLogParserController(client client.Client) *telemetrycontrollers.LogParserController {
-	config := logparser.Config{
-		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
-		DaemonSet:        types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: telemetryNamespace},
-	}
-
-	return telemetrycontrollers.NewLogParserController(
-		client,
-		logparser.New(
-			client,
-			config,
-			&k8sutils.DaemonSetProber{Client: client},
-			&k8sutils.DaemonSetAnnotator{Client: client},
-			overridesHandler,
-		),
-		config,
-	)
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
