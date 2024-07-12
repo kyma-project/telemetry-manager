@@ -35,7 +35,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
-	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -86,32 +85,37 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	config             Config
-	prober             DaemonSetProber
+	config *Config
+	syncer syncer
+
+	// Dependencies
+	agentProber        DaemonSetProber
 	flowHealthProber   FlowHealthProber
-	tlsCertValidator   TLSCertValidator
-	syncer             syncer
-	overridesHandler   OverridesHandler
 	istioStatusChecker IstioStatusChecker
+	overridesHandler   OverridesHandler
+	tlsCertValidator   TLSCertValidator
 }
 
 func NewReconciler(
 	client client.Client,
-	config Config,
+	config *Config,
 	agentProber DaemonSetProber,
 	flowHealthProber FlowHealthProber,
-	overridesHandler *overrides.Handler) *Reconciler {
-	var r Reconciler
-	r.Client = client
-	r.config = config
-	r.prober = agentProber
-	r.flowHealthProber = flowHealthProber
-	r.syncer = syncer{client, config}
-	r.overridesHandler = overridesHandler
-	r.istioStatusChecker = istiostatus.NewChecker(client)
-	r.tlsCertValidator = tlscert.New(client)
+	istioStatusChecker IstioStatusChecker,
+	overridesHandler OverridesHandler,
+	tlsCertValidator TLSCertValidator,
+) *Reconciler {
+	return &Reconciler{
+		Client: client,
+		config: config,
+		syncer: syncer{client, config},
 
-	return &r
+		agentProber:        agentProber,
+		flowHealthProber:   flowHealthProber,
+		istioStatusChecker: istioStatusChecker,
+		tlsCertValidator:   tlsCertValidator,
+		overridesHandler:   overridesHandler,
+	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

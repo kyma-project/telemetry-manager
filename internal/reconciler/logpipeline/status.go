@@ -60,7 +60,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	healthy, err := r.prober.IsReady(ctx, r.config.DaemonSet)
+	healthy, err := r.agentProber.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset - set condition as not healthy")
 		healthy = false
