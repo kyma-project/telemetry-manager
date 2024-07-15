@@ -465,7 +465,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 - **Reserved Log Attributes**: The log attribute named `kubernetes` is a special attribute that's enriched by the `kubernetes` filter. When you use that attribute as part of your structured log payload, the metadata enriched by the filter are overwritten by the payload data. Filters that rely on the original metadata might no longer work as expected.
 - **Buffer Limits**: Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs. The oldest logs are dropped when the limit is reached or after 300 retries.
 - **Throughput**: Each Fluent Bit Pod (each running on a dedicated Node) can process up to 10 MB/s of logs for a single LogPipeline. With multiple pipelines, the throughput per pipeline is reduced. The used logging backend or performance characteristics of the output plugin might limit the throughput earlier.
-- **Max Amount of Pipelines**: The maximum amount of log pipelines is 5.
+- **Max Amount of Pipelines**: The maximum amount of LogPipeline resources is 5.
 
 ## Troubleshooting
 

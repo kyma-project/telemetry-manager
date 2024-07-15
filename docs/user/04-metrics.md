@@ -564,55 +564,35 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 ## Limitations
 
-The metric setup is based on the following assumptions:
-
-- A destination can be unavailable for up to 5 minutes without direct loss of metric data (using retries).
-- An average metric consists of 20 metric data points and 10 labels.
-- Batching is enabled, and a batch contains up to 1024 metrics/batch.
-
-This leads to the following limitations:
-
-### Throughput
-
-The default metric **gateway** setup has a maximum throughput of 34K metric data points/sec. If more data is sent to the gateway, it is refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas for the Metric gateway.
-
-The metric **agent** setup has a maximum throughput of 14K metric data points/sec per instance. If more data must be ingested, it is refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, the metric agent refuses all the data.
-
-### Load Balancing With Istio
-
-To ensure availability, the metric gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances.
-By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
-
-### Unavailability of Output
-
-For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
-
-### No Guaranteed Delivery
-
-The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
-
-### Multiple MetricPipeline Support
-
-Up to three MetricPipeline resources at a time are supported.
+- **Throughput**: Assuming an average metric with 20 metric data points and 10 labels, the default metric **gateway** setup has a maximum throughput of 34K metric data points/sec. If more data is sent to the gateway, it is refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas for the Metric gateway.
+  The metric **agent** setup has a maximum throughput of 14K metric data points/sec per instance. If more data must be ingested, it is refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, the metric agent refuses all the data.
+- **Load Balancing With Istio**: To ensure availability, the metric gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances.
+  By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
+- **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
+- **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
+- **Multiple MetricPipeline Support**: The maximum amount of MetricPipeline resources is 3.
 
 ## Troubleshooting
 
 ### No Metrics Arrive at the Backend
 
-Cause: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
+**Symptom**: No metrics arrive at the backend. In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
 
-Remedy:
+**Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
 
-- Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
-- Check if the backend is up and reachable.
+**Remedy**:
+
+1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+2. Check if the backend is up and reachable.
+3. Fix the errors.
 
 ### Not All Metrics Arrive at the Backend
 
-Symptom: The backend is reachable and the connection is properly configured, but some metrics are refused.
+**Symptom**: The backend is reachable and the connection is properly configured, but some metrics are refused. In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
 
-Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
+**Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
-Remedy:
+**Remedy**:
 
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
 2. If backend is limiting the rate by refusing metrics, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
@@ -620,11 +600,11 @@ Remedy:
 
 ### Only Istio Metrics Arrive at the Backend
 
-Symptom: Custom metrics don't arrive at the backend, but Istio metrics do.
+**Symptom**: Custom metrics don't arrive at the backend, but Istio metrics do.
 
-Cause: Your SDK version is incompatible with the OTel collector version.
+**Cause**: Your SDK version is incompatible with the OTel collector version.
 
-Remedy:
+**Remedy**:
 
 1. Check which SDK version you are using for instrumentation.
 2. Investigate whether it is compatible with the OTel collector version.
@@ -632,35 +612,26 @@ Remedy:
 
 ### Log Entry: Failed to Scrape Prometheus Endpoint
 
-Symptom: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
+**Symptom**: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
 
-   ```bash
-   2023-08-29T09:53:07.123Z warn internal/transaction.go:111 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
-   ```
+```bash
+2023-08-29T09:53:07.123Z warn internal/transaction.go:111 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
+```
 
-Cause: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#4-activate-prometheus-based-metrics).
+**Cause**: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#4-activate-prometheus-based-metrics).
 
-Remedy: You can either set up 'STRICT' mTLS mode or HTTP scraping:
+**Remedy**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
 
-<!-- tabs:start -->
-
-#### **Strict mTLS**
-
-Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
-
-#### **HTTP Scraping**
-
-Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
-
-<!-- tabs:end -->
+- Configure the workload using “STRICT” mTLS mode (for example, by applying a corresponding PeerAuthentication).
+- Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 
 ### Gateway Buffer Filling Up
 
-Symptom: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+**Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
 
-Cause: The backend export rate is too low compared to the gateway ingestion rate.
+**Cause**: The backend export rate is too low compared to the gateway ingestion rate.
 
-Remedy:
+**Remedy**:
 
 - Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
 
@@ -670,10 +641,8 @@ Remedy:
 
 ### Gateway Throttling
 
-Symptom: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
+**Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
 
-Cause: Gateway cannot receive metrics at the given rate.
+**Cause**: Gateway cannot receive metrics at the given rate.
 
-Remedy:
-
-Manually scale out the gateway by increasing the number of replicas for the Metric gateway. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Remedy**: Manually scale out the gateway by increasing the number of replicas for the Metric gateway. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).

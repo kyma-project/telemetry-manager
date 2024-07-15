@@ -435,7 +435,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 - **Throughput**: Assuming an average span with 40 attributes with 64 characters,the maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceded, spans are refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
-- **Multiple TracePipeline Support**: Up to 3 trace pipelines at a time are supported.
+- **Multiple TracePipeline Support**: The maximum amount of Trace Pipeline resources is 3.
 - **System Span Filtering**: System-related spans reported by Istio are filtered out without the opt-out option, for example:
   - Any communication of applications to the Telemetry gateways
   - Any communication from the gateways to backends
@@ -444,9 +444,11 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 ### No Spans Arrive at the Backend
 
-Cause: Incorrect backend endpoint configuration (such as using the wrong authentication credentials), or the backend is unreachable.
+**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
 
-Remedy:
+**Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials), or the backend is unreachable.
+
+**Remedy**:
 
 1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
 2. Check if the backend is up and reachable.
@@ -454,11 +456,11 @@ Remedy:
 
 ### Not All Spans Arrive at the Backend
 
-Symptom: The backend is reachable and the connection is properly configured, but some spans are refused.
+**Symptom**: The backend is reachable and the connection is properly configured, but some spans are refused. In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
 
-Cause: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate.
+**Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
-Remedy:
+**Remedy**:
 
 1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
 2. If the backend is limiting the rate by refusing spans, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
@@ -466,9 +468,9 @@ Remedy:
 
 ### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
-Cause: Your SDK version is incompatible with the OTel collector version.
+**Cause**: Your SDK version is incompatible with the OTel collector version.
 
-Remedy:
+**Remedy**:
 
 1. Check which SDK version you are using for instrumentation.
 2. Investigate whether it is compatible with the OTel collector version.
@@ -476,9 +478,9 @@ Remedy:
 
 ### Trace Backend Shows Fewer Traces than Expected
 
-Cause: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
+**Cause**: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
 
-Remedy:
+**Remedy**:
 
 To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
 If you just want to see traces for one particular request, you can manually force sampling:
@@ -504,21 +506,21 @@ If you just want to see traces for one particular request, you can manually forc
 
 ### Gateway Buffer Filling Up
 
-Symptom: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+**Symptom**: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
 
-Cause: The backend export rate is too low compared to the gateway ingestion rate.
+**Cause**: The backend export rate is too low compared to the gateway ingestion rate.
 
-Remedy:
+**Remedy**:
 
-- Option 1: Increase the maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
+- Option 1: Increase the maximum backend ingestion rate - for example, by scaling out the SAP Cloud Logging instances.
 - Option 2: Reduce the emitted spans in your applications.
 
 ### Gateway Throttling
 
-Symptom: In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
+**Symptom**: 
+- In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
+- Also, your application might have error logs indicating a refusal for pushing traces to the gateway.
 
-Cause: Gateway cannot receive spans at the given rate.
+**Cause**: Gateway cannot receive spans at the given rate.
 
-Remedy:
-
-Manually scale out the gateway by increasing the number of replicas for the Trace collector. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Remedy**: Manually scale out the gateway by increasing the number of replicas for the Trace collector. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
