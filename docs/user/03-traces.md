@@ -432,37 +432,13 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 ## Limitations
 
-The trace gateway setup is designed using the following assumptions:
-
-- The collector has a limited resource setup for CPU and memory, and no autoscaling.
-- Batching is enabled, and a batch will contain up to 512 Spans/batch.
-- An unavailability of a destination must be survived for 5 minutes without direct loss of trace data.
-- An average span consists of 40 attributes with 64 character length.
-
-This leads to the following limitations:
-
-### Throughput
-
-The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceded, spans are refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas.
-
-### Unavailability of Output
-
-For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
-
-### No Guaranteed Delivery
-
-The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
-
-### Multiple TracePipeline Support
-
-Up to 3 TracePipelines at a time are supported.
-
-### System Span Filtering
-
-System-related spans reported by Istio are filtered out without the opt-out option, for example:
-
-- Any communication of applications to the Telemetry gateways
-- Any communication from the gateways to backends
+- **Throughput**: Assuming an average span with 40 attributes with 64 characters,the maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceded, spans are refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas.
+- **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
+- **No Guaranteed Delivery**: The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
+- **Multiple TracePipeline Support**: Up to 3 trace pipelines at a time are supported.
+- **System Span Filtering**: System-related spans reported by Istio are filtered out without the opt-out option, for example:
+  - Any communication of applications to the Telemetry gateways
+  - Any communication from the gateways to backends
 
 ## Troubleshooting
 
