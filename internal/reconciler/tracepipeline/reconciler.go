@@ -30,6 +30,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
@@ -38,7 +39,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
@@ -62,7 +62,7 @@ type GatewayApplierDeleter interface {
 
 type PipelineLock interface {
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-	IsLockHolder(ctx context.Context, owner metav1.Object) (bool, error)
+	IsLockHolder(ctx context.Context, owner metav1.Object) error
 }
 
 type DeploymentProber interface {
@@ -73,16 +73,16 @@ type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
-type TLSCertValidator interface {
-	Validate(ctx context.Context, config tlscert.TLSBundle) error
-}
-
 type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
 type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
+}
+
+type PipelineValidator interface {
+	Validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error
 }
 
 type Reconciler struct {
@@ -95,9 +95,9 @@ type Reconciler struct {
 	pipelineLock          PipelineLock
 	prober                DeploymentProber
 	flowHealthProber      FlowHealthProber
-	tlsCertValidator      TLSCertValidator
 	overridesHandler      OverridesHandler
 	istioStatusChecker    IstioStatusChecker
+	pipelineValidator     PipelineValidator
 }
 
 func NewReconciler(client client.Client,
@@ -105,6 +105,11 @@ func NewReconciler(client client.Client,
 	prober DeploymentProber,
 	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler) *Reconciler {
+	pipelineLock := resourcelock.New(client,
+		types.NamespacedName{
+			Name:      "telemetry-tracepipeline-lock",
+			Namespace: config.Gateway.Namespace,
+		}, config.MaxPipelines)
 	return &Reconciler{
 		Client: client,
 		config: config,
@@ -114,16 +119,16 @@ func NewReconciler(client client.Client,
 		gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{
 			Config: config.Gateway,
 		},
-		pipelineLock: resourcelock.New(client,
-			types.NamespacedName{
-				Name:      "telemetry-tracepipeline-lock",
-				Namespace: config.Gateway.Namespace,
-			}, config.MaxPipelines),
+		pipelineLock:       pipelineLock,
 		prober:             prober,
 		flowHealthProber:   flowHealthProber,
-		tlsCertValidator:   tlscert.New(client),
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
+		pipelineValidator: &validator{
+			client:           client,
+			tlsCertValidator: tlscert.New(client),
+			pipelineLock:     pipelineLock,
+		},
 	}
 }
 
@@ -150,10 +155,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
 	var err error
-	lockAcquired := true
 
 	defer func() {
-		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired); statusErr != nil {
+		if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
 			if err != nil {
 				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
 			} else {
@@ -163,7 +167,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}()
 
 	if err = r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
-		lockAcquired = false
 		return err
 	}
 
@@ -217,30 +220,21 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
-		if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
-			return false, nil
-		}
-		return false, err
+	err := r.pipelineValidator.Validate(ctx, pipeline)
+
+	// Pipeline with a certificate that is about to expire is still considered reconcilable
+	if err == nil || tlscert.IsCertAboutToExpireError(err) {
+		return true, nil
 	}
 
-	if tlsValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSBundle{
-			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
-			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
-			CA:   pipeline.Spec.Output.Otlp.TLS.CA,
-		}
-
-		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
-			return tlscert.IsCertAboutToExpireError(err), nil
-		}
+	// Remaining errors imply that the pipeline is not reconcilable
+	// In case that one of the requests to the Kubernetes API server failed, then the pipeline is also considered non-reconcilable and the error is returned to trigger a requeue
+	var APIRequestFailed *errortypes.APIRequestFailed
+	if errors.Is(err, APIRequestFailed) {
+		return false, APIRequestFailed.Err
 	}
-	hasLock, err := r.pipelineLock.IsLockHolder(ctx, pipeline)
-	if err != nil {
-		return false, fmt.Errorf("failed to check lock: %w", err)
-	}
-	return hasLock, nil
 
+	return false, nil
 }
 
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {

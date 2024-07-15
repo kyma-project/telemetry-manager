@@ -10,14 +10,16 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"errors"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
-func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
+func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
 	var pipeline telemetryv1alpha1.TracePipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -34,8 +36,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	}
 
 	r.setGatewayHealthyCondition(ctx, &pipeline)
-	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setFlowHealthCondition(ctx, &pipeline, withinPipelineCountLimit)
+	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
+	r.setFlowHealthCondition(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -69,8 +71,8 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
-	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline, withinPipelineCountLimit)
+func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
@@ -83,31 +85,30 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) (status metav1.ConditionStatus, reason string, message string) {
-	if !withinPipelineCountLimit {
-		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded)
+func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) (status metav1.ConditionStatus, reason string, message string) {
+	err := r.pipelineValidator.Validate(ctx, pipeline)
+	if err == nil {
+		return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured)
 	}
 
-	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
+	if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
+		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, err.Error()
+	}
+
+	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
 		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, err.Error()
 	}
 
-	if tlsValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSBundle{
-			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
-			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
-			CA:   pipeline.Spec.Output.Otlp.TLS.CA,
-		}
-
-		err := r.tlsCertValidator.Validate(ctx, tlsConfig)
-		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured))
+	var APIRequestFailed *errortypes.APIRequestFailed
+	if errors.Is(err, APIRequestFailed) {
+		return metav1.ConditionFalse, conditions.ReasonAPIRequestFailed, conditions.MessageForTracePipeline(conditions.ReasonAPIRequestFailed)
 	}
 
-	return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured)
+	return conditions.EvaluateTLSCertCondition(err)
 }
 
-func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
-	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline, withinPipelineCountLimit)
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeFlowHealthy,
@@ -120,8 +121,8 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) (metav1.ConditionStatus, string) {
-	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline, withinPipelineCountLimit)
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) (metav1.ConditionStatus, string) {
+	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
 	}
