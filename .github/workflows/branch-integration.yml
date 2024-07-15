@@ -26,7 +26,7 @@ jobs:
 
     # wait for the build to succeed so that the manager image is available
     - name: Wait for the 'post-telemetry-manager-build' job to succeed
-      uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+      uses: kyma-project/wait-for-commit-status-action@bd15d6ad1a27c040747f40275f85b39671d2b957
       with:
         context: "post-telemetry-manager-build"
         commit_ref: "${{ github.sha }}"
