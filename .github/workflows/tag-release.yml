@@ -15,7 +15,7 @@ jobs:
 
       # wait for the build to succeed so that the manager image is available
       - name: Wait for the 'post-telemetry-manager-build-release' job to succeed
-        uses: kyma-project/wait-for-commit-status-action@bd15d6ad1a27c040747f40275f85b39671d2b957
+        uses: kyma-project/wait-for-commit-status-action@b805fd5b536679183dc540369522d4d38811c182
         with:
           context: "post-telemetry-manager-build-release"
           commit_ref: "${{ github.ref_name }}" # 'github.ref_name' is the release tag which triggered the Github action
