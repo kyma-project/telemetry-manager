@@ -55,7 +55,7 @@ The LogPipeline resource is resource is watched by Telemetry Manager, which is r
 ![Manager resources](./assets/logs-resources.drawio.svg)
 
 - Telemetry Manager watches all LogPipeline resources and related Secrets.
-- Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated. 
+- Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated.
 - Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
 
 ## Setting up a LogPipeline
@@ -458,14 +458,22 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 ## Limitations
 
-- **Unsupported Mode**: The `unsupportedMode` attribute of a LogPipeline indicates that you are using a `custom` filter and/or `custom` output. The Kyma team does not provide support for a custom configuration. <!--- unsupported mode is not part of Help Portal docs --->
-- **Fluent Bit Plugins**: You cannot enable the following plugins, because they potentially harm the stability: <!--- Fluent Bit Plugins is not part of Help Portal docs --->
-  - Kubernetes Filter
-  - Rewrite_Tag Filter
 - **Reserved Log Attributes**: The log attribute named `kubernetes` is a special attribute that's enriched by the `kubernetes` filter. When you use that attribute as part of your structured log payload, the metadata enriched by the filter are overwritten by the payload data. Filters that rely on the original metadata might no longer work as expected.
 - **Buffer Limits**: Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs. The oldest logs are dropped when the limit is reached or after 300 retries.
 - **Throughput**: Each Fluent Bit Pod (each running on a dedicated Node) can process up to 10 MB/s of logs for a single LogPipeline. With multiple pipelines, the throughput per pipeline is reduced. The used logging backend or performance characteristics of the output plugin might limit the throughput earlier.
 - **Max Amount of Pipelines**: The maximum amount of LogPipeline resources is 5.
+
+### Unsupported Mode
+<!--- unsupported mode is not part of Help Portal docs --->
+The `unsupportedMode` attribute of a LogPipeline indicates that you are using a `custom` filter and/or `custom` output. The Kyma team does not provide support for a custom configuration.
+
+### Fluent Bit Plugins
+<!--- Fluent Bit Plugins is not part of Help Portal docs --->
+
+You cannot enable the following plugins, because they potentially harm the stability:
+
+- Kubernetes Filter
+- Rewrite_Tag Filter
 
 ## Troubleshooting
 
