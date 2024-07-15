@@ -89,7 +89,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 					Eventually(func(g Gomega) {
 						key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
 						err := k8sClient.Get(ctx, key, resource)
-						g.Expect(apierrors.IsNotFound(err)).To(BeTrueBecauseBecause())
+						g.Expect(apierrors.IsNotFound(err)).To(BeTrueBecause("Resource %s should be deleted", key))
 					}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 				}
 			})
