@@ -100,7 +100,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailed
-	if errors.Is(err, APIRequestFailed) {
+	if errors.As(err, &APIRequestFailed) {
 		return metav1.ConditionFalse, conditions.ReasonAPIRequestFailed, conditions.MessageForTracePipeline(conditions.ReasonAPIRequestFailed)
 	}
 
