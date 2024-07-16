@@ -343,7 +343,7 @@ kubectl apply -f logpipeline.yaml
 ### Result
 
 You activated a LogPipeline and logs start streaming to your backend.
-To check that the pipeline is running, verify that the status of the LogPipeline in your cluster is `READY`:
+To check that the pipeline is running, wait until all status conditions of the LogPipeline in your cluster have status `True`:
 
 ```bash
 kubectl get logpipeline
