@@ -47,7 +47,7 @@ type LogParserControllerConfig struct {
 	TelemetryNamespace     string
 }
 
-func NewLogParserController(client client.Client, atomicLevel zap.AtomicLevel, config *LogParserControllerConfig) *LogParserController {
+func NewLogParserController(client client.Client, atomicLevel zap.AtomicLevel, config LogParserControllerConfig) *LogParserController {
 	overridesHandler := overrides.New(client, atomicLevel, overrides.HandlerConfig{
 		ConfigMapName: types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
 		ConfigMapKey:  config.OverridesConfigMapKey,

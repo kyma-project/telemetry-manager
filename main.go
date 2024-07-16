@@ -402,7 +402,7 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		atomicLevel,
-		&telemetrycontrollers.LogPipelineControllerConfig{
+		telemetrycontrollers.LogPipelineControllerConfig{
 			ExporterImage:          fluentBitExporterImage,
 			FluentBitCPULimit:      fluentBitCPULimit,
 			FluentBitCPURequest:    fluentBitCPURequest,
@@ -429,7 +429,7 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 	logParserController := telemetrycontrollers.NewLogParserController(
 		mgr.GetClient(),
 		atomicLevel,
-		&telemetrycontrollers.LogParserControllerConfig{
+		telemetrycontrollers.LogParserControllerConfig{
 			OverridesConfigMapKey:  overridesConfigMapKey,
 			OverridesConfigMapName: overridesConfigMapName,
 			TelemetryNamespace:     telemetryNamespace,

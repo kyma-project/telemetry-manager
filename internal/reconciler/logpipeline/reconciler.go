@@ -85,7 +85,7 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	config *Config
+	config Config
 	syncer syncer
 
 	// Dependencies
@@ -98,7 +98,7 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	config *Config,
+	config Config,
 	agentProber DaemonSetProber,
 	flowHealthProber FlowHealthProber,
 	istioStatusChecker IstioStatusChecker,

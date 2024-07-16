@@ -67,7 +67,7 @@ type LogPipelineControllerConfig struct {
 	TelemetryNamespace     string
 }
 
-func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, atomicLevel zap.AtomicLevel, config *LogPipelineControllerConfig) (*LogPipelineController, error) {
+func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, atomicLevel zap.AtomicLevel, config LogPipelineControllerConfig) (*LogPipelineController, error) {
 	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		ConfigMapKey:  config.OverridesConfigMapKey,
 	})
 
-	reconcilerCfg := &logpipeline.Config{
+	reconcilerCfg := logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
 		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: config.TelemetryNamespace},
