@@ -50,7 +50,7 @@ This approach assures a reliable buffer management and isolation of pipelines, w
 
 ### Telemetry Manager
 
-The LogPipeline resource is resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the Fluent Bit configuration.
+The LogPipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the Fluent Bit configuration.
 
 ![Manager resources](./assets/logs-resources.drawio.svg)
 
@@ -201,7 +201,7 @@ Using the **http** output definition and the **valueFrom** attribute, you can ma
 
 <!-- tabs:start -->
 
-#### **Mutual TLS**
+#### **mTLS**
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -330,7 +330,7 @@ spec:
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 
 > [!TIP]
-> If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
+> If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
 ### 5. Deploy the Pipeline
 
@@ -343,6 +343,7 @@ kubectl apply -f logpipeline.yaml
 ### Result
 
 You activated a LogPipeline and logs start streaming to your backend.
+
 To check that the pipeline is running, wait until all status conditions of the LogPipeline in your cluster have status `True`:
 
 ```bash
@@ -357,11 +358,11 @@ After a log record has been read, it is preprocessed by configured plugins, like
 
 ![Flow](./assets/logs-flow.drawio.svg)
 
-Learn more about the flow of the log record through the general pipeline and the available log attributes in the following stages.
+Learn more about the flow of the log record through the general pipeline and the available log attributes in the following stages:
 
 ### Container Log Message
 
-The following example assumes that there's a container `myContainer` of Pod `myPod`, running in namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
+The following example assumes that there’s a container `myContainer` of Pod `myPod`, running in namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
 
 ```json
 {
@@ -458,7 +459,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 ## Limitations
 
-- **Reserved Log Attributes**: The log attribute named `kubernetes` is a special attribute that's enriched by the `kubernetes` filter. When you use that attribute as part of your structured log payload, the metadata enriched by the filter are overwritten by the payload data. Filters that rely on the original metadata might no longer work as expected.
+- **Reserved Log Attributes**: The log attribute named `kubernetes` is a special attribute that’s enriched by the `kubernetes` filter. When you use that attribute as part of your structured log payload, the metadata enriched by the filter are overwritten by the payload data. Filters that rely on the original metadata might no longer work as expected.
 - **Buffer Limits**: Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs. The oldest logs are dropped when the limit is reached or after 300 retries.
 - **Throughput**: Each Fluent Bit Pod (each running on a dedicated Node) can process up to 10 MB/s of logs for a single LogPipeline. With multiple pipelines, the throughput per pipeline is reduced. The used logging backend or performance characteristics of the output plugin might limit the throughput earlier.
 - **Max Amount of Pipelines**: The maximum amount of LogPipeline resources is 5.
@@ -479,7 +480,10 @@ You cannot enable the following plugins, because they potentially harm the stabi
 
 ### No Logs Arrive at the Backend
 
-**Symptom**: No logs arrive at the backend. In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
+**Symptom**:
+
+- No logs arrive at the backend.
+- In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
 
 **Cause**: Incorrect backend endpoint configuration (for example, using the wrong authentication credentials) or the backend being unreachable.
 
