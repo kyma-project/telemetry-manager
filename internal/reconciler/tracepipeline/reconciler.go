@@ -81,10 +81,6 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
 
-type PipelineValidator interface {
-	Validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error
-}
-
 type Reconciler struct {
 	client.Client
 	config                     Config
@@ -97,7 +93,7 @@ type Reconciler struct {
 	flowHealthProber      FlowHealthProber
 	overridesHandler      OverridesHandler
 	istioStatusChecker    IstioStatusChecker
-	pipelineValidator     PipelineValidator
+	pipelineValidator     pipelineValidator
 }
 
 func NewReconciler(client client.Client,
@@ -124,7 +120,7 @@ func NewReconciler(client client.Client,
 		flowHealthProber:   flowHealthProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
-		pipelineValidator: &validator{
+		pipelineValidator: pipelineValidator{
 			client:           client,
 			tlsCertValidator: tlscert.New(client),
 			pipelineLock:     pipelineLock,
@@ -220,7 +216,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
-	err := r.pipelineValidator.Validate(ctx, pipeline)
+	err := r.pipelineValidator.validate(ctx, pipeline)
 
 	// Pipeline with a certificate that is about to expire is still considered reconcilable
 	if err == nil || tlscert.IsCertAboutToExpireError(err) {

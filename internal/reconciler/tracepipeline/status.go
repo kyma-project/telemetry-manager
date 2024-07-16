@@ -86,7 +86,7 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 }
 
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) (status metav1.ConditionStatus, reason string, message string) {
-	err := r.pipelineValidator.Validate(ctx, pipeline)
+	err := r.pipelineValidator.validate(ctx, pipeline)
 	if err == nil {
 		return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured)
 	}
