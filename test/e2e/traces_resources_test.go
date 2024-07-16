@@ -96,55 +96,55 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 				var clusterRoleBinding rbacv1.ClusterRoleBinding
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayClusterRoleBinding, &clusterRoleBinding)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ClusterRoleBinding should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ClusterRoleBinding still exists")
 
 			Eventually(func(g Gomega) bool {
 				var serviceAccount corev1.ServiceAccount
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayServiceAccount, &serviceAccount)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ServiceAccount should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ServiceAccount still exists")
 
 			Eventually(func(g Gomega) bool {
 				var clusterRole rbacv1.ClusterRole
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayClusterRole, &clusterRole)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ClusterRole should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ClusterRole still exists")
 
 			Eventually(func(g Gomega) bool {
 				var service corev1.Service
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayMetricsService, &service)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Metrics service should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Metrics service still exists")
 
 			Eventually(func(g Gomega) bool {
 				var networkPolicy networkingv1.NetworkPolicy
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayNetworkPolicy, &networkPolicy)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "NetworkPolicy should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "NetworkPolicy still exists")
 
 			Eventually(func(g Gomega) bool {
 				var secret corev1.Secret
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewaySecretName, &secret)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "TraceGatewaySecret should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "TraceGatewaySecret still exists")
 
 			Eventually(func(g Gomega) bool {
 				var configMap corev1.ConfigMap
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayConfigMap, &configMap)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "TraceGatewayConfigMap should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "TraceGatewayConfigMap still exists")
 
 			Eventually(func(g Gomega) bool {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Deployment should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Deployment still exists")
 
 			Eventually(func(g Gomega) bool {
 				var service corev1.Service
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayOTLPService, &service)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "OTLP service should be deleted")
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "OTLP service still exists")
 		})
 	})
 })
