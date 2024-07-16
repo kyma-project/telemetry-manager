@@ -56,7 +56,7 @@ If you don't want to use the Traces feature, simply don't set up a TracePipeline
 
 In the following steps, you can see how to construct and deploy a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
 
-### 1a. Create a TracePipeline With an OTLP GRPC Output
+### 1. Create a TracePipeline
 
 To ship traces to a new OTLP output, create a resource of the kind `TracePipeline` and save the file (named, for example, `tracepipeline.yaml`).
 

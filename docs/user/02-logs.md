@@ -62,7 +62,7 @@ The LogPipeline resource is resource is watched by Telemetry Manager, which is r
 
 In the following steps, you can see how to construct and deploy a typical LogPipeline. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
-### Step 1: Create a LogPipeline and Output
+### 1. Create a LogPipeline and Output
 
 To ship application logs to a new output, create a resource of the kind `LogPipeline` and save the file (named, for example, `logpipeline.yaml`).
 
@@ -110,7 +110,7 @@ An output is a data destination configured by a [Fluent Bit output](https://docs
         tls.verify         on
   ```
 
-### Step 2: Filter Your Input
+### 2. Filter Your Input
 
 By default, input is collected from all namespaces, except the system namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default.
 
@@ -193,7 +193,7 @@ Telemetry Manager supports different types of [Fluent Bit filter](https://docs.f
 - The second filter drops all log records fulfilling the given rule. In the example, typical namespaces are dropped based on the **kubernetes** attribute.
 - A log record is modified by adding a new attribute. In the example, a constant attribute is added to every log record to record the actual cluster Node name at the record for later filtering in the backend system. As a value, a placeholder is used referring to a Kubernetes-specific environment variable.
 
-### Step 3: Add Authentication Details From Secrets
+### 3. Add Authentication Details From Secrets
 
 Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, LogPipeline supports the reference of Secrets.
 
@@ -325,14 +325,14 @@ spec:
 > [!NOTE]
 > If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
-### Step 4: Rotate the Secret
+### 4. Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 
 > [!TIP]
 > If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### Step 5: Deploy the Pipeline
+### 5. Deploy the Pipeline
 
 To activate the constructed LogPipeline, apply the  `logpipeline.yaml` resource file in your cluster:
 
