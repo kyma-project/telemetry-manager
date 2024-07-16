@@ -456,7 +456,10 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 ### Not All Spans Arrive at the Backend
 
-**Symptom**: The backend is reachable and the connection is properly configured, but some spans are refused. In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+**Symptom**:
+
+- The backend is reachable and the connection is properly configured, but some spans are refused.
+- In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
@@ -517,7 +520,8 @@ If you just want to see traces for one particular request, you can manually forc
 
 ### Gateway Throttling
 
-**Symptom**: 
+**Symptom**:
+
 - In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
 - Also, your application might have error logs indicating a refusal for pushing traces to the gateway.
 

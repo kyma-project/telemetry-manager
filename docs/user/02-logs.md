@@ -490,7 +490,10 @@ You cannot enable the following plugins, because they potentially harm the stabi
 
 ### Not All Logs Arrive at the Backend
 
-**Symptom**: The backend is reachable and the connection is properly configured, but some logs are refused. In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+**Symptom**:
+
+- The backend is reachable and the connection is properly configured, but some logs are refused.
+- In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate, or the backend is refusing logs because they are too large.
 
