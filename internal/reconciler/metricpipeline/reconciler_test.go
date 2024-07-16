@@ -898,7 +898,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		serverErr := errors.New("failed to get lock: server error")
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailed{Err: serverErr})
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
 		gatewayproberStub := &mocks.DeploymentProber{}
 		gatewayproberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)

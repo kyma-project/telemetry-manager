@@ -63,7 +63,7 @@ func (l *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error
 func (l *Checker) IsLockHolder(ctx context.Context, obj metav1.Object) error {
 	var lock corev1.ConfigMap
 	if err := l.client.Get(ctx, l.lockName, &lock); err != nil {
-		return &errortypes.APIRequestFailed{
+		return &errortypes.APIRequestFailedError{
 			Err: fmt.Errorf("failed to get lock: %w", err),
 		}
 	}

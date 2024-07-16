@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAPIRequestFailed_Error(t *testing.T) {
-	err := APIRequestFailed{
+func TestError(t *testing.T) {
+	err := APIRequestFailedError{
 		Err: errors.New("test error"),
 	}
 	require.Equal(t, "test error", err.Error())

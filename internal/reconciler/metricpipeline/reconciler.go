@@ -248,7 +248,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 
 	// Remaining errors imply that the pipeline is not reconcilable
 	// In case that one of the requests to the Kubernetes API server failed, then the pipeline is also considered non-reconcilable and the error is returned to trigger a requeue
-	var APIRequestFailed *errortypes.APIRequestFailed
+	var APIRequestFailed *errortypes.APIRequestFailedError
 	if errors.As(err, &APIRequestFailed) {
 		return false, APIRequestFailed.Err
 	}

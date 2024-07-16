@@ -40,7 +40,7 @@ func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.S
 		if apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("%w: Secret '%s' of Namespace '%s'", ErrSecretRefNotFound, ref.Name, ref.Namespace)
 		}
-		return nil, &errortypes.APIRequestFailed{
+		return nil, &errortypes.APIRequestFailedError{
 			Err: fmt.Errorf("failed to get Secret '%s' of Namespace '%s': %w", ref.Name, ref.Namespace, err),
 		}
 	}

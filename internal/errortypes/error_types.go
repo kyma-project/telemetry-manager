@@ -1,9 +1,9 @@
 package errortypes
 
-type APIRequestFailed struct {
+type APIRequestFailedError struct {
 	Err error
 }
 
-func (a *APIRequestFailed) Error() string {
+func (a *APIRequestFailedError) Error() string {
 	return a.Err.Error()
 }

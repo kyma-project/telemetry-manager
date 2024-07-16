@@ -113,7 +113,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.ConvertErrToMsg(err)
 	}
 
-	var APIRequestFailed *errortypes.APIRequestFailed
+	var APIRequestFailed *errortypes.APIRequestFailedError
 	if errors.As(err, &APIRequestFailed) {
 		return metav1.ConditionFalse, conditions.ReasonAPIRequestFailed, conditions.MessageForLogPipeline(conditions.ReasonAPIRequestFailed)
 	}
