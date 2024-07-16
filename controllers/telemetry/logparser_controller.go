@@ -19,13 +19,17 @@ limitations under the License.
 import (
 	"context"
 
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 )
@@ -34,15 +38,37 @@ import (
 type LogParserController struct {
 	client.Client
 
-	config     logparser.Config
 	reconciler *logparser.Reconciler
 }
 
-func NewLogParserController(client client.Client, reconciler *logparser.Reconciler, config logparser.Config) *LogParserController {
+type LogParserControllerConfig struct {
+	OverridesConfigMapKey  string
+	OverridesConfigMapName string
+	TelemetryNamespace     string
+}
+
+func NewLogParserController(client client.Client, atomicLevel zap.AtomicLevel, config LogParserControllerConfig) *LogParserController {
+	overridesHandler := overrides.New(client, atomicLevel, overrides.HandlerConfig{
+		ConfigMapName: types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
+		ConfigMapKey:  config.OverridesConfigMapKey,
+	})
+
+	reconcilerCfg := logparser.Config{
+		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: config.TelemetryNamespace},
+		DaemonSet:        types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
+	}
+
+	reconciler := logparser.New(
+		client,
+		reconcilerCfg,
+		&k8sutils.DaemonSetProber{Client: client},
+		&k8sutils.DaemonSetAnnotator{Client: client},
+		overridesHandler,
+	)
+
 	return &LogParserController{
 		Client:     client,
 		reconciler: reconciler,
-		config:     config,
 	}
 }
 
@@ -56,6 +82,6 @@ func (r *LogParserController) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&corev1.ConfigMap{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogParser{}),
-			builder.WithPredicates(predicate.OwnedResourceChanged())).
+			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged())).
 		Complete(r)
 }

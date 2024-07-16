@@ -19,34 +19,100 @@ limitations under the License.
 import (
 	"context"
 
+	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 // LogPipelineController reconciles a LogPipeline object
 type LogPipelineController struct {
 	client.Client
+
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *logpipeline.Reconciler
 }
 
-func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *logpipeline.Reconciler) *LogPipelineController {
+type LogPipelineControllerConfig struct {
+	ExporterImage          string
+	FluentBitCPULimit      string
+	FluentBitCPURequest    string
+	FluentBitMemoryLimit   string
+	FluentBitMemoryRequest string
+	FluentBitImage         string
+	OverridesConfigMapKey  string
+	OverridesConfigMapName string
+	PipelineDefaults       builder.PipelineDefaults
+	PriorityClassName      string
+	SelfMonitorName        string
+	TelemetryNamespace     string
+}
+
+func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, atomicLevel zap.AtomicLevel, config LogPipelineControllerConfig) (*LogPipelineController, error) {
+	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	if err != nil {
+		return nil, err
+	}
+
+	overridesHandler := overrides.New(client, atomicLevel, overrides.HandlerConfig{
+		ConfigMapName: types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
+		ConfigMapKey:  config.OverridesConfigMapKey,
+	})
+
+	reconcilerCfg := logpipeline.Config{
+		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
+		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
+		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: config.TelemetryNamespace},
+		ParsersConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: config.TelemetryNamespace},
+		EnvSecret:             types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: config.TelemetryNamespace},
+		OutputTLSConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: config.TelemetryNamespace},
+		DaemonSet:             types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
+		OverrideConfigMap:     types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
+		PipelineDefaults:      config.PipelineDefaults,
+		DaemonSetConfig: fluentbit.DaemonSetConfig{
+			FluentBitImage:    config.FluentBitImage,
+			ExporterImage:     config.ExporterImage,
+			PriorityClassName: config.PriorityClassName,
+			CPULimit:          resource.MustParse(config.FluentBitCPULimit),
+			MemoryLimit:       resource.MustParse(config.FluentBitMemoryLimit),
+			CPURequest:        resource.MustParse(config.FluentBitCPURequest),
+			MemoryRequest:     resource.MustParse(config.FluentBitMemoryRequest),
+		},
+	}
+
+	reconciler := logpipeline.New(
+		client,
+		reconcilerCfg,
+		&k8sutils.DaemonSetProber{Client: client},
+		flowHealthProber,
+		istiostatus.NewChecker(client),
+		overridesHandler,
+		tlscert.New(client))
+
 	return &LogPipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
-	}
+	}, nil
 }
 
 func (r *LogPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -77,7 +143,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 				mgr.GetRESTMapper(),
 				&telemetryv1alpha1.LogPipeline{},
 			),
-			builder.WithPredicates(predicate.OwnedResourceChanged()),
+			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged()),
 		)
 	}
 

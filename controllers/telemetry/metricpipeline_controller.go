@@ -27,7 +27,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -87,18 +87,18 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 				mgr.GetRESTMapper(),
 				&telemetryv1alpha1.MetricPipeline{},
 			),
-			builder.WithPredicates(predicate.OwnedResourceChanged()),
+			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged()),
 		)
 	}
 
 	return b.Watches(
 		&apiextensionsv1.CustomResourceDefinition{},
 		handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
-		builder.WithPredicates(predicate.CreateOrDelete()),
+		ctrlbuilder.WithPredicates(predicate.CreateOrDelete()),
 	).Watches(
 		&operatorv1alpha1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		builder.WithPredicates(predicate.CreateOrUpdateOrDelete()),
+		ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 

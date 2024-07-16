@@ -56,12 +56,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -82,6 +79,7 @@ import (
 var (
 	certDir            string
 	logLevel           string
+	atomicLevel        zap.AtomicLevel
 	overridesHandler   *overrides.Handler
 	scheme             = runtime.NewScheme()
 	setupLog           = ctrl.Log.WithName("setup")
@@ -103,18 +101,17 @@ var (
 	traceGatewayMemoryRequest        string
 	traceGatewayDynamicMemoryRequest string
 
-	fluentBitDeniedFilterPlugins       string
-	fluentBitDeniedOutputPlugins       string
-	fluentBitMemoryBufferLimit         string
-	fluentBitFsBufferLimit             string
-	fluentBitCPULimit                  string
-	fluentBitMemoryLimit               string
-	fluentBitCPURequest                string
-	fluentBitMemoryRequest             string
-	fluentBitImage                     string
-	fluentBitExporterImage             string
-	fluentBitConfigPrepperImageVersion string
-	fluentBitPriorityClassName         string
+	fluentBitDeniedFilterPlugins string
+	fluentBitDeniedOutputPlugins string
+	fluentBitMemoryBufferLimit   string
+	fluentBitFsBufferLimit       string
+	fluentBitCPULimit            string
+	fluentBitMemoryLimit         string
+	fluentBitCPURequest          string
+	fluentBitMemoryRequest       string
+	fluentBitImage               string
+	fluentBitExporterImage       string
+	fluentBitPriorityClassName   string
 
 	metricGatewayImage                string
 	metricGatewayPriorityClass        string
@@ -142,7 +139,6 @@ const (
 	overridesConfigMapName = "telemetry-override-config"
 	overridesConfigMapKey  = "override-config"
 
-	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-manager-webhook"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
@@ -280,7 +276,7 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-	atomicLevel := zap.NewAtomicLevelAt(parsedLevel)
+	atomicLevel = zap.NewAtomicLevelAt(parsedLevel)
 	ctrLogger, err := logger.New(atomicLevel)
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
@@ -402,18 +398,43 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
-	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace})
+	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
+		mgr.GetClient(),
+		reconcileTriggerChan,
+		atomicLevel,
+		telemetrycontrollers.LogPipelineControllerConfig{
+			ExporterImage:          fluentBitExporterImage,
+			FluentBitCPULimit:      fluentBitCPULimit,
+			FluentBitCPURequest:    fluentBitCPURequest,
+			FluentBitMemoryLimit:   fluentBitMemoryLimit,
+			FluentBitMemoryRequest: fluentBitMemoryRequest,
+			FluentBitImage:         fluentBitImage,
+			OverridesConfigMapKey:  overridesConfigMapKey,
+			OverridesConfigMapName: overridesConfigMapName,
+			PipelineDefaults:       createPipelineDefaults(),
+			PriorityClassName:      fluentBitPriorityClassName,
+			SelfMonitorName:        selfMonitorName,
+			TelemetryNamespace:     telemetryNamespace,
+		},
+	)
 	if err != nil {
-		setupLog.Error(err, "Failed to create flow health prober")
-		os.Exit(1)
-	}
-
-	if err := createLogPipelineController(mgr.GetClient(), reconcileTriggerChan, flowHealthProber).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
 		os.Exit(1)
 	}
+	if err := logPipelineController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to setup controller", "controller", "LogPipeline")
+		os.Exit(1)
+	}
 
-	if err := createLogParserController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	logParserController := telemetrycontrollers.NewLogParserController(
+		mgr.GetClient(),
+		atomicLevel,
+		telemetrycontrollers.LogParserControllerConfig{
+			OverridesConfigMapKey:  overridesConfigMapKey,
+			OverridesConfigMapName: overridesConfigMapName,
+			TelemetryNamespace:     telemetryNamespace,
+		})
+	if err := logParserController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogParser")
 		os.Exit(1)
 	}
@@ -479,60 +500,6 @@ func validateFlags() error {
 	return nil
 }
 
-func createLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.LogPipelineProber) *telemetrycontrollers.LogPipelineController {
-	config := logpipeline.Config{
-		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
-		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
-		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
-		ParsersConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
-		EnvSecret:             types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
-		OutputTLSConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: telemetryNamespace},
-		DaemonSet:             types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
-		OverrideConfigMap:     types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		PipelineDefaults:      createPipelineDefaults(),
-		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			FluentBitImage:              fluentBitImage,
-			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,
-			ExporterImage:               fluentBitExporterImage,
-			PriorityClassName:           fluentBitPriorityClassName,
-			CPULimit:                    resource.MustParse(fluentBitCPULimit),
-			MemoryLimit:                 resource.MustParse(fluentBitMemoryLimit),
-			CPURequest:                  resource.MustParse(fluentBitCPURequest),
-			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
-		},
-	}
-
-	return telemetrycontrollers.NewLogPipelineController(
-		client,
-		reconcileTriggerChan,
-		logpipeline.NewReconciler(
-			client,
-			config,
-			&k8sutils.DaemonSetProber{Client: client},
-			flowHealthProber,
-			overridesHandler,
-		))
-}
-
-func createLogParserController(client client.Client) *telemetrycontrollers.LogParserController {
-	config := logparser.Config{
-		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
-		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
-	}
-
-	return telemetrycontrollers.NewLogParserController(
-		client,
-		logparser.NewReconciler(
-			client,
-			config,
-			&k8sutils.DaemonSetProber{Client: client},
-			&k8sutils.DaemonSetAnnotator{Client: client},
-			overridesHandler,
-		),
-		config,
-	)
-}
-
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
@@ -579,7 +546,7 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 	return telemetrycontrollers.NewTracePipelineController(
 		client,
 		reconcileTriggerChan,
-		tracepipeline.NewReconciler(
+		tracepipeline.New(
 			client,
 			config,
 			&k8sutils.DeploymentProber{Client: client},
@@ -631,7 +598,7 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 	return telemetrycontrollers.NewMetricPipelineController(
 		client,
 		reconcileTriggerChan,
-		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, overridesHandler))
+		metricpipeline.New(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, overridesHandler))
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
@@ -684,7 +651,7 @@ func createTelemetryController(client client.Client, scheme *runtime.Scheme, web
 		SelfMonitor:            selfMonitorConfig,
 	}
 
-	return operator.NewTelemetryController(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)
+	return operator.NewTelemetryController(client, telemetry.New(client, scheme, config, overridesHandler), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {
