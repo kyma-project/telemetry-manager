@@ -311,8 +311,8 @@ To check that the pipeline is running, wait until all status conditions of the T
 
 ```bash
 kubectl get tracepipeline
-NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   FLOW HEALTHY   AGE
-backend   True                      True              True           2m
+NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   FLOW HEALTHY
+backend   True                      True              True        
 ```
 
 ## Kyma Modules With Tracing Capabilities

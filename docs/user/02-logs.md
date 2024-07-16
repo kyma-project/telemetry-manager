@@ -348,8 +348,8 @@ To check that the pipeline is running, wait until all status conditions of the L
 
 ```bash
 kubectl get logpipeline
-NAME      CONFIGURATION GENERATED   AGENT HEALTHY   FLOW HEALTHY   UNSUPPORTED MODE   AGE
-backend   True                      True            True           false              2m
+NAME      CONFIGURATION GENERATED   AGENT HEALTHY   FLOW HEALTHY
+backend   True                      True            True        
 ```
 
 ## Log Record Processing

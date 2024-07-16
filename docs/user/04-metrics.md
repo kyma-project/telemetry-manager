@@ -550,8 +550,8 @@ To check that the pipeline is running, wait until all status conditions of the M
 
 ```bash
 kubectl get metricpipeline
-NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   AGENT HEALTHY   FLOW HEALTHY   AGE
-backend   True                      True              True            True           2m
+NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   AGENT HEALTHY   FLOW HEALTHY
+backend   True                      True              True            True        
 ```
 
 ## Operations
