@@ -95,7 +95,7 @@ type Reconciler struct {
 	pipelineValidator     pipelineValidator
 }
 
-func NewReconciler(client client.Client,
+func New(client client.Client,
 	config Config,
 	prober DeploymentProber,
 	flowHealthProber FlowHealthProber,
