@@ -2,6 +2,7 @@ package tracepipeline
 
 import (
 	"context"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -17,6 +18,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
@@ -678,6 +680,66 @@ func TestReconcile(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("a request to the Kubernetes API server has failed when validating the pipeline", func(t *testing.T) {
+		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		serverErr := errors.New("failed to get lock: server error")
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailed{Err: serverErr})
+
+		proberStub := &mocks.DeploymentProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		sut := Reconciler{
+			Client:                fakeClient,
+			config:                testConfig,
+			gatewayConfigBuilder:  gatewayConfigBuilderMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
+			pipelineLock:          pipelineLockStub,
+			prober:                proberStub,
+			flowHealthProber:      flowHealthProberStub,
+			overridesHandler:      overridesHandlerStub,
+			istioStatusChecker:    istioStatusCheckerStub,
+			pipelineValidator: pipelineValidator{
+				client:           fakeClient,
+				tlsCertValidator: stubs.NewTLSCertValidator(nil),
+				pipelineLock:     pipelineLockStub,
+			},
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.True(t, errors.Is(err, serverErr))
+
+		var updatedPipeline telemetryv1alpha1.TracePipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonAPIRequestFailed,
+			"One of the requests to the Kubernetes API server has failed",
+		)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No spans delivered to backend because TracePipeline specification is not applied to the configuration of Trace gateway. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
+		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
 
 	t.Run("all trace pipelines are non-reconcilable", func(t *testing.T) {
