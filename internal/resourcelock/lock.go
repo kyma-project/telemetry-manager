@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var ErrMaxPipelinesExceeded = errors.New("Maximum pipeline count limit exceeded")
+var ErrMaxPipelinesExceeded = errors.New("maximum pipeline count limit exceeded")
 
 type Checker struct {
 	client    client.Client

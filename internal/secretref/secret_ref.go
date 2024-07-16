@@ -18,8 +18,8 @@ type Getter interface {
 }
 
 var (
-	ErrSecretKeyNotFound = errors.New("One or more keys in a referenced Secret are missing") //nolint:stylecheck //Message will be used in condition message and must be capitalized
-	ErrSecretRefNotFound = errors.New("One or more referenced Secrets are missing")          //nolint:stylecheck //Message will be used in condition message and must be capitalized
+	ErrSecretKeyNotFound = errors.New("one or more keys in a referenced Secret are missing")
+	ErrSecretRefNotFound = errors.New("one or more referenced Secrets are missing")
 )
 
 func VerifySecretReference(ctx context.Context, client client.Reader, getter Getter) error {

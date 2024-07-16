@@ -92,11 +92,11 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
-		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, err.Error()
+		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.ConvertErrToMsg(err)
 	}
 
 	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
-		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, err.Error()
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.ConvertErrToMsg(err)
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailed

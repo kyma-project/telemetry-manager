@@ -1,5 +1,7 @@
 package conditions
 
+import "strings"
+
 const (
 	TypeAgentHealthy            = "AgentHealthy"
 	TypeConfigurationGenerated  = "ConfigurationGenerated"
@@ -113,4 +115,10 @@ func message(reason string, specializedMessages map[string]string) string {
 		return condMessage
 	}
 	return ""
+}
+
+// ConvertErrToMsg converts the error to a condition message by capitalizing the error message
+func ConvertErrToMsg(err error) string {
+	errMsg := err.Error()
+	return strings.ToUpper(errMsg[:1]) + errMsg[1:]
 }
