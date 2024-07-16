@@ -115,7 +115,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonMaxPipelinesExceeded,
-						Message: conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded),
+						Message: "Maximum pipeline count limit exceeded",
 					}).
 					Build(),
 				testutils.NewTracePipelineBuilder().

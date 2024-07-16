@@ -156,7 +156,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonMaxPipelinesExceeded,
-						Message: conditions.MessageForMetricPipeline(conditions.ReasonMaxPipelinesExceeded),
+						Message: "Maximum pipeline count limit exceeded",
 					}).
 					Build(),
 			},

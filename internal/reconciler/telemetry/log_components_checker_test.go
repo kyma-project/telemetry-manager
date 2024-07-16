@@ -122,7 +122,7 @@ func TestLogComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonUnsupportedLokiOutput,
-						Message: conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput),
+						Message: "The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 					}).
 					Build(),
 			},
