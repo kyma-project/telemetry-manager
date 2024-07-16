@@ -120,7 +120,7 @@ To integrate with external systems, you must configure authentication  details. 
 #### **mTLS**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1
+apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
   name: backend
@@ -143,7 +143,7 @@ spec:
 #### **Basic Authentication**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1
+apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
   name: backend
@@ -163,7 +163,7 @@ spec:
 #### **Token-based authentication with custom headers**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1
+apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
   name: backend
@@ -193,7 +193,7 @@ You can store the value of the token in the referenced Secret without any prefix
 #### **mTLS**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1
+apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
   name: backend
@@ -220,7 +220,7 @@ spec:
 #### **Basic Authentication**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1
+apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
   name: backend
@@ -252,7 +252,7 @@ spec:
 #### **Token-based authentication with custom headers**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1
+apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
   name: backend
