@@ -2,6 +2,7 @@ package metricpipeline
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -881,6 +883,66 @@ func TestReconcile(t *testing.T) {
 			})
 		}
 
+	})
+
+	t.Run("a request to the Kubernetes API server has failed when validating the pipeline", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().WithName("pipeline").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		serverErr := errors.New("failed to get lock: server error")
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailed{Err: serverErr})
+
+		gatewayproberStub := &mocks.DeploymentProber{}
+		gatewayproberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		sut := Reconciler{
+			Client:                fakeClient,
+			config:                testConfig,
+			gatewayConfigBuilder:  gatewayConfigBuilderMock,
+			gatewayApplierDeleter: gatewayApplierDeleterMock,
+			pipelineLock:          pipelineLockStub,
+			gatewayProber:         gatewayproberStub,
+			flowHealthProber:      flowHealthProberStub,
+			overridesHandler:      overridesHandlerStub,
+			istioStatusChecker:    istioStatusCheckerStub,
+			pipelineValidator: pipelineValidator{
+				client:           fakeClient,
+				tlsCertValidator: stubs.NewTLSCertValidator(nil),
+				pipelineLock:     pipelineLockStub,
+			},
+		}
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.True(t, errors.Is(err, serverErr))
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonAPIRequestFailed,
+			"One of the requests to the Kubernetes API server has failed",
+		)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
+		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
 	})
 
 	t.Run("all metric pipelines are non-reconcilable", func(t *testing.T) {
