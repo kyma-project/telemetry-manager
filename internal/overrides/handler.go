@@ -34,7 +34,7 @@ type Handler struct {
 }
 
 type HandlerConfig struct {
-	ConfigNamespace string
+	SystemNamespace string
 }
 
 type Option = func(*Handler)
@@ -55,12 +55,11 @@ func DefaultAtomicLevel() zap.AtomicLevel {
 
 func New(client client.Reader, config HandlerConfig, opts ...Option) *Handler {
 	h := &Handler{
-		client:       client,
-		config:       config,
-		atomicLevel:  defaultAtomicLevel,
-		defaultLevel: defaultAtomicLevel.Level(),
+		client: client,
+		config: config,
 	}
 
+	WithAtomicLevel(DefaultAtomicLevel())(h)
 	for _, opt := range opts {
 		opt(h)
 	}
@@ -105,7 +104,7 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 	var cm corev1.ConfigMap
 	cmName := types.NamespacedName{
 		Name:      configMapName,
-		Namespace: h.config.ConfigNamespace,
+		Namespace: h.config.SystemNamespace,
 	}
 	if err := h.client.Get(ctx, cmName, &cm); err != nil {
 		if apierrors.IsNotFound(err) {

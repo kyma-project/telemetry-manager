@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	istiosecurityclientv1beta "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -326,7 +325,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	overridesHandler = overrides.New(mgr.GetClient(), overrides.HandlerConfig{ConfigNamespace: telemetryNamespace})
+	overridesHandler = overrides.New(mgr.GetClient(), overrides.HandlerConfig{SystemNamespace: telemetryNamespace})
 
 	tracePipelineReconcileTriggerChan := make(chan event.GenericEvent)
 	enableTracingController(mgr, tracePipelineReconcileTriggerChan)
@@ -522,8 +521,7 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 			},
 			OTLPServiceName: traceOTLPServiceName,
 		},
-		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		MaxPipelines:           maxTracePipelines,
+		MaxPipelines: maxTracePipelines,
 	}
 
 	return telemetrycontrollers.NewTracePipelineController(
@@ -573,9 +571,8 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 			},
 			OTLPServiceName: metricOTLPServiceName,
 		},
-		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		MaxPipelines:           maxMetricPipelines,
-		ModuleVersion:          version,
+		MaxPipelines:  maxMetricPipelines,
+		ModuleVersion: version,
 	}
 
 	return telemetrycontrollers.NewMetricPipelineController(
@@ -629,9 +626,8 @@ func createTelemetryController(client client.Client, scheme *runtime.Scheme, web
 			OTLPServiceName: metricOTLPServiceName,
 			Namespace:       telemetryNamespace,
 		},
-		Webhook:                webhookConfig,
-		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		SelfMonitor:            selfMonitorConfig,
+		Webhook:     webhookConfig,
+		SelfMonitor: selfMonitorConfig,
 	}
 
 	return operator.NewTelemetryController(client, telemetry.New(client, scheme, config, overridesHandler), config)

@@ -55,7 +55,7 @@ func NewLogParserController(client client.Client, config LogParserControllerConf
 		reconcilerCfg,
 		&k8sutils.DaemonSetProber{Client: client},
 		&k8sutils.DaemonSetAnnotator{Client: client},
-		overrides.New(client, overrides.HandlerConfig{ConfigNamespace: config.TelemetryNamespace}),
+		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 	)
 
 	return &LogParserController{

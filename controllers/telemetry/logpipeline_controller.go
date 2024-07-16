@@ -96,7 +96,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		&k8sutils.DaemonSetProber{Client: client},
 		flowHealthProber,
 		istiostatus.NewChecker(client),
-		overrides.New(client, overrides.HandlerConfig{ConfigNamespace: config.TelemetryNamespace}),
+		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		tlscert.New(client))
 
 	return &LogPipelineController{
