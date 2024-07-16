@@ -13,7 +13,7 @@ If you want more flexibility than provided by the proprietary protocol, you can 
 
 ## Prerequisites
 
-Your application must log to `stdout` or `stderr`, , which ensures that the logs can be processed by Kubernetes primitives like `kubectl logs`. For details, see [Kubernetes: Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
+Your application must log to `stdout` or `stderr`, which ensures that the logs can be processed by Kubernetes primitives like `kubectl logs`. For details, see [Kubernetes: Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
 
 ## Architecture
 
