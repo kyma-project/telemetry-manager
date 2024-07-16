@@ -160,7 +160,7 @@ spec:
             value: myPwd
 ```
 
-#### **Token-Based With Custom Headers**
+#### **Token-based authentication with custom headers**
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1
@@ -249,7 +249,7 @@ spec:
                 key: password
 ```
 
-#### **Token-Based With Custom Headers**
+#### **Token-based authentication with custom headers**
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1

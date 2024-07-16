@@ -17,7 +17,7 @@ While application logs and traces usually provide request-oriented data, metrics
 
 ## Architecture
 
-In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OTLP protocol](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma components and users' applications send the metrics data.
+In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma modules and users’ applications send the metrics data.
 
 Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can pull metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
 
@@ -285,7 +285,7 @@ stringData:
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 
 > [!TIP]
-> If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
+> If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
 ### 4. Activate Prometheus-Based Metrics
 
@@ -315,13 +315,13 @@ For metrics ingestion to start automatically, simply apply the following annotat
 
 | Annotation Key                     | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
 |------------------------------------|-------------------|-------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `prometheus.io/scrape` (mandatory) | `true`, `false` | None | Controls whether Prometheus automatically scrapes metrics from this target.                                                                                                                                                                                                                                                             |
-| `prometheus.io/port` (mandatory)   | `8080`, `9100` | None | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
+| `prometheus.io/scrape` (mandatory) | `true`, `false` | none | Controls whether Prometheus automatically scrapes metrics from this target.                                                                                                                                                                                                                                                             |
+| `prometheus.io/port` (mandatory)   | `8080`, `9100` | none | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
 | `prometheus.io/path`               | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
 | `prometheus.io/scheme`             | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
 
 > [!NOTE]
-> The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
+> The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
 
 ### 5. Activate Runtime Metrics
 
@@ -548,11 +548,11 @@ You activated a MetricPipeline and metrics start streaming to your backend.
 
 To check that the pipeline is running, wait until all status conditions of the MetricPipeline in your cluster have status `True`:
 
-    ```bash
-    kubectl get metricpipeline
-    NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   AGENT HEALTHY   FLOW HEALTHY   AGE
-    backend   True                      True              True            True           2m
-    ```
+```bash
+kubectl get metricpipeline
+NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   AGENT HEALTHY   FLOW HEALTHY   AGE
+backend   True                      True              True            True           2m
+```
 
 ## Operations
 
@@ -576,7 +576,10 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 ### No Metrics Arrive at the Backend
 
-**Symptom**: No metrics arrive at the backend. In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
+**Symptom**:
+
+- No metrics arrive at the backend.
+- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
 
@@ -588,7 +591,10 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 ### Not All Metrics Arrive at the Backend
 
-**Symptom**: The backend is reachable and the connection is properly configured, but some metrics are refused. In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+**Symptom**:
+
+- The backend is reachable and the connection is properly configured, but some metrics are refused.
+- In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
@@ -602,17 +608,17 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Symptom**: Custom metrics don't arrive at the backend, but Istio metrics do.
 
-**Cause**: Your SDK version is incompatible with the OTel collector version.
+**Cause**: Your SDK version is incompatible with the OTel Collector version.
 
 **Remedy**:
 
 1. Check which SDK version you are using for instrumentation.
-2. Investigate whether it is compatible with the OTel collector version.
+2. Investigate whether it is compatible with the OTel Collector version.
 3. If required, upgrade to a supported SDK version.
 
 ### Log Entry: Failed to Scrape Prometheus Endpoint
 
-**Symptom**: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
+**Symptom**: Custom metrics don't arrive at the destination and the OTel Collector produces log entries saying "Failed to scrape Prometheus endpoint", such as the following example:
 
 ```bash
 2023-08-29T09:53:07.123Z warn internal/transaction.go:111 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
@@ -645,4 +651,4 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: Gateway cannot receive metrics at the given rate.
 
-**Remedy**: Manually scale out the gateway by increasing the number of replicas for the Metric gateway. See [Module Configuration](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Remedy**: Manually scale out the gateway by increasing the number of replicas for the Metric gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
