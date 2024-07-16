@@ -97,7 +97,7 @@ You can set up shipment of applications and access logs to SAP Cloud Logging. Th
       </details>
     </div>
 
-2. Wait for the LogPipeline to be in the `Running` state. To check the state, run `kubectl get logpipelines`.
+2. Wait for the LogPipeline to be in the `Running` state. To check the state, run: `kubectl get logpipelines`.
 
 ### Set Up Access Logs
 
@@ -155,7 +155,7 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
       </details>
     </div>
 
-4. Wait for the LogPipeline to be in the `Running` state. To check the state, run `kubectl get logpipelines`.
+4. Wait for the LogPipeline to be in the `Running` state. To check the state, run: `kubectl get logpipelines`.
 
 ## Ship Distributed Traces to SAP Cloud Logging
 
@@ -224,7 +224,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
      </details>
    </div>
 
-3. Wait for the TracePipeline to be in the `Running` state. To check the state, run `kubectl get tracepipelines`.
+3. Wait for the TracePipeline to be in the `Running` state. To check the state, run: `kubectl get tracepipelines`.
 
 ## Ship Metrics to SAP Cloud Logging
 
@@ -282,7 +282,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
    For the available options, see [Metrics](./../../04-metrics.md).
 
-3. Wait for the MetricPipeline to be in the `Running` state. To check the state, run `kubectl get metricpipelines`.
+3. Wait for the MetricPipeline to be in the `Running` state. To check the state, run: `kubectl get metricpipelines`.
 
 ## Set Up Kyma Dashboard Integration
 
@@ -332,7 +332,7 @@ Learn how to define and import recommended alerts for SAP Cloud Logging. The fol
    | Kyma Telemetry Integration | [Metric ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | The MetricPipeline for shipping [metrics](#ship-metrics-to-sap-cloud-logging) might lose connectivity to SAP Cloud Logging, with the effect that no metrics are ingested anymore. |
 
 5. Edit notification action: Add the `destination` and adjust the intervals and thresholds to your needs.
-6. Verify that the new monitor definition is listed among the SAP Cloud Monitoring alerts.
+6. Verify that the new monitor definition is listed among the SAP Cloud Logging alerts.
 
 ## Use SAP Cloud Logging Dashboards
 
