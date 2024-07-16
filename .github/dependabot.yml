@@ -6,9 +6,10 @@ updates:
     schedule:
       interval: "daily"
     commit-message:
-      prefix: "chore(dependabot)"
+      prefix: "chore"
     labels:
       - "area/dependency"
+      - "kind/chore"
     ignore:
       - dependency-name: "kyma-project/prod/tpi/fluent-bit"
 
@@ -21,15 +22,17 @@ updates:
         patterns:
           - "go.opentelemetry.io/otel/*"
     commit-message:
-      prefix: "chore(dependabot)"
+      prefix: "chore"
     labels:
       - "area/dependency"
+      - "kind/chore"
 
   - package-ecosystem: "gomod"
     directory: "/internal/tools"
     schedule:
       interval: "daily"
     commit-message:
-      prefix: "chore(dependabot)"
+      prefix: "chore"
     labels:
       - "area/ci"
+      - "kind/chore"
