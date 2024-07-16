@@ -66,7 +66,7 @@ The default protocol is GRPC, but you can choose HTTP instead. Depending on the 
 
 - For GRPC, use:
   ```yaml
-  apiVersion: telemetry.kyma-project.io/v1
+  apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
   metadata:
     name: backend
@@ -80,7 +80,7 @@ The default protocol is GRPC, but you can choose HTTP instead. Depending on the 
 - For HTTP, use the `protocol` attribute:
 
   ```yaml
-  apiVersion: telemetry.kyma-project.io/v1
+  apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
   metadata:
     name: backend
