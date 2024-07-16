@@ -2,10 +2,12 @@ package metricpipeline
 
 import (
 	"context"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type TLSCertValidator interface {

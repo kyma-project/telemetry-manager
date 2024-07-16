@@ -2,8 +2,9 @@ package errortypes
 
 import (
 	"errors"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestAPIRequestFailed_Error(t *testing.T) {
