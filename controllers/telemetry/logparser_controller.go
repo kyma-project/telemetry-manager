@@ -19,7 +19,6 @@ limitations under the License.
 import (
 	"context"
 
-	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,17 +41,10 @@ type LogParserController struct {
 }
 
 type LogParserControllerConfig struct {
-	OverridesConfigMapKey  string
-	OverridesConfigMapName string
-	TelemetryNamespace     string
+	TelemetryNamespace string
 }
 
-func NewLogParserController(client client.Client, atomicLevel zap.AtomicLevel, config LogParserControllerConfig) *LogParserController {
-	overridesHandler := overrides.New(client, atomicLevel, overrides.HandlerConfig{
-		ConfigMapName: types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
-		ConfigMapKey:  config.OverridesConfigMapKey,
-	})
-
+func NewLogParserController(client client.Client, config LogParserControllerConfig) *LogParserController {
 	reconcilerCfg := logparser.Config{
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: config.TelemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
@@ -63,7 +55,7 @@ func NewLogParserController(client client.Client, atomicLevel zap.AtomicLevel, c
 		reconcilerCfg,
 		&k8sutils.DaemonSetProber{Client: client},
 		&k8sutils.DaemonSetAnnotator{Client: client},
-		overridesHandler,
+		overrides.New(client, overrides.HandlerConfig{ConfigNamespace: config.TelemetryNamespace}),
 	)
 
 	return &LogParserController{

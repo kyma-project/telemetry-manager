@@ -3,6 +3,7 @@ package overrides
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -13,6 +14,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	// name of the configmap where the overrides config is stored, the namespace is provided using HandlerConfig
+	configMapName = "telemetry-override-config"
+	// config key in the overrides configmap
+	configKey = "override-config"
+)
+
+var (
+	defaultAtomicLevel zap.AtomicLevel
+	once               sync.Once
+)
+
 type Handler struct {
 	client       client.Reader
 	config       HandlerConfig
@@ -21,17 +34,38 @@ type Handler struct {
 }
 
 type HandlerConfig struct {
-	ConfigMapName types.NamespacedName
-	ConfigMapKey  string
+	ConfigNamespace string
 }
 
-func New(client client.Reader, atomicLevel zap.AtomicLevel, config HandlerConfig) *Handler {
-	return &Handler{
-		atomicLevel:  atomicLevel,
-		defaultLevel: atomicLevel.Level(),
+type Option = func(*Handler)
+
+func WithAtomicLevel(level zap.AtomicLevel) Option {
+	return func(h *Handler) {
+		h.atomicLevel = level
+		h.defaultLevel = level.Level()
+	}
+}
+
+func DefaultAtomicLevel() zap.AtomicLevel {
+	once.Do(func() {
+		defaultAtomicLevel = zap.NewAtomicLevel()
+	})
+	return defaultAtomicLevel
+}
+
+func New(client client.Reader, config HandlerConfig, opts ...Option) *Handler {
+	h := &Handler{
 		client:       client,
 		config:       config,
+		atomicLevel:  defaultAtomicLevel,
+		defaultLevel: defaultAtomicLevel.Level(),
 	}
+
+	for _, opt := range opts {
+		opt(h)
+	}
+
+	return h
 }
 
 func (h *Handler) LoadOverrides(ctx context.Context) (*Config, error) {
@@ -69,14 +103,17 @@ func (h *Handler) loadOverridesConfig(ctx context.Context) (*Config, error) {
 
 func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 	var cm corev1.ConfigMap
-	cmName := h.config.ConfigMapName
+	cmName := types.NamespacedName{
+		Name:      configMapName,
+		Namespace: h.config.ConfigNamespace,
+	}
 	if err := h.client.Get(ctx, cmName, &cm); err != nil {
 		if apierrors.IsNotFound(err) {
 			return "", nil
 		}
 		return "", fmt.Errorf("failed to get overrides configmap: %w", err)
 	}
-	if data, ok := cm.Data[h.config.ConfigMapKey]; ok {
+	if data, ok := cm.Data[configKey]; ok {
 		return data, nil
 	}
 	return "", nil
