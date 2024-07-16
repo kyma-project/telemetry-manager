@@ -100,11 +100,13 @@ func NewReconciler(client client.Client,
 	prober DeploymentProber,
 	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler) *Reconciler {
+
 	pipelineLock := resourcelock.New(client,
 		types.NamespacedName{
 			Name:      "telemetry-tracepipeline-lock",
 			Namespace: config.Gateway.Namespace,
 		}, config.MaxPipelines)
+
 	return &Reconciler{
 		Client: client,
 		config: config,
