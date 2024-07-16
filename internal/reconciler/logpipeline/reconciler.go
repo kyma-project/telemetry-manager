@@ -35,7 +35,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
-	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -85,34 +84,38 @@ type IstioStatusChecker interface {
 
 type Reconciler struct {
 	client.Client
-	config                     Config
-	pipelinesConditionsCleared bool
 
-	prober             DaemonSetProber
+	config Config
+	syncer syncer
+
+	// Dependencies
+	agentProber        DaemonSetProber
 	flowHealthProber   FlowHealthProber
-	tlsCertValidator   TLSCertValidator
-	syncer             syncer
-	overridesHandler   OverridesHandler
 	istioStatusChecker IstioStatusChecker
+	overridesHandler   OverridesHandler
+	tlsCertValidator   TLSCertValidator
 }
 
-func NewReconciler(
+func New(
 	client client.Client,
 	config Config,
 	agentProber DaemonSetProber,
 	flowHealthProber FlowHealthProber,
-	overridesHandler *overrides.Handler) *Reconciler {
-	var r Reconciler
-	r.Client = client
-	r.config = config
-	r.prober = agentProber
-	r.flowHealthProber = flowHealthProber
-	r.syncer = syncer{client, config}
-	r.overridesHandler = overridesHandler
-	r.istioStatusChecker = istiostatus.NewChecker(client)
-	r.tlsCertValidator = tlscert.New(client)
+	istioStatusChecker IstioStatusChecker,
+	overridesHandler OverridesHandler,
+	tlsCertValidator TLSCertValidator,
+) *Reconciler {
+	return &Reconciler{
+		Client: client,
+		config: config,
+		syncer: syncer{client, config},
 
-	return &r
+		agentProber:        agentProber,
+		flowHealthProber:   flowHealthProber,
+		istioStatusChecker: istioStatusChecker,
+		tlsCertValidator:   tlsCertValidator,
+		overridesHandler:   overridesHandler,
+	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -151,10 +154,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := r.List(ctx, &allPipelines); err != nil {
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
-	}
-
-	if err = r.clearPipelinesConditions(ctx, allPipelines.Items); err != nil {
-		return fmt.Errorf("failed to clear the conditions list for log pipelines: %w", err)
 	}
 
 	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
@@ -441,23 +440,4 @@ func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 		return false
 	}
 	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
-}
-
-// clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation
-// This is done to clear the legacy conditions ("Running" and "Pending") at the end of the conditions list
-// TODO: Remove this logic after the legacy conditions ("Running" and "Pending") are cleaned up
-func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) error {
-	if r.pipelinesConditionsCleared {
-		return nil
-	}
-
-	for i := range allPipelines {
-		allPipelines[i].Status.Conditions = []metav1.Condition{}
-		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
-			return fmt.Errorf("failed to update LogPipeline status: %w", err)
-		}
-	}
-	r.pipelinesConditionsCleared = true
-
-	return nil
 }

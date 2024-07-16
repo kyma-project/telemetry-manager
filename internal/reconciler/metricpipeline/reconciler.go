@@ -102,7 +102,7 @@ type Reconciler struct {
 	istioStatusChecker    IstioStatusChecker
 }
 
-func NewReconciler(
+func New(
 	client client.Client,
 	config Config,
 	gatewayProber DeploymentProber,

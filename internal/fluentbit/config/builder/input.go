@@ -14,7 +14,7 @@ func createInputSection(pipeline *telemetryv1alpha1.LogPipeline, includePath, ex
 	inputBuilder.AddConfigParam("alias", pipeline.Name)
 	inputBuilder.AddConfigParam("path", includePath)
 	inputBuilder.AddIfNotEmpty("exclude_path", excludePath)
-	inputBuilder.AddConfigParam("multiline.parser", "docker, cri, go, python, java")
+	inputBuilder.AddConfigParam("multiline.parser", "cri")
 	inputBuilder.AddConfigParam("tag", fmt.Sprintf("%s.*", pipeline.Name))
 	inputBuilder.AddConfigParam("skip_long_lines", "on")
 	inputBuilder.AddConfigParam("db", fmt.Sprintf("/data/flb_%s.db", pipeline.Name))

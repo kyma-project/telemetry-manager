@@ -109,7 +109,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 
     ```bash
     kubectl apply -n istio-system -f - <<EOF
-    apiVersion: telemetry.istio.io/v1alpha1
+    apiVersion: telemetry.istio.io/v1
     kind: Telemetry
     metadata:
       name: tracing-default
@@ -213,7 +213,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
         helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
         helm repo update
 
-        helm upgrade --install -n ${DYNATRACE_NS} dynatrace-exporter open-telemetry/opentelemetry-collector -f exporter-values.yaml
+        helm upgrade --install -n ${DYNATRACE_NS} dynatrace-exporter open-telemetry/opentelemetry-collector -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/dynatrace/exporter-values.yaml
         ```
 
   1. Deploy the MetricPipeline that ships to the custom OTel Collector:

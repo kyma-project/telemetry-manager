@@ -38,9 +38,12 @@ func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config Builde
 
 	var sb strings.Builder
 	sb.WriteString(createInputSection(pipeline, includePath, excludePath))
+	// skip if the filter is a multiline filter, multiline filter should be first filter in the pipeline filter chain
+	// see for more details https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace
+	sb.WriteString(createCustomFilters(pipeline, multilineFilter))
 	sb.WriteString(createRecordModifierFilter(pipeline))
 	sb.WriteString(createKubernetesFilter(pipeline))
-	sb.WriteString(createCustomFilters(pipeline))
+	sb.WriteString(createCustomFilters(pipeline, nonMultilineFilter))
 	sb.WriteString(createLuaDedotFilter(pipeline))
 	sb.WriteString(createOutputSection(pipeline, config.PipelineDefaults))
 

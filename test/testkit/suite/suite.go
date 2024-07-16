@@ -39,13 +39,13 @@ func sanitizeSpecID(filePath string) string {
 }
 
 const (
-	LabelLogs                  = "logs"
-	LabelTraces                = "traces"
-	LabelMetrics               = "metrics"
-	LabelTelemetry             = "telemetry"
-	LabelV1Beta1               = "v1beta1"
-	LabelTelemetryLogsAnalysis = "telemetry-logs-analysis"
-	LabelMaxPipeline           = "max-pipeline"
+	LabelLogs                 = "logs"
+	LabelTraces               = "traces"
+	LabelMetrics              = "metrics"
+	LabelTelemetry            = "telemetry"
+	LabelV1Beta1              = "v1beta1"
+	LabelTelemetryLogAnalysis = "telemetry-log-analysis"
+	LabelMaxPipeline          = "max-pipeline"
 
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
 	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"

@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,15 +50,15 @@ type DaemonSetAnnotator interface {
 
 type Reconciler struct {
 	client.Client
-	config                   Config
-	prober                   DaemonSetProber
-	annotator                DaemonSetAnnotator
-	syncer                   syncer
-	overridesHandler         *overrides.Handler
-	parsersConditionsCleared bool
+
+	config           Config
+	prober           DaemonSetProber
+	annotator        DaemonSetAnnotator
+	syncer           syncer
+	overridesHandler *overrides.Handler
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
+func New(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client:           client,
 		config:           config,
@@ -108,10 +107,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, parser *telemetryv1alpha1.
 		return fmt.Errorf("failed to list log parsers: %w", err)
 	}
 
-	if err = r.clearParsersConditions(ctx, allParsers.Items); err != nil {
-		return fmt.Errorf("failed to clear the conditions list for log parsers: %w", err)
-	}
-
 	if err = ensureFinalizer(ctx, r.Client, parser); err != nil {
 		return err
 	}
@@ -142,23 +137,4 @@ func (r *Reconciler) calculateConfigChecksum(ctx context.Context) (string, error
 		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
 	}
 	return configchecksum.Calculate([]corev1.ConfigMap{cm}, nil), nil
-}
-
-// clearPipelinesConditions clears the status conditions for all LogPipelines only in the 1st reconciliation
-// This is done to clear the legacy conditions ("Running" and "Pending") at the end of the conditions list
-// TODO: Remove this logic after the legacy conditions ("Running" and "Pending") are cleaned up
-func (r *Reconciler) clearParsersConditions(ctx context.Context, allParsers []telemetryv1alpha1.LogParser) error {
-	if r.parsersConditionsCleared {
-		return nil
-	}
-
-	for i := range allParsers {
-		allParsers[i].Status.Conditions = []metav1.Condition{}
-		if err := r.Status().Update(ctx, &allParsers[i]); err != nil {
-			return fmt.Errorf("failed to update LogParser status: %w", err)
-		}
-	}
-	r.parsersConditionsCleared = true
-
-	return nil
 }
