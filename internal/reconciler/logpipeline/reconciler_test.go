@@ -317,7 +317,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
 			conditions.ReasonUnsupportedLokiOutput,
-			"grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
+			"The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 		)
 
 		requireHasStatusCondition(t, updatedPipeline,

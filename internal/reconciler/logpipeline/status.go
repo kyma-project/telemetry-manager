@@ -2,6 +2,7 @@ package logpipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -12,9 +13,9 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -99,26 +100,25 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 }
 
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
-	if pipeline.Spec.Output.IsLokiDefined() {
-		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)
+	err := r.pipelineValidator.validate(ctx, pipeline)
+	if err == nil {
+		return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured)
 	}
 
-	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
-		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, err.Error()
+	if errors.Is(err, errUnsupportedLokiOutput) {
+		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.ConvertErrToMsg(err)
 	}
 
-	if tlsValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSBundle{
-			Cert: pipeline.Spec.Output.HTTP.TLSConfig.Cert,
-			Key:  pipeline.Spec.Output.HTTP.TLSConfig.Key,
-			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,
-		}
-
-		err := r.tlsCertValidator.Validate(ctx, tlsConfig)
-		return conditions.EvaluateTLSCertCondition(err, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured))
+	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.ConvertErrToMsg(err)
 	}
 
-	return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured)
+	var APIRequestFailed *errortypes.APIRequestFailed
+	if errors.As(err, &APIRequestFailed) {
+		return metav1.ConditionFalse, conditions.ReasonAPIRequestFailed, conditions.MessageForLogPipeline(conditions.ReasonAPIRequestFailed)
+	}
+
+	return conditions.EvaluateTLSCertCondition(err)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
