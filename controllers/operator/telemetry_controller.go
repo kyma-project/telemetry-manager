@@ -22,7 +22,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -59,23 +59,23 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&corev1.Secret{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1alpha1.Telemetry{}),
-			builder.WithPredicates(predicate.OwnedResourceChanged())).
+			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged())).
 		Watches(
 			&admissionregistrationv1.ValidatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
-			builder.WithPredicates(predicate.UpdateOrDelete())).
+			ctrlbuilder.WithPredicates(predicate.UpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
-			builder.WithPredicates(predicate.CreateOrUpdateOrDelete())).
+			ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
-			builder.WithPredicates(predicate.CreateOrUpdateOrDelete())).
+			ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
-			builder.WithPredicates(predicate.CreateOrUpdateOrDelete()))
+			ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete()))
 
 	return b.Complete(r)
 }

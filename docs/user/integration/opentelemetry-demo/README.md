@@ -70,7 +70,7 @@ To [enable Istio](../../03-traces.md#2-enable-istio-tracing) to report span data
 
    ```bash
    cat <<EOF | kubectl apply -f -
-   apiVersion: telemetry.istio.io/v1alpha1
+   apiVersion: telemetry.istio.io/v1
    kind: Telemetry
    metadata:
      name: tracing-default
@@ -160,7 +160,7 @@ To capture the spans reported by the browser, you must expose the trace endpoint
     export CLUSTER_DOMAIN={my-domain}
     
     cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -
-    apiVersion: networking.istio.io/v1beta1
+    apiVersion: networking.istio.io/v1
     kind: VirtualService
     metadata:
       name: frontend

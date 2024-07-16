@@ -105,12 +105,11 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
 
 3. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection).
 
-4. Enable Istio access logs for your workload. See [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
+1. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection).
 
-   > [!WARNING]
-   > The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
+2. Enable Istio access logs for your workload. See [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
 
-5. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma with the following script:
+3. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma with the following script:
 
    <div tabs name="accesslogs">
      <details><summary>Script: Access Logs</summary>
@@ -156,7 +155,7 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
       </details>
     </div>
 
-6. Wait for the LogPipeline to be in the `Running` state. To check the state, run `kubectl get logpipelines`.
+4. Wait for the LogPipeline to be in the `Running` state. To check the state, run `kubectl get logpipelines`.
 
 ## Ship Distributed Traces to SAP Cloud Logging
 
@@ -169,7 +168,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
 
    ```bash
     kubectl apply -n istio-system -f - <<EOF
-    apiVersion: telemetry.istio.io/v1alpha1
+    apiVersion: telemetry.istio.io/v1
     kind: Telemetry
     metadata:
       name: tracing-default

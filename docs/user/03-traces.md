@@ -66,7 +66,7 @@ The default protocol is GRPC, but you can choose HTTP instead. Depending on the 
 
 - For GRPC, use:
   ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
+  apiVersion: telemetry.kyma-project.io/v1
   kind: TracePipeline
   metadata:
     name: backend
@@ -80,7 +80,7 @@ The default protocol is GRPC, but you can choose HTTP instead. Depending on the 
 - For HTTP protocol, use the `protocol` attribute:
 
   ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
+  apiVersion: telemetry.kyma-project.io/v1
   kind: TracePipeline
   metadata:
     name: backend
@@ -94,15 +94,12 @@ The default protocol is GRPC, but you can choose HTTP instead. Depending on the 
 
 ### 2. Enable Istio Tracing
 
-> [!WARNING]
-> The provided Istio feature uses an API in alpha state, which may change in future releases.
-
 By default, the tracing feature of the Istio module is disabled to avoid increased network utilization if there is no TracePipeline.
 
 To activate the Istio tracing feature with a sampling rate of 5% (for recommendations, see [Istio](#istio)), use a resource similar to the following example:
 
 ```yaml
-apiVersion: telemetry.istio.io/v1alpha1
+apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
   name: tracing-default
@@ -123,7 +120,7 @@ To integrate with external systems, you must configure authentication  details. 
 #### **Mutual TLS**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1
 kind: TracePipeline
 metadata:
   name: backend
@@ -146,7 +143,7 @@ spec:
 #### **Basic Authentication**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1
 kind: TracePipeline
 metadata:
   name: backend
@@ -166,7 +163,7 @@ spec:
 #### **Token-Based With Custom Headers**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1
 kind: TracePipeline
 metadata:
   name: backend
@@ -196,7 +193,7 @@ You can store the value of the token in the referenced Secret without any prefix
 #### **Mutual TLS**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1
 kind: TracePipeline
 metadata:
   name: backend
@@ -223,7 +220,7 @@ spec:
 #### **Basic Authentication**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1
 kind: TracePipeline
 metadata:
   name: backend
@@ -255,7 +252,7 @@ spec:
 #### **Token-Based With Custom Headers**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1
 kind: TracePipeline
 metadata:
   name: backend
@@ -323,9 +320,7 @@ Kyma bundles several modules that can be involved in user flows. Applications in
 
 ### Istio
 
-The [Istio module](https://kyma-project.io/#/istio/user/README) is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope and are enriched with trace context if it hasn't happened earlier. Furthermore, every component that's part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data.
-
-If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [w3c-tracecontext](https://www.w3.org/TR/trace-context/) protocol.
+The Istio module is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Usually, this is where external requests enter the cluster scope and are enriched with trace context if it hasn't happened yet. Furthermore, every component that's part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data. If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [w3c-tracecontext](https://www.w3.org/TR/trace-context/) protocol.
 
 > [!WARNING]
 > The provided Istio feature uses an API in alpha state, which may change in future releases.
@@ -339,7 +334,7 @@ The Istio module is configured with an [extension provider](https://istio.io/lat
 The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
 
 ```yaml
-apiVersion: telemetry.istio.io/v1alpha1
+apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
   name: tracing-default
@@ -361,7 +356,7 @@ By default, the sampling rate is configured to 1%. That means that only 1 trace 
 To configure an "always-on" sampling, set the sampling rate to 100%:
 
 ```yaml
-apiVersion: telemetry.istio.io/v1alpha1
+apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
   name: tracing-default
@@ -378,7 +373,7 @@ spec:
 If you need specific settings for individual namespaces or workloads, place additional Telemetry resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
 
 ```yaml
-apiVersion: telemetry.istio.io/v1alpha1
+apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
   name: tracing-default
@@ -398,7 +393,7 @@ spec:
 To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs) without any active trace reporting.
 
   ```yaml
-  apiVersion: telemetry.istio.io/v1alpha1
+  apiVersion: telemetry.istio.io/v1
   kind: Telemetry
   metadata:
     name: tracing-default
@@ -491,18 +486,18 @@ If you just want to see traces for one particular request, you can manually forc
 1. Create a `values.yaml` file.
    The following example sets the value to `60`, which means 60% of the requests are sent to the tracing backend.
 
-   ```yaml
-     apiVersion: telemetry.istio.io/v1alpha1
-     kind: Telemetry
-     metadata:
-       name: kyma-traces
-       namespace: istio-system
-     spec:
-       tracing:
-       - providers:
-         - name: "kyma-traces"
-         randomSamplingPercentage: 60
-   ```
+```yaml
+  apiVersion: telemetry.istio.io/v1
+  kind: Telemetry
+  metadata:
+    name: kyma-traces
+    namespace: istio-system
+  spec:
+    tracing:
+    - providers:
+      - name: "kyma-traces"
+      randomSamplingPercentage: 60
+```
 
 2. To override the default percentage, change the value for the **randomSamplingPercentage** attribute.
 3. Deploy the `values.yaml` to your existing Kyma installation.
