@@ -18,6 +18,7 @@ limitations under the License.
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/agentandgatwaystatus"
 
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +62,7 @@ func NewLogParserController(client client.Client, atomicLevel zap.AtomicLevel, c
 	reconciler := logparser.New(
 		client,
 		reconcilerCfg,
-		&k8sutils.DaemonSetProber{Client: client},
+		&agentandgatwaystatus.DaemonSetProber{Client: client},
 		&k8sutils.DaemonSetAnnotator{Client: client},
 		overridesHandler,
 	)

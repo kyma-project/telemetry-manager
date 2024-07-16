@@ -9,10 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type DaemonSetProber struct {
-	client.Client
-}
-
 type DaemonSetAnnotator struct {
 	client.Client
 }
