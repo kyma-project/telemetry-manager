@@ -1,0 +1,239 @@
+Evicted Pod
+Phase: Failed
+Conditions:[{
+    Type: Initialized
+    Status: True
+    LastProbeTime: 0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime: 2024-07-11 10:10:03 +0200 CEST
+    Reason: Message:
+}{
+    Type: Ready
+    Status: False
+    LastProbeTime: 0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime: 2024-07-11 10:12:10 +0200 CEST
+    Reason: PodFailed
+    Message:
+}{
+    Type: ContainersReady
+    Status: False
+    LastProbeTime: 0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime: 2024-07-11 10:12:10 +0200 CEST
+    Reason: PodFailed Message:
+}{
+Type: PodScheduled
+Status:True
+LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+LastTransitionTime:2024-07-11 10:10:03 +0200 CEST
+Reason: Message:
+}]
+    Message: Usage of EmptyDir volume "data-volume" exceeds the limit "1Mi".
+    Reason:Evicted
+    NominatedNodeName: HostIP:172.19.0.5
+    HostIPs:[]
+    PodIP:10.42.1.19
+    PodIPs:[{IP:10.42.1.19}]
+    StartTime:2024-07-11 10:10:03 +0200 CEST
+    InitContainerStatuses:[]
+    ContainerStatuses:[{
+    Name:busybox
+    State:{
+    Waiting:nil
+    Running:nil
+    Terminated: &ContainerStateTerminated{
+      ExitCode: 137,
+      Signal:0,
+      Reason:Error,
+      Message:,
+      StartedAt:2024-07-11 10:10:04 +0200 CEST,
+      FinishedAt:2024-07-11 10:12:10 +0200 CEST,
+      ContainerID:containerd://4401a287ec5072144ffaeebc40c72a4bcfd40bf765cb224b9b16fcf9f6187457,
+      }}
+      LastTerminationState:{Waiting:nil Running:nil Terminated:nil}
+      Ready:false
+      RestartCount:0
+      Image:docker.io/library/busybox:latest ImageID:docker.io/library/busybox@sha256:9ae97d36d26566ff84e8893c64a6dc4fe8ca6d1144bf5b87b2b85a32def253c7 ContainerID:containerd://4401a287ec5072144ffaeebc40c72a4bcfd40bf765cb224b9b16fcf9f6187457
+      Started:0xc00020bdd8
+      AllocatedResources:map[]
+      Resources:nil VolumeMounts:[]}]
+      QOSClass:BestEffort
+      EphemeralContainerStatuses:[]
+      Resize: ResourceClaimStatuses:[]}
+
+
+
+OOM Pod
+
+{
+    Phase:Running
+    Conditions:[{
+    Type:Initialized
+    Status:True
+    LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime:2024-07-10 09:12:53 +0200 CEST
+    Reason: Message:
+    }
+    {
+        Type:Ready
+        Status:False
+        LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+        LastTransitionTime:2024-07-10 09:12:53 +0200 CEST
+        Reason:ContainersNotReady
+        Message:containers with unready status: [collector]
+    }
+    {
+        Type:ContainersReady
+        Status:False
+        LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+        LastTransitionTime:2024-07-10 09:12:53 +0200 CEST
+        Reason:ContainersNotReady
+        Message:containers with unready status: [collector]
+    }
+    {
+        Type:PodScheduled
+        Status:True
+        LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+        LastTransitionTime:2024-07-10 09:12:53 +0200 CEST
+        Reason: Message:
+    }]
+    Message:
+    Reason:
+    NominatedNodeName: HostIP:172.19.0.4
+    HostIPs:[]
+    PodIP:10.42.0.8 PodIPs:[{IP:10.42.0.8}]
+    StartTime:2024-07-10 09:12:53 +0200 CEST
+    InitContainerStatuses:[]
+    ContainerStatuses:[{
+        Name:collector State:{
+            Waiting:&ContainerStateWaiting{
+                Reason:CrashLoopBackOff,
+                Message:back-off 5m0s restarting failed container=collector pod=telemetry-trace-collector-7794f88496-h5ntd_kyma-system(f229ae7c-dbc9-4642-ba34-4f74f40df390),
+            }
+            Running:nil
+            Terminated:nil
+        }
+        LastTerminationState:{
+        Waiting:nil
+        Running:nil
+        Terminated:&ContainerStateTerminated{
+        ExitCode:137,
+        Signal:0,
+        Reason:OOMKilled,
+        Message:,
+        StartedAt:2024-07-11 10:41:39 +0200 CEST,
+        FinishedAt:2024-07-11 10:41:39 +0200 CEST,
+        ContainerID:containerd://1461b508b5b280f6514845eb3e98eb3511dfc4d43636a53fa4ff69a281439410,
+        }}
+        Ready:false
+        RestartCount:143
+        Image:europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.102.1-fbfb6cdc
+        ImageID:europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector@sha256:122143e8fa529df641755e96f6c75f8e561f7b509aa92d546bfdaf137ef6b505
+        ContainerID:containerd://1461b508b5b280f6514845eb3e98eb3511dfc4d43636a53fa4ff69a281439410
+        Started:0xc00034059c
+        AllocatedResources:map[]
+        Resources:nil VolumeMounts:[]
+    }]
+    QOSClass:Burstable
+    EphemeralContainerStatuses:[]
+    Resize: ResourceClaimStatuses:[]}
+
+config not correct
+
+Phase:Running
+Conditions:[{
+    Type:Initialized
+    Status:True
+    LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime:2024-07-11 14:16:22 +0200 CEST
+    Reason: Message:
+} {
+    Type:Ready
+    Status:False
+    LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime:2024-07-11 14:16:22 +0200 CEST
+    Reason:ContainersNotReady
+    Message:containers with unready status: [collector]
+} {
+    Type:ContainersReady
+    Status:False
+    LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime:2024-07-11 14:16:22 +0200 CEST
+    Reason:ContainersNotReady
+    Message:containers with unready status: [collector]
+} {
+    Type:PodScheduled
+    Status:True
+    LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime:2024-07-11 14:16:22 +0200 CEST
+    Reason: Message:
+}]
+Message:
+Reason:
+NominatedNodeName:
+HostIP:172.19.0.5
+HostIPs:[]
+PodIP:10.42.1.21
+PodIPs:[{IP:10.42.1.21}]
+StartTime:2024-07-11 14:16:22 +0200 CEST
+InitContainerStatuses:[]
+ContainerStatuses:[{
+    Name:collector
+    State: {
+        Waiting:&ContainerStateWaiting {
+            Reason:CrashLoopBackOff,
+            Message:back-off 1m20s
+            restarting failed container=collector
+            pod=telemetry-trace-collector-757759865f-wnx7h_kyma-system(9525d87f-7e91-402c-995d-6f64fda1c2c6),
+        }
+        Running:nil Terminated:nil
+    }
+    LastTerminationState: {
+    Waiting:nil
+    Running:nil
+    Terminated:&ContainerStateTerminated{
+        ExitCode:1,
+        Signal:0,
+        Reason:Error,
+        Message:,
+        StartedAt:2024-07-11 14:17:58 +0200 CEST,
+        FinishedAt:2024-07-11 14:17:58 +0200 CEST,
+        ContainerID:containerd://4a1a68ed405852fe9fe36a20c76a87a64f684600fc5e7ed60558f2b3adc94759,
+    }}
+    Ready:false
+    RestartCount:4
+    Image:europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.102.1-fbfb6cdc
+    ImageID:europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector@sha256:122143e8fa529df641755e96f6c75f8e561f7b509aa92d546bfdaf137ef6b505
+    ContainerID:containerd://4a1a68ed405852fe9fe36a20c76a87a64f684600fc5e7ed60558f2b3adc94759
+    Started:0xc0001e586e
+    AllocatedResources:map[]
+    Resources:nil
+    VolumeMounts:[]
+}]
+QOSClass:Burstable
+EphemeralContainerStatuses:[]
+Resize: ResourceClaimStatuses:[]
+}
+
+Pending pod
+
+Phase:Pending
+Conditions:[{
+    Type:PodScheduled
+    Status:False
+    LastProbeTime:0001-01-01 00:00:00 +0000 UTC
+    LastTransitionTime:2024-07-10 10:53:37 +0200 CEST
+    Reason:Unschedulable Message:0/2 nodes are available: persistentvolumeclaim "my-pvc" not found. preemption: 0/2 nodes are available: 2 No preemption victims found for incoming pod..
+}]
+Message:
+Reason:
+NominatedNodeName:
+HostIP:
+HostIPs:[]
+PodIP:
+PodIPs:[]
+StartTime:<nil>
+InitContainerStatuses:[]
+ContainerStatuses:[]
+QOSClass:BestEffort
+EphemeralContainerStatuses:[]
+Resize: ResourceClaimStatuses:[]
+}

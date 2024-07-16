@@ -1,4 +1,4 @@
-package k8sutils
+package agentandgatwaystatus
 
 import (
 	"context"

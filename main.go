@@ -21,6 +21,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/agentandgatwaystatus"
 	"os"
 	"strings"
 	"time"
@@ -582,7 +583,7 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 		tracepipeline.NewReconciler(
 			client,
 			config,
-			&k8sutils.DeploymentProber{Client: client},
+			&agentandgatwaystatus.DeploymentProber{Client: client},
 			flowHealthProber,
 			overridesHandler),
 	)
@@ -631,7 +632,7 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 	return telemetrycontrollers.NewMetricPipelineController(
 		client,
 		reconcileTriggerChan,
-		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, overridesHandler))
+		metricpipeline.NewReconciler(client, config, &agentandgatwaystatus.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, overridesHandler))
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
