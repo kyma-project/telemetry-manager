@@ -27,7 +27,7 @@ import (
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap/zapcore"
-	istiosecurityclientv1beta "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -131,7 +131,7 @@ var (
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.7-1e5449d3"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.102.1-fbfb6cdc"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.0-8691013b"
 	metricOTLPServiceName         = "telemetry-otlp-metrics"
 	selfMonitorName               = "telemetry-self-monitor"
@@ -146,7 +146,7 @@ func init() {
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(istiosecurityclientv1beta.AddToScheme(scheme))
+	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
