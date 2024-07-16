@@ -23,7 +23,7 @@ const (
 func keepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_node_name", nodeAffiliated)},
-		Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
+		Regex:        fmt.Sprintf("${%s}", config.EnvVarCurrentNodeName),
 		Action:       Keep,
 	}
 }

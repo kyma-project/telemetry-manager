@@ -56,9 +56,9 @@ func MetricPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelin
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrueBecause("Gateway not healthy"))
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeAgentHealthy)).To(BeTrueBecause("Agent not healthy"))
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrueBecause("Configuration not generated"))
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrueBecause("Gateway was not healthy: %v", meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)))
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeAgentHealthy)).To(BeTrueBecause("Agent was not healthy: %v", meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy)))
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrueBecause("Configuration was not generated: %v", meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
