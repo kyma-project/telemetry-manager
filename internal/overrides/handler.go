@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	defaultAtomicLevel zap.AtomicLevel
-	once               sync.Once
+	atomicLevel zap.AtomicLevel
+	once        sync.Once
 )
 
 type Handler struct {
@@ -46,11 +46,13 @@ func WithAtomicLevel(level zap.AtomicLevel) Option {
 	}
 }
 
-func DefaultAtomicLevel() zap.AtomicLevel {
+// AtomicLevel returns a global atomic log level shared by all Handler instances and the root controller runtime logger.
+// This enables the log level to be changed globally if the user overrides it.
+func AtomicLevel() zap.AtomicLevel {
 	once.Do(func() {
-		defaultAtomicLevel = zap.NewAtomicLevel()
+		atomicLevel = zap.NewAtomicLevel()
 	})
-	return defaultAtomicLevel
+	return atomicLevel
 }
 
 func New(client client.Reader, config HandlerConfig, opts ...Option) *Handler {
@@ -59,7 +61,7 @@ func New(client client.Reader, config HandlerConfig, opts ...Option) *Handler {
 		config: config,
 	}
 
-	WithAtomicLevel(DefaultAtomicLevel())(h)
+	WithAtomicLevel(AtomicLevel())(h)
 	for _, opt := range opts {
 		opt(h)
 	}
