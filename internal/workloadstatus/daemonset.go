@@ -1,4 +1,4 @@
-package agentandgatwaystatus
+package workloadstatus
 
 import (
 	"context"

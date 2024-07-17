@@ -1,4 +1,4 @@
-package agentandgatwaystatus
+package workloadstatus
 
 import (
 	"context"
@@ -21,12 +21,14 @@ const (
 	ErrProcessInContainerExited = "container process has exited with status: %s"
 	ErrPodIsPending             = "pod is in pending state: %s"
 	ErrPodEvicted               = "pod has been evicted: %s"
+	ErrContainerNotRunning      = "container is not running: %s"
 )
 
 var errMap = map[string]string{
 	"podIsEvicted":             ErrPodEvicted,
 	"podIsPending":             ErrPodIsPending,
 	"processInContainerExited": ErrProcessInContainerExited,
+	"containerNotRunning":      ErrContainerNotRunning,
 }
 
 type PodsError struct {
@@ -35,12 +37,6 @@ type PodsError struct {
 }
 
 func (pe *PodsError) Error() string {
-	if err, ok := errMap[pe.errorString]; ok {
-		return fmt.Sprintf(err, pe.message)
-	}
-	if err, ok := errMap[pe.errorString]; ok {
-		return fmt.Sprintf(err, pe.message)
-	}
 	if err, ok := errMap[pe.errorString]; ok {
 		return fmt.Sprintf(err, pe.message)
 	}
@@ -105,20 +101,34 @@ func checkWaitingPods(c corev1.ContainerStatus) error {
 	if c.State.Waiting == nil {
 		return nil
 	}
+
+	// handle the cases when image is not pulled.
+	if &c.LastTerminationState == nil {
+		return fetchWaitingReason(*c.State.Waiting, "")
+	}
+
 	lastTerminatedState := c.LastTerminationState.Terminated
 	if lastTerminatedState.Reason == "OOMKilled" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
 		return ErrOOMKilled
 	}
 
 	if lastTerminatedState.Reason == "Error" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
-		if c.State.Waiting != nil {
-			if c.State.Waiting.Reason == "CrashLoopBackOff" {
-				return ErrContainerCrashLoop
-			}
+		if c.State.Waiting.Reason == "CrashLoopBackOff" {
+			return ErrContainerCrashLoop
 		}
 		return &PodsError{errorString: "processInContainerExited", message: string(lastTerminatedState.ExitCode)}
 	}
 	return nil
+}
+
+func fetchWaitingReason(state corev1.ContainerStateWaiting, exitCode string) error {
+	if state.Reason == "CrashLoopBackOff" {
+		return ErrContainerCrashLoop
+	}
+	if exitCode == "" {
+		return &PodsError{errorString: "containerNotRunning", message: state.Reason}
+	}
+	return &PodsError{errorString: "processInContainerExited", message: exitCode}
 }
 
 func exceededTimeThreshold(startedAt metav1.Time) bool {

@@ -18,8 +18,7 @@ limitations under the License.
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/agentandgatwaystatus"
-
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -102,7 +101,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	reconciler := logpipeline.New(
 		client,
 		reconcilerCfg,
-		&agentandgatwaystatus.DaemonSetProber{Client: client},
+		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		istiostatus.NewChecker(client),
 		overridesHandler,
