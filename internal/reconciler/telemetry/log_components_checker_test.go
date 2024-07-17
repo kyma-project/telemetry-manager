@@ -331,6 +331,30 @@ func TestLogComponentsCheck(t *testing.T) {
 				Message: "TLS certificate is about to expire",
 			},
 		},
+		{
+			name: "should not be healthy of one pipeline has a failed request to the Kubernetes API server during validation",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionFalse,
+						Reason:  "APIRequestFailed",
+						Message: "One of the requests to the Kubernetes API server has failed",
+					}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeLogComponentsHealthy,
+				Status:  "False",
+				Reason:  "APIRequestFailed",
+				Message: "One of the requests to the Kubernetes API server has failed",
+			},
+		},
 	}
 
 	for _, test := range tests {
