@@ -108,79 +108,79 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				var serviceAccount corev1.ServiceAccount
 				err := k8sClient.Get(ctx, kitkyma.FluentBitServiceAccount, &serviceAccount)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ServiceAccount still exists")
 
 			Eventually(func(g Gomega) bool {
 				var clusterRole rbacv1.ClusterRole
 				err := k8sClient.Get(ctx, kitkyma.FluentBitClusterRole, &clusterRole)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ClusterRole still exists")
 
 			Eventually(func(g Gomega) bool {
 				var clusterRoleBinding rbacv1.ClusterRoleBinding
 				err := k8sClient.Get(ctx, kitkyma.FluentBitClusterRoleBinding, &clusterRoleBinding)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ClusterRoleBinding still exists")
 
 			Eventually(func(g Gomega) bool {
 				var service corev1.Service
 				err := k8sClient.Get(ctx, kitkyma.FluentBitExporterMetricsService, &service)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Exporter metrics service still exists")
 
 			Eventually(func(g Gomega) bool {
 				var service corev1.Service
 				err := k8sClient.Get(ctx, kitkyma.FluentBitMetricsService, &service)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Metrics service still exists")
 
 			Eventually(func(g Gomega) bool {
 				var networkPolicy networkingv1.NetworkPolicy
 				err := k8sClient.Get(ctx, kitkyma.FluentBitNetworkPolicy, &networkPolicy)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Network policy still exists")
 
 			Eventually(func(g Gomega) bool {
 				var configMap corev1.ConfigMap
 				err := k8sClient.Get(ctx, kitkyma.FluentBitConfigMap, &configMap)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "ConfigMap still exists")
 
 			Eventually(func(g Gomega) bool {
 				var configMap corev1.ConfigMap
 				err := k8sClient.Get(ctx, kitkyma.FluentBitLuaConfigMap, &configMap)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Lua ConfigMap still exists")
 
 			Eventually(func(g Gomega) bool {
 				var configMap corev1.ConfigMap
 				err := k8sClient.Get(ctx, kitkyma.FluentBitParserConfigMap, &configMap)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Parser ConfigMap still exists")
 
 			Eventually(func(g Gomega) bool {
 				var configMap corev1.ConfigMap
 				err := k8sClient.Get(ctx, kitkyma.FluentBitSectionsConfigMap, &configMap)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Sections ConfigMap still exists")
 
 			Eventually(func(g Gomega) bool {
 				var configMap corev1.ConfigMap
 				err := k8sClient.Get(ctx, kitkyma.FluentBitFilesConfigMap, &configMap)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Files ConfigMap still exists")
 
 			Eventually(func(g Gomega) bool {
 				var daemonSet appsv1.DaemonSet
 				err := k8sClient.Get(ctx, kitkyma.FluentBitDaemonSet, &daemonSet)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "DaemonSet still exists")
 
 			Eventually(func(g Gomega) bool {
 				var service corev1.Service
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayOTLPService, &service)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "OTLP service still exists")
 		})
 	})
 })
