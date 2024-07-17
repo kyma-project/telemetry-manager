@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -41,7 +40,7 @@ func TestLoadOverrides(t *testing.T) {
 		},
 		{
 			name:              "invalid configmap",
-			configMapData:     map[string]string{"test-key": "invalid yaml"},
+			configMapData:     map[string]string{configKey: "invalid yaml"},
 			defaultLevel:      zapcore.InfoLevel,
 			expectedOverrides: nil,
 			expectError:       true,
@@ -50,7 +49,7 @@ func TestLoadOverrides(t *testing.T) {
 		{
 			name: "unknown log level",
 			configMapData: map[string]string{
-				"test-key": `global:
+				configKey: `global:
   logLevel: ultradebug`,
 			},
 			defaultLevel:      zapcore.InfoLevel,
@@ -61,7 +60,7 @@ func TestLoadOverrides(t *testing.T) {
 		{
 			name: "valid configmap",
 			configMapData: map[string]string{
-				"test-key": `global:
+				configKey: `global:
   logLevel: debug
 tracing:
   paused: true`,
@@ -86,7 +85,7 @@ tracing:
 			if tt.configMapData != nil {
 				configMap := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-configmap",
+						Name:      configMapName,
 						Namespace: "test-namespace",
 					},
 					Data: tt.configMapData,
@@ -97,14 +96,7 @@ tracing:
 			}
 
 			atomicLevel := zap.NewAtomicLevelAt(tt.defaultLevel)
-			handler := New(fakeClient, atomicLevel, HandlerConfig{
-				ConfigMapName: types.NamespacedName{
-					Name:      "test-configmap",
-					Namespace: "test-namespace",
-				},
-				ConfigMapKey: "test-key",
-			})
-
+			handler := New(fakeClient, HandlerConfig{SystemNamespace: "test-namespace"}, WithAtomicLevel(atomicLevel))
 			overrides, err := handler.LoadOverrides(context.Background())
 
 			if tt.expectError {
@@ -123,11 +115,11 @@ func TestLoadOverridesResetsLogLevelIfNoConfigMapFound(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-configmap",
+			Name:      configMapName,
 			Namespace: "test-namespace",
 		},
 		Data: map[string]string{
-			"test-key": `global:
+			configKey: `global:
   logLevel: debug
 tracing:
   paused: true`,
@@ -137,13 +129,7 @@ tracing:
 	require.NoError(t, err)
 
 	atomicLevel := zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	handler := New(fakeClient, atomicLevel, HandlerConfig{
-		ConfigMapName: types.NamespacedName{
-			Name:      "test-configmap",
-			Namespace: "test-namespace",
-		},
-		ConfigMapKey: "test-key",
-	})
+	handler := New(fakeClient, HandlerConfig{SystemNamespace: "test-namespace"}, WithAtomicLevel(atomicLevel))
 
 	require.Equal(t, atomicLevel.Level(), zapcore.InfoLevel)
 
