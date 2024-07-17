@@ -32,6 +32,24 @@ func (pb *podBuilder) WithExpiredThreshold() *podBuilder {
 	return pb
 }
 
+func (pb *podBuilder) WithImageNotFound() *podBuilder {
+	pb.status = &corev1.PodStatus{
+		Phase: corev1.PodRunning,
+		ContainerStatuses: []corev1.ContainerStatus{
+			{
+				Name: "collector",
+				State: corev1.ContainerState{
+					Waiting: &corev1.ContainerStateWaiting{
+						Reason:  "ImagePullBackOff",
+						Message: "Back-off pulling image \"foo:bar\"",
+					},
+				},
+			},
+		},
+	}
+	return pb
+}
+
 func (pb *podBuilder) WithOOMStatus() *podBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase: corev1.PodRunning,

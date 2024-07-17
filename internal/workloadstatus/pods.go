@@ -17,35 +17,59 @@ var (
 )
 
 const (
-	timeThreshold               = 5 * time.Minute
-	ErrProcessInContainerExited = "container process has exited with status: %s"
-	ErrPodIsPending             = "pod is in pending state: %s"
-	ErrPodEvicted               = "pod has been evicted: %s"
-	ErrContainerNotRunning      = "container is not running: %s"
+	timeThreshold = 5 * time.Minute
 )
 
-var errMap = map[string]string{
-	"podIsEvicted":             ErrPodEvicted,
-	"podIsPending":             ErrPodIsPending,
-	"processInContainerExited": ErrProcessInContainerExited,
-	"containerNotRunning":      ErrContainerNotRunning,
+type ProcessInContainerExitedError struct {
+	ExitCode int32
 }
 
-type PodsError struct {
-	errorString string
-	message     string
+func (picee *ProcessInContainerExitedError) Error() string {
+	return fmt.Sprintf("container process has exited with status: %d", picee.ExitCode)
 }
 
-func (pe *PodsError) Error() string {
-	if err, ok := errMap[pe.errorString]; ok {
-		return fmt.Sprintf(err, pe.message)
-	}
-	return fmt.Sprintf("unknown error: %s", pe.errorString)
+func isProcessInContainerExitedError(err error) bool {
+	var picee *ProcessInContainerExitedError
+	return errors.As(err, &picee)
 }
 
-func isPodError(err error) bool {
-	var podsError *PodsError
-	return errors.As(err, &podsError)
+type ContainerNotRunningError struct {
+	Message string
+}
+
+func (cnre *ContainerNotRunningError) Error() string {
+	return fmt.Sprintf("container is not running: %s", cnre.Message)
+}
+
+func isContainerNotRunningError(err error) bool {
+	var cnre *ContainerNotRunningError
+	return errors.As(err, &cnre)
+}
+
+type PodIsPendingError struct {
+	Message string
+}
+
+func (pipe *PodIsPendingError) Error() string {
+	return fmt.Sprintf("pod is in pending state: %s", pipe.Message)
+}
+
+func isPodIsPendingError(err error) bool {
+	var pipe *PodIsPendingError
+	return errors.As(err, &pipe)
+}
+
+type PodIsEvictedError struct {
+	Message string
+}
+
+func (pie *PodIsEvictedError) Error() string {
+	return fmt.Sprintf("pod has been evicted: %s", pie.Message)
+}
+
+func isPodIsEvictedError(err error) bool {
+	var pie *PodIsEvictedError
+	return errors.As(err, &pie)
 }
 
 func checkPodStatus(ctx context.Context, c client.Client, namespace string, selector *metav1.LabelSelector) error {
@@ -84,7 +108,7 @@ func checkPendingState(status corev1.PodStatus) error {
 	}
 	for _, c := range status.Conditions {
 		if c.Status == corev1.ConditionFalse && exceededTimeThreshold(c.LastTransitionTime) {
-			return &PodsError{errorString: "podIsPending", message: c.Message}
+			return &PodIsPendingError{Message: c.Message}
 		}
 	}
 	return nil
@@ -92,7 +116,7 @@ func checkPendingState(status corev1.PodStatus) error {
 
 func checkEviction(status corev1.PodStatus) error {
 	if status.Reason == "Evicted" {
-		return &PodsError{errorString: "podIsEvicted", message: status.Message}
+		return &PodIsEvictedError{Message: status.Message}
 	}
 	return nil
 }
@@ -103,8 +127,8 @@ func checkWaitingPods(c corev1.ContainerStatus) error {
 	}
 
 	// handle the cases when image is not pulled.
-	if &c.LastTerminationState == nil {
-		return fetchWaitingReason(*c.State.Waiting, "")
+	if c.LastTerminationState.Terminated == nil {
+		return fetchWaitingReason(*c.State.Waiting, -1)
 	}
 
 	lastTerminatedState := c.LastTerminationState.Terminated
@@ -113,22 +137,19 @@ func checkWaitingPods(c corev1.ContainerStatus) error {
 	}
 
 	if lastTerminatedState.Reason == "Error" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
-		if c.State.Waiting.Reason == "CrashLoopBackOff" {
-			return ErrContainerCrashLoop
-		}
-		return &PodsError{errorString: "processInContainerExited", message: string(lastTerminatedState.ExitCode)}
+		return fetchWaitingReason(*c.State.Waiting, lastTerminatedState.ExitCode)
 	}
 	return nil
 }
 
-func fetchWaitingReason(state corev1.ContainerStateWaiting, exitCode string) error {
+func fetchWaitingReason(state corev1.ContainerStateWaiting, exitCode int32) error {
 	if state.Reason == "CrashLoopBackOff" {
 		return ErrContainerCrashLoop
 	}
-	if exitCode == "" {
-		return &PodsError{errorString: "containerNotRunning", message: state.Reason}
+	if exitCode == -1 {
+		return &ContainerNotRunningError{Message: state.Reason}
 	}
-	return &PodsError{errorString: "processInContainerExited", message: exitCode}
+	return &ProcessInContainerExitedError{ExitCode: exitCode}
 }
 
 func exceededTimeThreshold(startedAt metav1.Time) bool {
