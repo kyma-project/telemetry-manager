@@ -27,7 +27,7 @@ To support telemetry for your applications, the Telemetry module provides the fo
 - Guidance for the instrumentation (traces and metrics only): Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
 - Enriching telemetry data by automatically adding common attributes. This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis. For details, see [Data Enrichment](gateways.md#data-enrichment).
 - Opt-out of features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
-- SAP BTP as first-class integration: Integration into BTP Observability services, such as SAP Cloud Logging is prioritized. For more information, see [SAP Cloud Logging](integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
+- SAP BTP as first-class integration: Integration into SAP BTP Observability services, such as SAP Cloud Logging, is prioritized. For more information, see [SAP Cloud Logging](integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
 
 ## Scope
 
