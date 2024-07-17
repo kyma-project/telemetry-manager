@@ -17,7 +17,7 @@ func DeploymentReady(ctx context.Context, k8sClient client.Client, name types.Na
 	Eventually(func(g Gomega) {
 		ready, err := isDeploymentReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrue())
+		g.Expect(ready).To(BeTrueBecause("Deployment not ready"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

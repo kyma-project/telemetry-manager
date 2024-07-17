@@ -170,7 +170,7 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 
 		hasIstioSidecar, err := assert.HasContainer(ctx, k8sClient, listOptions, "istio-proxy")
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(hasIstioSidecar).To(BeTrue())
+		g.Expect(hasIstioSidecar).To(BeTrueBecause("Istio sidecar not present"))
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 }
 
@@ -183,7 +183,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 
 		ready, err := assert.PodsReady(ctx, k8sClient, listOptions)
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrue())
+		g.Expect(ready).To(BeTrueBecause("Pods not ready"))
 
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 }
