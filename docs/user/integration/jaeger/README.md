@@ -90,7 +90,7 @@ EOF
   
 ### Activate Istio Tracing
 
-To [enable Istio](../../03-traces.md#step-2-enable-istio-tracing) to report span data, apply an Istio telemetry resource and set the sampling rate to 100%. This approach is not recommended for production.
+To [enable Istio](../../03-traces.md#2-enable-istio-tracing) to report span data, apply an Istio telemetry resource and set the sampling rate to 100%. This approach is not recommended for production.
 
 ```bash
 cat <<EOF | kubectl apply -f -
