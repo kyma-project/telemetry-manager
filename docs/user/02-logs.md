@@ -90,25 +90,26 @@ An output is a data destination configured by a [Fluent Bit output](https://docs
 - **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
 <!--- custom output/unsupported mode is not part of Help Portal docs --->
 - **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax.
-  > [!WARNING]
-  > If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
-  See the following example of the `custom` output:
+> [!WARNING]
+> If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
-  ```yaml
-  spec:
-    output:
-      custom: |
-        Name               http
-        Host               https://myhost/logs
-        Http_User          user
-        Http_Passwd        not-required
-        Format             json
-        Port               80
-        Uri                /
-        Tls                on
-        tls.verify         on
-  ```
+See the following example of the `custom` output:
+
+```yaml
+spec:
+  output:
+    custom: |
+      Name               http
+      Host               https://myhost/logs
+      Http_User          user
+      Http_Passwd        not-required
+      Format             json
+      Port               80
+      Uri                /
+      Tls                on
+      tls.verify         on
+```
 
 ### 2. Filter Your Input
 
