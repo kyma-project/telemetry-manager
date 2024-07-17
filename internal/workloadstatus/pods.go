@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 var (
@@ -153,5 +154,5 @@ func fetchWaitingReason(state corev1.ContainerStateWaiting, exitCode int32) erro
 }
 
 func exceededTimeThreshold(startedAt metav1.Time) bool {
-	return time.Now().Sub(startedAt.Time) > timeThreshold
+	return time.Since(startedAt.Time) > timeThreshold
 }

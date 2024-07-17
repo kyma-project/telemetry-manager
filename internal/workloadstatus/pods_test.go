@@ -2,13 +2,15 @@ package workloadstatus
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
-	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestExceededTimeThreshold(t *testing.T) {

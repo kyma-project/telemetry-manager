@@ -19,8 +19,6 @@ limitations under the License.
 import (
 	"context"
 
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,6 +31,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // LogParserController reconciles a Logparser object

@@ -1,9 +1,10 @@
 package testutils
 
 import (
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 type podBuilder struct {
@@ -52,26 +53,8 @@ func (pb *podBuilder) WithImageNotFound() *podBuilder {
 
 func (pb *podBuilder) WithOOMStatus() *podBuilder {
 	pb.status = &corev1.PodStatus{
-		Phase: corev1.PodRunning,
-		ContainerStatuses: []corev1.ContainerStatus{
-			{
-				Name: "collector",
-				State: corev1.ContainerState{
-					Waiting: &corev1.ContainerStateWaiting{
-						Reason:  "CrashLoopBackOff",
-						Message: "back-off 5m0s restarting failed container=collector pod=telemetry-trace-collector-7794f88496-h5ntd_kyma-system(f229ae7c-dbc9-4642-ba34-4f74f40df390)",
-					},
-				},
-				LastTerminationState: corev1.ContainerState{
-					Terminated: &corev1.ContainerStateTerminated{
-						ExitCode:   137,
-						Signal:     0,
-						Reason:     "OOMKilled",
-						StartedAt:  metav1.NewTime(time.Now()),
-						FinishedAt: metav1.NewTime(time.Now()),
-					}},
-			},
-		},
+		Phase:             corev1.PodRunning,
+		ContainerStatuses: createContainerStatus("OOMKilled", "Container was OOM killed", "OOMKilled", 137),
 	}
 	return pb
 }
@@ -131,26 +114,8 @@ func (pb *podBuilder) WithPendingStatus() *podBuilder {
 
 func (pb *podBuilder) WithNonZeroExitStatus() *podBuilder {
 	pb.status = &corev1.PodStatus{
-		Phase: corev1.PodRunning,
-		ContainerStatuses: []corev1.ContainerStatus{
-			{
-				Name: "collector",
-				State: corev1.ContainerState{
-					Waiting: &corev1.ContainerStateWaiting{
-						Reason:  "RunContainerError",
-						Message: "'failed to start containerd task",
-					},
-				},
-				LastTerminationState: corev1.ContainerState{
-					Terminated: &corev1.ContainerStateTerminated{
-						ExitCode:   2,
-						Signal:     0,
-						Reason:     "Error",
-						StartedAt:  metav1.NewTime(time.Now()),
-						FinishedAt: metav1.NewTime(time.Now()),
-					}},
-			},
-		},
+		Phase:             corev1.PodRunning,
+		ContainerStatuses: createContainerStatus("Error", "Container failed", "Error", 2),
 	}
 	return pb
 }
@@ -195,4 +160,26 @@ func (pb *podBuilder) Build() corev1.Pod {
 		pod.Status.ContainerStatuses[0].LastTerminationState.Terminated.StartedAt = metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	}
 	return pod
+}
+
+func createContainerStatus(waitingReason, waitingMsg, terminatedReason string, exitCode int32) []corev1.ContainerStatus {
+	return []corev1.ContainerStatus{
+		{
+			Name: "collector",
+			State: corev1.ContainerState{
+				Waiting: &corev1.ContainerStateWaiting{
+					Reason:  waitingReason,
+					Message: waitingMsg,
+				},
+			},
+			LastTerminationState: corev1.ContainerState{
+				Terminated: &corev1.ContainerStateTerminated{
+					ExitCode:   exitCode,
+					Signal:     0,
+					Reason:     terminatedReason,
+					StartedAt:  metav1.NewTime(time.Now()),
+					FinishedAt: metav1.NewTime(time.Now()),
+				}},
+		},
+	}
 }
