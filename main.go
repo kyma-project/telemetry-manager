@@ -458,11 +458,11 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 		},
 	)
 	if err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
+		setupLog.Error(err, "Failed to create controller", "controller", "TracePipeline")
 		os.Exit(1)
 	}
 	if err := tracePipelineController.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to setup controller", "controller", "LogPipeline")
+		setupLog.Error(err, "Failed to setup controller", "controller", "TracePipeline")
 		os.Exit(1)
 	}
 }
