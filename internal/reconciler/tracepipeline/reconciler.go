@@ -30,13 +30,11 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -87,41 +85,42 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	config                Config
-	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayApplierDeleter GatewayApplierDeleter
-	pipelineLock          PipelineLock
-	prober                DeploymentProber
+	config Config
+
+	// Dependencies
 	flowHealthProber      FlowHealthProber
-	tlsCertValidator      TLSCertValidator
-	overridesHandler      OverridesHandler
+	gatewayApplierDeleter GatewayApplierDeleter
+	gatewayConfigBuilder  GatewayConfigBuilder
+	gatewayProber         DeploymentProber
 	istioStatusChecker    IstioStatusChecker
+	overridesHandler      OverridesHandler
+	pipelineLock          PipelineLock
+	tlsCertValidator      TLSCertValidator
 }
 
-func New(client client.Client,
+func New(
+	client client.Client,
 	config Config,
-	prober DeploymentProber,
 	flowHealthProber FlowHealthProber,
-	overridesHandler *overrides.Handler) *Reconciler {
+	gatewayApplierDeleter GatewayApplierDeleter,
+	gatewayConfigBuilder GatewayConfigBuilder,
+	gatewayProber DeploymentProber,
+	istioStatusChecker IstioStatusChecker,
+	overridesHandler OverridesHandler,
+	pipelineLock PipelineLock,
+	tlsCertValidator TLSCertValidator,
+) *Reconciler {
 	return &Reconciler{
-		Client: client,
-		config: config,
-		gatewayConfigBuilder: &gateway.Builder{
-			Reader: client,
-		},
-		gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{
-			Config: config.Gateway,
-		},
-		pipelineLock: resourcelock.New(client,
-			types.NamespacedName{
-				Name:      "telemetry-tracepipeline-lock",
-				Namespace: config.Gateway.Namespace,
-			}, config.MaxPipelines),
-		prober:             prober,
-		flowHealthProber:   flowHealthProber,
-		tlsCertValidator:   tlscert.New(client),
-		overridesHandler:   overridesHandler,
-		istioStatusChecker: istiostatus.NewChecker(client),
+		Client:                client,
+		config:                config,
+		flowHealthProber:      flowHealthProber,
+		gatewayApplierDeleter: gatewayApplierDeleter,
+		gatewayConfigBuilder:  gatewayConfigBuilder,
+		gatewayProber:         gatewayProber,
+		istioStatusChecker:    istioStatusChecker,
+		overridesHandler:      overridesHandler,
+		pipelineLock:          pipelineLock,
+		tlsCertValidator:      tlsCertValidator,
 	}
 }
 

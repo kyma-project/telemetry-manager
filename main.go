@@ -57,7 +57,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -73,6 +72,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	//nolint:gosec // pprof package is required for performance analysis.
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 )
 
 var (
@@ -426,15 +426,43 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 
 func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with tracing controller")
-	var err error
-	var flowHealthProber *prober.OTelPipelineProber
-	if flowHealthProber, err = prober.NewTracePipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
-		setupLog.Error(err, "Failed to create flow health prober")
+
+	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
+		mgr.GetClient(),
+		reconcileTriggerChan,
+		telemetrycontrollers.TracePipelineControllerConfig{
+			Config: tracepipeline.Config{
+				Gateway: otelcollector.GatewayConfig{
+					Config: otelcollector.Config{
+						Namespace: telemetryNamespace,
+						BaseName:  "telemetry-trace-collector",
+					},
+					Deployment: otelcollector.DeploymentConfig{
+						Image:                traceGatewayImage,
+						PriorityClassName:    traceGatewayPriorityClass,
+						BaseCPULimit:         resource.MustParse(traceGatewayCPULimit),
+						DynamicCPULimit:      resource.MustParse(traceGatewayDynamicCPULimit),
+						BaseMemoryLimit:      resource.MustParse(traceGatewayMemoryLimit),
+						DynamicMemoryLimit:   resource.MustParse(traceGatewayDynamicMemoryLimit),
+						BaseCPURequest:       resource.MustParse(traceGatewayCPURequest),
+						DynamicCPURequest:    resource.MustParse(traceGatewayDynamicCPURequest),
+						BaseMemoryRequest:    resource.MustParse(traceGatewayMemoryRequest),
+						DynamicMemoryRequest: resource.MustParse(traceGatewayDynamicMemoryRequest),
+					},
+					OTLPServiceName: traceOTLPServiceName,
+				},
+				MaxPipelines: maxTracePipelines,
+			},
+			TelemetryNamespace: telemetryNamespace,
+			SelfMonitorName:    selfMonitorName,
+		},
+	)
+	if err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
 		os.Exit(1)
 	}
-
-	if err := createTracePipelineController(mgr.GetClient(), reconcileTriggerChan, flowHealthProber).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "TracePipeline")
+	if err := tracePipelineController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to setup controller", "controller", "LogPipeline")
 		os.Exit(1)
 	}
 }
@@ -500,42 +528,6 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		client,
 		dryrun.NewDryRunner(client, createDryRunConfig()),
 		admission.NewDecoder(scheme))
-}
-
-func createTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.OTelPipelineProber) *telemetrycontrollers.TracePipelineController {
-	config := tracepipeline.Config{
-		Gateway: otelcollector.GatewayConfig{
-			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-trace-collector",
-			},
-			Deployment: otelcollector.DeploymentConfig{
-				Image:                traceGatewayImage,
-				PriorityClassName:    traceGatewayPriorityClass,
-				BaseCPULimit:         resource.MustParse(traceGatewayCPULimit),
-				DynamicCPULimit:      resource.MustParse(traceGatewayDynamicCPULimit),
-				BaseMemoryLimit:      resource.MustParse(traceGatewayMemoryLimit),
-				DynamicMemoryLimit:   resource.MustParse(traceGatewayDynamicMemoryLimit),
-				BaseCPURequest:       resource.MustParse(traceGatewayCPURequest),
-				DynamicCPURequest:    resource.MustParse(traceGatewayDynamicCPURequest),
-				BaseMemoryRequest:    resource.MustParse(traceGatewayMemoryRequest),
-				DynamicMemoryRequest: resource.MustParse(traceGatewayDynamicMemoryRequest),
-			},
-			OTLPServiceName: traceOTLPServiceName,
-		},
-		MaxPipelines: maxTracePipelines,
-	}
-
-	return telemetrycontrollers.NewTracePipelineController(
-		client,
-		reconcileTriggerChan,
-		tracepipeline.New(
-			client,
-			config,
-			&k8sutils.DeploymentProber{Client: client},
-			flowHealthProber,
-			overridesHandler),
-	)
 }
 
 func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.OTelPipelineProber) *telemetrycontrollers.MetricPipelineController {
