@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestDaemonSetProber(t *testing.T) {
+func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 	tests := []struct {
 		summary            string
 		updatedScheduled   int32
@@ -21,7 +21,7 @@ func TestDaemonSetProber(t *testing.T) {
 		observedGeneration int64
 		desiredGeneration  int64
 
-		pods []*corev1.Pod
+		pods []corev1.Pod
 
 		expected      bool
 		expectedError error
@@ -32,7 +32,7 @@ func TestDaemonSetProber(t *testing.T) {
 			numberReady:      3,
 			updatedScheduled: 3,
 			expected:         true,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-2", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -46,7 +46,7 @@ func TestDaemonSetProber(t *testing.T) {
 			updatedScheduled: 2,
 			expected:         true,
 			expectedError:    nil,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
 				testutils.NewPodBuilder("pod-2", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
@@ -59,9 +59,10 @@ func TestDaemonSetProber(t *testing.T) {
 			updatedScheduled: 2,
 			expected:         false,
 			expectedError:    ErrContainerCrashLoop,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().WithExpiredThreshold().Build(),
+				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
 			},
 		},
 
@@ -72,9 +73,10 @@ func TestDaemonSetProber(t *testing.T) {
 			updatedScheduled: 3,
 			expected:         false,
 			expectedError:    ErrOOMKilled,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().WithExpiredThreshold().Build(),
+				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().WithExpiredThreshold().Build(),
 			},
 		},
 
@@ -85,7 +87,7 @@ func TestDaemonSetProber(t *testing.T) {
 			updatedScheduled: 3,
 			expected:         true,
 			expectedError:    nil,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
 				testutils.NewPodBuilder("pod-2", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
@@ -114,16 +116,20 @@ func TestDaemonSetProber(t *testing.T) {
 				},
 			}
 
-			fakeClient := fake.NewClientBuilder()
-			f := fakeClient.WithObjects(daemonSet)
-			for _, pod := range tc.pods {
-				f = fakeClient.WithObjects(pod)
+			podList := &corev1.PodList{
+				Items: tc.pods,
 			}
-			fClient := f.Build()
 
-			sut := DaemonSetProber{fClient}
+			fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
+
+			sut := DaemonSetProber{fakeClient}
 			ready, _ := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			require.Equal(t, tc.expected, ready)
+			if tc.expectedError != nil {
+				require.EqualError(t, tc.expectedError, tc.expectedError.Error())
+			} else {
+				require.NoError(t, tc.expectedError)
+			}
 		})
 	}
 }
@@ -138,7 +144,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 		observedGeneration int64
 		desiredGeneration  int64
 
-		pods []*corev1.Pod
+		pods []corev1.Pod
 
 		expected      bool
 		expectedError func(error) bool
@@ -150,7 +156,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			updatedScheduled: 2,
 			expected:         false,
 			expectedError:    isPodIsEvictedError,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithEvictedStatus().WithExpiredThreshold().Build(),
 			},
@@ -162,7 +168,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			updatedScheduled: 3,
 			expected:         false,
 			expectedError:    isPodIsPendingError,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
 				testutils.NewPodBuilder("pod-2", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().WithExpiredThreshold().Build(),
@@ -175,7 +181,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			updatedScheduled: 3,
 			expected:         false,
 			expectedError:    isContainerNotRunningError,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithImageNotFound().Build(),
 				testutils.NewPodBuilder("pod-2", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
@@ -188,7 +194,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			updatedScheduled: 3,
 			expected:         false,
 			expectedError:    isProcessInContainerExitedError,
-			pods: []*corev1.Pod{
+			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithExpiredThreshold().WithNonZeroExitStatus().Build(),
 				testutils.NewPodBuilder("pod-2", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
@@ -212,14 +218,13 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 				},
 			}
 
-			fakeClient := fake.NewClientBuilder()
-			f := fakeClient.WithObjects(daemonSet)
-			for _, pod := range tc.pods {
-				f = fakeClient.WithObjects(pod)
+			podList := &corev1.PodList{
+				Items: tc.pods,
 			}
-			fClient := f.Build()
 
-			sut := DaemonSetProber{fClient}
+			fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
+
+			sut := DaemonSetProber{fakeClient}
 			ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			require.Equal(t, tc.expected, ready)
 			require.True(t, tc.expectedError(err))

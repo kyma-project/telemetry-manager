@@ -161,12 +161,12 @@ func (pb *podBuilder) WithRunningStatus() *podBuilder {
 	}
 	return pb
 }
-func (pb *podBuilder) Build() *corev1.Pod {
+func (pb *podBuilder) Build() corev1.Pod {
 	if pb.labels == nil {
 		pb.labels = make(map[string]string)
 		pb.labels["app"] = "foo"
 	}
-	pod := &corev1.Pod{
+	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pb.name,
 			Namespace: pb.namespace,
@@ -196,13 +196,3 @@ func (pb *podBuilder) Build() *corev1.Pod {
 	}
 	return pod
 }
-
-//func CreatePodList(ready int32, labels map[string]string) []*corev1.Pod {
-//	var pods []*corev1.Pod
-//	for i := 0; i < int(ready); i++ {
-//		name := fmt.Sprintf("pod-%d", i)
-//		pod := NewPodBuilder(name, "telemetry-system").WithLabels(labels).Build()
-//		pods = append(pods, pod)
-//	}
-//	return pods
-//}

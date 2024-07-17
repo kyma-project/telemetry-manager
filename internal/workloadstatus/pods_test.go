@@ -39,7 +39,7 @@ func TestExceededTimeThreshold(t *testing.T) {
 func TestPodStatusWithExpiredThreshold(t *testing.T) {
 	tt := []struct {
 		name                   string
-		pod                    *corev1.Pod
+		pod                    corev1.Pod
 		expectedError          error
 		expectedErrorCheckFunc func(err error) bool
 	}{
@@ -82,7 +82,7 @@ func TestPodStatusWithExpiredThreshold(t *testing.T) {
 	for _, test := range tt {
 		t.Run(test.name, func(t *testing.T) {
 			//t.Parallel()
-			fakeClient := fake.NewClientBuilder().WithObjects(test.pod).Build()
+			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
 
 			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 			if test.expectedErrorCheckFunc != nil {
@@ -98,7 +98,7 @@ func TestPodStatusWithoutExpiredThreshold(t *testing.T) {
 	tt := []struct {
 		name   string
 		status corev1.PodStatus
-		pod    *corev1.Pod
+		pod    corev1.Pod
 	}{
 		{
 			name: "Pod is pending",
@@ -113,7 +113,7 @@ func TestPodStatusWithoutExpiredThreshold(t *testing.T) {
 	for _, test := range tt {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			fakeClient := fake.NewClientBuilder().WithObjects(test.pod).Build()
+			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
 
 			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 			require.NoError(t, err)
