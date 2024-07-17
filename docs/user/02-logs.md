@@ -323,7 +323,7 @@ spec:
     ...
 ```
 
-> [!NOTE]
+> [!WARNING]
 > If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
 ### 4. Rotate the Secret
