@@ -546,7 +546,7 @@ kubectl apply -f metricpipeline.yaml
 
 You activated a MetricPipeline and metrics start streaming to your backend. 
 
-To check that the pipeline is running, wait until all status conditions of the MetricPipeline in your cluster have status `True`:
+To check that the pipeline is running, wait until the status conditions of the MetricPipeline in your cluster have status `True`:
 
 ```bash
 kubectl get metricpipeline

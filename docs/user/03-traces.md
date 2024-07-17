@@ -307,7 +307,7 @@ kubectl apply -f tracepipeline.yaml
 
 You activated a TracePipeline and traces start streaming to your backend.
 
-To check that the pipeline is running, wait until all status conditions of the TracePipeline in your cluster have status `True`:
+To check that the pipeline is running, wait until the status conditions of the TracePipeline in your cluster have status `True`:
 
 ```bash
 kubectl get tracepipeline
