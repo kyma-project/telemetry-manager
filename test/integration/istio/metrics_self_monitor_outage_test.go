@@ -49,22 +49,28 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 
 	Context("Before deploying a metricpipeline", func() {
 		It("Should set scaling for metrics", Label(suite.LabelOperational), func() {
-			var telemetry operatorv1alpha1.Telemetry
-			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
-			Expect(err).NotTo(HaveOccurred())
+			// retry until the Telemetry CR is updated correctly
+			Eventually(func() error {
+				var telemetry operatorv1alpha1.Telemetry
+				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+				if err != nil {
+					return err
+				}
 
-			telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
-				Gateway: operatorv1alpha1.MetricGatewaySpec{
-					Scaling: operatorv1alpha1.Scaling{
-						Type: operatorv1alpha1.StaticScalingStrategyType,
-						Static: &operatorv1alpha1.StaticScaling{
-							Replicas: 1,
+				telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
+					Gateway: operatorv1alpha1.MetricGatewaySpec{
+						Scaling: operatorv1alpha1.Scaling{
+							Type: operatorv1alpha1.StaticScalingStrategyType,
+							Static: &operatorv1alpha1.StaticScaling{
+								Replicas: 1,
+							},
 						},
 					},
-				},
-			}
-			err = k8sClient.Update(ctx, &telemetry)
-			Expect(err).NotTo(HaveOccurred())
+				}
+				err = k8sClient.Update(ctx, &telemetry)
+				return err
+			}, "1m", "10s").Should(Succeed())
+
 		})
 
 		It("Should have a healthy webhook", func() {

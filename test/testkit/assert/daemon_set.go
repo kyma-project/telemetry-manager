@@ -17,7 +17,7 @@ func DaemonSetReady(ctx context.Context, k8sClient client.Client, name types.Nam
 	Eventually(func(g Gomega) {
 		ready, err := isDaemonSetReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrue())
+		g.Expect(ready).To(BeTrueBecause("DaemonSet not ready"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -79,7 +78,6 @@ import (
 var (
 	certDir            string
 	logLevel           string
-	atomicLevel        zap.AtomicLevel
 	overridesHandler   *overrides.Handler
 	scheme             = runtime.NewScheme()
 	setupLog           = ctrl.Log.WithName("setup")
@@ -131,19 +129,14 @@ var (
 )
 
 const (
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.7-1e5449d3"
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.7-1e5449d3"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.0-8691013b"
 
-	overridesConfigMapName = "telemetry-override-config"
-	overridesConfigMapKey  = "override-config"
-
-	webhookServiceName = "telemetry-manager-webhook"
-
 	metricOTLPServiceName = "telemetry-otlp-metrics"
-
-	traceOTLPServiceName = "telemetry-otlp-traces"
+	traceOTLPServiceName  = "telemetry-otlp-traces"
+	webhookServiceName    = "telemetry-manager-webhook"
 
 	selfMonitorName = "telemetry-self-monitor"
 )
@@ -276,8 +269,8 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-	atomicLevel = zap.NewAtomicLevelAt(parsedLevel)
-	ctrLogger, err := logger.New(atomicLevel)
+	overrides.AtomicLevel().SetLevel(parsedLevel)
+	ctrLogger, err := logger.New(overrides.AtomicLevel())
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 	if err != nil {
@@ -334,10 +327,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
-		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		ConfigMapKey:  overridesConfigMapKey,
-	})
+	overridesHandler = overrides.New(mgr.GetClient(), overrides.HandlerConfig{SystemNamespace: telemetryNamespace})
 
 	tracePipelineReconcileTriggerChan := make(chan event.GenericEvent)
 	enableTracingController(mgr, tracePipelineReconcileTriggerChan)
@@ -401,7 +391,6 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
 		reconcileTriggerChan,
-		atomicLevel,
 		telemetrycontrollers.LogPipelineControllerConfig{
 			ExporterImage:          fluentBitExporterImage,
 			FluentBitCPULimit:      fluentBitCPULimit,
@@ -409,8 +398,6 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 			FluentBitMemoryLimit:   fluentBitMemoryLimit,
 			FluentBitMemoryRequest: fluentBitMemoryRequest,
 			FluentBitImage:         fluentBitImage,
-			OverridesConfigMapKey:  overridesConfigMapKey,
-			OverridesConfigMapName: overridesConfigMapName,
 			PipelineDefaults:       createPipelineDefaults(),
 			PriorityClassName:      fluentBitPriorityClassName,
 			SelfMonitorName:        selfMonitorName,
@@ -428,11 +415,8 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 
 	logParserController := telemetrycontrollers.NewLogParserController(
 		mgr.GetClient(),
-		atomicLevel,
 		telemetrycontrollers.LogParserControllerConfig{
-			OverridesConfigMapKey:  overridesConfigMapKey,
-			OverridesConfigMapName: overridesConfigMapName,
-			TelemetryNamespace:     telemetryNamespace,
+			TelemetryNamespace: telemetryNamespace,
 		})
 	if err := logParserController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogParser")
@@ -539,8 +523,7 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 			},
 			OTLPServiceName: traceOTLPServiceName,
 		},
-		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		MaxPipelines:           maxTracePipelines,
+		MaxPipelines: maxTracePipelines,
 	}
 
 	return telemetrycontrollers.NewTracePipelineController(
@@ -590,9 +573,8 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 			},
 			OTLPServiceName: metricOTLPServiceName,
 		},
-		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		MaxPipelines:           maxMetricPipelines,
-		ModuleVersion:          version,
+		MaxPipelines:  maxMetricPipelines,
+		ModuleVersion: version,
 	}
 
 	return telemetrycontrollers.NewMetricPipelineController(
@@ -647,9 +629,8 @@ func createTelemetryController(client client.Client, scheme *runtime.Scheme, web
 			OTLPServiceName: metricOTLPServiceName,
 			Namespace:       telemetryNamespace,
 		},
-		Webhook:                webhookConfig,
-		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		SelfMonitor:            selfMonitorConfig,
+		Webhook:     webhookConfig,
+		SelfMonitor: selfMonitorConfig,
 	}
 
 	return operator.NewTelemetryController(client, telemetry.New(client, scheme, config, overridesHandler), config)

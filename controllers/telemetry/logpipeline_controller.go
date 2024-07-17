@@ -18,8 +18,9 @@ limitations under the License.
 
 import (
 	"context"
+
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
-	"go.uber.org/zap"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -58,24 +59,17 @@ type LogPipelineControllerConfig struct {
 	FluentBitMemoryLimit   string
 	FluentBitMemoryRequest string
 	FluentBitImage         string
-	OverridesConfigMapKey  string
-	OverridesConfigMapName string
 	PipelineDefaults       builder.PipelineDefaults
 	PriorityClassName      string
 	SelfMonitorName        string
 	TelemetryNamespace     string
 }
 
-func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, atomicLevel zap.AtomicLevel, config LogPipelineControllerConfig) (*LogPipelineController, error) {
+func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
 	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
-
-	overridesHandler := overrides.New(client, atomicLevel, overrides.HandlerConfig{
-		ConfigMapName: types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
-		ConfigMapKey:  config.OverridesConfigMapKey,
-	})
 
 	reconcilerCfg := logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
@@ -85,7 +79,6 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		EnvSecret:             types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: config.TelemetryNamespace},
 		OutputTLSConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: config.TelemetryNamespace},
 		DaemonSet:             types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
-		OverrideConfigMap:     types.NamespacedName{Name: config.OverridesConfigMapName, Namespace: config.TelemetryNamespace},
 		PipelineDefaults:      config.PipelineDefaults,
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:    config.FluentBitImage,
@@ -104,7 +97,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		istiostatus.NewChecker(client),
-		overridesHandler,
+		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		tlscert.New(client))
 
 	return &LogPipelineController{
