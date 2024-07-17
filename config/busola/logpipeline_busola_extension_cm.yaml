@@ -82,8 +82,8 @@ data:
                 source: spec.input.application.keepAnnotations
               - name: Drop Labels
                 source: spec.input.application.dropLabels
-              - name: Keep Raw Log Body
-                source: spec.input.application.keepRawBody
+              - name: Keep Original Log Body
+                source: spec.input.application.keepOriginalBody
       - widget: Panel
         name: Output
         children:
@@ -235,8 +235,8 @@ data:
           path: application.keepAnnotations
         - name: Drop Labels
           path: application.dropLabels
-        - name: Keep Raw Log Body
-          path: application.keepRawBody
+        - name: Keep Original Log Body
+          path: application.keepOriginalBody
     - name: Filters
       widget: SimpleList
       path: spec.filters

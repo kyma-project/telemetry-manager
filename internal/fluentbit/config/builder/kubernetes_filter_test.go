@@ -28,9 +28,9 @@ func TestCreateKubernetesFilterKeepAll(t *testing.T) {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.Input{
 				Application: telemetryv1alpha1.ApplicationInput{
-					KeepAnnotations: true,
-					DropLabels:      false,
-					KeepRawBody:     true}}}}
+					KeepAnnotations:  true,
+					DropLabels:       false,
+					KeepOriginalBody: true}}}}
 
 	actual := createKubernetesFilter(logPipeline)
 	require.Equal(t, expected, actual)
@@ -55,9 +55,9 @@ func TestCreateKubernetesFilterDropAll(t *testing.T) {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.Input{
 				Application: telemetryv1alpha1.ApplicationInput{
-					KeepAnnotations: false,
-					DropLabels:      true,
-					KeepRawBody:     true}}}}
+					KeepAnnotations:  false,
+					DropLabels:       true,
+					KeepOriginalBody: true}}}}
 
 	actual := createKubernetesFilter(logPipeline)
 	require.Equal(t, expected, actual)

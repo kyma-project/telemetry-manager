@@ -146,9 +146,9 @@ func TestMergeSectionsConfig(t *testing.T) {
 					Namespaces: telemetryv1alpha1.InputNamespaces{
 						System: true,
 					},
-					KeepAnnotations: true,
-					DropLabels:      false,
-					KeepRawBody:     true,
+					KeepAnnotations:  true,
+					DropLabels:       false,
+					KeepOriginalBody: true,
 				},
 			},
 			Filters: []telemetryv1alpha1.Filter{
@@ -235,7 +235,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 					Namespaces: telemetryv1alpha1.InputNamespaces{
 						System: true,
 					},
-					KeepRawBody: true,
+					KeepOriginalBody: true,
 				},
 			},
 			Output: telemetryv1alpha1.Output{
