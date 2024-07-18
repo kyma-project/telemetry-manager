@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.22.5-bookworm as builder
+FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.22.5-bookworm as builder
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
