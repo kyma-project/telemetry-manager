@@ -78,6 +78,10 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
 
+type pipelineValidator interface {
+	validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
+}
+
 type Reconciler struct {
 	client.Client
 
@@ -99,7 +103,7 @@ func New(
 	flowHealthProber FlowHealthProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
-	tlsCertValidator TLSCertValidator,
+	pipelineValidator pipelineValidator,
 ) *Reconciler {
 	return &Reconciler{
 		Client: client,
@@ -110,10 +114,7 @@ func New(
 		flowHealthProber:   flowHealthProber,
 		istioStatusChecker: istioStatusChecker,
 		overridesHandler:   overridesHandler,
-		pipelineValidator: pipelineValidator{
-			client:           client,
-			tlsCertValidator: tlsCertValidator,
-		},
+		pipelineValidator:  pipelineValidator,
 	}
 }
 

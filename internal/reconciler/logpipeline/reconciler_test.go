@@ -2,16 +2,9 @@ package logpipeline
 
 import (
 	"context"
-	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,16 +12,24 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"testing"
 
+	"fmt"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	"time"
 )
 
 func TestReconcile(t *testing.T) {
@@ -66,7 +67,9 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+		pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -86,7 +89,9 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+		pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -106,7 +111,9 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+		pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -136,7 +143,9 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+		pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -166,7 +175,9 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+		pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -189,7 +200,6 @@ func TestReconcile(t *testing.T) {
 	t.Run("referenced secret missing", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().
 			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
@@ -199,7 +209,13 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+		pipelineValidatorWithStubs := &validator{
+			client:             fakeClient,
+			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
+			secretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+		}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -276,7 +292,9 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+		pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -306,7 +324,9 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+		pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -438,7 +458,9 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+				pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -549,7 +571,9 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(tt.tlsCertErr))
+				pipelineValidatorWithStubs := &validator{client: fakeClient, tlsCertValidator: stubs.NewTLSCertValidator(nil), secretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr)}
+
+				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 

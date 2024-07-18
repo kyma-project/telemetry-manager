@@ -41,7 +41,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 // LogPipelineController reconciles a LogPipeline object
@@ -106,7 +105,8 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		flowHealthProber,
 		istiostatus.NewChecker(client),
 		overridesHandler,
-		tlscert.New(client))
+		logpipeline.NewValidator(client),
+	)
 
 	return &LogPipelineController{
 		Client:               client,

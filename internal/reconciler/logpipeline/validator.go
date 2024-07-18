@@ -17,17 +17,30 @@ type TLSCertValidator interface {
 	Validate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
-type pipelineValidator struct {
-	client           client.Reader
-	tlsCertValidator TLSCertValidator
+type SecretRefValidator interface {
+	Validate(ctx context.Context, getter secretref.Getter) error
 }
 
-func (v *pipelineValidator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+type validator struct {
+	client             client.Client
+	tlsCertValidator   TLSCertValidator
+	secretRefValidator SecretRefValidator
+}
+
+func NewValidator(client client.Client) *validator {
+	return &validator{
+		client:             client,
+		tlsCertValidator:   tlscert.New(client),
+		secretRefValidator: &secretref.Validator{Client: client},
+	}
+}
+
+func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	if pipeline.Spec.Output.IsLokiDefined() {
 		return errUnsupportedLokiOutput
 	}
 
-	if err := secretref.VerifySecretReference(ctx, v.client, pipeline); err != nil {
+	if err := v.secretRefValidator.Validate(ctx, pipeline); err != nil {
 		return err
 	}
 
