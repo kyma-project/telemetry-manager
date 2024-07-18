@@ -286,12 +286,6 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		agentProberMock := &mocks.DaemonSetProber{}
-		//TODO: Check
-		//de := workloadstatus.DaemonSetFetchingError{
-		//	Name:      "foo",
-		//	Namespace: "telemetry-system",
-		//	Err:       errors.New("unable to find daemonset due to unknown reason"),
-		//}
 		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
@@ -882,6 +876,122 @@ func TestReconcile(t *testing.T) {
 
 		agentApplierDeleterMock.AssertExpectations(t)
 		gatewayApplierDeleterMock.AssertExpectations(t)
+	})
+
+	t.Run("Check different Pod Error Conditions", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			probeAgentErr   error
+			probeGatewayErr error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
+		}{
+			{
+				name:            "pod is OOM",
+				probeAgentErr:   workloadstatus.ErrOOMKilled,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: workloadstatus.ErrOOMKilled.Error(),
+			},
+			{
+				name:            "pod is crashbackloop",
+				probeAgentErr:   workloadstatus.ErrContainerCrashLoop,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: workloadstatus.ErrContainerCrashLoop.Error(),
+			},
+			{
+				name:            "no pods deployed",
+				probeAgentErr:   workloadstatus.ErrNoPodsDeployed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: workloadstatus.ErrNoPodsDeployed.Error(),
+			},
+			{
+				name:            "Container is not ready",
+				probeGatewayErr: workloadstatus.ErrContainerCrashLoop,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonGatewayNotReady,
+				expectedMessage: workloadstatus.ErrContainerCrashLoop.Error(),
+			},
+			{
+				name:            "Container is not ready",
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonGatewayNotReady,
+				probeGatewayErr: workloadstatus.ErrOOMKilled,
+				expectedMessage: workloadstatus.ErrOOMKilled.Error(),
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+				agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}).Times(1)
+
+				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+				gatewayProberStub := &mocks.DeploymentProber{}
+				agentProberMock := &mocks.DaemonSetProber{}
+
+				if tt.probeAgentErr != nil {
+					agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeAgentErr)
+					gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+				}
+				if tt.probeGatewayErr != nil {
+					agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+					gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeGatewayErr)
+				}
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+				sut := Reconciler{
+					Client:                fakeClient,
+					config:                testConfig,
+					agentConfigBuilder:    agentConfigBuilderMock,
+					gatewayConfigBuilder:  gatewayConfigBuilderMock,
+					agentApplierDeleter:   agentApplierDeleterMock,
+					gatewayApplierDeleter: gatewayApplierDeleterMock,
+					pipelineLock:          pipelineLockStub,
+					gatewayProber:         gatewayProberStub,
+					agentProber:           agentProberMock,
+					flowHealthProber:      flowHealthProberStub,
+					overridesHandler:      overridesHandlerStub,
+					istioStatusChecker:    istioStatusCheckerStub,
+				}
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.MetricPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				if tt.probeGatewayErr != nil {
+					cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+					require.Equal(t, tt.expectedStatus, cond.Status)
+					require.Equal(t, tt.expectedReason, cond.Reason)
+					require.Equal(t, tt.expectedMessage, cond.Message)
+				}
+				if tt.probeAgentErr != nil {
+					cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
+					require.Equal(t, tt.expectedStatus, cond.Status)
+					require.Equal(t, tt.expectedReason, cond.Reason)
+					require.Equal(t, tt.expectedMessage, cond.Message)
+				}
+			})
+		}
 	})
 }
 

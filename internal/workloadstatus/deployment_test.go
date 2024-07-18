@@ -105,7 +105,7 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 evicted",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expectedError:    isPodIsEvictedError,
+			expectedError:    IsPodIsEvictedError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithEvictedStatus().Build(),
@@ -115,7 +115,7 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 pending",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expectedError:    isPodIsPendingError,
+			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
@@ -125,7 +125,7 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 container not ready",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expectedError:    isContainerNotRunningError,
+			expectedError:    IsContainerNotRunningError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithImageNotFound().Build(),
@@ -135,7 +135,7 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 process exited",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expectedError:    isProcessInContainerExitedError,
+			expectedError:    IsProcessInContainerExitedError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithNonZeroExitStatus().WithExpiredThreshold().Build(),

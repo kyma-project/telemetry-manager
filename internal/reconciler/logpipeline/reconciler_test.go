@@ -102,12 +102,6 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		//de := workloadstatus.DaemonSetFetchingError{
-		//	Name:      "foo",
-		//	Namespace: "telemetry-system",
-		//	Err:       errors.New("unable to find daemonset due to unknown reason"),
-		//}
-		//proberStub.On("IsReady", mock.Anything, mock.Anything).Return(de)
 
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetNotFound)
 
@@ -593,15 +587,66 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 
-	//t.Run("Check different Pod Error Conditions", func(t *testing.T) {
-	//	tests := []struct {
-	//		name            string
-	//		probe           prober.LogPipelineProbeResult
-	//		probeErr        error
-	//		expectedStatus  metav1.ConditionStatus
-	//		expectedReason  string
-	//		expectedMessage string
-	//})
+	t.Run("Check different Pod Error Conditions", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			probeErr        error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
+		}{
+			{
+				name:            "pod is OOM",
+				probeErr:        workloadstatus.ErrOOMKilled,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: workloadstatus.ErrOOMKilled.Error(),
+			},
+			{
+				name:            "pod is craashbackloop",
+				probeErr:        workloadstatus.ErrContainerCrashLoop,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: workloadstatus.ErrContainerCrashLoop.Error(),
+			},
+			{
+				name:            "no pods deployed",
+				probeErr:        workloadstatus.ErrNoPodsDeployed,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: workloadstatus.ErrNoPodsDeployed.Error(),
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				agentProberStub := &mocks.DaemonSetProber{}
+				agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeErr)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
+				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.LogPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
+				require.Equal(t, tt.expectedStatus, cond.Status)
+				require.Equal(t, tt.expectedReason, cond.Reason)
+
+				require.Equal(t, tt.expectedMessage, cond.Message)
+
+				var cm corev1.ConfigMap
+				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+				require.NoError(t, err, "sections configmap must exist")
+				require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
+			})
+		}
+	})
 
 }
 

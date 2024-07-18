@@ -146,7 +146,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			numberReady:      1,
 			updatedScheduled: 2,
 			expected:         false,
-			expectedError:    isPodIsEvictedError,
+			expectedError:    IsPodIsEvictedError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithEvictedStatus().WithExpiredThreshold().Build(),
@@ -158,7 +158,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			numberReady:      0,
 			updatedScheduled: 3,
 			expected:         false,
-			expectedError:    isPodIsPendingError,
+			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
@@ -171,7 +171,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			numberReady:      1,
 			updatedScheduled: 3,
 			expected:         false,
-			expectedError:    isContainerNotRunningError,
+			expectedError:    IsContainerNotRunningError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithImageNotFound().Build(),
@@ -184,7 +184,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			numberReady:      1,
 			updatedScheduled: 3,
 			expected:         false,
-			expectedError:    isProcessInContainerExitedError,
+			expectedError:    IsProcessInContainerExitedError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithExpiredThreshold().WithNonZeroExitStatus().Build(),

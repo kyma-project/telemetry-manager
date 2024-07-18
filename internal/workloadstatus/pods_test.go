@@ -48,7 +48,7 @@ func TestPodStatusWithExpiredThreshold(t *testing.T) {
 		{
 			name:                   "Pod is pending",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithPendingStatus().WithExpiredThreshold().Build(),
-			expectedErrorCheckFunc: isPodIsPendingError,
+			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
 			name:          "Invalid configuration",
@@ -63,12 +63,12 @@ func TestPodStatusWithExpiredThreshold(t *testing.T) {
 		{
 			name:                   "process in container exited with non zero error",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithExpiredThreshold().WithNonZeroExitStatus().Build(),
-			expectedErrorCheckFunc: isProcessInContainerExitedError,
+			expectedErrorCheckFunc: IsProcessInContainerExitedError,
 		},
 		{
 			name:                   "Pod is evicted",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithEvictedStatus().WithExpiredThreshold().Build(),
-			expectedErrorCheckFunc: isPodIsEvictedError,
+			expectedErrorCheckFunc: IsPodIsEvictedError,
 		},
 		{
 			name:          "Pod is running",
@@ -78,7 +78,7 @@ func TestPodStatusWithExpiredThreshold(t *testing.T) {
 		{
 			name:                   "Pod cannot pull image",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithImageNotFound().Build(),
-			expectedErrorCheckFunc: isContainerNotRunningError,
+			expectedErrorCheckFunc: IsContainerNotRunningError,
 		},
 	}
 	for _, test := range tt {

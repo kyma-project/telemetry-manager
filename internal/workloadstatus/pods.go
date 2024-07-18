@@ -29,7 +29,7 @@ func (picee *ProcessInContainerExitedError) Error() string {
 	return fmt.Sprintf("container process has exited with status: %d", picee.ExitCode)
 }
 
-func isProcessInContainerExitedError(err error) bool {
+func IsProcessInContainerExitedError(err error) bool {
 	var picee *ProcessInContainerExitedError
 	return errors.As(err, &picee)
 }
@@ -42,7 +42,7 @@ func (cnre *ContainerNotRunningError) Error() string {
 	return fmt.Sprintf("container is not running: %s", cnre.Message)
 }
 
-func isContainerNotRunningError(err error) bool {
+func IsContainerNotRunningError(err error) bool {
 	var cnre *ContainerNotRunningError
 	return errors.As(err, &cnre)
 }
@@ -55,7 +55,7 @@ func (pipe *PodIsPendingError) Error() string {
 	return fmt.Sprintf("pod is in pending state: %s", pipe.Message)
 }
 
-func isPodIsPendingError(err error) bool {
+func IsPodIsPendingError(err error) bool {
 	var pipe *PodIsPendingError
 	return errors.As(err, &pipe)
 }
@@ -68,7 +68,7 @@ func (pie *PodIsEvictedError) Error() string {
 	return fmt.Sprintf("pod has been evicted: %s", pie.Message)
 }
 
-func isPodIsEvictedError(err error) bool {
+func IsPodIsEvictedError(err error) bool {
 	var pie *PodIsEvictedError
 	return errors.As(err, &pie)
 }
