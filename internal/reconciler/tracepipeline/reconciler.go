@@ -65,7 +65,7 @@ type PipelineLock interface {
 }
 
 type DeploymentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
+	IsReady(ctx context.Context, name types.NamespacedName) error
 }
 
 type FlowHealthProber interface {

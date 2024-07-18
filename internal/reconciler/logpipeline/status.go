@@ -3,8 +3,6 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,25 +59,23 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	healthy, err := r.agentProber.IsReady(ctx, r.config.DaemonSet)
-	if err != nil && workloadstatus.IsDaemonSetFetchingError(err) {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset - set condition as not healthy")
-		healthy = false
-	}
-
-	status := metav1.ConditionFalse
-	reason := conditions.ReasonAgentNotReady
-
-	if healthy {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonAgentReady
-	}
-
-	// Check if we have any errors from pods
+	status := metav1.ConditionTrue
+	reason := conditions.ReasonAgentReady
 	msg := conditions.MessageForLogPipeline(reason)
+
+	err := r.agentProber.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset - set condition as not healthy")
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonAgentNotReady
 		msg = err.Error()
 	}
+
+	//// Check if we have any errors from pods
+	//
+	//if err != nil {
+	//	msg = err.Error()
+	//}
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeAgentHealthy,

@@ -2,7 +2,6 @@ package workloadstatus
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,7 +20,6 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 		summary          string
 		desiredScheduled *int32
 		numberReady      int32
-		expected         bool
 
 		pods []corev1.Pod
 
@@ -31,7 +29,6 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 			summary:          "all scheduled all ready",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      2,
-			expected:         true,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -41,7 +38,6 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 			summary:          "all scheduled one ready, OOM: 1 with expired threshold",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expected:         false,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().WithExpiredThreshold().Build(),
@@ -52,7 +48,6 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 			summary:          "all scheduled zero ready crashbacklook: 1, OOM: 1 with expired threshold",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      0,
-			expected:         false,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().WithExpiredThreshold().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
@@ -63,7 +58,6 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 			summary:          "all scheduled zero ready but no problem",
 			numberReady:      0,
 			desiredScheduled: ptr.To(int32(2)),
-			expected:         true,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
@@ -78,8 +72,6 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 				Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}},
 			},
 			Status: appsv1.DeploymentStatus{
-				// Todo: Check
-				//ReadyReplicas:   test.numberReady,
 				UpdatedReplicas: test.numberReady,
 			},
 		}
@@ -90,8 +82,7 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 
 		fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(podList).Build()
 		sut := DeploymentProber{fakeClient}
-		ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-		require.Equal(t, test.expected, ready)
+		err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 		if test.expectedError != nil {
 			require.EqualError(t, err, test.expectedError.Error())
 		} else {
@@ -108,14 +99,12 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 
 		pods []corev1.Pod
 
-		expected      bool
 		expectedError func(error) bool
 	}{
 		{
 			summary:          "all scheduled 1 ready 1 evicted",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expected:         false,
 			expectedError:    isPodIsEvictedError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -126,7 +115,6 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 pending",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expected:         false,
 			expectedError:    isPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -137,7 +125,6 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 container not ready",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expected:         false,
 			expectedError:    isContainerNotRunningError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -148,7 +135,6 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 process exited",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expected:         false,
 			expectedError:    isProcessInContainerExitedError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -175,9 +161,8 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 
 		fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(podList).Build()
 		sut := DeploymentProber{fakeClient}
-		ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-		require.Equal(t, test.expected, ready)
-		require.Equal(t, test.expected, ready)
+		err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+
 		require.True(t, test.expectedError(err))
 	}
 }
@@ -190,14 +175,12 @@ func TestDeployment_WithoutExpiredThreshold(t *testing.T) {
 
 		pods []corev1.Pod
 
-		expected      bool
 		expectedError func(error) bool
 	}{
 		{
 			summary:          "all scheduled one ready, OOM: 1 without expired threshold",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expected:         true,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
@@ -208,7 +191,6 @@ func TestDeployment_WithoutExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 pending without expired threshold",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expected:         true,
 			expectedError:    nil,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -235,8 +217,7 @@ func TestDeployment_WithoutExpiredThreshold(t *testing.T) {
 
 		fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(podList).Build()
 		sut := DeploymentProber{fakeClient}
-		ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-		require.Equal(t, test.expected, ready)
+		err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 		require.NoError(t, err)
 	}
 }
@@ -244,17 +225,6 @@ func TestDeployment_WithoutExpiredThreshold(t *testing.T) {
 func TestDeploymentNotCreated(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := DeploymentProber{fakeClient}
-	ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-	require.False(t, ready)
-	require.NoError(t, err)
-}
-
-func TestDeploymentError(t *testing.T) {
-	err := &DeploymentFetchingError{
-		Name:      "foo",
-		Namespace: "telemetry-system",
-		Err:       errors.New("unable to find deployment due to unknown reason"),
-	}
-	require.EqualError(t, err, "failed to get telemetry-system/foo Deployment: unable to find deployment due to unknown reason")
-	require.True(t, IsDeploymentFetchingError(err))
+	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	require.Equal(t, ErrDeploymentNotFound, err)
 }

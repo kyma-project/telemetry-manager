@@ -2,7 +2,6 @@ package tracepipeline
 
 import (
 	"context"
-	"errors"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 	"testing"
 	"time"
@@ -69,12 +68,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		proberStub := &mocks.DeploymentProber{}
-		var de = &workloadstatus.DeploymentFetchingError{
-			Name:      "gateway",
-			Namespace: "default",
-			Err:       errors.New("unable to fetch deployment due to unknown reason"),
-		}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, de)
+
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDeploymentFetching)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -101,7 +96,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			de.Error(),
+			workloadstatus.ErrDeploymentFetching.Error(),
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -122,7 +117,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrContainerCrashLoop)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -149,7 +144,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			"Trace gateway Deployment is not ready",
+			workloadstatus.ErrContainerCrashLoop.Error(),
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -170,7 +165,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -220,7 +215,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -285,7 +280,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -329,7 +324,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(false, nil)
 
 		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -475,7 +470,7 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 				gatewayProberStub := &mocks.DeploymentProber{}
-				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
@@ -601,7 +596,7 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 				proberStub := &mocks.DeploymentProber{}
-				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -667,7 +662,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)

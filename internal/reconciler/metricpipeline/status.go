@@ -3,8 +3,6 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,24 +50,30 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	msg := conditions.MessageForLogPipeline(reason)
 	if isMetricAgentRequired(pipeline) {
 		agentName := types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace}
-		healthy, err := r.agentProber.IsReady(ctx, agentName)
-		if err != nil && workloadstatus.IsDaemonSetFetchingError(err) {
-			logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric agent - set condition as not healthy")
-			healthy = false
-		}
-
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonAgentNotReady
-		if healthy {
-			status = metav1.ConditionTrue
-			reason = conditions.ReasonAgentReady
-		}
-
-		// Check if we have any errors from pods
+		status = metav1.ConditionTrue
+		reason = conditions.ReasonAgentReady
 		msg = conditions.MessageForMetricPipeline(reason)
+
+		err := r.agentProber.IsReady(ctx, agentName)
 		if err != nil {
+			logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric agent - set condition as not healthy")
+			status = metav1.ConditionFalse
+			reason = conditions.ReasonAgentNotReady
 			msg = err.Error()
 		}
+
+		//status = metav1.ConditionFalse
+		//reason = conditions.ReasonAgentNotReady
+		//if healthy {
+		//	status = metav1.ConditionTrue
+		//	reason = conditions.ReasonAgentReady
+		//}
+		//
+		//// Check if we have any errors from pods
+		//msg = conditions.MessageForMetricPipeline(reason)
+		//if err != nil {
+		//	msg = err.Error()
+		//}
 	}
 
 	condition := metav1.Condition{
@@ -85,24 +89,30 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
 	gatewayName := types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}
-	healthy, err := r.gatewayProber.IsReady(ctx, gatewayName)
-	if err != nil && workloadstatus.IsDeploymentFetchingError(err) {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric gateway - set condition as not healthy")
-		healthy = false
-	}
-
-	status := metav1.ConditionFalse
-	reason := conditions.ReasonGatewayNotReady
-	if healthy {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonGatewayReady
-	}
-
-	// Check if we have any errors from pods
+	status := metav1.ConditionTrue
+	reason := conditions.ReasonGatewayReady
 	msg := conditions.MessageForMetricPipeline(reason)
+
+	err := r.gatewayProber.IsReady(ctx, gatewayName)
 	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric gateway - set condition as not healthy")
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonGatewayNotReady
 		msg = err.Error()
 	}
+
+	//status := metav1.ConditionFalse
+	//reason := conditions.ReasonGatewayNotReady
+	//if healthy {
+	//	status = metav1.ConditionTrue
+	//	reason = conditions.ReasonGatewayReady
+	//}
+	//
+	//// Check if we have any errors from pods
+	//msg := conditions.MessageForMetricPipeline(reason)
+	//if err != nil {
+	//	msg = err.Error()
+	//}
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeGatewayHealthy,

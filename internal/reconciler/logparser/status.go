@@ -38,24 +38,29 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
-	healthy, err := r.prober.IsReady(ctx, r.config.DaemonSet)
+	status := metav1.ConditionTrue
+	reason := conditions.ReasonAgentReady
+	msg := conditions.MessageForLogPipeline(reason)
+	err := r.prober.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset - set condition as not healthy")
-		healthy = false
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonAgentNotReady
+		msg = err.Error()
 	}
-
-	status := metav1.ConditionFalse
-	reason := conditions.ReasonAgentNotReady
-	if healthy {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonAgentReady
-	}
+	//
+	//status := metav1.ConditionFalse
+	//reason := conditions.ReasonAgentNotReady
+	//if healthy {
+	//	status = metav1.ConditionTrue
+	//	reason = conditions.ReasonAgentReady
+	//}
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeAgentHealthy,
 		Status:             status,
 		Reason:             reason,
-		Message:            conditions.MessageForLogPipeline(reason),
+		Message:            msg,
 		ObservedGeneration: parser.Generation,
 	}
 

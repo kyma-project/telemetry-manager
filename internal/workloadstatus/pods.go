@@ -129,7 +129,7 @@ func checkWaitingPods(c corev1.ContainerStatus) error {
 
 	// handle the cases when image is not pulled.
 	if c.LastTerminationState.Terminated == nil {
-		return fetchWaitingReason(*c.State.Waiting, -1)
+		return &ContainerNotRunningError{Message: c.State.Waiting.Reason}
 	}
 
 	lastTerminatedState := c.LastTerminationState.Terminated
@@ -144,12 +144,14 @@ func checkWaitingPods(c corev1.ContainerStatus) error {
 }
 
 func fetchWaitingReason(state corev1.ContainerStateWaiting, exitCode int32) error {
-	if state.Reason == "CrashLoopBackOff" {
-		return ErrContainerCrashLoop
-	}
 	if exitCode == -1 {
 		return &ContainerNotRunningError{Message: state.Reason}
 	}
+
+	if state.Reason == "CrashLoopBackOff" {
+		return ErrContainerCrashLoop
+	}
+
 	return &ProcessInContainerExitedError{ExitCode: exitCode}
 }
 

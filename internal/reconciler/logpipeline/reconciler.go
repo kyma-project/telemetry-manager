@@ -58,7 +58,7 @@ type Config struct {
 }
 
 type DaemonSetProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
+	IsReady(ctx context.Context, name types.NamespacedName) error
 }
 
 type DaemonSetAnnotator interface {

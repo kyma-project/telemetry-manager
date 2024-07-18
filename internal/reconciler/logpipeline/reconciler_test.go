@@ -2,7 +2,6 @@ package logpipeline
 
 import (
 	"context"
-	"errors"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 	"testing"
 	"time"
@@ -63,7 +62,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -83,7 +82,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -103,7 +102,14 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		//de := workloadstatus.DaemonSetFetchingError{
+		//	Name:      "foo",
+		//	Namespace: "telemetry-system",
+		//	Err:       errors.New("unable to find daemonset due to unknown reason"),
+		//}
+		//proberStub.On("IsReady", mock.Anything, mock.Anything).Return(de)
+
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -119,7 +125,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			"Fluent Bit agent DaemonSet is not ready",
+			workloadstatus.ErrDaemonSetNotFound.Error(),
 		)
 
 		var cm corev1.ConfigMap
@@ -133,7 +139,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -163,12 +169,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		de := workloadstatus.DaemonSetFetchingError{
-			Name:      "foo",
-			Namespace: "telemetry-system",
-			Err:       errors.New("unable to find daemonset due to unknown reason"),
-		}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, de)
+
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetFetchingError)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -184,7 +186,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			de.Error(),
+			workloadstatus.ErrDaemonSetFetchingError.Error(),
 		)
 
 		var cm corev1.ConfigMap
@@ -201,7 +203,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -278,7 +280,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -308,7 +310,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -440,7 +442,7 @@ func TestReconcile(t *testing.T) {
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				agentProberStub := &mocks.DaemonSetProber{}
-				agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
@@ -551,7 +553,7 @@ func TestReconcile(t *testing.T) {
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				proberStub := &mocks.DaemonSetProber{}
-				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -590,7 +592,17 @@ func TestReconcile(t *testing.T) {
 			})
 		}
 	})
-	
+
+	//t.Run("Check different Pod Error Conditions", func(t *testing.T) {
+	//	tests := []struct {
+	//		name            string
+	//		probe           prober.LogPipelineProbeResult
+	//		probeErr        error
+	//		expectedStatus  metav1.ConditionStatus
+	//		expectedReason  string
+	//		expectedMessage string
+	//})
+
 }
 
 func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {

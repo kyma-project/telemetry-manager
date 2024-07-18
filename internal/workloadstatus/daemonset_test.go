@@ -2,7 +2,6 @@ package workloadstatus
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -26,7 +25,6 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 
 		pods []corev1.Pod
 
-		expected      bool
 		expectedError error
 	}{
 		{
@@ -34,7 +32,6 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 			desiredScheduled: 3,
 			numberReady:      3,
 			updatedScheduled: 3,
-			expected:         true,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -47,7 +44,6 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 			desiredScheduled: 3,
 			numberReady:      1,
 			updatedScheduled: 2,
-			expected:         true,
 			expectedError:    nil,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -60,7 +56,6 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 			desiredScheduled: 3,
 			numberReady:      1,
 			updatedScheduled: 2,
-			expected:         false,
 			expectedError:    ErrContainerCrashLoop,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -74,7 +69,6 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 			desiredScheduled: 3,
 			numberReady:      1,
 			updatedScheduled: 3,
-			expected:         false,
 			expectedError:    ErrOOMKilled,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -88,7 +82,6 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 			desiredScheduled: 3,
 			numberReady:      0,
 			updatedScheduled: 3,
-			expected:         true,
 			expectedError:    nil,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
@@ -122,10 +115,9 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
 
 			sut := DaemonSetProber{fakeClient}
-			ready, _ := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-			require.Equal(t, tc.expected, ready)
+			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			if tc.expectedError != nil {
-				require.EqualError(t, tc.expectedError, tc.expectedError.Error())
+				require.Equal(t, tc.expectedError, err)
 			} else {
 				require.NoError(t, tc.expectedError)
 			}
@@ -224,8 +216,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
 
 			sut := DaemonSetProber{fakeClient}
-			ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-			require.Equal(t, tc.expected, ready)
+			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			require.True(t, tc.expectedError(err))
 
 		})
@@ -234,17 +225,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 func TestDaemonSetNotCreated(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := DaemonSetProber{fakeClient}
-	ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-	require.False(t, ready)
-	require.NoError(t, err)
-}
+	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 
-func TestDaemonSetError(t *testing.T) {
-	err := &DaemonSetFetchingError{
-		Name:      "foo",
-		Namespace: "telemetry-system",
-		Err:       errors.New("unable to find daemonset due to unknown reason"),
-	}
-	require.EqualError(t, err, "failed to get telemetry-system/foo DaemonSet: unable to find daemonset due to unknown reason")
-	require.True(t, IsDaemonSetFetchingError(err))
+	require.Equal(t, ErrDaemonSetNotFound, err)
 }
