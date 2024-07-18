@@ -59,15 +59,15 @@ func MetricPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelin
 
 		agentHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		g.Expect(agentHealthy).NotTo(BeNil())
-		g.Expect(agentHealthy.Status).To(BeTrueBecause("Agent not healthy. Reason: %s. Message: %s", agentHealthy.Reason, agentHealthy.Message))
+		g.Expect(agentHealthy.Status).To(Equal(metav1.ConditionTrue), "Agent not healthy. Reason: %s. Message: %s", agentHealthy.Reason, agentHealthy.Message)
 
 		gatewayHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 		g.Expect(gatewayHealthy).NotTo(BeNil())
-		g.Expect(gatewayHealthy.Status).To(BeTrueBecause("Gateway not healthy. Reason: %s. Message: %s", gatewayHealthy.Reason, gatewayHealthy.Message))
+		g.Expect(gatewayHealthy.Status).To(Equal(metav1.ConditionTrue), "Gateway not healthy. Reason: %s. Message: %s", gatewayHealthy.Reason, gatewayHealthy.Message)
 
 		configGenerated := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		g.Expect(configGenerated).NotTo(BeNil())
-		g.Expect(configGenerated.Status).To(BeTrueBecause("Configuration not generated. Reason: %s. Message: %s", configGenerated.Reason, configGenerated.Message))
+		g.Expect(configGenerated.Status).To(Equal(metav1.ConditionTrue), "Configuration not generated. Reason: %s. Message: %s", configGenerated.Reason, configGenerated.Message)
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

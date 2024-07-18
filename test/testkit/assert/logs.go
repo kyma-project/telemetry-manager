@@ -41,11 +41,11 @@ func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineNa
 
 		agentHealthy := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy)
 		g.Expect(agentHealthy).NotTo(BeNil())
-		g.Expect(agentHealthy.Status).To(BeTrueBecause("Agent not healthy. Reason: %s. Message: %s", agentHealthy.Reason, agentHealthy.Message))
+		g.Expect(agentHealthy.Status).To(Equal(metav1.ConditionTrue), "Agent not healthy. Reason: %s. Message: %s", agentHealthy.Reason, agentHealthy.Message)
 
 		configGenerated := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		g.Expect(configGenerated).NotTo(BeNil())
-		g.Expect(configGenerated.Status).To(BeTrueBecause("Configuration not generated. Reason: %s. Message: %s", configGenerated.Reason, configGenerated.Message))
+		g.Expect(configGenerated.Status).To(Equal(metav1.ConditionTrue), "Configuration not generated. Reason: %s. Message: %s", configGenerated.Reason, configGenerated.Message)
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
