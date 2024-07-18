@@ -2,7 +2,6 @@ package metricpipeline
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 	"testing"
 	"time"
 
@@ -30,6 +29,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 func TestReconcile(t *testing.T) {
@@ -890,6 +890,7 @@ func TestReconcile(t *testing.T) {
 			{
 				name:            "pod is OOM",
 				probeAgentErr:   workloadstatus.ErrOOMKilled,
+				probeGatewayErr: nil,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
 				expectedMessage: workloadstatus.ErrOOMKilled.Error(),
@@ -897,6 +898,7 @@ func TestReconcile(t *testing.T) {
 			{
 				name:            "pod is crashbackloop",
 				probeAgentErr:   workloadstatus.ErrContainerCrashLoop,
+				probeGatewayErr: nil,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
 				expectedMessage: workloadstatus.ErrContainerCrashLoop.Error(),
@@ -904,12 +906,14 @@ func TestReconcile(t *testing.T) {
 			{
 				name:            "no pods deployed",
 				probeAgentErr:   workloadstatus.ErrNoPodsDeployed,
+				probeGatewayErr: nil,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
 				expectedMessage: workloadstatus.ErrNoPodsDeployed.Error(),
 			},
 			{
 				name:            "Container is not ready",
+				probeAgentErr:   nil,
 				probeGatewayErr: workloadstatus.ErrContainerCrashLoop,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
@@ -919,6 +923,7 @@ func TestReconcile(t *testing.T) {
 				name:            "Container is not ready",
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
+				probeAgentErr:   nil,
 				probeGatewayErr: workloadstatus.ErrOOMKilled,
 				expectedMessage: workloadstatus.ErrOOMKilled.Error(),
 			},
@@ -946,14 +951,13 @@ func TestReconcile(t *testing.T) {
 				gatewayProberStub := &mocks.DeploymentProber{}
 				agentProberMock := &mocks.DaemonSetProber{}
 
-				if tt.probeAgentErr != nil {
-					agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeAgentErr)
-					gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-				}
-				if tt.probeGatewayErr != nil {
-					agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-					gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeGatewayErr)
-				}
+				agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeAgentErr)
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeGatewayErr)
+
+				//if tt.probeGatewayErr != nil {
+				//	agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+				//	gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeGatewayErr)
+				//}
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
