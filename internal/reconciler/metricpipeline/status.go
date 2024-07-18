@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -48,11 +49,12 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonMetricAgentNotRequired
+	msg := conditions.MessageForLogPipeline(reason)
 
 	if isMetricAgentRequired(pipeline) {
 		agentName := types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace}
 		healthy, err := r.agentProber.IsReady(ctx, agentName)
-		if err != nil {
+		if err != nil && workloadstatus.IsDaemonSetFetchingError(err) {
 			logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric agent - set condition as not healthy")
 			healthy = false
 		}
@@ -63,13 +65,18 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 			status = metav1.ConditionTrue
 			reason = conditions.ReasonAgentReady
 		}
+
+		// Check if we have any errors from pods
+		if err != nil {
+			msg = err.Error()
+		}
 	}
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeAgentHealthy,
 		Status:             status,
 		Reason:             reason,
-		Message:            conditions.MessageForMetricPipeline(reason),
+		Message:            msg,
 		ObservedGeneration: pipeline.Generation,
 	}
 
@@ -79,23 +86,29 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
 	gatewayName := types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}
 	healthy, err := r.gatewayProber.IsReady(ctx, gatewayName)
-	if err != nil {
+	if err != nil && workloadstatus.IsDeploymentFetchingError(err) {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric gateway - set condition as not healthy")
 		healthy = false
 	}
 
 	status := metav1.ConditionFalse
 	reason := conditions.ReasonGatewayNotReady
+	msg := conditions.MessageForLogPipeline(reason)
 	if healthy {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonGatewayReady
+	}
+
+	// Check if we have any errors from pods
+	if err != nil {
+		msg = err.Error()
 	}
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeGatewayHealthy,
 		Status:             status,
 		Reason:             reason,
-		Message:            conditions.MessageForMetricPipeline(reason),
+		Message:            msg,
 		ObservedGeneration: pipeline.Generation,
 	}
 

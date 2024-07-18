@@ -2,6 +2,7 @@ package workloadstatus
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -240,4 +241,14 @@ func TestDaemonSetNotCreated(t *testing.T) {
 	ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.False(t, ready)
 	require.NoError(t, err)
+}
+
+func TestDaemonSetError(t *testing.T) {
+	err := &DaemonSetFetchingError{
+		Name:      "foo",
+		Namespace: "telemetry-system",
+		Err:       errors.New("unable to find daemonset due to unknown reason"),
+	}
+	require.EqualError(t, err, "failed to get telemetry-system/foo DaemonSet: unable to find daemonset due to unknown reason")
+	require.True(t, IsDaemonSetFetchingError(err))
 }

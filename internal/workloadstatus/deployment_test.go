@@ -2,6 +2,7 @@ package workloadstatus
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -246,4 +247,14 @@ func TestDeploymentNotCreated(t *testing.T) {
 	ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.False(t, ready)
 	require.NoError(t, err)
+}
+
+func TestDeploymentError(t *testing.T) {
+	err := &DeploymentFetchingError{
+		Name:      "foo",
+		Namespace: "telemetry-system",
+		Err:       errors.New("unable to find deployment due to unknown reason"),
+	}
+	require.EqualError(t, err, "failed to get telemetry-system/foo Deployment: unable to find deployment due to unknown reason")
+	require.True(t, IsDeploymentFetchingError(err))
 }

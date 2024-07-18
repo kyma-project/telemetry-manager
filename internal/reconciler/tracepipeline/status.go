@@ -53,16 +53,22 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 
 	status := metav1.ConditionFalse
 	reason := conditions.ReasonGatewayNotReady
+	msg := conditions.MessageForLogPipeline(reason)
 	if healthy {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonGatewayReady
+	}
+
+	// Check if we have any errors from pods
+	if err != nil {
+		msg = err.Error()
 	}
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeGatewayHealthy,
 		Status:             status,
 		Reason:             reason,
-		Message:            conditions.MessageForTracePipeline(reason),
+		Message:            msg,
 		ObservedGeneration: pipeline.Generation,
 	}
 

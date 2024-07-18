@@ -2,6 +2,7 @@ package workloadstatus
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,6 +16,21 @@ type DeploymentProber struct {
 	client.Client
 }
 
+type DeploymentFetchingError struct {
+	Name      string
+	Namespace string
+	Err       error
+}
+
+func (dfe *DeploymentFetchingError) Error() string {
+	return fmt.Sprintf("failed to get %s/%s Deployment: %s", dfe.Namespace, dfe.Name, dfe.Err)
+}
+
+func IsDeploymentFetchingError(err error) bool {
+	var dfe *DeploymentFetchingError
+	return errors.As(err, &dfe)
+}
+
 func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedName) (bool, error) {
 	log := logf.FromContext(ctx)
 	var d appsv1.Deployment
@@ -24,7 +40,11 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 			log.V(1).Info("DaemonSet is not yet created")
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to get %s/%s Deployment: %w", name.Namespace, name.Name, err)
+		return false, &DeploymentFetchingError{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Err:       err,
+		}
 	}
 
 	desiredReplicas := *d.Spec.Replicas

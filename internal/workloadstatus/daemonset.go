@@ -2,6 +2,7 @@ package workloadstatus
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,6 +16,21 @@ type DaemonSetProber struct {
 	client.Client
 }
 
+type DaemonSetFetchingError struct {
+	Name      string
+	Namespace string
+	Err       error
+}
+
+func (dsfe *DaemonSetFetchingError) Error() string {
+	return fmt.Sprintf("failed to get %s/%s DaemonSet: %s", dsfe.Namespace, dsfe.Name, dsfe.Err)
+}
+
+func IsDaemonSetFetchingError(err error) bool {
+	var dfse *DaemonSetFetchingError
+	return errors.As(err, &dfse)
+}
+
 func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedName) (bool, error) {
 	log := logf.FromContext(ctx)
 
@@ -25,7 +41,11 @@ func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedNa
 			log.V(1).Info("DaemonSet is not yet created")
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to get %s/%s DaemonSet: %w", name.Namespace, name.Name, err)
+		return false, &DaemonSetFetchingError{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Err:       err,
+		}
 	}
 	if ds.Status.NumberReady == ds.Status.DesiredNumberScheduled {
 		return true, nil
@@ -33,6 +53,11 @@ func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedNa
 
 	if err := checkPodStatus(ctx, dsp.Client, name.Namespace, ds.Spec.Selector); err != nil {
 		return false, err
+	}
+
+	// In a rolling update we perform update of one pod at a time. So, if the difference between desired and ready pods is 1, then we can consider the DaemonSet as ready.
+	if ds.Status.DesiredNumberScheduled-ds.Status.NumberReady == 1 || ds.Status.DesiredNumberScheduled-ds.Status.NumberReady == 0 {
+		return true, nil
 	}
 
 	return true, nil

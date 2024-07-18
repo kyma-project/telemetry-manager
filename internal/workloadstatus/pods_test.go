@@ -122,3 +122,50 @@ func TestPodStatusWithoutExpiredThreshold(t *testing.T) {
 		})
 	}
 }
+
+//func TestFoo(t *testing.T) {
+//	foo := &ContainerNotRunningError{Message: "container is not running"}
+//	require.Equal(t, "container is not running: container is not running", foo.Error())
+//}
+
+func TestErrorMessages(t *testing.T) {
+	tt := []struct {
+		name             string
+		err              error
+		expectedErrorMsg string
+	}{
+		{
+			name:             "ContainerNotRunningError",
+			err:              &ContainerNotRunningError{Message: "unable to pull image"},
+			expectedErrorMsg: "container is not running: unable to pull image",
+		},
+		{
+			name:             "PodIsPendingError",
+			err:              &PodIsPendingError{Message: "unable to mount volume"},
+			expectedErrorMsg: "pod is in pending state: unable to mount volume",
+		},
+		{
+			name:             "PodIsEvictedError",
+			err:              &PodIsEvictedError{Message: "due to known reason"},
+			expectedErrorMsg: "pod has been evicted: due to known reason",
+		},
+		{
+			name:             "ProcessInContainerExitedError",
+			err:              &ProcessInContainerExitedError{ExitCode: 1},
+			expectedErrorMsg: "container process has exited with status: 1",
+		},
+	}
+	for _, test := range tt {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			require.Equal(t, test.expectedErrorMsg, test.err.Error())
+		})
+	}
+}
+
+func TestNoPods(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
+	require.Equal(t, err, ErrNoPodsDeployed)
+
+}
