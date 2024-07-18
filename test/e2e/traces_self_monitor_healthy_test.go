@@ -106,7 +106,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Orde
 				var pipeline telemetryv1alpha1.TracePipeline
 				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
+				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 

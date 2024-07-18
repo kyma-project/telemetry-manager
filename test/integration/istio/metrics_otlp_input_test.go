@@ -89,7 +89,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 					Eventually(func(g Gomega) {
 						key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
 						err := k8sClient.Get(ctx, key, resource)
-						g.Expect(apierrors.IsNotFound(err)).To(BeTrue())
+						g.Expect(apierrors.IsNotFound(err)).To(BeTrueBecause("Resource %s still exists", key))
 					}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 				}
 			})

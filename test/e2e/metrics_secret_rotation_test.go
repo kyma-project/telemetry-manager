@@ -68,7 +68,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
 				return apierrors.IsNotFound(err)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Deployment still exists")
 		})
 
 		It("Should have running metricpipeline", func() {

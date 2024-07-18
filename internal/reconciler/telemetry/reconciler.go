@@ -10,7 +10,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,11 +33,10 @@ const (
 )
 
 type Config struct {
-	Traces                 TracesConfig
-	Metrics                MetricsConfig
-	Webhook                WebhookConfig
-	OverridesConfigMapName types.NamespacedName
-	SelfMonitor            SelfMonitorConfig
+	Traces      TracesConfig
+	Metrics     MetricsConfig
+	Webhook     WebhookConfig
+	SelfMonitor SelfMonitorConfig
 }
 
 type TracesConfig struct {

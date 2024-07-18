@@ -46,9 +46,8 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	Gateway                otelcollector.GatewayConfig
-	OverridesConfigMapName types.NamespacedName
-	MaxPipelines           int
+	Gateway      otelcollector.GatewayConfig
+	MaxPipelines int
 }
 
 type GatewayConfigBuilder interface {

@@ -28,9 +28,11 @@ This release process covers the steps to release new major and minor versions fo
    - `sec-scanners-config.yaml`:  
      For the images listed in the `protecode` field:
       - Update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
+      - Update the tag of the `kyma-otel-collector` image with the new version released from the [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) repository. For example, `europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.100.0-1.0.0
       - Ensure that all other images have the same versions as those used in the `main.go` file.
    - `main.go`:
-      Update the `version` variable with the new module version following the `x.y.z` pattern.
+      - Update the `version` variable with the new module version following the `x.y.z` pattern.
+      - Update the `defaultOtelImage` variable with the image referenced in `sec-scanners-config.yaml`. For example, `defaultOtelImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"`
 
 6. Merge the PR.
    

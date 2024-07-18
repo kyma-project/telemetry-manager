@@ -50,19 +50,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 	makeResourcesTracePipeline := func(backendName string) []client.Object {
 		var objs []client.Object
 
-		//backend
+		// backend
 		traceBackend := backend.New(namespace, backend.SignalTypeTraces, backend.WithName(backendName))
 		traceBackendURL = traceBackend.ExportURL(proxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
-		//pipeline
+		// pipeline
 		tracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(backendName).
 			WithOTLPOutput(testutils.OTLPEndpoint(traceBackend.Endpoint())).
 			Build()
 		objs = append(objs, &tracePipeline)
 
-		//client
+		// client
 		objs = append(objs, kitk8s.NewPod("telemetrygen-traces", namespace).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces)).K8sObject())
 		return objs
 	}
@@ -70,12 +70,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 	makeResourcesMetricPipeline := func(backendName string) []client.Object {
 		var objs []client.Object
 
-		//backend
+		// backend
 		metricBackend := backend.New(namespace, backend.SignalTypeMetrics, backend.WithName(backendName))
 		metricBackendURL = metricBackend.ExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
 
-		//pipeline
+		// pipeline
 		metricPipeline := testutils.NewMetricPipelineBuilder().
 			WithName(backendName).
 			WithPrometheusInput(true, testutils.IncludeNamespaces(namespace)).
@@ -85,7 +85,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 			Build()
 		objs = append(objs, &metricPipeline)
 
-		//client
+		// client
 		objs = append(objs, trafficgen.K8sObjects(namespace)...)
 		objs = append(objs, kitk8s.NewPod("telemetrygen-metrics", namespace).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)).K8sObject())
 
@@ -107,7 +107,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 			Build()
 		objs = append(objs, &logPipeline)
 
-		//no client
+		// no client
 		return objs
 	}
 
@@ -132,7 +132,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 
 	Context("When all components are deployed", func() {
 		BeforeAll(func() {
-			format.MaxLength = 0 // remove Gomega truncation
 			var k8sObjects []client.Object
 			k8sObjects = append(k8sObjects, kitk8s.NewNamespace(namespace).K8sObject())
 			k8sObjects = append(k8sObjects, makeResourcesTracePipeline(traceBackendName)...)
@@ -220,7 +219,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 								ContainSubstring("grpc: addrConn.createTransport failed to connect"),
 								ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
 								ContainSubstring("interrupted due to shutdown:"),
-								ContainSubstring("Variable substitution using $VAR will be deprecated"),
 							),
 						)),
 					)))),
