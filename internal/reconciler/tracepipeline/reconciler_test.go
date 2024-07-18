@@ -70,8 +70,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, assert.AnError)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, assert.AnError)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -83,18 +83,17 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:       pipelineLockStub,
 		}
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			prober:                proberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
-			pipelineValidator:     pipelineValidatorWithStubs,
-		}
+		sut := New(
+			fakeClient,
+			testConfig,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -126,8 +125,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -139,18 +138,17 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:       pipelineLockStub,
 		}
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			prober:                proberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
-			pipelineValidator:     pipelineValidatorWithStubs,
-		}
+		sut := New(
+			fakeClient,
+			testConfig,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -182,8 +180,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -195,18 +193,17 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:       pipelineLockStub,
 		}
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			prober:                proberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
-			pipelineValidator:     pipelineValidatorWithStubs,
-		}
+		sut := New(
+			fakeClient,
+			testConfig,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -250,18 +247,17 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:       pipelineLockStub,
 		}
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			prober:                proberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
-			pipelineValidator:     pipelineValidatorWithStubs,
-		}
+		sut := New(
+			fakeClient,
+			testConfig,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			proberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -310,8 +306,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -323,18 +319,17 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:       pipelineLockStub,
 		}
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			prober:                proberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
-			pipelineValidator:     pipelineValidatorWithStubs,
-		}
+		sut := New(
+			fakeClient,
+			testConfig,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -362,8 +357,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -375,16 +370,17 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:       pipelineLockStub,
 		}
 
-		sut := Reconciler{
-			Client:             fakeClient,
-			config:             testConfig,
-			pipelineLock:       pipelineLockStub,
-			prober:             proberStub,
-			flowHealthProber:   flowHealthProberStub,
-			overridesHandler:   overridesHandlerStub,
-			istioStatusChecker: istioStatusCheckerStub,
-			pipelineValidator:  pipelineValidatorWithStubs,
-		}
+		sut := New(
+			fakeClient,
+			testConfig,
+			flowHealthProberStub,
+			&mocks.GatewayApplierDeleter{},
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.Error(t, err)
 
@@ -529,18 +525,17 @@ func TestReconcile(t *testing.T) {
 					pipelineLock:       pipelineLockStub,
 				}
 
-				sut := Reconciler{
-					Client:                fakeClient,
-					config:                testConfig,
-					gatewayConfigBuilder:  gatewayConfigBuilderMock,
-					gatewayApplierDeleter: gatewayApplierDeleterMock,
-					pipelineLock:          pipelineLockStub,
-					prober:                gatewayProberStub,
-					flowHealthProber:      flowHealthProberStub,
-					overridesHandler:      overridesHandlerStub,
-					istioStatusChecker:    istioStatusCheckerStub,
-					pipelineValidator:     pipelineValidatorWithStubs,
-				}
+				sut := New(
+					fakeClient,
+					testConfig,
+					flowHealthProberStub,
+					gatewayApplierDeleterMock,
+					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					istioStatusCheckerStub,
+					overridesHandlerStub,
+					pipelineLockStub,
+					pipelineValidatorWithStubs)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -650,8 +645,8 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
-				proberStub := &mocks.DeploymentProber{}
-				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				gatewayProberStub := &mocks.DeploymentProber{}
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -663,18 +658,17 @@ func TestReconcile(t *testing.T) {
 					pipelineLock:       pipelineLockStub,
 				}
 
-				sut := Reconciler{
-					Client:                fakeClient,
-					config:                testConfig,
-					gatewayConfigBuilder:  gatewayConfigBuilderMock,
-					gatewayApplierDeleter: gatewayApplierDeleterMock,
-					pipelineLock:          pipelineLockStub,
-					prober:                proberStub,
-					flowHealthProber:      flowHealthProberStub,
-					overridesHandler:      overridesHandlerStub,
-					istioStatusChecker:    istioStatusCheckerStub,
-					pipelineValidator:     pipelineValidatorWithStubs,
-				}
+				sut := New(
+					fakeClient,
+					testConfig,
+					flowHealthProberStub,
+					gatewayApplierDeleterMock,
+					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					istioStatusCheckerStub,
+					overridesHandlerStub,
+					pipelineLockStub,
+					pipelineValidatorWithStubs)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -795,8 +789,8 @@ func TestReconcile(t *testing.T) {
 		serverErr := errors.New("failed to get lock: server error")
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -808,18 +802,17 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:       pipelineLockStub,
 		}
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			prober:                proberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
-			pipelineValidator:     pipelineValidatorWithStubs,
-		}
+		sut := New(
+			fakeClient,
+			testConfig,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.True(t, errors.Is(err, serverErr))
 
@@ -857,8 +850,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -870,18 +863,17 @@ func TestReconcile(t *testing.T) {
 			pipelineLock:       pipelineLockStub,
 		}
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			prober:                proberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
-			pipelineValidator:     pipelineValidatorWithStubs,
-		}
+		sut := New(
+			fakeClient,
+			testConfig,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
