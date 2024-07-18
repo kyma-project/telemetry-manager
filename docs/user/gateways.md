@@ -10,7 +10,7 @@ Both, the traces and the metrics feature, are based on a gateway, which is provi
 - Filtering to apply namespace filtering and remove noisy system data (individually for logs, traces, and metrics)
 - Dispatching to the configured backends (individually for logs, traces, and metrics)
 
-When the Istio module is added to your Kyma cluster, the gateways support mTLS for the communication from the workload to the gateway, as well as for communication to backends running in the cluster. For details, see [Istio support](#istio-support).
+When the Istio module is added to your Kyma cluster, the gateways support mTLS for the communication from the workload to the gateway, as well as for communication to backends running in the cluster. For details, see [Istio Support](#istio-support).
 
 The gateways are based on the [OTel Collector](https://opentelemetry.io/docs/collector/) and come with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Configuration](https://opentelemetry.io/docs/collector/configuration/)). Kyma's MetricPipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
 
@@ -23,7 +23,7 @@ The Telemetry module focuses on full configurability of backends integrated by O
 
 ## Data Enrichment
 
-The Telemetry gateways automatically enrich your data by adding the attributes:
+The Telemetry gateways automatically enrich your data by adding the following attributes:
 
 - `service.name`: The logical name of the service that emits the telemetry data. The gateway ensures that this attribute always has a valid value.
   If not provided by the user, or if its value follows the pattern `unknown_service:<process.executable.name>` as described in the [specification](https://opentelemetry.io/docs/specs/semconv/resource/#service), then it is generated from Kubernetes metadata. The gateway determines the service name based on the following hierarchy of labels and names:

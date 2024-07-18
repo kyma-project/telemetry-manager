@@ -52,7 +52,6 @@ type Config struct {
 	ParsersConfigMap      types.NamespacedName
 	EnvSecret             types.NamespacedName
 	OutputTLSConfigSecret types.NamespacedName
-	OverrideConfigMap     types.NamespacedName
 	PipelineDefaults      builder.PipelineDefaults
 	Overrides             overrides.Config
 	DaemonSetConfig       fluentbit.DaemonSetConfig

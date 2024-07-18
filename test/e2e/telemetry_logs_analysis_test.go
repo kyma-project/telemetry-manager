@@ -219,7 +219,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 								ContainSubstring("grpc: addrConn.createTransport failed to connect"),
 								ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
 								ContainSubstring("interrupted due to shutdown:"),
-								ContainSubstring("Variable substitution using $VAR will be deprecated"),
 							),
 						)),
 					)))),
