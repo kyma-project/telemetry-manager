@@ -71,12 +71,6 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 		msg = err.Error()
 	}
 
-	//// Check if we have any errors from pods
-	//
-	//if err != nil {
-	//	msg = err.Error()
-	//}
-
 	condition := metav1.Condition{
 		Type:               conditions.TypeAgentHealthy,
 		Status:             status,
