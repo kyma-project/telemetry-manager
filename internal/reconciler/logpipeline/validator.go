@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
@@ -21,26 +19,17 @@ type SecretRefValidator interface {
 	Validate(ctx context.Context, getter secretref.Getter) error
 }
 
-type validator struct {
-	client             client.Client
-	tlsCertValidator   TLSCertValidator
-	secretRefValidator SecretRefValidator
+type Validator struct {
+	TlsCertValidator   TLSCertValidator
+	SecretRefValidator SecretRefValidator
 }
 
-func NewValidator(client client.Client) *validator {
-	return &validator{
-		client:             client,
-		tlsCertValidator:   tlscert.New(client),
-		secretRefValidator: &secretref.Validator{Client: client},
-	}
-}
-
-func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	if pipeline.Spec.Output.IsLokiDefined() {
 		return errUnsupportedLokiOutput
 	}
 
-	if err := v.secretRefValidator.Validate(ctx, pipeline); err != nil {
+	if err := v.SecretRefValidator.Validate(ctx, pipeline); err != nil {
 		return err
 	}
 
@@ -51,7 +40,7 @@ func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,
 		}
 
-		if err := v.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
+		if err := v.TlsCertValidator.Validate(ctx, tlsConfig); err != nil {
 			return err
 		}
 	}
