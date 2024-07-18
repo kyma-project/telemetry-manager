@@ -2,6 +2,8 @@ package metricpipeline
 
 import (
 	"context"
+	"errors"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 	"testing"
 	"time"
 
@@ -79,7 +81,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, errors.New("container is in crash loop"))
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -105,7 +107,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			"Metric gateway Deployment is not ready")
+			workloadstatus.ErrContainerCrashLoop.Error())
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -125,7 +127,12 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+		de := &workloadstatus.DeploymentFetchingError{
+			Name:      "foo",
+			Namespace: "telemetry-system",
+			Err:       errors.New("unable to find deployment due to unknown reason"),
+		}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, de)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -151,7 +158,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			"Metric gateway Deployment is not ready")
+			de.Error())
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -282,7 +289,12 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		de := workloadstatus.DaemonSetFetchingError{
+			Name:      "foo",
+			Namespace: "telemetry-system",
+			Err:       errors.New("unable to find daemonset due to unknown reason"),
+		}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, de)
 
 		agentProberMock := &mocks.DaemonSetProber{}
 		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
@@ -314,7 +326,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			"Metric agent DaemonSet is not ready")
+			de.Error())
 
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)

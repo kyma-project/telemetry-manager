@@ -96,10 +96,6 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 				testutils.NewPodBuilder("pod-2", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
 			},
 		},
-
-		//{summary: "scheduled mismatch", desiredScheduled: 1, numberReady: 3, updatedScheduled: 3, expected: false}, // check for this condition
-		//{summary: "desired scheduled mismatch", desiredScheduled: 3, numberReady: 3, updatedScheduled: 1, expected: false},
-		//{summary: "generation mismatch", observedGeneration: 1, desiredGeneration: 2, expected: false},
 	}
 
 	for _, tc := range tests {

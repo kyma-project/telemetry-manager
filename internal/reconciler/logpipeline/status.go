@@ -69,7 +69,6 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 
 	status := metav1.ConditionFalse
 	reason := conditions.ReasonAgentNotReady
-	msg := conditions.MessageForLogPipeline(reason)
 
 	if healthy {
 		status = metav1.ConditionTrue
@@ -77,6 +76,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	}
 
 	// Check if we have any errors from pods
+	msg := conditions.MessageForLogPipeline(reason)
 	if err != nil {
 		msg = err.Error()
 	}

@@ -2,6 +2,8 @@ package logpipeline
 
 import (
 	"context"
+	"errors"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 	"testing"
 	"time"
 
@@ -161,7 +163,12 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+		de := workloadstatus.DaemonSetFetchingError{
+			Name:      "foo",
+			Namespace: "telemetry-system",
+			Err:       errors.New("unable to find daemonset due to unknown reason"),
+		}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, de)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -177,7 +184,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			"Fluent Bit agent DaemonSet is not ready",
+			de.Error(),
 		)
 
 		var cm corev1.ConfigMap
@@ -583,6 +590,7 @@ func TestReconcile(t *testing.T) {
 			})
 		}
 	})
+	
 }
 
 func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {

@@ -2,6 +2,8 @@ package tracepipeline
 
 import (
 	"context"
+	"errors"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 	"testing"
 	"time"
 
@@ -67,7 +69,12 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 
 		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, assert.AnError)
+		var de = &workloadstatus.DeploymentFetchingError{
+			Name:      "gateway",
+			Namespace: "default",
+			Err:       errors.New("unable to fetch deployment due to unknown reason"),
+		}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, de)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -94,7 +101,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			"Trace gateway Deployment is not ready",
+			de.Error(),
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)

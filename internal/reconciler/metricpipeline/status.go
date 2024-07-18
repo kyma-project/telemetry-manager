@@ -50,7 +50,6 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonMetricAgentNotRequired
 	msg := conditions.MessageForLogPipeline(reason)
-
 	if isMetricAgentRequired(pipeline) {
 		agentName := types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace}
 		healthy, err := r.agentProber.IsReady(ctx, agentName)
@@ -67,6 +66,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 		}
 
 		// Check if we have any errors from pods
+		msg = conditions.MessageForMetricPipeline(reason)
 		if err != nil {
 			msg = err.Error()
 		}
@@ -93,13 +93,13 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 
 	status := metav1.ConditionFalse
 	reason := conditions.ReasonGatewayNotReady
-	msg := conditions.MessageForLogPipeline(reason)
 	if healthy {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonGatewayReady
 	}
 
 	// Check if we have any errors from pods
+	msg := conditions.MessageForMetricPipeline(reason)
 	if err != nil {
 		msg = err.Error()
 	}
