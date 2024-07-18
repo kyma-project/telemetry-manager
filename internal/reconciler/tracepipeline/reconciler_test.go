@@ -725,8 +725,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProber := &mocks.DeploymentProber{}
+		gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -745,7 +745,7 @@ func TestReconcile(t *testing.T) {
 			gatewayConfigBuilder:  gatewayConfigBuilderMock,
 			gatewayApplierDeleter: gatewayApplierDeleterMock,
 			pipelineLock:          pipelineLockStub,
-			prober:                proberStub,
+			gatewayProber:         gatewayProber,
 			flowHealthProber:      flowHealthProberStub,
 			overridesHandler:      overridesHandlerStub,
 			istioStatusChecker:    istioStatusCheckerStub,

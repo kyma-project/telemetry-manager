@@ -108,7 +108,7 @@ func New(
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,
-	tlsCertValidator TLSCertValidator,
+	pipelineValidator pipelineValidator,
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
@@ -120,7 +120,7 @@ func New(
 		istioStatusChecker:    istioStatusChecker,
 		overridesHandler:      overridesHandler,
 		pipelineLock:          pipelineLock,
-		pipelineValidator:  NewValidator(client, pipelineLock),
+		pipelineValidator:     pipelineValidator,
 	}
 }
 
