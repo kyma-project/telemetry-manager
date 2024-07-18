@@ -8,10 +8,10 @@ import (
 )
 
 type FlatMetric struct {
-	Name, Description                                  string
-	ResourceAttribute, ScopeAttribute, MetricAttribute map[string]string
-	Type                                               pmetric.MetricType
-	ScopeAndVersion                                    ScopeVersion
+	Name, Description                                     string
+	ResourceAttributes, ScopeAttributes, MetricAttributes map[string]string
+	Type                                                  pmetric.MetricType
+	ScopeAndVersion                                       ScopeVersion
 }
 
 type ScopeVersion struct {
@@ -46,13 +46,13 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
 				metric := scopeMetrics.Metrics().At(k)
 				flatMetrics = append(flatMetrics, FlatMetric{
-					Name:              metric.Name(),
-					Description:       metric.Description(),
-					ScopeAndVersion:   ScopeVersion{scopeMetrics.Scope().Name(), scopeMetrics.Scope().Version()},
-					ResourceAttribute: attributeToMap(resourceMetrics.Resource().Attributes()),
-					ScopeAttribute:    attributeToMap(scopeMetrics.Scope().Attributes()),
-					MetricAttribute:   attributeToMap(getAttributesPerDataPoint(metric)[0]),
-					Type:              metric.Type(),
+					Name:               metric.Name(),
+					Description:        metric.Description(),
+					ScopeAndVersion:    ScopeVersion{scopeMetrics.Scope().Name(), scopeMetrics.Scope().Version()},
+					ResourceAttributes: attributeToMap(resourceMetrics.Resource().Attributes()),
+					ScopeAttributes:    attributeToMap(scopeMetrics.Scope().Attributes()),
+					MetricAttributes:   attributeToMap(getAttributesPerDataPoint(metric)[0]),
+					Type:               metric.Type(),
 				})
 			}
 		}

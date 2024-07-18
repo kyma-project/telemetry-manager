@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics, "test"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When multiple metric pipelines with instrumentation scope exist", Ordered, func() {
 		var (
 			mockNs                     = suite.ID()

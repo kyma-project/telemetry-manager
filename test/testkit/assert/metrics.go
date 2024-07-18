@@ -3,6 +3,7 @@ package assert
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -25,12 +26,16 @@ func MetricsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendEx
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(
-			ContainMd(SatisfyAll(
-				ContainMetric(WithName(BeElementOf(metricNames))),
-				ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
-			)),
-		))
+		bodycontent, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(bodycontent).To(
+			WithFlatMetrics(ContainElement(SatisfyAll(
+				HaveField("Name", BeElementOf(metricNames)),
+				HaveField("ResourceAttributes", HaveKeyWithValue("k8s.namespace.name", namespace)),
+			))),
+		)
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
