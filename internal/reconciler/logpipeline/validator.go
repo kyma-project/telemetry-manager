@@ -20,7 +20,7 @@ type SecretRefValidator interface {
 }
 
 type Validator struct {
-	TlsCertValidator   TLSCertValidator
+	TLSCertValidator   TLSCertValidator
 	SecretRefValidator SecretRefValidator
 }
 
@@ -40,7 +40,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,
 		}
 
-		if err := v.TlsCertValidator.Validate(ctx, tlsConfig); err != nil {
+		if err := v.TLSCertValidator.Validate(ctx, tlsConfig); err != nil {
 			return err
 		}
 	}

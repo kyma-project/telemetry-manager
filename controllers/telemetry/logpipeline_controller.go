@@ -98,7 +98,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		flowHealthProber,
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
-		&logpipeline.Validator{TlsCertValidator: tlscert.New(client), SecretRefValidator: &secretref.Validator{Client: client}})
+		&logpipeline.Validator{TLSCertValidator: tlscert.New(client), SecretRefValidator: &secretref.Validator{Client: client}})
 
 	return &LogPipelineController{
 		Client:               client,
