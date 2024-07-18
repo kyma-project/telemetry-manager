@@ -81,6 +81,10 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
 
+type pipelineValidator interface {
+	validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error
+}
+
 type Reconciler struct {
 	client.Client
 
@@ -121,11 +125,7 @@ func New(client client.Client,
 		flowHealthProber:   flowHealthProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
-		pipelineValidator: pipelineValidator{
-			client:           client,
-			tlsCertValidator: tlscert.New(client),
-			pipelineLock:     pipelineLock,
-		},
+		pipelineValidator:  NewValidator(client, pipelineLock),
 	}
 }
 

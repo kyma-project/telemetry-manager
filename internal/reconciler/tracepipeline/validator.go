@@ -14,14 +14,28 @@ type TLSCertValidator interface {
 	Validate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
-type pipelineValidator struct {
-	client           client.Reader
-	tlsCertValidator TLSCertValidator
-	pipelineLock     PipelineLock
+type SecretRefValidator interface {
+	Validate(ctx context.Context, getter secretref.Getter) error
 }
 
-func (v *pipelineValidator) validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
-	if err := secretref.VerifySecretReference(ctx, v.client, pipeline); err != nil {
+type validator struct {
+	client             client.Reader
+	tlsCertValidator   TLSCertValidator
+	secretRefValidator SecretRefValidator
+	pipelineLock       PipelineLock
+}
+
+func NewValidator(client client.Client, pipelineLock PipelineLock) *validator {
+	return &validator{
+		client:             client,
+		tlsCertValidator:   tlscert.New(client),
+		secretRefValidator: &secretref.Validator{Client: client},
+		pipelineLock:       pipelineLock,
+	}
+}
+
+func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+	if err := v.secretRefValidator.Validate(ctx, pipeline); err != nil {
 		return err
 	}
 
