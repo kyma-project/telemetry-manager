@@ -18,15 +18,19 @@ type Getter interface {
 	GetSecretRefs() []telemetryv1alpha1.SecretKeyRef
 }
 
+type Validator struct {
+	Client client.Reader
+}
+
 var (
 	ErrSecretKeyNotFound = errors.New("one or more keys in a referenced Secret are missing")
 	ErrSecretRefNotFound = errors.New("one or more referenced Secrets are missing")
 )
 
-func VerifySecretReference(ctx context.Context, client client.Reader, getter Getter) error {
+func (v *Validator) Validate(ctx context.Context, getter Getter) error {
 	refs := getter.GetSecretRefs()
 	for _, ref := range refs {
-		if _, err := GetValue(ctx, client, ref); err != nil {
+		if _, err := GetValue(ctx, v.Client, ref); err != nil {
 			return err
 		}
 	}
