@@ -76,11 +76,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(nil),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := New(
@@ -131,11 +130,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(nil),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := New(
@@ -186,11 +184,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(nil),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := New(
@@ -240,11 +237,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := New(
@@ -312,11 +308,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(nil),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := New(
@@ -363,11 +358,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(nil),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := New(
@@ -518,11 +512,10 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				pipelineValidatorWithStubs := &validator{
-					client:             fakeClient,
-					tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-					secretRefValidator: stubs.NewSecretRefValidator(nil),
-					pipelineLock:       pipelineLockStub,
+				pipelineValidatorWithStubs := &Validator{
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
 				}
 
 				sut := New(
@@ -651,11 +644,10 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-				pipelineValidatorWithStubs := &validator{
-					client:             fakeClient,
-					tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-					secretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr),
-					pipelineLock:       pipelineLockStub,
+				pipelineValidatorWithStubs := &Validator{
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr),
+					PipelineLock:       pipelineLockStub,
 				}
 
 				sut := New(
@@ -732,11 +724,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		serverErr := errors.New("failed to get lock: server error")
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr}),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr}),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := Reconciler{
@@ -795,11 +786,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(nil),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := New(
@@ -856,11 +846,10 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &validator{
-			client:             fakeClient,
-			tlsCertValidator:   stubs.NewTLSCertValidator(nil),
-			secretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
-			pipelineLock:       pipelineLockStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+			PipelineLock:       pipelineLockStub,
 		}
 
 		sut := New(

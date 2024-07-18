@@ -44,7 +44,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 // TracePipelineController reconciles a TracePipeline object
@@ -78,7 +80,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
-		tracepipeline.NewValidator(client, pipelineLock))
+		&tracepipeline.Validator{TLSCertValidator: tlscert.New(client), SecretRefValidator: &secretref.Validator{Client: client}, PipelineLock: pipelineLock})
 
 	return &TracePipelineController{
 		Client:               client,
