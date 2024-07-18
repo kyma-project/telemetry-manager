@@ -63,6 +63,9 @@ var (
 	selectorLabels  = map[string]string{
 		"app": "sample-metrics",
 	}
+
+	// DefaultMetricsNames is an alias for MetricNames.
+	DefaultMetricsNames = MetricNames
 )
 
 // MetricProducer represents a workload that exposes dummy metrics in the Prometheus exposition format

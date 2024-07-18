@@ -7,11 +7,68 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
+type FlatMetric struct {
+	Name, Description                                  string
+	ResourceAttribute, ScopeAttribute, MetricAttribute map[string]string
+	Type                                               pmetric.MetricType
+	ScopeAndVersion                                    ScopeVersion
+}
+
+type ScopeVersion struct {
+	Name, Version string
+}
+
 func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 	return matchers.UnmarshalSignals[pmetric.Metrics](jsonlMetrics, func(buf []byte) (pmetric.Metrics, error) {
 		var unmarshaler pmetric.JSONUnmarshaler
 		return unmarshaler.UnmarshalMetrics(buf)
 	})
+}
+
+func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
+	var flatMetrics []FlatMetric
+
+	for _, md := range mds {
+		flatMetrics = append(flatMetrics, flattenMetrics(md)...)
+	}
+
+	return flatMetrics
+
+}
+
+func flattenMetrics(md pmetric.Metrics) []FlatMetric {
+	var flatMetrics []FlatMetric
+
+	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		resourceMetrics := md.ResourceMetrics().At(i)
+		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
+			scopeMetrics := resourceMetrics.ScopeMetrics().At(j)
+			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
+				metric := scopeMetrics.Metrics().At(k)
+				flatMetrics = append(flatMetrics, FlatMetric{
+					Name:              metric.Name(),
+					Description:       metric.Description(),
+					ScopeAndVersion:   ScopeVersion{scopeMetrics.Scope().Name(), scopeMetrics.Scope().Version()},
+					ResourceAttribute: attributeToMap(resourceMetrics.Resource().Attributes()),
+					ScopeAttribute:    attributeToMap(scopeMetrics.Scope().Attributes()),
+					MetricAttribute:   attributeToMap(getAttributesPerDataPoint(metric)[0]),
+					Type:              metric.Type(),
+				})
+			}
+		}
+	}
+
+	return flatMetrics
+
+}
+
+func attributeToMap(attrs pcommon.Map) map[string]string {
+	attrMap := make(map[string]string)
+	attrs.Range(func(k string, v pcommon.Value) bool {
+		attrMap[k] = v.AsString()
+		return true
+	})
+	return attrMap
 }
 
 func getMetrics(md pmetric.Metrics) []pmetric.Metric {

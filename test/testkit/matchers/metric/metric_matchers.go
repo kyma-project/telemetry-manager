@@ -2,6 +2,8 @@ package metric
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -16,6 +18,46 @@ func WithMds(matcher types.GomegaMatcher) types.GomegaMatcher {
 		}
 
 		return mds, nil
+	}, matcher)
+}
+
+func WithNames(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fm []FlatMetric) ([]string, error) {
+		var names []string
+		for _, m := range fm {
+			names = append(names, m.Name)
+		}
+		slices.Sort(names)
+		return slices.Compact(names), nil
+	}, matcher)
+}
+
+func WithScopeAndVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fm []FlatMetric) ([]ScopeVersion, error) {
+		var scopes []ScopeVersion
+		for _, m := range fm {
+			scopes = append(scopes, m.ScopeAndVersion)
+		}
+		slices.SortFunc(scopes, func(i, j ScopeVersion) int {
+			if i.Name == j.Name {
+				return strings.Compare(i.Version, j.Version)
+			}
+			return strings.Compare(i.Name, j.Name)
+		})
+		return slices.Compact(scopes), nil
+	}, matcher)
+}
+
+func WithFlatMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([]FlatMetric, error) {
+		mds, err := unmarshalMetrics(jsonlMetrics)
+		if err != nil {
+			return nil, fmt.Errorf("WithMds requires a valid OTLP JSON document: %w", err)
+		}
+
+		fm := flattenAllMetrics(mds)
+
+		return fm, nil
 	}, matcher)
 }
 

@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -23,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics, "test"), Ordered, func() {
 	Context("When multiple metric pipelines with instrumentation scope exist", Ordered, func() {
 		var (
 			mockNs                     = suite.ID()
@@ -98,56 +99,59 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-					ContainMetric(WithName(BeElementOf(kubeletstats.DefaultMetricsNames))),
-					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
-				))))
+				bodycontent, err := io.ReadAll(resp.Body)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(ConsistOf(kubeletstats.DefaultMetricsNames))), "Not all required kubeletstats metrics are sent to runtime backend")
+				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(ConsistOf(And(
+					HaveField("Name", InstrumentationScopeRuntime),
+					HaveField("Version",
+						SatisfyAny(
+							ContainSubstring("main"),
+							ContainSubstring("1."),
+							ContainSubstring("PR-"),
+						)))))), "Only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures kubeletstats metrics are not sent to app backend", func() {
+		It("Ensures kubeletstats metrics are not sent to prometheus backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendPrometheusExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainMd(Not(SatisfyAll(
-					ContainMetric(WithName(BeElementOf(kubeletstats.DefaultMetricsNames))),
-					ContainScope(
-						SatisfyAll(
-							WithScopeName(ContainSubstring(InstrumentationScopeRuntime)),
-							WithScopeVersion(
-								SatisfyAny(
-									ContainSubstring("main"),
-									ContainSubstring("1."),
-									ContainSubstring("PR-"),
-								),
-							),
-						),
-					),
-				)))))
+				bodycontent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(Not(ContainElements(kubeletstats.DefaultMetricsNames)))), "No kubeletstats metrics must be sent to prometheus backend")
+				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(Not(ContainElement(And(HaveField("Name", InstrumentationScopeRuntime),
+					HaveField("Version",
+						SatisfyAny(
+							ContainSubstring("main"),
+							ContainSubstring("1."),
+							ContainSubstring("PR-"),
+						)),
+				))))), "scope '%v' must not be sent to the prometheus backend", InstrumentationScopeRuntime)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures prometheus metrics are sent to app backend", func() {
+		It("Ensures prometheus metrics are sent to prometheus backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendPrometheusExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-					ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
-					ContainScope(
-						SatisfyAll(
-							WithScopeName(ContainSubstring(InstrumentationScopePrometheus)),
-							WithScopeVersion(
-								SatisfyAny(
-									ContainSubstring("main"),
-									ContainSubstring("1."),
-									ContainSubstring("PR-"),
-								),
-							),
-						),
-					),
-				))))
+				bodycontent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
+				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
+				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(ConsistOf(And(HaveField("Name", InstrumentationScopePrometheus),
+					HaveField("Version",
+						SatisfyAny(
+							ContainSubstring("main"),
+							ContainSubstring("1."),
+							ContainSubstring("PR-"),
+						)),
+				)))), "Only scope '%v' must be sent to the prometheus backend", InstrumentationScopePrometheus)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -156,24 +160,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainMd(Not(SatisfyAll(
-					ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
-					ContainScope(
-						SatisfyAll(
-							WithScopeName(ContainSubstring(InstrumentationScopePrometheus)),
-							WithScopeVersion(
-								SatisfyAny(
-									ContainSubstring("main"),
-									ContainSubstring("1."),
-									ContainSubstring("PR-"),
-								),
-							),
-						),
-					),
-				)))))
+				bodycontent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(Not(ContainElements(prommetricgen.DefaultMetricsNames)))), "No prometheus metrics must be sent to runtime backend")
+				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(Not(ContainElement(And(HaveField("Name", InstrumentationScopePrometheus),
+					HaveField("Version",
+						SatisfyAny(
+							ContainSubstring("main"),
+							ContainSubstring("1."),
+							ContainSubstring("PR-"),
+						)),
+				))))), "'%v' must not be sent to the runtime backend", InstrumentationScopePrometheus)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
-
 	})
-
 })
