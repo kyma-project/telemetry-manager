@@ -69,7 +69,7 @@ type OverridesHandler interface {
 }
 
 type SelfMonitorApplierDeleter interface {
-	ApplyResources(ctx context.Context, c client.Client, prometheusConfigPath, prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) error
+	ApplyResources(ctx context.Context, c client.Client, opts selfmonitor.ApplyOptions) error
 	DeleteResources(ctx context.Context, c client.Client) error
 }
 
@@ -177,11 +177,13 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
-		selfMonitorConfigPath,
-		selfMonitorConfigFileName,
-		string(prometheusConfigYAML),
-		selfMonitorAlertRuleFileName,
-		string(alertRulesYAML),
+		selfmonitor.ApplyOptions{
+			AlertRulesFileName:       selfMonitorAlertRuleFileName,
+			AlertRulesYAML:           string(alertRulesYAML),
+			PrometheusConfigFileName: selfMonitorConfigFileName,
+			PrometheusConfigPath:     selfMonitorConfigPath,
+			PrometheusConfigYAML:     string(prometheusConfigYAML),
+		},
 	); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}
