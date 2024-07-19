@@ -33,7 +33,6 @@ func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
 	}
 
 	return flatMetrics
-
 }
 
 func flattenMetrics(md pmetric.Metrics) []FlatMetric {
@@ -59,7 +58,6 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 	}
 
 	return flatMetrics
-
 }
 
 func attributeToMap(attrs pcommon.Map) map[string]string {
