@@ -357,14 +357,3 @@ func getGatewayPorts() []int32 {
 		ports.OTLPGRPC,
 	}
 }
-
-func tlsValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	otlp := pipeline.Spec.Output.Otlp
-	if otlp == nil {
-		return false
-	}
-	if otlp.TLS == nil {
-		return false
-	}
-	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil || otlp.TLS.CA != nil
-}

@@ -47,3 +47,11 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 
 	return nil
 }
+
+func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+	http := pipeline.Spec.Output.HTTP
+	if http == nil {
+		return false
+	}
+	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
+}

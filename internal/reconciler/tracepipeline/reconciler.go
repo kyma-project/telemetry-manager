@@ -290,15 +290,3 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 	return defaultReplicaCount
 }
-
-func tlsValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
-	otlp := pipeline.Spec.Output.Otlp
-	if otlp == nil {
-		return false
-	}
-	if otlp.TLS == nil {
-		return false
-	}
-
-	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil || otlp.TLS.CA != nil
-}
