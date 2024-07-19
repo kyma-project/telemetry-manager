@@ -34,6 +34,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 )
 
 type TelemetryController struct {
@@ -56,6 +57,7 @@ func NewTelemetryController(client client.Client, scheme *runtime.Scheme, config
 		scheme,
 		config.Config,
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		&selfmonitor.ApplierDeleter{Config: config.SelfMonitor.Config},
 	)
 
 	return &TelemetryController{

@@ -68,6 +68,11 @@ type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
+type SelfMonitorApplierDeleter interface {
+	ApplyResources(ctx context.Context, c client.Client, prometheusConfigPath, prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) error
+	DeleteResources(ctx context.Context, c client.Client) error
+}
+
 type Reconciler struct {
 	client.Client
 
@@ -76,7 +81,7 @@ type Reconciler struct {
 
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
-	selfMonitorApplierDeleter *selfmonitor.ApplierDeleter
+	selfMonitorApplierDeleter SelfMonitorApplierDeleter
 }
 
 func New(
@@ -84,6 +89,7 @@ func New(
 	scheme *runtime.Scheme,
 	config Config,
 	overridesHandler OverridesHandler,
+	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
 ) *Reconciler {
 	return &Reconciler{
 		Client: client,
@@ -94,10 +100,8 @@ func New(
 			traces:  &traceComponentsChecker{client: client},
 			metrics: &metricComponentsChecker{client: client},
 		},
-		overridesHandler: overridesHandler,
-		selfMonitorApplierDeleter: &selfmonitor.ApplierDeleter{
-			Config: config.SelfMonitor.Config,
-		},
+		overridesHandler:          overridesHandler,
+		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
 	}
 }
 
