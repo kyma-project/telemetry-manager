@@ -10,7 +10,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -71,18 +70,24 @@ type OverridesHandler interface {
 
 type Reconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	*rest.Config
-	config                    Config
+
+	scheme *runtime.Scheme
+	config Config
+
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
 	selfMonitorApplierDeleter *selfmonitor.ApplierDeleter
 }
 
-func New(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
+func New(
+	client client.Client,
+	scheme *runtime.Scheme,
+	config Config,
+	overridesHandler OverridesHandler,
+) *Reconciler {
 	return &Reconciler{
 		Client: client,
-		Scheme: scheme,
+		scheme: scheme,
 		config: config,
 		healthCheckers: healthCheckers{
 			logs:    &logComponentsChecker{client: client},
@@ -269,7 +274,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	if err := r.Get(ctx, r.config.Webhook.CertConfig.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
-	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {
+	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference for secret: %w", err)
 	}
 	if err := k8sutils.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {

@@ -21,6 +21,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,6 +31,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 )
@@ -37,15 +39,29 @@ import (
 type TelemetryController struct {
 	client.Client
 
+	config     TelemetryControllerConfig
 	reconciler *telemetry.Reconciler
-	config     telemetry.Config
 }
 
-func NewTelemetryController(client client.Client, reconciler *telemetry.Reconciler, config telemetry.Config) *TelemetryController {
+type TelemetryControllerConfig struct {
+	telemetry.Config
+
+	SelfMonitorName    string
+	TelemetryNamespace string
+}
+
+func NewTelemetryController(client client.Client, scheme *runtime.Scheme, config TelemetryControllerConfig) *TelemetryController {
+	reconciler := telemetry.New(
+		client,
+		scheme,
+		config.Config,
+		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+	)
+
 	return &TelemetryController{
 		Client:     client,
-		reconciler: reconciler,
 		config:     config,
+		reconciler: reconciler,
 	}
 }
 
