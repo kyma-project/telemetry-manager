@@ -70,6 +70,13 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 	}
 
 	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-tracepipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
+
+	pipelineValidator := &tracepipeline.Validator{
+		TLSCertValidator:   tlscert.New(client),
+		SecretRefValidator: &secretref.Validator{Client: client},
+		PipelineLock:       pipelineLock,
+	}
+
 	reconciler := tracepipeline.New(
 		client,
 		config.Config,
@@ -80,7 +87,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
-		&tracepipeline.Validator{TLSCertValidator: tlscert.New(client), SecretRefValidator: &secretref.Validator{Client: client}, PipelineLock: pipelineLock})
+		pipelineValidator)
 
 	return &TracePipelineController{
 		Client:               client,
