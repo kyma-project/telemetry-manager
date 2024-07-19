@@ -46,7 +46,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 // MetricPipelineController reconciles a MetricPipeline object
@@ -87,7 +89,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
-		metricpipeline.NewValidator(client, pipelineLock))
+		&metricpipeline.Validator{TLSCertValidator: tlscert.New(client), SecretRefValidator: &secretref.Validator{Client: client}, PipelineLock: pipelineLock})
 
 	return &MetricPipelineController{
 		Client:               client,
