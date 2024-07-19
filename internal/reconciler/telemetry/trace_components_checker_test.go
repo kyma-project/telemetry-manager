@@ -115,7 +115,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonMaxPipelinesExceeded,
-						Message: conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded),
+						Message: "Maximum pipeline count limit exceeded",
 					}).
 					Build(),
 				testutils.NewTracePipelineBuilder().
@@ -289,6 +289,30 @@ func TestTraceComponentsCheck(t *testing.T) {
 				Status:  "True",
 				Reason:  "TLSCertificateAboutToExpire",
 				Message: "TLS certificate is about to expire",
+			},
+		},
+		{
+			name: "should not be healthy of one pipeline has a failed request to the Kubernetes API server during validation",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  "False",
+						Reason:  "ValidationFailed",
+						Message: "Pipeline validation failed due to an error from the Kubernetes API server",
+					}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeTraceComponentsHealthy,
+				Status:  "False",
+				Reason:  "ValidationFailed",
+				Message: "Pipeline validation failed due to an error from the Kubernetes API server",
 			},
 		},
 	}

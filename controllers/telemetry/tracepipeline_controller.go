@@ -44,6 +44,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
@@ -68,6 +69,14 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		return nil, err
 	}
 
+	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-tracepipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
+
+	pipelineValidator := &tracepipeline.Validator{
+		TLSCertValidator:   tlscert.New(client),
+		SecretRefValidator: &secretref.Validator{Client: client},
+		PipelineLock:       pipelineLock,
+	}
+
 	reconciler := tracepipeline.New(
 		client,
 		config.Config,
@@ -77,8 +86,8 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		&k8sutils.DeploymentProber{Client: client},
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
-		resourcelock.New(client, types.NamespacedName{Name: "telemetry-tracepipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines),
-		tlscert.New(client))
+		pipelineLock,
+		pipelineValidator)
 
 	return &TracePipelineController{
 		Client:               client,

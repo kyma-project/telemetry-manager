@@ -49,30 +49,10 @@ func TestTryAcquireLock(t *testing.T) {
 	require.NoError(t, err)
 
 	err = l.TryAcquireLock(ctx, owner3)
-	require.Equal(t, ErrLockInUse, err)
+	require.Equal(t, ErrMaxPipelinesExceeded, err)
 }
 
 func TestIsLockHolder(t *testing.T) {
-	owner1 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner1",
-			Namespace: "default",
-		},
-	}
-
-	ctx := context.Background()
-	fakeClient := fake.NewClientBuilder().Build()
-	l := New(fakeClient, lockName, 2)
-
-	err := l.TryAcquireLock(ctx, owner1)
-	require.NoError(t, err)
-
-	isLockHolder, err := l.IsLockHolder(ctx, owner1)
-	require.NoError(t, err)
-	require.True(t, isLockHolder)
-}
-
-func TestIsNotLockHolder(t *testing.T) {
 	owner1 := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "owner1",
@@ -85,6 +65,12 @@ func TestIsNotLockHolder(t *testing.T) {
 			Namespace: "default",
 		},
 	}
+	owner3 := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "owner3",
+			Namespace: "default",
+		},
+	}
 
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
@@ -92,8 +78,16 @@ func TestIsNotLockHolder(t *testing.T) {
 
 	err := l.TryAcquireLock(ctx, owner1)
 	require.NoError(t, err)
-
-	isLockHolder, err := l.IsLockHolder(ctx, owner2)
+	err = l.IsLockHolder(ctx, owner1)
 	require.NoError(t, err)
-	require.False(t, isLockHolder)
+
+	err = l.TryAcquireLock(ctx, owner2)
+	require.NoError(t, err)
+	err = l.IsLockHolder(ctx, owner2)
+	require.NoError(t, err)
+
+	err = l.TryAcquireLock(ctx, owner3)
+	require.Equal(t, ErrMaxPipelinesExceeded, err)
+	err = l.IsLockHolder(ctx, owner3)
+	require.Equal(t, ErrMaxPipelinesExceeded, err)
 }
