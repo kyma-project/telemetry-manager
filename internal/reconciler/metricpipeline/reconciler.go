@@ -15,14 +15,12 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
@@ -86,61 +84,51 @@ type pipelineValidator interface {
 
 type Reconciler struct {
 	client.Client
+
 	config Config
 
-	agentConfigBuilder    AgentConfigBuilder
-	gatewayConfigBuilder  GatewayConfigBuilder
 	agentApplierDeleter   AgentApplierDeleter
-	gatewayApplierDeleter GatewayApplierDeleter
-	pipelineLock          PipelineLock
-	gatewayProber         DeploymentProber
+	agentConfigBuilder    AgentConfigBuilder
 	agentProber           DaemonSetProber
 	flowHealthProber      FlowHealthProber
-	overridesHandler      OverridesHandler
+	gatewayApplierDeleter GatewayApplierDeleter
+	gatewayConfigBuilder  GatewayConfigBuilder
+	gatewayProber         DeploymentProber
 	istioStatusChecker    IstioStatusChecker
+	overridesHandler      OverridesHandler
+	pipelineLock          PipelineLock
+	tlsCertValidator      TLSCertValidator
 	pipelineValidator     pipelineValidator
 }
 
 func New(
 	client client.Client,
 	config Config,
-	gatewayProber DeploymentProber,
+	agentApplierDeleter AgentApplierDeleter,
+	agentConfigBuilder AgentConfigBuilder,
 	agentProber DaemonSetProber,
 	flowHealthProber FlowHealthProber,
-	overridesHandler *overrides.Handler,
+	gatewayApplierDeleter GatewayApplierDeleter,
+	gatewayConfigBuilder GatewayConfigBuilder,
+	gatewayProber DeploymentProber,
+	istioStatusChecker IstioStatusChecker,
+	overridesHandler OverridesHandler,
+	pipelineLock PipelineLock,
+	tlsCertValidator TLSCertValidator,
 ) *Reconciler {
-
-	pipelineLock := resourcelock.New(client, types.NamespacedName{
-		Name:      "telemetry-metricpipeline-lock",
-		Namespace: config.Gateway.Namespace,
-	}, config.MaxPipelines)
-
 	return &Reconciler{
-		Client: client,
-		config: config,
-		gatewayConfigBuilder: &gateway.Builder{
-			Reader: client,
-		},
-		agentConfigBuilder: &agent.Builder{
-			Config: agent.BuilderConfig{
-				GatewayOTLPServiceName: types.NamespacedName{
-					Namespace: config.Gateway.Namespace,
-					Name:      config.Gateway.OTLPServiceName,
-				},
-			},
-		},
-		gatewayApplierDeleter: &otelcollector.GatewayApplierDeleter{
-			Config: config.Gateway,
-		},
-		agentApplierDeleter: &otelcollector.AgentApplierDeleter{
-			Config: config.Agent,
-		},
-		pipelineLock:       pipelineLock,
-		gatewayProber:      gatewayProber,
-		agentProber:        agentProber,
-		flowHealthProber:   flowHealthProber,
-		overridesHandler:   overridesHandler,
-		istioStatusChecker: istiostatus.NewChecker(client),
+		Client:                client,
+		config:                config,
+		agentApplierDeleter:   agentApplierDeleter,
+		agentConfigBuilder:    agentConfigBuilder,
+		agentProber:           agentProber,
+		flowHealthProber:      flowHealthProber,
+		gatewayApplierDeleter: gatewayApplierDeleter,
+		gatewayConfigBuilder:  gatewayConfigBuilder,
+		gatewayProber:         gatewayProber,
+		istioStatusChecker:    istioStatusChecker,
+		overridesHandler:      overridesHandler,
+		pipelineLock:          pipelineLock,
 		pipelineValidator:  NewValidator(client, pipelineLock),
 	}
 }

@@ -52,7 +52,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
@@ -60,7 +59,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
@@ -131,7 +129,7 @@ var (
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.7-1e5449d3"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.0-8691013b"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
@@ -469,15 +467,58 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 
 func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with metrics controller")
-	var err error
-	var flowHealthProber *prober.OTelPipelineProber
-	if flowHealthProber, err = prober.NewMetricPipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
-		setupLog.Error(err, "Failed to create flow health prober")
+
+	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
+		mgr.GetClient(),
+		reconcileTriggerChan,
+		telemetrycontrollers.MetricPipelineControllerConfig{
+			Config: metricpipeline.Config{
+				Agent: otelcollector.AgentConfig{
+					Config: otelcollector.Config{
+						Namespace: telemetryNamespace,
+						BaseName:  "telemetry-metric-agent",
+					},
+					DaemonSet: otelcollector.DaemonSetConfig{
+						Image:             metricGatewayImage,
+						PriorityClassName: metricGatewayPriorityClass,
+						CPULimit:          resource.MustParse("1"),
+						MemoryLimit:       resource.MustParse("1200Mi"),
+						CPURequest:        resource.MustParse("15m"),
+						MemoryRequest:     resource.MustParse("50Mi"),
+					},
+				},
+				Gateway: otelcollector.GatewayConfig{
+					Config: otelcollector.Config{
+						Namespace: telemetryNamespace,
+						BaseName:  "telemetry-metric-gateway",
+					},
+					Deployment: otelcollector.DeploymentConfig{
+						Image:                metricGatewayImage,
+						PriorityClassName:    metricGatewayPriorityClass,
+						BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
+						DynamicCPULimit:      resource.MustParse(metricGatewayDynamicCPULimit),
+						BaseMemoryLimit:      resource.MustParse(metricGatewayMemoryLimit),
+						DynamicMemoryLimit:   resource.MustParse(metricGatewayDynamicMemoryLimit),
+						BaseCPURequest:       resource.MustParse(metricGatewayCPURequest),
+						DynamicCPURequest:    resource.MustParse(metricGatewayDynamicCPURequest),
+						BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
+						DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
+					},
+					OTLPServiceName: metricOTLPServiceName,
+				},
+				MaxPipelines:  maxMetricPipelines,
+				ModuleVersion: version,
+			},
+			TelemetryNamespace: telemetryNamespace,
+			SelfMonitorName:    selfMonitorName,
+		},
+	)
+	if err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
 		os.Exit(1)
 	}
-
-	if err := createMetricPipelineController(mgr.GetClient(), reconcileTriggerChan, flowHealthProber).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
+	if err := metricPipelineController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to setup controller", "controller", "MetricPipeline")
 		os.Exit(1)
 	}
 }
@@ -528,51 +569,6 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		client,
 		dryrun.NewDryRunner(client, createDryRunConfig()),
 		admission.NewDecoder(scheme))
-}
-
-func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.OTelPipelineProber) *telemetrycontrollers.MetricPipelineController {
-	config := metricpipeline.Config{
-		Agent: otelcollector.AgentConfig{
-			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-metric-agent",
-			},
-			DaemonSet: otelcollector.DaemonSetConfig{
-				Image:             metricGatewayImage,
-				PriorityClassName: metricGatewayPriorityClass,
-				CPULimit:          resource.MustParse("1"),
-				MemoryLimit:       resource.MustParse("1200Mi"),
-				CPURequest:        resource.MustParse("15m"),
-				MemoryRequest:     resource.MustParse("50Mi"),
-			},
-		},
-		Gateway: otelcollector.GatewayConfig{
-			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-metric-gateway",
-			},
-			Deployment: otelcollector.DeploymentConfig{
-				Image:                metricGatewayImage,
-				PriorityClassName:    metricGatewayPriorityClass,
-				BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
-				DynamicCPULimit:      resource.MustParse(metricGatewayDynamicCPULimit),
-				BaseMemoryLimit:      resource.MustParse(metricGatewayMemoryLimit),
-				DynamicMemoryLimit:   resource.MustParse(metricGatewayDynamicMemoryLimit),
-				BaseCPURequest:       resource.MustParse(metricGatewayCPURequest),
-				DynamicCPURequest:    resource.MustParse(metricGatewayDynamicCPURequest),
-				BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
-				DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
-			},
-			OTLPServiceName: metricOTLPServiceName,
-		},
-		MaxPipelines:  maxMetricPipelines,
-		ModuleVersion: version,
-	}
-
-	return telemetrycontrollers.NewMetricPipelineController(
-		client,
-		reconcileTriggerChan,
-		metricpipeline.New(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, flowHealthProber, overridesHandler))
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
