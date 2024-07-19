@@ -977,8 +977,8 @@ func TestReconcile(t *testing.T) {
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
-			conditions.ReasonAPIRequestFailed,
-			"One of the requests to the Kubernetes API server has failed",
+			conditions.ReasonValidationFailed,
+			"Pipeline validation failed due to an error from the Kubernetes API server",
 		)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -1040,8 +1040,8 @@ func TestReconcile(t *testing.T) {
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionFalse,
-			conditions.ReasonAPIRequestFailed,
-			"One of the requests to the Kubernetes API server has failed",
+			conditions.ReasonValidationFailed,
+			"Pipeline validation failed due to an error from the Kubernetes API server",
 		)
 
 		requireHasStatusCondition(t, updatedPipeline,

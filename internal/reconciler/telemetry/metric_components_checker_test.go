@@ -364,16 +364,16 @@ func TestMetricComponentsCheck(t *testing.T) {
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  "False",
-						Reason:  "APIRequestFailed",
-						Message: "One of the requests to the Kubernetes API server has failed",
+						Reason:  "ValidationFailed",
+						Message: "Pipeline validation failed due to an error from the Kubernetes API server",
 					}).
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
-				Reason:  "APIRequestFailed",
-				Message: "One of the requests to the Kubernetes API server has failed",
+				Reason:  "ValidationFailed",
+				Message: "Pipeline validation failed due to an error from the Kubernetes API server",
 			},
 		},
 	}

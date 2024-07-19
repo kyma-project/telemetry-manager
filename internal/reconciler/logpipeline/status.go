@@ -115,7 +115,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 
 	var APIRequestFailed *errortypes.APIRequestFailedError
 	if errors.As(err, &APIRequestFailed) {
-		return metav1.ConditionFalse, conditions.ReasonAPIRequestFailed, conditions.MessageForLogPipeline(conditions.ReasonAPIRequestFailed)
+		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForLogPipeline(conditions.ReasonValidationFailed)
 	}
 
 	return conditions.EvaluateTLSCertCondition(err)

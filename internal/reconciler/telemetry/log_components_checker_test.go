@@ -343,16 +343,16 @@ func TestLogComponentsCheck(t *testing.T) {
 					WithStatusCondition(metav1.Condition{
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
-						Reason:  "APIRequestFailed",
-						Message: "One of the requests to the Kubernetes API server has failed",
+						Reason:  "ValidationFailed",
+						Message: "Pipeline validation failed due to an error from the Kubernetes API server",
 					}).
 					Build(),
 			},
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
-				Reason:  "APIRequestFailed",
-				Message: "One of the requests to the Kubernetes API server has failed",
+				Reason:  "ValidationFailed",
+				Message: "Pipeline validation failed due to an error from the Kubernetes API server",
 			},
 		},
 	}

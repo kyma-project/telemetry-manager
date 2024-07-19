@@ -31,7 +31,7 @@ const (
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
 	ReasonTLSConfigurationInvalid     = "TLSConfigurationInvalid"
 	ReasonGatewayConfigured           = "GatewayConfigured"
-	ReasonAPIRequestFailed            = "APIRequestFailed"
+	ReasonValidationFailed            = "ValidationFailed"
 
 	// Telemetry reasons
 	ReasonComponentsRunning      = "ComponentsRunning"
@@ -52,7 +52,7 @@ var commonMessages = map[string]string{
 	ReasonSelfMonFlowHealthy:      "No problems detected in the telemetry flow",
 	ReasonSelfMonProbingFailed:    "Could not determine the health of the telemetry flow because the self monitor probing failed",
 	ReasonTLSConfigurationInvalid: "TLS configuration invalid: %s",
-	ReasonAPIRequestFailed:        "One of the requests to the Kubernetes API server has failed",
+	ReasonValidationFailed:        "Pipeline validation failed due to an error from the Kubernetes API server",
 }
 
 var logPipelineMessages = map[string]string{
