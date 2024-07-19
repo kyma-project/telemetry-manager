@@ -93,7 +93,6 @@ type Reconciler struct {
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
-	tlsCertValidator      TLSCertValidator
 	pipelineValidator     *Validator
 }
 
