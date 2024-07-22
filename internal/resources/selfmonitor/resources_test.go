@@ -35,7 +35,14 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 		},
 	}
 
-	err := sut.ApplyResources(ctx, client, configPath, configFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML)
+	opts := ApplyOptions{
+		AlertRulesFileName:       alertRulesFileName,
+		AlertRulesYAML:           alertRulesYAML,
+		PrometheusConfigFileName: configFileName,
+		PrometheusConfigPath:     configPath,
+		PrometheusConfigYAML:     prometheusConfigYAML,
+	}
+	err := sut.ApplyResources(ctx, client, opts)
 	require.NoError(t, err)
 
 	t.Run("It should create all resources", func(t *testing.T) {
@@ -96,7 +103,14 @@ func TestApplySelfMonitorResources(t *testing.T) {
 		},
 	}
 
-	err := sut.ApplyResources(ctx, client, configPath, configFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML)
+	opts := ApplyOptions{
+		AlertRulesFileName:       alertRulesFileName,
+		AlertRulesYAML:           alertRulesYAML,
+		PrometheusConfigFileName: configFileName,
+		PrometheusConfigPath:     configPath,
+		PrometheusConfigYAML:     prometheusConfigYAML,
+	}
+	err := sut.ApplyResources(ctx, client, opts)
 	require.NoError(t, err)
 
 	t.Run("should create collector Config configmap", func(t *testing.T) {
