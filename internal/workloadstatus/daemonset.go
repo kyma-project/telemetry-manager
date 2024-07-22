@@ -13,6 +13,7 @@ import (
 var (
 	ErrDaemonSetNotFound      = errors.New("DaemonSet is not yet created")
 	ErrDaemonSetFetchingError = errors.New("failed to get DaemonSet")
+	ErrReplicaCountMismatch   = errors.New("replica count mismatch")
 )
 
 type DaemonSetProber struct {
@@ -28,7 +29,11 @@ func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedNa
 		}
 		return ErrDaemonSetFetchingError
 	}
-	if ds.Status.NumberReady == ds.Status.DesiredNumberScheduled {
+
+	updated := ds.Status.UpdatedNumberScheduled
+	desired := ds.Status.DesiredNumberScheduled
+	ready := ds.Status.NumberReady
+	if updated == desired && ready >= desired {
 		return nil
 	}
 
@@ -36,10 +41,5 @@ func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedNa
 		return err
 	}
 
-	// In a rolling update we perform update of one pod at a time. So, if the difference between desired and ready pods is 1, then we can consider the DaemonSet as ready.
-	if ds.Status.DesiredNumberScheduled-ds.Status.NumberReady == 1 || ds.Status.DesiredNumberScheduled-ds.Status.NumberReady == 0 {
-		return nil
-	}
-
-	return nil
+	return ErrReplicaCountMismatch
 }

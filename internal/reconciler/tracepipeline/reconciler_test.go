@@ -713,6 +713,13 @@ func TestReconcile(t *testing.T) {
 				expectedReason:  conditions.ReasonGatewayNotReady,
 				expectedMessage: workloadstatus.ErrNoPodsDeployed.Error(),
 			},
+			{
+				name:            "pod is ready",
+				probeGatewayErr: nil,
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonGatewayReady,
+				expectedMessage: conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
+			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -753,12 +760,10 @@ func TestReconcile(t *testing.T) {
 				var updatedPipeline telemetryv1alpha1.TracePipeline
 				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-				if tt.probeGatewayErr != nil {
-					cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
-					require.Equal(t, tt.expectedStatus, cond.Status)
-					require.Equal(t, tt.expectedReason, cond.Reason)
-					require.Equal(t, tt.expectedMessage, cond.Message)
-				}
+				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+				require.Equal(t, tt.expectedStatus, cond.Status)
+				require.Equal(t, tt.expectedReason, cond.Reason)
+				require.Equal(t, tt.expectedMessage, cond.Message)
 			})
 		}
 	})

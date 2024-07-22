@@ -137,22 +137,22 @@ func TestErrorMessages(t *testing.T) {
 		{
 			name:             "ContainerNotRunningError",
 			err:              &ContainerNotRunningError{Message: "unable to pull image"},
-			expectedErrorMsg: "container is not running: unable to pull image",
+			expectedErrorMsg: "Container is not running: unable to pull image",
 		},
 		{
 			name:             "PodIsPendingError",
 			err:              &PodIsPendingError{Message: "unable to mount volume"},
-			expectedErrorMsg: "pod is in pending state: unable to mount volume",
+			expectedErrorMsg: "Pod is in pending state: unable to mount volume",
 		},
 		{
 			name:             "PodIsEvictedError",
 			err:              &PodIsEvictedError{Message: "due to known reason"},
-			expectedErrorMsg: "pod has been evicted: due to known reason",
+			expectedErrorMsg: "Pod has been evicted: due to known reason",
 		},
 		{
 			name:             "ProcessInContainerExitedError",
 			err:              &ProcessInContainerExitedError{ExitCode: 1},
-			expectedErrorMsg: "container process has exited with status: 1",
+			expectedErrorMsg: "Container process has exited with status: 1",
 		},
 	}
 	for _, test := range tt {

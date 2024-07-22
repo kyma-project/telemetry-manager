@@ -52,7 +52,6 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 	err := r.gatewayProber.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe trace gateway - set condition as not healthy")
-
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonGatewayNotReady
 		msg = err.Error()

@@ -26,7 +26,7 @@ type ProcessInContainerExitedError struct {
 }
 
 func (picee *ProcessInContainerExitedError) Error() string {
-	return fmt.Sprintf("container process has exited with status: %d", picee.ExitCode)
+	return fmt.Sprintf("Container process has exited with status: %d", picee.ExitCode)
 }
 
 func IsProcessInContainerExitedError(err error) bool {
@@ -39,7 +39,7 @@ type ContainerNotRunningError struct {
 }
 
 func (cnre *ContainerNotRunningError) Error() string {
-	return fmt.Sprintf("container is not running: %s", cnre.Message)
+	return fmt.Sprintf("Container is not running: %s", cnre.Message)
 }
 
 func IsContainerNotRunningError(err error) bool {
@@ -52,7 +52,7 @@ type PodIsPendingError struct {
 }
 
 func (pipe *PodIsPendingError) Error() string {
-	return fmt.Sprintf("pod is in pending state: %s", pipe.Message)
+	return fmt.Sprintf("Pod is in pending state: %s", pipe.Message)
 }
 
 func IsPodIsPendingError(err error) bool {
@@ -65,7 +65,7 @@ type PodIsEvictedError struct {
 }
 
 func (pie *PodIsEvictedError) Error() string {
-	return fmt.Sprintf("pod has been evicted: %s", pie.Message)
+	return fmt.Sprintf("Pod has been evicted: %s", pie.Message)
 }
 
 func IsPodIsEvictedError(err error) bool {
@@ -79,11 +79,17 @@ func checkPodStatus(ctx context.Context, c client.Client, namespace string, sele
 	if err := c.List(ctx, &pods, client.InNamespace(namespace), client.MatchingLabels(selector.MatchLabels)); err != nil {
 		return err
 	}
+
 	if len(pods.Items) == 0 {
 		return ErrNoPodsDeployed
 	}
 
 	for _, pod := range pods.Items {
+		//check if all containers are ready
+		containerReadyCondition := findConditions(pod.Status.Conditions, corev1.ContainersReady)
+		if containerReadyCondition.Status == corev1.ConditionTrue {
+			continue
+		}
 		// Check for pending pods
 		if err := checkPendingState(pod.Status); err != nil {
 			return err
@@ -94,7 +100,7 @@ func checkPodStatus(ctx context.Context, c client.Client, namespace string, sele
 		}
 		for _, c := range pod.Status.ContainerStatuses {
 			// Check if pod is terminated
-			if err := checkWaitingPods(c); err != nil {
+			if err := checkWaitingPods(c, pod.Status.Conditions); err != nil {
 				return err
 			}
 		}
@@ -122,25 +128,42 @@ func checkEviction(status corev1.PodStatus) error {
 	return nil
 }
 
-func checkWaitingPods(c corev1.ContainerStatus) error {
+func checkWaitingPods(c corev1.ContainerStatus, podConditions []corev1.PodCondition) error {
 	if c.State.Waiting == nil {
 		return nil
 	}
 
-	// handle the cases when image is not pulled.
+	if c.LastTerminationState.Terminated != nil {
+		lastTerminatedState := c.LastTerminationState.Terminated
+		if lastTerminatedState.Reason == "OOMKilled" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
+			return ErrOOMKilled
+		}
+
+		if lastTerminatedState.Reason == "Error" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
+			return fetchWaitingReason(*c.State.Waiting, lastTerminatedState.ExitCode)
+		}
+	}
+
+	// handle the cases when image is not pulled or ContainerCreating for more than threshold time
+	//We can only know for how long its stuck in this situation is via LastTransitionTime as the last termination state is not present.
 	if c.LastTerminationState.Terminated == nil {
-		return &ContainerNotRunningError{Message: c.State.Waiting.Reason}
+		containerReadyCondition := findConditions(podConditions, corev1.ContainersReady)
+		if exceededTimeThreshold(containerReadyCondition.LastTransitionTime) {
+			return &ContainerNotRunningError{Message: c.State.Waiting.Reason}
+		}
 	}
 
-	lastTerminatedState := c.LastTerminationState.Terminated
-	if lastTerminatedState.Reason == "OOMKilled" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
-		return ErrOOMKilled
-	}
-
-	if lastTerminatedState.Reason == "Error" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
-		return fetchWaitingReason(*c.State.Waiting, lastTerminatedState.ExitCode)
-	}
 	return nil
+}
+
+func findConditions(conditions []corev1.PodCondition, s corev1.PodConditionType) corev1.PodCondition {
+	for _, c := range conditions {
+		if c.Type == s {
+			return c
+		}
+	}
+	return corev1.PodCondition{}
+
 }
 
 func fetchWaitingReason(state corev1.ContainerStateWaiting, exitCode int32) error {

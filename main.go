@@ -217,7 +217,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 func main() {
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
+	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "kyma-system"), "Namespace of the manager")
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
 
 	flag.StringVar(&traceGatewayImage, "trace-collector-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
