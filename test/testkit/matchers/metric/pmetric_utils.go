@@ -7,6 +7,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
+// FlatMetric is holds all information about metrics used in the test.
+// It makes accessing the information easier than using pdata.Metric directly.
 type FlatMetric struct {
 	Name, Description                                     string
 	ResourceAttributes, ScopeAttributes, MetricAttributes map[string]string
@@ -25,6 +27,7 @@ func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 	})
 }
 
+// flattenAllMetrics converts pdata.Metrics to a slice of FlatMetric.
 func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
 	var flatMetrics []FlatMetric
 
@@ -60,6 +63,7 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 	return flatMetrics
 }
 
+// attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
 func attributeToMap(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
 	attrs.Range(func(k string, v pcommon.Value) bool {
