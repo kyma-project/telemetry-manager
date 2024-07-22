@@ -37,8 +37,18 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 // MetricPipelineController reconciles a MetricPipeline object
@@ -48,12 +58,51 @@ type MetricPipelineController struct {
 	reconciler           *metricpipeline.Reconciler
 }
 
-func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *metricpipeline.Reconciler) *MetricPipelineController {
+type MetricPipelineControllerConfig struct {
+	metricpipeline.Config
+
+	SelfMonitorName    string
+	TelemetryNamespace string
+}
+
+func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
+	flowHealthProber, err := prober.NewMetricPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	if err != nil {
+		return nil, err
+	}
+
+	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-metricpipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
+
+	pipelineValidator := &metricpipeline.Validator{
+		TLSCertValidator:   tlscert.New(client),
+		SecretRefValidator: &secretref.Validator{Client: client},
+		PipelineLock:       pipelineLock,
+	}
+
+	reconciler := metricpipeline.New(
+		client,
+		config.Config,
+		&otelcollector.AgentApplierDeleter{Config: config.Agent},
+		&agent.Builder{
+			Config: agent.BuilderConfig{
+				GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: config.Gateway.OTLPServiceName},
+			},
+		},
+		&k8sutils.DaemonSetProber{Client: client},
+		flowHealthProber,
+		&otelcollector.GatewayApplierDeleter{Config: config.Gateway},
+		&gateway.Builder{Reader: client},
+		&k8sutils.DeploymentProber{Client: client},
+		istiostatus.NewChecker(client),
+		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		pipelineLock,
+		pipelineValidator)
+
 	return &MetricPipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
-	}
+	}, nil
 }
 
 func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

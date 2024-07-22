@@ -11,9 +11,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 )
 
-var ErrLockInUse = errors.New("lock is already acquired by other resources")
+var ErrMaxPipelinesExceeded = errors.New("maximum pipeline count limit exceeded")
 
 type Checker struct {
 	client    client.Client
@@ -55,22 +57,24 @@ func (l *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error
 		return nil
 	}
 
-	return ErrLockInUse
+	return ErrMaxPipelinesExceeded
 }
 
-func (l *Checker) IsLockHolder(ctx context.Context, obj metav1.Object) (bool, error) {
+func (l *Checker) IsLockHolder(ctx context.Context, obj metav1.Object) error {
 	var lock corev1.ConfigMap
 	if err := l.client.Get(ctx, l.lockName, &lock); err != nil {
-		return false, fmt.Errorf("failed to get lock: %w", err)
+		return &errortypes.APIRequestFailedError{
+			Err: fmt.Errorf("failed to get lock: %w", err),
+		}
 	}
 
 	for _, ref := range lock.GetOwnerReferences() {
 		if ref.Name == obj.GetName() && ref.UID == obj.GetUID() {
-			return true, nil
+			return nil
 		}
 	}
 
-	return false, nil
+	return ErrMaxPipelinesExceeded
 }
 
 func (l *Checker) createLock(ctx context.Context, owner metav1.Object) error {
@@ -80,11 +84,14 @@ func (l *Checker) createLock(ctx context.Context, owner metav1.Object) error {
 			Namespace: l.lockName.Namespace,
 		},
 	}
+
 	if err := controllerutil.SetOwnerReference(owner, &lock, l.client.Scheme()); err != nil {
 		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
+
 	if err := l.client.Create(ctx, &lock); err != nil {
 		return fmt.Errorf("failed to create lock: %w", err)
 	}
+
 	return nil
 }

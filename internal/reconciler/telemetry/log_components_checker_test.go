@@ -122,7 +122,7 @@ func TestLogComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeConfigurationGenerated,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonUnsupportedLokiOutput,
-						Message: conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput),
+						Message: "The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 					}).
 					Build(),
 			},
@@ -131,7 +131,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "UnsupportedLokiOutput",
-				Message: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
+				Message: "The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 			},
 		},
 		{
@@ -329,6 +329,30 @@ func TestLogComponentsCheck(t *testing.T) {
 				Status:  "True",
 				Reason:  "TLSCertificateAboutToExpire",
 				Message: "TLS certificate is about to expire",
+			},
+		},
+		{
+			name: "should not be healthy of one pipeline has a failed request to the Kubernetes API server during validation",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{
+						Type:    conditions.TypeConfigurationGenerated,
+						Status:  metav1.ConditionFalse,
+						Reason:  "ValidationFailed",
+						Message: "Pipeline validation failed due to an error from the Kubernetes API server",
+					}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeLogComponentsHealthy,
+				Status:  "False",
+				Reason:  "ValidationFailed",
+				Message: "Pipeline validation failed due to an error from the Kubernetes API server",
 			},
 		},
 	}

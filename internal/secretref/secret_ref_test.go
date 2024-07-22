@@ -20,7 +20,7 @@ func (m mockGetter) GetSecretRefs() []telemetryv1alpha1.SecretKeyRef {
 	return m.refs
 }
 
-func TestVerifySecretReference(t *testing.T) {
+func TestValidate(t *testing.T) {
 	tests := []struct {
 		name        string
 		getter      []telemetryv1alpha1.SecretKeyRef
@@ -87,7 +87,10 @@ func TestVerifySecretReference(t *testing.T) {
 				refs: test.getter,
 			}
 
-			err := VerifySecretReference(context.TODO(), client, getter)
+			secretRefValidator := Validator{
+				Client: client,
+			}
+			err := secretRefValidator.Validate(context.TODO(), getter)
 			require.ErrorIs(t, err, test.expectError)
 		})
 	}
