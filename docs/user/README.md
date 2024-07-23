@@ -37,7 +37,7 @@ Supported integration scenarios are neutral to the vendor of the target system.
 
 ## Architecture
 
-![Components](./assets/telemetry-components.drawio.svg)
+![Components](./assets/telemetry-arch.drawio.svg)
 
 ### Telemetry Manager
 
