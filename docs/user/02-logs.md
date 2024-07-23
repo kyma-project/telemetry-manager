@@ -53,9 +53,10 @@ The LogPipeline resource is watched by Telemetry Manager, which is responsible f
 
 ![Manager resources](./assets/logs-resources.drawio.svg)
 
-- Telemetry Manager watches all LogPipeline resources and related Secrets.
-- Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated.
-- Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
+1. Telemetry Manager watches all LogPipeline resources and related Secrets.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the Fluent Bit DaemonSet itself. Only if there is a LogPipeline defined, the agent is deployed.
+3. Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated.
+4. Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
 
 ## Setting up a LogPipeline
 

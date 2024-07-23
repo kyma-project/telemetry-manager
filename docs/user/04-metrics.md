@@ -47,10 +47,10 @@ The MetricPipeline resource is watched by Telemetry Manager, which is responsibl
 
 ![Manager resources](./assets/metrics-resources.drawio.svg)
 
-- Telemetry Manager watches all MetricPipeline resources and related Secrets.
-- Whenever the configuration changes, it validates the configuration and generates a new configuration for the gateway and agent, and for each, a ConfigMap for the configuration is generated.
-- Referenced Secrets are copied into one Secret that is mounted to the gateway as well.
-- Furthermore, Telemetry Manager takes care of the full lifecycle of the gateway Deployment and the agent DaemonSet itself. Only if there is a MetricPipeline defined, they are deployed.
+1. Telemetry Manager watches all MetricPipeline resources and related Secrets.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the gateway Deployment and the agent DaemonSet itself. Only if there is a MetricPipeline defined, they are deployed.
+3. Whenever the user configuration changes, it validates the configuration and generates a single configuration for the gateway and agent.
+4. Referenced Secrets are copied into one Secret that is mounted to the gateway as well.
 
 If you don't want to use the Metrics feature, simply don't set up a MetricPipeline.
 
