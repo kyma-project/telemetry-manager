@@ -106,11 +106,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				// By default, pod and container metrics are enabled for the runtime input
-				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-					ContainMetric(WithName(BeElementOf(kubeletstats.PodMetricsNames))),
-					ContainMetric(WithName(BeElementOf(kubeletstats.ContainerMetricsNames))),
-					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
-				))))
+				// g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
+				// 	ContainMetric(WithName(BeElementOf(kubeletstats.PodMetricsNames))),
+				// 	ContainMetric(WithName(BeElementOf(kubeletstats.ContainerMetricsNames))),
+				// 	ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
+				// ))))
+				g.Expect(resp).To(HaveHTTPBody(WithFlatMetrics(
+					SatisfyAll(
+						ContainElements(
+							HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)),
+							HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)),
+							HaveField("ScopeAndVersion", HaveField("Scope", ContainSubstring(InstrumentationScopeRuntime))),
+						)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -120,6 +127,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
+				
 					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletstats.MetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

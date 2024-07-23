@@ -79,14 +79,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Ensures diagnostic metrics are sent to the backend", func() {
+		It("Ensures all defined diagnostic metrics are sent to the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(ContainMetric(WithName(
-						BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"))))))
+					WithFlatMetrics(WithNames(ContainElements("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

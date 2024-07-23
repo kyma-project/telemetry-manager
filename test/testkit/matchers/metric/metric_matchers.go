@@ -21,6 +21,7 @@ func WithMds(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
+// WithNames extracts metric names from FlatMetrics and applies the matcher to them.
 func WithNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm []FlatMetric) ([]string, error) {
 		var names []string
@@ -32,6 +33,7 @@ func WithNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
+// WithScopeAndVersion extracts scope and version from FlatMetrics and applies the matcher to them.
 func WithScopeAndVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm []FlatMetric) ([]ScopeVersion, error) {
 		var scopes []ScopeVersion
@@ -48,6 +50,7 @@ func WithScopeAndVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
+// WithFlatMetrics extracts FlatMetrics from OTLP JSON and applies the matcher to them.
 func WithFlatMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlMetrics []byte) ([]FlatMetric, error) {
 		mds, err := unmarshalMetrics(jsonlMetrics)
