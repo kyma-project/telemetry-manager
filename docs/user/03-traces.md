@@ -515,7 +515,7 @@ If you just want to see traces for one particular request, you can manually forc
 **Symptom**:
 
 - In the TracePipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
-- Also, your application might have error logs indicating a refusal for pushing traces to the gateway.
+- Also, your application might have error logs indicating a refusal for sending traces to the gateway.
 
 **Cause**: Gateway cannot receive spans at the given rate.
 

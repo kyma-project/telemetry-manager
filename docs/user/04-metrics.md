@@ -19,15 +19,15 @@ While application logs and traces usually provide request-oriented data, metrics
 
 In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma modules and users’ applications send the metrics data.
 
-Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can pull metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
+Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can retrieve metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
 
 ![Architecture](./assets/metrics-arch.drawio.svg)
 
-1. An application (exposing metrics in OTLP) pushes metrics to the central metric gateway service.
+1. An application (exposing metrics in OTLP) sends metrics to the central metric gateway service.
 2. An application exposing metrics in Prometheus protocol, activates the agent to scrape the metrics with an annotation-based configuration.
 3. Additionally, you can activate the agent to pull metrics of each Istio sidecar.
 4. The agent supports collecting container metrics from the Kubelet and K8S APIServer
-5. The agent converts and pushes all collected metric data to the gateway in OTLP.
+5. The agent converts and sends all collected metric data to the gateway in OTLP.
 6. The gateway discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
 7. The Telemetry manager configures the agent and gateway according to the `MetricPipeline` resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
 8. As specified in your `MetricPipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster. If authentication has been set up, the backend can also run outside the cluster.
@@ -39,7 +39,7 @@ In a Kyma cluster, the metric gateway is the central component to which all comp
 
 ### Metric Agent
 
-If a MetricPipeline configures a feature in the `input` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of Prometheus-based metrics. Hereby, the workload puts a `prometheus.io/scrape` annotation on the specification of the Pod or service, and the agent collects it. The agent pushes all data in OTLP to the central gateway.
+If a MetricPipeline configures a feature in the `input` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of Prometheus-based metrics. Hereby, the workload puts a `prometheus.io/scrape` annotation on the specification of the Pod or service, and the agent collects it. The agent sends all data in OTLP to the central gateway.
 
 ### Telemetry Manager
 
@@ -404,7 +404,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-With this, the agent starts pulling all Istio metrics from Istio sidecars.
+With this, the agent starts retrieving all Istio metrics from Istio sidecars.
 
 ### 7. Deactivate OTLP Metrics
 
@@ -429,7 +429,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-With this, the agent starts pulling all Istio metrics from Istio sidecars, and the push-based OTLP metrics are dropped.
+With this, the agent starts retrieving all Istio metrics from Istio sidecars, and the push-based OTLP metrics are dropped.
 
 ### 8. Add Filters
 
