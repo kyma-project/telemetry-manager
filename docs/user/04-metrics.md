@@ -7,6 +7,7 @@ The goal of the Telemetry module is to support you in collecting all relevant me
 Observability is all about exposing the internals of the components belonging to a distributed application and making that data analysable at a central place.
 While application logs and traces usually provide request-oriented data, metrics are aggregated statistics exposed by a component to reflect the internal state. Typical statistics like the amount of processed requests, or the amount of registered users, can be very useful to monitor the current state and also the health of a component. Also, you can define proactive and reactive alerts if metrics are about to reach thresholds, or if they already passed thresholds.
 
+
 ## Prerequisites
 
 - Before you can collect metrics data from a component, it must expose (or instrument) the metrics. Typically, it instruments specific metrics for the used language runtime (like Node.js) and custom metrics specific to the business logic. Also, the exposure can be in different formats, like the pull-based Prometheus format or the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
@@ -18,6 +19,8 @@ While application logs and traces usually provide request-oriented data, metrics
 ## Architecture
 
 In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma modules and users’ applications send the metrics data.
+
+The feature is optional, if you don't want to use the Metrics feature, simply don't set up a MetricPipeline.
 
 Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can retrieve metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
 
@@ -33,14 +36,6 @@ Optionally, the Telemetry module provides a DaemonSet of an OTel Collector actin
 8. As specified in your `MetricPipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster. If authentication has been set up, the backend can also run outside the cluster.
 9. You can analyze the metric data with your preferred backend system.
 
-### Metric Gateway
-
-In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Telemetry Gateways](./gateways.md).
-
-### Metric Agent
-
-If a MetricPipeline configures a feature in the `input` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of Prometheus-based metrics. Hereby, the workload puts a `prometheus.io/scrape` annotation on the specification of the Pod or service, and the agent collects it. The agent sends all data in OTLP to the central gateway.
-
 ### Telemetry Manager
 
 The MetricPipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the OTel Collector configuration.
@@ -52,7 +47,13 @@ The MetricPipeline resource is watched by Telemetry Manager, which is responsibl
 3. Whenever the user configuration changes, it validates the configuration and generates a single configuration for the gateway and agent.
 4. Referenced Secrets are copied into one Secret that is mounted to the gateway as well.
 
-If you don't want to use the Metrics feature, simply don't set up a MetricPipeline.
+### Metric Gateway
+
+In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Telemetry Gateways](./gateways.md).
+
+### Metric Agent
+
+If a MetricPipeline configures a feature in the `input` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of Prometheus-based metrics. Hereby, the workload puts a `prometheus.io/scrape` annotation on the specification of the Pod or service, and the agent collects it. The agent sends all data in OTLP to the central gateway.
 
 ## Setting up a MetricPipeline
 

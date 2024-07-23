@@ -24,6 +24,8 @@ For the recording of a distributed trace, every involved component must propagat
 
 In the Kyma cluster, the Telemetry module provides a central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints to which all Kyma modules and users’ applications should send the trace data to.
 
+The feature is optional, if you don't want to use the Traces feature, simply don't set up a TracePipeline.
+
 ![Architecture](./assets/traces-arch.drawio.svg)
 
 1. An end-to-end request is triggered and populates across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
@@ -33,10 +35,6 @@ In the Kyma cluster, the Telemetry module provides a central deployment of an [O
 5. The Telemetry manager configures the gateway according to the `TracePipeline` resource, including the target backend for the trace gateway. Also, it observes the trace flow to the backend and reports problems in the `TracePipeline` status.
 6. As specified in your `TracePipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster. If authentication has been set up, the backend can also run outside the cluster.
 7. You can analyze the trace data with your preferred backend system.
-
-### Trace Gateway
-
-In a Kyma cluster, the trace gateway is the central component to which all components can send their individual spans. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Telemetry Gateways](./gateways.md).
 
 ### Telemetry Manager
 
@@ -49,7 +47,9 @@ The TracePipeline resource is watched by Telemetry Manager, which is responsible
 3. Whenever the configuration changes, it validates the configuration and generates a new configuration for OTel Collector, where a ConfigMap for the configuration is generated.
 4. Referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
 
-If you don't want to use the Traces feature, simply don't set up a TracePipeline.
+### Trace Gateway
+
+In a Kyma cluster, the trace gateway is the central component to which all components can send their individual spans. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Telemetry Gateways](./gateways.md).
 
 ## Setting up a TracePipeline
 
