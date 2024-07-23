@@ -128,7 +128,7 @@ var (
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.7-1e5449d3"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-main"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/dev/kyma-otel-collector:PR-81"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.0-8691013b"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
