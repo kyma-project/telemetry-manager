@@ -17,6 +17,7 @@ func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 		AddConfigParam("annotations", fmt.Sprintf("%v", fluentBitFlag(pipeline.Spec.Input.Application.KeepAnnotations))).
 		AddConfigParam("labels", fmt.Sprintf("%v", fluentBitFlag(!pipeline.Spec.Input.Application.DropLabels))).
 		AddConfigParam("buffer_size", "1MB").
+		AddConfigParam("keep_log", fluentBitFlag(pipeline.Spec.Input.Application.KeepOriginalBody)).
 		Build()
 }
 
