@@ -9,7 +9,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func TestCreateKubernetesFilterKeepAll(t *testing.T) {
+func TestCreateKubernetesFilterKeepAnnotations(t *testing.T) {
 	expected := `[FILTER]
     name                kubernetes
     match               test-logpipeline.*
@@ -35,7 +35,7 @@ func TestCreateKubernetesFilterKeepAll(t *testing.T) {
 	require.Equal(t, expected, actual)
 }
 
-func TestCreateKubernetesFilterDropAll(t *testing.T) {
+func TestCreateKubernetesFilterDropLabels(t *testing.T) {
 	expected := `[FILTER]
     name                kubernetes
     match               test-logpipeline.*
