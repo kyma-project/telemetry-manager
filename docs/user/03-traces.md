@@ -31,9 +31,8 @@ In the Kyma cluster, the Telemetry module provides a central deployment of an [O
 3. Istio is enabled to send the related span data to the trace gateway as well.
 4. The trace gateway enriches the span data with metadata that's typical for sources running on Kubernetes, like Pod identifiers.
 5. The Telemetry manager configures the gateway according to the `TracePipeline` resource, including the target backend for the trace gateway. Also, it observes the trace flow to the backend and reports problems in the `TracePipeline` status.
-6. As specified in your `TracePipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster.
-7. If authentication has been set up, the backend can also run outside the cluster.
-8. You can analyze the trace data with your preferred backend system.
+6. As specified in your `TracePipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster. If authentication has been set up, the backend can also run outside the cluster.
+7. You can analyze the trace data with your preferred backend system.
 
 ### Trace Gateway
 

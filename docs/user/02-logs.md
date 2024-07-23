@@ -27,9 +27,8 @@ Your application must log to `stdout` or `stderr`, which ensures that the logs c
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
 3. Fluent Bit queries the [Kubernetes API Server](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/) for additional Pod metadata, such as Pod annotations and labels.
 4. The Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
-5. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems inside the Kyma cluster. Here, you can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
-6. If authentication has been set up, the backend can also run outside the cluster.
-7. To analyze and visualize your logs, access the internal or external observability system.
+5. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems inside the Kyma cluster. You can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation. If authentication has been set up, the backend can also run outside the cluster.
+6. To analyze and visualize your logs, access the internal or external observability system.
 
 ### Pipelines
 <!--- Pipelines is not part of Help Portal docs --->
