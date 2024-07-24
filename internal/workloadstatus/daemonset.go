@@ -3,7 +3,6 @@ package workloadstatus
 import (
 	"context"
 	"errors"
-
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,7 +12,7 @@ import (
 var (
 	ErrDaemonSetNotFound      = errors.New("DaemonSet is not yet created")
 	ErrDaemonSetFetchingError = errors.New("failed to get DaemonSet")
-	ErrReplicaCountMismatch   = errors.New("replica count mismatch")
+	RolloutInProgress         = errors.New("pods rollout in progress")
 )
 
 type DaemonSetProber struct {
@@ -37,9 +36,11 @@ func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedNa
 		return nil
 	}
 
+	// check if any of the pods have issues. If so return the error
 	if err := checkPodStatus(ctx, dsp.Client, name.Namespace, ds.Spec.Selector); err != nil {
 		return err
 	}
 
-	return ErrReplicaCountMismatch
+	// Assume that there is an update or rollout of pods is in progress
+	return RolloutInProgress
 }

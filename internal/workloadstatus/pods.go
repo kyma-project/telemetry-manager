@@ -2,77 +2,22 @@ package workloadstatus
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"time"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	ErrOOMKilled          = errors.New("container is OOMKilled")
-	ErrContainerCrashLoop = errors.New("container is in crash loop")
-	ErrNoPodsDeployed     = errors.New("no pods deployed")
-)
-
-const (
-	timeThreshold = 5 * time.Minute
-)
-
-type ProcessInContainerExitedError struct {
-	ExitCode int32
-}
-
-func (picee *ProcessInContainerExitedError) Error() string {
-	return fmt.Sprintf("Container process has exited with status: %d", picee.ExitCode)
-}
-
-func IsProcessInContainerExitedError(err error) bool {
-	var picee *ProcessInContainerExitedError
-	return errors.As(err, &picee)
-}
-
-type ContainerNotRunningError struct {
-	Message string
-}
-
-func (cnre *ContainerNotRunningError) Error() string {
-	return fmt.Sprintf("Container is not running: %s", cnre.Message)
-}
-
-func IsContainerNotRunningError(err error) bool {
-	var cnre *ContainerNotRunningError
-	return errors.As(err, &cnre)
-}
-
-type PodIsPendingError struct {
-	Message string
-}
-
-func (pipe *PodIsPendingError) Error() string {
-	return fmt.Sprintf("Pod is in pending state: %s", pipe.Message)
-}
-
-func IsPodIsPendingError(err error) bool {
-	var pipe *PodIsPendingError
-	return errors.As(err, &pipe)
-}
-
-type PodIsEvictedError struct {
-	Message string
-}
-
-func (pie *PodIsEvictedError) Error() string {
-	return fmt.Sprintf("Pod has been evicted: %s", pie.Message)
-}
-
-func IsPodIsEvictedError(err error) bool {
-	var pie *PodIsEvictedError
-	return errors.As(err, &pie)
-}
-
+// Status from a pod consists of PodConditions and ContainerStatuses
+// PodPhase tells the current state of Pod which can be Pending, Running, Succeeded, Failed, Unknown
+// The table below shows the various scenarios anc compares with
+// podPhase, PodScheduled (under podConditions), ContainerStatus.State, ContainerStatus.LastState
+// +----------------+-----------------+-----------------+-----------------+-----------------+-----------------+
+// | Scenario       | PodPhase | Pod Scheduled | ContainerStatus.State           | ContainerStatus.LastState |
+// |  Crashbackloop | Running  | True          | State.Waiting.Reason: CrashLoopBackOff| exitCode: 1, Reason: Error|
+// |  OOMKilled     | Running  | True          | State.Waiting.Reason: OOMKilled    | exitCode: 137, Reason: OOMKilled|
+// | PVC not found  | Pending  | False, Reason: Unschedulable        | - | -                       |
+// | ImagePullBackOff| Pending | True        | State.Waiting.Reason: ErrImagePul|-|
+// | Evicted        | Failed   | True             | - | -                       | only Status.Message is set
 func checkPodStatus(ctx context.Context, c client.Client, namespace string, selector *metav1.LabelSelector) error {
 	var pods corev1.PodList
 
@@ -85,22 +30,26 @@ func checkPodStatus(ctx context.Context, c client.Client, namespace string, sele
 	}
 
 	for _, pod := range pods.Items {
-		//check if all containers are ready
-		containerReadyCondition := findConditions(pod.Status.Conditions, corev1.ContainersReady)
-		if containerReadyCondition.Status == corev1.ConditionTrue {
+		//check if Pod is in running state & all containers are ready.
+		podReadyCondition := findPodConditions(pod.Status.Conditions, corev1.PodReady)
+		if pod.Status.Phase == corev1.PodRunning && podReadyCondition.Status == corev1.ConditionTrue {
 			continue
 		}
-		// Check for pending pods
-		if err := checkPendingState(pod.Status); err != nil {
+
+		// ToDo: Check readiness probe failure
+
+		// Check if Pods are in Pending state
+		if err := checkPodPendingState(pod.Status); err != nil {
 			return err
 		}
-		// check pod status for eviction
-		if err := checkEviction(pod.Status); err != nil {
+		// check pods are in failed State
+		if err := checkPodFailedState(pod.Status); err != nil {
 			return err
 		}
+		// Check is Pod is running state and if there is some issue with one of the containers
 		for _, c := range pod.Status.ContainerStatuses {
 			// Check if pod is terminated
-			if err := checkWaitingPods(c, pod.Status.Conditions); err != nil {
+			if err := checkPodsWaitingState(pod.Status, c); err != nil {
 				return err
 			}
 		}
@@ -109,54 +58,57 @@ func checkPodStatus(ctx context.Context, c client.Client, namespace string, sele
 	return nil
 }
 
-func checkPendingState(status corev1.PodStatus) error {
+func checkPodPendingState(status corev1.PodStatus) error {
 	if status.Phase != corev1.PodPending {
 		return nil
 	}
-	for _, c := range status.Conditions {
-		if c.Status == corev1.ConditionFalse && exceededTimeThreshold(c.LastTransitionTime) {
-			return &PodIsPendingError{Message: c.Message}
+
+	condition := findPodConditions(status.Conditions, corev1.PodScheduled)
+	if condition.Status == corev1.ConditionFalse {
+		return &PodIsPendingError{Message: condition.Message}
+	}
+
+	for _, c := range status.ContainerStatuses {
+		if c.State.Waiting != nil {
+			if c.State.Waiting.Reason != "" {
+				return &PodIsPendingError{Message: c.State.Waiting.Reason}
+
+			}
+			return &PodIsPendingError{Message: c.State.Waiting.Reason}
 		}
 	}
+
+	// We skip checking the state of each container here as they are not ready and hence the state would be false.
+	// Returning waiting reason would be wrong as the pod might be still starting up.
 	return nil
 }
 
-func checkEviction(status corev1.PodStatus) error {
-	if status.Reason == "Evicted" {
-		return &PodIsEvictedError{Message: status.Message}
+func checkPodFailedState(status corev1.PodStatus) error {
+	if status.Phase != corev1.PodFailed {
+		return nil
 	}
-	return nil
+
+	return &PodIsFailedError{Message: status.Message}
 }
 
-func checkWaitingPods(c corev1.ContainerStatus, podConditions []corev1.PodCondition) error {
-	if c.State.Waiting == nil {
+func checkPodsWaitingState(status corev1.PodStatus, c corev1.ContainerStatus) error {
+	if status.Phase != corev1.PodRunning && c.State.Waiting == nil {
 		return nil
 	}
 
 	if c.LastTerminationState.Terminated != nil {
 		lastTerminatedState := c.LastTerminationState.Terminated
-		if lastTerminatedState.Reason == "OOMKilled" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
-			return ErrOOMKilled
-		}
 
-		if lastTerminatedState.Reason == "Error" && exceededTimeThreshold(lastTerminatedState.StartedAt) {
-			return fetchWaitingReason(*c.State.Waiting, lastTerminatedState.ExitCode)
+		if lastTerminatedState.Reason != "" {
+			return &ContainerNotRunningError{Message: lastTerminatedState.Reason}
 		}
 	}
 
-	// handle the cases when image is not pulled or ContainerCreating for more than threshold time
-	//We can only know for how long its stuck in this situation is via LastTransitionTime as the last termination state is not present.
-	if c.LastTerminationState.Terminated == nil {
-		containerReadyCondition := findConditions(podConditions, corev1.ContainersReady)
-		if exceededTimeThreshold(containerReadyCondition.LastTransitionTime) {
-			return &ContainerNotRunningError{Message: c.State.Waiting.Reason}
-		}
-	}
-
-	return nil
+	// handle rest of error states when lastTerminatedState is not set
+	return &ContainerNotRunningError{Message: c.State.Waiting.Message}
 }
 
-func findConditions(conditions []corev1.PodCondition, s corev1.PodConditionType) corev1.PodCondition {
+func findPodConditions(conditions []corev1.PodCondition, s corev1.PodConditionType) corev1.PodCondition {
 	for _, c := range conditions {
 		if c.Type == s {
 			return c
@@ -164,20 +116,4 @@ func findConditions(conditions []corev1.PodCondition, s corev1.PodConditionType)
 	}
 	return corev1.PodCondition{}
 
-}
-
-func fetchWaitingReason(state corev1.ContainerStateWaiting, exitCode int32) error {
-	if exitCode == -1 {
-		return &ContainerNotRunningError{Message: state.Reason}
-	}
-
-	if state.Reason == "CrashLoopBackOff" {
-		return ErrContainerCrashLoop
-	}
-
-	return &ProcessInContainerExitedError{ExitCode: exitCode}
-}
-
-func exceededTimeThreshold(startedAt metav1.Time) bool {
-	return time.Since(startedAt.Time) > timeThreshold
 }

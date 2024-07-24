@@ -28,15 +28,10 @@ func (pb *podBuilder) WithLabels(labels map[string]string) *podBuilder {
 	return pb
 }
 
-func (pb *podBuilder) WithExpiredThreshold() *podBuilder {
-	pb.withExpiredThreshold = true
-	return pb
-}
-
 func (pb *podBuilder) WithImageNotFound() *podBuilder {
 
 	pb.status = &corev1.PodStatus{
-		Phase:      corev1.PodFailed,
+		Phase:      corev1.PodPending,
 		Conditions: createContainerReadyConditions(corev1.ConditionFalse, "", ""),
 		ContainerStatuses: []corev1.ContainerStatus{
 			{
@@ -154,11 +149,6 @@ func (pb *podBuilder) Build() corev1.Pod {
 
 	if pb.status != nil {
 		pod.Status = *pb.status
-	}
-
-	if len(pod.Status.Conditions) != 0 && pb.withExpiredThreshold {
-		pod.Status.Conditions[0].LastTransitionTime = metav1.NewTime(time.Now().Add(-1 * time.Hour))
-
 	}
 
 	if len(pod.Status.ContainerStatuses) != 0 && pb.withExpiredThreshold {

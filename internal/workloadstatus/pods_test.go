@@ -2,43 +2,16 @@ package workloadstatus
 
 import (
 	"context"
-	"testing"
-	"time"
-
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"testing"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
-func TestExceededTimeThreshold(t *testing.T) {
-	tt := []struct {
-		name       string
-		timePassed metav1.Time
-		expected   bool
-	}{
-		{
-			name:       "Time passed is less than threshold",
-			timePassed: metav1.Now(),
-			expected:   false,
-		},
-		{
-			name:       "Time passed is greater than threshold",
-			timePassed: metav1.NewTime(time.Now().Add(-6 * time.Minute)),
-			expected:   true,
-		},
-	}
-	for _, test := range tt {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			require.Equal(t, test.expected, exceededTimeThreshold(test.timePassed))
-		})
-	}
-}
-
-func TestPodStatusWithExpiredThreshold(t *testing.T) {
+func TestPodStatus(t *testing.T) {
 	tt := []struct {
 		name                   string
 		pod                    corev1.Pod
@@ -47,28 +20,28 @@ func TestPodStatusWithExpiredThreshold(t *testing.T) {
 	}{
 		{
 			name:                   "Pod is pending",
-			pod:                    testutils.NewPodBuilder("foo", "default").WithPendingStatus().WithExpiredThreshold().Build(),
+			pod:                    testutils.NewPodBuilder("foo", "default").WithPendingStatus().Build(),
 			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
-			name:          "Invalid configuration",
-			pod:           testutils.NewPodBuilder("foo", "default").WithExpiredThreshold().WithCrashBackOffStatus().Build(),
-			expectedError: ErrContainerCrashLoop,
+			name:                   "Invalid configuration",
+			pod:                    testutils.NewPodBuilder("foo", "default").WithCrashBackOffStatus().Build(),
+			expectedErrorCheckFunc: IsContainerNotRunningError,
 		},
 		{
-			name:          "container is OOMKilled",
-			pod:           testutils.NewPodBuilder("foo", "default").WithExpiredThreshold().WithOOMStatus().Build(),
-			expectedError: ErrOOMKilled,
+			name:                   "container is OOMKilled",
+			pod:                    testutils.NewPodBuilder("foo", "default").WithOOMStatus().Build(),
+			expectedErrorCheckFunc: IsContainerNotRunningError,
 		},
 		{
 			name:                   "process in container exited with non zero error",
-			pod:                    testutils.NewPodBuilder("foo", "default").WithExpiredThreshold().WithNonZeroExitStatus().Build(),
-			expectedErrorCheckFunc: IsProcessInContainerExitedError,
+			pod:                    testutils.NewPodBuilder("foo", "default").WithNonZeroExitStatus().Build(),
+			expectedErrorCheckFunc: IsContainerNotRunningError,
 		},
 		{
 			name:                   "Pod is evicted",
-			pod:                    testutils.NewPodBuilder("foo", "default").WithEvictedStatus().WithExpiredThreshold().Build(),
-			expectedErrorCheckFunc: IsPodIsEvictedError,
+			pod:                    testutils.NewPodBuilder("foo", "default").WithEvictedStatus().Build(),
+			expectedErrorCheckFunc: IsPodFailedError,
 		},
 		{
 			name:          "Pod is running",
@@ -78,12 +51,12 @@ func TestPodStatusWithExpiredThreshold(t *testing.T) {
 		{
 			name:                   "Pod cannot pull image",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithImageNotFound().Build(),
-			expectedErrorCheckFunc: IsContainerNotRunningError,
+			expectedErrorCheckFunc: IsImageNotPulledError,
 		},
 	}
 	for _, test := range tt {
 		t.Run(test.name, func(t *testing.T) {
-			//t.Parallel()
+			t.Parallel()
 			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
 
 			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
@@ -123,11 +96,6 @@ func TestPodStatusWithoutExpiredThreshold(t *testing.T) {
 	}
 }
 
-//func TestFoo(t *testing.T) {
-//	foo := &ContainerNotRunningError{Message: "container is not running"}
-//	require.Equal(t, "container is not running: container is not running", foo.Error())
-//}
-
 func TestErrorMessages(t *testing.T) {
 	tt := []struct {
 		name             string
@@ -145,14 +113,9 @@ func TestErrorMessages(t *testing.T) {
 			expectedErrorMsg: "Pod is in pending state: unable to mount volume",
 		},
 		{
-			name:             "PodIsEvictedError",
-			err:              &PodIsEvictedError{Message: "due to known reason"},
-			expectedErrorMsg: "Pod has been evicted: due to known reason",
-		},
-		{
-			name:             "ProcessInContainerExitedError",
-			err:              &ProcessInContainerExitedError{ExitCode: 1},
-			expectedErrorMsg: "Container process has exited with status: 1",
+			name:             "PodIsFailedError",
+			err:              &PodIsFailedError{Message: "due to known reason"},
+			expectedErrorMsg: "Pod has failed: due to known reason",
 		},
 	}
 	for _, test := range tt {

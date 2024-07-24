@@ -88,10 +88,12 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 	if replicaSet.Status.ReadyReplicas >= desiredReplicas {
 		return nil
 	}
+
 	if err := checkPodStatus(ctx, dp.Client, name.Namespace, d.Spec.Selector); err != nil {
 		return err
 	}
-	return ErrReplicaCountMismatch
+
+	return RolloutInProgress
 }
 
 func getLatestReplicaSet(deployment *appsv1.Deployment, allReplicaSets *appsv1.ReplicaSetList) *appsv1.ReplicaSet {

@@ -20,10 +20,8 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 		summary          string
 		desiredScheduled *int32
 		numberReady      int32
-
-		pods []corev1.Pod
-
-		expectedError error
+		pods             []corev1.Pod
+		expectedError    error
 	}{
 		{
 			summary:          "all scheduled all ready",
@@ -34,26 +32,7 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 			},
 		},
-		{
-			summary:          "all scheduled one ready, OOM: 1 with expired threshold",
-			desiredScheduled: ptr.To(int32(2)),
-			numberReady:      1,
-			pods: []corev1.Pod{
-				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
-				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().WithExpiredThreshold().Build(),
-			},
-			expectedError: ErrOOMKilled,
-		},
-		{
-			summary:          "all scheduled zero ready crashbacklook: 1, OOM: 1 with expired threshold",
-			desiredScheduled: ptr.To(int32(2)),
-			numberReady:      0,
-			pods: []corev1.Pod{
-				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().WithExpiredThreshold().Build(),
-				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
-			},
-			expectedError: ErrContainerCrashLoop,
-		},
+
 		{
 			summary:          "all scheduled zero ready but no problem",
 			numberReady:      0,
@@ -96,16 +75,14 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 		summary          string
 		desiredScheduled *int32
 		numberReady      int32
-
-		pods []corev1.Pod
-
-		expectedError func(error) bool
+		pods             []corev1.Pod
+		expectedError    func(error) bool
 	}{
 		{
 			summary:          "all scheduled 1 ready 1 evicted",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expectedError:    IsPodIsEvictedError,
+			expectedError:    IsPodFailedError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithEvictedStatus().Build(),
@@ -118,7 +95,7 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
-				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().WithExpiredThreshold().Build(),
+				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
 			},
 		},
 		{
@@ -135,11 +112,31 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 process exited",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expectedError:    IsProcessInContainerExitedError,
+			expectedError:    IsContainerNotRunningError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
-				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithNonZeroExitStatus().WithExpiredThreshold().Build(),
+				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithNonZeroExitStatus().Build(),
 			},
+		},
+		{
+			summary:          "all scheduled one ready, OOM: 1 with expired threshold",
+			desiredScheduled: ptr.To(int32(2)),
+			numberReady:      1,
+			pods: []corev1.Pod{
+				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
+				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
+			},
+			expectedError: IsContainerNotRunningError,
+		},
+		{
+			summary:          "all scheduled zero ready crashbacklook: 1, OOM: 1 with expired threshold",
+			desiredScheduled: ptr.To(int32(2)),
+			numberReady:      0,
+			pods: []corev1.Pod{
+				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().Build(),
+				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
+			},
+			expectedError: IsContainerNotRunningError,
 		},
 	}
 	for _, test := range tests {
