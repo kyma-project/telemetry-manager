@@ -6,7 +6,10 @@ The goal of the Telemetry module is to support you in collecting all relevant me
 
 Observability is all about exposing the internals of the components belonging to a distributed application and making that data analysable at a central place.
 While application logs and traces usually provide request-oriented data, metrics are aggregated statistics exposed by a component to reflect the internal state. Typical statistics like the amount of processed requests, or the amount of registered users, can be very useful to monitor the current state and also the health of a component. Also, you can define proactive and reactive alerts if metrics are about to reach thresholds, or if they already passed thresholds.
+The Telemetry module provides a metric agent and, optionally, a gateway for the collection and shipment of metrics of any container running in the Kyma runtime.
 
+You can configure the metric agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named MetricPipeline. 
+The Metrics feature is optional. If you don't want to use it, simply don't set up a MetricPipeline.
 
 ## Prerequisites
 
@@ -20,7 +23,6 @@ While application logs and traces usually provide request-oriented data, metrics
 
 In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma modules and users’ applications send the metrics data.
 
-The feature is optional, if you don't want to use the Metrics feature, simply don't set up a MetricPipeline.
 
 Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can retrieve metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
 
@@ -32,7 +34,7 @@ Optionally, the Telemetry module provides a DaemonSet of an OTel Collector actin
 4. The agent supports collecting container metrics from the Kubelet and Kubernetes APIServer
 5. The agent converts and sends all collected metric data to the gateway in OTLP.
 6. The gateway discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
-7. The Telemetry manager configures the agent and gateway according to the `MetricPipeline` resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
+7. The Telemetry Manager configures the agent and gateway according to the `MetricPipeline` resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
 8. As specified in your `MetricPipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster. If authentication has been set up, the backend can also run outside the cluster.
 9. You can analyze the metric data with your preferred backend system.
 
@@ -43,8 +45,8 @@ The MetricPipeline resource is watched by Telemetry Manager, which is responsibl
 ![Manager resources](./assets/metrics-resources.drawio.svg)
 
 1. Telemetry Manager watches all MetricPipeline resources and related Secrets.
-2. Furthermore, Telemetry Manager takes care of the full lifecycle of the gateway Deployment and the agent DaemonSet itself. Only if there is a MetricPipeline defined, they are deployed.
-3. Whenever the user configuration changes, it validates the configuration and generates a single configuration for the gateway and agent.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the gateway Deployment and the agent DaemonSet. Only if you defined a MetricPipeline, the gateway and agent are deployed.
+3. Whenever the user configuration changes, Telemetry Manager validates it and generates a single configuration for the gateway and agent.
 4. Referenced Secrets are copied into one Secret that is mounted to the gateway as well.
 
 ### Metric Gateway
@@ -405,7 +407,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-With this, the agent starts retrieving all Istio metrics from Istio sidecars.
+With this, the agent starts collecting all Istio metrics from Istio sidecars.
 
 ### 7. Deactivate OTLP Metrics
 
@@ -430,7 +432,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-With this, the agent starts retrieving all Istio metrics from Istio sidecars, and the push-based OTLP metrics are dropped.
+With this, the agent starts collecting all Istio metrics from Istio sidecars, and the push-based OTLP metrics are dropped.
 
 ### 8. Add Filters
 
