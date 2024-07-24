@@ -21,6 +21,12 @@ updates:
       otel: # used by e2e and integration tests to push dummy otlp data
         patterns:
           - "go.opentelemetry.io/otel/*"
+      k8s:
+        patterns:
+          - "k8s.io/*"
+      istio:
+        patterns:
+          - "istio.io/*"
     commit-message:
       prefix: "chore"
     labels:
