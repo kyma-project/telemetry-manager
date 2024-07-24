@@ -19,6 +19,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +39,6 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -88,11 +88,11 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 				GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: config.Gateway.OTLPServiceName},
 			},
 		},
-		&k8sutils.DaemonSetProber{Client: client},
+		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		&otelcollector.GatewayApplierDeleter{Config: config.Gateway},
 		&gateway.Builder{Reader: client},
-		&k8sutils.DeploymentProber{Client: client},
+		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,

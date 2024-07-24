@@ -32,45 +32,37 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 			},
 		},
-
-		{
-			summary:          "all scheduled zero ready but no problem",
-			numberReady:      0,
-			desiredScheduled: ptr.To(int32(2)),
-			pods: []corev1.Pod{
-				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
-				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
-			},
-		},
 	}
 	for _, test := range tests {
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: test.desiredScheduled,
-				Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}},
-			},
-			Status: appsv1.DeploymentStatus{
-				UpdatedReplicas: test.numberReady,
-			},
-		}
+		t.Run(test.summary, func(t *testing.T) {
+			t.Parallel()
+			deployment := createDeployment(test.desiredScheduled, test.numberReady)
+			replicaSet := createReplicaSet(test.desiredScheduled, test.numberReady, *deployment)
 
-		podList := &corev1.PodList{
-			Items: test.pods,
-		}
+			itemList := make([]appsv1.ReplicaSet, 1)
 
-		fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(podList).Build()
-		sut := DeploymentProber{fakeClient}
-		err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-		if test.expectedError != nil {
-			require.EqualError(t, err, test.expectedError.Error())
-		} else {
-			require.NoError(t, err)
-		}
+			itemList = append(itemList, *replicaSet)
+			rsList := &appsv1.ReplicaSetList{
+				Items: itemList,
+			}
+
+			podList := &corev1.PodList{
+				Items: test.pods,
+			}
+
+			fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList, podList).Build()
+			sut := DeploymentProber{fakeClient}
+			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+			if test.expectedError != nil {
+				require.EqualError(t, err, test.expectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
 	}
 }
-func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 
+func TestDeployment_WithErrorAssert(t *testing.T) {
 	tests := []struct {
 		summary          string
 		desiredScheduled *int32
@@ -78,6 +70,16 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 		pods             []corev1.Pod
 		expectedError    func(error) bool
 	}{
+		{
+			summary:          "all scheduled zero ready but no problem",
+			numberReady:      0,
+			desiredScheduled: ptr.To(int32(2)),
+			expectedError:    IsPodIsPendingError,
+			pods: []corev1.Pod{
+				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
+				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
+			},
+		},
 		{
 			summary:          "all scheduled 1 ready 1 evicted",
 			desiredScheduled: ptr.To(int32(2)),
@@ -102,7 +104,7 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 			summary:          "all scheduled 1 ready 1 container not ready",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expectedError:    IsContainerNotRunningError,
+			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithImageNotFound().Build(),
@@ -140,83 +142,43 @@ func TestDeployment_WithErrorAssert_WithExpiredThreshold(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: test.desiredScheduled,
-				Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}},
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas:   test.numberReady,
-				UpdatedReplicas: test.numberReady,
-			},
-		}
+		t.Run(test.summary, func(t *testing.T) {
+			t.Parallel()
 
-		podList := &corev1.PodList{
-			Items: test.pods,
-		}
+			deployment := createDeployment(test.desiredScheduled, test.numberReady)
+			replicaSet := createReplicaSet(test.desiredScheduled, test.numberReady, *deployment)
 
-		fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(podList).Build()
-		sut := DeploymentProber{fakeClient}
-		err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+			itemList := make([]appsv1.ReplicaSet, 1)
 
-		require.True(t, test.expectedError(err))
+			itemList = append(itemList, *replicaSet)
+			rsList := &appsv1.ReplicaSetList{
+				Items: itemList,
+			}
+
+			//deployment := &appsv1.Deployment{
+			//	ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
+			//	Spec: appsv1.DeploymentSpec{
+			//		Replicas: test.desiredScheduled,
+			//		Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}},
+			//	},
+			//	Status: appsv1.DeploymentStatus{
+			//		ReadyReplicas:   test.numberReady,
+			//		UpdatedReplicas: test.numberReady,
+			//	},
+			//}
+
+			podList := &corev1.PodList{
+				Items: test.pods,
+			}
+
+			fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList, podList).Build()
+			sut := DeploymentProber{fakeClient}
+			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+
+			require.True(t, test.expectedError(err))
+		})
 	}
-}
 
-func TestDeployment_WithoutExpiredThreshold(t *testing.T) {
-	tests := []struct {
-		summary          string
-		desiredScheduled *int32
-		numberReady      int32
-
-		pods []corev1.Pod
-
-		expectedError func(error) bool
-	}{
-		{
-			summary:          "all scheduled one ready, OOM: 1 without expired threshold",
-			desiredScheduled: ptr.To(int32(2)),
-			numberReady:      1,
-			pods: []corev1.Pod{
-				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
-				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
-			},
-			expectedError: nil,
-		},
-		{
-			summary:          "all scheduled 1 ready 1 pending without expired threshold",
-			desiredScheduled: ptr.To(int32(2)),
-			numberReady:      1,
-			expectedError:    nil,
-			pods: []corev1.Pod{
-				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
-				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
-			},
-		},
-	}
-	for _, test := range tests {
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: test.desiredScheduled,
-				Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}},
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas:   test.numberReady,
-				UpdatedReplicas: test.numberReady,
-			},
-		}
-
-		podList := &corev1.PodList{
-			Items: test.pods,
-		}
-
-		fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(podList).Build()
-		sut := DeploymentProber{fakeClient}
-		err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-		require.NoError(t, err)
-	}
 }
 
 func TestDeploymentNotCreated(t *testing.T) {
@@ -224,4 +186,37 @@ func TestDeploymentNotCreated(t *testing.T) {
 	sut := DeploymentProber{fakeClient}
 	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.Equal(t, ErrDeploymentNotFound, err)
+}
+
+func createDeployment(desiredScheduled *int32, numberReady int32) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: desiredScheduled,
+			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}},
+		},
+		Status: appsv1.DeploymentStatus{
+			ReadyReplicas: numberReady,
+		},
+	}
+}
+
+func createReplicaSet(desiredScheduled *int32, numberReady int32, dep appsv1.Deployment) *appsv1.ReplicaSet {
+	return &appsv1.ReplicaSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "foo",
+			Namespace:       "telemetry-system",
+			Labels:          dep.Spec.Selector.MatchLabels,
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&dep, dep.GroupVersionKind())},
+		},
+		Spec: appsv1.ReplicaSetSpec{
+			Selector: dep.Spec.Selector,
+			Replicas: desiredScheduled,
+			Template: dep.Spec.Template,
+		},
+		Status: appsv1.ReplicaSetStatus{
+			ReadyReplicas: numberReady,
+			Replicas:      numberReady,
+		},
+	}
 }

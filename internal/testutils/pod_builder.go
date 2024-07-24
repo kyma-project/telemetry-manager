@@ -32,7 +32,7 @@ func (pb *podBuilder) WithImageNotFound() *podBuilder {
 
 	pb.status = &corev1.PodStatus{
 		Phase:      corev1.PodPending,
-		Conditions: createContainerReadyConditions(corev1.ConditionFalse, "", ""),
+		Conditions: createPodReadyConditions(corev1.ConditionFalse, "", ""),
 		ContainerStatuses: []corev1.ContainerStatus{
 			{
 				Name: "collector",
@@ -51,7 +51,7 @@ func (pb *podBuilder) WithImageNotFound() *podBuilder {
 func (pb *podBuilder) WithOOMStatus() *podBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:             corev1.PodRunning,
-		Conditions:        createContainerReadyConditions(corev1.ConditionFalse, "", ""),
+		Conditions:        createPodReadyConditions(corev1.ConditionFalse, "", ""),
 		ContainerStatuses: createContainerStatus("OOMKilled", "Container was OOM killed", "OOMKilled", 137),
 	}
 	return pb
@@ -60,7 +60,7 @@ func (pb *podBuilder) WithOOMStatus() *podBuilder {
 func (pb *podBuilder) WithCrashBackOffStatus() *podBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:      corev1.PodRunning,
-		Conditions: createContainerReadyConditions(corev1.ConditionFalse, "", ""),
+		Conditions: createPodReadyConditions(corev1.ConditionFalse, "", ""),
 		ContainerStatuses: []corev1.ContainerStatus{
 			{
 				Name: "collector",
@@ -113,7 +113,7 @@ func (pb *podBuilder) WithPendingStatus() *podBuilder {
 func (pb *podBuilder) WithNonZeroExitStatus() *podBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:             corev1.PodRunning,
-		Conditions:        createContainerReadyConditions(corev1.ConditionFalse, "", ""),
+		Conditions:        createPodReadyConditions(corev1.ConditionFalse, "", ""),
 		ContainerStatuses: createContainerStatus("Error", "Container failed", "Error", 2),
 	}
 	return pb
@@ -122,7 +122,7 @@ func (pb *podBuilder) WithNonZeroExitStatus() *podBuilder {
 func (pb *podBuilder) WithRunningStatus() *podBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:      corev1.PodRunning,
-		Conditions: createContainerReadyConditions(corev1.ConditionTrue, "", ""),
+		Conditions: createPodReadyConditions(corev1.ConditionTrue, "", ""),
 	}
 	return pb
 }
@@ -179,9 +179,9 @@ func createContainerStatus(waitingReason, waitingMsg, terminatedReason string, e
 	}
 }
 
-func createContainerReadyConditions(status corev1.ConditionStatus, reason, msg string) []corev1.PodCondition {
+func createPodReadyConditions(status corev1.ConditionStatus, reason, msg string) []corev1.PodCondition {
 	condition := corev1.PodCondition{
-		Type:               corev1.ContainersReady,
+		Type:               corev1.PodReady,
 		Status:             status,
 		LastProbeTime:      metav1.Time{},
 		LastTransitionTime: metav1.NewTime(time.Now()),

@@ -3,7 +3,6 @@ package workloadstatus
 import (
 	"context"
 	"errors"
-	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,32 +21,6 @@ var (
 	ErrDeploymentFetching          = errors.New("failed to get Deployment")
 	ErrFailedToGetLatestReplicaSet = errors.New("failed to get latest ReplicaSets")
 )
-
-type FailedToListReplicaSetErr struct {
-	Message string
-}
-
-func (ftlr *FailedToListReplicaSetErr) Error() string {
-	return fmt.Sprintf("failed to list ReplicaSets: %s", ftlr.Message)
-}
-
-func IsFailedToListReplicaSetErr(err error) bool {
-	var ftlr *FailedToListReplicaSetErr
-	return errors.As(err, &ftlr)
-}
-
-type FailedToFetchReplicaSetErr struct {
-	Message string
-}
-
-func (ftfr *FailedToFetchReplicaSetErr) Error() string {
-	return fmt.Sprintf("failed to fetch ReplicaSets: %s", ftfr.Message)
-}
-
-func IsFailedToFetchReplicaSetErr(err error) bool {
-	var ftfr *FailedToFetchReplicaSetErr
-	return errors.As(err, &ftfr)
-}
 
 type DeploymentProber struct {
 	client.Client

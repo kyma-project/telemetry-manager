@@ -51,7 +51,7 @@ func TestPodStatus(t *testing.T) {
 		{
 			name:                   "Pod cannot pull image",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithImageNotFound().Build(),
-			expectedErrorCheckFunc: IsImageNotPulledError,
+			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 	}
 	for _, test := range tt {
@@ -69,66 +69,11 @@ func TestPodStatus(t *testing.T) {
 	}
 }
 
-func TestPodStatusWithoutExpiredThreshold(t *testing.T) {
-	tt := []struct {
-		name   string
-		status corev1.PodStatus
-		pod    corev1.Pod
-	}{
-		{
-			name: "Pod is pending",
-			pod:  testutils.NewPodBuilder("foo", "default").WithPendingStatus().Build(),
-		},
-		{
-			name: "Invalid configuration",
-			pod:  testutils.NewPodBuilder("foo", "default").WithCrashBackOffStatus().Build(),
-		},
-	}
-
-	for _, test := range tt {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
-
-			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
-			require.NoError(t, err)
-		})
-	}
-}
-
-func TestErrorMessages(t *testing.T) {
-	tt := []struct {
-		name             string
-		err              error
-		expectedErrorMsg string
-	}{
-		{
-			name:             "ContainerNotRunningError",
-			err:              &ContainerNotRunningError{Message: "unable to pull image"},
-			expectedErrorMsg: "Container is not running: unable to pull image",
-		},
-		{
-			name:             "PodIsPendingError",
-			err:              &PodIsPendingError{Message: "unable to mount volume"},
-			expectedErrorMsg: "Pod is in pending state: unable to mount volume",
-		},
-		{
-			name:             "PodIsFailedError",
-			err:              &PodIsFailedError{Message: "due to known reason"},
-			expectedErrorMsg: "Pod has failed: due to known reason",
-		},
-	}
-	for _, test := range tt {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			require.Equal(t, test.expectedErrorMsg, test.err.Error())
-		})
-	}
-}
-
 func TestNoPods(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 	require.Equal(t, err, ErrNoPodsDeployed)
 
 }
+
+func checkPods

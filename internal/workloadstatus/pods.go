@@ -74,7 +74,7 @@ func checkPodPendingState(status corev1.PodStatus) error {
 				return &PodIsPendingError{Message: c.State.Waiting.Reason}
 
 			}
-			return &PodIsPendingError{Message: c.State.Waiting.Reason}
+			return &PodIsPendingError{Message: c.State.Waiting.Message}
 		}
 	}
 

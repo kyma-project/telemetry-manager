@@ -6,8 +6,6 @@ import (
 )
 
 var (
-	//ErrOOMKilled          = errors.New("container is OOMKilled")
-	//ErrContainerCrashLoop = errors.New("container is in crash loop")
 	ErrNoPodsDeployed = errors.New("no pods deployed")
 )
 
@@ -50,16 +48,28 @@ func IsPodFailedError(err error) bool {
 	return errors.As(err, &pfe)
 }
 
-type ImageNotPulledError struct {
-	ContainerName string
-	Message       string
+type FailedToListReplicaSetErr struct {
+	Message string
 }
 
-func (inpe *ImageNotPulledError) Error() string {
-	return fmt.Sprintf("Image in container: %s cannot be pulled: %s", inpe.ContainerName, inpe.Message)
+func (ftlr *FailedToListReplicaSetErr) Error() string {
+	return fmt.Sprintf("failed to list ReplicaSets: %s", ftlr.Message)
 }
 
-func IsImageNotPulledError(err error) bool {
-	var inpe *ImageNotPulledError
-	return errors.As(err, &inpe)
+func IsFailedToListReplicaSetErr(err error) bool {
+	var ftlr *FailedToListReplicaSetErr
+	return errors.As(err, &ftlr)
+}
+
+type FailedToFetchReplicaSetErr struct {
+	Message string
+}
+
+func (ftfr *FailedToFetchReplicaSetErr) Error() string {
+	return fmt.Sprintf("failed to fetch ReplicaSets: %s", ftfr.Message)
+}
+
+func IsFailedToFetchReplicaSetErr(err error) bool {
+	var ftfr *FailedToFetchReplicaSetErr
+	return errors.As(err, &ftfr)
 }

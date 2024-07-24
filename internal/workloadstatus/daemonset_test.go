@@ -146,7 +146,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			numberReady:      1,
 			updatedScheduled: 3,
 			expected:         false,
-			expectedError:    IsContainerNotRunningError,
+			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithImageNotFound().Build(),
