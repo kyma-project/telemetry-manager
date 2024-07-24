@@ -32,7 +32,7 @@ The feature is optional, if you don't want to use the Traces feature, simply don
 2. After contributing a new span to the trace, the involved components send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OpenTelemetry Protocol (OTLP)](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) either using GRPC or HTTP.
 3. Istio sends the related span data to the trace gateway as well.
 4. The trace gateway discovers metadata that's typical for sources running on Kubernetes, like Pod identifiers, and then enriches the span data with that metadata.
-5. The Telemetry manager configures the gateway according to the `TracePipeline` resource, including the target backend for the trace gateway. Also, it observes the trace flow to the backend and reports problems in the `TracePipeline` status.
+5. The Telemetry Manager configures the gateway according to the `TracePipeline` resource, including the target backend for the trace gateway. Also, it observes the trace flow to the backend and reports problems in the `TracePipeline` status.
 6. As specified in your `TracePipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster. If authentication has been set up, the backend can also run outside the cluster.
 7. You can analyze the trace data with your preferred backend system.
 
@@ -43,7 +43,7 @@ The TracePipeline resource is watched by Telemetry Manager, which is responsible
 ![Manager resources](./assets/traces-resources.drawio.svg)
 
 1. Telemetry Manager watches all TracePipeline resources and related Secrets.
-2. Furthermore, Telemetry Manager takes care of the full lifecycle of the OTel Collector Deployment itself. Only if there is a TracePipeline defined, the collector is deployed.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the OTel Collector Deployment itself. Only if you defined a TracePipeline, the collector is deployed.
 3. Whenever the configuration changes, it validates the configuration and generates a new configuration for OTel Collector, where a ConfigMap for the configuration is generated.
 4. Referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
 

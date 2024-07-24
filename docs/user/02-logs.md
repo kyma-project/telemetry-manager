@@ -25,8 +25,8 @@ The feature is optional, if you don't want to use the Logs feature, simply don't
 
 1. Container logs are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories.
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
-3. Fluent Bit queries the [Kubernetes API Server](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/) for additional Pod metadata, such as Pod annotations and labels.
-4. The Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
+3. Fluent Bit discovers additional Pod metadata, such as Pod annotations and labels
+4. Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
 5. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems inside the Kyma cluster. You can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation. If authentication has been set up, the backend can also run outside the cluster.
 6. To analyze and visualize your logs, access the internal or external observability system.
 
@@ -37,7 +37,7 @@ The LogPipeline resource is watched by Telemetry Manager, which is responsible f
 ![Manager resources](./assets/logs-resources.drawio.svg)
 
 1. Telemetry Manager watches all LogPipeline resources and related Secrets.
-2. Furthermore, Telemetry Manager takes care of the full lifecycle of the Fluent Bit DaemonSet itself. Only if there is a LogPipeline defined, the agent is deployed.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the Fluent Bit DaemonSet itself. Only if you defined a LogPipeline, the agent is deployed.
 3. Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated.
 4. Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
 
