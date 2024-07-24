@@ -6,10 +6,11 @@ The goal of the Telemetry module is to support you in collecting all relevant me
 
 Observability is all about exposing the internals of the components belonging to a distributed application and making that data analysable at a central place.
 While application logs and traces usually provide request-oriented data, metrics are aggregated statistics exposed by a component to reflect the internal state. Typical statistics like the amount of processed requests, or the amount of registered users, can be very useful to monitor the current state and also the health of a component. Also, you can define proactive and reactive alerts if metrics are about to reach thresholds, or if they already passed thresholds.
-The Telemetry module provides a metric agent and, optionally, a gateway for the collection and shipment of metrics of any container running in the Kyma runtime.
 
-You can configure the metric agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named MetricPipeline. 
-The Metrics feature is optional. If you don't want to use it, simply don't set up a MetricPipeline.
+The Telemetry module provides a metric gateway and, optionally, an agent for the collection and shipment of metrics of any container running in the Kyma runtime.
+
+You can configure the metric gateway with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named MetricPipeline. 
+The Metric feature is optional. If you don't want to use it, simply don't set up a MetricPipeline.
 
 ## Prerequisites
 
@@ -35,8 +36,10 @@ Optionally, the Telemetry module provides a DaemonSet of an OTel Collector actin
 5. The agent converts and sends all collected metric data to the gateway in OTLP.
 6. The gateway discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
 7. The Telemetry Manager configures the agent and gateway according to the `MetricPipeline` resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
-8. As specified in your `MetricPipeline` resource, the gateway sends the data to observability systems inside the Kyma cluster. If authentication has been set up, the backend can also run outside the cluster.
+8. The metric gateway sends the data to the observability system that's specified in your `MetricPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
 9. You can analyze the metric data with your preferred backend system.
+
+
 
 ### Telemetry Manager
 

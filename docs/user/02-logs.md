@@ -8,6 +8,8 @@ The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent 
 
 You can configure the log agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a [Fluentd integration](https://medium.com/hepsiburadatech/fluent-logging-architecture-fluent-bit-fluentd-elasticsearch-ca4a898e28aa).
 
+The feature is optional, if you don't want to use the Logs feature, simply don't set up a LogPipeline.
+
 <!--- custom output/unsupported mode is not part of Help Portal docs --->
 If you want more flexibility than provided by the proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), using the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
 
@@ -19,15 +21,13 @@ Your application must log to `stdout` or `stderr`, which ensures that the logs c
 
 In the Kyma cluster, the Telemetry module provides a DaemonSet of [Fluent Bit](https://fluentbit.io/) acting as a agent. The agent tails container logs from the Kubernetes container runtime and ships them to a backend.
 
-The feature is optional, if you don't want to use the Logs feature, simply don't set up a LogPipeline.
-
 ![Architecture](./assets/logs-arch.drawio.svg)
 
 1. Container logs are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories.
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
 3. Fluent Bit discovers additional Pod metadata, such as Pod annotations and labels
 4. Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
-5. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems inside the Kyma cluster. You can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation. If authentication has been set up, the backend can also run outside the cluster.
+5. The log agent sends the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend. You can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
 6. To analyze and visualize your logs, access the internal or external observability system.
 
 ### Telemetry Manager
