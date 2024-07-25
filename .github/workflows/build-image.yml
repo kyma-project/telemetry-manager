@@ -1,0 +1,54 @@
+name: Build Image
+
+on:
+  pull_request_target:
+    types: [ opened, edited, synchronize, reopened, ready_for_review ]
+    branches:
+      - "main"
+      - "release-*"
+  push:
+    branches:
+      - "main"
+      - "release-*"
+
+jobs:
+
+  envs:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.create-tags.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout code
+        if: github.event_name == 'push'
+        uses: actions/checkout@v4
+
+      - name: create tags
+        id: create-tags
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+            echo 'TAGS={{ github.event.push.ref }}'
+          fi
+          
+  #  build-image:
+  #    needs: envs
+  #    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+  #    with:
+  #      name: telemetry-manager 
+  #      dockerfile: Dockerfile
+  #      context: .
+  #      tags: ${{ needs.envs.outputs.tags }}
+
+  #  list-images:
+  #    needs: build-image
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - name: List images
+  #        run: |
+  #          echo "${{ needs.build-image.outputs.images }}"
