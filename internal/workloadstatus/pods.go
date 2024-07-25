@@ -93,7 +93,7 @@ func checkPodFailedState(status corev1.PodStatus) error {
 }
 
 func checkPodsWaitingState(status corev1.PodStatus, c corev1.ContainerStatus) error {
-	if status.Phase != corev1.PodRunning && c.State.Waiting == nil {
+	if status.Phase != corev1.PodRunning || c.State.Waiting == nil {
 		return nil
 	}
 
