@@ -8,6 +8,8 @@ The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent 
 
 You can configure the log agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a [Fluentd integration](https://medium.com/hepsiburadatech/fluent-logging-architecture-fluent-bit-fluentd-elasticsearch-ca4a898e28aa).
 
+The feature is optional, if you don't want to use the Logs feature, simply don't set up a LogPipeline.
+
 <!--- custom output/unsupported mode is not part of Help Portal docs --->
 If you want more flexibility than provided by the proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), using the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
 
@@ -17,19 +19,31 @@ Your application must log to `stdout` or `stderr`, which ensures that the logs c
 
 ## Architecture
 
-### Log Agent
-
-[Fluent Bit](https://fluentbit.io/), as a log agent, collects all application logs of the cluster workload and ships them to a backend.
+In the Kyma cluster, the Telemetry module provides a DaemonSet of [Fluent Bit](https://fluentbit.io/) acting as a agent. The agent tails container logs from the Kubernetes container runtime and ships them to a backend.
 
 ![Architecture](./assets/logs-arch.drawio.svg)
 
 1. Container logs are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories.
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
-3. Fluent Bit queries the [Kubernetes API Server](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/) for additional Pod metadata, such as Pod annotations and labels.
-4. The Telemetry module configures Fluent Bit with your output configuration.
-5. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems outside or inside the Kyma cluster. Here, you can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
+3. Fluent Bit discovers additional Pod metadata, such as Pod annotations and labels
+4. Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
+5. The log agent sends the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend. You can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
 6. To analyze and visualize your logs, access the internal or external observability system.
-7. The self monitor observes the log flow to the backend and reports problems in the LogPipeline status.
+
+### Telemetry Manager
+
+The LogPipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the Fluent Bit configuration.
+
+![Manager resources](./assets/logs-resources.drawio.svg)
+
+1. Telemetry Manager watches all LogPipeline resources and related Secrets.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the Fluent Bit DaemonSet itself. Only if you defined a LogPipeline, the agent is deployed.
+3. Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated.
+4. Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
+
+### Log Agent
+
+If a LogPipeline is defined, a DaemonSet is deployed acting as an agent. The agent is based on [Fluent Bit](https://fluentbit.io/) and encompasses the collection of application logs provided by the Kubernetes container runtime. The agent sends all data to the configured backend.
 
 ### Pipelines
 <!--- Pipelines is not part of Help Portal docs --->
@@ -47,16 +61,6 @@ This approach ensures reliable buffer management and isolation of pipelines, whi
 3. Based on the default and custom filters, you get the desired **output** for each `LogPipeline`.
 
 This approach assures a reliable buffer management and isolation of pipelines, while keeping flexibility on customizations.
-
-### Telemetry Manager
-
-The LogPipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the Fluent Bit configuration.
-
-![Manager resources](./assets/logs-resources.drawio.svg)
-
-- Telemetry Manager watches all LogPipeline resources and related Secrets.
-- Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated.
-- Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
 
 ## Setting up a LogPipeline
 
