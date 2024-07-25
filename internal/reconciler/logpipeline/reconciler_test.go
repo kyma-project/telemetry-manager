@@ -623,17 +623,17 @@ func TestReconcile(t *testing.T) {
 		}{
 			{
 				name:            "pod is OOM",
-				probeErr:        workloadstatus.ErrOOMKilled,
+				probeErr:        &workloadstatus.ContainerNotRunningError{Message: "OOMKilled"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: workloadstatus.ErrOOMKilled.Error(),
+				expectedMessage: "Container is not running: OOMKilled",
 			},
 			{
 				name:            "pod is craashbackloop",
-				probeErr:        workloadstatus.ErrContainerCrashLoop,
+				probeErr:        &workloadstatus.ContainerNotRunningError{Message: "Error"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: workloadstatus.ErrContainerCrashLoop.Error(),
+				expectedMessage: "Container is not running: Error",
 			},
 			{
 				name:            "no pods deployed",
@@ -654,7 +654,9 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, stubs.NewTLSCertValidator(nil))
+				pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+
+				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -681,7 +683,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)

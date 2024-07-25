@@ -35,7 +35,7 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(parser).WithStatusSubresource(parser).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrOOMKilled)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(&workloadstatus.ContainerNotRunningError{Message: "OOMKilled"})
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -56,7 +56,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, agentHealthyCond.Status)
 		require.Equal(t, conditions.ReasonAgentNotReady, agentHealthyCond.Reason)
-		require.Equal(t, workloadstatus.ErrOOMKilled.Error(), agentHealthyCond.Message)
+		require.Equal(t, "Container is not running: OOMKilled", agentHealthyCond.Message)
 		require.Equal(t, updatedParser.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 	})

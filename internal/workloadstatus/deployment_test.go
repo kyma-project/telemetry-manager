@@ -155,18 +155,6 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 				Items: itemList,
 			}
 
-			//deployment := &appsv1.Deployment{
-			//	ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
-			//	Spec: appsv1.DeploymentSpec{
-			//		Replicas: test.desiredScheduled,
-			//		Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}},
-			//	},
-			//	Status: appsv1.DeploymentStatus{
-			//		ReadyReplicas:   test.numberReady,
-			//		UpdatedReplicas: test.numberReady,
-			//	},
-			//}
-
 			podList := &corev1.PodList{
 				Items: test.pods,
 			}
@@ -219,4 +207,46 @@ func createReplicaSet(desiredScheduled *int32, numberReady int32, dep appsv1.Dep
 			Replicas:      numberReady,
 		},
 	}
+}
+
+func TestDeploymentSetRollout(t *testing.T) {
+	deployment := createDeployment(ptr.To(int32(2)), 1)
+	replicaSet := createReplicaSet(ptr.To(int32(2)), 1, *deployment)
+
+	pods := []corev1.Pod{
+		testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
+	}
+
+	rollingOutPod := testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).Build()
+
+	containerStatus := []corev1.ContainerStatus{{
+		Name: "collector",
+	}}
+	rollingOutPod.Status.ContainerStatuses = containerStatus
+	rollingOutPod.Status.Phase = corev1.PodPending
+
+	pods = append(pods, rollingOutPod)
+	podList := &corev1.PodList{
+		Items: pods,
+	}
+
+	replicaSets := make([]appsv1.ReplicaSet, 1)
+	replicaSets = append(replicaSets, *replicaSet)
+	rsList := &appsv1.ReplicaSetList{
+		Items: replicaSets,
+	}
+
+	fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList, podList).Build()
+	sut := DeploymentProber{fakeClient}
+	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	require.Equal(t, RolloutInProgress, err)
+}
+
+func TestReplicaSetNotFound(t *testing.T) {
+	deployment := createDeployment(ptr.To(int32(2)), 1)
+
+	fakeClient := fake.NewClientBuilder().WithObjects(deployment).Build()
+	sut := DeploymentProber{fakeClient}
+	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	require.Equal(t, err, ErrFailedToGetLatestReplicaSet)
 }

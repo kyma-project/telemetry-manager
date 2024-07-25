@@ -84,7 +84,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrContainerCrashLoop)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(&workloadstatus.ContainerNotRunningError{Message: "Error"})
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -120,7 +120,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			workloadstatus.ErrContainerCrashLoop.Error())
+			"Container is not running: Error")
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -261,7 +261,7 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		agentProberStub := &mocks.DaemonSetProber{}
-		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrContainerCrashLoop)
+		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(&workloadstatus.ContainerNotRunningError{Message: "Error"})
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -297,7 +297,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			workloadstatus.ErrContainerCrashLoop.Error())
+			"Container is not running: Error")
 
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -956,7 +956,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -1022,7 +1022,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -1139,19 +1139,19 @@ func TestReconcile(t *testing.T) {
 		}{
 			{
 				name:            "pod is OOM",
-				probeAgentErr:   workloadstatus.ErrOOMKilled,
+				probeAgentErr:   &workloadstatus.ContainerNotRunningError{Message: "OOMKilled"},
 				probeGatewayErr: nil,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: workloadstatus.ErrOOMKilled.Error(),
+				expectedMessage: "Container is not running: OOMKilled",
 			},
 			{
 				name:            "pod is crashbackloop",
-				probeAgentErr:   workloadstatus.ErrContainerCrashLoop,
+				probeAgentErr:   &workloadstatus.ContainerNotRunningError{Message: "Error"},
 				probeGatewayErr: nil,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: workloadstatus.ErrContainerCrashLoop.Error(),
+				expectedMessage: "Container is not running: Error",
 			},
 			{
 				name:            "no pods deployed",
@@ -1164,18 +1164,18 @@ func TestReconcile(t *testing.T) {
 			{
 				name:            "Container is not ready",
 				probeAgentErr:   nil,
-				probeGatewayErr: workloadstatus.ErrContainerCrashLoop,
+				probeGatewayErr: &workloadstatus.ContainerNotRunningError{Message: "Error"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
-				expectedMessage: workloadstatus.ErrContainerCrashLoop.Error(),
+				expectedMessage: "Container is not running: Error",
 			},
 			{
 				name:            "Container is not ready",
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
 				probeAgentErr:   nil,
-				probeGatewayErr: workloadstatus.ErrOOMKilled,
-				expectedMessage: workloadstatus.ErrOOMKilled.Error(),
+				probeGatewayErr: &workloadstatus.ContainerNotRunningError{Message: "OOMKilled"},
+				expectedMessage: "Container is not running: OOMKilled",
 			},
 		}
 		for _, tt := range tests {
@@ -1195,22 +1195,24 @@ func TestReconcile(t *testing.T) {
 				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-				pipelineLockStub := &mocks.PipelineLock{}
-				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
 				gatewayProberStub := &mocks.DeploymentProber{}
 				agentProberMock := &mocks.DaemonSetProber{}
 
 				agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeAgentErr)
 				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeGatewayErr)
 
-				//if tt.probeGatewayErr != nil {
-				//	agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-				//	gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeGatewayErr)
-				//}
-
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+				pipelineValidatorWithStubs := &Validator{
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
+				}
 
 				sut := Reconciler{
 					Client:                fakeClient,
@@ -1225,6 +1227,7 @@ func TestReconcile(t *testing.T) {
 					flowHealthProber:      flowHealthProberStub,
 					overridesHandler:      overridesHandlerStub,
 					istioStatusChecker:    istioStatusCheckerStub,
+					pipelineValidator:     pipelineValidatorWithStubs,
 				}
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)

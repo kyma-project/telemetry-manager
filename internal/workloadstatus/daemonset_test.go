@@ -229,3 +229,39 @@ func TestDaemonSetNotCreated(t *testing.T) {
 
 	require.Equal(t, ErrDaemonSetNotFound, err)
 }
+
+func TestDaemonsSetRollout(t *testing.T) {
+	daemonSet := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system", Generation: 1},
+		Spec: appsv1.DaemonSetSpec{Selector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{"app": "foo"},
+		}},
+		Status: appsv1.DaemonSetStatus{
+			DesiredNumberScheduled: 2,
+			NumberReady:            1,
+			UpdatedNumberScheduled: 1,
+		},
+	}
+
+	pods := []corev1.Pod{
+		testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
+	}
+
+	rollingOutPod := testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).Build()
+
+	containerStatus := []corev1.ContainerStatus{{
+		Name: "collector",
+	}}
+	rollingOutPod.Status.ContainerStatuses = containerStatus
+	rollingOutPod.Status.Phase = corev1.PodPending
+
+	pods = append(pods, rollingOutPod)
+	podList := &corev1.PodList{
+		Items: pods,
+	}
+
+	fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
+	sut := DaemonSetProber{fakeClient}
+	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	require.Equal(t, RolloutInProgress, err)
+}

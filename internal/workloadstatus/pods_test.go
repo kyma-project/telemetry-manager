@@ -76,4 +76,64 @@ func TestNoPods(t *testing.T) {
 
 }
 
-func checkPods
+func TestPodPendingStatus(t *testing.T) {
+	tests := []struct {
+		name              string
+		pod               corev1.Pod
+		expectedErrorFunc func(err error) bool
+		expectedError     error
+		waitingState      *corev1.ContainerStateWaiting
+	}{
+		{
+			name:              "Pod is pending but container state is waiting is not set",
+			pod:               testutils.NewPodBuilder("foo", "default").Build(),
+			waitingState:      nil,
+			expectedErrorFunc: nil,
+			expectedError:     nil,
+		},
+		{
+			name:              "Pod is pending but container state has no reason set",
+			pod:               testutils.NewPodBuilder("foo", "default").Build(),
+			waitingState:      &corev1.ContainerStateWaiting{Reason: "", Message: "foo Message"},
+			expectedErrorFunc: IsPodIsPendingError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			containerStatus := []corev1.ContainerStatus{{
+				Name:  "collector",
+				State: corev1.ContainerState{Waiting: test.waitingState},
+			}}
+			test.pod.Status.ContainerStatuses = containerStatus
+			test.pod.Status.Phase = corev1.PodPending
+			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
+			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
+			if test.expectedErrorFunc != nil {
+				require.True(t, test.expectedErrorFunc(err))
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
+	}
+}
+
+func TestPodWaitingStatus(t *testing.T) {
+	pod := testutils.NewPodBuilder("foo", "default").Build()
+	containerStatus := []corev1.ContainerStatus{{
+		Name: "collector",
+		State: corev1.ContainerState{
+			Waiting: &corev1.ContainerStateWaiting{
+				Reason: "foo Reason",
+			},
+		},
+	}}
+
+	pod.Status.ContainerStatuses = containerStatus
+	pod.Status.Phase = corev1.PodRunning
+	fakeClient := fake.NewClientBuilder().WithObjects(&pod).Build()
+	err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
+	require.True(t, IsContainerNotRunningError(err))
+
+}
