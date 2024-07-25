@@ -176,7 +176,7 @@ func TestReconcile(t *testing.T) {
 
 		proberStub := &mocks.DaemonSetProber{}
 
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetFetchingError)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetFetching)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -194,7 +194,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			workloadstatus.ErrDaemonSetFetchingError.Error(),
+			workloadstatus.ErrDaemonSetFetching.Error(),
 		)
 
 		var cm corev1.ConfigMap

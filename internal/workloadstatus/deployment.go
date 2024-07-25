@@ -3,14 +3,14 @@ package workloadstatus
 import (
 	"context"
 	"errors"
-	corev1 "k8s.io/api/core/v1"
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"sort"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -46,11 +46,11 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 		Namespace:     d.Namespace,
 	}
 	if err := dp.List(ctx, &allReplicaSets, listOps); err != nil {
-		return &FailedToListReplicaSetErr{Message: err.Error()}
+		return &FailedToListReplicaSetError{Message: err.Error()}
 	}
 
 	if err := dp.Get(ctx, name, &d); err != nil {
-		return &FailedToFetchReplicaSetErr{Message: err.Error()}
+		return &FailedToFetchReplicaSetError{Message: err.Error()}
 	}
 
 	replicaSet := getLatestReplicaSet(&d, &allReplicaSets)
@@ -66,7 +66,7 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 		return err
 	}
 
-	return RolloutInProgress
+	return ErrRolloutInProgress
 }
 
 func getLatestReplicaSet(deployment *appsv1.Deployment, allReplicaSets *appsv1.ReplicaSetList) *appsv1.ReplicaSet {

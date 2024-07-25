@@ -6,7 +6,10 @@ import (
 )
 
 var (
-	ErrNoPodsDeployed = errors.New("no pods deployed")
+	ErrNoPodsDeployed    = errors.New("no pods deployed")
+	ErrDaemonSetNotFound = errors.New("DaemonSet is not yet created")
+	ErrDaemonSetFetching = errors.New("failed to get DaemonSet")
+	ErrRolloutInProgress = errors.New("pods rollout in progress")
 )
 
 type ContainerNotRunningError struct {
@@ -48,28 +51,28 @@ func IsPodFailedError(err error) bool {
 	return errors.As(err, &pfe)
 }
 
-type FailedToListReplicaSetErr struct {
+type FailedToListReplicaSetError struct {
 	Message string
 }
 
-func (ftlr *FailedToListReplicaSetErr) Error() string {
+func (ftlr *FailedToListReplicaSetError) Error() string {
 	return fmt.Sprintf("failed to list ReplicaSets: %s", ftlr.Message)
 }
 
 func IsFailedToListReplicaSetErr(err error) bool {
-	var ftlr *FailedToListReplicaSetErr
+	var ftlr *FailedToListReplicaSetError
 	return errors.As(err, &ftlr)
 }
 
-type FailedToFetchReplicaSetErr struct {
+type FailedToFetchReplicaSetError struct {
 	Message string
 }
 
-func (ftfr *FailedToFetchReplicaSetErr) Error() string {
+func (ftfr *FailedToFetchReplicaSetError) Error() string {
 	return fmt.Sprintf("failed to fetch ReplicaSets: %s", ftfr.Message)
 }
 
-func IsFailedToFetchReplicaSetErr(err error) bool {
-	var ftfr *FailedToFetchReplicaSetErr
+func IsFailedToFetchReplicaSetError(err error) bool {
+	var ftfr *FailedToFetchReplicaSetError
 	return errors.As(err, &ftfr)
 }

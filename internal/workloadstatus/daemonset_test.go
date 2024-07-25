@@ -263,5 +263,5 @@ func TestDaemonsSetRollout(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
 	sut := DaemonSetProber{fakeClient}
 	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-	require.Equal(t, RolloutInProgress, err)
+	require.Equal(t, ErrRolloutInProgress, err)
 }

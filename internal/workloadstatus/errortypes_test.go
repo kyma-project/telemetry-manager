@@ -1,8 +1,9 @@
 package workloadstatus
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestErrorMessages(t *testing.T) {
@@ -31,16 +32,16 @@ func TestErrorMessages(t *testing.T) {
 			expectedErrorCheckFunc: IsPodFailedError,
 		},
 		{
-			name:                   "FailedToListReplicaSetErr",
-			err:                    &FailedToListReplicaSetErr{Message: "unable to list ReplicaSets"},
+			name:                   "FailedToListReplicaSetError",
+			err:                    &FailedToListReplicaSetError{Message: "unable to list ReplicaSets"},
 			expectedErrorMsg:       "failed to list ReplicaSets: unable to list ReplicaSets",
 			expectedErrorCheckFunc: IsFailedToListReplicaSetErr,
 		},
 		{
-			name:                   "FailedToFetchReplicaSetErr",
-			err:                    &FailedToFetchReplicaSetErr{Message: "unable to fetch ReplicaSets"},
+			name:                   "FailedToFetchReplicaSetError",
+			err:                    &FailedToFetchReplicaSetError{Message: "unable to fetch ReplicaSets"},
 			expectedErrorMsg:       "failed to fetch ReplicaSets: unable to fetch ReplicaSets",
-			expectedErrorCheckFunc: IsFailedToFetchReplicaSetErr,
+			expectedErrorCheckFunc: IsFailedToFetchReplicaSetError,
 		},
 	}
 	for _, test := range tt {
