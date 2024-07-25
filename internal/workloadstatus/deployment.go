@@ -66,7 +66,7 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 		return err
 	}
 
-	return ErrRolloutInProgress
+	return &RolloutInProgressError{}
 }
 
 func getLatestReplicaSet(deployment *appsv1.Deployment, allReplicaSets *appsv1.ReplicaSetList) *appsv1.ReplicaSet {

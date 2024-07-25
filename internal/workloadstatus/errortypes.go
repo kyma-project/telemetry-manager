@@ -9,7 +9,6 @@ var (
 	ErrNoPodsDeployed    = errors.New("no pods deployed")
 	ErrDaemonSetNotFound = errors.New("DaemonSet is not yet created")
 	ErrDaemonSetFetching = errors.New("failed to get DaemonSet")
-	ErrRolloutInProgress = errors.New("pods rollout in progress")
 )
 
 type ContainerNotRunningError struct {
@@ -75,4 +74,16 @@ func (ftfr *FailedToFetchReplicaSetError) Error() string {
 func IsFailedToFetchReplicaSetError(err error) bool {
 	var ftfr *FailedToFetchReplicaSetError
 	return errors.As(err, &ftfr)
+}
+
+type RolloutInProgressError struct {
+}
+
+func (ripe *RolloutInProgressError) Error() string {
+	return "Rollout is in progress"
+}
+
+func IsRolloutInProgressError(err error) bool {
+	var ripe *RolloutInProgressError
+	return errors.As(err, &ripe)
 }

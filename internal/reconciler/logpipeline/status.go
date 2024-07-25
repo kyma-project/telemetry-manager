@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -66,7 +67,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	msg := conditions.MessageForLogPipeline(reason)
 
 	err := r.agentProber.IsReady(ctx, r.config.DaemonSet)
-	if err != nil {
+	if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset - set condition as not healthy")
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonAgentNotReady

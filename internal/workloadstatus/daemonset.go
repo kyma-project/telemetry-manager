@@ -36,5 +36,5 @@ func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedNa
 	}
 
 	// Assume that there is an update or rollout of pods is in progress
-	return ErrRolloutInProgress
+	return &RolloutInProgressError{}
 }

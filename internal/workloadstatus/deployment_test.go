@@ -239,7 +239,7 @@ func TestDeploymentSetRollout(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList, podList).Build()
 	sut := DeploymentProber{fakeClient}
 	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
-	require.Equal(t, ErrRolloutInProgress, err)
+	require.True(t, IsRolloutInProgressError(err))
 }
 
 func TestReplicaSetNotFound(t *testing.T) {
