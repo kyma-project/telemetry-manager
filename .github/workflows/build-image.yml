@@ -5,12 +5,13 @@ on:
     types: [ opened, edited, synchronize, reopened, ready_for_review ]
     branches:
       - "main"
-      - "release-*"
+      - "release-[0-9]+.[0-9]+"
   push:
     branches:
       - "main"
-      - "release-*"
-
+      - "release-[0-9]+.[0-9]+"
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
 jobs:
 
   envs:
@@ -33,22 +34,24 @@ jobs:
         id: create-tags
         run: |
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
-            echo 'TAGS={{ github.event.push.ref }}'
+            echo 'TAGS=${{ github.ref_name }}' >> "$GITHUB_OUTPUT"
+          else
+            echo 'TAGS=PR-${{ github.event.pull_request.number }}' >> "$GITHUB_OUTPUT"
           fi
-          
-  #  build-image:
-  #    needs: envs
-  #    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
-  #    with:
-  #      name: telemetry-manager 
-  #      dockerfile: Dockerfile
-  #      context: .
-  #      tags: ${{ needs.envs.outputs.tags }}
 
-  #  list-images:
-  #    needs: build-image
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #      - name: List images
-  #        run: |
-  #          echo "${{ needs.build-image.outputs.images }}"
+  build-image:
+    needs: envs
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: telemetry-manager 
+      dockerfile: Dockerfile
+      context: .
+      tags: ${{ needs.envs.outputs.tags }}
+
+  list-images:
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: List images
+        run: |
+          echo "${{ needs.build-image.outputs.images }}"
