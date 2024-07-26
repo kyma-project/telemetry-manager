@@ -6,8 +6,8 @@ As the core element of the Telemetry module, Telemetry Manager manages the lifec
 
 The Telemetry module includes Telemetry Manager, a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that's described by a custom resource of type Telemetry. Telemetry Manager has the following tasks:
 
-1. Watch for the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
-2. Watch the module configuration for changes and sync the module status to it.
+1. Watch the module configuration for changes and sync the module status to it.
+2. Watch for the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
 3. Manage the lifecycle of the self monitor and the user-configured agents and gateways.
    For example, only if you defined a LogPipeline resource, the Fluent Bit DaemonSet is deployed as log agent.
 
