@@ -98,6 +98,18 @@ func TestPodPendingStatus(t *testing.T) {
 			waitingState:      &corev1.ContainerStateWaiting{Reason: "", Message: "foo Message"},
 			expectedErrorFunc: IsPodIsPendingError,
 		},
+		{
+			name:              "Pod is pending and reason is podInitializing",
+			pod:               testutils.NewPodBuilder("foo", "default").Build(),
+			waitingState:      &corev1.ContainerStateWaiting{Reason: "PodInitializing"},
+			expectedErrorFunc: nil,
+		},
+		{
+			name:              "Pod is pending and reason is ContainerCreating",
+			pod:               testutils.NewPodBuilder("foo", "default").Build(),
+			waitingState:      &corev1.ContainerStateWaiting{Reason: "ContainerCreating"},
+			expectedErrorFunc: nil,
+		},
 	}
 
 	for _, test := range tests {

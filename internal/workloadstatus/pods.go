@@ -68,14 +68,15 @@ func checkPodPendingState(status corev1.PodStatus) error {
 
 	for _, c := range status.ContainerStatuses {
 		if c.State.Waiting != nil {
-			// During the restart of the pod can be stuck in PodIntializing and ContainerCreating state for
+			// During the restart of the pod can be stuck in PodInitializing and ContainerCreating state for
 			// long which is not an error state, so we skip this state
-			if c.State.Waiting.Message != "PodInitializing" && c.State.Waiting.Message != "ContainerCreating" {
-				if c.State.Waiting.Reason != "" {
-					return &PodIsPendingError{Message: c.State.Waiting.Reason}
-				}
-				return &PodIsPendingError{Message: c.State.Waiting.Message}
+			if c.State.Waiting.Reason == "PodInitializing" || c.State.Waiting.Reason == "ContainerCreating" {
+				return nil
 			}
+			if c.State.Waiting.Reason != "" {
+				return &PodIsPendingError{Message: c.State.Waiting.Reason}
+			}
+			return &PodIsPendingError{Message: c.State.Waiting.Message}
 
 		}
 	}
