@@ -36,9 +36,6 @@ func checkPodStatus(ctx context.Context, c client.Client, namespace string, sele
 		if pod.Status.Phase == corev1.PodRunning && podReadyCondition.Status == corev1.ConditionTrue {
 			continue
 		}
-
-		// ToDo: Check readiness probe failure
-
 		// Check if Pods are in Pending state
 		if err := checkPodPendingState(pod.Status); err != nil {
 			return err
@@ -73,7 +70,7 @@ func checkPodPendingState(status corev1.PodStatus) error {
 		if c.State.Waiting != nil {
 			// During the restart of the pod can be stuck in PodIntializing and ContainerCreating state for
 			// long which is not an error state, so we skip this state
-			if c.State.Waiting.Message != "PodIntializing" && c.State.Waiting.Message != "ContainerCreating" {
+			if c.State.Waiting.Message != "PodInitializing" && c.State.Waiting.Message != "ContainerCreating" {
 				if c.State.Waiting.Reason != "" {
 					return &PodIsPendingError{Message: c.State.Waiting.Reason}
 				}
