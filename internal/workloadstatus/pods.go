@@ -2,7 +2,6 @@ package workloadstatus
 
 import (
 	"context"
-	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,7 +63,6 @@ func checkPodPendingState(status corev1.PodStatus) error {
 	if status.Phase != corev1.PodPending {
 		return nil
 	}
-	fmt.Printf("I AM INVOKED PENDING: %+v", status)
 
 	condition := findPodConditions(status.Conditions, corev1.PodScheduled)
 	if condition.Status == corev1.ConditionFalse {
@@ -73,14 +71,15 @@ func checkPodPendingState(status corev1.PodStatus) error {
 
 	for _, c := range status.ContainerStatuses {
 		if c.State.Waiting != nil {
-			if c.State.Waiting.Reason != "" {
-				return &PodIsPendingError{Message: c.State.Waiting.Reason}
-			}
-			// Sometimes the pod is stuck in PodIntializing and ContainerCreating state for long which is not an error state
-			// so we skip this state.
+			// During the restart of the pod can be stuck in PodIntializing and ContainerCreating state for
+			// long which is not an error state, so we skip this state
 			if c.State.Waiting.Message != "PodIntializing" && c.State.Waiting.Message != "ContainerCreating" {
+				if c.State.Waiting.Reason != "" {
+					return &PodIsPendingError{Message: c.State.Waiting.Reason}
+				}
 				return &PodIsPendingError{Message: c.State.Waiting.Message}
 			}
+
 		}
 	}
 
@@ -101,7 +100,6 @@ func checkPodsWaitingState(status corev1.PodStatus, c corev1.ContainerStatus) er
 	if status.Phase != corev1.PodRunning || c.State.Waiting == nil {
 		return nil
 	}
-	fmt.Printf("I AM INVOKED WAITING: %+v\n", status)
 
 	if c.LastTerminationState.Terminated != nil {
 		lastTerminatedState := c.LastTerminationState.Terminated

@@ -121,6 +121,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&appsv1.Deployment{},
 		&appsv1.DaemonSet{},
 		&corev1.ConfigMap{},
+		&corev1.Pod{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
