@@ -906,6 +906,13 @@ func TestReconcile(t *testing.T) {
 				expectedReason:  conditions.ReasonGatewayReady,
 				expectedMessage: conditions.MessageForTracePipeline(conditions.ReasonGatewayReady),
 			},
+			{
+				name:            "rollout in progress",
+				probeGatewayErr: &workloadstatus.RolloutInProgressError{},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonGatewayReady,
+				expectedMessage: "Rollout is in progress",
+			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {

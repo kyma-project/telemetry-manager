@@ -65,6 +65,11 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 			reason = conditions.ReasonAgentNotReady
 			msg = err.Error()
 		}
+		if workloadstatus.IsRolloutInProgressError(err) {
+			status = metav1.ConditionTrue
+			reason = conditions.ReasonAgentReady
+			msg = err.Error()
+		}
 	}
 
 	condition := metav1.Condition{
@@ -89,6 +94,12 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric gateway - set condition as not healthy")
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonGatewayNotReady
+		msg = err.Error()
+	}
+
+	if workloadstatus.IsRolloutInProgressError(err) {
+		status = metav1.ConditionTrue
+		reason = conditions.ReasonGatewayReady
 		msg = err.Error()
 	}
 

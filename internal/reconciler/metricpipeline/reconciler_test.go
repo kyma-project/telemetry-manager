@@ -1177,6 +1177,22 @@ func TestReconcile(t *testing.T) {
 				probeGatewayErr: &workloadstatus.ContainerNotRunningError{Message: "OOMKilled"},
 				expectedMessage: "Container is not running: OOMKilled",
 			},
+			{
+				name:            "Agent Rollout in progress",
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonAgentReady,
+				probeAgentErr:   &workloadstatus.RolloutInProgressError{},
+				probeGatewayErr: nil,
+				expectedMessage: "Rollout is in progress",
+			},
+			{
+				name:            "Gateway Rollout in progress",
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonGatewayReady,
+				probeAgentErr:   nil,
+				probeGatewayErr: &workloadstatus.RolloutInProgressError{},
+				expectedMessage: "Rollout is in progress",
+			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {

@@ -642,6 +642,13 @@ func TestReconcile(t *testing.T) {
 				expectedReason:  conditions.ReasonAgentNotReady,
 				expectedMessage: workloadstatus.ErrNoPodsDeployed.Error(),
 			},
+			{
+				name:            "fluent bit rollout in progress",
+				probeErr:        &workloadstatus.RolloutInProgressError{},
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonAgentReady,
+				expectedMessage: "Rollout is in progress",
+			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {

@@ -60,6 +60,12 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 		msg = err.Error()
 	}
 
+	if workloadstatus.IsRolloutInProgressError(err) {
+		status = metav1.ConditionTrue
+		reason = conditions.ReasonGatewayReady
+		msg = err.Error()
+	}
+
 	condition := metav1.Condition{
 		Type:               conditions.TypeGatewayHealthy,
 		Status:             status,
