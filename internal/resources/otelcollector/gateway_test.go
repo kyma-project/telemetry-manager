@@ -91,11 +91,12 @@ func TestApplyGatewayResources(t *testing.T) {
 		}
 
 		require.NotNil(t, cr)
-		require.Equal(t, cr.Name, name)
+		require.Equal(t, name, cr.Name)
+		require.Equal(t, namespace, cr.Namespace)
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, cr.Labels)
-		require.Equal(t, cr.Rules, expectedRules)
+		require.Equal(t, expectedRules, cr.Rules)
 	})
 
 	t.Run("should create cluster role binding", func(t *testing.T) {
@@ -105,11 +106,20 @@ func TestApplyGatewayResources(t *testing.T) {
 
 		crb := crbs.Items[0]
 		require.NotNil(t, crb)
+
 		require.Equal(t, name, crb.Name)
 		require.Equal(t, namespace, crb.Namespace)
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, crb.Labels)
+
+		subject := crb.Subjects[0]
+		require.Equal(t, "ServiceAccount", subject.Kind)
+		require.Equal(t, name, subject.Name)
+		require.Equal(t, namespace, subject.Namespace)
+
+		require.Equal(t, "rbac.authorization.k8s.io", crb.RoleRef.APIGroup)
+		require.Equal(t, "ClusterRole", crb.RoleRef.Kind)
 		require.Equal(t, name, crb.RoleRef.Name)
 	})
 
@@ -332,7 +342,7 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	t.Run("It should have permissive peer authentication created", func(t *testing.T) {
+	t.Run("should have permissive peer authentication created", func(t *testing.T) {
 		var peerAuth istiosecurityclientv1.PeerAuthentication
 		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &peerAuth))
 
@@ -340,7 +350,7 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 		require.Equal(t, istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE, peerAuth.Spec.Mtls.Mode)
 	})
 
-	t.Run("It should have istio enabled with ports excluded", func(t *testing.T) {
+	t.Run("should have istio enabled with ports excluded", func(t *testing.T) {
 		var deps appsv1.DeploymentList
 		require.NoError(t, client.List(ctx, &deps))
 		require.Len(t, deps.Items, 1)
@@ -362,6 +372,103 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	})
 }
 
+func TestApplyGatewayResourcesWithKymaInputAllowed(t *testing.T) {
+	ctx := context.Background()
+	client := fake.NewClientBuilder().Build()
+
+	sut := GatewayApplierDeleter{
+		Config: createGatewayConfig(),
+	}
+
+	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
+		AllowedPorts:        []int32{5555, 6666},
+		CollectorConfigYAML: cfg,
+		CollectorEnvVars:    envVars,
+		KymaInputAllowed:    true,
+	})
+	require.NoError(t, err)
+
+	t.Run("should create cluster role", func(t *testing.T) {
+		var crs rbacv1.ClusterRoleList
+		require.NoError(t, client.List(ctx, &crs))
+		require.Len(t, crs.Items, 1)
+
+		cr := crs.Items[0]
+		expectedRules := []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"operator.kyma-project.io"},
+				Resources: []string{"telemetries"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		}
+
+		require.NotNil(t, cr)
+		require.Equal(t, name, cr.Name)
+		require.Equal(t, namespace, cr.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, cr.Labels)
+		require.Equal(t, expectedRules, cr.Rules)
+	})
+
+	t.Run("should create role", func(t *testing.T) {
+		var rs rbacv1.RoleList
+		require.NoError(t, client.List(ctx, &rs))
+		require.Len(t, rs.Items, 1)
+
+		r := rs.Items[0]
+		expectedRules := []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+		}
+
+		require.NotNil(t, r)
+		require.Equal(t, name, r.Name)
+		require.Equal(t, namespace, r.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, r.Labels)
+		require.Equal(t, expectedRules, r.Rules)
+	})
+
+	t.Run("should create role binding", func(t *testing.T) {
+		var rbs rbacv1.RoleBindingList
+		require.NoError(t, client.List(ctx, &rbs))
+		require.Len(t, rbs.Items, 1)
+
+		rb := rbs.Items[0]
+		require.NotNil(t, rb)
+
+		require.Equal(t, name, rb.Name)
+		require.Equal(t, namespace, rb.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, rb.Labels)
+
+		subject := rb.Subjects[0]
+		require.Equal(t, "ServiceAccount", subject.Kind)
+		require.Equal(t, name, subject.Name)
+		require.Equal(t, namespace, subject.Namespace)
+
+		require.Equal(t, "rbac.authorization.k8s.io", rb.RoleRef.APIGroup)
+		require.Equal(t, "Role", rb.RoleRef.Kind)
+		require.Equal(t, name, rb.RoleRef.Name)
+	})
+}
+
 func TestDeleteGatewayResources(t *testing.T) {
 	ctx := context.Background()
 	scheme := runtime.NewScheme()
@@ -380,6 +487,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 		IstioEnabled:        true,
 		IstioExcludePorts:   []int32{1111, 2222},
 		Replicas:            replicas,
+		KymaInputAllowed:    true,
 	})
 	require.NoError(t, err)
 
@@ -444,6 +552,18 @@ func TestDeleteGatewayResources(t *testing.T) {
 	t.Run("should delete permissive peer authentication", func(t *testing.T) {
 		var peerAuth istiosecurityclientv1.PeerAuthentication
 		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &peerAuth)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete role binding", func(t *testing.T) {
+		var roleBinding rbacv1.RoleBinding
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &roleBinding)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete role", func(t *testing.T) {
+		var role rbacv1.Role
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &role)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 }
