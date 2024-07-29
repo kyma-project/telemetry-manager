@@ -37,20 +37,19 @@ type GatewayApplyOptions struct {
 	CollectorEnvVars    map[string][]byte
 	IstioEnabled        bool
 	IstioExcludePorts   []int32
-
 	// Replicas specifies the number of gateway replicas.
 	Replicas int32
-
 	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
+	KymaInputAllowed               bool
 }
 
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
 	name := types.NamespacedName{Namespace: gad.Config.Namespace, Name: gad.Config.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, gad.makeGatewayClusterRole(name), opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, gad.makeGatewayClusterRole(name, opts.KymaInputAllowed), opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -77,6 +76,17 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
+	}
+
+	if opts.KymaInputAllowed {
+		if err := k8sutils.CreateOrUpdateRole(ctx, c, gad.makeGatewayRole(name)); err != nil {
+			return fmt.Errorf("failed to create role: %w", err)
+		}
+
+		if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, gad.makeGatewayRoleBinding(name)); err != nil {
+			return fmt.Errorf("failed to create role binding: %w", err)
+		}
+
 	}
 
 	return nil
@@ -126,7 +136,7 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	return allErrors
 }
 
-func (gad *GatewayApplierDeleter) makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+func (gad *GatewayApplierDeleter) makeGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bool) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -146,6 +156,15 @@ func (gad *GatewayApplierDeleter) makeGatewayClusterRole(name types.NamespacedNa
 			},
 		},
 	}
+
+	if kymaInputAllowed {
+		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
+			APIGroups: []string{"operator.kyma-project.io"},
+			Resources: []string{"telemetries"},
+			Verbs:     []string{"get", "list", "watch"},
+		})
+	}
+
 	return &clusterRole
 }
 
@@ -301,6 +320,45 @@ func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv
 		Spec: istiosecurityv1.PeerAuthentication{
 			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: labels},
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
+		},
+	}
+}
+
+func (gad *GatewayApplierDeleter) makeGatewayRole(name types.NamespacedName) *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+		},
+	}
+}
+
+func (gad *GatewayApplierDeleter) makeGatewayRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      name.Name,
+				Namespace: name.Namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     name.Name,
 		},
 	}
 }
