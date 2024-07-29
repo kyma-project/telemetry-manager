@@ -79,11 +79,11 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 	}
 
 	if opts.KymaInputAllowed {
-		if err := k8sutils.CreateOrUpdateRole(ctx, c, gad.makeGatewayRole(name)); err != nil {
+		if err := k8sutils.CreateOrUpdateRole(ctx, c, gad.makeGatewayRole()); err != nil {
 			return fmt.Errorf("failed to create role: %w", err)
 		}
 
-		if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, gad.makeGatewayRoleBinding(name)); err != nil {
+		if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, gad.makeGatewayRoleBinding()); err != nil {
 			return fmt.Errorf("failed to create role binding: %w", err)
 		}
 
@@ -334,12 +334,12 @@ func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv
 	}
 }
 
-func (gad *GatewayApplierDeleter) makeGatewayRole(name types.NamespacedName) *rbacv1.Role {
+func (gad *GatewayApplierDeleter) makeGatewayRole() *rbacv1.Role {
 	return &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Name:      gad.Config.BaseName,
+			Namespace: gad.Config.Namespace,
+			Labels:    defaultLabels(gad.Config.BaseName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -351,24 +351,24 @@ func (gad *GatewayApplierDeleter) makeGatewayRole(name types.NamespacedName) *rb
 	}
 }
 
-func (gad *GatewayApplierDeleter) makeGatewayRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
+func (gad *GatewayApplierDeleter) makeGatewayRoleBinding() *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Name:      gad.Config.BaseName,
+			Namespace: gad.Config.Namespace,
+			Labels:    defaultLabels(gad.Config.BaseName),
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      rbacv1.ServiceAccountKind,
-				Name:      name.Name,
-				Namespace: name.Namespace,
+				Name:      gad.Config.BaseName,
+				Namespace: gad.Config.Namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     name.Name,
+			Name:     gad.Config.BaseName,
 		},
 	}
 }
