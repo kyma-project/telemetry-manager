@@ -40,7 +40,7 @@ func TestErrorMessages(t *testing.T) {
 		{
 			name:                   "FailedToFetchReplicaSetError",
 			err:                    &FailedToFetchReplicaSetError{Message: "unable to fetch ReplicaSets"},
-			expectedErrorMsg:       "failed to fetch ReplicaSets: unable to fetch ReplicaSets",
+			expectedErrorMsg:       "Failed to fetch ReplicaSets: unable to fetch ReplicaSets",
 			expectedErrorCheckFunc: IsFailedToFetchReplicaSetError,
 		},
 		{

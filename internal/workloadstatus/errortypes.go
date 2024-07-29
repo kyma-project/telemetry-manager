@@ -55,7 +55,7 @@ type FailedToListReplicaSetError struct {
 }
 
 func (ftlr *FailedToListReplicaSetError) Error() string {
-	return fmt.Sprintf("failed to list ReplicaSets: %s", ftlr.Message)
+	return fmt.Sprintf("Failed to list ReplicaSets: %s", ftlr.Message)
 }
 
 func IsFailedToListReplicaSetErr(err error) bool {
@@ -68,7 +68,7 @@ type FailedToFetchReplicaSetError struct {
 }
 
 func (ftfr *FailedToFetchReplicaSetError) Error() string {
-	return fmt.Sprintf("failed to fetch ReplicaSets: %s", ftfr.Message)
+	return fmt.Sprintf("Failed to fetch ReplicaSets: %s", ftfr.Message)
 }
 
 func IsFailedToFetchReplicaSetError(err error) bool {
