@@ -1146,7 +1146,7 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "Container is not running: OOMKilled",
 			},
 			{
-				name:            "pod is crashbackloop",
+				name:            "pod is CrashLoop",
 				probeAgentErr:   &workloadstatus.ContainerNotRunningError{Message: "Error"},
 				probeGatewayErr: nil,
 				expectedStatus:  metav1.ConditionFalse,
@@ -1183,7 +1183,7 @@ func TestReconcile(t *testing.T) {
 				expectedReason:  conditions.ReasonAgentReady,
 				probeAgentErr:   &workloadstatus.RolloutInProgressError{},
 				probeGatewayErr: nil,
-				expectedMessage: "Rollout is in progress",
+				expectedMessage: "Rollout is in progress. Pods are being started or updated",
 			},
 			{
 				name:            "Gateway Rollout in progress",
@@ -1191,7 +1191,7 @@ func TestReconcile(t *testing.T) {
 				expectedReason:  conditions.ReasonGatewayReady,
 				probeAgentErr:   nil,
 				probeGatewayErr: &workloadstatus.RolloutInProgressError{},
-				expectedMessage: "Rollout is in progress",
+				expectedMessage: "Rollout is in progress. Pods are being started or updated",
 			},
 		}
 		for _, tt := range tests {

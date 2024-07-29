@@ -64,7 +64,7 @@ func TestPodStatus(t *testing.T) {
 			if test.expectedErrorCheckFunc != nil {
 				require.True(t, test.expectedErrorCheckFunc(err))
 			} else {
-				require.Equal(t, test.expectedError, err)
+				require.ErrorIs(t, err, test.expectedError)
 			}
 		})
 	}
@@ -126,7 +126,7 @@ func TestPodPendingStatus(t *testing.T) {
 			if test.expectedErrorFunc != nil {
 				require.True(t, test.expectedErrorFunc(err))
 			} else {
-				require.Equal(t, test.expectedError, err)
+				require.ErrorIs(t, err, test.expectedError)
 			}
 		})
 	}
@@ -148,5 +148,4 @@ func TestPodWaitingStatus(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithObjects(&pod).Build()
 	err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 	require.True(t, IsContainerNotRunningError(err))
-
 }

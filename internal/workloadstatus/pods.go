@@ -14,6 +14,7 @@ import (
 // podPhase, PodScheduled (under podConditions), ContainerStatus.State, ContainerStatus.LastState
 // +----------------+-----------------+-----------------+-----------------+-----------------+-----------------+
 // | Scenario       | PodPhase | Pod Scheduled | ContainerStatus.State           | ContainerStatus.LastState |
+// +----------------+----------+---------------+---------------------------------+---------------------------+
 // |  Crashbackloop | Running  | True          | State.Waiting.Reason: CrashLoopBackOff| exitCode: 1, Reason: Error|
 // |  OOMKilled     | Running  | True          | State.Waiting.Reason: OOMKilled    | exitCode: 137, Reason: OOMKilled|
 // | PVC not found  | Pending  | False, Reason: Unschedulable        | - | -                       |
@@ -32,15 +33,15 @@ func checkPodStatus(ctx context.Context, c client.Client, namespace string, sele
 
 	for _, pod := range pods.Items {
 		//check if Pod is in running state & all containers are ready.
-		podReadyCondition := findPodConditions(pod.Status.Conditions, corev1.PodReady)
+		podReadyCondition := findPodCondition(pod.Status.Conditions, corev1.PodReady)
 		if pod.Status.Phase == corev1.PodRunning && podReadyCondition.Status == corev1.ConditionTrue {
 			continue
 		}
-		// Check if Pods are in Pending state
+		// Check if Pod is Pending state
 		if err := checkPodPendingState(pod.Status); err != nil {
 			return err
 		}
-		// check pods are in failed State
+		// check pod is in failed State
 		if err := checkPodFailedState(pod.Status); err != nil {
 			return err
 		}
@@ -56,12 +57,12 @@ func checkPodStatus(ctx context.Context, c client.Client, namespace string, sele
 	return nil
 }
 
-func checkPodPendingState(status corev1.PodStatus) error {
+func checkPodPendingState(status corev1.PodStatus) *PodIsPendingError {
 	if status.Phase != corev1.PodPending {
 		return nil
 	}
 
-	condition := findPodConditions(status.Conditions, corev1.PodScheduled)
+	condition := findPodCondition(status.Conditions, corev1.PodScheduled)
 	if condition.Status == corev1.ConditionFalse {
 		return &PodIsPendingError{Message: condition.Message}
 	}
@@ -86,15 +87,15 @@ func checkPodPendingState(status corev1.PodStatus) error {
 	return nil
 }
 
-func checkPodFailedState(status corev1.PodStatus) error {
+func checkPodFailedState(status corev1.PodStatus) *PodIsFailingError {
 	if status.Phase != corev1.PodFailed {
 		return nil
 	}
 
-	return &PodIsFailedError{Message: status.Message}
+	return &PodIsFailingError{Message: status.Message}
 }
 
-func checkPodsWaitingState(status corev1.PodStatus, c corev1.ContainerStatus) error {
+func checkPodsWaitingState(status corev1.PodStatus, c corev1.ContainerStatus) *ContainerNotRunningError {
 	if status.Phase != corev1.PodRunning || c.State.Waiting == nil {
 		return nil
 	}
@@ -111,7 +112,7 @@ func checkPodsWaitingState(status corev1.PodStatus, c corev1.ContainerStatus) er
 	return &ContainerNotRunningError{Message: c.State.Waiting.Message}
 }
 
-func findPodConditions(conditions []corev1.PodCondition, s corev1.PodConditionType) corev1.PodCondition {
+func findPodCondition(conditions []corev1.PodCondition, s corev1.PodConditionType) corev1.PodCondition {
 	for _, c := range conditions {
 		if c.Type == s {
 			return c

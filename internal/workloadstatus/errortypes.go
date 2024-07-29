@@ -37,16 +37,16 @@ func IsPodIsPendingError(err error) bool {
 	return errors.As(err, &pipe)
 }
 
-type PodIsFailedError struct {
+type PodIsFailingError struct {
 	Message string
 }
 
-func (pfe *PodIsFailedError) Error() string {
+func (pfe *PodIsFailingError) Error() string {
 	return fmt.Sprintf("Pod has failed: %s", pfe.Message)
 }
 
 func IsPodFailedError(err error) bool {
-	var pfe *PodIsFailedError
+	var pfe *PodIsFailingError
 	return errors.As(err, &pfe)
 }
 
@@ -80,7 +80,7 @@ type RolloutInProgressError struct {
 }
 
 func (ripe *RolloutInProgressError) Error() string {
-	return "Rollout is in progress"
+	return "Rollout is in progress. Pods are being started or updated"
 }
 
 func IsRolloutInProgressError(err error) bool {

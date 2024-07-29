@@ -110,7 +110,6 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
@@ -175,7 +174,6 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetFetching)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
@@ -629,7 +627,7 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "Container is not running: OOMKilled",
 			},
 			{
-				name:            "pod is craashbackloop",
+				name:            "pod is CrashLoop",
 				probeErr:        &workloadstatus.ContainerNotRunningError{Message: "Error"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
@@ -647,7 +645,7 @@ func TestReconcile(t *testing.T) {
 				probeErr:        &workloadstatus.RolloutInProgressError{},
 				expectedStatus:  metav1.ConditionTrue,
 				expectedReason:  conditions.ReasonAgentReady,
-				expectedMessage: "Rollout is in progress",
+				expectedMessage: "Rollout is in progress. Pods are being started or updated",
 			},
 		}
 		for _, tt := range tests {

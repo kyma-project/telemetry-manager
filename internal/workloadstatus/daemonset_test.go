@@ -230,7 +230,7 @@ func TestDaemonSetNotCreated(t *testing.T) {
 	require.Equal(t, ErrDaemonSetNotFound, err)
 }
 
-func TestDaemonsSetRollout(t *testing.T) {
+func TestDaemonSetRollout(t *testing.T) {
 	daemonSet := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system", Generation: 1},
 		Spec: appsv1.DaemonSetSpec{Selector: &metav1.LabelSelector{

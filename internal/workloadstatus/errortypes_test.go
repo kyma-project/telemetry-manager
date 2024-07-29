@@ -26,8 +26,8 @@ func TestErrorMessages(t *testing.T) {
 			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
-			name:                   "PodIsFailedError",
-			err:                    &PodIsFailedError{Message: "due to known reason"},
+			name:                   "PodIsFailingError",
+			err:                    &PodIsFailingError{Message: "due to known reason"},
 			expectedErrorMsg:       "Pod has failed: due to known reason",
 			expectedErrorCheckFunc: IsPodFailedError,
 		},
@@ -42,6 +42,12 @@ func TestErrorMessages(t *testing.T) {
 			err:                    &FailedToFetchReplicaSetError{Message: "unable to fetch ReplicaSets"},
 			expectedErrorMsg:       "failed to fetch ReplicaSets: unable to fetch ReplicaSets",
 			expectedErrorCheckFunc: IsFailedToFetchReplicaSetError,
+		},
+		{
+			name:                   "RolloutInProgressError",
+			err:                    &RolloutInProgressError{},
+			expectedErrorMsg:       "Rollout is in progress. Pods are being started or updated",
+			expectedErrorCheckFunc: IsRolloutInProgressError,
 		},
 	}
 	for _, test := range tt {

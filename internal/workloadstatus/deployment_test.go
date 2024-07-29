@@ -24,7 +24,7 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 		expectedError    error
 	}{
 		{
-			summary:          "all scheduled all ready",
+			summary:          "all scheduled, all ready",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      2,
 			pods: []corev1.Pod{
@@ -71,7 +71,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 		expectedError    func(error) bool
 	}{
 		{
-			summary:          "all scheduled zero ready but no problem",
+			summary:          "all scheduled, zero ready but no problem",
 			numberReady:      0,
 			desiredScheduled: ptr.To(int32(2)),
 			expectedError:    IsPodIsPendingError,
@@ -81,7 +81,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 			},
 		},
 		{
-			summary:          "all scheduled 1 ready 1 evicted",
+			summary:          "all scheduled, 1 ready, 1 evicted",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
 			expectedError:    IsPodFailedError,
@@ -91,7 +91,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 			},
 		},
 		{
-			summary:          "all scheduled 1 ready 1 pending",
+			summary:          "all scheduled, 1 ready, 1 pending",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
 			expectedError:    IsPodIsPendingError,
@@ -101,7 +101,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 			},
 		},
 		{
-			summary:          "all scheduled 1 ready 1 container not ready",
+			summary:          "all scheduled, 1 ready, 1 container not ready",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
 			expectedError:    IsPodIsPendingError,
@@ -111,7 +111,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 			},
 		},
 		{
-			summary:          "all scheduled 1 ready 1 process exited",
+			summary:          "all scheduled, 1 ready, 1 process exited",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
 			expectedError:    IsContainerNotRunningError,
@@ -131,7 +131,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 			expectedError: IsContainerNotRunningError,
 		},
 		{
-			summary:          "all scheduled zero ready crashbacklook: 1, OOM: 1 with expired threshold",
+			summary:          "all scheduled, 0 ready, crashloop: 1, OOM: 1 with expired threshold",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      0,
 			pods: []corev1.Pod{

@@ -911,7 +911,7 @@ func TestReconcile(t *testing.T) {
 				probeGatewayErr: &workloadstatus.RolloutInProgressError{},
 				expectedStatus:  metav1.ConditionTrue,
 				expectedReason:  conditions.ReasonGatewayReady,
-				expectedMessage: "Rollout is in progress",
+				expectedMessage: "Rollout is in progress. Pods are being started or updated",
 			},
 		}
 		for _, tt := range tests {
