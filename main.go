@@ -122,6 +122,8 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
+	kymaInputAllowed bool
+
 	version = "main"
 )
 
@@ -256,6 +258,8 @@ func main() {
 
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
+
+	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
