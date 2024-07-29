@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -17,7 +18,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -48,33 +48,9 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
-	status := metav1.ConditionTrue
-	reason := conditions.ReasonGatewayReady
-	msg := conditions.MessageForTracePipeline(reason)
-
-	err := r.gatewayProber.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
-	if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe trace gateway - set condition as not healthy")
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonGatewayNotReady
-		msg = err.Error()
-	}
-
-	if workloadstatus.IsRolloutInProgressError(err) {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonGatewayReady
-		msg = err.Error()
-	}
-
-	condition := metav1.Condition{
-		Type:               conditions.TypeGatewayHealthy,
-		Status:             status,
-		Reason:             reason,
-		Message:            msg,
-		ObservedGeneration: pipeline.Generation,
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+	condition := commonstatus.GetGatewayHealthyCondition(ctx, r.gatewayProber, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}, commonstatus.SignalTypeTraces)
+	condition.ObservedGeneration = pipeline.Generation
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {

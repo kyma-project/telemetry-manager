@@ -34,7 +34,7 @@ func TestErrorMessages(t *testing.T) {
 		{
 			name:                   "FailedToListReplicaSetError",
 			err:                    &FailedToListReplicaSetError{Message: "unable to list ReplicaSets"},
-			expectedErrorMsg:       "failed to list ReplicaSets: unable to list ReplicaSets",
+			expectedErrorMsg:       "Failed to list ReplicaSets: unable to list ReplicaSets",
 			expectedErrorCheckFunc: IsFailedToListReplicaSetErr,
 		},
 		{

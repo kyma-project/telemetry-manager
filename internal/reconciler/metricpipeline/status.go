@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -17,7 +18,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -49,69 +49,24 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	status := metav1.ConditionTrue
-	reason := conditions.ReasonMetricAgentNotRequired
-	msg := conditions.MessageForLogPipeline(reason)
+	condition := &metav1.Condition{
+		Status:  metav1.ConditionTrue,
+		Reason:  conditions.ReasonMetricAgentNotRequired,
+		Message: conditions.MessageForLogPipeline(conditions.ReasonMetricAgentNotRequired),
+	}
+
 	if isMetricAgentRequired(pipeline) {
-		agentName := types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace}
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonAgentReady
-		msg = conditions.MessageForMetricPipeline(reason)
-
-		err := r.agentProber.IsReady(ctx, agentName)
-		if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
-			logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric agent - set condition as not healthy")
-			status = metav1.ConditionFalse
-			reason = conditions.ReasonAgentNotReady
-			msg = err.Error()
-		}
-		if workloadstatus.IsRolloutInProgressError(err) {
-			status = metav1.ConditionTrue
-			reason = conditions.ReasonAgentReady
-			msg = err.Error()
-		}
+		condition = commonstatus.GetAgentHealthyCondition(ctx, r.agentProber, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace}, commonstatus.SignalTypeMetrics)
 	}
 
-	condition := metav1.Condition{
-		Type:               conditions.TypeAgentHealthy,
-		Status:             status,
-		Reason:             reason,
-		Message:            msg,
-		ObservedGeneration: pipeline.Generation,
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+	condition.ObservedGeneration = pipeline.Generation
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	gatewayName := types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}
-	status := metav1.ConditionTrue
-	reason := conditions.ReasonGatewayReady
-	msg := conditions.MessageForMetricPipeline(reason)
-
-	err := r.gatewayProber.IsReady(ctx, gatewayName)
-	if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric gateway - set condition as not healthy")
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonGatewayNotReady
-		msg = err.Error()
-	}
-
-	if workloadstatus.IsRolloutInProgressError(err) {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonGatewayReady
-		msg = err.Error()
-	}
-
-	condition := metav1.Condition{
-		Type:               conditions.TypeGatewayHealthy,
-		Status:             status,
-		Reason:             reason,
-		Message:            msg,
-		ObservedGeneration: pipeline.Generation,
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+	condition := commonstatus.GetGatewayHealthyCondition(ctx, r.gatewayProber, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}, commonstatus.SignalTypeMetrics)
+	condition.ObservedGeneration = pipeline.Generation
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
