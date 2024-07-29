@@ -133,6 +133,16 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		}
 	}
 
+	roleBinding := rbacv1.RoleBinding{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &roleBinding); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete role binding: %w", err))
+	}
+
+	role := rbacv1.Role{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &role); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete role: %w", err))
+	}
+
 	return allErrors
 }
 
