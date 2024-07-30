@@ -15,9 +15,9 @@ func TestErrorMessages(t *testing.T) {
 	}{
 		{
 			name:                   "ContainerNotRunningError",
-			err:                    &ContainerNotRunningError{Message: "unable to pull image"},
-			expectedErrorMsg:       "Container is not running: unable to pull image",
-			expectedErrorCheckFunc: IsContainerNotRunningError,
+			err:                    &PodIsPendingError{Message: "unable to pull image"},
+			expectedErrorMsg:       "Pod is in pending state: unable to pull image",
+			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
 			name:                   "PodIsPendingError",
@@ -46,7 +46,7 @@ func TestErrorMessages(t *testing.T) {
 		{
 			name:                   "RolloutInProgressError",
 			err:                    &RolloutInProgressError{},
-			expectedErrorMsg:       "Rollout is in progress. Pods are being started or updated",
+			expectedErrorMsg:       "Rollout is in progress",
 			expectedErrorCheckFunc: IsRolloutInProgressError,
 		},
 	}

@@ -27,17 +27,17 @@ func TestPodStatus(t *testing.T) {
 		{
 			name:                   "Invalid configuration",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithCrashBackOffStatus().Build(),
-			expectedErrorCheckFunc: IsContainerNotRunningError,
+			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
 			name:                   "container is OOMKilled",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithOOMStatus().Build(),
-			expectedErrorCheckFunc: IsContainerNotRunningError,
+			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
 			name:                   "process in container exited with non zero error",
 			pod:                    testutils.NewPodBuilder("foo", "default").WithNonZeroExitStatus().Build(),
-			expectedErrorCheckFunc: IsContainerNotRunningError,
+			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
 			name:                   "Pod is evicted",
@@ -147,5 +147,5 @@ func TestPodWaitingStatus(t *testing.T) {
 	pod.Status.Phase = corev1.PodRunning
 	fakeClient := fake.NewClientBuilder().WithObjects(&pod).Build()
 	err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
-	require.True(t, IsContainerNotRunningError(err))
+	require.True(t, IsPodIsPendingError(err))
 }

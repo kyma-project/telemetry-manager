@@ -114,7 +114,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 			summary:          "all scheduled, 1 ready, 1 process exited",
 			desiredScheduled: ptr.To(int32(2)),
 			numberReady:      1,
-			expectedError:    IsContainerNotRunningError,
+			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithNonZeroExitStatus().Build(),
@@ -128,7 +128,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
 			},
-			expectedError: IsContainerNotRunningError,
+			expectedError: IsPodIsPendingError,
 		},
 		{
 			summary:          "all scheduled, 0 ready, crashloop: 1, OOM: 1 with expired threshold",
@@ -138,7 +138,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
 			},
-			expectedError: IsContainerNotRunningError,
+			expectedError: IsPodIsPendingError,
 		},
 	}
 	for _, test := range tests {

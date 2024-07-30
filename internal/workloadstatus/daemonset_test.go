@@ -159,7 +159,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			numberReady:      1,
 			updatedScheduled: 3,
 			expected:         false,
-			expectedError:    IsContainerNotRunningError,
+			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithNonZeroExitStatus().Build(),
@@ -171,7 +171,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			desiredScheduled: 3,
 			numberReady:      1,
 			updatedScheduled: 2,
-			expectedError:    IsContainerNotRunningError,
+			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().Build(),
@@ -184,7 +184,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			desiredScheduled: 3,
 			numberReady:      1,
 			updatedScheduled: 3,
-			expectedError:    IsContainerNotRunningError,
+			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
 				testutils.NewPodBuilder("pod-1", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithOOMStatus().Build(),
