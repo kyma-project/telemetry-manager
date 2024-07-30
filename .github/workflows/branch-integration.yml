@@ -25,18 +25,11 @@ jobs:
       uses: "./.github/template/setup-golang"
 
     # wait for the build to succeed so that the manager image is available
-    - name: Wait for the 'post-telemetry-manager-build' job to succeed
-      uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
-      with:
-        context: "post-telemetry-manager-build"
-        commit_ref: "${{ github.sha }}"
-        timeout: 600000 # 10 minutes in milliseconds
-        # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
-        check_interval: 60000 # 1 minute in milliseconds
+    - name: Wait for the image to be available in the registry
+      run: "chmod +x ./hack/await_image.sh && ./hack/await_image.sh ${{ github.ref_name }}"
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        GITHUB_OWNER: "${{ github.repository_owner }}"
-        GITHUB_REPO: "telemetry-manager"
+        IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
 
     # save gardener kubeconfig to a temp file in order to pass it to the command
     - name: Save serviceaccount to file
