@@ -50,9 +50,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
 	condition := &metav1.Condition{
+		Type:    conditions.TypeAgentHealthy,
 		Status:  metav1.ConditionTrue,
 		Reason:  conditions.ReasonMetricAgentNotRequired,
-		Message: conditions.MessageForLogPipeline(conditions.ReasonMetricAgentNotRequired),
+		Message: conditions.MessageForMetricPipeline(conditions.ReasonMetricAgentNotRequired),
 	}
 
 	if isMetricAgentRequired(pipeline) {
