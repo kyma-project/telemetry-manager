@@ -11,21 +11,32 @@ var (
 	ErrDaemonSetFetching = errors.New("failed to get DaemonSet")
 )
 
-type ContainerNotRunningError struct {
+//type ContainerNotRunningError struct {
+//	Message string
+//}
+//
+//
+//func (cnre *ContainerNotRunningError) Error() string {
+//	return fmt.Sprintf("Container is not running: %s", cnre.Message)
+//}
+//
+//func IsContainerNotRunningError(err error) bool {
+//	var cnre *ContainerNotRunningError
+//	return errors.As(err, &cnre)
+//}
+
+type PodIsNotScheduledError struct {
 	Message string
 }
 
-func (cnre *ContainerNotRunningError) Error() string {
-	return fmt.Sprintf("Container is not running: %s", cnre.Message)
-}
-
-func IsContainerNotRunningError(err error) bool {
-	var cnre *ContainerNotRunningError
-	return errors.As(err, &cnre)
+func (pns *PodIsNotScheduledError) Error() string {
+	return fmt.Sprintf("Pod is not scheduled: %s", pns.Message)
 }
 
 type PodIsPendingError struct {
-	Message string
+	ContainerName string
+	Reason        string
+	Message       string
 }
 
 func (pipe *PodIsPendingError) Error() string {
@@ -80,7 +91,7 @@ type RolloutInProgressError struct {
 }
 
 func (ripe *RolloutInProgressError) Error() string {
-	return "Rollout is in progress. Pods are being started or updated"
+	return "Rollout is in progress"
 }
 
 func IsRolloutInProgressError(err error) bool {

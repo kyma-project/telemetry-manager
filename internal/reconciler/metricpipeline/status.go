@@ -57,7 +57,11 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	}
 
 	if isMetricAgentRequired(pipeline) {
-		condition = commonstatus.GetAgentHealthyCondition(ctx, r.agentProber, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace}, commonstatus.SignalTypeMetrics)
+		condition = commonstatus.GetAgentHealthyCondition(ctx,
+			r.agentProber,
+			types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace},
+			r.errToMsgConverter,
+			commonstatus.SignalTypeMetrics)
 	}
 
 	condition.ObservedGeneration = pipeline.Generation
@@ -65,7 +69,10 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	condition := commonstatus.GetGatewayHealthyCondition(ctx, r.gatewayProber, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}, commonstatus.SignalTypeMetrics)
+	condition := commonstatus.GetGatewayHealthyCondition(ctx,
+		r.gatewayProber, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace},
+		r.errToMsgConverter,
+		commonstatus.SignalTypeMetrics)
 	condition.ObservedGeneration = pipeline.Generation
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }

@@ -18,6 +18,7 @@ limitations under the License.
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -104,6 +105,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineValidator,
+		&conditions.ErrorToMessageConverter{},
 	)
 
 	return &LogPipelineController{

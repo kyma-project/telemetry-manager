@@ -77,6 +77,10 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
 
+type ErrorToMessageConverter interface {
+	Convert(err error) string
+}
+
 type Reconciler struct {
 	client.Client
 
@@ -89,6 +93,7 @@ type Reconciler struct {
 	istioStatusChecker IstioStatusChecker
 	overridesHandler   OverridesHandler
 	pipelineValidator  *Validator
+	errToMsgConverter  ErrorToMessageConverter
 }
 
 func New(
@@ -99,6 +104,7 @@ func New(
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineValidator *Validator,
+	errToMsgConverter ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
 		Client: client,
@@ -110,6 +116,7 @@ func New(
 		istioStatusChecker: istioStatusChecker,
 		overridesHandler:   overridesHandler,
 		pipelineValidator:  pipelineValidator,
+		errToMsgConverter:  errToMsgConverter,
 	}
 }
 

@@ -23,7 +23,11 @@ type DaemonsetProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) error
 }
 
-func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, namespacedName types.NamespacedName, signalType string) *metav1.Condition {
+type ErrorToMessageConverter interface {
+	Convert(err error) string
+}
+
+func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonGatewayReady
 	msg := conditions.MessageForTracePipeline(reason)
@@ -37,13 +41,13 @@ func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, na
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe trace gateway - set condition as not healthy")
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonGatewayNotReady
-		msg = err.Error()
+		msg = errToMsgCon.Convert(err)
 	}
 
 	if workloadstatus.IsRolloutInProgressError(err) {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonGatewayReady
-		msg = err.Error()
+		msg = errToMsgCon.Convert(err)
 	}
 
 	return &metav1.Condition{
@@ -55,7 +59,7 @@ func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, na
 
 }
 
-func GetAgentHealthyCondition(ctx context.Context, prober DaemonsetProber, namespacedName types.NamespacedName, signalType string) *metav1.Condition {
+func GetAgentHealthyCondition(ctx context.Context, prober DaemonsetProber, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonAgentReady
 	msg := conditions.MessageForLogPipeline(reason)
@@ -68,12 +72,12 @@ func GetAgentHealthyCondition(ctx context.Context, prober DaemonsetProber, names
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric agent - set condition as not healthy")
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonAgentNotReady
-		msg = err.Error()
+		msg = errToMsgCon.Convert(err)
 	}
 	if workloadstatus.IsRolloutInProgressError(err) {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonAgentReady
-		msg = err.Error()
+		msg = errToMsgCon.Convert(err)
 	}
 
 	return &metav1.Condition{
