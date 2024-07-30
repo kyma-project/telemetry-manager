@@ -83,6 +83,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -93,7 +95,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -105,7 +108,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			workloadstatus.ErrDeploymentFetching.Error(),
+			"Failed to get Deployment",
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -126,7 +129,7 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		cnre := &workloadstatus.ContainerNotRunningError{Message: "Error"}
+		cnre := &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"}
 		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(cnre)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
@@ -138,6 +141,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -148,7 +153,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -160,7 +166,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			cnre.Error(),
+			"Pod is in pending state as container: foo is not running due to: Error",
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -192,6 +198,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -202,7 +210,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -245,6 +254,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -255,7 +266,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -316,6 +328,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -326,7 +340,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -366,6 +381,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -376,7 +393,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.Error(t, err)
 
@@ -520,6 +538,8 @@ func TestReconcile(t *testing.T) {
 					PipelineLock:       pipelineLockStub,
 				}
 
+				errToMsg := &conditions.ErrorToMessageConverter{}
+
 				sut := New(
 					fakeClient,
 					testConfig,
@@ -530,7 +550,8 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					overridesHandlerStub,
 					pipelineLockStub,
-					pipelineValidatorWithStubs)
+					pipelineValidatorWithStubs,
+					errToMsg)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -652,6 +673,8 @@ func TestReconcile(t *testing.T) {
 					PipelineLock:       pipelineLockStub,
 				}
 
+				errToMsg := &conditions.ErrorToMessageConverter{}
+
 				sut := New(
 					fakeClient,
 					testConfig,
@@ -662,7 +685,8 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					overridesHandlerStub,
 					pipelineLockStub,
-					pipelineValidatorWithStubs)
+					pipelineValidatorWithStubs,
+					errToMsg)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -732,6 +756,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -742,7 +768,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.True(t, errors.Is(err, serverErr))
 
@@ -793,6 +820,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -803,7 +832,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.True(t, errors.Is(err, serverErr))
 
@@ -853,6 +883,8 @@ func TestReconcile(t *testing.T) {
 			PipelineLock:       pipelineLockStub,
 		}
 
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
 		sut := New(
 			fakeClient,
 			testConfig,
@@ -863,7 +895,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			overridesHandlerStub,
 			pipelineLockStub,
-			pipelineValidatorWithStubs)
+			pipelineValidatorWithStubs,
+			errToMsg)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -880,24 +913,24 @@ func TestReconcile(t *testing.T) {
 		}{
 			{
 				name:            "pod is OOM",
-				probeGatewayErr: &workloadstatus.ContainerNotRunningError{Message: "OOMKilled"},
+				probeGatewayErr: &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
-				expectedMessage: "Container is not running: OOMKilled",
+				expectedMessage: "Pod is in pending state as container: foo is not running due to: OOMKilled",
 			},
 			{
 				name:            "pod is craashbackloop",
-				probeGatewayErr: &workloadstatus.ContainerNotRunningError{Message: "Error"},
+				probeGatewayErr: &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
-				expectedMessage: "Container is not running: Error",
+				expectedMessage: "Pod is in pending state as container: foo is not running due to: Error",
 			},
 			{
 				name:            "no pods deployed",
 				probeGatewayErr: workloadstatus.ErrNoPodsDeployed,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
-				expectedMessage: workloadstatus.ErrNoPodsDeployed.Error(),
+				expectedMessage: "No pods deployed",
 			},
 			{
 				name:            "pod is ready",
@@ -911,7 +944,7 @@ func TestReconcile(t *testing.T) {
 				probeGatewayErr: &workloadstatus.RolloutInProgressError{},
 				expectedStatus:  metav1.ConditionTrue,
 				expectedReason:  conditions.ReasonGatewayReady,
-				expectedMessage: "Rollout is in progress. Pods are being started or updated",
+				expectedMessage: "Pods are being started/updated",
 			},
 		}
 		for _, tt := range tests {
@@ -941,6 +974,8 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
+				errToMsg := &conditions.ErrorToMessageConverter{}
+
 				sut := New(
 					fakeClient,
 					testConfig,
@@ -951,7 +986,8 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					overridesHandlerStub,
 					pipelineLockStub,
-					pipelineValidatorWithStubs)
+					pipelineValidatorWithStubs,
+					errToMsg)
 
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)

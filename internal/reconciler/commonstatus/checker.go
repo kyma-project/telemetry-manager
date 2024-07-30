@@ -2,11 +2,13 @@ package commonstatus
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 const (
@@ -69,7 +71,7 @@ func GetAgentHealthyCondition(ctx context.Context, prober DaemonsetProber, names
 
 	err := prober.IsReady(ctx, namespacedName)
 	if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric agent - set condition as not healthy")
+		logf.FromContext(ctx).V(1).Error(err, "Failed to probe agent - set condition as not healthy")
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonAgentNotReady
 		msg = errToMsgCon.Convert(err)

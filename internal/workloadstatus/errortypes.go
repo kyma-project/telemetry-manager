@@ -39,8 +39,8 @@ type PodIsPendingError struct {
 	Message       string
 }
 
-func (pipe *PodIsPendingError) Error() string {
-	return fmt.Sprintf("Pod is in pending state: %s", pipe.Message)
+func (p PodIsPendingError) Error() string {
+	return fmt.Sprintf("Pod is in pending state: reason: %s, message: %s", p.Reason, p.Message)
 }
 
 func IsPodIsPendingError(err error) bool {

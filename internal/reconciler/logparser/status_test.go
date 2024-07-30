@@ -35,7 +35,9 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(parser).WithStatusSubresource(parser).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(&workloadstatus.ContainerNotRunningError{Message: "OOMKilled"})
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "OOMKilled"})
+
+		errToMsgConverter := &conditions.ErrorToMessageConverter{}
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -43,7 +45,8 @@ func TestUpdateStatus(t *testing.T) {
 				DaemonSet:        types.NamespacedName{Name: "fluent-bit"},
 				ParsersConfigMap: types.NamespacedName{Name: "parsers"},
 			},
-			prober: proberStub,
+			prober:         proberStub,
+			errorConverter: errToMsgConverter,
 		}
 
 		err := sut.updateStatus(context.Background(), parser.Name)
@@ -56,7 +59,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, agentHealthyCond.Status)
 		require.Equal(t, conditions.ReasonAgentNotReady, agentHealthyCond.Reason)
-		require.Equal(t, "Container is not running: OOMKilled", agentHealthyCond.Message)
+		require.Equal(t, "Pod is in pending state as container: foo is not running due to: OOMKilled", agentHealthyCond.Message)
 		require.Equal(t, updatedParser.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 	})
@@ -74,13 +77,16 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 
+		errToMsgConverter := &conditions.ErrorToMessageConverter{}
+
 		sut := Reconciler{
 			Client: fakeClient,
 			config: Config{
 				DaemonSet:        types.NamespacedName{Name: "fluent-bit"},
 				ParsersConfigMap: types.NamespacedName{Name: "parsers"},
 			},
-			prober: proberStub,
+			prober:         proberStub,
+			errorConverter: errToMsgConverter,
 		}
 
 		err := sut.updateStatus(context.Background(), parser.Name)

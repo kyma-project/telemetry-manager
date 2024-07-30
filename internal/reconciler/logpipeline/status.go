@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
+
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -15,6 +15,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )

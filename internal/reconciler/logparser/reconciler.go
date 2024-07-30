@@ -48,6 +48,10 @@ type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
 }
 
+type ErrorToMessageConverter interface {
+	Convert(err error) string
+}
+
 type Reconciler struct {
 	client.Client
 
@@ -56,9 +60,10 @@ type Reconciler struct {
 	annotator        DaemonSetAnnotator
 	syncer           syncer
 	overridesHandler *overrides.Handler
+	errorConverter   ErrorToMessageConverter
 }
 
-func New(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
+func New(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler, errToMsgConverter ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:           client,
 		config:           config,
@@ -66,6 +71,7 @@ func New(client client.Client, config Config, prober DaemonSetProber, annotator 
 		annotator:        annotator,
 		syncer:           syncer{client, config},
 		overridesHandler: overridesHandler,
+		errorConverter:   errToMsgConverter,
 	}
 }
 
