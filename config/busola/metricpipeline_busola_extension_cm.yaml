@@ -543,7 +543,7 @@ data:
       group: telemetry.kyma-project.io
       version: v1alpha1
     name: Metric Pipelines
-    category: Observability
+    category: Telemetry
     urlPath: metricpipelines
     scope: cluster
     description: >-
