@@ -2,16 +2,17 @@ package commonstatus
 
 import (
 	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	logMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	metricMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	traceMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
-
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"testing"
 )
 
 func TestTracesGetHealthCondition(t *testing.T) {

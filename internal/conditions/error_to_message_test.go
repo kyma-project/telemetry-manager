@@ -1,8 +1,9 @@
 package conditions
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 	"testing"
+
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 func TestErrorConverter(t *testing.T) {
