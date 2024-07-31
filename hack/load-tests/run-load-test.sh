@@ -261,6 +261,10 @@ function cleanup() {
         get_result_and_cleanup_fluentbit
     fi
 
+    if [ "$TEST_TARGET" = "logs-otel" ]; then
+        get_result_and_cleanup_log_otel
+    fi
+
     if [ "$TEST_TARGET" = "self-monitor" ]; then
         get_result_and_cleanup_selfmonitor
     fi
@@ -358,27 +362,32 @@ function get_result_and_cleanup_metricagent() {
 
    kubectl delete -f hack/load-tests/metric-agent-test-setup.yaml
 
-function get_result_log_otel() {
+   echo -e "\nTest run for $TEST_DURATION seconds\n"| tee -a $RESULTS_FILE
+   echo -e "\nMetric Gateway got $restartsGateway time restarted\n"| tee -a $RESULTS_FILE
+   echo -e "\nMetric Agent got $restartsAgent time restarted\n"| tee -a $RESULTS_FILE
+
+   print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
+}
+
+function get_result_and_cleanup_log_otel() {
    RECEIVED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_receiver_accepted_log_records{service="log-gateway-metrics"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
    EXPORTED=$(curl -fs --data-urlencode 'query=round(sum(rate(otelcol_exporter_sent_log_records{service=~"log-gateway-metrics"}[20m])))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
    QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="log-gateway-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
    MEMORY=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="log-load-test", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="log-load-test", workload="log-gateway"}[20m])) by (pod) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
    CPU=$(curl -fs --data-urlencode 'query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="log-load-test"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="log-load-test", workload="log-gateway"}[20m])) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
+   kill %1
 
    restartsGateway=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
    restartsGenerator=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-load-generator -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
 
+   kubectl delete -f hack/load-tests/log-load-test-setup.yaml
 
    echo -e "\nTest run for $TEST_DURATION seconds with RATE: $LOG_RATE\n"| tee -a $RESULTS_FILE
    echo -e "\nLog Gateway $restartsGateway time restarted\n"| tee -a $RESULTS_FILE
    echo -e "\nLog Generator $restartsGenerator time restarted\n"| tee -a $RESULTS_FILE
 
    print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
-}
-
-function cleanup_log_otel() {
-   kubectl delete -f hack/load-tests/log-load-test-setup.yaml
 }
 
 # shellcheck disable=SC2112
