@@ -29,6 +29,7 @@ type ErrorToMessageConverter interface {
 	Convert(err error) string
 }
 
+//nolint:dupl // abstracting the common code will still have duplicates
 func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonGatewayReady
@@ -61,6 +62,7 @@ func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, na
 
 }
 
+//nolint:dupl // abstracting the common code will still have duplicates and would complicate the code.
 func GetAgentHealthyCondition(ctx context.Context, prober DaemonsetProber, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonAgentReady

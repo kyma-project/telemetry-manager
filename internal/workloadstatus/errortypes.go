@@ -11,26 +11,17 @@ var (
 	ErrDaemonSetFetching = errors.New("failed to get DaemonSet")
 )
 
-//type ContainerNotRunningError struct {
-//	Message string
-//}
-//
-//
-//func (cnre *ContainerNotRunningError) Error() string {
-//	return fmt.Sprintf("Container is not running: %s", cnre.Message)
-//}
-//
-//func IsContainerNotRunningError(err error) bool {
-//	var cnre *ContainerNotRunningError
-//	return errors.As(err, &cnre)
-//}
-
 type PodIsNotScheduledError struct {
 	Message string
 }
 
 func (pns *PodIsNotScheduledError) Error() string {
 	return fmt.Sprintf("Pod is not scheduled: %s", pns.Message)
+}
+
+func IsPodIsNotScheduledError(err error) bool {
+	var pns *PodIsNotScheduledError
+	return errors.As(err, &pns)
 }
 
 type PodIsPendingError struct {
