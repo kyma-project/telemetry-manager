@@ -14,15 +14,15 @@ func TestErrorMessages(t *testing.T) {
 		expectedErrorCheckFunc func(err error) bool
 	}{
 		{
-			name:                   "ContainerNotRunningError",
-			err:                    &PodIsPendingError{Message: "unable to pull image"},
-			expectedErrorMsg:       "Pod is in pending state: unable to pull image",
+			name:                   "Unable to pull image",
+			err:                    &PodIsPendingError{ContainerName: "foo", Reason: "ErrImagePull", Message: "unable to pull image"},
+			expectedErrorMsg:       "Pod is in pending state: reason: ErrImagePull, message: unable to pull image",
 			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
 			name:                   "PodIsPendingError",
-			err:                    &PodIsPendingError{Message: "unable to mount volume"},
-			expectedErrorMsg:       "Pod is in pending state: unable to mount volume",
+			err:                    &PodIsPendingError{Reason: "Unschedulable", Message: "unable to mount volume"},
+			expectedErrorMsg:       "Pod is in pending state: reason: Unschedulable, message: unable to mount volume",
 			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
