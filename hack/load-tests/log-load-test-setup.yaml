@@ -5,8 +5,33 @@ metadata:
   name: log-load-test
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: log-gateway
+  name: log-gateway
+  namespace: log-load-test
 data:
   relay.conf: |
+    receivers:
+        otlp:
+            protocols:
+                grpc:
+                    endpoint: ${MY_POD_IP}:4317
+    exporters:
+        otlp:
+            endpoint: "log-receiver:4317"
+            tls:
+                insecure: true
+            sending_queue:
+                enabled: false
+                queue_size: 2048
+            retry_on_failure:
+                enabled: false
+                initial_interval: 5s
+                max_interval: 30s
+                max_elapsed_time: 300s
+        nop: {}
     extensions:
         health_check:
             endpoint: ${MY_POD_IP}:13133
@@ -18,7 +43,7 @@ data:
                 receivers:
                     - otlp
                 exporters:
-                    - otlp/sample
+                    - otlp
         telemetry:
             metrics:
                 address: 0.0.0.0:8888
@@ -28,32 +53,36 @@ data:
         extensions:
             - health_check
             - pprof
-    receivers:
-        otlp:
-            protocols:
-                http:
-                    endpoint: ${MY_POD_IP}:4318
-                grpc:
-                    endpoint: ${MY_POD_IP}:4317
-    exporters:
-        otlp/sample:
-            endpoint: "log-receiver:4317"
-            tls:
-                insecure: true
-            sending_queue:
-                enabled: true
-                queue_size: 2048
-            retry_on_failure:
-                enabled: true
-                initial_interval: 5s
-                max_interval: 30s
-                max_elapsed_time: 300s
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
-  labels:
-    app.kubernetes.io/name: log-gateway
-  name: log-gateway
+  name: log-receiver
   namespace: log-load-test
+  labels:
+    app: log-receiver
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${MY_POD_IP}:4317
+    exporters:
+      debug:
+        verbosity: detailed
+      nop: {}
+
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        logs:
+          receivers:
+            - otlp
+          exporters:
+            - nop
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -86,13 +115,11 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        - name: GOMEMLIMIT
-          value: "858993440"
         envFrom:
         - secretRef:
             name: log-gateway
             optional: true
-        image: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-main
+        image: otel/opentelemetry-collector-contrib:0.105.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -113,13 +140,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        resources:
-          limits:
-            cpu: "1"
-            memory: 1Gi
-          requests:
-            cpu: 25m
-            memory: 32Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -199,10 +219,11 @@ kind: Deployment
 metadata:
   labels:
     app: log-load-generator
+    app.kubernetes.io/name: log-load-generator
   name: log-load-generator
   namespace: log-load-test
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app: log-load-generator
@@ -210,6 +231,7 @@ spec:
     metadata:
       labels:
         app: log-load-generator
+        app.kubernetes.io/name: log-load-generator
     spec:
       affinity:
         podAntiAffinity:
@@ -237,51 +259,15 @@ spec:
           - --otlp-attributes
           - "service.name=\"log-load-generator\""
           - --workers
-          - "1"
-          - --duration
-          - "24h"
-          - --rate
           - "100"
-          - --body
-          - "{\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}"
+          - --duration
+          - "90m"
+          - --rate
+          - "LOG_RATE"
+#          - --body
+#          - "{\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}"
           imagePullPolicy: IfNotPresent
           name: telemetrygen
-          resources:
-            limits:
-              memory: 256Mi
-            requests:
-              memory: 256Mi
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: log-receiver
-  namespace: log-load-test
-  labels:
-    app: log-receiver
-data:
-  config.yaml: |
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${MY_POD_IP}:4317
-          http:
-            endpoint: ${MY_POD_IP}:4318
-    exporters:
-      debug:
-        verbosity: detailed
-
-    service:
-      telemetry:
-        metrics:
-          address: 0.0.0.0:8888
-      pipelines:
-        logs:
-          receivers:
-            - otlp
-          exporters:
-            - debug
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -307,13 +293,8 @@ spec:
       securityContext:
         fsGroup: 101
       containers:
-        - image: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-main
+        - image: otel/opentelemetry-collector-contrib:0.105.0
           name: otel-collector
-          resources:
-            limits:
-              memory: 1024Mi
-            requests:
-              memory: 1024Mi
           volumeMounts:
             - name: collector-config
               mountPath: /etc/collector
