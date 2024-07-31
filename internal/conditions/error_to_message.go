@@ -6,14 +6,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-const (
-	//containerNotRunning = "Container: %s in not in running state due to: %s"
-	podIsNotScheduled    = "Pod not scheduled: %s"
-	podIsPending         = "Pod is in pending state as container: %s is not running due to: %s"
-	podIsFailed          = "Pod is in failed state due to: %s"
-	podRolloutInProgress = "Pods are being started/updated"
-)
-
 type ErrorToMessageConverter struct {
 }
 
