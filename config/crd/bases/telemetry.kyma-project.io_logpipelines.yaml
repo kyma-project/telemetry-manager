@@ -111,6 +111,14 @@ spec:
                         description: Defines whether to keep all Kubernetes annotations.
                           The default is `false`.
                         type: boolean
+                      keepOriginalBody:
+                        default: true
+                        description: If the `log` attribute contains a JSON payload
+                          and it is successfully parsed, the `log` attribute will
+                          be retained if `KeepOriginalBody` is set to `true`. Otherwise,
+                          the log attribute will be removed from the log record. The
+                          default is `true`.
+                        type: boolean
                       namespaces:
                         description: Describes whether application logs from specific
                           Namespaces are selected. The options are mutually exclusive.

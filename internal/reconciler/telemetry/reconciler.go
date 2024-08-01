@@ -10,7 +10,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -69,30 +68,40 @@ type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
-type Reconciler struct {
-	client.Client
-	Scheme *runtime.Scheme
-	*rest.Config
-	config                    Config
-	healthCheckers            healthCheckers
-	overridesHandler          OverridesHandler
-	selfMonitorApplierDeleter *selfmonitor.ApplierDeleter
+type SelfMonitorApplierDeleter interface {
+	ApplyResources(ctx context.Context, c client.Client, opts selfmonitor.ApplyOptions) error
+	DeleteResources(ctx context.Context, c client.Client) error
 }
 
-func New(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
+type Reconciler struct {
+	client.Client
+
+	scheme *runtime.Scheme
+	config Config
+
+	healthCheckers            healthCheckers
+	overridesHandler          OverridesHandler
+	selfMonitorApplierDeleter SelfMonitorApplierDeleter
+}
+
+func New(
+	client client.Client,
+	scheme *runtime.Scheme,
+	config Config,
+	overridesHandler OverridesHandler,
+	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
+) *Reconciler {
 	return &Reconciler{
 		Client: client,
-		Scheme: scheme,
+		scheme: scheme,
 		config: config,
 		healthCheckers: healthCheckers{
 			logs:    &logComponentsChecker{client: client},
 			traces:  &traceComponentsChecker{client: client},
 			metrics: &metricComponentsChecker{client: client},
 		},
-		overridesHandler: overridesHandler,
-		selfMonitorApplierDeleter: &selfmonitor.ApplierDeleter{
-			Config: config.SelfMonitor.Config,
-		},
+		overridesHandler:          overridesHandler,
+		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
 	}
 }
 
@@ -168,11 +177,13 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
-		selfMonitorConfigPath,
-		selfMonitorConfigFileName,
-		string(prometheusConfigYAML),
-		selfMonitorAlertRuleFileName,
-		string(alertRulesYAML),
+		selfmonitor.ApplyOptions{
+			AlertRulesFileName:       selfMonitorAlertRuleFileName,
+			AlertRulesYAML:           string(alertRulesYAML),
+			PrometheusConfigFileName: selfMonitorConfigFileName,
+			PrometheusConfigPath:     selfMonitorConfigPath,
+			PrometheusConfigYAML:     string(prometheusConfigYAML),
+		},
 	); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}
@@ -269,7 +280,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	if err := r.Get(ctx, r.config.Webhook.CertConfig.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
-	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {
+	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference for secret: %w", err)
 	}
 	if err := k8sutils.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {

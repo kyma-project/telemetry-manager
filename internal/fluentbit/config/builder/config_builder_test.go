@@ -106,6 +106,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
+    keep_log            on
     kube_tag_prefix     foo.var.log.containers.
     labels              on
     merge_log           on
@@ -145,8 +146,9 @@ func TestMergeSectionsConfig(t *testing.T) {
 					Namespaces: telemetryv1alpha1.InputNamespaces{
 						System: true,
 					},
-					KeepAnnotations: true,
-					DropLabels:      false,
+					KeepAnnotations:  true,
+					DropLabels:       false,
+					KeepOriginalBody: true,
 				},
 			},
 			Filters: []telemetryv1alpha1.Filter{
@@ -211,6 +213,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
+    keep_log            on
     kube_tag_prefix     foo.var.log.containers.
     labels              on
     merge_log           on
@@ -232,6 +235,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 					Namespaces: telemetryv1alpha1.InputNamespaces{
 						System: true,
 					},
+					KeepOriginalBody: true,
 				},
 			},
 			Output: telemetryv1alpha1.Output{

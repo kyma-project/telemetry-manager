@@ -267,7 +267,7 @@ func TestUpdateStatus(t *testing.T) {
 
 			r := &Reconciler{
 				Client: fakeClient,
-				Scheme: scheme,
+				scheme: scheme,
 				healthCheckers: healthCheckers{
 					logs:    mockLogsChecker,
 					metrics: mockMetricsChecker,

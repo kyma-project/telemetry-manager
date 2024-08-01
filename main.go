@@ -76,7 +76,6 @@ import (
 var (
 	certDir            string
 	logLevel           string
-	overridesHandler   *overrides.Handler
 	scheme             = runtime.NewScheme()
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
@@ -128,8 +127,8 @@ var (
 
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.0.7-1e5449d3"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-main"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.1.3-44a3707"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.105.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.0-8691013b"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
@@ -325,8 +324,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	overridesHandler = overrides.New(mgr.GetClient(), overrides.HandlerConfig{SystemNamespace: telemetryNamespace})
-
 	tracePipelineReconcileTriggerChan := make(chan event.GenericEvent)
 	enableTracingController(mgr, tracePipelineReconcileTriggerChan)
 
@@ -374,7 +371,28 @@ func main() {
 func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) {
 	setupLog.WithValues("version", version).Info("Starting with telemetry manager controller")
 
-	if err := createTelemetryController(mgr.GetClient(), mgr.GetScheme(), webhookConfig, selfMonitorConfig).SetupWithManager(mgr); err != nil {
+	telemetryPipleineController := operator.NewTelemetryController(
+		mgr.GetClient(),
+		mgr.GetScheme(),
+		operator.TelemetryControllerConfig{
+			Config: telemetry.Config{
+				Traces: telemetry.TracesConfig{
+					OTLPServiceName: traceOTLPServiceName,
+					Namespace:       telemetryNamespace,
+				},
+				Metrics: telemetry.MetricsConfig{
+					OTLPServiceName: metricOTLPServiceName,
+					Namespace:       telemetryNamespace,
+				},
+				Webhook:     webhookConfig,
+				SelfMonitor: selfMonitorConfig,
+			},
+			SelfMonitorName:    selfMonitorName,
+			TelemetryNamespace: telemetryNamespace,
+		},
+	)
+
+	if err := telemetryPipleineController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 		os.Exit(1)
 	}
@@ -546,7 +564,6 @@ func setNamespaceFieldSelector() fields.Selector {
 }
 
 func validateFlags() error {
-
 	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
 		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")
 	}
@@ -604,23 +621,6 @@ func createPipelineDefaults() builder.PipelineDefaults {
 
 func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
-}
-
-func createTelemetryController(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) *operator.TelemetryController {
-	config := telemetry.Config{
-		Traces: telemetry.TracesConfig{
-			OTLPServiceName: traceOTLPServiceName,
-			Namespace:       telemetryNamespace,
-		},
-		Metrics: telemetry.MetricsConfig{
-			OTLPServiceName: metricOTLPServiceName,
-			Namespace:       telemetryNamespace,
-		},
-		Webhook:     webhookConfig,
-		SelfMonitor: selfMonitorConfig,
-	}
-
-	return operator.NewTelemetryController(client, telemetry.New(client, scheme, config, overridesHandler), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

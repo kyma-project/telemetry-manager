@@ -44,6 +44,7 @@ packages:
     interfaces:
       ComponentHealthChecker:
       OverridesHandler:
+      SelfMonitorApplierDeleter:
   github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober:
     interfaces:
       alertGetter:
