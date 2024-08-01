@@ -22,9 +22,10 @@ runs:
 
     # wait for the build to succeed so that the manager image is available
     - name: Wait for the image to be available in the registry
+      shell: bash
       run: "./hack/await_image.sh 'PR-${{ github.event.pull_request.number }}'"
       env:
-        GITHUB_TOKEN: "${{inputs.GITHUB_TOKEN }}"
+        GITHUB_TOKEN: "${{ inputs.GITHUB_TOKEN }}"
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
     - name: Deploy module release
