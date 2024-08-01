@@ -19,6 +19,7 @@ package logparser
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,30 +41,22 @@ type Config struct {
 	Overrides         overrides.Config
 }
 
-type DaemonSetProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) error
-}
-
 type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
-}
-
-type ErrorToMessageConverter interface {
-	Convert(err error) string
 }
 
 type Reconciler struct {
 	client.Client
 
 	config           Config
-	prober           DaemonSetProber
+	prober           commonstatus.DaemonSetProber
 	annotator        DaemonSetAnnotator
 	syncer           syncer
 	overridesHandler *overrides.Handler
-	errorConverter   ErrorToMessageConverter
+	errorConverter   commonstatus.ErrorToMessageConverter
 }
 
-func New(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler, errToMsgConverter ErrorToMessageConverter) *Reconciler {
+func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler, errToMsgConverter commonstatus.ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:           client,
 		config:           config,

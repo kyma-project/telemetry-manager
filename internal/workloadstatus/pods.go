@@ -19,7 +19,7 @@ import (
 // |  OOMKilled     | Running  | True          | State.Waiting.Reason: OOMKilled    | exitCode: 137, Reason: OOMKilled|
 // | PVC not found  | Pending  | False, Reason: Unschedulable        | - | -                       |
 // | ImagePullBackOff| Pending | True        | State.Waiting.Reason: ErrImagePul|-|
-// | Evicted        | Failed   | True             | - | -                       | only Status.Message is set
+// | Evicted        | Failed   | True             | - | -                       | only Status.Message is set|
 func checkPodStatus(ctx context.Context, c client.Client, namespace string, selector *metav1.LabelSelector) error {
 	var pods corev1.PodList
 
@@ -129,5 +129,4 @@ func findPodCondition(conditions []corev1.PodCondition, s corev1.PodConditionTyp
 		}
 	}
 	return corev1.PodCondition{}
-
 }

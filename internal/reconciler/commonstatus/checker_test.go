@@ -2,6 +2,7 @@ package commonstatus
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -49,6 +50,16 @@ func TestTracesGetHealthCondition(t *testing.T) {
 				Status:  metav1.ConditionTrue,
 				Reason:  conditions.ReasonGatewayReady,
 				Message: "Pods are being started/updated",
+			},
+		},
+		{
+			name:      "Test GetHealthCondition with signal type traces and wrapped error",
+			proberErr: fmt.Errorf("new error: %w", &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "foo"}),
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayNotReady,
+				Message: "Pod is in pending state as container: foo is not running due to: foo",
 			},
 		},
 	}
@@ -121,6 +132,23 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 				Message: "Pods are being started/updated",
 			},
 		},
+		{
+			name:             "Test GetHealthCondition with signal type metrics and wrapped error",
+			proberAgentErr:   fmt.Errorf("new error: %w", &workloadstatus.PodIsFailingError{Message: "foo"}),
+			preberGatewayErr: fmt.Errorf("new error: %w", &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "fooMessage"}),
+			expectedGatewayCondition: &metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayNotReady,
+				Message: "Pod is in pending state as container: foo is not running due to: fooMessage",
+			},
+			expectedAgentCondition: &metav1.Condition{
+				Type:    conditions.TypeAgentHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonAgentNotReady,
+				Message: "Pod is in failed state due to: foo",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -173,6 +201,16 @@ func TestLogsGetHealthCondition(t *testing.T) {
 				Status:  metav1.ConditionTrue,
 				Reason:  conditions.ReasonAgentReady,
 				Message: "Pods are being started/updated",
+			},
+		},
+		{
+			name:      "Test GetHealthCondition with signal type logs and wrapped error",
+			proberErr: fmt.Errorf("new error: %w", &workloadstatus.PodIsNotScheduledError{Message: "foo"}),
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeAgentHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonAgentNotReady,
+				Message: "Pod is not scheduled: foo",
 			},
 		},
 	}

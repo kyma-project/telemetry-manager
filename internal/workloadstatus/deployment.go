@@ -2,7 +2,6 @@ package workloadstatus
 
 import (
 	"context"
-	"errors"
 	"sort"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,11 +15,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var (
-	ErrDeploymentNotFound          = errors.New("deployment is not yet created")
-	ErrDeploymentFetching          = errors.New("failed to get Deployment")
-	ErrFailedToGetLatestReplicaSet = errors.New("failed to get latest ReplicaSets")
-)
+var ()
 
 type DeploymentProber struct {
 	client.Client
@@ -32,7 +27,7 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 	if err := dp.Get(ctx, name, &d); err != nil {
 		if apierrors.IsNotFound(err) {
 			// The status of pipeline is changed before the creation of daemonset
-			log.V(1).Info("Deployment is not yet created")
+			log.V(1).Info(ErrDeploymentNotFound.Error())
 			return ErrDeploymentNotFound
 		}
 		return ErrDeploymentFetching

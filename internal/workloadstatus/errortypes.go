@@ -9,6 +9,10 @@ var (
 	ErrNoPodsDeployed    = errors.New("no pods deployed")
 	ErrDaemonSetNotFound = errors.New("DaemonSet is not yet created")
 	ErrDaemonSetFetching = errors.New("failed to get DaemonSet")
+
+	ErrDeploymentNotFound          = errors.New("deployment is not yet created")
+	ErrDeploymentFetching          = errors.New("failed to get Deployment")
+	ErrFailedToGetLatestReplicaSet = errors.New("failed to get latest ReplicaSets")
 )
 
 type PodIsNotScheduledError struct {

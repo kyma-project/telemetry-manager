@@ -20,10 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -62,10 +62,6 @@ type PipelineLock interface {
 	IsLockHolder(ctx context.Context, owner metav1.Object) error
 }
 
-type DeploymentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) error
-}
-
 type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
@@ -78,10 +74,6 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
 
-type ErrorToMessageConverter interface {
-	Convert(err error) string
-}
-
 type Reconciler struct {
 	client.Client
 
@@ -91,12 +83,12 @@ type Reconciler struct {
 	flowHealthProber      FlowHealthProber
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         DeploymentProber
+	gatewayProber         commonstatus.DeploymentProber
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
 	pipelineValidator     *Validator
-	errToMsgConverter     ErrorToMessageConverter
+	errToMsgConverter     commonstatus.ErrorToMessageConverter
 }
 
 func New(
@@ -105,12 +97,12 @@ func New(
 	flowHealthProber FlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber DeploymentProber,
+	gatewayProber commonstatus.DeploymentProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,
 	pipelineValidator *Validator,
-	errToMsgConverter ErrorToMessageConverter,
+	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,

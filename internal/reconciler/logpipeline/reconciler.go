@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -57,10 +58,6 @@ type Config struct {
 	DaemonSetConfig       fluentbit.DaemonSetConfig
 }
 
-type DaemonSetProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) error
-}
-
 type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
 }
@@ -77,10 +74,6 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
 
-type ErrorToMessageConverter interface {
-	Convert(err error) string
-}
-
 type Reconciler struct {
 	client.Client
 
@@ -88,23 +81,23 @@ type Reconciler struct {
 	syncer syncer
 
 	// Dependencies
-	agentProber        DaemonSetProber
+	agentProber        commonstatus.DaemonSetProber
 	flowHealthProber   FlowHealthProber
 	istioStatusChecker IstioStatusChecker
 	overridesHandler   OverridesHandler
 	pipelineValidator  *Validator
-	errToMsgConverter  ErrorToMessageConverter
+	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
 
 func New(
 	client client.Client,
 	config Config,
-	agentProber DaemonSetProber,
+	agentProber commonstatus.DaemonSetProber,
 	flowHealthProber FlowHealthProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineValidator *Validator,
-	errToMsgConverter ErrorToMessageConverter,
+	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
 		Client: client,

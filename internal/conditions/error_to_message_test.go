@@ -15,7 +15,7 @@ func TestErrorConverter(t *testing.T) {
 		{
 			name: "PodIsNotScheduledError",
 			err:  &workloadstatus.PodIsNotScheduledError{Message: "pvc not mounted"},
-			want: "Pod not scheduled: pvc not mounted",
+			want: "Pod is not scheduled: pvc not mounted",
 		},
 		{
 			name: "PodIsPendingError Without Reason",

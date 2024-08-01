@@ -2,6 +2,7 @@ package workloadstatus
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -227,7 +228,7 @@ func TestDaemonSetNotCreated(t *testing.T) {
 	sut := DaemonSetProber{fakeClient}
 	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 
-	require.Equal(t, ErrDaemonSetNotFound, err)
+	require.True(t, errors.Is(err, ErrDaemonSetNotFound))
 }
 
 func TestDaemonSetRollout(t *testing.T) {
