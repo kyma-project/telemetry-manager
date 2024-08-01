@@ -29,25 +29,25 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 
 	// Create RBAC resources in the following order: cluster role, cluster role binding, role, role binding
 	if rbac.clusterRole != nil {
-		if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, rbac.clusterRole); err != nil {
+		if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, rbac.clusterRole.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to create cluster role: %w", err)
 		}
 	}
 
 	if rbac.clusterRoleBinding != nil {
-		if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, rbac.clusterRoleBinding); err != nil {
+		if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, rbac.clusterRoleBinding.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to create cluster role binding: %w", err)
 		}
 	}
 
 	if rbac.role != nil {
-		if err := k8sutils.CreateOrUpdateRole(ctx, c, rbac.role); err != nil {
+		if err := k8sutils.CreateOrUpdateRole(ctx, c, rbac.role.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to create role: %w", err)
 		}
 	}
 
 	if rbac.roleBinding != nil {
-		if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, rbac.roleBinding); err != nil {
+		if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, rbac.roleBinding.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to create role binding: %w", err)
 		}
 	}
