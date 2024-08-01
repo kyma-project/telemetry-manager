@@ -25,7 +25,7 @@ In the Kyma cluster, the Telemetry module provides a DaemonSet of [Fluent Bit](h
 
 1. Container logs are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories.
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
-3. Fluent Bit discovers additional Pod metadata, such as Pod annotations and labels
+3. Fluent Bit discovers additional Pod metadata, such as Pod annotations and labels.
 4. Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
 5. The log agent sends the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend. You can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
 6. To analyze and visualize your logs, access the internal or external observability system.
@@ -39,7 +39,7 @@ The LogPipeline resource is watched by Telemetry Manager, which is responsible f
 1. Telemetry Manager watches all LogPipeline resources and related Secrets.
 2. Furthermore, Telemetry Manager takes care of the full lifecycle of the Fluent Bit DaemonSet itself. Only if you defined a LogPipeline, the agent is deployed.
 3. Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated.
-4. Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
+4. Referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
 
 ### Log Agent
 
