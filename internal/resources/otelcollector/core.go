@@ -29,24 +29,32 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 
 	// Create RBAC resources in the following order: cluster role, cluster role binding, role, role binding
 	if rbac.clusterRole != nil {
+		// Deep copy the rbac.clusterRole object to avoid modifying the original object (e.g. populating the resourceVersion with a value)
+		// So that the original rbac.clusterRole can be re-used again for re-creating the cluster role when needed
 		if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, rbac.clusterRole.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to create cluster role: %w", err)
 		}
 	}
 
 	if rbac.clusterRoleBinding != nil {
+		// Deep copy the rbac.clusterRoleBinding object to avoid modifying the original object (e.g. populating the resourceVersion with a value)
+		// So that the original rbac.clusterRoleBinding can be re-used again for re-creating the cluster role binding when needed
 		if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, rbac.clusterRoleBinding.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to create cluster role binding: %w", err)
 		}
 	}
 
 	if rbac.role != nil {
+		// Deep copy the rbac.role object to avoid modifying the original object (e.g. populating the resourceVersion with a value)
+		// So that the original rbac.role can be re-used again for re-creating the role when needed
 		if err := k8sutils.CreateOrUpdateRole(ctx, c, rbac.role.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to create role: %w", err)
 		}
 	}
 
 	if rbac.roleBinding != nil {
+		// Deep copy the rbac.roleBinding object to avoid modifying the original object (e.g. populating the resourceVersion with a value)
+		// So that the original rbac.roleBinding can be re-used again for re-creating the roleBinding when needed
 		if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, rbac.roleBinding.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to create role binding: %w", err)
 		}
