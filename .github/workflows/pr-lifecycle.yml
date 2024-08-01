@@ -38,7 +38,7 @@ jobs:
 
       - name: Wait for manager readiness
         shell: bash
-        run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=2s
+        run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
       - name: Run test on latest tag
         shell: bash
@@ -79,11 +79,3 @@ jobs:
         if: success() || failure()
         with:
           failure: failure()
-
-      - name: Send slack message on failure
-        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
-        if: failure()
-        with:
-          payload-file-path: ".github/workflows/slack-message.json"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_HUSKIES_NOTIF_WEBHOOK_URL }}
