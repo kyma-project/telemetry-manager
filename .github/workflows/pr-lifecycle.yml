@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Golang
-        uses: #"./.github/template/setup-golang"
+        uses: "./.github/template/setup-golang"
 
       - name: Provision K3D
         shell: bash
@@ -49,7 +49,7 @@ jobs:
 
       - name: Wait for manager readiness
         shell: bash
-        run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
+        run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=2s
 
       - name: Run test on latest tag
         shell: bash
