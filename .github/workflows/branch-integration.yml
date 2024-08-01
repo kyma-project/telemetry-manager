@@ -26,7 +26,7 @@ jobs:
 
     # wait for the build to succeed so that the manager image is available
     - name: Wait for the image to be available in the registry
-      run: "chmod +x ./hack/await_image.sh && ./hack/await_image.sh ${{ github.ref_name }}"
+      run: "./hack/await_image.sh ${{ github.ref_name }}"
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
