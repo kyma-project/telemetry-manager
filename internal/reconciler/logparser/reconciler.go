@@ -19,7 +19,6 @@ package logparser
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,6 +29,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 )
 
 const checksumAnnotationKey = "checksum/logparser-config"

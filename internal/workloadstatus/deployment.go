@@ -15,8 +15,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var ()
-
 type DeploymentProber struct {
 	client.Client
 }
