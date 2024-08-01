@@ -21,18 +21,35 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []int32) error {
-	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, rbac rbac, allowedPorts []int32) error {
+	// Create service account before RBAC resources
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
-		return fmt.Errorf("failed to create cluster role: %w", err)
+	// Create RBAC resources in the following order: cluster role, cluster role binding, role, role binding
+	if rbac.clusterRole != nil {
+		if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, rbac.clusterRole); err != nil {
+			return fmt.Errorf("failed to create cluster role: %w", err)
+		}
 	}
 
-	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {
-		return fmt.Errorf("failed to create cluster role binding: %w", err)
+	if rbac.clusterRoleBinding != nil {
+		if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, rbac.clusterRoleBinding); err != nil {
+			return fmt.Errorf("failed to create cluster role binding: %w", err)
+		}
+	}
+
+	if rbac.role != nil {
+		if err := k8sutils.CreateOrUpdateRole(ctx, c, rbac.role); err != nil {
+			return fmt.Errorf("failed to create role: %w", err)
+		}
+	}
+
+	if rbac.roleBinding != nil {
+		if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, rbac.roleBinding); err != nil {
+			return fmt.Errorf("failed to create role binding: %w", err)
+		}
 	}
 
 	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
@@ -62,6 +79,16 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role: %w", err))
+	}
+
+	roleBinding := rbacv1.RoleBinding{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &roleBinding); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete role binding: %w", err))
+	}
+
+	role := rbacv1.Role{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &role); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete role: %w", err))
 	}
 
 	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
@@ -97,23 +124,6 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 		},
 	}
 	return &serviceAccount
-}
-
-func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
-	clusterRoleBinding := rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
-		},
-		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     name.Name,
-		},
-	}
-	return &clusterRoleBinding
 }
 
 func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev1.ConfigMap {

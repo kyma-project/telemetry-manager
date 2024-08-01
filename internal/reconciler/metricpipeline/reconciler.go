@@ -29,11 +29,10 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	Agent            otelcollector.AgentConfig
-	Gateway          otelcollector.GatewayConfig
-	MaxPipelines     int
-	ModuleVersion    string
-	KymaInputAllowed bool
+	Agent         otelcollector.AgentConfig
+	Gateway       otelcollector.GatewayConfig
+	MaxPipelines  int
+	ModuleVersion string
 }
 
 type AgentConfigBuilder interface {
@@ -273,7 +272,6 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
-		KymaInputAllowed:               r.config.KymaInputAllowed,
 	}
 
 	if err := r.gatewayApplierDeleter.ApplyResources(

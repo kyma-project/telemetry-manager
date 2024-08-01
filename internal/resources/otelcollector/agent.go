@@ -9,7 +9,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,6 +28,7 @@ const (
 
 type AgentApplierDeleter struct {
 	Config AgentConfig
+	RBAC   rbac
 }
 
 type AgentApplyOptions struct {
@@ -39,7 +39,7 @@ type AgentApplyOptions struct {
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.Config.Namespace, Name: aad.Config.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, aad.makeAgentClusterRole(), opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, aad.RBAC, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -81,28 +81,6 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	return allErrors
-}
-
-func (aad *AgentApplierDeleter) makeAgentClusterRole() *rbacv1.ClusterRole {
-	clusterRole := rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      aad.Config.BaseName,
-			Namespace: aad.Config.Namespace,
-			Labels:    defaultLabels(aad.Config.BaseName),
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/metrics", "nodes/stats", "services", "endpoints", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
-				Verbs:           []string{"get"},
-			},
-		},
-	}
-	return &clusterRole
 }
 
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
