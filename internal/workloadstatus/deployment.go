@@ -39,11 +39,11 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 		Namespace:     d.Namespace,
 	}
 	if err := dp.List(ctx, &allReplicaSets, listOps); err != nil {
-		return &FailedToListReplicaSetError{Message: err.Error()}
+		return &FailedToListReplicaSetError{ErrorObj: err}
 	}
 
 	if err := dp.Get(ctx, name, &d); err != nil {
-		return &FailedToFetchReplicaSetError{Message: err.Error()}
+		return &FailedToFetchReplicaSetError{ErroObj: err}
 	}
 
 	replicaSet := getLatestReplicaSet(&d, &allReplicaSets)

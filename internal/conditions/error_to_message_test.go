@@ -1,6 +1,7 @@
 package conditions
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
@@ -36,6 +37,16 @@ func TestErrorConverter(t *testing.T) {
 			name: "RolloutInProgressError",
 			err:  &workloadstatus.RolloutInProgressError{},
 			want: "Pods are being started/updated",
+		},
+		{
+			name: "FailedToListReplicaSetError",
+			err:  &workloadstatus.FailedToListReplicaSetError{ErrorObj: errors.New("unknown reason")},
+			want: "Unknown reason",
+		},
+		{
+			name: "FailedToFetchReplicaSetError",
+			err:  &workloadstatus.FailedToFetchReplicaSetError{ErroObj: errors.New("unknown reason")},
+			want: "Unknown reason",
 		},
 		{
 			name: "Error string",

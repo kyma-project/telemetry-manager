@@ -1,6 +1,7 @@
 package workloadstatus
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,9 +22,9 @@ func TestErrorMessages(t *testing.T) {
 		},
 		{
 			name:                   "PodIsPendingError",
-			err:                    &PodIsPendingError{Reason: "Unschedulable", Message: "unable to mount volume"},
-			expectedErrorMsg:       "Pod is in pending state: reason: Unschedulable, message: unable to mount volume",
-			expectedErrorCheckFunc: IsPodIsPendingError,
+			err:                    &PodIsNotScheduledError{Message: "unable to mount volume"},
+			expectedErrorMsg:       "Pod is not scheduled: unable to mount volume",
+			expectedErrorCheckFunc: IsPodIsNotScheduledError,
 		},
 		{
 			name:                   "PodIsFailingError",
@@ -33,14 +34,14 @@ func TestErrorMessages(t *testing.T) {
 		},
 		{
 			name:                   "FailedToListReplicaSetError",
-			err:                    &FailedToListReplicaSetError{Message: "unable to list ReplicaSets"},
-			expectedErrorMsg:       "Failed to list ReplicaSets: unable to list ReplicaSets",
+			err:                    &FailedToListReplicaSetError{ErrorObj: errors.New("unable to list ReplicaSets")},
+			expectedErrorMsg:       "failed to list ReplicaSets: unable to list ReplicaSets",
 			expectedErrorCheckFunc: IsFailedToListReplicaSetErr,
 		},
 		{
 			name:                   "FailedToFetchReplicaSetError",
-			err:                    &FailedToFetchReplicaSetError{Message: "unable to fetch ReplicaSets"},
-			expectedErrorMsg:       "Failed to fetch ReplicaSets: unable to fetch ReplicaSets",
+			err:                    &FailedToFetchReplicaSetError{ErroObj: errors.New("unable to fetch ReplicaSets")},
+			expectedErrorMsg:       "failed to fetch ReplicaSets: unable to fetch ReplicaSets",
 			expectedErrorCheckFunc: IsFailedToFetchReplicaSetError,
 		},
 		{

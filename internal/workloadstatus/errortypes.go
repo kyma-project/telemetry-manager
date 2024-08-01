@@ -57,11 +57,11 @@ func IsPodFailedError(err error) bool {
 }
 
 type FailedToListReplicaSetError struct {
-	Message string
+	ErrorObj error
 }
 
 func (ftlr *FailedToListReplicaSetError) Error() string {
-	return fmt.Sprintf("Failed to list ReplicaSets: %s", ftlr.Message)
+	return fmt.Sprintf("failed to list ReplicaSets: %s", ftlr.ErrorObj.Error())
 }
 
 func IsFailedToListReplicaSetErr(err error) bool {
@@ -70,11 +70,11 @@ func IsFailedToListReplicaSetErr(err error) bool {
 }
 
 type FailedToFetchReplicaSetError struct {
-	Message string
+	ErroObj error
 }
 
 func (ftfr *FailedToFetchReplicaSetError) Error() string {
-	return fmt.Sprintf("Failed to fetch ReplicaSets: %s", ftfr.Message)
+	return fmt.Sprintf("failed to fetch ReplicaSets: %s", ftfr.ErroObj.Error())
 }
 
 func IsFailedToFetchReplicaSetError(err error) bool {

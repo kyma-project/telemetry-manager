@@ -36,5 +36,15 @@ func (etc *ErrorToMessageConverter) Convert(err error) string {
 		return podRolloutInProgress
 	}
 
+	var ftlr *workloadstatus.FailedToListReplicaSetError
+	if errors.As(err, &ftlr) {
+		return ConvertErrToMsg(ftlr.ErrorObj)
+	}
+
+	var ftfr *workloadstatus.FailedToFetchReplicaSetError
+	if errors.As(err, &ftfr) {
+		return ConvertErrToMsg(ftfr.ErroObj)
+	}
+
 	return ConvertErrToMsg(err)
 }
