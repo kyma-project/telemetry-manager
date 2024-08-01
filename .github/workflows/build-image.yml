@@ -48,6 +48,18 @@ jobs:
       context: .
       tags: ${{ needs.envs.outputs.tags }}
 
+  notify-on-failure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send slack message on failure
+        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
+        if: failure()
+        with:
+          payload-file-path: ".github/workflows/slack-message.json"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_HUSKIES_NOTIF_WEBHOOK_URL }}
+
+
   list-images:
     needs: build-image
     runs-on: ubuntu-latest
