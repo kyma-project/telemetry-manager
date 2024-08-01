@@ -63,6 +63,7 @@ type MetricPipelineControllerConfig struct {
 
 	SelfMonitorName    string
 	TelemetryNamespace string
+	KymaInputAllowed   bool
 }
 
 func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
@@ -79,10 +80,13 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		PipelineLock:       pipelineLock,
 	}
 
+	agentRBAC := otelcollector.MakeMetricAgentRBAC(types.NamespacedName{Name: config.Agent.BaseName, Namespace: config.Agent.Namespace})
+	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed)
+
 	reconciler := metricpipeline.New(
 		client,
 		config.Config,
-		&otelcollector.AgentApplierDeleter{Config: config.Agent},
+		&otelcollector.AgentApplierDeleter{Config: config.Agent, RBAC: agentRBAC},
 		&agent.Builder{
 			Config: agent.BuilderConfig{
 				GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: config.Gateway.OTLPServiceName},
@@ -90,7 +94,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		},
 		&k8sutils.DaemonSetProber{Client: client},
 		flowHealthProber,
-		&otelcollector.GatewayApplierDeleter{Config: config.Gateway},
+		&otelcollector.GatewayApplierDeleter{Config: config.Gateway, RBAC: gatewayRBAC},
 		&gateway.Builder{Reader: client},
 		&k8sutils.DeploymentProber{Client: client},
 		istiostatus.NewChecker(client),

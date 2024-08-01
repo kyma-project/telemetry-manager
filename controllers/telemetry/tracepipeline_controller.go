@@ -77,11 +77,13 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		PipelineLock:       pipelineLock,
 	}
 
+	gatewayRBAC := otelcollector.MakeTraceGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace})
+
 	reconciler := tracepipeline.New(
 		client,
 		config.Config,
 		flowHealthProber,
-		&otelcollector.GatewayApplierDeleter{Config: config.Gateway},
+		&otelcollector.GatewayApplierDeleter{Config: config.Gateway, RBAC: gatewayRBAC},
 		&gateway.Builder{Reader: client},
 		&k8sutils.DeploymentProber{Client: client},
 		istiostatus.NewChecker(client),
