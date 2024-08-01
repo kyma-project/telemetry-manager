@@ -12,47 +12,54 @@ metadata:
   name: log-gateway
   namespace: log-load-test
 data:
-  relay.conf: |
+  relay.yaml: |
     receivers:
-        otlp:
-            protocols:
-                grpc:
-                    endpoint: ${MY_POD_IP}:4317
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${MY_POD_IP}:4317
     exporters:
-        otlp:
-            endpoint: "log-receiver:4317"
-            tls:
-                insecure: true
-            sending_queue:
-                enabled: false
-                queue_size: 2048
-            retry_on_failure:
-                enabled: false
-                initial_interval: 5s
-                max_interval: 30s
-                max_elapsed_time: 300s
-        nop: {}
+      otlp:
+        endpoint: "log-receiver:4317"
+        tls:
+          insecure: true
+        sending_queue:
+          enabled: false
+          queue_size: 20000
+          num_consumers: 20
+        retry_on_failure:
+          enabled: false
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+        compression: none
+      
+      nop: {}
     extensions:
-        health_check:
-            endpoint: ${MY_POD_IP}:13133
-        pprof:
-            endpoint: 127.0.0.1:1777
+      health_check:
+        endpoint: ${MY_POD_IP}:13133
+      pprof:
+        endpoint: 127.0.0.1:1777
+    processors:
+      batch:
     service:
-        pipelines:
-            logs/sample:
-                receivers:
-                    - otlp
-                exporters:
-                    - otlp
-        telemetry:
-            metrics:
-                address: 0.0.0.0:8888
-            logs:
-                level: info
-                encoding: json
-        extensions:
-            - health_check
-            - pprof
+      pipelines:
+        logs/sample:
+          receivers:
+            - otlp
+          exporters:
+            - otlp
+          processors:
+            - batch
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+        logs:
+          level: info
+          encoding: json
+      extensions:
+        - health_check
+        - pprof
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -61,6 +68,7 @@ metadata:
   namespace: log-load-test
   labels:
     app: log-receiver
+    app.kubernetes.io/name: log-receiver
 data:
   config.yaml: |
     receivers:
@@ -100,62 +108,92 @@ spec:
         app.kubernetes.io/name: log-gateway
         sidecar.istio.io/inject: "false"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-receiver
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-gateway
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
-      - args:
-        - --config=/conf/relay.conf
-        - --feature-gates=-confmap.unifyEnvVarExpansion
-        env:
-        - name: MY_POD_IP
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: status.podIP
-        - name: MY_NODE_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: spec.nodeName
-        envFrom:
-        - secretRef:
-            name: log-gateway
-            optional: true
-        image: otel/opentelemetry-collector-contrib:0.105.0
-        imagePullPolicy: IfNotPresent
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /
-            port: 13133
-            scheme: HTTP
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
-        name: collector
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /
-            port: 13133
-            scheme: HTTP
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 10001
-          seccompProfile:
-            type: RuntimeDefault
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /conf
-          name: config
+        - args:
+            - --config=/conf/relay.yaml
+            - --feature-gates=-confmap.unifyEnvVarExpansion
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          envFrom:
+            - secretRef:
+                name: log-gateway
+                optional: true
+          image: otel/opentelemetry-collector-contrib:0.105.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 13133
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: collector
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 13133
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /conf
+              name: config
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -166,13 +204,13 @@ spec:
           type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       volumes:
-      - configMap:
-          defaultMode: 420
-          items:
-          - key: relay.conf
-            path: relay.conf
-          name: log-gateway
-        name: config
+        - configMap:
+            defaultMode: 420
+            items:
+              - key: relay.yaml
+                path: relay.yaml
+            name: log-gateway
+          name: config
 ---
 apiVersion: v1
 kind: Service
@@ -183,14 +221,14 @@ metadata:
   namespace: log-load-test
 spec:
   ports:
-  - name: grpc-collector
-    port: 4317
-    protocol: TCP
-    targetPort: 4317
-  - name: http-collector
-    port: 4318
-    protocol: TCP
-    targetPort: 4318
+    - name: grpc-collector
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-collector
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
   selector:
     app.kubernetes.io/name: log-gateway
 ---
@@ -207,10 +245,10 @@ metadata:
   namespace: log-load-test
 spec:
   ports:
-  - name: http-metrics
-    port: 8888
-    protocol: TCP
-    targetPort: 8888
+    - name: http-metrics
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
   selector:
     app.kubernetes.io/name: log-gateway
 ---
@@ -223,7 +261,7 @@ metadata:
   name: log-load-generator
   namespace: log-load-test
 spec:
-  replicas: 5
+  replicas: 8
   selector:
     matchLabels:
       app: log-load-generator
@@ -234,38 +272,58 @@ spec:
         app.kubernetes.io/name: log-load-generator
     spec:
       affinity:
-        podAntiAffinity:
+        podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: app
+                    - key: app.kubernetes.io/name
                       operator: In
                       values:
                         - log-load-generator
                 topologyKey: kubernetes.io/hostname
               weight: 100
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-receiver
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-gateway
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
         - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
           args:
-          - logs
-          - --severity-number
-          - "1"
-          - --severity-text
-          - fatal
-          - --otlp-insecure
-          - --otlp-endpoint
-          - "log-gateway:4317"
-          - --otlp-attributes
-          - "service.name=\"log-load-generator\""
-          - --workers
-          - "100"
-          - --duration
-          - "90m"
-          - --rate
-          - "LOG_RATE"
-#          - --body
-#          - "{\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}"
+            - logs
+            - --severity-number
+            - "1"
+            - --severity-text
+            - fatal
+            - --otlp-insecure
+            - --otlp-endpoint
+            - "log-gateway:4317"
+            - --otlp-attributes
+            - "service.name=\"log-load-generator\""
+            - --workers
+            - "10"
+            - --duration
+            - "90m"
+            - --rate
+            - "LOG_RATE"
+          #          - --body
+          #          - "{\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}"
           imagePullPolicy: IfNotPresent
           name: telemetrygen
 ---
@@ -274,6 +332,7 @@ kind: Deployment
 metadata:
   labels:
     app: log-receiver
+    app.kubernetes.io/name: log-receiver
   name: log-receiver
   namespace: log-load-test
 spec:
@@ -281,11 +340,43 @@ spec:
   selector:
     matchLabels:
       app: log-receiver
+      app.kubernetes.io/name: log-receiver
   template:
     metadata:
       labels:
         app: log-receiver
+        app.kubernetes.io/name: log-receiver
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-receiver
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-gateway
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       volumes:
         - name: collector-config
           configMap:
@@ -301,11 +392,11 @@ spec:
           args:
             - --config=/etc/collector/config.yaml
           env:
-          - name: MY_POD_IP
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: status.podIP
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
 
 ---
 apiVersion: v1
@@ -313,6 +404,7 @@ kind: Service
 metadata:
   labels:
     app: log-receiver
+    app.kubernetes.io/name: log-receiver
   name: log-receiver
   namespace: log-load-test
 spec:
@@ -326,5 +418,6 @@ spec:
       protocol: TCP
       targetPort: 4318
   selector:
-    app: log-receiver
+    app.kubernetes.io/name: log-receiver
+
 
