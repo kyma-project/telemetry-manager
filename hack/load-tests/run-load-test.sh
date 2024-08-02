@@ -77,12 +77,16 @@ function setup() {
 }
 
 function setup_trace() {
-    [ "$MAX_PIPELINE" == "true" ] && kubectl apply -f hack/load-tests/trace-max-pipeline.yaml
+    if [[ "$MAX_PIPELINE" == "true" ]]; then
+      kubectl apply -f hack/load-tests/trace-max-pipeline.yaml
+    fi
 
     # Deploy test setup
     sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/trace-load-test-setup.yaml | kubectl apply -f -
 
-    [ "$BACKPRESSURE_TEST" == "true" ] && kubectl apply -f hack/load-tests/trace-backpressure-config.yaml
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl apply -f hack/load-tests/trace-backpressure-config.yaml
+    fi
 }
 
 function setup_metric() {
@@ -102,16 +106,22 @@ function setup_metric_agent() {
     # Deploy test setup
     sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-agent-test-setup.yaml | kubectl apply -f -
 
-    [[ "$BACKPRESSURE_TEST" == "true" ]] && kubectl apply -f hack/load-tests/metric-agent-backpressure-config.yaml
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl apply -f hack/load-tests/metric-agent-backpressure-config.yaml
+    fi
 }
 
 function setup_fluentbit() {
-    [[ "$MAX_PIPELINE" == "true" ]] && kubectl apply -f hack/load-tests/log-fluentbit-max-pipeline.yaml
+    if [[ "$MAX_PIPELINE" == "true" ]]; then
+      kubectl apply -f hack/load-tests/log-fluentbit-max-pipeline.yaml
+    fi
 
     # Deploy test setup
     sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/log-fluentbit-test-setup.yaml | kubectl apply -f -
 
-    [[ "$BACKPRESSURE_TEST" == "true" ]] && kubectl apply -f hack/load-tests/log-fluentbit-backpressure-config.yaml
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl apply -f hack/load-tests/log-fluentbit-backpressure-config.yaml
+    fi
 }
 
 function setup_logs_otel() {
@@ -237,8 +247,12 @@ function get_result_and_cleanup_trace() {
 
   kill %1
 
-  [[ "$MAX_PIPELINE" == "true" ]] && kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
-  [[ "$BACKPRESSURE_TEST" == "true" ]] && kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
+  if [[ "$MAX_PIPELINE" == "true" ]]; then
+    kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
+  fi
+  if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+    kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
+  fi
 
   kubectl delete -f hack/load-tests/trace-load-test-setup.yaml
 }
@@ -260,8 +274,13 @@ function get_result_and_cleanup_metric() {
 
     kill %1
 
-    [[ "$MAX_PIPELINE" == "true" ]] && kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
-    [[ "$BACKPRESSURE_TEST" == "true" ]] && kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
+    if [[ "$MAX_PIPELINE" == "true" ]]; then
+      kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
+    fi
+
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
+    fi
 
     kubectl delete -f hack/load-tests/metric-load-test-setup.yaml
 }
@@ -283,7 +302,9 @@ function get_result_and_cleanup_metricagent() {
     RESULT_RESTARTS_AGENT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
     kill %1
-    [ "$BACKPRESSURE_TEST" == "true" ] && kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
+    fi
     kubectl delete -f hack/load-tests/metric-agent-test-setup.yaml
 }
 
@@ -324,8 +345,12 @@ function get_result_and_cleanup_fluentbit() {
 
   kill %1
 
-  [[ "$MAX_PIPELINE" == "true" ]] && kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
-  [[ "$BACKPRESSURE_TEST" == "true" ]] && kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
+  if [[ "$MAX_PIPELINE" == "true" ]]; then
+    kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
+  fi
+  if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+    kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
+  fi
 
   kubectl delete -f hack/load-tests/log-fluentbit-test-setup.yaml
 }
