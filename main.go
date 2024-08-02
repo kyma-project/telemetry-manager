@@ -528,12 +528,12 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 					},
 					OTLPServiceName: metricOTLPServiceName,
 				},
-				MaxPipelines:  maxMetricPipelines,
-				ModuleVersion: version,
+				MaxPipelines:     maxMetricPipelines,
+				ModuleVersion:    version,
+				KymaInputAllowed: kymaInputAllowed,
 			},
 			TelemetryNamespace: telemetryNamespace,
 			SelfMonitorName:    selfMonitorName,
-			KymaInputAllowed:   kymaInputAllowed,
 		},
 	)
 	if err != nil {

@@ -64,7 +64,6 @@ type MetricPipelineControllerConfig struct {
 
 	SelfMonitorName    string
 	TelemetryNamespace string
-	KymaInputAllowed   bool
 }
 
 func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {

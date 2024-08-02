@@ -29,10 +29,11 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	Agent         otelcollector.AgentConfig
-	Gateway       otelcollector.GatewayConfig
-	MaxPipelines  int
-	ModuleVersion string
+	Agent            otelcollector.AgentConfig
+	Gateway          otelcollector.GatewayConfig
+	MaxPipelines     int
+	ModuleVersion    string
+	KymaInputAllowed bool
 }
 
 type AgentConfigBuilder interface {
