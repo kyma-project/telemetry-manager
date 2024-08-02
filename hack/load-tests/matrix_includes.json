@@ -103,5 +103,12 @@
     "backpressure": "false",
     "multi": "false",
     "image": "prometheus"
+  },
+  {
+    "name": "logs-otel",
+    "type": "logs-otel",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "logs-otel"
   }
 ]
