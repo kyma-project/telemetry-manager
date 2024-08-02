@@ -16,6 +16,11 @@ on:
           - logs-otel
         description: 'Image to test'
         required: true
+      duration:
+        type: string
+        description: 'Duration of the test in seconds'
+        required: true
+        default: '1200'
 
 run-name: "Load Test for ${{ inputs.image }} on PR-${{ inputs.pr_number }}"
 
@@ -83,7 +88,7 @@ jobs:
 
       # Run the load test
       - name: Run Load test
-        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }}
+        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }} -d ${{ github.event.inputs.duration }}
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -104,10 +109,11 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Download Results
-        uses: actions/download-artifact@v4
       - name: Checkout repo
         uses: actions/checkout@v4
+      - name: Download Results
+        uses: actions/download-artifact@v4
       - name: Print Results
         run: |
+            ls -la
             python3 hack/load-tests/convert-results.py Results-*
