@@ -42,6 +42,7 @@ data:
         endpoint: 127.0.0.1:1777
     processors:
       batch:
+        send_batch_max_size: 500 # 500 logs per batch to prevent `code = ResourceExhausted desc = grpc: received message larger than max (5686900 vs. 4194304)","rejected_items":2650`
     service:
       pipelines:
         logs/sample:
