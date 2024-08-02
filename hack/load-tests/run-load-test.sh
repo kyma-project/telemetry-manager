@@ -125,7 +125,7 @@ function setup_fluentbit() {
 }
 
 function setup_logs_otel() {
-    sed -e "s|LOG_RATE|$LOG_RATE|g" -e"s|LOG_CONTENT|$(for i in $(seq $LOG_SIZE); do echo -n X; done)" hack/load-tests/log-load-test-setup.yaml | kubectl apply -f -
+    sed -e "s|LOG_RATE|$LOG_RATE|g" -e"s|LOG_CONTENT|$(for i in $(seq $LOG_SIZE); do echo -n X; done)|g" hack/load-tests/log-load-test-setup.yaml | kubectl apply -f -
 }
 
 function setup_selfmonitor() {
