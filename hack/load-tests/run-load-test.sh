@@ -18,7 +18,7 @@ TEST_TARGET="traces"
 TEST_NAME="No Name"
 TEST_DURATION=1200
 OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.105.0-main"
-LOG_SIZE=1000
+LOG_SIZE=2000
 LOG_RATE=1000
 PROMAPI="http://localhost:9090/api/v1/query"
 
@@ -125,7 +125,7 @@ function setup_fluentbit() {
 }
 
 function setup_logs_otel() {
-    sed -e "s|LOG_RATE|$LOG_RATE|g" hack/load-tests/log-load-test-setup.yaml | kubectl apply -f -
+    sed -e "s|LOG_RATE|$LOG_RATE|g" -e"s|LOG_CONTENT|$(for i in $(seq $LOG_SIZE); do echo -n X; done)" hack/load-tests/log-load-test-setup.yaml | kubectl apply -f -
 }
 
 function setup_selfmonitor() {
