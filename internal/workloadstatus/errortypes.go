@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrNoPodsDeployed    = errors.New("no pods deployed")
+	ErrNoPodsDeployed    = errors.New("no Pods deployed")
 	ErrDaemonSetNotFound = errors.New("DaemonSet is not yet created")
 	ErrDaemonSetFetching = errors.New("failed to get DaemonSet")
 
@@ -35,7 +35,7 @@ type PodIsPendingError struct {
 }
 
 func (p PodIsPendingError) Error() string {
-	return fmt.Sprintf("Pod is in pending state: reason: %s, message: %s", p.Reason, p.Message)
+	return fmt.Sprintf("Pod is in the pending state: reason: %s, message: %s", p.Reason, p.Message)
 }
 
 func IsPodIsPendingError(err error) bool {

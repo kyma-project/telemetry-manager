@@ -22,17 +22,17 @@ func TestErrorConverter(t *testing.T) {
 		{
 			name: "PodIsPendingError Without Reason",
 			err:  &workloadstatus.PodIsPendingError{ContainerName: "fluent-bit", Message: "Error"},
-			want: "Pod is in pending state as container: fluent-bit is not running due to: Error",
+			want: "Pod is in the pending state as container: fluent-bit is not running due to: Error",
 		},
 		{
 			name: "PodIsPendingError With Reason",
 			err:  &workloadstatus.PodIsPendingError{ContainerName: "fluent-bit", Reason: "CrashLoopBackOff"},
-			want: "Pod is in pending state as container: fluent-bit is not running due to: CrashLoopBackOff",
+			want: "Pod is in the pending state as container: fluent-bit is not running due to: CrashLoopBackOff",
 		},
 		{
 			name: "PodIsFailedError",
 			err:  &workloadstatus.PodIsFailingError{Message: "Pod is evicted"},
-			want: "Pod is in failed state due to: Pod is evicted",
+			want: "Pod is in the failed state due to: Pod is evicted",
 		},
 		{
 			name: "RolloutInProgressError",
@@ -57,7 +57,7 @@ func TestErrorConverter(t *testing.T) {
 		{
 			name: "Wrapped Error",
 			err:  fmt.Errorf("new error %w", &workloadstatus.PodIsFailingError{Message: "unknown error"}),
-			want: "Pod is in failed state due to: unknown error",
+			want: "Pod is in the failed state due to: unknown error",
 		},
 	}
 	etc := &ErrorToMessageConverter{}

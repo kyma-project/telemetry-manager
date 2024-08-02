@@ -166,7 +166,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			"Pod is in pending state as container: foo is not running due to: Error",
+			"Pod is in the pending state as container: foo is not running due to: Error",
 		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -916,21 +916,21 @@ func TestReconcile(t *testing.T) {
 				probeGatewayErr: &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
-				expectedMessage: "Pod is in pending state as container: foo is not running due to: OOMKilled",
+				expectedMessage: "Pod is in the pending state as container: foo is not running due to: OOMKilled",
 			},
 			{
 				name:            "pod is craashbackloop",
 				probeGatewayErr: &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
-				expectedMessage: "Pod is in pending state as container: foo is not running due to: Error",
+				expectedMessage: "Pod is in the pending state as container: foo is not running due to: Error",
 			},
 			{
-				name:            "no pods deployed",
+				name:            "no Pods deployed",
 				probeGatewayErr: workloadstatus.ErrNoPodsDeployed,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
-				expectedMessage: "No pods deployed",
+				expectedMessage: "No Pods deployed",
 			},
 			{
 				name:            "pod is ready",

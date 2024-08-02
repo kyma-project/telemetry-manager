@@ -17,7 +17,7 @@ func TestErrorMessages(t *testing.T) {
 		{
 			name:                   "Unable to pull image",
 			err:                    &PodIsPendingError{ContainerName: "foo", Reason: "ErrImagePull", Message: "unable to pull image"},
-			expectedErrorMsg:       "Pod is in pending state: reason: ErrImagePull, message: unable to pull image",
+			expectedErrorMsg:       "Pod is in the pending state: reason: ErrImagePull, message: unable to pull image",
 			expectedErrorCheckFunc: IsPodIsPendingError,
 		},
 		{
