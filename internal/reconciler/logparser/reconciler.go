@@ -29,6 +29,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 )
 
 const checksumAnnotationKey = "checksum/logparser-config"
@@ -40,10 +41,6 @@ type Config struct {
 	Overrides         overrides.Config
 }
 
-type DaemonSetProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
-}
-
 type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
 }
@@ -52,13 +49,14 @@ type Reconciler struct {
 	client.Client
 
 	config           Config
-	prober           DaemonSetProber
+	prober           commonstatus.DaemonSetProber
 	annotator        DaemonSetAnnotator
 	syncer           syncer
 	overridesHandler *overrides.Handler
+	errorConverter   commonstatus.ErrorToMessageConverter
 }
 
-func New(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
+func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler, errToMsgConverter commonstatus.ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:           client,
 		config:           config,
@@ -66,6 +64,7 @@ func New(client client.Client, config Config, prober DaemonSetProber, annotator 
 		annotator:        annotator,
 		syncer:           syncer{client, config},
 		overridesHandler: overridesHandler,
+		errorConverter:   errToMsgConverter,
 	}
 }
 

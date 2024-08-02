@@ -16,6 +16,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -34,7 +35,9 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(parser).WithStatusSubresource(parser).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "OOMKilled"})
+
+		errToMsgConverter := &conditions.ErrorToMessageConverter{}
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -42,7 +45,8 @@ func TestUpdateStatus(t *testing.T) {
 				DaemonSet:        types.NamespacedName{Name: "fluent-bit"},
 				ParsersConfigMap: types.NamespacedName{Name: "parsers"},
 			},
-			prober: proberStub,
+			prober:         proberStub,
+			errorConverter: errToMsgConverter,
 		}
 
 		err := sut.updateStatus(context.Background(), parser.Name)
@@ -55,7 +59,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, agentHealthyCond.Status)
 		require.Equal(t, conditions.ReasonAgentNotReady, agentHealthyCond.Reason)
-		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonAgentNotReady), agentHealthyCond.Message)
+		require.Equal(t, "Pod is in the pending state as container: foo is not running due to: OOMKilled", agentHealthyCond.Message)
 		require.Equal(t, updatedParser.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 	})
@@ -71,7 +75,9 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(parser).WithStatusSubresource(parser).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+
+		errToMsgConverter := &conditions.ErrorToMessageConverter{}
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -79,7 +85,8 @@ func TestUpdateStatus(t *testing.T) {
 				DaemonSet:        types.NamespacedName{Name: "fluent-bit"},
 				ParsersConfigMap: types.NamespacedName{Name: "parsers"},
 			},
-			prober: proberStub,
+			prober:         proberStub,
+			errorConverter: errToMsgConverter,
 		}
 
 		err := sut.updateStatus(context.Background(), parser.Name)

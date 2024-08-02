@@ -32,9 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -42,6 +42,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // LogPipelineController reconciles a LogPipeline object
@@ -99,11 +100,12 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	reconciler := logpipeline.New(
 		client,
 		reconcilerCfg,
-		&k8sutils.DaemonSetProber{Client: client},
+		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineValidator,
+		&conditions.ErrorToMessageConverter{},
 	)
 
 	return &LogPipelineController{
@@ -127,6 +129,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},
 		&corev1.ConfigMap{},
+		&corev1.Pod{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},

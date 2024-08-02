@@ -38,6 +38,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -55,10 +56,6 @@ type Config struct {
 	PipelineDefaults      builder.PipelineDefaults
 	Overrides             overrides.Config
 	DaemonSetConfig       fluentbit.DaemonSetConfig
-}
-
-type DaemonSetProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
 type DaemonSetAnnotator interface {
@@ -84,21 +81,23 @@ type Reconciler struct {
 	syncer syncer
 
 	// Dependencies
-	agentProber        DaemonSetProber
+	agentProber        commonstatus.DaemonSetProber
 	flowHealthProber   FlowHealthProber
 	istioStatusChecker IstioStatusChecker
 	overridesHandler   OverridesHandler
 	pipelineValidator  *Validator
+	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
 
 func New(
 	client client.Client,
 	config Config,
-	agentProber DaemonSetProber,
+	agentProber commonstatus.DaemonSetProber,
 	flowHealthProber FlowHealthProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineValidator *Validator,
+	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
 		Client: client,
@@ -110,6 +109,7 @@ func New(
 		istioStatusChecker: istioStatusChecker,
 		overridesHandler:   overridesHandler,
 		pipelineValidator:  pipelineValidator,
+		errToMsgConverter:  errToMsgConverter,
 	}
 }
 

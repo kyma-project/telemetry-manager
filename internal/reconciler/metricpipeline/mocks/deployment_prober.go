@@ -16,31 +16,21 @@ type DeploymentProber struct {
 }
 
 // IsReady provides a mock function with given fields: ctx, name
-func (_m *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedName) (bool, error) {
+func (_m *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedName) error {
 	ret := _m.Called(ctx, name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for IsReady")
 	}
 
-	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.NamespacedName) (bool, error)); ok {
-		return rf(ctx, name)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, types.NamespacedName) bool); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, types.NamespacedName) error); ok {
 		r0 = rf(ctx, name)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, types.NamespacedName) error); ok {
-		r1 = rf(ctx, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // NewDeploymentProber creates a new instance of DeploymentProber. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

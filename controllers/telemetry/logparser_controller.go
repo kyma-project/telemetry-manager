@@ -27,10 +27,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // LogParserController reconciles a Logparser object
@@ -53,9 +55,10 @@ func NewLogParserController(client client.Client, config LogParserControllerConf
 	reconciler := logparser.New(
 		client,
 		reconcilerCfg,
-		&k8sutils.DaemonSetProber{Client: client},
+		&workloadstatus.DaemonSetProber{Client: client},
 		&k8sutils.DaemonSetAnnotator{Client: client},
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		&conditions.ErrorToMessageConverter{},
 	)
 
 	return &LogParserController{

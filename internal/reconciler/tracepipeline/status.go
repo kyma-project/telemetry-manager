@@ -14,6 +14,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -47,28 +48,12 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
-	healthy, err := r.gatewayProber.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe trace gateway - set condition as not healthy")
-		healthy = false
-	}
-
-	status := metav1.ConditionFalse
-	reason := conditions.ReasonGatewayNotReady
-	if healthy {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonGatewayReady
-	}
-
-	condition := metav1.Condition{
-		Type:               conditions.TypeGatewayHealthy,
-		Status:             status,
-		Reason:             reason,
-		Message:            conditions.MessageForTracePipeline(reason),
-		ObservedGeneration: pipeline.Generation,
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+	condition := commonstatus.GetGatewayHealthyCondition(ctx,
+		r.gatewayProber, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace},
+		r.errToMsgConverter,
+		commonstatus.SignalTypeTraces)
+	condition.ObservedGeneration = pipeline.Generation
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {

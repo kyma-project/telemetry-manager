@@ -7,7 +7,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -21,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
@@ -58,14 +58,6 @@ type PipelineLock interface {
 	IsLockHolder(ctx context.Context, owner metav1.Object) error
 }
 
-type DeploymentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
-}
-
-type DaemonSetProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
-}
-
 type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
@@ -85,15 +77,16 @@ type Reconciler struct {
 
 	agentApplierDeleter   AgentApplierDeleter
 	agentConfigBuilder    AgentConfigBuilder
-	agentProber           DaemonSetProber
+	agentProber           commonstatus.DaemonSetProber
 	flowHealthProber      FlowHealthProber
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         DeploymentProber
+	gatewayProber         commonstatus.DeploymentProber
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
 	pipelineValidator     *Validator
+	errToMsgConverter     commonstatus.ErrorToMessageConverter
 }
 
 func New(
@@ -101,15 +94,16 @@ func New(
 	config Config,
 	agentApplierDeleter AgentApplierDeleter,
 	agentConfigBuilder AgentConfigBuilder,
-	agentProber DaemonSetProber,
+	agentProber commonstatus.DaemonSetProber,
 	flowHealthProber FlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber DeploymentProber,
+	gatewayProber commonstatus.DeploymentProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,
 	pipelineValidator *Validator,
+	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
@@ -125,6 +119,7 @@ func New(
 		overridesHandler:      overridesHandler,
 		pipelineLock:          pipelineLock,
 		pipelineValidator:     pipelineValidator,
+		errToMsgConverter:     errToMsgConverter,
 	}
 }
 
