@@ -2,6 +2,7 @@ package conditions
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
@@ -52,6 +53,11 @@ func TestErrorConverter(t *testing.T) {
 			name: "Error string",
 			err:  workloadstatus.ErrDeploymentFetching,
 			want: "Failed to get Deployment",
+		},
+		{
+			name: "Wrapped Error",
+			err:  fmt.Errorf("new error %w", &workloadstatus.PodIsFailingError{Message: "unknown error"}),
+			want: "Pod is in failed state due to: unknown error",
 		},
 	}
 	etc := &ErrorToMessageConverter{}
