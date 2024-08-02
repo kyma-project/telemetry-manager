@@ -12,14 +12,16 @@ import (
 // PodPhase tells the current state of Pod which can be Pending, Running, Succeeded, Failed, Unknown
 // The table below shows the various scenarios anc compares with
 // podPhase, PodScheduled (under podConditions), ContainerStatus.State, ContainerStatus.LastState
-// +----------------+-----------------+-----------------+-----------------+-----------------+-----------------+
-// | Scenario       | PodPhase | Pod Scheduled | ContainerStatus.State           | ContainerStatus.LastState |
-// +----------------+----------+---------------+---------------------------------+---------------------------+
-// |  Crashbackloop | Running  | True          | State.Waiting.Reason: CrashLoopBackOff| exitCode: 1, Reason: Error|
-// |  OOMKilled     | Running  | True          | State.Waiting.Reason: OOMKilled    | exitCode: 137, Reason: OOMKilled|
-// | PVC not found  | Pending  | False, Reason: Unschedulable        | - | -                       |
-// | ImagePullBackOff| Pending | True        | State.Waiting.Reason: ErrImagePul|-|
-// | Evicted        | Failed   | True             | - | -                       | only Status.Message is set|
+// +------------------+----------+------------------------------+----------------------------------------+----------------------------------+----------------------------+
+// |     Scenario     | PodPhase |        Pod Scheduled         |         ContainerStatus.State          |    ContainerStatus.LastState     |          Remarks           |
+// +------------------+----------+------------------------------+----------------------------------------+----------------------------------+----------------------------+
+// | CrashLoop        | Running  | True                         | State.Waiting.Reason: CrashLoopBackOff | exitCode: 1, Reason: Error       |                            |
+// | OOMKilled        | Running  | True                         | State.Waiting.Reason: OOMKilled        | exitCode: 137, Reason: OOMKilled |                            |
+// | PVC not found    | Pending  | False, Reason: Unschedulable |                                        |                                  |                            |
+// | ImagePullBackOff | Pending  | True                         | State.Waiting.Reason: ErrImagePull     |                                  |                            |
+// | Evicted          | Failed   | True                         |                                        |                                  | only Status.Message is set |
+// | Evicted          | Failed   |                              |                                        |                                  |                            |
+// +------------------+----------+------------------------------+----------------------------------------+----------------------------------+----------------------------+
 func checkPodStatus(ctx context.Context, c client.Client, namespace string, selector *metav1.LabelSelector) error {
 	var pods corev1.PodList
 
