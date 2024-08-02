@@ -14,7 +14,7 @@ The following diagram shows how distributed tracing helps to track the request p
 
 The Telemetry module provides a trace gateway for the shipment of traces of any container running in the Kyma runtime.
 
-You can configure the trace gateway with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named TracePipeline. 
+You can configure the trace gateway with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named TracePipeline.
 The Trace feature is optional. If you don't want to use it, simply don't set up a TracePipeline.
 
 ## Prerequisites
@@ -29,15 +29,13 @@ For the recording of a distributed trace, every involved component must propagat
 
 In the Kyma cluster, the Telemetry module provides a central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints to which all Kyma modules and users’ applications should send the trace data to.
 
-The feature is optional, if you don't want to use the Traces feature, simply don't set up a TracePipeline.
-
 ![Architecture](./assets/traces-arch.drawio.svg)
 
 1. An end-to-end request is triggered and populates across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
 2. After contributing a new span to the trace, the involved components send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OpenTelemetry Protocol (OTLP)](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) either using GRPC or HTTP.
 3. Istio sends the related span data to the trace gateway as well.
 4. The trace gateway discovers metadata that's typical for sources running on Kubernetes, like Pod identifiers, and then enriches the span data with that metadata.
-5. The Telemetry Manager configures the gateway according to the `TracePipeline` resource, including the target backend for the trace gateway. Also, it observes the trace flow to the backend and reports problems in the `TracePipeline` status.
+5. Telemetry Manager configures the gateway according to the `TracePipeline` resource, including the target backend for the trace gateway. Also, it observes the trace flow to the backend and reports problems in the `TracePipeline` status.
 6. The trace gateway sends the data to the observability system that's specified in your `TracePipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
 7. You can analyze the trace data with your preferred backend system.
 

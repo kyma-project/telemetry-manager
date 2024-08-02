@@ -1,27 +1,34 @@
-package k8sutils
+package workloadstatus
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type DeploymentProber struct {
 	client.Client
 }
 
-func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedName) (bool, error) {
+func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedName) error {
+	log := logf.FromContext(ctx)
 	var d appsv1.Deployment
 	if err := dp.Get(ctx, name, &d); err != nil {
-		return false, fmt.Errorf("failed to get %s/%s Deployment: %w", name.Namespace, name.Name, err)
+		if apierrors.IsNotFound(err) {
+			// The status of pipeline is changed before the creation of daemonset
+			log.V(1).Info(ErrDeploymentNotFound.Error())
+			return ErrDeploymentNotFound
+		}
+		return ErrDeploymentFetching
 	}
 
 	desiredReplicas := *d.Spec.Replicas
@@ -32,20 +39,27 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 		Namespace:     d.Namespace,
 	}
 	if err := dp.List(ctx, &allReplicaSets, listOps); err != nil {
-		return false, fmt.Errorf("failed to list ReplicaSets: %w", err)
+		return &FailedToListReplicaSetError{ErrorObj: err}
 	}
 
 	if err := dp.Get(ctx, name, &d); err != nil {
-		return false, fmt.Errorf("failed to get %s/%s ReplicaSet for deployment: %w", name.Namespace, name.Name, err)
+		return &FailedToFetchReplicaSetError{ErroObj: err}
 	}
 
 	replicaSet := getLatestReplicaSet(&d, &allReplicaSets)
 	if replicaSet == nil {
-		return false, fmt.Errorf("failed to get latest ReplicaSet")
+		return ErrFailedToGetLatestReplicaSet
 	}
 
-	isReady := replicaSet.Status.ReadyReplicas >= desiredReplicas
-	return isReady, nil
+	if replicaSet.Status.ReadyReplicas >= desiredReplicas {
+		return nil
+	}
+
+	if err := checkPodStatus(ctx, dp.Client, name.Namespace, d.Spec.Selector); err != nil {
+		return err
+	}
+
+	return &RolloutInProgressError{}
 }
 
 func getLatestReplicaSet(deployment *appsv1.Deployment, allReplicaSets *appsv1.ReplicaSetList) *appsv1.ReplicaSet {

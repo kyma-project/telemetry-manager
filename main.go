@@ -122,13 +122,15 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
+	kymaInputAllowed bool
+
 	version = "main"
 )
 
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.1.3-44a3707"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-main"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.105.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.0-8691013b"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
@@ -214,7 +216,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 func main() {
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
+	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
 
 	flag.StringVar(&traceGatewayImage, "trace-collector-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
@@ -256,6 +258,8 @@ func main() {
 
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
+
+	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -529,6 +533,7 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 			},
 			TelemetryNamespace: telemetryNamespace,
 			SelfMonitorName:    selfMonitorName,
+			KymaInputAllowed:   kymaInputAllowed,
 		},
 	)
 	if err != nil {

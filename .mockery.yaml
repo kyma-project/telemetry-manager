@@ -16,6 +16,7 @@ packages:
       FlowHealthProber:
       IstioStatusChecker:
       OverridesHandler:
+      ErrorToMessageConverter:
   github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline:
     interfaces:
       DeploymentProber:
@@ -25,6 +26,7 @@ packages:
       IstioStatusChecker:
       OverridesHandler:
       PipelineLock:
+      ErrorToMessageConverter:
   github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline:
     interfaces:
       AgentApplierDeleter:
@@ -37,6 +39,7 @@ packages:
       IstioStatusChecker:
       OverridesHandler:
       PipelineLock:
+      ErrorToMessageConverter:
   github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry:
     interfaces:
       ComponentHealthChecker:
@@ -44,7 +47,7 @@ packages:
       SelfMonitorApplierDeleter:
   github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober:
     interfaces:
-      alertGetter: 
+      alertGetter:
   github.com/kyma-project/telemetry-manager/webhook/dryrun:
     interfaces:
       commandRunner:

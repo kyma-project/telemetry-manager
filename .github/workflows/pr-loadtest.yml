@@ -17,6 +17,8 @@ on:
         description: 'Image to test'
         required: true
 
+run-name: "Load Test for ${{ inputs.image }} on PR-${{ inputs.pr_number }}"
+
 env:
   IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.inputs.pr_number }}
 

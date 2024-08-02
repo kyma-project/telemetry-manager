@@ -14,6 +14,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
@@ -61,28 +62,12 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	healthy, err := r.agentProber.IsReady(ctx, r.config.DaemonSet)
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset - set condition as not healthy")
-		healthy = false
-	}
-
-	status := metav1.ConditionFalse
-	reason := conditions.ReasonAgentNotReady
-	if healthy {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonAgentReady
-	}
-
-	condition := metav1.Condition{
-		Type:               conditions.TypeAgentHealthy,
-		Status:             status,
-		Reason:             reason,
-		Message:            conditions.MessageForLogPipeline(reason),
-		ObservedGeneration: pipeline.Generation,
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+	condition := commonstatus.GetAgentHealthyCondition(ctx,
+		r.agentProber,
+		types.NamespacedName{Name: r.config.DaemonSet.Name, Namespace: r.config.DaemonSet.Namespace},
+		r.errToMsgConverter,
+		commonstatus.SignalTypeLogs)
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {

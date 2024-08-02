@@ -12,7 +12,6 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,6 +28,7 @@ import (
 
 type GatewayApplierDeleter struct {
 	Config GatewayConfig
+	RBAC   rbac
 }
 
 type GatewayApplyOptions struct {
@@ -37,10 +37,8 @@ type GatewayApplyOptions struct {
 	CollectorEnvVars    map[string][]byte
 	IstioEnabled        bool
 	IstioExcludePorts   []int32
-
 	// Replicas specifies the number of gateway replicas.
 	Replicas int32
-
 	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
@@ -50,7 +48,7 @@ type GatewayApplyOptions struct {
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
 	name := types.NamespacedName{Namespace: gad.Config.Namespace, Name: gad.Config.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, gad.makeGatewayClusterRole(name), opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, gad.RBAC, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -124,29 +122,6 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	}
 
 	return allErrors
-}
-
-func (gad *GatewayApplierDeleter) makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
-	clusterRole := rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"namespaces", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
-	}
-	return &clusterRole
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {

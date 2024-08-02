@@ -37,8 +37,8 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -49,6 +49,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // MetricPipelineController reconciles a MetricPipeline object
@@ -63,6 +64,7 @@ type MetricPipelineControllerConfig struct {
 
 	SelfMonitorName    string
 	TelemetryNamespace string
+	KymaInputAllowed   bool
 }
 
 func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
@@ -79,24 +81,29 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		PipelineLock:       pipelineLock,
 	}
 
+	agentRBAC := otelcollector.MakeMetricAgentRBAC(types.NamespacedName{Name: config.Agent.BaseName, Namespace: config.Agent.Namespace})
+	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed)
+
 	reconciler := metricpipeline.New(
 		client,
 		config.Config,
-		&otelcollector.AgentApplierDeleter{Config: config.Agent},
+		&otelcollector.AgentApplierDeleter{Config: config.Agent, RBAC: agentRBAC},
 		&agent.Builder{
 			Config: agent.BuilderConfig{
 				GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: config.Gateway.OTLPServiceName},
 			},
 		},
-		&k8sutils.DaemonSetProber{Client: client},
+		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
-		&otelcollector.GatewayApplierDeleter{Config: config.Gateway},
+		&otelcollector.GatewayApplierDeleter{Config: config.Gateway, RBAC: gatewayRBAC},
 		&gateway.Builder{Reader: client},
-		&k8sutils.DeploymentProber{Client: client},
+		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(client),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
-		pipelineValidator)
+		pipelineValidator,
+		&conditions.ErrorToMessageConverter{},
+	)
 
 	return &MetricPipelineController{
 		Client:               client,
@@ -121,6 +128,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&appsv1.Deployment{},
 		&appsv1.DaemonSet{},
 		&corev1.ConfigMap{},
+		&corev1.Pod{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
