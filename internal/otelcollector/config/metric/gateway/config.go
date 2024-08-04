@@ -13,7 +13,35 @@ type Config struct {
 }
 
 type Receivers struct {
-	OTLP config.OTLPReceiver `yaml:"otlp"`
+	OTLP                              config.OTLPReceiver                `yaml:"otlp"`
+	SingletonKymaStatsReceiverCreator *SingletonKymaStatsReceiverCreator `yaml:"singleton_receiver_creator/kymastats,omitempty"`
+}
+
+type SingletonKymaStatsReceiverCreator struct {
+	AuthType                   string                     `yaml:"auth_type"`
+	LeaderElection             LeaderElection             `yaml:"leader_election"`
+	SingletonKymaStatsReceiver SingletonKymaStatsReceiver `yaml:"receiver"`
+}
+
+type LeaderElection struct {
+	LeaseName      string `yaml:"lease_name"`
+	LeaseNamespace string `yaml:"lease_namespace"`
+}
+
+type SingletonKymaStatsReceiver struct {
+	KymaStatsReceiver KymaStatsReceiver `yaml:"kymastats"`
+}
+
+type KymaStatsReceiver struct {
+	AuthType           string      `yaml:"auth_type"`
+	CollectionInterval string      `yaml:"collection_interval"`
+	Modules            []ModuleGVR `yaml:"modules"`
+}
+
+type ModuleGVR struct {
+	Group    string `yaml:"group"`
+	Version  string `yaml:"version"`
+	Resource string `yaml:"resource"`
 }
 
 type Processors struct {
