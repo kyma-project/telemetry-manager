@@ -96,6 +96,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should ship logs without original body to backend1", func() {
+			// Log generator produces JSON logs and logPipeline1 drops the original body if JSON keys were successfully extracted
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backend1ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -107,6 +108,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should ship logs with original body to backend2", func() {
+			// Log generator produces JSON logs and logPipeline1 keeps the original body if JSON keys were successfully extracted
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
