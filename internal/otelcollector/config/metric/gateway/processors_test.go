@@ -15,9 +15,17 @@ func TestProcessors(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
+	gatewayNamespace := "test-namespace"
 
 	t.Run("insert cluster name processor", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		require.Equal(t, 1, len(collectorConfig.Processors.InsertClusterName.Attributes))
@@ -27,7 +35,14 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("memory limit processors", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
@@ -36,7 +51,14 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("batch processors", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		require.Equal(t, 1024, collectorConfig.Processors.Batch.SendBatchSize)
@@ -45,7 +67,14 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("k8s attributes processors", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		require.Equal(t, "serviceAccount", collectorConfig.Processors.K8sAttributes.AuthType)
@@ -73,7 +102,14 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("drop by input source filter", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithOTLPInput(false).Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithOTLPInput(false).Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceRuntime)
@@ -99,13 +135,19 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("namespace filter processor using include", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").
-				WithRuntimeInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
-				WithPrometheusInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
-				WithIstioInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
-				WithOTLPInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
-				Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+					WithPrometheusInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+					WithIstioInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+					WithOTLPInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+					Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		namespaceFilters := collectorConfig.Processors.NamespaceFilters
@@ -136,13 +178,19 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("namespace filter processor using exclude", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").
-				WithRuntimeInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
-				WithPrometheusInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
-				WithIstioInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
-				WithOTLPInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
-				Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+					WithPrometheusInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+					WithIstioInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+					WithOTLPInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+					Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		namespaceFilters := collectorConfig.Processors.NamespaceFilters
@@ -173,11 +221,17 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("prometheus diagnostic metrics filter processor", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").
-				WithPrometheusInput(true).
-				WithPrometheusInputDiagnosticMetrics(false).
-				Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithPrometheusInput(true).
+					WithPrometheusInputDiagnosticMetrics(false).
+					Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		prometheusScrapeFilter := collectorConfig.Processors.DropDiagnosticMetricsIfInputSourcePrometheus
@@ -189,11 +243,17 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("istio diagnostic metrics filter processor", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").
-				WithIstioInput(true).
-				WithIstioInputDiagnosticMetrics(false).
-				Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithIstioInput(true).
+					WithIstioInputDiagnosticMetrics(false).
+					Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		istioScrapeFilter := collectorConfig.Processors.DropDiagnosticMetricsIfInputSourceIstio
@@ -207,11 +267,17 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("runtime pod metrics filter processor", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").
-				WithRuntimeInput(true).
-				WithRuntimeInputPodMetrics(false).
-				Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		runtimePodMetricsFilter := collectorConfig.Processors.DropRuntimePodMetrics
@@ -222,11 +288,17 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("runtime container metrics filter processor", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").
-				WithRuntimeInput(true).
-				WithRuntimeInputContainerMetrics(false).
-				Build()})
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(false).
+					Build(),
+			},
+			gatewayNamespace,
+			false,
+		)
 		require.NoError(t, err)
 
 		runtimeContainerMetricsFilter := collectorConfig.Processors.DropRuntimeContainerMetrics
