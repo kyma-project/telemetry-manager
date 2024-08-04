@@ -35,7 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		logProducer := loggen.New(mockNs).WithJSON()
+		logProducer := loggen.New(mockNs).WithUseJSON()
 		objs = append(objs, logProducer.K8sObject())
 
 		// logPipeline1 ships logs without original body to backend1

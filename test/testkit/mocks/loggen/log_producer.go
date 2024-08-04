@@ -62,7 +62,7 @@ func (lp *LogProducer) WithLoad(load Load) *LogProducer {
 	return lp
 }
 
-func (lp *LogProducer) WithJSON() *LogProducer {
+func (lp *LogProducer) WithUseJSON() *LogProducer {
 	lp.useJSON = true
 	return lp
 }
@@ -103,15 +103,15 @@ func (lp *LogProducer) podSpec() corev1.PodSpec {
 func (lp *LogProducer) alpineSpec() corev1.PodSpec {
 	logCmd := `while true
 do
-	echo "Hello, Kubernetes!"
+        echo "foo bar"
 	sleep 500
 done`
 	if lp.useJSON {
 		logCmd = `while true
-		do
-			echo '{"name": "John Doe", "age": 30, "city": "Munich"}'
-			sleep 500
-		done`
+do
+	echo '{"name": "John Doe", "age": 30, "city": "Munich"}'
+	sleep 500
+done`
 	}
 
 	return corev1.PodSpec{
