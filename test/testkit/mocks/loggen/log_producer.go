@@ -103,7 +103,7 @@ func (lp *LogProducer) podSpec() corev1.PodSpec {
 func (lp *LogProducer) alpineSpec() corev1.PodSpec {
 	logCmd := `while true
 do
-        echo "foo bar"
+	echo "foo bar"
 	sleep 500
 done`
 	if lp.useJSON {
