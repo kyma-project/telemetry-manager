@@ -124,7 +124,7 @@ func flogSpec() corev1.PodSpec {
 						corev1.ResourceMemory: resource.MustParse("200Mi"),
 					},
 					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resour + ce.MustParse("10m"),
+						corev1.ResourceCPU:    resource.MustParse("10m"),
 						corev1.ResourceMemory: resource.MustParse("50Mi"),
 					},
 				},
