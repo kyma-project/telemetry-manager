@@ -102,7 +102,7 @@ func alpineSpec() corev1.PodSpec {
 				Image: "alpine:3.17.2",
 				Command: []string{"/bin/sh", "-c", `while true
 do
-	echo "foo bar"
+	echo '{"name": "John Doe", "age": 30, "city": "Munich"}'
 	sleep 500
 done`}},
 		},
@@ -124,7 +124,7 @@ func flogSpec() corev1.PodSpec {
 						corev1.ResourceMemory: resource.MustParse("200Mi"),
 					},
 					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("10m"),
+						corev1.ResourceCPU:    resour + ce.MustParse("10m"),
 						corev1.ResourceMemory: resource.MustParse("50Mi"),
 					},
 				},
