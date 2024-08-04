@@ -22,28 +22,44 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs            = suite.ID()
+		pipeline1Name     = suite.IDWithSuffix("1")
+		pipeline2Name     = suite.IDWithSuffix("2")
+		backend1Name      = "backend-1"
+		backend1ExportURL string
+		backend2Name      = "backend-2"
+		backend2ExportURL string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs)
 		logProducer := loggen.New(mockNs)
-		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
-		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := testutils.NewLogPipelineBuilder().
-			WithName(pipelineName).
+		// logPipeline1 ships logs without original body to backend1
+		backend1 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend1Name))
+		backend1ExportURL = backend1.ExportURL(proxyClient)
+		objs = append(objs, backend1.K8sObjects()...)
+		logPipeline1 := testutils.NewLogPipelineBuilder().
+			WithName(pipeline1Name).
 			WithIncludeContainers(loggen.DefaultContainerName).
 			WithKeepOriginalBody(false).
-			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			WithHTTPOutput(testutils.HTTPHost(backend1.Host()), testutils.HTTPPort(backend1.Port())).
 			Build()
-		objs = append(objs, &logPipeline)
+		objs = append(objs, &logPipeline1)
+
+		// logPipeline2 ships logs with original body to backend2 (default behavior)
+		backend2 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend2Name))
+		backend2ExportURL = backend2.ExportURL(proxyClient)
+		objs = append(objs, backend2.K8sObjects()...)
+		logPipeline2 := testutils.NewLogPipelineBuilder().
+			WithName(pipeline2Name).
+			WithIncludeContainers(loggen.DefaultContainerName).
+			WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
+			Build()
+		objs = append(objs, &logPipeline2)
 
 		return objs
 	}
@@ -54,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 	})
 
-	Context("When a logpipeline that keeps annotations and drops labels exists", Ordered, func() {
+	Context("When 2 logpipelines that keep and drop orginal log body exist", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -63,25 +79,38 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", func() {
-			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
+		It("Should have running logpipelines", func() {
+			assert.LogPipelineHealthy(ctx, k8sClient, pipeline1Name)
+			assert.LogPipelineHealthy(ctx, k8sClient, pipeline2Name)
 		})
 
-		It("Should have a log backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+		It("Should have log backends running", func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend1Name})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend2Name})
 		})
 
 		It("Should have a log producer running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should have logs with annotations in the backend", func() {
+		It("Should ship logs without original body to backend1", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
+				resp, err := proxyClient.Get(backend1ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ConsistOfLds(ConsistOfLogRecords(
 					WithLogBody(BeEmpty()),
+				))))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should ship logs with original body to backend2", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backend2ExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(ConsistOfLds(ConsistOfLogRecords(
+					WithLogBody(Not(BeEmpty())),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
