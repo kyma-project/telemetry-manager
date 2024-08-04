@@ -35,7 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		logProducer := loggen.New(mockNs)
+		logProducer := loggen.New(mockNs).WithJSON()
 		objs = append(objs, logProducer.K8sObject())
 
 		// logPipeline1 ships logs without original body to backend1
@@ -70,7 +70,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 	})
 
-	Context("When 2 logpipelines that keep and drop orginal log body exist", Ordered, func() {
+	Context("When 2 logpipelines that keep and drop original log body exist", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {

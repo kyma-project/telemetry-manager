@@ -30,6 +30,7 @@ type LogProducer struct {
 	labels      map[string]string
 	replicas    int32
 	load        Load
+	useJSON     bool
 }
 
 func New(namespace string) *LogProducer {
@@ -61,6 +62,11 @@ func (lp *LogProducer) WithLoad(load Load) *LogProducer {
 	return lp
 }
 
+func (lp *LogProducer) WithJSON() *LogProducer {
+	lp.useJSON = true
+	return lp
+}
+
 func (lp *LogProducer) K8sObject() *appsv1.Deployment {
 	labels := map[string]string{"app": lp.name}
 	if lp.labels != nil {
@@ -81,42 +87,55 @@ func (lp *LogProducer) K8sObject() *appsv1.Deployment {
 					Labels:      labels,
 					Annotations: lp.annotations,
 				},
-				Spec: podSpec(lp.load),
+				Spec: lp.podSpec(),
 			},
 		},
 	}
 }
 
-func podSpec(load Load) corev1.PodSpec {
-	if load == LoadLow {
-		return alpineSpec()
+func (lp *LogProducer) podSpec() corev1.PodSpec {
+	if lp.load == LoadLow {
+		return lp.alpineSpec()
 	}
-	return flogSpec()
+	return lp.flogSpec()
 }
 
-func alpineSpec() corev1.PodSpec {
+func (lp *LogProducer) alpineSpec() corev1.PodSpec {
+	logCmd := `while true
+do
+	echo "Hello, Kubernetes!"
+	sleep 500
+done`
+	if lp.useJSON {
+		logCmd = `while true
+		do
+			echo '{"name": "John Doe", "age": 30, "city": "Munich"}'
+			sleep 500
+		done`
+	}
+
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:  DefaultContainerName,
-				Image: "alpine:3.17.2",
-				Command: []string{"/bin/sh", "-c", `while true
-do
-	echo '{"name": "John Doe", "age": 30, "city": "Munich"}'
-	sleep 500
-done`}},
+				Name:    DefaultContainerName,
+				Image:   "alpine:3.17.2",
+				Command: []string{"/bin/sh", "-c", logCmd}},
 		},
 	}
 }
 
-func flogSpec() corev1.PodSpec {
+func (lp *LogProducer) flogSpec() corev1.PodSpec {
 	const bytePerSecond = "10485760"
+	args := []string{fmt.Sprintf("-b=%s", bytePerSecond), "-l"}
+	if lp.useJSON {
+		args = append(args, "-f=json")
+	}
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            DefaultContainerName,
 				Image:           "mingrammer/flog",
-				Args:            []string{fmt.Sprintf("-b=%s", bytePerSecond), "-f=json", "-l"},
+				Args:            args,
 				ImagePullPolicy: corev1.PullAlways,
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
