@@ -23,6 +23,7 @@ func NewConfigMap(name, namespace string, certs *testutils.ServerCerts) *ConfigM
 
 const configTemplateFluentd = `<source>
   @type http
+  @log_level fatal
   port 9880
   bind 0.0.0.0
   body_size_limit 32m
@@ -48,6 +49,7 @@ const configTemplateFluentd = `<source>
 
 const configTemplateFluentdTLS = `<source>
   @type http
+  @log_level fatal
   port 9880
   bind 0.0.0.0
   body_size_limit 32m
