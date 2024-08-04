@@ -52,8 +52,9 @@ type ApplicationInput struct {
 	// Defines whether to drop all Kubernetes labels. The default is `false`.
 	DropLabels bool `json:"dropLabels,omitempty"`
 	// If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `KeepOriginalBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. The default is `true`.
-	// +kubebuilder:default:=true
-	KeepOriginalBody bool `json:"keepOriginalBody,omitempty"`
+	// +optional
+	// +kubebuilder:default=true
+	KeepOriginalBody *bool `json:"keepOriginalBody,omitempty"`
 }
 
 // InputNamespaces describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
