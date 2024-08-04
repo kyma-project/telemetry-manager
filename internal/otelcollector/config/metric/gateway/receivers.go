@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"fmt"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
