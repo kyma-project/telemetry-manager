@@ -30,6 +30,11 @@ func ContainLd(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithLds(gomega.ContainElement(matcher))
 }
 
+// ConsistOfLds is an alias for WithLds(gomega.ConsistOf()).
+func ConsistOfLds(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithLds(gomega.ConsistOf(matcher))
+}
+
 func WithLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(ld plog.Logs) ([]plog.LogRecord, error) {
 		return getLogRecords(ld), nil
@@ -39,6 +44,11 @@ func WithLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
 // ContainLogRecord is an alias for WithLogRecords(gomega.ContainElement()).
 func ContainLogRecord(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithLogRecords(gomega.ContainElement(matcher))
+}
+
+// ConsistOfLogRecordsis an alias for WithLogRecords(gomega.ConsistOf()).
+func ConsistOfLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithLogRecords(gomega.ConsistOf(matcher))
 }
 
 func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
