@@ -9,7 +9,7 @@ While application logs and traces usually provide request-oriented data, metrics
 
 The Telemetry module provides a metric gateway and, optionally, an agent for the collection and shipment of metrics of any container running in the Kyma runtime.
 
-You can configure the metric gateway with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named MetricPipeline.
+You can configure the metric gateway with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named MetricPipeline.
 The Metric feature is optional. If you don't want to use it, simply don't set up a MetricPipeline.
 
 ## Prerequisites
