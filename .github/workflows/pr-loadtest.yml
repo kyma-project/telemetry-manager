@@ -14,13 +14,13 @@ on:
           - fluent-bit
           - prometheus
           - logs-otel
-        description: 'Image to test'
+        description: "Image to test"
         required: true
       duration:
         type: string
-        description: 'Duration of the test in seconds'
+        description: "Duration of the test in seconds"
         required: true
-        default: '1200'
+        default: "1200"
 
 run-name: "Load Test for ${{ inputs.image }} on PR-${{ inputs.pr_number }}"
 
@@ -38,7 +38,7 @@ jobs:
       - id: set-matrix
         run: |
           image=${{ github.event.inputs.image }}
-          matrix=$(jq --arg image "$image" 'map( . | select (.image==$image) )' hack/load-tests/matrix_includes.json)                
+          matrix=$(jq --arg image "$image" 'map( . | select (.image==$image) )' hack/load-tests/matrix_includes.json)
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
   load-test:
     needs: prepare-matrix
@@ -49,19 +49,19 @@ jobs:
 
     steps:
       - name: Test
-        run:  echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.image }}"
+        run: echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.image }}"
 
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: 'refs/pull/${{ github.event.inputs.pr_number }}/head'
+          ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
       - name: Setup gardener cluster name
-        run:  echo "GARDENER_CLUSTER_NAME=${{ matrix.name }}" >> $GITHUB_ENV
+        run: echo "GARDENER_CLUSTER_NAME=${{ matrix.name }}" >> $GITHUB_ENV
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
       - name: Save service account to file
@@ -88,7 +88,7 @@ jobs:
 
       # Run the load test
       - name: Run Load test
-        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }} -d ${{ github.event.inputs.duration }}
+        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }} -d ${{ github.event.inputs.duration }} -o "${{ github.event.inputs.overlay}}"
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
@@ -115,5 +115,5 @@ jobs:
         uses: actions/download-artifact@v4
       - name: Print Results
         run: |
-            ls -la
-            python3 hack/load-tests/convert-results.py Results-*
+          ls -la
+          python3 hack/load-tests/convert-results.py Results-*

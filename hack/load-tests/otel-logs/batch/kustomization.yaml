@@ -1,6 +1,9 @@
-bases:
-  - ../base
 configMapGenerator:
-  - name: log-gateway
-    files:
-      - relay.yaml=config/relay.yaml
+- behavior: merge
+  files:
+  - relay.yaml=config/relay.yaml
+  name: log-gateway
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base

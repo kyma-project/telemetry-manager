@@ -32,10 +32,11 @@ function help() {
     echo "  -d <test_duration>        Duration of the test in seconds"
     echo "  -r <log_rate>             Rate of log generation in logs-otel test"
     echo "  -s <log_size>             Size of log in logs-otel test"
+    echo "  -o <config>               Use alternative overlay (batch) for logs-otel test"
     exit 1
 }
 
-while getopts m:b:n:t:d:r:s: flag; do
+while getopts m:b:n:t:d:r:s:o: flag; do
     case "$flag" in
         m) MAX_PIPELINE="${OPTARG}" ;;
         b) BACKPRESSURE_TEST="${OPTARG}" ;;
@@ -44,6 +45,7 @@ while getopts m:b:n:t:d:r:s: flag; do
         d) TEST_DURATION=${OPTARG} ;;
         r) LOG_RATE=${OPTARG} ;;
         s) LOG_SIZE=${OPTARG} ;;
+        o) OVERLAY=${OPTARG} ;;
         *) help ;;
     esac
 done
@@ -129,7 +131,11 @@ function setup_logs_otel() {
 LOG_RATE=$LOG_RATE
 LOG_CONTENT=$(for i in $(seq $LOG_SIZE); do echo -n X; done)
 EOF
-    kubectl apply -k hack/load-tests/otel-logs/base
+    if [[ "$OVERLAY" == "batch" ]]; then
+        kubectl apply -k hack/load-tests/otel-logs/batch
+    else
+        kubectl apply -k hack/load-tests/otel-logs/base
+    fi
 }
 
 function setup_selfmonitor() {
@@ -329,6 +335,12 @@ function get_result_and_cleanup_log_otel() {
   RESULT_RESTARTS_GENERATOR=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-load-generator -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
   kill %1
+
+  if [[ "$OVERLAY" == "batch" ]]; then
+    kubectl delete -k hack/load-tests/logs-otel/batch
+  else
+    kubectl delete -k hack/load-tests/logs-otel/base
+  fi
 }
 
 function get_result_and_cleanup_fluentbit() {

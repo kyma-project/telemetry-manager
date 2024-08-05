@@ -110,5 +110,13 @@
     "backpressure": "false",
     "multi": "false",
     "image": "logs-otel"
+  },
+  {
+    "name": "logs-otel-batch",
+    "type": "logs-otel",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "logs-otel",
+    "overlay": "batch"
   }
 ]
