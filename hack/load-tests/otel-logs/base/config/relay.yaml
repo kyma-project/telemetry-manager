@@ -1,0 +1,49 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${MY_POD_IP}:4317
+exporters:
+  otlp:
+    endpoint: "log-receiver:4317"
+    tls:
+      insecure: true
+    sending_queue:
+      enabled: false
+      queue_size: 20000
+      num_consumers: 20
+    retry_on_failure:
+      enabled: false
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    compression: none
+
+  nop: {}
+extensions:
+  health_check:
+    endpoint: ${MY_POD_IP}:13133
+  pprof:
+    endpoint: 127.0.0.1:1777
+processors:
+  batch:
+    send_batch_size: 500 # 500 logs per batch to prevent `code = ResourceExhausted desc = grpc: received message larger than max (5686900 vs. 4194304)","rejected_items":2650`
+    send_batch_max_size: 600
+service:
+  pipelines:
+    logs/sample:
+      receivers:
+        - otlp
+      exporters:
+        - otlp
+      processors:
+        - batch
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+    logs:
+      level: info
+      encoding: json
+  extensions:
+    - health_check
+    - pprof
