@@ -1,4 +1,4 @@
-kind: namespace
 apiVersion: v1
+kind: Namespace
 metadata:
   name: log-load-test
