@@ -1,0 +1,4 @@
+kind: namespace
+apiVersion: v1
+metadata:
+  name: log-load-test

@@ -9,11 +9,11 @@ exporters:
     tls:
       insecure: true
     sending_queue:
-      enabled: false
+      enabled: true
       queue_size: 20000
       num_consumers: 20
     retry_on_failure:
-      enabled: false
+      enabled: true
       initial_interval: 5s
       max_interval: 30s
       max_elapsed_time: 300s

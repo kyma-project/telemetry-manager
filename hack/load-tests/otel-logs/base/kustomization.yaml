@@ -4,33 +4,52 @@ kind: Kustomization
 namespace: log-load-test
 
 resources:
+  - namespace.yaml
   - log-receiver.yaml
   - log-gateway.yaml
   - log-generator.yaml
 
 configMapGenerator:
-  - name: log-gateway
-    files:
+  - files:
       - relay.yaml=config/relay.yaml
-  - name: log-receiver
-    files:
+    name: log-gateway
+  - files:
       - config.yaml=config/receiver.yaml
-  - name: environment-variables
-    envs: [base.env]
-    behavior: create
+    name: log-receiver
+  - behavior: create
+    envs:
+      - base.env
+    name: environment-variables
 
-vars:
-  - name: LOG_RATE
-    objref:
+replacements:
+  - source:
+      fieldPath: data.LOG_RATE
       kind: ConfigMap
       name: environment-variables
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.LOG_RATE
-  - name: LOG_CONTENT
-    objref:
+      version: v1
+    targets:
+      - fieldPaths:
+          - spec.template.spec.containers.0.args.15
+        select:
+          group: apps
+          kind: Deployment
+          name: log-load-generator
+          namespace: log-load-test
+          version: v1
+  - source:
+      fieldPath: data.LOG_CONTENT
       kind: ConfigMap
       name: environment-variables
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.LOG_CONTENT
+      version: v1
+    targets:
+      - fieldPaths:
+          - spec.template.spec.containers.0.args.17
+        options:
+          delimiter: '"'
+          index: 3
+        select:
+          group: apps
+          kind: Deployment
+          name: log-load-generator
+          namespace: log-load-test
+          version: v1

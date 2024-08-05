@@ -68,8 +68,8 @@ spec:
             - --duration
             - "90m"
             - --rate
-            - "$(LOG_RATE)"
+            - "LOG_RATE_PLACEHOLDER"
             - --body
-            - '{"foo":"$(LOG_CONTENT)"}'
+            - '{"foo":"LOG_CONTENT_PLACEHOLDER"}'
           imagePullPolicy: IfNotPresent
           name: telemetrygen

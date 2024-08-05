@@ -1,17 +1,6 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-namespace: foo
-
-resources:
-  - log-receiver.yaml
-  - log-gateway.yaml
-  - log-generator.yaml
-
+bases:
+  - ../base
 configMapGenerator:
   - name: log-gateway
     files:
-      - relay.yaml=config/gateway-batch.yaml
-  - name: log-receiver
-    files:
-      - config.yaml=config/receiver.yaml
+      - relay.yaml=config/relay.yaml
