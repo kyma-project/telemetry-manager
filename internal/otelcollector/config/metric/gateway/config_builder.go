@@ -17,7 +17,7 @@ type Builder struct {
 	Reader client.Reader
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, gatewayNamespace string, kymaInputAllowed bool) (*Config, otlpexporter.EnvVars, error) {
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, gatewayNamespace string, kymaInputAllowed bool, instrumentationScopeVersion string) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
 			Service:    config.DefaultService(make(config.Pipelines)),
@@ -44,7 +44,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			queueSize,
 			otlpexporter.SignalTypeMetric,
 		)
-		if err := declareComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars, gatewayNamespace, kymaInputAllowed); err != nil {
+		if err := declareComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars, gatewayNamespace, kymaInputAllowed, instrumentationScopeVersion); err != nil {
 			return nil, nil, err
 		}
 
@@ -64,12 +64,14 @@ func declareComponentsForMetricPipeline(
 	envVars otlpexporter.EnvVars,
 	gatewayNamespace string,
 	kymaInputAllowed bool,
+	instrumentationScopeVersion string,
 ) error {
 	declareSingletonKymaStatsReceiverCreator(pipeline, cfg, gatewayNamespace, kymaInputAllowed)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
+	declareInstrumentationScopeTransform(pipeline, cfg, instrumentationScopeVersion, kymaInputAllowed)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
 
@@ -142,6 +144,12 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 	}
 }
 
+func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, instrumentationScopeVersion string, kymaInputAllowed bool) {
+	if isKymaInputEnabled(pipeline.Annotations, kymaInputAllowed) {
+		cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, instrumentationScopeVersion)
+	}
+}
+
 func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
@@ -165,6 +173,10 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, kymaI
 	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
+
+	if isKymaInputEnabled(pipeline.Annotations, kymaInputAllowed) {
+		processors = append(processors, "transform/set-instrumentation-scope-kyma")
+	}
 
 	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
 
