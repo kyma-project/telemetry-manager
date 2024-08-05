@@ -295,4 +295,27 @@ func TestProcessors(t *testing.T) {
 		expectedCondition := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" and IsMatch(name, \"(^k8s.container.*)|(^container.*)\")"
 		require.Equal(t, expectedCondition, runtimeContainerMetricsFilter.Metrics.Metric[0])
 	})
+
+	t.Run("kyma instrumentation scope transform processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{"experimental-kyma-input": "true"}).Build(),
+			},
+			BuildOptions{
+				InstrumentationScopeVersion: "main",
+				KymaInputAllowed:            true,
+			},
+		)
+		require.NoError(t, err)
+
+		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeKyma)
+		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeKyma.ErrorMode)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements, 1)
+		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Context)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements, 2)
+		require.Equal(t, "set(version, \"main\") where name == \"otelcol/kymastats\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(name, \"io.kyma-project.telemetry/kyma\") where name == \"otelcol/kymastats\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
+
+	})
 }
