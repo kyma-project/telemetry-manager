@@ -53,6 +53,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ always() && (needs.build-image.result == 'failure') }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Send slack message on failure
         uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
         with:
