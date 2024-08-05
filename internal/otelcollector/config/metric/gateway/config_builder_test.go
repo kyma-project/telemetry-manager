@@ -215,7 +215,7 @@ func TestMakeConfig(t *testing.T) {
 					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(false).Build(),
 				},
 				gatewayNamespace,
-				false,
+				true,
 			)
 			require.NoError(t, err)
 
@@ -224,6 +224,7 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.NotContains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "singleton_receiver_creator/kymastats")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
 				"filter/drop-if-input-source-runtime",
@@ -534,6 +535,62 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-runtime",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with kyma input annotation existing and kyma input is allowed", func(t *testing.T) {
+			collectorConfig, _, err := sut.Build(
+				ctx,
+				[]telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{"experimental-kyma-input": "true"}).Build(),
+				},
+				gatewayNamespace,
+				true,
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "singleton_receiver_creator/kymastats")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-runtime",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with kyma input annotation existing and kyma input is not allowed", func(t *testing.T) {
+			collectorConfig, _, err := sut.Build(
+				ctx,
+				[]telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{"experimental-kyma-input": "true"}).Build(),
+				},
+				gatewayNamespace,
+				false,
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.NotContains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "singleton_receiver_creator/kymastats")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
 				"filter/drop-if-input-source-runtime",
