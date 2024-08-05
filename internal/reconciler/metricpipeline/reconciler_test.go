@@ -25,6 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	metricMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -83,8 +84,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -102,7 +103,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			&metricMocks.AgentApplierDeleter{},
 			&metricMocks.AgentConfigBuilder{},
-			&metricMocks.DaemonSetProber{},
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -142,8 +143,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDeploymentFetching)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -161,7 +162,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			&metricMocks.AgentApplierDeleter{},
 			&metricMocks.AgentConfigBuilder{},
-			&metricMocks.DaemonSetProber{},
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -201,8 +202,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -220,7 +221,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			&metricMocks.AgentApplierDeleter{},
 			&metricMocks.AgentConfigBuilder{},
-			&metricMocks.DaemonSetProber{},
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -266,11 +267,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
-		agentProberStub := &metricMocks.DaemonSetProber{}
-		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(&workloadstatus.PodIsPendingError{Message: "Error"})
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -334,11 +333,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
-		agentProberMock := &metricMocks.DaemonSetProber{}
-		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetNotFound)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -356,7 +353,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
-			agentProberMock,
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -403,11 +400,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
-		agentProberMock := &metricMocks.DaemonSetProber{}
-		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -425,7 +420,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
-			agentProberMock,
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -474,8 +469,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -493,7 +488,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			&metricMocks.AgentApplierDeleter{},
 			&metricMocks.AgentConfigBuilder{},
-			&metricMocks.DaemonSetProber{},
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -536,8 +531,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -555,7 +550,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			agentApplierDeleterMock,
 			&metricMocks.AgentConfigBuilder{},
-			&metricMocks.DaemonSetProber{},
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -599,8 +594,9 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -617,7 +613,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			&metricMocks.AgentApplierDeleter{},
 			&metricMocks.AgentConfigBuilder{},
-			&metricMocks.DaemonSetProber{},
+			agentProberStub,
 			flowHealthProberStub,
 			&metricMocks.GatewayApplierDeleter{},
 			gatewayConfigBuilderMock,
@@ -759,8 +755,9 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-				gatewayProberStub := &metricMocks.DeploymentProber{}
-				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &metricMocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
@@ -777,7 +774,7 @@ func TestReconcile(t *testing.T) {
 					testConfig,
 					&metricMocks.AgentApplierDeleter{},
 					&metricMocks.AgentConfigBuilder{},
-					&metricMocks.DaemonSetProber{},
+					agentProberStub,
 					flowHealthProberStub,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
@@ -901,8 +898,8 @@ func TestReconcile(t *testing.T) {
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-				gatewayProberStub := &metricMocks.DeploymentProber{}
-				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &metricMocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -920,7 +917,7 @@ func TestReconcile(t *testing.T) {
 					testConfig,
 					agentApplierDeleterMock,
 					&metricMocks.AgentConfigBuilder{},
-					&metricMocks.DaemonSetProber{},
+					agentProberStub,
 					flowHealthProberStub,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
@@ -985,8 +982,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -1005,7 +1002,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			&metricMocks.AgentApplierDeleter{},
 			&metricMocks.AgentConfigBuilder{},
-			&metricMocks.DaemonSetProber{},
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -1054,8 +1051,8 @@ func TestReconcile(t *testing.T) {
 		serverErr := errors.New("failed to get lock: server error")
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -1073,7 +1070,7 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			&metricMocks.AgentApplierDeleter{},
 			&metricMocks.AgentConfigBuilder{},
-			&metricMocks.DaemonSetProber{},
+			agentProberStub,
 			flowHealthProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
@@ -1127,11 +1124,8 @@ func TestReconcile(t *testing.T) {
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &metricMocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-
-		agentProberStub := &metricMocks.DaemonSetProber{}
-		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &metricMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -1250,11 +1244,8 @@ func TestReconcile(t *testing.T) {
 				gatewayApplierDeleterMock := &metricMocks.GatewayApplierDeleter{}
 				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-				gatewayProberStub := &metricMocks.DeploymentProber{}
-				agentProberMock := &metricMocks.DaemonSetProber{}
-
-				agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeAgentErr)
-				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeGatewayErr)
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
+				agentProberMock := commonStatusStubs.NewDaemonSetProber(tt.probeAgentErr)
 
 				flowHealthProberStub := &metricMocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)

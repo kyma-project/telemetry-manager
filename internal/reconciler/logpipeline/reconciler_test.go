@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"testing"
 	"time"
 
@@ -65,8 +66,7 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithCustomFilter("Name grep").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -89,8 +89,7 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -113,8 +112,7 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetNotFound)
+		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -148,8 +146,7 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -182,8 +179,7 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(workloadstatus.ErrDaemonSetFetching)
+		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetFetching)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -218,8 +214,7 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -303,8 +298,7 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -338,8 +332,7 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithLokiOutput().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -474,8 +467,7 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-				agentProberStub := &logMocks.DaemonSetProber{}
-				agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &logMocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
@@ -485,7 +477,7 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &logMocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -590,8 +582,7 @@ func TestReconcile(t *testing.T) {
 					Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-				proberStub := &logMocks.DaemonSetProber{}
-				proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &logMocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -678,8 +669,7 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-				agentProberStub := &logMocks.DaemonSetProber{}
-				agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(tt.probeErr)
+				proberStub := commonStatusStubs.NewDaemonSetProber(tt.probeErr)
 
 				flowHealthProberStub := &logMocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
@@ -687,9 +677,8 @@ func TestReconcile(t *testing.T) {
 				pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
-				//errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -715,8 +704,7 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
-		proberStub := &logMocks.DaemonSetProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logMocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
