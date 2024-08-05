@@ -13,6 +13,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
+const KymaInputAnnotation = "telemetry.kyma-project.io/experimental-kyma-input"
+
 type Builder struct {
 	Reader client.Reader
 }
@@ -326,5 +328,5 @@ func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInpu
 }
 
 func isKymaInputEnabled(annotations map[string]string, kymaInputAllowed bool) bool {
-	return kymaInputAllowed && annotations["experimental-kyma-input"] == "true"
+	return kymaInputAllowed && annotations[KymaInputAnnotation] == "true"
 }

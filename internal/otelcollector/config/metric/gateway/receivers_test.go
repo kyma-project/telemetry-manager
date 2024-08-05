@@ -38,7 +38,7 @@ func TestReceivers(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
 			[]telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{"experimental-kyma-input": "true"}).Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{KymaInputAnnotation: "true"}).Build(),
 			},
 			BuildOptions{
 				GatewayNamespace: gatewayNamespace,
