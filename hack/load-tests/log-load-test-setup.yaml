@@ -33,7 +33,7 @@ data:
           max_interval: 30s
           max_elapsed_time: 300s
         compression: none
-      
+
       nop: {}
     extensions:
       health_check:
@@ -42,7 +42,8 @@ data:
         endpoint: 127.0.0.1:1777
     processors:
       batch:
-        send_batch_max_size: 500 # 500 logs per batch to prevent `code = ResourceExhausted desc = grpc: received message larger than max (5686900 vs. 4194304)","rejected_items":2650`
+        send_batch_size: 500 # 500 logs per batch to prevent `code = ResourceExhausted desc = grpc: received message larger than max (5686900 vs. 4194304)","rejected_items":2650`
+        send_batch_max_size: 600
     service:
       pipelines:
         logs/sample:
@@ -316,7 +317,7 @@ spec:
             - --otlp-endpoint
             - "log-gateway:4317"
             - --otlp-attributes
-            - "service.name=\"log-load-generator\""
+            - 'service.name="log-load-generator"'
             - --workers
             - "10"
             - --duration
@@ -324,7 +325,7 @@ spec:
             - --rate
             - "LOG_RATE"
             - --body
-            - "{\"foo\":\"LOG_CONTENT\"}"
+            - '{"foo":"LOG_CONTENT"}'
           imagePullPolicy: IfNotPresent
           name: telemetrygen
 ---
@@ -420,5 +421,3 @@ spec:
       targetPort: 4318
   selector:
     app.kubernetes.io/name: log-receiver
-
-
