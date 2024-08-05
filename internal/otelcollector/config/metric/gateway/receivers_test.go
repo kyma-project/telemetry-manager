@@ -14,7 +14,6 @@ func TestReceivers(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
-	gatewayNamespace := "test-namespace"
 
 	t.Run("OTLP receiver", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
@@ -22,8 +21,7 @@ func TestReceivers(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -34,13 +32,17 @@ func TestReceivers(t *testing.T) {
 	})
 
 	t.Run("singleton kyma stats receiver creator", func(t *testing.T) {
+		gatewayNamespace := "test-namespace"
+
 		collectorConfig, _, err := sut.Build(
 			ctx,
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{"experimental-kyma-input": "true"}).Build(),
 			},
-			gatewayNamespace,
-			true,
+			BuildOptions{
+				GatewayNamespace: gatewayNamespace,
+				KymaInputAllowed: true,
+			},
 		)
 		require.NoError(t, err)
 

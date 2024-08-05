@@ -21,7 +21,6 @@ func TestMakeConfig(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
-	gatewayNamespace := "test-namespace"
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(
@@ -29,8 +28,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -50,8 +48,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -66,8 +63,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
@@ -82,8 +78,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
@@ -105,8 +100,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-custom-header")
@@ -127,8 +121,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "cert", "key")).Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-mtls")
@@ -150,8 +143,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -167,8 +159,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -183,8 +174,7 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
@@ -198,8 +188,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-2").Build(),
 				testutils.NewMetricPipelineBuilder().WithName("test-3").Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-1"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
@@ -214,8 +203,9 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(false).Build(),
 				},
-				gatewayNamespace,
-				true,
+				BuildOptions{
+					KymaInputAllowed: true,
+				},
 			)
 			require.NoError(t, err)
 
@@ -243,8 +233,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithPrometheusInput(true).WithPrometheusInputDiagnosticMetrics(true).Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -269,8 +258,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithPrometheusInput(true).WithPrometheusInputDiagnosticMetrics(false).Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -296,8 +284,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithPrometheusInput(true).Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -330,8 +317,7 @@ func TestMakeConfig(t *testing.T) {
 						WithRuntimeInputContainerMetrics(true).
 						Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -360,8 +346,7 @@ func TestMakeConfig(t *testing.T) {
 						WithRuntimeInputContainerMetrics(false).
 						Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -391,8 +376,7 @@ func TestMakeConfig(t *testing.T) {
 						WithRuntimeInputPodMetrics(false).
 						Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -418,8 +402,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithIstioInput(true).WithIstioInputDiagnosticMetrics(true).Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -444,8 +427,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithIstioInput(true).WithIstioInputDiagnosticMetrics(false).Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -471,8 +453,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithIstioInput(true).Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -498,8 +479,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -525,8 +505,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(true).Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -552,8 +531,9 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{"experimental-kyma-input": "true"}).Build(),
 				},
-				gatewayNamespace,
-				true,
+				BuildOptions{
+					KymaInputAllowed: true,
+				},
 			)
 			require.NoError(t, err)
 
@@ -568,6 +548,7 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"batch",
@@ -580,8 +561,7 @@ func TestMakeConfig(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{"experimental-kyma-input": "true"}).Build(),
 				},
-				gatewayNamespace,
-				false,
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -624,8 +604,7 @@ func TestMakeConfig(t *testing.T) {
 					WithIstioInput(true).
 					Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -706,8 +685,7 @@ func TestMakeConfig(t *testing.T) {
 							WithOTLPInput(tt.withOtlpInput).
 							WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 					},
-					gatewayNamespace,
-					false,
+					BuildOptions{},
 				)
 				require.NoError(t, err)
 

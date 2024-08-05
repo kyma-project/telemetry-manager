@@ -15,7 +15,6 @@ func TestProcessors(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
-	gatewayNamespace := "test-namespace"
 
 	t.Run("insert cluster name processor", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
@@ -23,8 +22,7 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -40,8 +38,7 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -56,8 +53,7 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -72,8 +68,7 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -107,8 +102,7 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithOTLPInput(false).Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -145,8 +139,7 @@ func TestProcessors(t *testing.T) {
 					WithOTLPInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
 					Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -188,8 +181,7 @@ func TestProcessors(t *testing.T) {
 					WithOTLPInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
 					Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -229,8 +221,7 @@ func TestProcessors(t *testing.T) {
 					WithPrometheusInputDiagnosticMetrics(false).
 					Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -251,8 +242,7 @@ func TestProcessors(t *testing.T) {
 					WithIstioInputDiagnosticMetrics(false).
 					Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -275,8 +265,7 @@ func TestProcessors(t *testing.T) {
 					WithRuntimeInputPodMetrics(false).
 					Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
@@ -296,8 +285,7 @@ func TestProcessors(t *testing.T) {
 					WithRuntimeInputContainerMetrics(false).
 					Build(),
 			},
-			gatewayNamespace,
-			false,
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 
