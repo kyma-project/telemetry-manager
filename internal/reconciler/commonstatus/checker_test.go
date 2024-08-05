@@ -48,7 +48,7 @@ func TestTracesGetHealthCondition(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonGatewayReady,
+				Reason:  conditions.ReasonRolloutInProgress,
 				Message: "Pods are being started/updated",
 			},
 		},
@@ -122,13 +122,13 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 			expectedGatewayCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonGatewayReady,
+				Reason:  conditions.ReasonRolloutInProgress,
 				Message: "Pods are being started/updated",
 			},
 			expectedAgentCondition: &metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
 				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonAgentReady,
+				Reason:  conditions.ReasonRolloutInProgress,
 				Message: "Pods are being started/updated",
 			},
 		},
@@ -199,7 +199,7 @@ func TestLogsGetHealthCondition(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
 				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonAgentReady,
+				Reason:  conditions.ReasonRolloutInProgress,
 				Message: "Pods are being started/updated",
 			},
 		},

@@ -669,7 +669,7 @@ func TestReconcile(t *testing.T) {
 				name:            "fluent bit rollout in progress",
 				probeErr:        &workloadstatus.RolloutInProgressError{},
 				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonAgentReady,
+				expectedReason:  conditions.ReasonRolloutInProgress,
 				expectedMessage: "Pods are being started/updated",
 			},
 		}
@@ -687,7 +687,6 @@ func TestReconcile(t *testing.T) {
 				pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
-				//errToMsgStub.On("Convert", mock.Anything).Return("")
 
 				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})

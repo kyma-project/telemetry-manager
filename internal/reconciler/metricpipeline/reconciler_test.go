@@ -1219,7 +1219,7 @@ func TestReconcile(t *testing.T) {
 			{
 				name:            "Agent Rollout in progress",
 				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonAgentReady,
+				expectedReason:  conditions.ReasonRolloutInProgress,
 				probeAgentErr:   &workloadstatus.RolloutInProgressError{},
 				probeGatewayErr: nil,
 				expectedMessage: "Pods are being started/updated",
@@ -1227,7 +1227,7 @@ func TestReconcile(t *testing.T) {
 			{
 				name:            "Gateway Rollout in progress",
 				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonGatewayReady,
+				expectedReason:  conditions.ReasonRolloutInProgress,
 				probeAgentErr:   nil,
 				probeGatewayErr: &workloadstatus.RolloutInProgressError{},
 				expectedMessage: "Pods are being started/updated",
