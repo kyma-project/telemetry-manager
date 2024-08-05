@@ -41,7 +41,7 @@ type AgentConfigBuilder interface {
 }
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, gatewayNamespace string, kymaInputAllowed bool, instrumentationScopeVersion string) (*gateway.Config, otlpexporter.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {
@@ -243,7 +243,12 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, r.config.Gateway.Namespace, r.config.KymaInputAllowed, r.config.ModuleVersion)
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
+		GatewayNamespace:            r.config.Gateway.Namespace,
+		InstrumentationScopeVersion: r.config.ModuleVersion,
+		KymaInputAllowed:            r.config.KymaInputAllowed,
+	})
+
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}
