@@ -48,7 +48,7 @@ func TestTracesGetHealthCondition(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonGatewayReady,
+				Reason:  conditions.ReasonRolloutInProgress,
 				Message: "Pods are being started/updated",
 			},
 		},
@@ -59,7 +59,7 @@ func TestTracesGetHealthCondition(t *testing.T) {
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionFalse,
 				Reason:  conditions.ReasonGatewayNotReady,
-				Message: "Pod is in the pending state as container: foo is not running due to: foo",
+				Message: "Pod is in the pending state because container: foo is not running due to: foo",
 			},
 		},
 	}
@@ -122,13 +122,13 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 			expectedGatewayCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonGatewayReady,
+				Reason:  conditions.ReasonRolloutInProgress,
 				Message: "Pods are being started/updated",
 			},
 			expectedAgentCondition: &metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
 				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonAgentReady,
+				Reason:  conditions.ReasonRolloutInProgress,
 				Message: "Pods are being started/updated",
 			},
 		},
@@ -140,7 +140,7 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionFalse,
 				Reason:  conditions.ReasonGatewayNotReady,
-				Message: "Pod is in the pending state as container: foo is not running due to: fooMessage",
+				Message: "Pod is in the pending state because container: foo is not running due to: fooMessage",
 			},
 			expectedAgentCondition: &metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
@@ -199,7 +199,7 @@ func TestLogsGetHealthCondition(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
 				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonAgentReady,
+				Reason:  conditions.ReasonRolloutInProgress,
 				Message: "Pods are being started/updated",
 			},
 		},

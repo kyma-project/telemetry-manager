@@ -649,14 +649,14 @@ func TestReconcile(t *testing.T) {
 				probeErr:        &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled", Message: ""},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "Pod is in the pending state as container: foo is not running due to: OOMKilled",
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled",
 			},
 			{
 				name:            "pod is CrashLoop",
 				probeErr:        &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "Pod is in the pending state as container: foo is not running due to: Error",
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error",
 			},
 			{
 				name:            "no Pods deployed",
@@ -669,7 +669,7 @@ func TestReconcile(t *testing.T) {
 				name:            "fluent bit rollout in progress",
 				probeErr:        &workloadstatus.RolloutInProgressError{},
 				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonAgentReady,
+				expectedReason:  conditions.ReasonRolloutInProgress,
 				expectedMessage: "Pods are being started/updated",
 			},
 		}
@@ -687,7 +687,6 @@ func TestReconcile(t *testing.T) {
 				pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
-				//errToMsgStub.On("Convert", mock.Anything).Return("")
 
 				sut := New(fakeClient, testConfig, agentProberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
