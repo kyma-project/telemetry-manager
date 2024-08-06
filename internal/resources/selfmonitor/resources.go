@@ -42,6 +42,14 @@ type ApplierDeleter struct {
 	Config Config
 }
 
+type ApplyOptions struct {
+	AlertRulesFileName       string
+	AlertRulesYAML           string
+	PrometheusConfigFileName string
+	PrometheusConfigPath     string
+	PrometheusConfigYAML     string
+}
+
 func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
 	objectMeta := metav1.ObjectMeta{
 		Name:      ad.Config.BaseName,
@@ -79,7 +87,7 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 	return nil
 }
 
-func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, prometheusConfigPath, prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) error {
+func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts ApplyOptions) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, ad.makeServiceAccount()); err != nil {
 		return fmt.Errorf("failed to create self-monitor service account: %w", err)
@@ -97,13 +105,13 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, p
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
-	configMap := ad.makeConfigMap(prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML)
+	configMap := ad.makeConfigMap(opts.PrometheusConfigFileName, opts.PrometheusConfigYAML, opts.AlertRulesFileName, opts.AlertRulesYAML)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, nil)
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, ad.makeDeployment(checksum, prometheusConfigPath, prometheusConfigFileName)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, ad.makeDeployment(checksum, opts.PrometheusConfigPath, opts.PrometheusConfigFileName)); err != nil {
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 

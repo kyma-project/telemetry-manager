@@ -36,8 +36,18 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // TracePipelineController reconciles a TracePipeline object
@@ -47,12 +57,47 @@ type TracePipelineController struct {
 	reconciler           *tracepipeline.Reconciler
 }
 
-func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *tracepipeline.Reconciler) *TracePipelineController {
+type TracePipelineControllerConfig struct {
+	tracepipeline.Config
+
+	SelfMonitorName    string
+	TelemetryNamespace string
+}
+
+func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config TracePipelineControllerConfig) (*TracePipelineController, error) {
+	flowHealthProber, err := prober.NewTracePipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	if err != nil {
+		return nil, err
+	}
+
+	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-tracepipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
+
+	pipelineValidator := &tracepipeline.Validator{
+		TLSCertValidator:   tlscert.New(client),
+		SecretRefValidator: &secretref.Validator{Client: client},
+		PipelineLock:       pipelineLock,
+	}
+
+	gatewayRBAC := otelcollector.MakeTraceGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace})
+
+	reconciler := tracepipeline.New(
+		client,
+		config.Config,
+		flowHealthProber,
+		&otelcollector.GatewayApplierDeleter{Config: config.Gateway, RBAC: gatewayRBAC},
+		&gateway.Builder{Reader: client},
+		&workloadstatus.DeploymentProber{Client: client},
+		istiostatus.NewChecker(client),
+		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
+		pipelineLock,
+		pipelineValidator,
+		&conditions.ErrorToMessageConverter{})
+
 	return &TracePipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
-	}
+	}, nil
 }
 
 func (r *TracePipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

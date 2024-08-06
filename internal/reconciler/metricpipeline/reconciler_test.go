@@ -2,6 +2,8 @@ package metricpipeline
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -19,16 +21,20 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 func TestReconcile(t *testing.T) {
@@ -76,25 +82,38 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			&mocks.AgentApplierDeleter{},
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -105,7 +124,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			"Metric gateway Deployment is not ready")
+			"Pod is in the pending state because container: foo is not running due to: Error")
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -122,25 +141,38 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			&mocks.AgentApplierDeleter{},
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -151,7 +183,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			"Metric gateway Deployment is not ready")
+			"Failed to get Deployment")
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -168,25 +200,38 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			&mocks.AgentApplierDeleter{},
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -220,31 +265,38 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
-		agentProberStub := &mocks.DaemonSetProber{}
-		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			agentConfigBuilder:    agentConfigBuilderMock,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   agentApplierDeleterMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			agentProber:           agentProberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			agentApplierDeleterMock,
+			agentConfigBuilderMock,
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -255,7 +307,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			"Metric agent DaemonSet is not ready")
+			"Pod is in the pending state because container:  is not running due to: Error")
 
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -279,31 +331,39 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
-		agentProberMock := &mocks.DaemonSetProber{}
-		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(false, assert.AnError)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			agentConfigBuilder:    agentConfigBuilderMock,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   agentApplierDeleterMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			agentProber:           agentProberMock,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			agentApplierDeleterMock,
+			agentConfigBuilderMock,
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -314,7 +374,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			"Metric agent DaemonSet is not ready")
+			workloadstatus.ErrDaemonSetNotFound.Error())
 
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -338,31 +398,39 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
-		agentProberMock := &mocks.DaemonSetProber{}
-		agentProberMock.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			agentConfigBuilder:    agentConfigBuilderMock,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   agentApplierDeleterMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			agentProber:           agentProberMock,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			agentApplierDeleterMock,
+			agentConfigBuilderMock,
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -399,25 +467,38 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			&mocks.AgentApplierDeleter{},
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -448,26 +529,38 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   agentApplierDeleterMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+			PipelineLock:       pipelineLockStub,
 		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			agentApplierDeleterMock,
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
@@ -491,31 +584,46 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("max pipelines exceeded", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
+		pipeline := testutils.NewMetricPipelineBuilder().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil)
 
 		pipelineLockStub := &mocks.PipelineLock{}
-		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrLockInUse)
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:               fakeClient,
-			config:               testConfig,
-			gatewayConfigBuilder: gatewayConfigBuilderMock,
-			pipelineLock:         pipelineLockStub,
-			gatewayProber:        gatewayProberStub,
-			flowHealthProber:     flowHealthProberStub,
-			overridesHandler:     overridesHandlerStub,
-			istioStatusChecker:   istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
 		}
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			&mocks.AgentApplierDeleter{},
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			&mocks.GatewayApplierDeleter{},
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.Error(t, err)
 
@@ -645,25 +753,38 @@ func TestReconcile(t *testing.T) {
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-				gatewayProberStub := &mocks.DeploymentProber{}
-				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+
+				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				sut := Reconciler{
-					Client:                fakeClient,
-					config:                testConfig,
-					gatewayConfigBuilder:  gatewayConfigBuilderMock,
-					gatewayApplierDeleter: gatewayApplierDeleterMock,
-					pipelineLock:          pipelineLockStub,
-					gatewayProber:         gatewayProberStub,
-					flowHealthProber:      flowHealthProberStub,
-					overridesHandler:      overridesHandlerStub,
-					istioStatusChecker:    istioStatusCheckerStub,
+				pipelineValidatorWithStubs := &Validator{
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
 				}
+
+				errToMsg := &conditions.ErrorToMessageConverter{}
+				sut := New(
+					fakeClient,
+					testConfig,
+					&mocks.AgentApplierDeleter{},
+					&mocks.AgentConfigBuilder{},
+					agentProberStub,
+					flowHealthProberStub,
+					gatewayApplierDeleterMock,
+					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					istioStatusCheckerStub,
+					overridesHandlerStub,
+					pipelineLockStub,
+					pipelineValidatorWithStubs,
+					errToMsg,
+				)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -775,27 +896,38 @@ func TestReconcile(t *testing.T) {
 
 				pipelineLockStub := &mocks.PipelineLock{}
 				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-				gatewayProberStub := &mocks.DeploymentProber{}
-				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-				sut := Reconciler{
-					Client:                fakeClient,
-					config:                testConfig,
-					gatewayConfigBuilder:  gatewayConfigBuilderMock,
-					agentApplierDeleter:   agentApplierDeleterMock,
-					gatewayApplierDeleter: gatewayApplierDeleterMock,
-					pipelineLock:          pipelineLockStub,
-					gatewayProber:         gatewayProberStub,
-					flowHealthProber:      flowHealthProberStub,
-					tlsCertValidator:      stubs.NewTLSCertValidator(tt.tlsCertErr),
-					overridesHandler:      overridesHandlerStub,
-					istioStatusChecker:    istioStatusCheckerStub,
+				pipelineValidatorWithStubs := &Validator{
+					TLSCertValidator:   stubs.NewTLSCertValidator(tt.tlsCertErr),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
 				}
+
+				errToMsg := &conditions.ErrorToMessageConverter{}
+
+				sut := New(
+					fakeClient,
+					testConfig,
+					agentApplierDeleterMock,
+					&mocks.AgentConfigBuilder{},
+					agentProberStub,
+					flowHealthProberStub,
+					gatewayApplierDeleterMock,
+					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					istioStatusCheckerStub,
+					overridesHandlerStub,
+					pipelineLockStub,
+					pipelineValidatorWithStubs,
+					errToMsg,
+				)
 				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
@@ -828,6 +960,150 @@ func TestReconcile(t *testing.T) {
 
 	})
 
+	t.Run("a request to the Kubernetes API server has failed when validating the secret references", func(t *testing.T) {
+		secret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "some-secret",
+				Namespace: "some-namespace",
+			},
+			Data: map[string][]byte{"user": {}, "password": {}},
+		}
+		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		serverErr := errors.New("failed to get secret: server error")
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr}),
+			PipelineLock:       pipelineLockStub,
+		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			&mocks.AgentApplierDeleter{},
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.True(t, errors.Is(err, serverErr))
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonValidationFailed,
+			"Pipeline validation failed due to an error from the Kubernetes API server",
+		)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
+		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
+	})
+
+	t.Run("a request to the Kubernetes API server has failed when validating the max pipeline count limit", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().WithName("pipeline").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		serverErr := errors.New("failed to get lock: server error")
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
+		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			&mocks.AgentApplierDeleter{},
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.True(t, errors.Is(err, serverErr))
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeConfigurationGenerated,
+			metav1.ConditionFalse,
+			conditions.ReasonValidationFailed,
+			"Pipeline validation failed due to an error from the Kubernetes API server",
+		)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeFlowHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonSelfMonConfigNotGenerated,
+			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+		)
+
+		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
+	})
+
 	t.Run("all metric pipelines are non-reconcilable", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().
 			WithRuntimeInput(true).
@@ -846,35 +1122,182 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(true, nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
 
-		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
-
-		agentProberStub := &mocks.DaemonSetProber{}
-		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		sut := Reconciler{
-			Client:                fakeClient,
-			config:                testConfig,
-			gatewayConfigBuilder:  gatewayConfigBuilderMock,
-			agentApplierDeleter:   agentApplierDeleterMock,
-			gatewayApplierDeleter: gatewayApplierDeleterMock,
-			pipelineLock:          pipelineLockStub,
-			gatewayProber:         gatewayProberStub,
-			agentProber:           agentProberStub,
-			flowHealthProber:      flowHealthProberStub,
-			overridesHandler:      overridesHandlerStub,
-			istioStatusChecker:    istioStatusCheckerStub,
+		pipelineValidatorWithStubs := &Validator{
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+			PipelineLock:       pipelineLockStub,
 		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			testConfig,
+			agentApplierDeleterMock,
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		agentApplierDeleterMock.AssertExpectations(t)
 		gatewayApplierDeleterMock.AssertExpectations(t)
+	})
+
+	t.Run("Check different Pod Error Conditions", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			probeAgentErr   error
+			probeGatewayErr error
+			expectedStatus  metav1.ConditionStatus
+			expectedReason  string
+			expectedMessage string
+		}{
+			{
+				name:            "pod is OOM",
+				probeAgentErr:   &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled"},
+				probeGatewayErr: nil,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled",
+			},
+			{
+				name:            "pod is CrashLoop",
+				probeAgentErr:   &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
+				probeGatewayErr: nil,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error",
+			},
+			{
+				name:            "no Pods deployed",
+				probeAgentErr:   workloadstatus.ErrNoPodsDeployed,
+				probeGatewayErr: nil,
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonAgentNotReady,
+				expectedMessage: "No Pods deployed",
+			},
+			{
+				name:            "Container is not ready",
+				probeAgentErr:   nil,
+				probeGatewayErr: &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonGatewayNotReady,
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error",
+			},
+			{
+				name:            "Container is not ready",
+				expectedStatus:  metav1.ConditionFalse,
+				expectedReason:  conditions.ReasonGatewayNotReady,
+				probeAgentErr:   nil,
+				probeGatewayErr: &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled"},
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled",
+			},
+			{
+				name:            "Agent Rollout in progress",
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonRolloutInProgress,
+				probeAgentErr:   &workloadstatus.RolloutInProgressError{},
+				probeGatewayErr: nil,
+				expectedMessage: "Pods are being started/updated",
+			},
+			{
+				name:            "Gateway Rollout in progress",
+				expectedStatus:  metav1.ConditionTrue,
+				expectedReason:  conditions.ReasonRolloutInProgress,
+				probeAgentErr:   nil,
+				probeGatewayErr: &workloadstatus.RolloutInProgressError{},
+				expectedMessage: "Pods are being started/updated",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+				agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}).Times(1)
+
+				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
+
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
+				agentProberMock := commonStatusStubs.NewDaemonSetProber(tt.probeAgentErr)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+				pipelineLockStub := &mocks.PipelineLock{}
+				pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+				pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+				pipelineValidatorWithStubs := &Validator{
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					PipelineLock:       pipelineLockStub,
+				}
+
+				errToMsg := &conditions.ErrorToMessageConverter{}
+
+				sut := Reconciler{
+					Client:                fakeClient,
+					config:                testConfig,
+					agentConfigBuilder:    agentConfigBuilderMock,
+					gatewayConfigBuilder:  gatewayConfigBuilderMock,
+					agentApplierDeleter:   agentApplierDeleterMock,
+					gatewayApplierDeleter: gatewayApplierDeleterMock,
+					pipelineLock:          pipelineLockStub,
+					gatewayProber:         gatewayProberStub,
+					agentProber:           agentProberMock,
+					flowHealthProber:      flowHealthProberStub,
+					overridesHandler:      overridesHandlerStub,
+					istioStatusChecker:    istioStatusCheckerStub,
+					pipelineValidator:     pipelineValidatorWithStubs,
+					errToMsgConverter:     errToMsg,
+				}
+				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.MetricPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				if tt.probeGatewayErr != nil {
+					cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+					require.Equal(t, tt.expectedStatus, cond.Status)
+					require.Equal(t, tt.expectedReason, cond.Reason)
+					require.Equal(t, tt.expectedMessage, cond.Message)
+				}
+				if tt.probeAgentErr != nil {
+					cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
+					require.Equal(t, tt.expectedStatus, cond.Status)
+					require.Equal(t, tt.expectedReason, cond.Reason)
+					require.Equal(t, tt.expectedMessage, cond.Message)
+				}
+			})
+		}
 	})
 }
 

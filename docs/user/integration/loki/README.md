@@ -27,7 +27,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - Helm 3.x
 

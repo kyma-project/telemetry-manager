@@ -37,7 +37,7 @@ Supported integration scenarios are neutral to the vendor of the target system.
 
 ## Architecture
 
-![Components](./assets/telemetry-components.drawio.svg)
+![Components](./assets/telemetry-arch.drawio.svg)
 
 ### Telemetry Manager
 
@@ -45,10 +45,6 @@ The Telemetry module ships Telemetry Manager as its core component. Telemetry Ma
 If Telemetry Manager detects a configuration, it deploys the related gateway and agent components accordingly and keeps them in sync with the requested pipeline definition.
 
 For more information, see [Telemetry Manager](01-manager.md).
-
-### Self Monitor
-
-The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed gateways and agents. Based on the collected data, it provides insights about the telemetry data flow health and the module and pipeline status.
 
 ### Gateways
 

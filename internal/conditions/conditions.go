@@ -1,5 +1,7 @@
 package conditions
 
+import "strings"
+
 const (
 	TypeAgentHealthy            = "AgentHealthy"
 	TypeConfigurationGenerated  = "ConfigurationGenerated"
@@ -29,6 +31,8 @@ const (
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
 	ReasonTLSConfigurationInvalid     = "TLSConfigurationInvalid"
 	ReasonGatewayConfigured           = "GatewayConfigured"
+	ReasonValidationFailed            = "ValidationFailed"
+	ReasonRolloutInProgress           = "RolloutInProgress"
 
 	// Telemetry reasons
 	ReasonComponentsRunning      = "ComponentsRunning"
@@ -44,12 +48,20 @@ const (
 	ReasonMetricAgentNotRequired = "AgentNotRequired"
 )
 
+// Error messages
+const (
+	podIsNotScheduled    = "Pod is not scheduled: %s"
+	podIsPending         = "Pod is in the pending state because container: %s is not running due to: %s"
+	podIsFailed          = "Pod is in the failed state due to: %s"
+	podRolloutInProgress = "Pods are being started/updated"
+)
+
 var commonMessages = map[string]string{
-	ReasonMaxPipelinesExceeded:    "Maximum pipeline count limit exceeded",
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonSelfMonFlowHealthy:      "No problems detected in the telemetry flow",
 	ReasonSelfMonProbingFailed:    "Could not determine the health of the telemetry flow because the self monitor probing failed",
 	ReasonTLSConfigurationInvalid: "TLS configuration invalid: %s",
+	ReasonValidationFailed:        "Pipeline validation failed due to an error from the Kubernetes API server",
 }
 
 var logPipelineMessages = map[string]string{
@@ -62,7 +74,6 @@ var logPipelineMessages = map[string]string{
 	ReasonSelfMonNoLogsDelivered:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonSomeDataDropped:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 	ReasonSelfMonConfigNotGenerated: "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
-	ReasonUnsupportedLokiOutput:     "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 }
 
 var tracePipelineMessages = map[string]string{
@@ -111,4 +122,10 @@ func message(reason string, specializedMessages map[string]string) string {
 		return condMessage
 	}
 	return ""
+}
+
+// ConvertErrToMsg converts the error to a condition message by capitalizing the error message
+func ConvertErrToMsg(err error) string {
+	errMsg := err.Error()
+	return strings.ToUpper(errMsg[:1]) + errMsg[1:]
 }

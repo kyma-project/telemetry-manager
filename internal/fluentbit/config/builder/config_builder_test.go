@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -106,6 +107,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
+    keep_log            on
     kube_tag_prefix     foo.var.log.containers.
     labels              on
     merge_log           on
@@ -145,8 +147,9 @@ func TestMergeSectionsConfig(t *testing.T) {
 					Namespaces: telemetryv1alpha1.InputNamespaces{
 						System: true,
 					},
-					KeepAnnotations: true,
-					DropLabels:      false,
+					KeepAnnotations:  true,
+					DropLabels:       false,
+					KeepOriginalBody: ptr.To(true),
 				},
 			},
 			Filters: []telemetryv1alpha1.Filter{
@@ -211,6 +214,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
+    keep_log            on
     kube_tag_prefix     foo.var.log.containers.
     labels              on
     merge_log           on
@@ -227,8 +231,9 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.Input{
 				Application: telemetryv1alpha1.ApplicationInput{
-					KeepAnnotations: true,
-					DropLabels:      false,
+					KeepAnnotations:  true,
+					DropLabels:       false,
+					KeepOriginalBody: ptr.To(true),
 					Namespaces: telemetryv1alpha1.InputNamespaces{
 						System: true,
 					},

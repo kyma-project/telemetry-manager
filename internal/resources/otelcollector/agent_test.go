@@ -10,30 +10,35 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+var (
+	agentNamespace = "my-namespace"
+	agentName      = "my-agent"
+	agentCfg       = "dummy otel collector config"
+)
+
 func TestApplyAgentResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
-	namespace := "my-namespace"
-	name := "my-agent"
-	cfg := "dummy otel collector config"
 
 	sut := AgentApplierDeleter{
 		Config: AgentConfig{
 			Config: Config{
-				BaseName:  name,
-				Namespace: namespace,
+				BaseName:  agentName,
+				Namespace: agentNamespace,
 			},
 		},
+		RBAC: createAgentRBAC(),
 	}
 
 	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
 		AllowedPorts:        []int32{5555, 6666},
-		CollectorConfigYAML: cfg,
+		CollectorConfigYAML: agentCfg,
 	})
 	require.NoError(t, err)
 
@@ -44,10 +49,10 @@ func TestApplyAgentResources(t *testing.T) {
 
 		sa := sas.Items[0]
 		require.NotNil(t, sa)
-		require.Equal(t, name, sa.Name)
-		require.Equal(t, namespace, sa.Namespace)
+		require.Equal(t, agentName, sa.Name)
+		require.Equal(t, agentNamespace, sa.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, sa.Labels)
 	})
 
@@ -57,24 +62,13 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Len(t, crs.Items, 1)
 
 		cr := crs.Items[0]
-		expectedRules := []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/metrics", "nodes/stats", "services", "endpoints", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
-				Verbs:           []string{"get"},
-			},
-		}
-
 		require.NotNil(t, cr)
-		require.Equal(t, cr.Name, name)
+		require.Equal(t, agentName, cr.Name)
+		require.Equal(t, agentNamespace, cr.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, cr.Labels)
-		require.Equal(t, cr.Rules, expectedRules)
+		require.Equal(t, sut.RBAC.clusterRole.Rules, cr.Rules)
 	})
 
 	t.Run("should create cluster role binding", func(t *testing.T) {
@@ -84,12 +78,20 @@ func TestApplyAgentResources(t *testing.T) {
 
 		crb := crbs.Items[0]
 		require.NotNil(t, crb)
-		require.Equal(t, name, crb.Name)
-		require.Equal(t, namespace, crb.Namespace)
+		require.Equal(t, agentName, crb.Name)
+		require.Equal(t, agentNamespace, crb.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, crb.Labels)
-		require.Equal(t, name, crb.RoleRef.Name)
+
+		subject := crb.Subjects[0]
+		require.Equal(t, "ServiceAccount", subject.Kind)
+		require.Equal(t, agentName, subject.Name)
+		require.Equal(t, agentNamespace, subject.Namespace)
+
+		require.Equal(t, "rbac.authorization.k8s.io", crb.RoleRef.APIGroup)
+		require.Equal(t, "ClusterRole", crb.RoleRef.Kind)
+		require.Equal(t, agentName, crb.RoleRef.Name)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {
@@ -99,14 +101,14 @@ func TestApplyAgentResources(t *testing.T) {
 
 		svc := svcs.Items[0]
 		require.NotNil(t, svc)
-		require.Equal(t, name+"-metrics", svc.Name)
-		require.Equal(t, namespace, svc.Namespace)
+		require.Equal(t, agentName+"-metrics", svc.Name)
+		require.Equal(t, agentNamespace, svc.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                 name,
+			"app.kubernetes.io/name":                 agentName,
 			"telemetry.kyma-project.io/self-monitor": "enabled",
 		}, svc.Labels)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, svc.Spec.Selector)
 		require.Equal(t, map[string]string{
 			"prometheus.io/port":   "8888",
@@ -130,13 +132,13 @@ func TestApplyAgentResources(t *testing.T) {
 
 		np := nps.Items[0]
 		require.NotNil(t, np)
-		require.Equal(t, name, np.Name)
-		require.Equal(t, namespace, np.Namespace)
+		require.Equal(t, agentName, np.Name)
+		require.Equal(t, agentNamespace, np.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, np.Labels)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, np.Spec.PodSelector.MatchLabels)
 		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, np.Spec.PolicyTypes)
 		require.Len(t, np.Spec.Ingress, 1)
@@ -169,13 +171,13 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Len(t, cms.Items, 1)
 
 		cm := cms.Items[0]
-		require.Equal(t, name, cm.Name)
-		require.Equal(t, namespace, cm.Namespace)
+		require.Equal(t, agentName, cm.Name)
+		require.Equal(t, agentNamespace, cm.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, cm.Labels)
 		require.Contains(t, cm.Data, "relay.conf")
-		require.Equal(t, cfg, cm.Data["relay.conf"])
+		require.Equal(t, agentCfg, cm.Data["relay.conf"])
 	})
 
 	t.Run("should create a daemonset", func(t *testing.T) {
@@ -184,18 +186,18 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Len(t, dss.Items, 1)
 
 		ds := dss.Items[0]
-		require.Equal(t, name, ds.Name)
-		require.Equal(t, namespace, ds.Namespace)
+		require.Equal(t, agentName, ds.Name)
+		require.Equal(t, agentNamespace, ds.Namespace)
 
 		//labels
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, ds.Labels, "must have expected daemonset labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": agentName,
 		}, ds.Spec.Selector.MatchLabels, "must have expected daemonset selector labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":  name,
+			"app.kubernetes.io/name":  agentName,
 			"sidecar.istio.io/inject": "true",
 		}, ds.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
@@ -243,23 +245,21 @@ func TestApplyAgentResources(t *testing.T) {
 func TestDeleteAgentResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
-	namespace := "my-namespace"
-	name := "my-agent"
-	cfg := "dummy otel collector config"
 
 	sut := AgentApplierDeleter{
 		Config: AgentConfig{
 			Config: Config{
-				BaseName:  name,
-				Namespace: namespace,
+				BaseName:  agentName,
+				Namespace: agentNamespace,
 			},
 		},
+		RBAC: createAgentRBAC(),
 	}
 
 	// Create agent resources before testing deletion
 	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
 		AllowedPorts:        []int32{5555, 6666},
-		CollectorConfigYAML: cfg,
+		CollectorConfigYAML: agentCfg,
 	})
 	require.NoError(t, err)
 
@@ -269,43 +269,81 @@ func TestDeleteAgentResources(t *testing.T) {
 
 	t.Run("should delete service account", func(t *testing.T) {
 		var serviceAccount corev1.ServiceAccount
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &serviceAccount)
+		err := client.Get(ctx, types.NamespacedName{Name: agentName, Namespace: agentNamespace}, &serviceAccount)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete cluster role", func(t *testing.T) {
 		var clusterRole rbacv1.ClusterRole
-		err := client.Get(ctx, types.NamespacedName{Name: name}, &clusterRole)
+		err := client.Get(ctx, types.NamespacedName{Name: agentName}, &clusterRole)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete cluster role binding", func(t *testing.T) {
 		var clusterRoleBinding rbacv1.ClusterRoleBinding
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &clusterRoleBinding)
+		err := client.Get(ctx, types.NamespacedName{Name: agentName, Namespace: agentNamespace}, &clusterRoleBinding)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete metrics service", func(t *testing.T) {
 		var service corev1.Service
-		err := client.Get(ctx, types.NamespacedName{Name: name + "-metrics", Namespace: namespace}, &service)
+		err := client.Get(ctx, types.NamespacedName{Name: agentName + "-metrics", Namespace: agentNamespace}, &service)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete network policy", func(t *testing.T) {
 		var networkPolicy networkingv1.NetworkPolicy
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &networkPolicy)
+		err := client.Get(ctx, types.NamespacedName{Name: agentName, Namespace: agentNamespace}, &networkPolicy)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete collector config configmap", func(t *testing.T) {
 		var configMap corev1.ConfigMap
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &configMap)
+		err := client.Get(ctx, types.NamespacedName{Name: agentName, Namespace: agentNamespace}, &configMap)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete daemonset", func(t *testing.T) {
 		var daemonSet appsv1.DaemonSet
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &daemonSet)
+		err := client.Get(ctx, types.NamespacedName{Name: agentName, Namespace: agentNamespace}, &daemonSet)
 		require.True(t, apierrors.IsNotFound(err))
 	})
+}
+
+func createAgentRBAC() rbac {
+	clusterRole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      agentName,
+			Namespace: agentNamespace,
+			Labels:    defaultLabels(agentName),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"test"},
+				Resources: []string{"test"},
+				Verbs:     []string{"test"},
+			},
+		},
+	}
+
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      agentName,
+			Namespace: agentNamespace,
+			Labels:    defaultLabels(agentName),
+		},
+		Subjects: []rbacv1.Subject{{Name: agentName, Namespace: agentNamespace, Kind: rbacv1.ServiceAccountKind}},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     agentName,
+		},
+	}
+
+	return rbac{
+		clusterRole:        clusterRole,
+		clusterRoleBinding: clusterRoleBinding,
+		role:               nil,
+		roleBinding:        nil,
+	}
 }

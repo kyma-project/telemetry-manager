@@ -97,13 +97,6 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 			expectedMessage: fmt.Sprintf("TLS CA certificate is about to expire, configured certificate is valid until %s", time.Now().AddDate(0, 0, 7).Format(time.DateOnly)),
 		},
 		{
-			name:            "cert and private key valid",
-			given:           nil,
-			expectedStatus:  metav1.ConditionTrue,
-			expectedReason:  ReasonAgentConfigured,
-			expectedMessage: MessageForLogPipeline(ReasonAgentConfigured),
-		},
-		{
 			name:            "invalid cert key pair",
 			given:           tlscert.ErrInvalidCertificateKeyPair,
 			expectedStatus:  metav1.ConditionFalse,
@@ -114,7 +107,7 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			status, reason, msg := EvaluateTLSCertCondition(test.given, ReasonAgentConfigured, MessageForLogPipeline(ReasonAgentConfigured))
+			status, reason, msg := EvaluateTLSCertCondition(test.given)
 			require.Equal(t, test.expectedStatus, status)
 			require.Equal(t, test.expectedReason, reason)
 			require.Equal(t, test.expectedMessage, msg)

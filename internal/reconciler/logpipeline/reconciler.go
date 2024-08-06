@@ -33,13 +33,14 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
@@ -57,16 +58,8 @@ type Config struct {
 	DaemonSetConfig       fluentbit.DaemonSetConfig
 }
 
-type DaemonSetProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
-}
-
 type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
-}
-
-type TLSCertValidator interface {
-	Validate(ctx context.Context, config tlscert.TLSBundle) error
 }
 
 type FlowHealthProber interface {
@@ -88,21 +81,23 @@ type Reconciler struct {
 	syncer syncer
 
 	// Dependencies
-	agentProber        DaemonSetProber
+	agentProber        commonstatus.DaemonSetProber
 	flowHealthProber   FlowHealthProber
 	istioStatusChecker IstioStatusChecker
 	overridesHandler   OverridesHandler
-	tlsCertValidator   TLSCertValidator
+	pipelineValidator  *Validator
+	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
 
 func New(
 	client client.Client,
 	config Config,
-	agentProber DaemonSetProber,
+	agentProber commonstatus.DaemonSetProber,
 	flowHealthProber FlowHealthProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
-	tlsCertValidator TLSCertValidator,
+	pipelineValidator *Validator,
+	errToMsgConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
 		Client: client,
@@ -112,8 +107,9 @@ func New(
 		agentProber:        agentProber,
 		flowHealthProber:   flowHealthProber,
 		istioStatusChecker: istioStatusChecker,
-		tlsCertValidator:   tlsCertValidator,
 		overridesHandler:   overridesHandler,
+		pipelineValidator:  pipelineValidator,
+		errToMsgConverter:  errToMsgConverter,
 	}
 }
 
@@ -400,30 +396,22 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
-	if err := secretref.VerifySecretReference(ctx, r.Client, pipeline); err != nil {
-		if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
-			return false, nil
-		}
-		return false, err
+
+	err := r.pipelineValidator.validate(ctx, pipeline)
+
+	// Pipeline with a certificate that is about to expire is still considered reconcilable
+	if err == nil || tlscert.IsCertAboutToExpireError(err) {
+		return true, nil
 	}
 
-	if pipeline.Spec.Output.IsLokiDefined() {
-		return false, nil
+	// Remaining errors imply that the pipeline is not reconcilable
+	// In case that one of the requests to the Kubernetes API server failed, then the pipeline is also considered non-reconcilable and the error is returned to trigger a requeue
+	var APIRequestFailed *errortypes.APIRequestFailedError
+	if errors.As(err, &APIRequestFailed) {
+		return false, APIRequestFailed.Err
 	}
 
-	if tlsValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSBundle{
-			Cert: pipeline.Spec.Output.HTTP.TLSConfig.Cert,
-			Key:  pipeline.Spec.Output.HTTP.TLSConfig.Key,
-			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,
-		}
-
-		if err := r.tlsCertValidator.Validate(ctx, tlsConfig); err != nil {
-			return tlscert.IsCertAboutToExpireError(err), nil
-		}
-	}
-
-	return true, nil
+	return false, nil
 }
 
 func getFluentBitPorts() []int32 {
@@ -431,12 +419,4 @@ func getFluentBitPorts() []int32 {
 		ports.ExporterMetrics,
 		ports.HTTP,
 	}
-}
-
-func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
-	http := pipeline.Spec.Output.HTTP
-	if http == nil {
-		return false
-	}
-	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
 }

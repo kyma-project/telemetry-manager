@@ -70,7 +70,7 @@ spec:
           value: "300MiB"
         - name: APP_LOG_LEVEL
           value: "info"
-        - name: MY_POD_NAMESPACE
+        - name: MANAGER_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace

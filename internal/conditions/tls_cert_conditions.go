@@ -9,11 +9,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
-func EvaluateTLSCertCondition(errValidation error, configuredReason string, configuredMessage string) (status metav1.ConditionStatus, reason, message string) {
-	if errValidation == nil {
-		return metav1.ConditionTrue, configuredReason, configuredMessage
-	}
-
+func EvaluateTLSCertCondition(errValidation error) (status metav1.ConditionStatus, reason, message string) {
 	var errCertExpired *tlscert.CertExpiredError
 	if errors.As(errValidation, &errCertExpired) {
 		return metav1.ConditionFalse, ReasonTLSCertificateExpired, errCertExpired.Error()

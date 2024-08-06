@@ -13,6 +13,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -21,9 +22,9 @@ import (
 )
 
 var (
-	namespace            = "my-namespace"
-	name                 = "my-gateway"
-	cfg                  = "dummy otel collector config"
+	gatewayNamespace     = "my-namespace"
+	gatewayName          = "my-gateway"
+	gatewayCfg           = "dummy otel collector config"
 	baseCPURequest       = resource.MustParse("150m")
 	dynamicCPURequest    = resource.MustParse("75m")
 	baseCPULimit         = resource.MustParse("300m")
@@ -46,11 +47,12 @@ func TestApplyGatewayResources(t *testing.T) {
 
 	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
+		RBAC:   createGatewayRBAC(),
 	}
 
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
 		AllowedPorts:                   []int32{5555, 6666},
-		CollectorConfigYAML:            cfg,
+		CollectorConfigYAML:            gatewayCfg,
 		CollectorEnvVars:               envVars,
 		Replicas:                       replicas,
 		ResourceRequirementsMultiplier: 1,
@@ -64,10 +66,10 @@ func TestApplyGatewayResources(t *testing.T) {
 
 		sa := sas.Items[0]
 		require.NotNil(t, sa)
-		require.Equal(t, name, sa.Name)
-		require.Equal(t, namespace, sa.Namespace)
+		require.Equal(t, gatewayName, sa.Name)
+		require.Equal(t, gatewayNamespace, sa.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, sa.Labels)
 	})
 
@@ -77,25 +79,13 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Len(t, crs.Items, 1)
 
 		cr := crs.Items[0]
-		expectedRules := []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"namespaces", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		}
-
 		require.NotNil(t, cr)
-		require.Equal(t, cr.Name, name)
+		require.Equal(t, gatewayName, cr.Name)
+		require.Equal(t, gatewayNamespace, cr.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, cr.Labels)
-		require.Equal(t, cr.Rules, expectedRules)
+		require.Equal(t, sut.RBAC.clusterRole.Rules, cr.Rules)
 	})
 
 	t.Run("should create cluster role binding", func(t *testing.T) {
@@ -105,27 +95,73 @@ func TestApplyGatewayResources(t *testing.T) {
 
 		crb := crbs.Items[0]
 		require.NotNil(t, crb)
-		require.Equal(t, name, crb.Name)
-		require.Equal(t, namespace, crb.Namespace)
+		require.Equal(t, gatewayName, crb.Name)
+		require.Equal(t, gatewayNamespace, crb.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, crb.Labels)
-		require.Equal(t, name, crb.RoleRef.Name)
+
+		subject := crb.Subjects[0]
+		require.Equal(t, "ServiceAccount", subject.Kind)
+		require.Equal(t, gatewayName, subject.Name)
+		require.Equal(t, gatewayNamespace, subject.Namespace)
+
+		require.Equal(t, "rbac.authorization.k8s.io", crb.RoleRef.APIGroup)
+		require.Equal(t, "ClusterRole", crb.RoleRef.Kind)
+		require.Equal(t, gatewayName, crb.RoleRef.Name)
+	})
+
+	t.Run("should create role", func(t *testing.T) {
+		var rs rbacv1.RoleList
+		require.NoError(t, client.List(ctx, &rs))
+		require.Len(t, rs.Items, 1)
+
+		r := rs.Items[0]
+		require.NotNil(t, r)
+		require.Equal(t, gatewayName, r.Name)
+		require.Equal(t, gatewayNamespace, r.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": gatewayName,
+		}, r.Labels)
+		require.Equal(t, sut.RBAC.role.Rules, r.Rules)
+	})
+
+	t.Run("should create role binding", func(t *testing.T) {
+		var rbs rbacv1.RoleBindingList
+		require.NoError(t, client.List(ctx, &rbs))
+		require.Len(t, rbs.Items, 1)
+
+		rb := rbs.Items[0]
+		require.NotNil(t, rb)
+		require.Equal(t, gatewayName, rb.Name)
+		require.Equal(t, gatewayNamespace, rb.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": gatewayName,
+		}, rb.Labels)
+
+		subject := rb.Subjects[0]
+		require.Equal(t, "ServiceAccount", subject.Kind)
+		require.Equal(t, gatewayName, subject.Name)
+		require.Equal(t, gatewayNamespace, subject.Namespace)
+
+		require.Equal(t, "rbac.authorization.k8s.io", rb.RoleRef.APIGroup)
+		require.Equal(t, "Role", rb.RoleRef.Kind)
+		require.Equal(t, gatewayName, rb.RoleRef.Name)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {
 		var svc corev1.Service
-		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name + "-metrics"}, &svc))
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: gatewayNamespace, Name: gatewayName + "-metrics"}, &svc))
 
 		require.NotNil(t, svc)
-		require.Equal(t, name+"-metrics", svc.Name)
-		require.Equal(t, namespace, svc.Namespace)
+		require.Equal(t, gatewayName+"-metrics", svc.Name)
+		require.Equal(t, gatewayNamespace, svc.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                 name,
+			"app.kubernetes.io/name":                 gatewayName,
 			"telemetry.kyma-project.io/self-monitor": "enabled",
 		}, svc.Labels)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, svc.Spec.Selector)
 		require.Equal(t, map[string]string{
 			"prometheus.io/port":   "8888",
@@ -149,13 +185,13 @@ func TestApplyGatewayResources(t *testing.T) {
 
 		np := nps.Items[0]
 		require.NotNil(t, np)
-		require.Equal(t, name, np.Name)
-		require.Equal(t, namespace, np.Namespace)
+		require.Equal(t, gatewayName, np.Name)
+		require.Equal(t, gatewayNamespace, np.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, np.Labels)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, np.Spec.PodSelector.MatchLabels)
 		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, np.Spec.PolicyTypes)
 		require.Len(t, np.Spec.Ingress, 1)
@@ -188,10 +224,10 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Len(t, secrets.Items, 1)
 
 		secret := secrets.Items[0]
-		require.Equal(t, name, secret.Name)
-		require.Equal(t, namespace, secret.Namespace)
+		require.Equal(t, gatewayName, secret.Name)
+		require.Equal(t, gatewayNamespace, secret.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, secret.Labels)
 		for k, v := range envVars {
 			require.Equal(t, v, secret.Data[k])
@@ -204,12 +240,12 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Len(t, cms.Items, 1)
 
 		cm := cms.Items[0]
-		require.Equal(t, name, cm.Name)
-		require.Equal(t, namespace, cm.Namespace)
+		require.Equal(t, gatewayName, cm.Name)
+		require.Equal(t, gatewayNamespace, cm.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, cm.Labels)
-		require.Equal(t, cfg, cm.Data["relay.conf"])
+		require.Equal(t, gatewayCfg, cm.Data["relay.conf"])
 	})
 
 	t.Run("should create a deployment", func(t *testing.T) {
@@ -218,19 +254,19 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Len(t, deps.Items, 1)
 
 		dep := deps.Items[0]
-		require.Equal(t, name, dep.Name)
-		require.Equal(t, namespace, dep.Namespace)
+		require.Equal(t, gatewayName, dep.Name)
+		require.Equal(t, gatewayNamespace, dep.Namespace)
 		require.Equal(t, replicas, *dep.Spec.Replicas)
 
 		//labels
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, dep.Labels, "must have expected deployment labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, dep.Spec.Selector.MatchLabels, "must have expected deployment selector labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":  name,
+			"app.kubernetes.io/name":  gatewayName,
 			"sidecar.istio.io/inject": "false",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
@@ -284,16 +320,16 @@ func TestApplyGatewayResources(t *testing.T) {
 
 	t.Run("should create OTLP service", func(t *testing.T) {
 		var svc corev1.Service
-		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: otlpServiceName}, &svc))
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: gatewayNamespace, Name: otlpServiceName}, &svc))
 
 		require.NotNil(t, svc)
 		require.Equal(t, otlpServiceName, svc.Name)
-		require.Equal(t, namespace, svc.Namespace)
+		require.Equal(t, gatewayNamespace, svc.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, svc.Labels)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": gatewayName,
 		}, svc.Spec.Selector)
 		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
 		require.Len(t, svc.Spec.Ports, 2)
@@ -321,10 +357,11 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 
 	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
+		RBAC:   createGatewayRBAC(),
 	}
 
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
-		CollectorConfigYAML: cfg,
+		CollectorConfigYAML: gatewayCfg,
 		CollectorEnvVars:    envVars,
 		IstioEnabled:        true,
 		IstioExcludePorts:   []int32{1111, 2222},
@@ -332,25 +369,25 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	t.Run("It should have permissive peer authentication created", func(t *testing.T) {
+	t.Run("should have permissive peer authentication created", func(t *testing.T) {
 		var peerAuth istiosecurityclientv1.PeerAuthentication
-		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &peerAuth))
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: gatewayNamespace, Name: gatewayName}, &peerAuth))
 
-		require.Equal(t, name, peerAuth.Name)
+		require.Equal(t, gatewayName, peerAuth.Name)
 		require.Equal(t, istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE, peerAuth.Spec.Mtls.Mode)
 	})
 
-	t.Run("It should have istio enabled with ports excluded", func(t *testing.T) {
+	t.Run("should have istio enabled with ports excluded", func(t *testing.T) {
 		var deps appsv1.DeploymentList
 		require.NoError(t, client.List(ctx, &deps))
 		require.Len(t, deps.Items, 1)
 		dep := deps.Items[0]
-		require.Equal(t, name, dep.Name)
-		require.Equal(t, namespace, dep.Namespace)
+		require.Equal(t, gatewayName, dep.Name)
+		require.Equal(t, gatewayNamespace, dep.Namespace)
 		require.Equal(t, replicas, *dep.Spec.Replicas)
 
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":  name,
+			"app.kubernetes.io/name":  gatewayName,
 			"sidecar.istio.io/inject": "true",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
@@ -371,11 +408,12 @@ func TestDeleteGatewayResources(t *testing.T) {
 
 	sut := GatewayApplierDeleter{
 		Config: createGatewayConfig(),
+		RBAC:   createGatewayRBAC(),
 	}
 
 	// Create gateway resources before testing deletion
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
-		CollectorConfigYAML: cfg,
+		CollectorConfigYAML: gatewayCfg,
 		CollectorEnvVars:    envVars,
 		IstioEnabled:        true,
 		IstioExcludePorts:   []int32{1111, 2222},
@@ -389,61 +427,73 @@ func TestDeleteGatewayResources(t *testing.T) {
 
 	t.Run("should delete service account", func(t *testing.T) {
 		var serviceAccount corev1.ServiceAccount
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &serviceAccount)
-		require.True(t, apierrors.IsNotFound(err))
-	})
-
-	t.Run("should delete cluster role", func(t *testing.T) {
-		var clusterRole rbacv1.ClusterRole
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &clusterRole)
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &serviceAccount)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete cluster role binding", func(t *testing.T) {
 		var clusterRoleBinding rbacv1.ClusterRoleBinding
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &clusterRoleBinding)
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &clusterRoleBinding)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete cluster role", func(t *testing.T) {
+		var clusterRole rbacv1.ClusterRole
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &clusterRole)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete role binding", func(t *testing.T) {
+		var roleBinding rbacv1.RoleBinding
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &roleBinding)
+		require.True(t, apierrors.IsNotFound(err))
+	})
+
+	t.Run("should delete role", func(t *testing.T) {
+		var role rbacv1.Role
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &role)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete metrics service", func(t *testing.T) {
 		var service corev1.Service
-		err := client.Get(ctx, types.NamespacedName{Name: name + "-metrics", Namespace: namespace}, &service)
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName + "-metrics", Namespace: gatewayNamespace}, &service)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete network policy", func(t *testing.T) {
 		var networkPolicy networkingv1.NetworkPolicy
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &networkPolicy)
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &networkPolicy)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete env secret", func(t *testing.T) {
 		var secret corev1.Secret
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &secret)
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &secret)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete collector config configmap", func(t *testing.T) {
 		var configMap corev1.ConfigMap
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &configMap)
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &configMap)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete deployment", func(t *testing.T) {
 		var deployment appsv1.Deployment
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &deployment)
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &deployment)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete OTLP service", func(t *testing.T) {
 		var service corev1.Service
-		err := client.Get(ctx, types.NamespacedName{Name: otlpServiceName, Namespace: namespace}, &service)
+		err := client.Get(ctx, types.NamespacedName{Name: otlpServiceName, Namespace: gatewayNamespace}, &service)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 
 	t.Run("should delete permissive peer authentication", func(t *testing.T) {
 		var peerAuth istiosecurityclientv1.PeerAuthentication
-		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &peerAuth)
+		err := client.Get(ctx, types.NamespacedName{Name: gatewayName, Namespace: gatewayNamespace}, &peerAuth)
 		require.True(t, apierrors.IsNotFound(err))
 	})
 }
@@ -451,8 +501,8 @@ func TestDeleteGatewayResources(t *testing.T) {
 func createGatewayConfig() GatewayConfig {
 	return GatewayConfig{
 		Config: Config{
-			BaseName:  name,
-			Namespace: namespace,
+			BaseName:  gatewayName,
+			Namespace: gatewayNamespace,
 		},
 		OTLPServiceName: otlpServiceName,
 
@@ -466,5 +516,72 @@ func createGatewayConfig() GatewayConfig {
 			BaseMemoryLimit:      baseMemoryLimit,
 			DynamicMemoryLimit:   dynamicMemoryLimit,
 		},
+	}
+}
+
+func createGatewayRBAC() rbac {
+	clusterRole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gatewayName,
+			Namespace: gatewayNamespace,
+			Labels:    defaultLabels(gatewayName),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"test"},
+				Resources: []string{"test"},
+				Verbs:     []string{"test"},
+			},
+		},
+	}
+
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gatewayName,
+			Namespace: gatewayNamespace,
+			Labels:    defaultLabels(gatewayName),
+		},
+		Subjects: []rbacv1.Subject{{Name: gatewayName, Namespace: gatewayNamespace, Kind: rbacv1.ServiceAccountKind}},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     gatewayName,
+		},
+	}
+
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gatewayName,
+			Namespace: gatewayNamespace,
+			Labels:    defaultLabels(gatewayName),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"test"},
+				Resources: []string{"test"},
+				Verbs:     []string{"test"},
+			},
+		},
+	}
+
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gatewayName,
+			Namespace: gatewayNamespace,
+			Labels:    defaultLabels(gatewayName),
+		},
+		Subjects: []rbacv1.Subject{{Name: gatewayName, Namespace: gatewayNamespace, Kind: rbacv1.ServiceAccountKind}},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     gatewayName,
+		},
+	}
+
+	return rbac{
+		clusterRole:        clusterRole,
+		clusterRoleBinding: clusterRoleBinding,
+		role:               role,
+		roleBinding:        roleBinding,
 	}
 }
