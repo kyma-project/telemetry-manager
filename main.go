@@ -61,7 +61,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
-	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
@@ -582,14 +581,12 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 		validation.NewMaxPipelinesValidator(maxLogPipelines),
 		validation.NewFilesValidator(),
 		admission.NewDecoder(scheme),
-		dryrun.NewDryRunner(client, createDryRunConfig()),
 		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(fluentBitDeniedOutputPlugins), DeniedFilterPlugins: parsePlugins(fluentBitDeniedFilterPlugins)})
 }
 
 func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
 	return logparserwebhook.NewValidatingWebhookHandler(
 		client,
-		dryrun.NewDryRunner(client, createDryRunConfig()),
 		admission.NewDecoder(scheme))
 }
 
@@ -605,13 +602,6 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 		},
 		WebhookScheme: "https",
 		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
-	}
-}
-
-func createDryRunConfig() dryrun.Config {
-	return dryrun.Config{
-		FluentBitConfigMapName: types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: telemetryNamespace},
-		PipelineDefaults:       createPipelineDefaults(),
 	}
 }
 
