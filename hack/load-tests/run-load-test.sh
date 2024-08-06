@@ -337,9 +337,9 @@ function get_result_and_cleanup_log_otel() {
   kill %1
 
   if [[ "$OVERLAY" == "batch" ]]; then
-    kubectl delete -k hack/load-tests/logs-otel/batch
+    kubectl delete -k hack/load-tests/otel-logs/batch
   else
-    kubectl delete -k hack/load-tests/logs-otel/base
+    kubectl delete -k hack/load-tests/otel-logs/base
   fi
 }
 
