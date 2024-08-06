@@ -31,10 +31,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 )
 
-type DryRunner interface {
-	RunPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-}
-
 const (
 	StatusReasonConfigurationError = "InvalidConfiguration"
 )
@@ -46,7 +42,6 @@ type ValidatingWebhookHandler struct {
 	maxPipelinesValidator       validation.MaxPipelinesValidator
 	fileValidator               validation.FilesValidator
 	decoder                     admission.Decoder
-	dryRunner                   DryRunner
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig
 }
 
@@ -56,7 +51,6 @@ func NewValidatingWebhookHandler(
 	maxPipelinesValidator validation.MaxPipelinesValidator,
 	fileValidator validation.FilesValidator,
 	decoder admission.Decoder,
-	dryRunner DryRunner,
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig,
 ) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
@@ -65,7 +59,6 @@ func NewValidatingWebhookHandler(
 		maxPipelinesValidator:       maxPipelinesValidator,
 		decoder:                     decoder,
 		fileValidator:               fileValidator,
-		dryRunner:                   dryRunner,
 		logPipelineValidationConfig: logPipelineValidationConfig,
 	}
 }
@@ -136,11 +129,6 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 	}
 
 	if err := v.fileValidator.Validate(logPipeline, &logPipelines); err != nil {
-		log.Error(err, "Failed to validate Fluent Bit config")
-		return err
-	}
-
-	if err := v.dryRunner.RunPipeline(ctx, logPipeline); err != nil {
 		log.Error(err, "Failed to validate Fluent Bit config")
 		return err
 	}
