@@ -20,16 +20,6 @@ jobs:
       tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
-      - name: Checkout code
-        if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Checkout code
-        if: github.event_name == 'push'
-        uses: actions/checkout@v4
-
       - name: create tags
         id: create-tags
         run: |
