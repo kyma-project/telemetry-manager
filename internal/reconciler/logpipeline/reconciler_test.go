@@ -649,14 +649,14 @@ func TestReconcile(t *testing.T) {
 				probeErr:        &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled", Message: ""},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "Pod is in the pending state as container: foo is not running due to: OOMKilled",
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled",
 			},
 			{
 				name:            "pod is CrashLoop",
 				probeErr:        &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "Pod is in the pending state as container: foo is not running due to: Error",
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error",
 			},
 			{
 				name:            "no Pods deployed",

@@ -59,7 +59,7 @@ func TestTracesGetHealthCondition(t *testing.T) {
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionFalse,
 				Reason:  conditions.ReasonGatewayNotReady,
-				Message: "Pod is in the pending state as container: foo is not running due to: foo",
+				Message: "Pod is in the pending state because container: foo is not running due to: foo",
 			},
 		},
 	}
@@ -140,7 +140,7 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionFalse,
 				Reason:  conditions.ReasonGatewayNotReady,
-				Message: "Pod is in the pending state as container: foo is not running due to: fooMessage",
+				Message: "Pod is in the pending state because container: foo is not running due to: fooMessage",
 			},
 			expectedAgentCondition: &metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
