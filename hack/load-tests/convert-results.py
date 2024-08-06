@@ -32,6 +32,7 @@ from collections import defaultdict
 
 # templates for table line based on target_type
 templates = {}
+# templates['logs-otel'] = "|{bla} |"# {single[bla]} | {single[results][bla]} | {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
 templates['logs-otel'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
 templates['logs-fluentbit'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
 templates['metrics'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
@@ -57,15 +58,16 @@ def load_results(directories):
                         test_key.append('bp')
                     if len(test_key) == 0:
                         test_key.append('single')
-                    results[key]['-'.join(test_key)] = data
+                    new_data = defaultdict(str, data)
+                    new_data['results'] = defaultdict(str, data['results'])
+                    results[key]['-'.join(test_key)] = new_data
     return results
-
 
 def print_results(results):
     # iterate over all test_targets
     for test_target, test_run in results.items():
         template = templates[test_target]
-        print(template.format(**results[test_target]))
+        print(template.format_map(results[test_target]))
 
 
 # main
