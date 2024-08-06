@@ -61,7 +61,7 @@ jobs:
         uses: "./.github/template/setup-golang"
 
       - name: Setup gardener cluster name
-        run: echo "GARDENER_CLUSTER_NAME=${{ matrix.name }}" >> $GITHUB_ENV
+        run: echo "GARDENER_CLUSTER_NAME=$(echo \"${{ matrix.name }}-${{ github.run_id }}${{ github.run_attempt }}\" | cut -c 1-12)" >> $GITHUB_ENV
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
       - name: Save service account to file
