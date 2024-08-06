@@ -6,6 +6,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -83,6 +84,11 @@ func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder 
 
 func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
 	b.input.Application.DropLabels = drop
+	return b
+}
+
+func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder {
+	b.input.Application.KeepOriginalBody = ptr.To(keep)
 	return b
 }
 
