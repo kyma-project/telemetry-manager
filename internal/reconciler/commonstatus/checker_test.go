@@ -3,7 +3,6 @@ package commonstatus
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -63,7 +63,7 @@ func TestTracesGetHealthCondition(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gatewayProberStub := stubs.NewDeploymentSetProber(tt.proberErr)
+			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.proberErr)
 			actualCondition := GetGatewayHealthyCondition(context.TODO(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeTraces)
 			require.True(t, validateCondition(t, tt.expectedCondition, actualCondition))
 		})
@@ -150,8 +150,8 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			agentProberStub := stubs.NewDaemonSetProber(tt.proberAgentErr)
-			gatewayProberStub := stubs.NewDeploymentSetProber(tt.preberGatewayErr)
+			agentProberStub := commonStatusStubs.NewDaemonSetProber(tt.proberAgentErr)
+			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.preberGatewayErr)
 
 			actualAgentCondition := GetAgentHealthyCondition(context.TODO(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
 			actualGatewayCondition := GetGatewayHealthyCondition(context.TODO(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
@@ -211,7 +211,7 @@ func TestLogsGetHealthCondition(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			agentProberStub := stubs.NewDaemonSetProber(tt.proberErr)
+			agentProberStub := commonStatusStubs.NewDaemonSetProber(tt.proberErr)
 			actualCondition := GetAgentHealthyCondition(context.TODO(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeLogs)
 			require.True(t, validateCondition(t, tt.expectedCondition, actualCondition))
 		})

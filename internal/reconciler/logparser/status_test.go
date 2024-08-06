@@ -2,7 +2,6 @@ package logparser
 
 import (
 	"context"
-	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,6 +14,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
