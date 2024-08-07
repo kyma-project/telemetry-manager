@@ -14,24 +14,25 @@ const (
 
 const (
 	// Common reasons
-	ReasonAgentNotReady               = "AgentNotReady"
-	ReasonAgentReady                  = "AgentReady"
-	ReasonGatewayNotReady             = "GatewayNotReady"
-	ReasonGatewayReady                = "GatewayReady"
-	ReasonMaxPipelinesExceeded        = "MaxPipelinesExceeded"
-	ReasonReferencedSecretMissing     = "ReferencedSecretMissing"
-	ReasonSelfMonAllDataDropped       = "AllTelemetryDataDropped"
-	ReasonSelfMonBufferFillingUp      = "BufferFillingUp"
-	ReasonSelfMonFlowHealthy          = "FlowHealthy"
-	ReasonSelfMonGatewayThrottling    = "GatewayThrottling"
-	ReasonSelfMonProbingFailed        = "ProbingFailed"
-	ReasonSelfMonSomeDataDropped      = "SomeTelemetryDataDropped"
-	ReasonSelfMonConfigNotGenerated   = "ConfigurationNotGenerated"
-	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
-	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
-	ReasonTLSConfigurationInvalid     = "TLSConfigurationInvalid"
-	ReasonGatewayConfigured           = "GatewayConfigured"
-	ReasonValidationFailed            = "ValidationFailed"
+	ReasonAgentNotReady                = "AgentNotReady"
+	ReasonAgentReady                   = "AgentReady"
+	ReasonEndpointConfigurationInvalid = "EndpointConfigurationInvalid"
+	ReasonGatewayConfigured            = "GatewayConfigured"
+	ReasonGatewayNotReady              = "GatewayNotReady"
+	ReasonGatewayReady                 = "GatewayReady"
+	ReasonMaxPipelinesExceeded         = "MaxPipelinesExceeded"
+	ReasonReferencedSecretMissing      = "ReferencedSecretMissing"
+	ReasonSelfMonAllDataDropped        = "AllTelemetryDataDropped"
+	ReasonSelfMonBufferFillingUp       = "BufferFillingUp"
+	ReasonSelfMonFlowHealthy           = "FlowHealthy"
+	ReasonSelfMonGatewayThrottling     = "GatewayThrottling"
+	ReasonSelfMonProbingFailed         = "ProbingFailed"
+	ReasonSelfMonSomeDataDropped       = "SomeTelemetryDataDropped"
+	ReasonSelfMonConfigNotGenerated    = "ConfigurationNotGenerated"
+	ReasonTLSCertificateAboutToExpire  = "TLSCertificateAboutToExpire"
+	ReasonTLSCertificateExpired        = "TLSCertificateExpired"
+	ReasonTLSConfigurationInvalid      = "TLSConfigurationInvalid"
+	ReasonValidationFailed             = "ValidationFailed"
 
 	// Telemetry reasons
 	ReasonComponentsRunning      = "ComponentsRunning"
@@ -56,11 +57,12 @@ const (
 )
 
 var commonMessages = map[string]string{
-	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
-	ReasonSelfMonFlowHealthy:      "No problems detected in the telemetry flow",
-	ReasonSelfMonProbingFailed:    "Could not determine the health of the telemetry flow because the self monitor probing failed",
-	ReasonTLSConfigurationInvalid: "TLS configuration invalid: %s",
-	ReasonValidationFailed:        "Pipeline validation failed due to an error from the Kubernetes API server",
+	ReasonEndpointConfigurationInvalid: "Endpoint configuration invalid: %s",
+	ReasonNoPipelineDeployed:           "No pipelines have been deployed",
+	ReasonSelfMonFlowHealthy:           "No problems detected in the telemetry flow",
+	ReasonSelfMonProbingFailed:         "Could not determine the health of the telemetry flow because the self monitor probing failed",
+	ReasonTLSConfigurationInvalid:      "TLS configuration invalid: %s",
+	ReasonValidationFailed:             "Pipeline validation failed due to an error from the Kubernetes API server",
 }
 
 var logPipelineMessages = map[string]string{
