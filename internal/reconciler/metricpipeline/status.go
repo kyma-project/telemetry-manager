@@ -13,6 +13,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -103,6 +104,13 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 
 	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
 		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.ConvertErrToMsg(err)
+	}
+	
+	var errEndpointInvalid *endpoint.EndpointInvalidError
+	if errors.As(err, &errEndpointInvalid) {
+		return metav1.ConditionFalse,
+			conditions.ReasonEndpointConfigurationInvalid,
+			fmt.Sprintf(conditions.MessageForTracePipeline(conditions.ReasonEndpointConfigurationInvalid), errEndpointInvalid.Error())
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError

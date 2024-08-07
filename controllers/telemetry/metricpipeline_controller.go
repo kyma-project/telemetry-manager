@@ -38,6 +38,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
@@ -76,6 +77,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-metricpipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
 
 	pipelineValidator := &metricpipeline.Validator{
+		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
 		SecretRefValidator: &secretref.Validator{Client: client},
 		PipelineLock:       pipelineLock,

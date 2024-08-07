@@ -22,9 +22,9 @@ type TLSCertValidator interface {
 
 type Validator struct {
 	EndpointValidator  EndpointValidator
-	PipelineLock       PipelineLock
-	SecretRefValidator SecretRefValidator
 	TLSCertValidator   TLSCertValidator
+	SecretRefValidator SecretRefValidator
+	PipelineLock       PipelineLock
 }
 
 func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {

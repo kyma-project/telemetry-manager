@@ -75,9 +75,9 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 
 	pipelineValidator := &tracepipeline.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
-		PipelineLock:       pipelineLock,
-		SecretRefValidator: &secretref.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
+		SecretRefValidator: &secretref.Validator{Client: client},
+		PipelineLock:       pipelineLock,
 	}
 
 	gatewayRBAC := otelcollector.MakeTraceGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace})
