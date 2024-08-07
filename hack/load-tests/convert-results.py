@@ -4,6 +4,7 @@
 import json
 import os
 from collections import defaultdict
+from py_markdown_table.markdown_table import markdown_table
 
 # the input json looks like this:
 # {
@@ -33,7 +34,20 @@ from collections import defaultdict
 # templates for table line based on target_type
 templates = {}
 # templates['logs-otel'] = "|{bla} |"# {single[bla]} | {single[results][bla]} | {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
-templates['logs-otel'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
+templates['logs-otel'] = (
+    "\n"
+    "| config | logs received | logs exported | logs queued | cpu | memory | no. restarts of gateway | no. restarts of generator "
+    "|"
+    "\n"
+    "| --- | --- | --- | --- | --- | --- | ---"
+    "|"
+    "\n"
+    "| single | {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} "
+    "|"
+    "\n"
+    "| batch | {batch[results][RECEIVED]} | {batch[results][EXPORTED]} | {batch[results][QUEUE]} | {batch[results][CPU]} | {batch[results][MEMORY]} | {batch[results][RESTARTS_GATEWAY]} | {batch[results][RESTARTS_GENERATOR]} "
+    "|"
+)
 templates['logs-fluentbit'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
 templates['metrics'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
 templates['traces'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
@@ -62,6 +76,7 @@ def load_results(directories):
                         test_key.append('single')
                     new_data = defaultdict(str, data)
                     new_data['results'] = defaultdict(str, data['results'])
+                    new_data['mode'] = '-'.join(test_key)
                     results[key]['-'.join(test_key)] = new_data
     return results
 

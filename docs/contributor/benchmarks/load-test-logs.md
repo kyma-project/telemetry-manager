@@ -37,6 +37,11 @@ A typical test result output looks like the following example:
 |---------|----------------------------|----------------------------|---------------------|----------------------|---------------|
 | 0.105.0 | 5992                       | 5993                       | 0                   | 225                  | 1.6           |
 
+
+|   test_name   |test_target|overlay|max_pipeline|               nodes              |backpressure_test|test_duration|EXPORTED|RESTARTS_GATEWAY|CPU|RECEIVED|QUEUE|TYPE|MEMORY|RESTARTS_GENERATOR| mode |
+|---------------|-----------|-------|------------|----------------------------------|-----------------|-------------|--------|----------------|---|--------|-----|----|------|------------------|------|
+|   logs-otel   | logs-otel | batch |    false   |['n1-standard-4', 'n1-standard-4']|      false      |     1200    |  7117  |        0       |2.5|  7115  |11716| log|  772 |         6        | batch|
+|logs-otel-batch| logs-otel |       |    false   |['n1-standard-4', 'n1-standard-4']|      false      |     1200    |  6353  |        0       |2.4|  6349  |13404| log|  809 |         2        |single|
 </div>
 
 ## Interpretation
