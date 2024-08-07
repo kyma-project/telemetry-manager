@@ -58,6 +58,20 @@ NAME="$TEST_TARGET"
 
 RESULTS_FILE="tests/$(echo "$NAME-$image_clean" | tr -cd '[[:alnum:]]._-').json"
 
+function print_config() {
+    echo "Test configuration:"
+    echo "  Test Name: $TEST_NAME"
+    echo "  Test Target: $TEST_TARGET"
+    echo "  Test Duration: $TEST_DURATION"
+    echo "  OTEL Image: $OTEL_IMAGE"
+    echo "  Max Pipeline: $MAX_PIPELINE"
+    echo "  Backpressure Test: $BACKPRESSURE_TEST"
+    echo "  Log Rate: $LOG_RATE"
+    echo "  Log Size: $LOG_SIZE"
+    echo "  Overlay: $OVERLAY"
+    echo "  Results File: $RESULTS_FILE"
+}
+
 function setup() {
     kubectl create namespace "$PROMETHEUS_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
@@ -393,8 +407,11 @@ function get_result_and_cleanup_selfmonitor() {
     kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
 }
 
+
+
 # cleanup on exit. cleanup also collects the results and writes them to a file
 trap cleanup EXIT
+print_config
 setup
 wait_for_resources
 # wait for the test to finish

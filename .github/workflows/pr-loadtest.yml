@@ -88,7 +88,7 @@ jobs:
 
       # Run the load test
       - name: Run Load test
-        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }} -d ${{ github.event.inputs.duration }} -o "${{ github.event.inputs.overlay}}"
+        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }} -d ${{ github.event.inputs.duration }} -o "${{ github.event.inputs.overlay }}"
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
