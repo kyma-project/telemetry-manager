@@ -9,7 +9,7 @@ import (
 )
 
 type EndpointValidator interface {
-	Validate(ctx context.Context, endpoint telemetryv1alpha1.ValueType) error
+	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType) error
 }
 
 type SecretRefValidator interface {
@@ -32,7 +32,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Tr
 		return err
 	}
 
-	if err := v.EndpointValidator.Validate(ctx, pipeline.Spec.Output.Otlp.Endpoint); err != nil {
+	if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.Otlp.Endpoint); err != nil {
 		return err
 	}
 
