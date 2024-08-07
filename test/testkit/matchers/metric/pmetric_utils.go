@@ -47,15 +47,18 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 			scopeMetrics := resourceMetrics.ScopeMetrics().At(j)
 			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
 				metric := scopeMetrics.Metrics().At(k)
-				flatMetrics = append(flatMetrics, FlatMetric{
-					Name:               metric.Name(),
-					Description:        metric.Description(),
-					ScopeAndVersion:    ScopeVersion{scopeMetrics.Scope().Name(), scopeMetrics.Scope().Version()},
-					ResourceAttributes: attributeToMap(resourceMetrics.Resource().Attributes()),
-					ScopeAttributes:    attributeToMap(scopeMetrics.Scope().Attributes()),
-					MetricAttributes:   attributeToMap(getAttributesPerDataPoint(metric)[0]),
-					Type:               metric.Type(),
-				})
+				dataPointsAttributes := getAttributesPerDataPoint(metric)
+				for l := 0; l < len(dataPointsAttributes); l++ {
+					flatMetrics = append(flatMetrics, FlatMetric{
+						Name:               metric.Name(),
+						Description:        metric.Description(),
+						ScopeAndVersion:    ScopeVersion{scopeMetrics.Scope().Name(), scopeMetrics.Scope().Version()},
+						ResourceAttributes: attributeToMap(resourceMetrics.Resource().Attributes()),
+						ScopeAttributes:    attributeToMap(scopeMetrics.Scope().Attributes()),
+						MetricAttributes:   attributeToMap(dataPointsAttributes[l]),
+						Type:               metric.Type(),
+					})
+				}
 			}
 		}
 	}
