@@ -181,6 +181,7 @@ linters-settings:
     rules:
       - name: dot-imports
         disabled: true
+      - name: unexported-return
 
   gocyclo:
     # Minimal code complexity to report.
