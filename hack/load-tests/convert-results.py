@@ -4,7 +4,6 @@
 import json
 import os
 from collections import defaultdict
-from py_markdown_table.markdown_table import markdown_table
 
 # the input json looks like this:
 # {
