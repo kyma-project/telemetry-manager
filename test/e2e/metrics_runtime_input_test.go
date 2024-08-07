@@ -120,6 +120,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
+
 					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletstats.MetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

@@ -33,6 +33,7 @@ const (
 	ReasonTLSCertificateExpired        = "TLSCertificateExpired"
 	ReasonTLSConfigurationInvalid      = "TLSConfigurationInvalid"
 	ReasonValidationFailed             = "ValidationFailed"
+	ReasonRolloutInProgress            = "RolloutInProgress"
 
 	// Telemetry reasons
 	ReasonComponentsRunning      = "ComponentsRunning"
@@ -51,7 +52,7 @@ const (
 // Error messages
 const (
 	podIsNotScheduled    = "Pod is not scheduled: %s"
-	podIsPending         = "Pod is in the pending state as container: %s is not running due to: %s"
+	podIsPending         = "Pod is in the pending state because container: %s is not running due to: %s"
 	podIsFailed          = "Pod is in the failed state due to: %s"
 	podRolloutInProgress = "Pods are being started/updated"
 )
