@@ -21,7 +21,7 @@ type SecretRefValidator interface {
 }
 
 type Validator struct {
-	EndpointValidator EndpointValidator
+	EndpointValidator  EndpointValidator
 	TLSCertValidator   TLSCertValidator
 	SecretRefValidator SecretRefValidator
 	PipelineLock       PipelineLock
