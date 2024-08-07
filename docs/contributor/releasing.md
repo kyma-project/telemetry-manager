@@ -58,11 +58,11 @@ This release process covers the steps to release new major and minor versions fo
    git push upstream {RELEASE_DEV_VERSION}
    ```
 
-   The {RELEASE_VERSION} tag triggers a post-submit Prow Job (`post-telemetry-manager-build-release`) and a GitHub action (`GitHub Release`). The `post-telemetry-manager-build-release` job builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. The `GitHub Release` action creates the GitHub release.
+   The {RELEASE_VERSION} tag triggers the GitHub actions `Build Image` and `Tag Release`. The `Build Image` action builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. `Tag Release` action creates the GitHub release.
 
-10. Verify the [status](https://status.build.kyma-project.io/) of the post-submit Prow Job (`post-telemetry-manager-build-release`) and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the GitHub action (`GitHub Release`).
-   - Once the post-submit Prow Job and the GitHub action succeed, the new GitHub release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
-   - If the post-submit Prow Job or the GitHub action fails, re-trigger them by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
+10. Verify the [status](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-image.yml) of the `Build Image` GitHub action and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the `Tag Release` GitHub action.
+   - Once the `Build Image` and the `Tag Release` GitHub action succeed, the new GitHub release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
+   - If the `Build Image` or the `Tag Release` GitHub action fails, re-trigger them by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
 
      ```bash
      git push --delete upstream {RELEASE_VERSION}
