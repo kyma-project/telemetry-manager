@@ -32,8 +32,12 @@ func IsEndpointInvalidError(err error) bool {
 	return errors.As(err, &errEndpointInvalid)
 }
 
-func (v *Validator) Validate(ctx context.Context, endpoint telemetryv1alpha1.ValueType) error {
-	endpointValue, err := resolveValue(ctx, v.Client, endpoint)
+func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType) error {
+	if endpoint == nil {
+		return &EndpointInvalidError{Message: ValueResolveFailedErrorMessage}
+	}
+
+	endpointValue, err := resolveValue(ctx, v.Client, *endpoint)
 	if err != nil {
 		return err
 	}
