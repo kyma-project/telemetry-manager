@@ -44,3 +44,23 @@ func makeSingletonKymaStatsReceiverCreatorConfig(gatewayNamespace string) *Singl
 		},
 	}
 }
+
+func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *SingletonK8sClusterReceiverCreator {
+	return &SingletonK8sClusterReceiverCreator{
+		AuthType: "serviceAccount",
+		LeaderElection: LeaderElection{
+			LeaseName:      "telemetry-metric-gateway-k8scluster",
+			LeaseNamespace: gatewayNamespace,
+		},
+		SingletonK8sClusterReceiver: SingletonK8sClusterReceiver{
+			K8sClusterReceiver: K8sClusterReceiver{
+				AuthType:           "serviceAccount",
+				CollectionInterval: "30s",
+				AllocatableTypeToReport: []string{
+					"cpu",
+					"memory",
+				},
+			},
+		},
+	}
+}

@@ -23,6 +23,7 @@ type BuildOptions struct {
 	GatewayNamespace            string
 	InstrumentationScopeVersion string
 	KymaInputAllowed            bool
+	K8sClusterReceiverAllowed   bool
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
@@ -73,12 +74,19 @@ func declareComponentsForMetricPipeline(
 	opts BuildOptions,
 ) error {
 	declareSingletonKymaStatsReceiverCreator(pipeline, cfg, opts)
+	declareSingletonK8sClusterReceiverCreator(pipeline, cfg, opts)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
 	declareInstrumentationScopeTransform(pipeline, cfg, opts)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+}
+
+func declareSingletonK8sClusterReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
+	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) && isRuntimePodMetricsEnabled(pipeline.Spec.Input) {
+		cfg.Receivers.SingletonK8sClusterReceiver = makeSingletonK8sClusterReceiverCreatorConfig(opts.GatewayNamespace)
+	}
 }
 
 func declareSingletonKymaStatsReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
@@ -154,6 +162,9 @@ func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipe
 	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
 		cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, opts.InstrumentationScopeVersion)
 	}
+	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) && isRuntimeInputEnabled(pipeline.Spec.Input) {
+		cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceK8sCluster, opts.InstrumentationScopeVersion)
+	}
 }
 
 func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
@@ -184,10 +195,14 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 		processors = append(processors, "transform/set-instrumentation-scope-kyma")
 	}
 
+	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) && isRuntimeInputEnabled(pipeline.Spec.Input) {
+		processors = append(processors, "transform/set-instrumentation-scope-k8s_cluster")
+	}
+
 	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
 
 	return config.Pipeline{
-		Receivers:  makeReceiversIDs(pipeline.Annotations, opts.KymaInputAllowed),
+		Receivers:  makeReceiversIDs(pipeline, opts),
 		Processors: processors,
 		Exporters:  []string{makeOTLPExporterID(pipeline)},
 	}
@@ -265,13 +280,17 @@ func formatNamespaceFilterID(pipelineName string, inputSourceType metric.InputSo
 	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
 }
 
-func makeReceiversIDs(annotations map[string]string, kymaInputAllowed bool) []string {
+func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) []string {
 	var receivers []string
 
 	receivers = append(receivers, "otlp")
 
-	if isKymaInputEnabled(annotations, kymaInputAllowed) {
+	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
 		receivers = append(receivers, "singleton_receiver_creator/kymastats")
+	}
+
+	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) && isRuntimeInputEnabled(pipeline.Spec.Input) {
+		receivers = append(receivers, "singleton_receiver_creator/k8s_cluster")
 	}
 
 	return receivers
@@ -329,4 +348,8 @@ func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInpu
 
 func isKymaInputEnabled(annotations map[string]string, kymaInputAllowed bool) bool {
 	return kymaInputAllowed && annotations[KymaInputAnnotation] == "true"
+}
+
+func isK8sClusterReceiverEnabled(input telemetryv1alpha1.MetricPipelineInput, k8sClusterReceiverAllowed bool) bool {
+	return k8sClusterReceiverAllowed && input.Runtime != nil && input.Runtime.Enabled
 }

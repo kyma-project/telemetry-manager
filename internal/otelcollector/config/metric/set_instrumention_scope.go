@@ -11,6 +11,7 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourcePrometheus: "otelcol/prometheusreceiver",
 	InputSourceIstio:      "otelcol/prometheusreceiver",
 	InputSourceKyma:       "otelcol/kymastats",
+	InputSourceK8sCluster: "otelcol/k8sclusterreceiver",
 }
 
 func MakeInstrumentationScopeProcessor(inputSource InputSourceType, instrumentationScopeVersion string) *TransformProcessor {

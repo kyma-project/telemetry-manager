@@ -14,14 +14,21 @@ type Config struct {
 }
 
 type Receivers struct {
-	OTLP                              config.OTLPReceiver                `yaml:"otlp"`
-	SingletonKymaStatsReceiverCreator *SingletonKymaStatsReceiverCreator `yaml:"singleton_receiver_creator/kymastats,omitempty"`
+	OTLP                              config.OTLPReceiver                 `yaml:"otlp"`
+	SingletonKymaStatsReceiverCreator *SingletonKymaStatsReceiverCreator  `yaml:"singleton_receiver_creator/kymastats,omitempty"`
+	SingletonK8sClusterReceiver       *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8scluster,omitempty"`
 }
 
 type SingletonKymaStatsReceiverCreator struct {
 	AuthType                   string                     `yaml:"auth_type"`
 	LeaderElection             LeaderElection             `yaml:"leader_election"`
 	SingletonKymaStatsReceiver SingletonKymaStatsReceiver `yaml:"receiver"`
+}
+
+type SingletonK8sClusterReceiverCreator struct {
+	AuthType                    string                      `yaml:"auth_type"`
+	LeaderElection              LeaderElection              `yaml:"leader_election"`
+	SingletonK8sClusterReceiver SingletonK8sClusterReceiver `yaml:"receiver"`
 }
 
 type LeaderElection struct {
@@ -37,6 +44,16 @@ type KymaStatsReceiver struct {
 	AuthType           string      `yaml:"auth_type"`
 	CollectionInterval string      `yaml:"collection_interval"`
 	Modules            []ModuleGVR `yaml:"modules"`
+}
+
+type SingletonK8sClusterReceiver struct {
+	K8sClusterReceiver K8sClusterReceiver `yaml:"k8scluster"`
+}
+
+type K8sClusterReceiver struct {
+	AuthType                string   `yaml:"auth_type"`
+	CollectionInterval      string   `yaml:"collection_interval"`
+	AllocatableTypeToReport []string `yaml:"allocatable_type_to_report"`
 }
 
 type ModuleGVR struct {
@@ -60,6 +77,7 @@ type Processors struct {
 	DropRuntimeContainerMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-container-metrics,omitempty"`
 	ResolveServiceName                           *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 	SetInstrumentationScopeKyma                  *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
+	SetInstrumentationScopeK8sCluster            *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-k8s_cluster,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`

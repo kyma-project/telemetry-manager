@@ -52,6 +52,32 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				}},
 			},
 			inputSource: InputSourceIstio,
+		}, {
+			name: "InputSourceKyma",
+			want: &TransformProcessor{
+				ErrorMode: "ignore",
+				MetricStatements: []config.TransformProcessorStatements{{
+					Context: "scope",
+					Statements: []string{
+						"set(version, \"main\") where name == \"otelcol/kymastats\"",
+						"set(name, \"io.kyma-project.telemetry/kyma\") where name == \"otelcol/kymastats\"",
+					},
+				}},
+			},
+			inputSource: InputSourceKyma,
+		}, {
+			name: "InputSourceK8sCluster",
+			want: &TransformProcessor{
+				ErrorMode: "ignore",
+				MetricStatements: []config.TransformProcessorStatements{{
+					Context: "scope",
+					Statements: []string{
+						"set(version, \"main\") where name == \"otelcol/k8sclusterreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/k8s_cluster\") where name == \"otelcol/k8sclusterreceiver\"",
+					},
+				}},
+			},
+			inputSource: InputSourceK8sCluster,
 		},
 	}
 
