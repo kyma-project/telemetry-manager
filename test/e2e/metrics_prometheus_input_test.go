@@ -86,24 +86,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 				// targets discovered via annotated pods must have no service label
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(prommetricgen.MetricCPUTemperature.Name)),
-						WithType(Equal(prommetricgen.MetricCPUTemperature.Type)),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
-						WithType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type)),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
-						WithType(Equal(prommetricgen.MetricHardwareHumidity.Type)),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
-						WithType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type)),
-					))),
-				),
+				g.Expect(resp).To(HaveHTTPBody(
+					WithFlatMetrics(SatisfyAll(
+						ContainElement(
+							And(
+								HaveField("Name", prommetricgen.MetricCPUTemperature.Name),
+								HaveField("Type", prommetricgen.MetricCPUTemperature.Type),
+							),
+						),
+						ContainElement(
+							And(
+								HaveField("Name", prommetricgen.MetricCPUEnergyHistogram.Name),
+								HaveField("Type", prommetricgen.MetricCPUEnergyHistogram.Type),
+							),
+						),
+						ContainElement(
+							And(
+								HaveField("Name", prommetricgen.MetricHardwareHumidity.Name),
+								HaveField("Type", prommetricgen.MetricHardwareHumidity.Type),
+							),
+						),
+						ContainElement(
+							And(
+								HaveField("Name", prommetricgen.MetricHardDiskErrorsTotal.Name),
+								HaveField("Type", prommetricgen.MetricHardDiskErrorsTotal.Type),
+							),
+						),
+					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -113,28 +122,37 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(prommetricgen.MetricCPUTemperature.Name)),
-						WithType(Equal(prommetricgen.MetricCPUTemperature.Type)),
-						ContainDataPointAttrs(HaveKey("service")),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
-						WithType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type)),
-						ContainDataPointAttrs(HaveKey("service")),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
-						WithType(Equal(prommetricgen.MetricHardwareHumidity.Type)),
-						ContainDataPointAttrs(HaveKey("service")),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
-						WithType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type)),
-						ContainDataPointAttrs(HaveKey("service")),
-					))),
-				),
+				g.Expect(resp).To(HaveHTTPBody(
+					WithFlatMetrics(SatisfyAll(
+						ContainElement(
+							And(
+								HaveField("Name", prommetricgen.MetricCPUTemperature.Name),
+								HaveField("Type", prommetricgen.MetricCPUTemperature.Type),
+								HaveField("MetricAttributes", HaveKey("service")),
+							),
+						),
+						ContainElement(
+							And(
+								HaveField("Name", prommetricgen.MetricCPUEnergyHistogram.Name),
+								HaveField("Type", prommetricgen.MetricCPUEnergyHistogram.Type),
+								HaveField("MetricAttributes", HaveKey("service")),
+							),
+						),
+						ContainElement(
+							And(
+								HaveField("Name", prommetricgen.MetricHardwareHumidity.Name),
+								HaveField("Type", prommetricgen.MetricHardwareHumidity.Type),
+								HaveField("MetricAttributes", HaveKey("service")),
+							),
+						),
+						ContainElement(
+							And(
+								HaveField("Name", prommetricgen.MetricHardDiskErrorsTotal.Name),
+								HaveField("Type", prommetricgen.MetricHardDiskErrorsTotal.Type),
+								HaveField("MetricAttributes", HaveKey("service")),
+							),
+						),
+					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -145,8 +163,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.DefaultMetricsNames))))),
-				))
+					WithFlatMetrics(
+						Not(ContainElement(
+							HaveField("Name", BeElementOf(kubeletstats.DefaultMetricsNames)),
+						)),
+						// Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.DefaultMetricsNames))))),
+					)))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -160,7 +182,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(ContainMetric(WithName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"))))),
+					WithFlatMetrics(
+						Not(ContainElement(
+							HaveField("Name", BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")),
+						))),
+					// Not(ContainMd(ContainMetric(WithName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
