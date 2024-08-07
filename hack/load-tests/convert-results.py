@@ -56,6 +56,8 @@ def load_results(directories):
                         test_key.append('multi')
                     if data['backpressure_test'] == 'true':
                         test_key.append('bp')
+                    if data['overlay'] != "":
+                        test_key.append(data['overlay'])
                     if len(test_key) == 0:
                         test_key.append('single')
                     new_data = defaultdict(str, data)

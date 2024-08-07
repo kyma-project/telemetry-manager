@@ -228,7 +228,8 @@ function cleanup() {
         "nodes": $nodes,
         "backpressure_test": "$BACKPRESSURE_TEST",
         "results": $json,
-        "test_duration": "$TEST_DURATION"
+        "test_duration": "$TEST_DURATION",
+        "overlay": "$OVERLAY"
     }
 EOF
     )
