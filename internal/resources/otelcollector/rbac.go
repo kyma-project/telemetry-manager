@@ -6,15 +6,15 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-type rbac struct {
+type Rbac struct {
 	clusterRole        *rbacv1.ClusterRole
 	clusterRoleBinding *rbacv1.ClusterRoleBinding
 	role               *rbacv1.Role
 	roleBinding        *rbacv1.RoleBinding
 }
 
-func MakeTraceGatewayRBAC(name types.NamespacedName) rbac {
-	return rbac{
+func MakeTraceGatewayRBAC(name types.NamespacedName) Rbac {
+	return Rbac{
 		clusterRole:        makeTraceGatewayClusterRole(name),
 		clusterRoleBinding: makeClusterRoleBinding(name),
 		role:               nil,
@@ -22,8 +22,8 @@ func MakeTraceGatewayRBAC(name types.NamespacedName) rbac {
 	}
 }
 
-func MakeMetricAgentRBAC(name types.NamespacedName) rbac {
-	return rbac{
+func MakeMetricAgentRBAC(name types.NamespacedName) Rbac {
+	return Rbac{
 		clusterRole:        makeMetricAgentClusterRole(name),
 		clusterRoleBinding: makeClusterRoleBinding(name),
 		role:               nil,
@@ -31,8 +31,8 @@ func MakeMetricAgentRBAC(name types.NamespacedName) rbac {
 	}
 }
 
-func MakeMetricGatewayRBAC(name types.NamespacedName, kymaInputAllowed bool) rbac {
-	return rbac{
+func MakeMetricGatewayRBAC(name types.NamespacedName, kymaInputAllowed bool) Rbac {
+	return Rbac{
 		clusterRole:        makeMetricGatewayClusterRole(name, kymaInputAllowed),
 		clusterRoleBinding: makeClusterRoleBinding(name),
 		role:               makeMetricGatewayRole(name, kymaInputAllowed),

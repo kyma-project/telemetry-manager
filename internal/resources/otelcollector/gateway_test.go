@@ -519,7 +519,7 @@ func createGatewayConfig() GatewayConfig {
 	}
 }
 
-func createGatewayRBAC() rbac {
+func createGatewayRBAC() Rbac {
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
@@ -578,7 +578,7 @@ func createGatewayRBAC() rbac {
 		},
 	}
 
-	return rbac{
+	return Rbac{
 		clusterRole:        clusterRole,
 		clusterRoleBinding: clusterRoleBinding,
 		role:               role,
