@@ -65,6 +65,7 @@ templates['logs-fluentbit'] = (
     "| Input Bytes Processing Rate/sec (KByte)  | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage "
     "| Input Bytes Processing Rate/sec (KByte)  | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage "
     "|\n"
+    "|                     "
     "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
 )
 templates['traces'] = (
@@ -143,12 +144,41 @@ templates['metricagent'] = (
     "|  Receiver Accepted Metric/sec  | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
     "|         Receiver Accepted Metric/sec          | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
     "|\n"
+    "|                    "
     "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][MEMORY]} | {single[results][CPU]} "
     "| {bp[results][RECEIVED]} | {bp[results][EXPORTED]} | {bp[results][QUEUE]} | {bp[results][MEMORY]} | {bp[results][CPU]} "
     "|\n"
 )
 
 
+# load all individual json files from the directories and combine them into a single dictionary
+# the result looks like this:
+# {
+#   "metrics": { << test kind (metrics, selfmonitor, metricagent, etc.)
+#     "single": {  << test type (single, multi, bp, multi-bp, etc.)
+#       "test_name": "metrics",
+#       "test_target": "metrics",
+#       "max_pipeline": "false",
+#       "nodes": [
+#         "n1-standard-4",
+#         "n1-standard-4"
+#       ],
+#       "backpressure_test": "false",
+#       "results": {
+#         "EXPORTED": "4477",
+#         "RESTARTS_GATEWAY": "0",
+#         "CPU": "1.5",
+#         "RECEIVED": "4476",
+#         "QUEUE": "0",
+#         "TYPE": "metric",
+#         "MEMORY": "247"
+#       },
+#       "test_duration": "1200",
+#       "overlay": "",
+#       "mode": "single"
+#     }
+#   }
+# }
 def load_results(directories):
     results = defaultdict(dict)
     for directory in directories:
@@ -180,6 +210,7 @@ def print_results(results):
     for test_target, test_run in results.items():
         template = templates[test_target]
         try:
+            # print the template with the data from the results
             print(template.format_map(results[test_target]))
         except KeyError as e:
             print("Template {} requires data for entry {}".format( test_target, e))
