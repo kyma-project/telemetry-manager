@@ -106,11 +106,10 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.ConvertErrToMsg(err)
 	}
 
-	var errEndpointInvalid *endpoint.EndpointInvalidError
-	if errors.As(err, &errEndpointInvalid) {
+	if endpoint.IsEndpointInvalidError(err) {
 		return metav1.ConditionFalse,
 			conditions.ReasonEndpointConfigurationInvalid,
-			fmt.Sprintf(conditions.MessageForTracePipeline(conditions.ReasonEndpointConfigurationInvalid), errEndpointInvalid.Error())
+			fmt.Sprintf(conditions.MessageForTracePipeline(conditions.ReasonEndpointConfigurationInvalid), err.Error())
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError

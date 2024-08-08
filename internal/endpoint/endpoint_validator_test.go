@@ -2,7 +2,6 @@ package endpoint
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -28,8 +27,7 @@ func TestMissingEndpoint(t *testing.T) {
 
 	err := validator.Validate(context.Background(), nil)
 
-	var endpointInvalidError *EndpointInvalidError
-	require.True(t, errors.As(err, &endpointInvalidError))
+	require.True(t, IsEndpointInvalidError(err))
 	require.EqualError(t, err, endpointMissingErrMessage)
 }
 
@@ -41,8 +39,7 @@ func TestEmptyEndpoint(t *testing.T) {
 
 	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{})
 
-	var endpointInvalidError *EndpointInvalidError
-	require.True(t, errors.As(err, &endpointInvalidError))
+	require.True(t, IsEndpointInvalidError(err))
 	require.EqualError(t, err, endpointMissingErrMessage)
 }
 
@@ -65,8 +62,7 @@ func TestEndpointValueInvalid(t *testing.T) {
 
 	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{Value: endpointInvalid})
 
-	var endpointInvalidError *EndpointInvalidError
-	require.True(t, errors.As(err, &endpointInvalidError))
+	require.True(t, IsEndpointInvalidError(err))
 	require.EqualError(t, err, endpointInvalidErrMessage)
 }
 
@@ -119,7 +115,33 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 			Key:       "apikey",
 		}}})
 
-	var endpointInvalidError *EndpointInvalidError
-	require.True(t, errors.As(err, &endpointInvalidError))
+	require.True(t, IsEndpointInvalidError(err))
 	require.EqualError(t, err, endpointInvalidErrMessage)
+}
+
+func TestEndpointValueFromMissing(t *testing.T) {
+	validSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"apikey": []byte(endpointInvalid),
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithObjects(validSecret).Build()
+	validator := Validator{
+		Client: fakeClient,
+	}
+
+	err := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			Name:      "unknown",
+			Namespace: "default",
+			Key:       "apikey",
+		}}})
+
+	require.True(t, IsEndpointInvalidError(err))
+	require.EqualError(t, err, endpointMissingErrMessage)
 }
