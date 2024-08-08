@@ -73,7 +73,7 @@ func TestEndpointValueFromValid(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			"apikey": []byte(endpointValid),
+			"endpoint": []byte(endpointValid),
 		},
 	}
 
@@ -86,7 +86,7 @@ func TestEndpointValueFromValid(t *testing.T) {
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
-			Key:       "apikey",
+			Key:       "endpoint",
 		}}})
 
 	require.NoError(t, err)
@@ -99,7 +99,7 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			"apikey": []byte(endpointInvalid),
+			"endpoint": []byte(endpointInvalid),
 		},
 	}
 
@@ -112,7 +112,7 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
-			Key:       "apikey",
+			Key:       "endpoint",
 		}}})
 
 	require.True(t, IsEndpointInvalidError(err))
@@ -126,7 +126,7 @@ func TestEndpointValueFromMissing(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			"apikey": []byte(endpointInvalid),
+			"endpoint": []byte(endpointInvalid),
 		},
 	}
 
@@ -139,7 +139,7 @@ func TestEndpointValueFromMissing(t *testing.T) {
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "unknown",
 			Namespace: "default",
-			Key:       "apikey",
+			Key:       "endpoint",
 		}}})
 
 	require.True(t, IsEndpointInvalidError(err))
