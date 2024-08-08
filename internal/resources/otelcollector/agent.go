@@ -28,7 +28,7 @@ const (
 
 type AgentApplierDeleter struct {
 	Config AgentConfig
-	RBAC   rbac
+	RBAC   Rbac
 }
 
 type AgentApplyOptions struct {
