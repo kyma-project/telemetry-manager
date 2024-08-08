@@ -122,7 +122,8 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	kymaInputAllowed bool
+	kymaStatsReceiverAllowed  bool
+	k8sClusterReceiverAllowed bool
 
 	version = "main"
 )
@@ -259,7 +260,8 @@ func main() {
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
-	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
+	flag.BoolVar(&kymaStatsReceiverAllowed, "kyma-stats-receiver-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
+	flag.BoolVar(&k8sClusterReceiverAllowed, "k8s-cluster-receiver-allowed", false, "Allow collecting cluster level metrics from API Server in kyma")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -533,7 +535,7 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 			},
 			TelemetryNamespace: telemetryNamespace,
 			SelfMonitorName:    selfMonitorName,
-			KymaInputAllowed:   kymaInputAllowed,
+			KymaInputAllowed:   kymaStatsReceiverAllowed,
 		},
 	)
 	if err != nil {

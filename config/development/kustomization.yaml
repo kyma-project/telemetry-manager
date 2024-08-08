@@ -23,7 +23,7 @@ patches:
   - patch: |-
       - op: add
         path: /spec/template/spec/containers/0/args/-
-        value: --kyma-input-allowed=true
+        value: --kyma-stats-receiver-allowed=true
     target:
       kind: Deployment
       name: manager
