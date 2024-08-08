@@ -43,7 +43,7 @@ const (
 	LabelTraces               = "traces"
 	LabelMetrics              = "metrics"
 	LabelTelemetry            = "telemetry"
-	LabelV1Beta1              = "v1beta1"
+	LabelExperimental         = "experimental"
 	LabelTelemetryLogAnalysis = "telemetry-log-analysis"
 	LabelMaxPipeline          = "max-pipeline"
 

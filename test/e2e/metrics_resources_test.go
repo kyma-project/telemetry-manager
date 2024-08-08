@@ -19,11 +19,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
-	var pipelineName = suite.ID()
+var _ = Describe(suite.ID(), Ordered, func() {
 	const ownerReferenceKind = "MetricPipeline"
 
-	Context("When a MetricPipeline exists", Ordered, func() {
+	Context("When a MetricPipeline exists", Label(suite.LabelMetrics), Ordered, func() {
+		var pipelineName = suite.ID()
 		endpointKey := "metrics-endpoint"
 		secret := kitk8s.NewOpaqueSecret("metrics-resources", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
 		metricPipeline := testutils.NewMetricPipelineBuilder().
@@ -133,6 +133,57 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			})
 			gatewayResourcesAreDeleted()
 			agentResourcesAreDeleted()
+		})
+
+	})
+
+	//TODO: Move the tests in this Context to the Context above ("When a MetricPipeline exists") when the feature flag --kyma-input-allowed is removed
+	Context("When a MetricPipeline exists in experimental channel", Label(suite.LabelMetrics, suite.LabelExperimental), Ordered, func() {
+		var pipelineName = suite.IDWithSuffix("experimental")
+		endpointKey := "metrics-endpoint"
+		secret := kitk8s.NewOpaqueSecret("metrics-resources", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
+		metricPipeline := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+			WithRuntimeInput(true).
+			Build()
+
+		BeforeAll(func() {
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, &metricPipeline)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, &metricPipeline, secret.K8sObject())).Should(Succeed())
+		})
+
+		Context("should have experimental gateway resources", Ordered, func() {
+			It("Should have a gateway Role owned by the MetricPipeline", func() {
+				var role rbacv1.Role
+				assert.HasOwnerReference(ctx, k8sClient, &role, kitkyma.MetricGatewayRole, ownerReferenceKind, pipelineName)
+			})
+
+			It("Should have a gateway RoleBinding owned by the MetricPipeline", func() {
+				var roleBinding rbacv1.RoleBinding
+				assert.HasOwnerReference(ctx, k8sClient, &roleBinding, kitkyma.MetricGatewayRoleBinding, ownerReferenceKind, pipelineName)
+			})
+		})
+
+		It("Should clean up experimental gateway resources when pipeline becomes non-reconcilable", func() {
+			By("Deleting referenced secret", func() {
+				Expect(k8sClient.Delete(ctx, secret.K8sObject())).Should(Succeed())
+			})
+
+			Eventually(func(g Gomega) bool {
+				var role rbacv1.Role
+				err := k8sClient.Get(ctx, kitkyma.MetricGatewayRole, &role)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "Role still exists")
+
+			Eventually(func(g Gomega) bool {
+				var roleBinding rbacv1.ClusterRoleBinding
+				err := k8sClient.Get(ctx, kitkyma.MetricGatewayRoleBinding, &roleBinding)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "RoleBinding still exists")
+
 		})
 
 	})

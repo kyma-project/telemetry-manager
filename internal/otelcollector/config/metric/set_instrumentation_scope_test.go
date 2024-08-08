@@ -1,20 +1,17 @@
-package agent
+package metric
 
 import (
 	"testing"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 func TestTransformedInstrumentationScope(t *testing.T) {
-	opts := BuildOptions{
-		InstrumentationScopeVersion: "main",
-	}
+	instrumentationScopeVersion := "main"
 	tests := []struct {
 		name        string
 		want        *TransformProcessor
-		inputSource metric.InputSourceType
+		inputSource InputSourceType
 	}{
 		{
 			name: "InputSourceRuntime",
@@ -28,7 +25,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 					},
 				}},
 			},
-			inputSource: metric.InputSourceRuntime,
+			inputSource: InputSourceRuntime,
 		}, {
 			name: "InputSourcePrometheus",
 			want: &TransformProcessor{
@@ -41,7 +38,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 					},
 				}},
 			},
-			inputSource: metric.InputSourcePrometheus,
+			inputSource: InputSourcePrometheus,
 		}, {
 			name: "InputSourceIstio",
 			want: &TransformProcessor{
@@ -54,13 +51,13 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 					},
 				}},
 			},
-			inputSource: metric.InputSourceIstio,
+			inputSource: InputSourceIstio,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := makeInstrumentationScopeProcessor(tt.inputSource, opts); !compareTransformProcessor(got, tt.want) {
+			if got := MakeInstrumentationScopeProcessor(tt.inputSource, instrumentationScopeVersion); !compareTransformProcessor(got, tt.want) {
 				t.Errorf("makeInstrumentationScopeProcessor() = %v, want %v", got, tt.want)
 			}
 		})
