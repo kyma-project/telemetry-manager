@@ -533,9 +533,10 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 				MaxPipelines:  maxMetricPipelines,
 				ModuleVersion: version,
 			},
-			TelemetryNamespace: telemetryNamespace,
-			SelfMonitorName:    selfMonitorName,
-			KymaInputAllowed:   kymaStatsReceiverAllowed,
+			TelemetryNamespace:        telemetryNamespace,
+			SelfMonitorName:           selfMonitorName,
+			KymaInputAllowed:          kymaStatsReceiverAllowed,
+			K8sClusterReceiverAllowed: k8sClusterReceiverAllowed,
 		},
 	)
 	if err != nil {
