@@ -32,26 +32,121 @@ from collections import defaultdict
 
 # templates for table line based on target_type
 templates = {}
-# templates['logs-otel'] = "|{bla} |"# {single[bla]} | {single[results][bla]} | {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
 templates['logs-otel'] = (
     "\n"
     "| config | logs received | logs exported | logs queued | cpu | memory | no. restarts of gateway | no. restarts of generator "
     "|"
     "\n"
-    "| --- | --- | --- | --- | --- | --- | ---"
+    "| --- | --- | --- | --- | --- | --- | --- "
     "|"
     "\n"
     "| single | {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} "
     "|"
     "\n"
     "| batch | {batch[results][RECEIVED]} | {batch[results][EXPORTED]} | {batch[results][QUEUE]} | {batch[results][CPU]} | {batch[results][MEMORY]} | {batch[results][RESTARTS_GATEWAY]} | {batch[results][RESTARTS_GENERATOR]} "
-    "|"
+    "|\n"
 )
-templates['logs-fluentbit'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
-templates['metrics'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
-templates['traces'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
-templates['selfmonitor'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
-templates['metricsagent'] = "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
+templates['logs-fluentbit'] = (
+    "|        Version/Test "
+    "|        Single Pipeline (ci-logs)        |                                          |                                 |                      |               "
+    "|       Multi Pipeline (ci-logs-m)        |                                          |                                 |                      |               "
+    "| Single Pipeline Backpressure (ci-logs-b) |                                          |                                 |                      |               "
+    "| Multi Pipeline Backpressure (ci-logs-mb) |                                          |                                 |                      |               "
+    "|\n"
+    "|--------------------:"
+    "|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:"
+    "|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:"
+    "|:----------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:"
+    "|:----------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:"
+    "|\n"
+    "|                     "
+    "| Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage "
+    "| Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage "
+    "| Input Bytes Processing Rate/sec (KByte)  | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage "
+    "| Input Bytes Processing Rate/sec (KByte)  | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|\n"
+    "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
+)
+templates['traces'] = (
+    "|       Version/Test "
+    "| Single Pipeline (ci-traces) |                             |                     |                      |               "
+    "| Multi Pipeline (ci-traces-m) |                             |                     |                      |              "
+    "| Single Pipeline Backpressure (ci-traces-b) |                             |                     |                      |               "
+    "| Multi Pipeline Backpressure (ci-traces-mb) |                             |                     |                      |               "
+    "|\n"
+    "|-------------------:"
+    "|:---------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|:----------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|:------------------------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|:------------------------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|\n"
+    "|                    "
+    "| Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "| Receiver Accepted Spans/sec  | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|        Receiver Accepted Spans/sec         | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|        Receiver Accepted Spans/sec         | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|\n"
+    "|                    "
+    "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][MEMORY]} | {single[results][CPU]} "
+    "| {multi[results][RECEIVED]} | {multi[results][EXPORTED]} | {multi[results][QUEUE]} | {multi[results][MEMORY]} | {multi[results][CPU]} "
+    "| {bp[results][RECEIVED]} | {bp[results][EXPORTED]} | {bp[results][QUEUE]} | {bp[results][MEMORY]} | {bp[results][CPU]} "
+    "| {multi-bp[results][RECEIVED]} | {multi-bp[results][EXPORTED]} | {multi-bp[results][QUEUE]} | {multi-bp[results][MEMORY]} | {multi-bp[results][CPU]} "
+    "|\n"
+)
+templates['metrics'] = (
+    "|       Version/Test "
+    "| Single Pipeline (ci-metrics) |                              |                     |                      |               "
+    "| Multi Pipeline (ci-metrics-m) |                              |                     |                      |               "
+    "| Single Pipeline Backpressure (ci-metrics-b) |                              |                     |                      |               "
+    "| Multi Pipeline Backpressure (ci-metrics-mb) |                              |                     |                      |               "
+    "|\n"
+    "|-------------------:"
+    "|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|:-----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|:-------------------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|:-------------------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|\n"
+    "|                    "
+    "| Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "| Receiver Accepted Metric/sec  | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|        Receiver Accepted Metric/sec         | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|        Receiver Accepted Metric/sec         | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|\n"
+    "|                    "
+    "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][MEMORY]} | {single[results][CPU]} "
+    "| {multi[results][RECEIVED]} | {multi[results][EXPORTED]} | {multi[results][QUEUE]} | {multi[results][MEMORY]} | {multi[results][CPU]} "
+    "| {bp[results][RECEIVED]} | {bp[results][EXPORTED]} | {bp[results][QUEUE]} | {bp[results][MEMORY]} | {bp[results][CPU]} "
+    "| {multi-bp[results][RECEIVED]} | {multi-bp[results][EXPORTED]} | {multi-bp[results][QUEUE]} | {multi-bp[results][MEMORY]} | {multi-bp[results][CPU]} "
+    "|\n"
+)
+templates['selfmonitor'] = (
+    "| Version/Test "
+    "| Default (ci-self-monitor) |                      |                        |                                  |                      |               "
+    "|\n"
+    "|-------------:"
+    "|:-------------------------:|:--------------------:|:----------------------:|:--------------------------------:|:--------------------:|:-------------:"
+    "|\n"
+    "|              "
+    "|    Scrape Samples/sec     | Total Series Created | WAL Storage Size/bytes | Head Chunk Storage Size in bytes | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|\n"
+)
+templates['metricsagent'] = (
+    "|       Version/Test "
+    "| Single Pipeline (ci-metric-ag) |                              |                     |                      |               "
+    "| Single Pipeline Backpressure (ci-metric-ag-b) |                              |                     |                      |               "
+    "|\n"
+    "|-------------------:"
+    "|:------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|:---------------------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:"
+    "|\n"
+    "|                    "
+    "|  Receiver Accepted Metric/sec  | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|         Receiver Accepted Metric/sec          | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage "
+    "|\n"
+    "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][MEMORY]} | {single[results][CPU]} "
+    "| {bp[results][RECEIVED]} | {bp[results][EXPORTED]} | {bp[results][QUEUE]} | {bp[results][MEMORY]} | {bp[results][CPU]} "
+    "|\n"
+)
 
 
 def load_results(directories):
@@ -62,6 +157,7 @@ def load_results(directories):
                 filenamePath = os.path.join(directory, filename)
                 with open(filenamePath, mode='r') as f:
                     data = json.load(f)
+                    print(data)
                     # calculate a new key by combining test_target, max_pipeline and backpressure_test
                     key = data['test_target']
                     test_key = []
@@ -83,7 +179,11 @@ def print_results(results):
     # iterate over all test_targets
     for test_target, test_run in results.items():
         template = templates[test_target]
-        print(template.format_map(results[test_target]))
+        try:
+            print(template.format_map(results[test_target]))
+        except KeyError as e:
+            print("Template {} requires data for entry {}".format( test_target, e))
+
 
 
 # main
