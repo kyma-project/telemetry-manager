@@ -30,23 +30,16 @@ import (
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 )
 
-//go:generate mockery --name DryRunner --filename dryrun.go
-type DryRunner interface {
-	RunParser(ctx context.Context, parser *telemetryv1alpha1.LogParser) error
-}
-
 // +kubebuilder:webhook:path=/validate-logparser,mutating=false,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=logparsers,verbs=create;update,versions=v1alpha1,name=vlogparser.kb.io,admissionReviewVersions=v1
 type ValidatingWebhookHandler struct {
 	client.Client
-	dryRunner DryRunner
-	decoder   admission.Decoder
+	decoder admission.Decoder
 }
 
-func NewValidatingWebhookHandler(client client.Client, dryRunner DryRunner, decoder admission.Decoder) *ValidatingWebhookHandler {
+func NewValidatingWebhookHandler(client client.Client, decoder admission.Decoder) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
-		Client:    client,
-		dryRunner: dryRunner,
-		decoder:   decoder,
+		Client:  client,
+		decoder: decoder,
 	}
 }
 
@@ -76,14 +69,8 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 }
 
 func (v *ValidatingWebhookHandler) validateLogParser(ctx context.Context, logParser *telemetryv1alpha1.LogParser) error {
-	log := logf.FromContext(ctx)
 	err := logParser.Validate()
 	if err != nil {
-		return err
-	}
-
-	if err = v.dryRunner.RunParser(ctx, logParser); err != nil {
-		log.Error(err, "Failed to validate Fluent Bit parser config")
 		return err
 	}
 
