@@ -31,9 +31,9 @@ func MakeMetricAgentRBAC(name types.NamespacedName) rbac {
 	}
 }
 
-func MakeMetricGatewayRBAC(name types.NamespacedName, kymaInputAllowed bool) rbac {
+func MakeMetricGatewayRBAC(name types.NamespacedName, kymaInputAllowed bool, k8sClusterReceiverAllowed bool) rbac {
 	return rbac{
-		clusterRole:        makeMetricGatewayClusterRole(name, kymaInputAllowed),
+		clusterRole:        makeMetricGatewayClusterRole(name, kymaInputAllowed, k8sClusterReceiverAllowed),
 		clusterRoleBinding: makeClusterRoleBinding(name),
 		role:               makeMetricGatewayRole(name, kymaInputAllowed),
 		roleBinding:        makeMetricGatewayRoleBinding(name, kymaInputAllowed),
@@ -83,7 +83,7 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	}
 }
 
-func makeMetricGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bool) *rbacv1.ClusterRole {
+func makeMetricGatewayClusterRole(name types.NamespacedName, kymaStatsReceiverAllowed, k8sClusterReceiverAllowed bool) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -104,12 +104,38 @@ func makeMetricGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bo
 		},
 	}
 
-	if kymaInputAllowed {
+	if kymaStatsReceiverAllowed {
 		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
 			APIGroups: []string{"operator.kyma-project.io"},
 			Resources: []string{"telemetries"},
 			Verbs:     []string{"get", "list", "watch"},
 		})
+	}
+
+	if k8sClusterReceiverAllowed {
+		clusterRules := []rbacv1.PolicyRule{{
+			APIGroups: []string{""},
+			Resources: []string{"events", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "services", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "namespaces", "pods"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments", "daemonsets", "replicasets", "statefulsets"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{"extensions"},
+			Resources: []string{"deployments", "daemonsets", "replicasets", "statefulsets"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{"batch"},
+			Resources: []string{"cronjobs", "jobs"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{"autoscaling"},
+			Resources: []string{"horizontalpodautoscalers"},
+			Verbs:     []string{"get", "list", "watch"},
+		}}
+
+		clusterRole.Rules = append(clusterRole.Rules, clusterRules...)
 	}
 
 	return &clusterRole

@@ -62,9 +62,10 @@ type MetricPipelineController struct {
 type MetricPipelineControllerConfig struct {
 	metricpipeline.Config
 
-	SelfMonitorName    string
-	TelemetryNamespace string
-	KymaInputAllowed   bool
+	SelfMonitorName           string
+	TelemetryNamespace        string
+	KymaInputAllowed          bool
+	K8sClusterReceiverAllowed bool
 }
 
 func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
@@ -82,7 +83,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	}
 
 	agentRBAC := otelcollector.MakeMetricAgentRBAC(types.NamespacedName{Name: config.Agent.BaseName, Namespace: config.Agent.Namespace})
-	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed)
+	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed, config.K8sClusterReceiverAllowed)
 
 	reconciler := metricpipeline.New(
 		client,

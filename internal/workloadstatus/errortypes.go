@@ -10,7 +10,7 @@ var (
 	ErrDaemonSetNotFound = errors.New("DaemonSet is not yet created")
 	ErrDaemonSetFetching = errors.New("failed to get DaemonSet")
 
-	ErrDeploymentNotFound          = errors.New("Deployment is not yet created") //nolint: stylecheck // Deployment is a proper noun
+	ErrDeploymentNotFound1         = errors.New("Deployment is not yet created") //nolint: stylecheck // Deployment is a proper noun
 	ErrDeploymentFetching          = errors.New("failed to get Deployment")
 	ErrFailedToGetLatestReplicaSet = errors.New("failed to get latest ReplicaSets")
 )
