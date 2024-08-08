@@ -60,8 +60,8 @@ This release process covers the steps to release new major and minor versions fo
 
    The {RELEASE_VERSION} tag triggers the GitHub actions `Build Image` and `Tag Release`. The `Build Image` action builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. `Tag Release` action creates the GitHub release.
 
-10. Verify the [status](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-image.yml) of the `Build Image` GitHub action and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the `Tag Release` GitHub action.
-   - Once the `Build Image` and the `Tag Release` GitHub action succeed, the new GitHub release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
+10. Verify the [status](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-image.yml) of the `Build Image` GitHub action and the [status](https://github.com/kyma-project/telemetry-manager/actions/workflows/tag-release.yml) of the `Tag Release` GitHub action.
+   - Once the `Build Image` and the `Tag Release` GitHub actions succeed, the new GitHub release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
    - If the `Build Image` or the `Tag Release` GitHub action fails, re-trigger them by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
 
      ```bash
