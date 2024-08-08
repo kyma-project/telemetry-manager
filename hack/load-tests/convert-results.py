@@ -130,7 +130,7 @@ templates['selfmonitor'] = (
     "|    Scrape Samples/sec     | Total Series Created | WAL Storage Size/bytes | Head Chunk Storage Size in bytes | Pod Memory Usage(MB) | Pod CPU Usage "
     "|\n"
 )
-templates['metricsagent'] = (
+templates['metricagent'] = (
     "|       Version/Test "
     "| Single Pipeline (ci-metric-ag) |                              |                     |                      |               "
     "| Single Pipeline Backpressure (ci-metric-ag-b) |                              |                     |                      |               "
