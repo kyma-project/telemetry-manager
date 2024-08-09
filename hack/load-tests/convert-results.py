@@ -124,7 +124,7 @@ templates['metrics'] = (
     "| {multi-bp[results][RECEIVED]} | {multi-bp[results][EXPORTED]} | {multi-bp[results][QUEUE]} | {multi-bp[results][MEMORY]} | {multi-bp[results][CPU]} "
     "|\n"
 )
-templates['selfmonitor'] = (
+templates['self-monitor'] = (
     "| Version/Test "
     "| Default (ci-self-monitor) |                      |                        |                                  |                      |               "
     "|\n"
