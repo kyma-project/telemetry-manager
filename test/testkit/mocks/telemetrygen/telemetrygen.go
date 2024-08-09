@@ -122,7 +122,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 				Args: []string{
 					string(signalType),
 					"--rate",
-					"30s",
+					"10",
 					"--duration",
 					"30m",
 					"--otlp-endpoint",
