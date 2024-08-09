@@ -71,7 +71,7 @@ jobs:
       - name: Run test on current version
         shell: bash
         run: |
-          make install-tools # delete after the tools via go modules are released 
+          make install-tools # delete after the tools via go modules are released
           bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Finalize test
@@ -79,3 +79,11 @@ jobs:
         if: success() || failure()
         with:
           failure: failure()
+
+  PR-Lifecycle-Success:
+    needs: manager-upgrade
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: |
+          echo "PR Lifecycle completed successfully"
