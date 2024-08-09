@@ -66,7 +66,11 @@ templates['logs-fluentbit'] = (
     "| Input Bytes Processing Rate/sec (KByte)  | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage "
     "|\n"
     "|                     "
-    "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][CPU]} | {single[results][MEMORY]} | {single[results][RESTARTS_GATEWAY]} | {single[results][RESTARTS_GENERATOR]} |"
+    "| {single[results][RECEIVED]} | {single[results][EXPORTED]} | {single[results][QUEUE]} | {single[results][MEMORY]} | {single[results][CPU]} "
+    "| {multi[results][RECEIVED]} | {multi[results][EXPORTED]} | {multi[results][QUEUE]} | {multi[results][MEMORY]} | {multi[results][CPU]} "
+    "| {bp[results][RECEIVED]} | {bp[results][EXPORTED]} | {bp[results][QUEUE]} | {bp[results][MEMORY]} | {bp[results][CPU]} "
+    "| {multi-bp[results][RECEIVED]} | {multi-bp[results][EXPORTED]} | {multi-bp[results][QUEUE]} | {multi-bp[results][MEMORY]} | {multi-bp[results][CPU]} "
+    "|\n"
 )
 templates['traces'] = (
     "|       Version/Test "
