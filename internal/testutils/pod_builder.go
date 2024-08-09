@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type podBuilder struct {
+type PodBuilder struct {
 	name                 string
 	namespace            string
 	labels               map[string]string
@@ -15,24 +15,24 @@ type podBuilder struct {
 	withExpiredThreshold bool
 }
 
-func NewPodBuilder(name, namespace string) *podBuilder {
-	pb := &podBuilder{
+func NewPodBuilder(name, namespace string) *PodBuilder {
+	pb := &PodBuilder{
 		name:      name,
 		namespace: namespace,
 	}
 	return pb
 }
 
-func (pb *podBuilder) WithLabels(labels map[string]string) *podBuilder {
+func (pb *PodBuilder) WithLabels(labels map[string]string) *PodBuilder {
 	pb.labels = labels
 	return pb
 }
 
-func (pb *podBuilder) WithImageNotFound() *podBuilder {
+func (pb *PodBuilder) WithImageNotFound() *PodBuilder {
 
 	pb.status = &corev1.PodStatus{
 		Phase:      corev1.PodPending,
-		Conditions: createPodReadyConditions(corev1.ConditionFalse, "", ""),
+		Conditions: createPodReadyConditions(corev1.ConditionFalse),
 		ContainerStatuses: []corev1.ContainerStatus{
 			{
 				Name: "collector",
@@ -48,19 +48,19 @@ func (pb *podBuilder) WithImageNotFound() *podBuilder {
 	return pb
 }
 
-func (pb *podBuilder) WithOOMStatus() *podBuilder {
+func (pb *PodBuilder) WithOOMStatus() *PodBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:             corev1.PodRunning,
-		Conditions:        createPodReadyConditions(corev1.ConditionFalse, "", ""),
+		Conditions:        createPodReadyConditions(corev1.ConditionFalse),
 		ContainerStatuses: createContainerStatus("OOMKilled", "Container was OOM killed", "OOMKilled", 137),
 	}
 	return pb
 }
 
-func (pb *podBuilder) WithCrashBackOffStatus() *podBuilder {
+func (pb *PodBuilder) WithCrashBackOffStatus() *PodBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:      corev1.PodRunning,
-		Conditions: createPodReadyConditions(corev1.ConditionFalse, "", ""),
+		Conditions: createPodReadyConditions(corev1.ConditionFalse),
 		ContainerStatuses: []corev1.ContainerStatus{
 			{
 				Name: "collector",
@@ -86,7 +86,7 @@ func (pb *podBuilder) WithCrashBackOffStatus() *podBuilder {
 	return pb
 }
 
-func (pb *podBuilder) WithEvictedStatus() *podBuilder {
+func (pb *PodBuilder) WithEvictedStatus() *PodBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:   corev1.PodFailed,
 		Reason:  "Evicted",
@@ -95,7 +95,7 @@ func (pb *podBuilder) WithEvictedStatus() *podBuilder {
 	return pb
 }
 
-func (pb *podBuilder) WithPendingStatus() *podBuilder {
+func (pb *PodBuilder) WithPendingStatus() *PodBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase: corev1.PodPending,
 		Conditions: []corev1.PodCondition{
@@ -110,23 +110,23 @@ func (pb *podBuilder) WithPendingStatus() *podBuilder {
 	return pb
 }
 
-func (pb *podBuilder) WithNonZeroExitStatus() *podBuilder {
+func (pb *PodBuilder) WithNonZeroExitStatus() *PodBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:             corev1.PodRunning,
-		Conditions:        createPodReadyConditions(corev1.ConditionFalse, "", ""),
+		Conditions:        createPodReadyConditions(corev1.ConditionFalse),
 		ContainerStatuses: createContainerStatus("Error", "Container failed", "Error", 2),
 	}
 	return pb
 }
 
-func (pb *podBuilder) WithRunningStatus() *podBuilder {
+func (pb *PodBuilder) WithRunningStatus() *PodBuilder {
 	pb.status = &corev1.PodStatus{
 		Phase:      corev1.PodRunning,
-		Conditions: createPodReadyConditions(corev1.ConditionTrue, "", ""),
+		Conditions: createPodReadyConditions(corev1.ConditionTrue),
 	}
 	return pb
 }
-func (pb *podBuilder) Build() corev1.Pod {
+func (pb *PodBuilder) Build() corev1.Pod {
 	if pb.labels == nil {
 		pb.labels = make(map[string]string)
 		pb.labels["app"] = "foo"
@@ -179,14 +179,14 @@ func createContainerStatus(waitingReason, waitingMsg, terminatedReason string, e
 	}
 }
 
-func createPodReadyConditions(status corev1.ConditionStatus, reason, msg string) []corev1.PodCondition {
+func createPodReadyConditions(status corev1.ConditionStatus) []corev1.PodCondition {
 	condition := corev1.PodCondition{
 		Type:               corev1.PodReady,
 		Status:             status,
 		LastProbeTime:      metav1.Time{},
 		LastTransitionTime: metav1.NewTime(time.Now()),
-		Reason:             reason,
-		Message:            msg,
+		Reason:             "",
+		Message:            "",
 	}
 	conditions := []corev1.PodCondition{}
 	conditions = append(conditions, condition)

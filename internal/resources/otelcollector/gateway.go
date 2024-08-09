@@ -28,7 +28,7 @@ import (
 
 type GatewayApplierDeleter struct {
 	Config GatewayConfig
-	RBAC   rbac
+	RBAC   Rbac
 }
 
 type GatewayApplyOptions struct {

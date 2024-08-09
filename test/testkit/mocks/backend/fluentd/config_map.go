@@ -21,7 +21,10 @@ func NewConfigMap(name, namespace string, certs *testutils.ServerCerts) *ConfigM
 	}
 }
 
-const configTemplateFluentd = `<source>
+const configTemplateFluentd = `<system>
+  log_level fatal
+</system>
+<source>
   @type http
   port 9880
   bind 0.0.0.0
@@ -46,7 +49,10 @@ const configTemplateFluentd = `<source>
   </server>
 </match>`
 
-const configTemplateFluentdTLS = `<source>
+const configTemplateFluentdTLS = `<system>
+  log_level fatal
+</system>
+<source>
   @type http
   port 9880
   bind 0.0.0.0

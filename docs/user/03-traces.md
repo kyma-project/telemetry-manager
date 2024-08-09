@@ -14,7 +14,7 @@ The following diagram shows how distributed tracing helps to track the request p
 
 The Telemetry module provides a trace gateway for the shipment of traces of any container running in the Kyma runtime.
 
-You can configure the trace gateway with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named TracePipeline.
+You can configure the trace gateway with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named TracePipeline.
 The Trace feature is optional. If you don't want to use it, simply don't set up a TracePipeline.
 
 ## Prerequisites

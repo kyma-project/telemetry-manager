@@ -49,7 +49,7 @@ func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, na
 
 	if workloadstatus.IsRolloutInProgressError(err) {
 		status = metav1.ConditionTrue
-		reason = conditions.ReasonGatewayReady
+		reason = conditions.ReasonRolloutInProgress
 		msg = errToMsgCon.Convert(err)
 	}
 
@@ -80,7 +80,7 @@ func GetAgentHealthyCondition(ctx context.Context, prober DaemonSetProber, names
 	}
 	if workloadstatus.IsRolloutInProgressError(err) {
 		status = metav1.ConditionTrue
-		reason = conditions.ReasonAgentReady
+		reason = conditions.ReasonRolloutInProgress
 		msg = errToMsgCon.Convert(err)
 	}
 
