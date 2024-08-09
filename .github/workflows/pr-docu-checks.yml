@@ -35,7 +35,7 @@ jobs:
         run: |
           md-check-link -q -n 8 -c https://raw.githubusercontent.com/kyma-project/md-check-link/main/.mlc.config.json ./
 
-  PR-Code-Checks-Success:
+  PR-Docu-Checks-Success:
     needs: [verify-manifests, markdown-link-check]
     runs-on: ubuntu-latest
     steps:
