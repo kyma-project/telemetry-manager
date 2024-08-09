@@ -2,7 +2,7 @@ name: Build Image
 
 on:
   pull_request_target:
-    types: [ opened, edited, synchronize, reopened, ready_for_review ]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
     branches:
       - "main"
       - "release-[0-9]+.[0-9]+"
@@ -13,7 +13,6 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
 jobs:
-
   envs:
     runs-on: ubuntu-latest
     outputs:
@@ -33,7 +32,7 @@ jobs:
     needs: envs
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
-      name: telemetry-manager 
+      name: telemetry-manager
       dockerfile: Dockerfile
       context: .
       tags: ${{ needs.envs.outputs.tags }}
@@ -53,7 +52,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_HUSKIES_NOTIF_WEBHOOK_URL }}
 
-  list-images:
+  Build-Image-Success:
     needs: build-image
     runs-on: ubuntu-latest
     steps:

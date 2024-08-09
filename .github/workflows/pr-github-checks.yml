@@ -24,7 +24,6 @@ jobs:
         run: |
           echo "${MILESTONE}" | jq -e '.!=null' || (echo "Milestone is not set"; exit 1)
 
-
   pr-label-check:
     runs-on: ubuntu-latest
     steps:
@@ -53,7 +52,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-
   pr-title-check:
     runs-on: ubuntu-latest
     steps:
@@ -71,3 +69,11 @@ jobs:
             test
           requireScope: false
           subjectPattern: ^([A-Z].*[^.]|bump .*)$
+
+  PR-Github-Checks-Success:
+    needs: [pr-milestone-check, pr-label-check, pr-title-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR Github Checks Success
+        run: |
+          echo "PR Github Checks Success"
