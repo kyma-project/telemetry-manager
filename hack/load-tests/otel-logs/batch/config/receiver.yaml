@@ -1,0 +1,20 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${MY_POD_IP}:4317
+exporters:
+  debug:
+    verbosity: detailed
+  nop: {}
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+  pipelines:
+    logs:
+      receivers:
+        - otlp
+      exporters:
+        - nop

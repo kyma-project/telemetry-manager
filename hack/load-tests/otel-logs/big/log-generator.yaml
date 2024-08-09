@@ -1,0 +1,75 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: log-load-generator
+    app.kubernetes.io/name: log-load-generator
+  name: log-load-generator
+  namespace: log-load-test
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      app: log-load-generator
+  template:
+    metadata:
+      labels:
+        app: log-load-generator
+        app.kubernetes.io/name: log-load-generator
+    spec:
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-receiver
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-gateway
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+          args:
+            - logs
+            - --severity-number
+            - "1"
+            - --severity-text
+            - fatal
+            - --otlp-insecure
+            - --otlp-endpoint
+            - "log-gateway:4317"
+            - --otlp-attributes
+            - 'service.name="log-load-generator"'
+            - --workers
+            - "10"
+            - --duration
+            - "90m"
+            - --rate
+            - "LOG_RATE"
+            - --body
+            - '{"foo":"LOG_CONTENT"}'
+          imagePullPolicy: IfNotPresent
+          name: telemetrygen
