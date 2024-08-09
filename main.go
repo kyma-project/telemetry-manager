@@ -188,6 +188,13 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes/spec,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=pods/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=replicationcontrollers,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=replicationcontrollers/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=resourcequotas,verbs=get;list;watch
 //+kubebuilder:rbac:urls=/metrics,verbs=get
 //+kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
@@ -196,6 +203,9 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
 
@@ -210,6 +220,10 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 
 // +kubebuilder:rbac:groups=security.istio.io,resources=peerauthentications,verbs=get;list;watch
 // +kubebuilder:rbac:groups=security.istio.io,namespace=system,resources=peerauthentications,verbs=create;update;patch;delete
+
+//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch
+
+//+kubebuilder:rbac:groups=extensions,resources=statefulsets,verbs=get;list;watch
 
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
