@@ -16,6 +16,11 @@ var ErrCertDecodeFailed = errors.New("failed to decode PEM block containing cert
 If additional context is necessary, define a custom error type. For example, in the following code snippet `CertExpiredError` defines an `Expiry` field that can be used by the calling code:
 
 ```go
+import (
+  "fmt"
+  "time"
+)
+
 type CertExpiredError struct {
   Expiry time.Time
 }
