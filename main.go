@@ -226,7 +226,6 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch
 
-//+kubebuilder:rbac:groups=extensions,resources=statefulsets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=extensions,resources=daemonsets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=extensions,resources=deployments,verbs=get;list;watch
 //+kubebuilder:rbac:groups=extensions,resources=replicasets,verbs=get;list;watch
