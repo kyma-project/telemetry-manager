@@ -52,7 +52,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if err := v.validateLogParser(ctx, logParser); err != nil {
+	if err := v.validateLogParser(logParser); err != nil {
 		log.Error(err, "LogParser rejected")
 		return admission.Response{
 			AdmissionResponse: admissionv1.AdmissionResponse{
@@ -68,7 +68,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 	return admission.Allowed("LogParser validation successful")
 }
 
-func (v *ValidatingWebhookHandler) validateLogParser(ctx context.Context, logParser *telemetryv1alpha1.LogParser) error {
+func (v *ValidatingWebhookHandler) validateLogParser(logParser *telemetryv1alpha1.LogParser) error {
 	err := logParser.Validate()
 	if err != nil {
 		return err
