@@ -51,9 +51,10 @@ type SingletonK8sClusterReceiver struct {
 }
 
 type K8sClusterReceiver struct {
-	AuthType                string   `yaml:"auth_type"`
-	CollectionInterval      string   `yaml:"collection_interval"`
-	AllocatableTypeToReport []string `yaml:"allocatable_type_to_report"`
+	AuthType                 string   `yaml:"auth_type"`
+	CollectionInterval       string   `yaml:"collection_interval"`
+	NodeConditionsToReport   []string `yaml:"node_conditions_to_report"`
+	AllocatableTypesToReport []string `yaml:"allocatable_types_to_report"`
 }
 
 type ModuleGVR struct {
@@ -75,6 +76,7 @@ type Processors struct {
 	DropIfInputSourceOtlp                        *FilterProcessor               `yaml:"filter/drop-if-input-source-otlp,omitempty"`
 	DropRuntimePodMetrics                        *FilterProcessor               `yaml:"filter/drop-runtime-pod-metrics,omitempty"`
 	DropRuntimeContainerMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-container-metrics,omitempty"`
+	DropK8sClusterMetrics                        *FilterProcessor               `yaml:"filter/drop-k8s-cluster-metrics,omitempty"`
 	ResolveServiceName                           *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 	SetInstrumentationScopeKyma                  *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
 	SetInstrumentationScopeK8sCluster            *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-k8s_cluster,omitempty"`

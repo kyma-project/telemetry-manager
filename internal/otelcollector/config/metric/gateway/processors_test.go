@@ -296,7 +296,7 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, expectedCondition, runtimeContainerMetricsFilter.Metrics.Metric[0])
 	})
 
-	t.Run("kyma instrumentation scope transform processor", func(t *testing.T) {
+	t.Run("kyma instrumentation scope transform processor for kymastats receiver", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
 			[]telemetryv1alpha1.MetricPipeline{
@@ -317,5 +317,44 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "set(version, \"main\") where name == \"otelcol/kymastats\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(name, \"io.kyma-project.telemetry/kyma\") where name == \"otelcol/kymastats\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
 
+	})
+
+	t.Run("kyma instrumentation scope transform processor for k8sCluster receiver", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).Build(),
+			},
+			BuildOptions{
+				InstrumentationScopeVersion: "main",
+				K8sClusterReceiverAllowed:   true,
+			},
+		)
+		require.NoError(t, err)
+
+		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeK8sCluster)
+		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeK8sCluster.ErrorMode)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeK8sCluster.MetricStatements, 1)
+		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeK8sCluster.MetricStatements[0].Context)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeK8sCluster.MetricStatements[0].Statements, 2)
+		require.Equal(t, "set(version, \"main\") where name == \"otelcol/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeK8sCluster.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(name, \"io.kyma-project.telemetry/k8s_cluster\") where name == \"otelcol/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeK8sCluster.MetricStatements[0].Statements[1])
+	})
+	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					Build(),
+			},
+			BuildOptions{K8sClusterReceiverAllowed: true},
+		)
+		require.NoError(t, err)
+
+		runtimeContainerMetricsFilter := collectorConfig.Processors.DropK8sClusterMetrics
+		require.NotNil(t, runtimeContainerMetricsFilter)
+		require.Len(t, runtimeContainerMetricsFilter.Metrics.Metric, 1)
+		require.Equal(t, k8sClusterMetricsDrop[0], runtimeContainerMetricsFilter.Metrics.Metric[0])
 	})
 }

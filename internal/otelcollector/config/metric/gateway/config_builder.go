@@ -77,10 +77,17 @@ func declareComponentsForMetricPipeline(
 	declareSingletonK8sClusterReceiverCreator(pipeline, cfg, opts)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
-	declareRuntimeResourcesFilters(pipeline, cfg)
+	declareRuntimeResourcesFilters(pipeline, cfg, opts)
 	declareNamespaceFilters(pipeline, cfg)
 	declareInstrumentationScopeTransform(pipeline, cfg, opts)
+	declareK8sClusterMetricsDrop(pipeline, cfg, opts)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+}
+
+func declareK8sClusterMetricsDrop(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
+	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) {
+		cfg.Processors.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
+	}
 }
 
 func declareSingletonK8sClusterReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
@@ -123,14 +130,14 @@ func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *
 	}
 }
 
-func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
 	input := pipeline.Spec.Input
 
 	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
-		cfg.Processors.DropRuntimePodMetrics = makeDropRuntimePodMetricsConfig()
+		cfg.Processors.DropRuntimePodMetrics = makeDropRuntimePodMetricsConfig(opts)
 	}
 	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
-		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
+		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig(opts)
 	}
 }
 
@@ -197,6 +204,7 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 
 	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) && isRuntimeInputEnabled(pipeline.Spec.Input) {
 		processors = append(processors, "transform/set-instrumentation-scope-k8s_cluster")
+		processors = append(processors, "filter/drop-k8s-cluster-metrics")
 	}
 
 	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")

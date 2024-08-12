@@ -85,28 +85,42 @@ func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimePodMetricsConfig() *FilterProcessor {
+func makeDropRuntimePodMetricsConfig(opts BuildOptions) *FilterProcessor {
+	dropMetricRules := []string{
+		ottlexpr.JoinWithAnd(
+			inputSourceEquals(metric.InputSourceRuntime),
+			ottlexpr.IsMatch("name", "^k8s.pod.*"),
+		),
+	}
+	if opts.K8sClusterReceiverAllowed {
+		dropMetricRules = append(dropMetricRules, ottlexpr.JoinWithAnd(
+			inputSourceEquals(metric.InputSourceK8sCluster),
+			ottlexpr.IsMatch("name", "^k8s.pod.*"),
+		))
+	}
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
-			Metric: []string{
-				ottlexpr.JoinWithAnd(
-					inputSourceEquals(metric.InputSourceRuntime),
-					ottlexpr.IsMatch("name", "^k8s.pod.*"),
-				),
-			},
+			Metric: dropMetricRules,
 		},
 	}
 }
 
-func makeDropRuntimeContainerMetricsConfig() *FilterProcessor {
+func makeDropRuntimeContainerMetricsConfig(opts BuildOptions) *FilterProcessor {
+	dropMetricRules := []string{
+		ottlexpr.JoinWithAnd(
+			inputSourceEquals(metric.InputSourceRuntime),
+			ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
+		),
+	}
+	if opts.K8sClusterReceiverAllowed {
+		dropMetricRules = append(dropMetricRules, ottlexpr.JoinWithAnd(
+			inputSourceEquals(metric.InputSourceK8sCluster),
+			ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
+		))
+	}
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
-			Metric: []string{
-				ottlexpr.JoinWithAnd(
-					inputSourceEquals(metric.InputSourceRuntime),
-					ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
-				),
-			},
+			Metric: dropMetricRules,
 		},
 	}
 }
