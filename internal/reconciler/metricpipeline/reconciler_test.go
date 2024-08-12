@@ -1176,7 +1176,7 @@ func TestReconcile(t *testing.T) {
 				probeGatewayErr: nil,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled",
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled. Please check the container: foo logs.",
 			},
 			{
 				name:            "pod is CrashLoop",
@@ -1200,7 +1200,7 @@ func TestReconcile(t *testing.T) {
 				probeGatewayErr: &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonGatewayNotReady,
-				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error",
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
 			},
 			{
 				name:            "Container is not ready",
