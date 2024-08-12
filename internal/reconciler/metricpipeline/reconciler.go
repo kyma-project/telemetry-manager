@@ -248,6 +248,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		GatewayNamespace:            r.config.Gateway.Namespace,
 		InstrumentationScopeVersion: r.config.ModuleVersion,
 		KymaInputAllowed:            r.config.KymaInputAllowed,
+		K8sClusterReceiverAllowed:   r.config.K8sClusterReceiverAllowed,
 	})
 
 	if err != nil {

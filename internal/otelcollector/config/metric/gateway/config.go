@@ -16,7 +16,7 @@ type Config struct {
 type Receivers struct {
 	OTLP                              config.OTLPReceiver                 `yaml:"otlp"`
 	SingletonKymaStatsReceiverCreator *SingletonKymaStatsReceiverCreator  `yaml:"singleton_receiver_creator/kymastats,omitempty"`
-	SingletonK8sClusterReceiver       *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8scluster,omitempty"`
+	SingletonK8sClusterReceiver       *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8s_cluster,omitempty"`
 }
 
 type SingletonKymaStatsReceiverCreator struct {
@@ -47,7 +47,7 @@ type KymaStatsReceiver struct {
 }
 
 type SingletonK8sClusterReceiver struct {
-	K8sClusterReceiver K8sClusterReceiver `yaml:"k8scluster"`
+	K8sClusterReceiver K8sClusterReceiver `yaml:"k8s_cluster"`
 }
 
 type K8sClusterReceiver struct {

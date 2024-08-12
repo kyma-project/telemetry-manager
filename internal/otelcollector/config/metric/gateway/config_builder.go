@@ -163,7 +163,7 @@ func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipe
 		cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, opts.InstrumentationScopeVersion)
 	}
 	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) && isRuntimeInputEnabled(pipeline.Spec.Input) {
-		cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceK8sCluster, opts.InstrumentationScopeVersion)
+		cfg.Processors.SetInstrumentationScopeK8sCluster = metric.MakeInstrumentationScopeProcessor(metric.InputSourceK8sCluster, opts.InstrumentationScopeVersion)
 	}
 }
 

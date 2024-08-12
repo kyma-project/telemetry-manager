@@ -49,7 +49,7 @@ func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *Sing
 	return &SingletonK8sClusterReceiverCreator{
 		AuthType: "serviceAccount",
 		LeaderElection: LeaderElection{
-			LeaseName:      "telemetry-metric-gateway-k8scluster",
+			LeaseName:      "telemetry-metric-gateway-k8s_cluster",
 			LeaseNamespace: gatewayNamespace,
 		},
 		SingletonK8sClusterReceiver: SingletonK8sClusterReceiver{
