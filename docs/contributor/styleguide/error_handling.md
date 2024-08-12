@@ -1,6 +1,6 @@
 # Error Handling
 
-### Reflecting Errors in Status Condition Messages
+## Reflecting Errors in Status Condition Messages
 In Telemetry Manager, it is a common practice to reflect errors in status condition messages. For instance, a LogPipeline might require a client TLS certificate to authenticate against a backend. If the certificate is invalid, the error should be captured and mapped to a corresponding reason/message in the LogPipeline status.
 
 ### Defining and Using Sentinel Errors
