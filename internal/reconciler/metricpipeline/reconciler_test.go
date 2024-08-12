@@ -124,7 +124,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeGatewayHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonGatewayNotReady,
-			"Pod is in the pending state because container: foo is not running due to: Error")
+			"Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.")
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -307,7 +307,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonAgentNotReady,
-			"Pod is in the pending state because container:  is not running due to: Error")
+			"Pod is in the pending state because container:  is not running due to: Error. Please check the container:  logs.")
 
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
@@ -1184,7 +1184,7 @@ func TestReconcile(t *testing.T) {
 				probeGatewayErr: nil,
 				expectedStatus:  metav1.ConditionFalse,
 				expectedReason:  conditions.ReasonAgentNotReady,
-				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error",
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
 			},
 			{
 				name:            "no Pods deployed",
@@ -1208,7 +1208,7 @@ func TestReconcile(t *testing.T) {
 				expectedReason:  conditions.ReasonGatewayNotReady,
 				probeAgentErr:   nil,
 				probeGatewayErr: &workloadstatus.PodIsPendingError{ContainerName: "foo", Reason: "OOMKilled"},
-				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled",
+				expectedMessage: "Pod is in the pending state because container: foo is not running due to: OOMKilled. Please check the container: foo logs.",
 			},
 			{
 				name:            "Agent Rollout in progress",
