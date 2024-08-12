@@ -245,19 +245,19 @@ func TestMakeMetricGatewayRBACWithK8sClusterReceiverAllowed(t *testing.T) {
 			},
 			{
 				APIGroups: []string{""},
-				Resources: []string{"events", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "services", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "namespaces", "pods"},
+				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
 				Verbs:     []string{"get", "list", "watch"},
 			}, {
 				APIGroups: []string{"apps"},
-				Resources: []string{"deployments", "daemonsets", "replicasets", "statefulsets"},
+				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
 				Verbs:     []string{"get", "list", "watch"},
 			}, {
 				APIGroups: []string{"extensions"},
-				Resources: []string{"deployments", "daemonsets", "replicasets", "statefulsets"},
+				Resources: []string{"daemonsets", "deployments", "replicasets"},
 				Verbs:     []string{"get", "list", "watch"},
 			}, {
 				APIGroups: []string{"batch"},
-				Resources: []string{"cronjobs", "jobs"},
+				Resources: []string{"jobs", "cronjobs"},
 				Verbs:     []string{"get", "list", "watch"},
 			}, {
 				APIGroups: []string{"autoscaling"},
