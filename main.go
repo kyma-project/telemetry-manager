@@ -121,7 +121,8 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	kymaInputAllowed bool
+	kymaInputAllowed          bool
+	k8sClusterReceiverAllowed bool
 
 	version = "main"
 )
@@ -187,6 +188,13 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes/spec,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=pods/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=replicationcontrollers,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=replicationcontrollers/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=resourcequotas,verbs=get;list;watch
 //+kubebuilder:rbac:urls=/metrics,verbs=get
 //+kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
@@ -195,6 +203,9 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
 
@@ -209,6 +220,15 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 
 // +kubebuilder:rbac:groups=security.istio.io,resources=peerauthentications,verbs=get;list;watch
 // +kubebuilder:rbac:groups=security.istio.io,namespace=system,resources=peerauthentications,verbs=create;update;patch;delete
+
+//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch
+
+//+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch
+//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch
+
+//+kubebuilder:rbac:groups=extensions,resources=daemonsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=extensions,resources=deployments,verbs=get;list;watch
+//+kubebuilder:rbac:groups=extensions,resources=replicasets,verbs=get;list;watch
 
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
@@ -259,6 +279,7 @@ func main() {
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
 	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
+	flag.BoolVar(&k8sClusterReceiverAllowed, "k8s-cluster-receiver-allowed", false, "Allow collecting cluster level metrics from API Server in kyma")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -527,9 +548,10 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 					},
 					OTLPServiceName: metricOTLPServiceName,
 				},
-				MaxPipelines:     maxMetricPipelines,
-				ModuleVersion:    version,
-				KymaInputAllowed: kymaInputAllowed,
+				MaxPipelines:              maxMetricPipelines,
+				ModuleVersion:             version,
+				KymaInputAllowed:          kymaInputAllowed,
+				K8sClusterReceiverAllowed: k8sClusterReceiverAllowed,
 			},
 			TelemetryNamespace: telemetryNamespace,
 			SelfMonitorName:    selfMonitorName,
