@@ -27,9 +27,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), func() {
 		pipelineNameValueFrom = suite.IDWithSuffix("value-from")
 	)
 
-	makeResources := func() []client.Object {
-		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+	makeResources := func() ([]client.Object, []client.Object) {
+		var objsSuccess, objsFailure []client.Object
+		objsSuccess = append(objsSuccess, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		logPipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
 			WithName(pipelineNameValue).
@@ -45,31 +45,35 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), func() {
 			WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 			Build()
 
-		objs = append(objs,
+		objsSuccess = append(objsSuccess,
 			secret.K8sObject(),
-			&logPipelineInvalidEndpointValue,
 			&logPipelineInvalidEndpointValueFrom,
 		)
 
-		return objs
+		objsFailure = append(objsFailure,
+			&logPipelineInvalidEndpointValue,
+		)
+
+		return objsSuccess, objsFailure
 	}
 
 	Context("When log pipelines with an invalid Endpoint are created", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects := makeResources()
+			k8sObjectsSuccess, k8sObjectsFailure := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjectsSuccess...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjectsSuccess...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjectsFailure...)).Should(MatchError(ContainSubstring("invalid hostname")))
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineNameValue, metav1.Condition{
-				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonEndpointConfigurationInvalid,
-			})
+			// assert.LogPipelineHasCondition(ctx, k8sClient, pipelineNameValue, metav1.Condition{
+			// 	Type:   conditions.TypeConfigurationGenerated,
+			// 	Status: metav1.ConditionFalse,
+			// 	Reason: conditions.ReasonEndpointConfigurationInvalid,
+			// })
 
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineNameValueFrom, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
