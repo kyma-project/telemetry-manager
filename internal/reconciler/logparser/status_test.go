@@ -57,7 +57,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, agentHealthyCond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, agentHealthyCond.Status)
 		require.Equal(t, conditions.ReasonAgentNotReady, agentHealthyCond.Reason)
-		require.Equal(t, "Pod is in the pending state because container: foo is not running due to: OOMKilled", agentHealthyCond.Message)
+		require.Equal(t, "Pod is in the pending state because container: foo is not running due to: OOMKilled. Please check the container: foo logs.", agentHealthyCond.Message)
 		require.Equal(t, updatedParser.Generation, agentHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 	})

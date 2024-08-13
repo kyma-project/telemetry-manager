@@ -21,9 +21,9 @@ func (etc *ErrorToMessageConverter) Convert(err error) string {
 	var pipe *workloadstatus.PodIsPendingError
 	if errors.As(err, &pipe) {
 		if pipe.Reason == "" {
-			return fmt.Sprintf(podIsPending, pipe.ContainerName, pipe.Message)
+			return fmt.Sprintf(podIsPending, pipe.ContainerName, pipe.Message, pipe.ContainerName)
 		}
-		return fmt.Sprintf(podIsPending, pipe.ContainerName, pipe.Reason)
+		return fmt.Sprintf(podIsPending, pipe.ContainerName, pipe.Reason, pipe.ContainerName)
 	}
 
 	var pfe *workloadstatus.PodIsFailingError
