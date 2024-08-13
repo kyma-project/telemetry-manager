@@ -19,12 +19,12 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-        - logs
-        - metrics
-        - traces
-        - telemetry
-        - max-pipeline
-        - telemetry-log-analysis
+          - logs
+          - metrics
+          - traces
+          - telemetry
+          - max-pipeline
+          - telemetry-log-analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -37,7 +37,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !v1beta1" test/e2e
+        run: bin/ginkgo run --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -50,9 +50,9 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-        - logs
-        - metrics
-        - traces
+          - logs
+          - metrics
+          - traces
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -64,7 +64,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && v1beta1" test/e2e
+        run: bin/ginkgo run --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -140,3 +140,11 @@ jobs:
         if: success() || failure()
         with:
           failure: failure()
+
+  PR-Integration-Success:
+    needs: [e2e, e2e-dev, e2e-istio, e2e-self-mon]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: |
+          echo "PR Integration completed successfully"

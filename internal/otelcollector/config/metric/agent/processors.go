@@ -5,7 +5,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
-func makeProcessorsConfig(inputs inputSources, opts BuildOptions) Processors {
+func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion string) Processors {
 	processorsConfig := Processors{
 		BaseProcessors: config.BaseProcessors{
 			Batch:         makeBatchProcessorConfig(),
@@ -17,16 +17,16 @@ func makeProcessorsConfig(inputs inputSources, opts BuildOptions) Processors {
 		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
 
 		if inputs.runtime {
-			processorsConfig.SetInstrumentationScopeRuntime = makeInstrumentationScopeProcessor(metric.InputSourceRuntime, opts)
+			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(metric.InputSourceRuntime, instrumentationScopeVersion)
 		}
 
 		if inputs.prometheus {
-			processorsConfig.SetInstrumentationScopePrometheus = makeInstrumentationScopeProcessor(metric.InputSourcePrometheus, opts)
+			processorsConfig.SetInstrumentationScopePrometheus = metric.MakeInstrumentationScopeProcessor(metric.InputSourcePrometheus, instrumentationScopeVersion)
 		}
 
 		if inputs.istio {
 			processorsConfig.DropInternalCommunication = makeFilterToDropMetricsForTelemetryComponents()
-			processorsConfig.SetInstrumentationScopeIstio = makeInstrumentationScopeProcessor(metric.InputSourceIstio, opts)
+			processorsConfig.SetInstrumentationScopeIstio = metric.MakeInstrumentationScopeProcessor(metric.InputSourceIstio, instrumentationScopeVersion)
 		}
 	}
 

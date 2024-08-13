@@ -29,10 +29,12 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	Agent         otelcollector.AgentConfig
-	Gateway       otelcollector.GatewayConfig
-	MaxPipelines  int
-	ModuleVersion string
+	Agent                     otelcollector.AgentConfig
+	Gateway                   otelcollector.GatewayConfig
+	MaxPipelines              int
+	ModuleVersion             string
+	KymaInputAllowed          bool
+	K8sClusterReceiverAllowed bool
 }
 
 type AgentConfigBuilder interface {
@@ -40,7 +42,7 @@ type AgentConfigBuilder interface {
 }
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, options gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {
@@ -242,7 +244,12 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines)
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
+		GatewayNamespace:            r.config.Gateway.Namespace,
+		InstrumentationScopeVersion: r.config.ModuleVersion,
+		KymaInputAllowed:            r.config.KymaInputAllowed,
+	})
+
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}

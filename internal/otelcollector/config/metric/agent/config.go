@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 type Config struct {
@@ -115,11 +116,11 @@ const (
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	DeleteServiceName                 *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
-	DropInternalCommunication         *FilterProcessor          `yaml:"filter/drop-internal-communication,omitempty"`
-	SetInstrumentationScopeRuntime    *TransformProcessor       `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
-	SetInstrumentationScopePrometheus *TransformProcessor       `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
-	SetInstrumentationScopeIstio      *TransformProcessor       `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
+	DeleteServiceName                 *config.ResourceProcessor  `yaml:"resource/delete-service-name,omitempty"`
+	DropInternalCommunication         *FilterProcessor           `yaml:"filter/drop-internal-communication,omitempty"`
+	SetInstrumentationScopeRuntime    *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	SetInstrumentationScopePrometheus *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
+	SetInstrumentationScopeIstio      *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
 }
 
 type Exporters struct {
@@ -132,9 +133,4 @@ type FilterProcessor struct {
 
 type FilterProcessorMetrics struct {
 	Metric []string `yaml:"metric,omitempty"`
-}
-
-type TransformProcessor struct {
-	ErrorMode        string                                `yaml:"error_mode"`
-	MetricStatements []config.TransformProcessorStatements `yaml:"metric_statements"`
 }
