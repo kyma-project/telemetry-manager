@@ -69,12 +69,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			// assert.LogPipelineHasCondition(ctx, k8sClient, pipelineNameValue, metav1.Condition{
-			// 	Type:   conditions.TypeConfigurationGenerated,
-			// 	Status: metav1.ConditionFalse,
-			// 	Reason: conditions.ReasonEndpointConfigurationInvalid,
-			// })
-
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineNameValueFrom, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
