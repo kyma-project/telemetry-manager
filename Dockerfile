@@ -22,7 +22,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager 
 FROM scratch
 
 WORKDIR /
+
 COPY --from=builder /telemetry-manager-workspace/manager .
+
+ADD tmp.tar /
 
 USER 65532:65532
 
