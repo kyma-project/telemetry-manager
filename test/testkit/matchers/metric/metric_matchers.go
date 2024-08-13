@@ -23,7 +23,7 @@ func WithMds(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 // WithNames extracts metric names from FlatMetrics and applies the matcher to them.
 func WithNames(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(fm []FlatMetric) ([]string, error) {
+	return gomega.WithTransform(func(fm []FlatMetricDataPoint) ([]string, error) {
 		var names []string
 		for _, m := range fm {
 			names = append(names, m.Name)
@@ -35,7 +35,7 @@ func WithNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 // WithScopeAndVersion extracts scope and version from FlatMetrics and applies the matcher to them.
 func WithScopeAndVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(fm []FlatMetric) ([]ScopeVersion, error) {
+	return gomega.WithTransform(func(fm []FlatMetricDataPoint) ([]ScopeVersion, error) {
 		var scopes []ScopeVersion
 		for _, m := range fm {
 			scopes = append(scopes, m.ScopeAndVersion)
@@ -52,7 +52,7 @@ func WithScopeAndVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 // WithFlatMetrics extracts FlatMetrics from OTLP JSON and applies the matcher to them.
 func WithFlatMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlMetrics []byte) ([]FlatMetric, error) {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([]FlatMetricDataPoint, error) {
 		mds, err := unmarshalMetrics(jsonlMetrics)
 		if err != nil {
 			return nil, fmt.Errorf("WithMds requires a valid OTLP JSON document: %w", err)

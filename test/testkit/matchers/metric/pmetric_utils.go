@@ -7,9 +7,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-// FlatMetric is holds all information about metrics used in the test.
+// FlatMetricDataPoint holds all needed information about a metric data point.
 // It makes accessing the information easier than using pdata.Metric directly.
-type FlatMetric struct {
+type FlatMetricDataPoint struct {
 	Name, Description                                     string
 	ResourceAttributes, ScopeAttributes, MetricAttributes map[string]string
 	Type                                                  pmetric.MetricType
@@ -27,9 +27,9 @@ func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 	})
 }
 
-// flattenAllMetrics converts pdata.Metrics to a slice of FlatMetric.
-func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
-	var flatMetrics []FlatMetric
+// flattenAllMetrics converts pdata.Metrics to a slice of FlatMetricDataPoint.
+func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetricDataPoint {
+	var flatMetrics []FlatMetricDataPoint
 
 	for _, md := range mds {
 		flatMetrics = append(flatMetrics, flattenMetrics(md)...)
@@ -38,8 +38,8 @@ func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
 	return flatMetrics
 }
 
-func flattenMetrics(md pmetric.Metrics) []FlatMetric {
-	var flatMetrics []FlatMetric
+func flattenMetrics(md pmetric.Metrics) []FlatMetricDataPoint {
+	var flatMetrics []FlatMetricDataPoint
 
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		resourceMetrics := md.ResourceMetrics().At(i)
@@ -49,7 +49,7 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 				metric := scopeMetrics.Metrics().At(k)
 				dataPointsAttributes := getAttributesPerDataPoint(metric)
 				for l := 0; l < len(dataPointsAttributes); l++ {
-					flatMetrics = append(flatMetrics, FlatMetric{
+					flatMetrics = append(flatMetrics, FlatMetricDataPoint{
 						Name:               metric.Name(),
 						Description:        metric.Description(),
 						ScopeAndVersion:    ScopeVersion{scopeMetrics.Scope().Name(), scopeMetrics.Scope().Version()},
