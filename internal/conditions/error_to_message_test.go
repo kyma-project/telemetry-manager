@@ -22,12 +22,12 @@ func TestErrorConverter(t *testing.T) {
 		{
 			name: "PodIsPendingError Without Reason",
 			err:  &workloadstatus.PodIsPendingError{ContainerName: "fluent-bit", Message: "Error"},
-			want: "Pod is in the pending state because container: fluent-bit is not running due to: Error",
+			want: "Pod is in the pending state because container: fluent-bit is not running due to: Error. Please check the container: fluent-bit logs.",
 		},
 		{
 			name: "PodIsPendingError With Reason",
 			err:  &workloadstatus.PodIsPendingError{ContainerName: "fluent-bit", Reason: "CrashLoopBackOff"},
-			want: "Pod is in the pending state because container: fluent-bit is not running due to: CrashLoopBackOff",
+			want: "Pod is in the pending state because container: fluent-bit is not running due to: CrashLoopBackOff. Please check the container: fluent-bit logs.",
 		},
 		{
 			name: "PodIsFailedError",
