@@ -1,10 +1,10 @@
 # Error Handling
 
 ## Reflecting Errors in Status Condition Messages
-In Telemetry Manager, it is a common practice to reflect errors in status condition messages. For instance, a LogPipeline might require a client TLS certificate to authenticate against a backend. If the certificate is invalid, the error should be captured and mapped to a corresponding reason/message in the LogPipeline status.
+In Telemetry Manager, it is a common practice to reflect errors in status condition messages. For example, a LogPipeline might need a client TLS certificate to authenticate against a backend. If the certificate is invalid, the error should be captured and mapped to a corresponding reason or message in the LogPipeline status.
 
 ### Defining and Using Sentinel Errors
-When an error occurs, the package that returns it (e.g., a TLS validator) should define a sentinel error that the calling code can check. For example:
+When an error occurs, the package that returns it (for example, a TLS validator) should define a sentinel error that the calling code can check. For example:
 
 ```go
 import "errors"
@@ -13,7 +13,7 @@ var ErrCertDecodeFailed = errors.New("failed to decode PEM block containing cert
 ```
 
 ### Creating Custom Error Types for Additional Context
-If additional context is necessary, define a custom error type. For example, in the following code snippet `CertExpiredError` defines an `Expiry` field that can be used by the calling code:
+If additional context is necessary, define a custom error type. For example, in the following code snippet, `CertExpiredError` defines an `Expiry` field that can be used by the calling code:
 
 ```go
 import (
