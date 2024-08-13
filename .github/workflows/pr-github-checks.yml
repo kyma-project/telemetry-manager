@@ -70,6 +70,16 @@ jobs:
           requireScope: false
           subjectPattern: ^([A-Z].*[^.]|bump .*)$
 
+  pr-prevent-kustomization:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prevent kustomization.yaml changes
+        uses: xalvarez/prevent-file-change-action@v1.6.0
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          pattern: .\config\kustomization.yaml
+          allowNewFiles: false
+
   PR-Github-Checks-Success:
     needs: [pr-milestone-check, pr-label-check, pr-title-check]
     runs-on: ubuntu-latest
