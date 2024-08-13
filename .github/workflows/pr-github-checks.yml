@@ -81,7 +81,7 @@ jobs:
           allowNewFiles: false
 
   PR-Github-Checks-Success:
-    needs: [pr-milestone-check, pr-label-check, pr-title-check]
+    needs: [pr-milestone-check, pr-label-check, pr-title-check, pr-prevent-kustomization]
     runs-on: ubuntu-latest
     steps:
       - name: PR Github Checks Success
