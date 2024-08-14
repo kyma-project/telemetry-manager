@@ -25,8 +25,6 @@ WORKDIR /
 
 COPY --from=builder /telemetry-manager-workspace/manager .
 
-ADD tmp.tar /
-
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
