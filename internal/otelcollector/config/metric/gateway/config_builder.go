@@ -193,6 +193,12 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 
 	input := pipeline.Spec.Input
 
+	// Perform the transform before runtime resource filter as InstrumentationScopeK8sCluster is required for dropping container/pod metrics
+	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) && isRuntimeInputEnabled(pipeline.Spec.Input) {
+		processors = append(processors, "transform/set-instrumentation-scope-k8s_cluster")
+		processors = append(processors, "filter/drop-k8s-cluster-metrics")
+	}
+
 	processors = append(processors, makeInputSourceFiltersIDs(input)...)
 	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
@@ -200,11 +206,6 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 
 	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
 		processors = append(processors, "transform/set-instrumentation-scope-kyma")
-	}
-
-	if isK8sClusterReceiverEnabled(pipeline.Spec.Input, opts.K8sClusterReceiverAllowed) && isRuntimeInputEnabled(pipeline.Spec.Input) {
-		processors = append(processors, "transform/set-instrumentation-scope-k8s_cluster")
-		processors = append(processors, "filter/drop-k8s-cluster-metrics")
 	}
 
 	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")

@@ -602,10 +602,10 @@ func TestMakeConfig(t *testing.T) {
 			require.Equal(t, []string{
 				"memory_limiter",
 				"k8sattributes",
-				"filter/drop-if-input-source-prometheus",
-				"filter/drop-if-input-source-istio",
 				"transform/set-instrumentation-scope-k8s_cluster",
 				"filter/drop-k8s-cluster-metrics",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"batch",
