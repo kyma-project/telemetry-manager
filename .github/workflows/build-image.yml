@@ -25,7 +25,11 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             echo 'TAGS=${{ github.ref_name }}' >> "$GITHUB_OUTPUT"
           else
-            echo 'TAGS=PR-${{ github.event.pull_request.number }}' >> "$GITHUB_OUTPUT"
+            {
+              echo 'tags<<TAGS'
+              echo 'PR-${{ github.event.pull_request.number }}'
+              echo '${{ github.sha }'
+            } >> "$GITHUB_OUTPUT"
           fi
 
   build-image:
