@@ -19,9 +19,9 @@ func TestDropDiagnosticMetricsForInput(t *testing.T) {
 }
 
 var k8sClusterMetricsDrop = []string{"instrumentation_scope.name == \"io.kyma-project.telemetry/k8s_cluster\"" +
-	" and (name == \"^k8s.deployment.*\" or name == \"^k8s.cronjob.*\" or name == \"^k8s.daemonset.*\" or name == \"^k8s.hpa.*\" or name == \"^k8s.job.*\"" +
-	" or name == \"^k8s.namespace.*\" or name == \"^k8s.replicaset.*\" or name == \"^k8s.replication_controller.*\" or name == \"^k8s.resource_quota.*\" or name == \"^k8s.statefulset.*\"" +
-	" or name == \"^openshift.*\" or name == \"^k8s.node.*\")"}
+	" and (IsMatch(name, \"^k8s.deployment.*\") or IsMatch(name, \"^k8s.cronjob.*\") or IsMatch(name, \"^k8s.daemonset.*\") or IsMatch(name, \"^k8s.hpa.*\") or IsMatch(name, \"^k8s.job.*\")" +
+	" or IsMatch(name, \"^k8s.namespace.*\") or IsMatch(name, \"^k8s.replicaset.*\") or IsMatch(name, \"^k8s.replication_controller.*\") or IsMatch(name, \"^k8s.resource_quota.*\") or IsMatch(name, \"^k8s.statefulset.*\")" +
+	" or IsMatch(name, \"^openshift.*\") or IsMatch(name, \"^k8s.node.*\"))"}
 
 func TestMakeK8sClusterDropMetrics(t *testing.T) {
 	dropFilter := makeK8sClusterDropMetrics()

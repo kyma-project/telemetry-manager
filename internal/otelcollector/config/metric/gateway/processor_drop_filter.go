@@ -35,8 +35,9 @@ func makeK8sClusterDropMetrics() *FilterProcessor {
 		"^k8s.resource_quota.*",
 		"^k8s.statefulset.*",
 		"^openshift.*",
-		"^k8s.node.*"}
-	metricNameConditions := createNameConditions(metricNames)
+		"^k8s.node.*",
+	}
+	metricNameConditions := createIsMatchNameConditions(metricNames)
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -47,6 +48,14 @@ func makeK8sClusterDropMetrics() *FilterProcessor {
 			},
 		},
 	}
+}
+
+func createIsMatchNameConditions(names []string) []string {
+	var nameConditions []string
+	for _, name := range names {
+		nameConditions = append(nameConditions, ottlexpr.IsMatch("name", name))
+	}
+	return nameConditions
 }
 
 func createNameConditions(names []string) []string {
