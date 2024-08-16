@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,6 +70,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		It("Should have running pipelines", func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, pipeline1Name)
 			assert.LogPipelineHealthy(ctx, k8sClient, pipeline2Name)
+		})
+
+		It("Should have running log agent", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
 		})
 
 		It("Should have a log backend running", func() {

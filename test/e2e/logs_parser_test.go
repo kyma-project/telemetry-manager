@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"net/http"
 	"time"
 
@@ -73,6 +74,10 @@ Types user:string pass:string`
 
 		It("Should have a running logpipeline", func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have running log agent", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
 		})
 
 		It("Should have a log backend running", func() {

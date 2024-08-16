@@ -67,6 +67,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsHealthy), Ordere
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
+		It("Should have running log agent", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
+		})
+
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})

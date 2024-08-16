@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -70,6 +71,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		It("Should have unsupportedMode set to true", func() {
 			assert.LogPipelineUnsupportedMode(ctx, k8sClient, pipelineName, true)
+		})
+
+		It("Should have running log agent", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
 		})
 
 		It("Should have a log backend running", func() {
