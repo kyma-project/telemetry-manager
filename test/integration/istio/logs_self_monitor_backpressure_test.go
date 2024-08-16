@@ -63,7 +63,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), O
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have a running self-monitor", func() {

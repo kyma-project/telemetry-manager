@@ -77,7 +77,7 @@ Types user:string pass:string`
 		})
 
 		It("Should have running log agent", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have a log backend running", func() {
