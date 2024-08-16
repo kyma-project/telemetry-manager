@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,7 +28,7 @@ func TestMissingEndpoint(t *testing.T) {
 
 	err := validator.Validate(context.Background(), nil)
 
-	require.True(t, IsEndpointInvalidError(err))
+	require.True(t, errors.Is(err, ErrValueResolveFailed))
 	require.EqualError(t, err, endpointMissingErrMessage)
 }
 
@@ -39,7 +40,7 @@ func TestEmptyEndpoint(t *testing.T) {
 
 	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{})
 
-	require.True(t, IsEndpointInvalidError(err))
+	require.True(t, errors.Is(err, ErrValueResolveFailed))
 	require.EqualError(t, err, endpointMissingErrMessage)
 }
 
@@ -142,6 +143,6 @@ func TestEndpointValueFromMissing(t *testing.T) {
 			Key:       "endpoint",
 		}}})
 
-	require.True(t, IsEndpointInvalidError(err))
+	require.True(t, errors.Is(err, ErrValueResolveFailed))
 	require.EqualError(t, err, endpointMissingErrMessage)
 }

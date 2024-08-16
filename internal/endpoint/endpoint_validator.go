@@ -15,16 +15,20 @@ type Validator struct {
 	Client client.Reader
 }
 
-const (
-	ValueResolveFailedErrorMessage = "either value or secret key reference must be provided"
+var (
+	ErrValueResolveFailed = errors.New("either value or secret key reference must be provided")
 )
 
 type EndpointInvalidError struct {
-	Message string
+	Err error
 }
 
 func (eie *EndpointInvalidError) Error() string {
-	return eie.Message
+	return eie.Err.Error()
+}
+
+func (eie *EndpointInvalidError) Unwrap() error {
+	return eie.Err
 }
 
 func IsEndpointInvalidError(err error) bool {
@@ -34,7 +38,7 @@ func IsEndpointInvalidError(err error) bool {
 
 func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType) error {
 	if endpoint == nil {
-		return &EndpointInvalidError{Message: ValueResolveFailedErrorMessage}
+		return &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
 
 	endpointValue, err := resolveValue(ctx, v.Client, *endpoint)
@@ -55,12 +59,12 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 	}
 
 	if value.ValueFrom == nil || !value.ValueFrom.IsSecretKeyRef() {
-		return nil, &EndpointInvalidError{Message: ValueResolveFailedErrorMessage}
+		return nil, &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
 
 	valueFromSecret, err := secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
 	if err != nil {
-		return nil, &EndpointInvalidError{Message: ValueResolveFailedErrorMessage}
+		return nil, &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
 
 	return valueFromSecret, nil
@@ -69,7 +73,7 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 func parseEndpoint(endpoint []byte) (*url.URL, error) {
 	u, err := url.Parse(string(endpoint))
 	if err != nil {
-		return nil, &EndpointInvalidError{Message: err.Error()}
+		return nil, &EndpointInvalidError{Err: err}
 	}
 
 	return u, nil
