@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -66,6 +67,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have running pipelines", func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have running metric gateway", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metric backend running", func() {

@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,10 +70,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 			assert.TracePipelineHealthy(ctx, k8sClient, pipeline1Name)
 			assert.TracePipelineHealthy(ctx, k8sClient, pipeline2Name)
 		})
+
+		It("Should have a running trace gateway deployment", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+		})
+
 		It("Should have a trace backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
+
 		It("Should verify traces from telemetrygen are delivered", func() {
 			assert.TracesFromNamespaceDelivered(proxyClient, backend1ExportURL, mockNs)
 			assert.TracesFromNamespaceDelivered(proxyClient, backend2ExportURL, mockNs)

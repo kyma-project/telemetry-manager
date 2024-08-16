@@ -96,6 +96,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Orde
 			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
+		It("Should have a running trace gateway deployment", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+		})
+
 		It("Should deliver telemetrygen traces", func() {
 			assert.TracesFromNamespaceDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
 		})

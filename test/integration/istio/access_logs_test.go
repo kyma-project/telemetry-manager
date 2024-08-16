@@ -3,6 +3,7 @@
 package istio
 
 import (
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -88,6 +89,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 
 		It("Should have the log pipeline running", func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have a running log agent daemonset", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
