@@ -4,18 +4,23 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
-- nonResourceURLs:
-  - /metrics/cadvisor
-  verbs:
-  - get
 - apiGroups:
   - ""
   resources:
   - endpoints
+  - namespaces
+  - namespaces/status
+  - nodes
+  - nodes/metrics
+  - nodes/spec
+  - nodes/stats
+  - pods
+  - pods/status
+  - replicationcontrollers
+  - replicationcontrollers/status
+  - resourcequotas
+  - secrets
+  - services
   verbs:
   - get
   - list
@@ -29,110 +34,6 @@ rules:
   - get
   - list
   - patch
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - namespaces/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes/metrics
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes/spec
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes/stats
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - replicationcontrollers
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - replicationcontrollers/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - resourcequotas
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - get
-  - list
   - watch
 - apiGroups:
   - admissionregistration.k8s.io
@@ -158,29 +59,8 @@ rules:
   - apps
   resources:
   - daemonsets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - deployments
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - replicasets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - statefulsets
   verbs:
   - get
@@ -198,13 +78,6 @@ rules:
   - batch
   resources:
   - cronjobs
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - batch
-  resources:
   - jobs
   verbs:
   - get
@@ -214,21 +87,7 @@ rules:
   - extensions
   resources:
   - daemonsets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - extensions
-  resources:
   - deployments
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - extensions
-  resources:
   - replicasets
   verbs:
   - get
@@ -254,41 +113,8 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - clusterroles
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - rolebindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - roles
   verbs:
   - create
@@ -310,83 +136,8 @@ rules:
   - telemetry.kyma-project.io
   resources:
   - logparsers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - logparsers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - logparsers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
   - logpipelines
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - logpipelines/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - logpipelines/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
   - metricpipelines
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - metricpipelines/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
-  - metricpipelines/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - telemetry.kyma-project.io
-  resources:
   - tracepipelines
   verbs:
   - create
@@ -399,6 +150,17 @@ rules:
 - apiGroups:
   - telemetry.kyma-project.io
   resources:
+  - logparsers/finalizers
+  - logpipelines/finalizers
+  - metricpipelines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - logparsers/status
+  - logpipelines/status
+  - metricpipelines/status
   - tracepipelines/status
   verbs:
   - get
@@ -415,6 +177,8 @@ rules:
   - ""
   resources:
   - configmaps
+  - serviceaccounts
+  - services
   verbs:
   - create
   - delete
@@ -433,44 +197,9 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - daemonsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - deployments
   verbs:
   - create
