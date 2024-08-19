@@ -58,7 +58,7 @@ jobs:
       - name: Validate title
         uses: amannn/action-semantic-pull-request@47b15d52c5c30e94a17ec87eb8dd51ff5221fed9
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           types: |
             deps
@@ -70,8 +70,24 @@ jobs:
           requireScope: false
           subjectPattern: ^([A-Z].*[^.]|bump .*)$
 
+  pr-prevent-kustomization:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check-out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prevent kustomization.yaml changes
+        run: |
+          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
+          FILES=$(curl -s -X GET -G $URL | jq -r '.[] | .filename')
+          if echo $FILES | grep -q "config/manager/kustomization.yaml"; then
+            echo "kustomization.yaml file changed!"
+            exit 1
+          fi
+
   PR-Github-Checks-Success:
-    needs: [pr-milestone-check, pr-label-check, pr-title-check]
+    needs: [pr-milestone-check, pr-label-check, pr-title-check, pr-prevent-kustomization]
     runs-on: ubuntu-latest
     steps:
       - name: PR Github Checks Success
