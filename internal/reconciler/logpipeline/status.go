@@ -102,7 +102,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	if endpoint.IsEndpointInvalidError(err) {
 		return metav1.ConditionFalse,
 			conditions.ReasonEndpointInvalid,
-			fmt.Sprintf(conditions.MessageForTracePipeline(conditions.ReasonEndpointInvalid), err.Error())
+			fmt.Sprintf(conditions.MessageForLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError
