@@ -32,8 +32,10 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 		return err
 	}
 
-	if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.Otlp.Endpoint); err != nil {
-		return err
+	if pipeline.Spec.Output.Otlp != nil {
+		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.Otlp.Endpoint); err != nil {
+			return err
+		}
 	}
 
 	if tlsValidationRequired(pipeline) {
