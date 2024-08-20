@@ -102,10 +102,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 					OnlyContainElementsOf(containerMetricNames))), "Found container metrics in backend that are not part of k8scluster or kubeletstats")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(
-					ContainElement(HaveField("Name", BeElementOf(k8scluster.ContainerMetricsNames)))), "Found container metrics in backend that are not part of k8scluster")
+					ContainElement(HaveField("Name", BeElementOf(k8scluster.ContainerMetricsNames)))), "Did not find any k8scluster container metrics in backend")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(
-					ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))), "Found container metrics in backend that are not part of kubeletstats")
+					ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))), "Did not find any kubeletstats container metrics in backend")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(WithScopeAndVersion(ContainElement(And(
 					HaveField("Name", metric.InputSourceRuntime),
@@ -134,10 +134,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 					OnlyContainElementsOf(podMetricNames))), "Found pod metrics in backend that are not part of k8scluster or kubeletstats")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(
-					ContainElement(HaveField("Name", BeElementOf(k8scluster.PodMetricsNames)))), "Found pod metrics in backend that are not part of k8scluster")
+					ContainElement(HaveField("Name", BeElementOf(k8scluster.PodMetricsNames)))), "Did not find any k8scluster pod metrics in backend")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(
-					ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))), "Found pod metrics in backend that are not part of kubeletstats")
+					ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))), "Did not find any kubeletstats pod metrics in backend")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(WithScopeAndVersion(ContainElement(And(
 					HaveField("Name", metric.InputSourceRuntime),
