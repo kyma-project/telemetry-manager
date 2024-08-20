@@ -192,7 +192,7 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 
 	// Perform the transform before runtime resource filter as InstrumentationScopeK8sCluster is required for dropping container/pod metrics
 	if isRuntimeInputEnabled(pipeline.Spec.Input) && opts.K8sClusterReceiverAllowed {
-		processors = append(processors, "transform/set-instrumentation-scope-k8s_cluster")
+		processors = append(processors, "transform/set-instrumentation-scope-runtime")
 	}
 
 	processors = append(processors, makeInputSourceFiltersIDs(input)...)
