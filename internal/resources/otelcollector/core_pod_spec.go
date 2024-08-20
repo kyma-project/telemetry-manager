@@ -63,7 +63,6 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 				Image: image,
 				Args: []string{
 					"--config=/conf/" + configMapKey,
-					"--feature-gates=-confmap.unifyEnvVarExpansion",
 				},
 				EnvFrom: []corev1.EnvFromSource{
 					{
