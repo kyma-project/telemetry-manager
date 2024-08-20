@@ -10,14 +10,9 @@ import (
 // FlatMetricDataPoint holds all needed information about a metric data point.
 // It makes accessing the information easier than using pdata.Metric directly.
 type FlatMetricDataPoint struct {
-	Name, Description                                     string
+	Name, Description, ScopeName, ScopeVersion            string
 	ResourceAttributes, ScopeAttributes, MetricAttributes map[string]string
-	Type                                                  pmetric.MetricType
-	ScopeAndVersion                                       ScopeVersion
-}
-
-type ScopeVersion struct {
-	Name, Version string
+	Type                                                  string
 }
 
 func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
@@ -52,11 +47,12 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetricDataPoint {
 					flatMetrics = append(flatMetrics, FlatMetricDataPoint{
 						Name:               metric.Name(),
 						Description:        metric.Description(),
-						ScopeAndVersion:    ScopeVersion{scopeMetrics.Scope().Name(), scopeMetrics.Scope().Version()},
+						ScopeName:          scopeMetrics.Scope().Name(),
+						ScopeVersion:       scopeMetrics.Scope().Version(),
 						ResourceAttributes: attributeToMap(resourceMetrics.Resource().Attributes()),
 						ScopeAttributes:    attributeToMap(scopeMetrics.Scope().Attributes()),
 						MetricAttributes:   attributeToMap(dataPointsAttributes[l]),
-						Type:               metric.Type(),
+						Type:               metric.Type().String(),
 					})
 				}
 			}
