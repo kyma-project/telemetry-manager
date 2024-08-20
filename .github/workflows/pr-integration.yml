@@ -91,13 +91,14 @@ jobs:
 
       - name: Run tests
         run: |
-          bin/ginkgo run --tags istio --label-filter="integration" test/integration/istio
+          bin/ginkgo run --junit-report=junit-report.xml --tags istio --label-filter="integration" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
         if: success() || failure()
         with:
           failure: failure()
+          job-name: ${{ github.job }}
 
   e2e-self-mon:
     strategy:
@@ -125,7 +126,7 @@ jobs:
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
         run: |
-          bin/ginkgo run --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/e2e
+          bin/ginkgo run --junit-report=junit-report-healthy.xml --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/e2e
 
         # we need Istio for fault injection to simulate backpressure and outages
       - name: Deploy Istio Module
@@ -135,13 +136,14 @@ jobs:
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
         run: |
-          bin/ginkgo run --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/integration/istio
+          bin/ginkgo run --junit-report=junit-report-unhealthy.xml --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
         if: success() || failure()
         with:
           failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
 
   PR-Integration-Success:
     needs: [e2e, e2e-dev, e2e-istio, e2e-self-mon]
