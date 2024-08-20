@@ -7,9 +7,9 @@ import (
 )
 
 var upstreamInstrumentationScopeName = map[InputSourceType]string{
-	InputSourceRuntime:    "otelcol/kubeletstatsreceiver",
-	InputSourcePrometheus: "otelcol/prometheusreceiver",
-	InputSourceIstio:      "otelcol/prometheusreceiver",
+	InputSourceRuntime:    "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver",
+	InputSourcePrometheus: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
+	InputSourceIstio:      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
 	InputSourceKyma:       "otelcol/kymastats",
 }
 
