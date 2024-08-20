@@ -5,11 +5,19 @@ inputs:
   failure:
     description: Are we in failure mode?
     required: true
+  job-name:
+    description: The name of the job
+    required: false
 
 runs:
   using: "composite"
 
   steps:
+    - name: Upload Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.job-name }}-report
+        path: junit-report.xml
 
     - name: Describe manager pod
       shell: bash

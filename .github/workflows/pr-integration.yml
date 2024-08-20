@@ -39,18 +39,12 @@ jobs:
       - name: Run tests
         run: bin/ginkgo run --junit-report=junit-report.xml --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" test/e2e
 
-      - name: Upload Report
-        uses: actions/upload-artifact@v4
-        if: success() || failure()
-        with:
-          name: JUnit-Report-${{ matrix.name }}
-          path: junit-report.xml
-
       - name: Finalize test
         uses: "./.github/template/finalize-test"
         if: success() || failure()
         with:
           failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-dev:
     strategy:
@@ -71,13 +65,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" test/e2e
+        run: bin/ginkgo run --junit-report=junit-report.xml --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
         if: success() || failure()
         with:
           failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-istio:
     runs-on: ubuntu-latest
