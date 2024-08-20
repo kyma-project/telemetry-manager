@@ -5,12 +5,13 @@ import (
 )
 
 const (
-	metricOtelCollectorExporterSent          = "otelcol_exporter_sent"
-	metricOtelCollectorExporterSendFailed    = "otelcol_exporter_send_failed"
-	metricOtelCollectorExporterQueueSize     = "otelcol_exporter_queue_size"
-	metricOtelCollectorExporterQueueCapacity = "otelcol_exporter_queue_capacity"
-	metricOtelCollectorExporterEnqueueFailed = "otelcol_exporter_enqueue_failed"
-	metricOtelCollectorReceiverRefused       = "otelcol_receiver_refused"
+	metricOtelCollectorExporterSent                         = "otelcol_exporter_sent"
+	metricOtelCollectorExporterSendFailed                   = "otelcol_exporter_send_failed"
+	metricOtelCollectorExporterQueueSize                    = "otelcol_exporter_queue_size"
+	metricOtelCollectorExporterQueueCapacity                = "otelcol_exporter_queue_capacity"
+	metricOtelCollectorExporterEnqueueFailed                = "otelcol_exporter_enqueue_failed"
+	metricOtelCollectorReceiverRefused                      = "otelcol_receiver_refused"
+	vectorMatchOtelCollectorExporterQueueSizeIgnoreDataType = "ignoring(data_type)"
 )
 
 type otelCollectorRuleBuilder struct {
@@ -58,7 +59,7 @@ func (rb otelCollectorRuleBuilder) exporterDroppedRule() Rule {
 func (rb otelCollectorRuleBuilder) exporterQueueAlmostFullRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterQueueAlmostFull,
-		Expr: div(metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity, selectService(rb.serviceName)).
+		Expr: div(metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity, vectorMatchOtelCollectorExporterQueueSizeIgnoreDataType, selectService(rb.serviceName)).
 			maxBy(labelPipelineName).
 			greaterThan(0.8).
 			build(),

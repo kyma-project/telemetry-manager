@@ -42,14 +42,14 @@ func rate(metric string, selectors ...labelSelector) *exprBuilder {
 	return eb
 }
 
-func div(nominator, denominator string, selectors ...labelSelector) *exprBuilder {
+func div(nominator, denominator, vectormatch string, selectors ...labelSelector) *exprBuilder {
 	for _, s := range selectors {
 		nominator = s(nominator)
 		denominator = s(denominator)
 	}
 
 	eb := &exprBuilder{
-		expr: fmt.Sprintf("%s / %s", nominator, denominator),
+		expr: fmt.Sprintf("%s / %s %s", nominator, vectormatch, denominator),
 	}
 	return eb
 }
