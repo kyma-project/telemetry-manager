@@ -16,6 +16,5 @@ var (
 
 	PodMetricsNames = []string{
 		"k8s.pod.phase",
-		"k8s.pod.status_reason",
 	}
 )

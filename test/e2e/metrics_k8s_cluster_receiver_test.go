@@ -108,13 +108,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 					ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))), "Found container metrics in backend that are not part of kubeletstats")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(WithScopeAndVersion(ContainElement(And(
-					HaveField("Name", metric.InstrumentationScopeK8sCluster),
+					HaveField("Name", metric.InputSourceRuntime),
 					HaveField("Version",
 						SatisfyAny(
 							ContainSubstring("main"),
 							ContainSubstring("1."),
 							ContainSubstring("PR-"),
-						)))))), "Only scope '%v' must be sent to the runtime backend", metric.InstrumentationScopeK8sCluster)
+						)))))), "Only scope '%v' must be sent to the runtime backend", metric.InstrumentationScopeRuntime)
 
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -140,13 +140,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 					ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))), "Found pod metrics in backend that are not part of kubeletstats")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(WithScopeAndVersion(ContainElement(And(
-					HaveField("Name", metric.InstrumentationScopeK8sCluster),
+					HaveField("Name", metric.InputSourceRuntime),
 					HaveField("Version",
 						SatisfyAny(
 							ContainSubstring("main"),
 							ContainSubstring("1."),
 							ContainSubstring("PR-"),
-						)))))), "Only scope '%v' must be sent to the runtime backend", metric.InstrumentationScopeK8sCluster)
+						)))))), "Only scope '%v' must be sent to the runtime backend", metric.InputSourceRuntime)
 
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

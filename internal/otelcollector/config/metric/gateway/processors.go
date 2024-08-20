@@ -85,18 +85,12 @@ func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
 	}
 }
 
-func makeDropRuntimePodMetricsConfig(opts BuildOptions) *FilterProcessor {
+func makeDropRuntimePodMetricsConfig() *FilterProcessor {
 	dropMetricRules := []string{
 		ottlexpr.JoinWithAnd(
 			inputSourceEquals(metric.InputSourceRuntime),
 			ottlexpr.IsMatch("name", "^k8s.pod.*"),
 		),
-	}
-	if opts.K8sClusterReceiverAllowed {
-		dropMetricRules = append(dropMetricRules, ottlexpr.JoinWithAnd(
-			inputSourceEquals(metric.InputSourceK8sCluster),
-			ottlexpr.IsMatch("name", "^k8s.pod.*"),
-		))
 	}
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
@@ -105,19 +99,14 @@ func makeDropRuntimePodMetricsConfig(opts BuildOptions) *FilterProcessor {
 	}
 }
 
-func makeDropRuntimeContainerMetricsConfig(opts BuildOptions) *FilterProcessor {
+func makeDropRuntimeContainerMetricsConfig() *FilterProcessor {
 	dropMetricRules := []string{
 		ottlexpr.JoinWithAnd(
 			inputSourceEquals(metric.InputSourceRuntime),
 			ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
 		),
 	}
-	if opts.K8sClusterReceiverAllowed {
-		dropMetricRules = append(dropMetricRules, ottlexpr.JoinWithAnd(
-			inputSourceEquals(metric.InputSourceK8sCluster),
-			ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
-		))
-	}
+
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: dropMetricRules,
@@ -161,6 +150,44 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.MetricPipe
 			Metric: filterExpressions,
 		},
 	}
+}
+
+// Drop the metrics scraped by k8s cluster, except for the pod and container metrics
+// Complete list of the metrics is here: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
+func makeK8sClusterDropMetrics() *FilterProcessor {
+	metricNames := []string{
+		"^k8s.deployment.*",
+		"^k8s.cronjob.*",
+		"^k8s.daemonset.*",
+		"^k8s.hpa.*",
+		"^k8s.job.*",
+		"^k8s.namespace.*",
+		"^k8s.replicaset.*",
+		"^k8s.replication_controller.*",
+		"^k8s.resource_quota.*",
+		"^k8s.statefulset.*",
+		"^openshift.*",
+		"^k8s.node.*",
+	}
+	metricNameConditions := createIsMatchNameConditions(metricNames)
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.JoinWithOr(metricNameConditions...),
+				),
+			},
+		},
+	}
+}
+
+func createIsMatchNameConditions(names []string) []string {
+	var nameConditions []string
+	for _, name := range names {
+		nameConditions = append(nameConditions, ottlexpr.IsMatch("name", name))
+	}
+	return nameConditions
 }
 
 func createNamespacesConditions(namespaces []string) []string {

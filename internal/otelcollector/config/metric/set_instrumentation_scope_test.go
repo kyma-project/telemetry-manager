@@ -53,7 +53,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			},
 			inputSource: InputSourceIstio,
 		}, {
-			name: "InputSourceKyma",
+			name: "InputSourceK8sCluster",
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
@@ -73,7 +73,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 					Context: "scope",
 					Statements: []string{
 						"set(version, \"main\") where name == \"otelcol/k8sclusterreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/k8s_cluster\") where name == \"otelcol/k8sclusterreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"otelcol/k8sclusterreceiver\"",
 					},
 				}},
 			},

@@ -14,9 +14,9 @@ type Config struct {
 }
 
 type Receivers struct {
-	OTLP                              config.OTLPReceiver                 `yaml:"otlp"`
-	SingletonKymaStatsReceiverCreator *SingletonKymaStatsReceiverCreator  `yaml:"singleton_receiver_creator/kymastats,omitempty"`
-	SingletonK8sClusterReceiver       *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8s_cluster,omitempty"`
+	OTLP                               config.OTLPReceiver                 `yaml:"otlp"`
+	SingletonKymaStatsReceiverCreator  *SingletonKymaStatsReceiverCreator  `yaml:"singleton_receiver_creator/kymastats,omitempty"`
+	SingletonK8sClusterReceiverCreator *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8s_cluster,omitempty"`
 }
 
 type SingletonKymaStatsReceiverCreator struct {
@@ -79,7 +79,7 @@ type Processors struct {
 	DropK8sClusterMetrics                        *FilterProcessor               `yaml:"filter/drop-k8s-cluster-metrics,omitempty"`
 	ResolveServiceName                           *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 	SetInstrumentationScopeKyma                  *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
-	SetInstrumentationScopeK8sCluster            *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-k8s_cluster,omitempty"`
+	SetInstrumentationScopeRuntime               *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`

@@ -17,14 +17,3 @@ func TestDropDiagnosticMetricsForInput(t *testing.T) {
 	require.Len(t, dropFilterPrometheus.Metrics.Metric, 1)
 	require.Equal(t, []string{expectedDropMetricsPrometheusConfiguration}, dropFilterPrometheus.Metrics.Metric)
 }
-
-var k8sClusterMetricsDrop = []string{"instrumentation_scope.name == \"io.kyma-project.telemetry/k8s_cluster\"" +
-	" and (IsMatch(name, \"^k8s.deployment.*\") or IsMatch(name, \"^k8s.cronjob.*\") or IsMatch(name, \"^k8s.daemonset.*\") or IsMatch(name, \"^k8s.hpa.*\") or IsMatch(name, \"^k8s.job.*\")" +
-	" or IsMatch(name, \"^k8s.namespace.*\") or IsMatch(name, \"^k8s.replicaset.*\") or IsMatch(name, \"^k8s.replication_controller.*\") or IsMatch(name, \"^k8s.resource_quota.*\") or IsMatch(name, \"^k8s.statefulset.*\")" +
-	" or IsMatch(name, \"^openshift.*\") or IsMatch(name, \"^k8s.node.*\"))"}
-
-func TestMakeK8sClusterDropMetrics(t *testing.T) {
-	dropFilter := makeK8sClusterDropMetrics()
-	require.Len(t, dropFilter.Metrics.Metric, 1)
-	require.Equal(t, k8sClusterMetricsDrop, dropFilter.Metrics.Metric)
-}
