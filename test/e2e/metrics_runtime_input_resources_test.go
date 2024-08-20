@@ -90,7 +90,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))),
+					WithFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -101,7 +101,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames))))),
+					WithFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -112,7 +112,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))),
+					WithFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -123,7 +123,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames))))),
+					WithFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

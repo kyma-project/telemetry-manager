@@ -22,8 +22,8 @@ func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 	})
 }
 
-// flattenAllMetrics converts pdata.Metrics to a slice of FlatMetricDataPoint.
-func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetricDataPoint {
+// flattenAllMetricsDataPoints converts pdata.Metrics to a slice of FlatMetricDataPoint.
+func flattenAllMetricsDataPoints(mds []pmetric.Metrics) []FlatMetricDataPoint {
 	var flatMetrics []FlatMetricDataPoint
 
 	for _, md := range mds {

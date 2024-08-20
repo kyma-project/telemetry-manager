@@ -87,7 +87,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 				// targets discovered via annotated pods must have no service label
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(SatisfyAll(
+					WithFlatMetricsDataPoints(SatisfyAll(
 						ContainElement(
 							And(
 								HaveField("Name", prommetricgen.MetricCPUTemperature.Name),
@@ -123,7 +123,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(SatisfyAll(
+					WithFlatMetricsDataPoints(SatisfyAll(
 						ContainElement(
 							And(
 								HaveField("Name", prommetricgen.MetricCPUTemperature.Name),
@@ -163,7 +163,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(
+					WithFlatMetricsDataPoints(
 						Not(ContainElement(
 							HaveField("Name", BeElementOf(kubeletstats.DefaultMetricsNames)),
 						)),
@@ -182,7 +182,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(
+					WithFlatMetricsDataPoints(
 						Not(ContainElement(
 							HaveField("Name", BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")),
 						))),

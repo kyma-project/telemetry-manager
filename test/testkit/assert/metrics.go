@@ -31,7 +31,7 @@ func MetricsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendEx
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodycontent).To(
-			WithFlatMetrics(ContainElement(SatisfyAll(
+			WithFlatMetricsDataPoints(ContainElement(SatisfyAll(
 				HaveField("Name", BeElementOf(metricNames)),
 				HaveField("ResourceAttributes", HaveKeyWithValue("k8s.namespace.name", namespace)),
 			))),
