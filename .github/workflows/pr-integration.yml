@@ -37,7 +37,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run -v --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" test/e2e
+        run: bin/ginkgo run --junit-report=junit-report.xml --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" test/e2e
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: JUnit-Report-${{ matrix.name }}
+          path: junit-report.xml
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -89,7 +95,7 @@ jobs:
 
       - name: Run tests
         run: |
-          bin/ginkgo run -v --tags istio --label-filter="integration" test/integration/istio
+          bin/ginkgo run --tags istio --label-filter="integration" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
