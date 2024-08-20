@@ -65,6 +65,9 @@ spec:
           requests:
             cpu: 5m
             memory: 100Mi
+        volumeMounts:
+          - mountPath: /tmp
+            name: crt-volume
         env:
         - name: GOMEMLIMIT
           value: "300MiB"
@@ -74,5 +77,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+      volumes:
+        - name: crt-volume
+          emptyDir: {}
       serviceAccountName: manager
       terminationGracePeriodSeconds: 10
