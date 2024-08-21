@@ -1,0 +1,93 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: log-receiver
+    app.kubernetes.io/name: log-receiver
+  name: log-receiver
+  namespace: log-load-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-receiver
+      app.kubernetes.io/name: log-receiver
+  template:
+    metadata:
+      labels:
+        app: log-receiver
+        app.kubernetes.io/name: log-receiver
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-receiver
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - log-gateway
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      volumes:
+        - name: collector-config
+          configMap:
+            name: log-receiver
+      securityContext:
+        fsGroup: 101
+      containers:
+        - image: otel/opentelemetry-collector-contrib:0.105.0
+          name: otel-collector
+          volumeMounts:
+            - name: collector-config
+              mountPath: /etc/collector
+          args:
+            - --config=/etc/collector/config.yaml
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: log-receiver
+    app.kubernetes.io/name: log-receiver
+  name: log-receiver
+  namespace: log-load-test
+spec:
+  ports:
+    - name: grpc-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-otlp
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+  selector:
+    app.kubernetes.io/name: log-receiver

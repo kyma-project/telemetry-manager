@@ -1,107 +1,122 @@
 [
   {
-    "name": "ci-traces",
+    "name": "traces",
     "type": "traces",
     "backpressure": "false",
     "multi": "false",
     "image": "otel-collector"
   },
   {
-    "name": "ci-traces-m",
+    "name": "traces-multi",
     "type": "traces",
     "backpressure": "false",
     "multi": "true",
     "image": "otel-collector"
   },
   {
-    "name": "ci-traces-b",
+    "name": "traces-backpressure",
     "type": "traces",
     "backpressure": "true",
     "multi": "false",
     "image": "otel-collector"
   },
   {
-    "name": "ci-traces-mb",
+    "name": "traces-multi-backpressure",
     "type": "traces",
     "backpressure": "true",
     "multi": "true",
     "image": "otel-collector"
   },
   {
-    "name": "ci-metrics",
+    "name": "metrics",
     "type": "metrics",
     "backpressure": "false",
     "multi": "false",
     "image": "otel-collector"
   },
   {
-    "name": "ci-metrics-m",
+    "name": "metrics-multi",
     "type": "metrics",
     "backpressure": "false",
     "multi": "true",
     "image": "otel-collector"
   },
   {
-    "name": "ci-metrics-b",
+    "name": "metrics-backpressure",
     "type": "metrics",
     "backpressure": "true",
     "multi": "false",
     "image": "otel-collector"
   },
   {
-    "name": "ci-metrics-mb",
+    "name": "metrics-multi-backpressure",
     "type": "metrics",
     "backpressure": "true",
     "multi": "true",
     "image": "otel-collector"
   },
   {
-    "name": "ci-metrics-ag",
+    "name": "metrics-agent",
     "type": "metricagent",
     "backpressure": "false",
     "multi": "false",
     "image": "otel-collector"
   },
   {
-    "name": "ci-metrics-ag-b",
+    "name": "metrics-agent-backpressure",
     "type": "metricagent",
     "backpressure": "true",
     "multi": "false",
     "image": "otel-collector"
   },
   {
-    "name": "ci-logs",
+    "name": "logs",
     "type": "logs-fluentbit",
     "backpressure": "false",
     "multi": "false",
     "image": "fluent-bit"
   },
   {
-    "name": "ci-logs-m",
+    "name": "logs-fluentbit-multi",
     "type": "logs-fluentbit",
     "backpressure": "false",
     "multi": "true",
     "image": "fluent-bit"
   },
   {
-    "name": "ci-logs-b",
+    "name": "logs-fluentbit-backpressure",
     "type": "logs-fluentbit",
     "backpressure": "true",
     "multi": "false",
     "image": "fluent-bit"
   },
   {
-    "name": "ci-logs-mb",
+    "name": "logs-fluentbit-multi-backpressure",
     "type": "logs-fluentbit",
     "backpressure": "true",
     "multi": "true",
     "image": "fluent-bit"
   },
   {
-    "name": "ci-self-monitor",
+    "name": "self-monitor",
     "type": "self-monitor",
     "backpressure": "false",
     "multi": "false",
     "image": "prometheus"
+  },
+  {
+    "name": "logs-otel",
+    "type": "logs-otel",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "logs-otel"
+  },
+  {
+    "name": "logs-otel-batch",
+    "type": "logs-otel",
+    "backpressure": "false",
+    "multi": "false",
+    "image": "logs-otel",
+    "overlay": "batch"
   }
 ]

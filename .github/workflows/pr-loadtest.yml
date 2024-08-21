@@ -13,8 +13,14 @@ on:
           - otel-collector
           - fluent-bit
           - prometheus
-        description: 'Image to test'
+          - logs-otel
+        description: "Image to test"
         required: true
+      duration:
+        type: string
+        description: "Duration of the test in seconds"
+        required: true
+        default: "1200"
 
 run-name: "Load Test for ${{ inputs.image }} on PR-${{ inputs.pr_number }}"
 
@@ -32,7 +38,7 @@ jobs:
       - id: set-matrix
         run: |
           image=${{ github.event.inputs.image }}
-          matrix=$(jq --arg image "$image" 'map( . | select (.image==$image) )' hack/load-tests/matrix_includes.json)                
+          matrix=$(jq --arg image "$image" 'map( . | select (.image==$image) )' hack/load-tests/matrix_includes.json)
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
   load-test:
     needs: prepare-matrix
@@ -43,19 +49,23 @@ jobs:
 
     steps:
       - name: Test
-        run:  echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.image }}"
+        run: echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.image }}"
 
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: 'refs/pull/${{ github.event.inputs.pr_number }}/head'
+          ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
       - name: Setup gardener cluster name
-        run:  echo "GARDENER_CLUSTER_NAME=${{ matrix.name }}" >> $GITHUB_ENV
+        run: |
+          ID=$(echo ${{ github.run_id }}${{ github.run_attempt }} | rev )
+          SHORT_NAME=$(echo ${{ matrix.name }} | awk -F- '{for(i=1;i<=NF;i++) printf "%s",substr($i,1,1);print "";}')
+          GARDENER_CLUSTER_NAME=$(echo lt-${SHORT_NAME}-${ID} | cut -c 1-14)
+          echo "GARDENER_CLUSTER_NAME=$GARDENER_CLUSTER_NAME" >> $GITHUB_ENV
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
       - name: Save service account to file
@@ -82,14 +92,14 @@ jobs:
 
       # Run the load test
       - name: Run Load test
-        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }}
+        run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }} -d ${{ github.event.inputs.duration }} -o "${{ matrix.overlay }}"
 
       - name: Upload Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Results-${{ matrix.name }}
-          path: tests/*.md
+          path: tests/*.json
 
       - name: Deprovision Gardener
         run: make deprovision-gardener
@@ -103,11 +113,11 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
       - name: Download Results
         uses: actions/download-artifact@v4
       - name: Print Results
         run: |
-          for i in Results-*/*.md; do
-            echo "Results from $i"
-            cat $i
-          done
+          ls -la
+          python3 hack/load-tests/convert-results.py Results-*
