@@ -72,33 +72,6 @@ func attributeToMap(attrs pcommon.Map) map[string]string {
 	return attrMap
 }
 
-func getMetrics(md pmetric.Metrics) []pmetric.Metric {
-	var metrics []pmetric.Metric
-
-	for i := 0; i < md.ResourceMetrics().Len(); i++ {
-		resourceMetrics := md.ResourceMetrics().At(i)
-		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
-			scopeMetrics := resourceMetrics.ScopeMetrics().At(j)
-			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
-				metrics = append(metrics, scopeMetrics.Metrics().At(k))
-			}
-		}
-	}
-
-	return metrics
-}
-
-func getScope(md pmetric.Metrics) []pmetric.ScopeMetrics {
-	var scopeMetrics []pmetric.ScopeMetrics
-	for i := 0; i < md.ResourceMetrics().Len(); i++ {
-		resourceMetrics := md.ResourceMetrics().At(i)
-		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
-			scopeMetrics = append(scopeMetrics, resourceMetrics.ScopeMetrics().At(j))
-		}
-	}
-	return scopeMetrics
-}
-
 func getAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
 	var attrsPerDataPoint []pcommon.Map
 
