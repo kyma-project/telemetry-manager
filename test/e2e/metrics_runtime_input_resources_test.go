@@ -3,7 +3,10 @@
 package e2e
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
+	"io"
 	"net/http"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -89,19 +92,35 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))),
-				))
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				containerMetricNames := slices.Concat(kubeletstats.ContainerMetricsNames, k8scluster.ContainerMetricsNames)
+				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
+					OnlyContainElementsOf(containerMetricNames))), "Found container metrics in backend that are not part of k8scluster or kubeletstats")
+
+				g.Expect(bodyContent).To(WithFlatMetrics(
+					ContainElement(HaveField("Name", BeElementOf(k8scluster.ContainerMetricsNames)))), "Did not find any k8scluster container metrics in backend")
+
+				g.Expect(bodyContent).To(WithFlatMetrics(
+					ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))), "Did not find any kubeletstats container metrics in backend")
+
+				//g.Expect(resp).To(HaveHTTPBody(
+				//	WithFlatMetrics(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))),
+				//))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should not deliver runtime pod metrics to container-metrics backend", func() {
 			Consistently(func(g Gomega) {
+				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
+
 				resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames))))),
+					WithFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(podMetricNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -111,19 +130,35 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))),
-				))
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+				//g.Expect(resp).To(HaveHTTPBody(
+				//	WithFlatMetrics(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))),
+				//))
+				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
+
+				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
+					OnlyContainElementsOf(podMetricNames))), "Found pod metrics in backend that are not part of k8scluster or kubeletstats")
+
+				g.Expect(bodyContent).To(WithFlatMetrics(
+					ContainElement(HaveField("Name", BeElementOf(k8scluster.PodMetricsNames)))), "Did not find any k8scluster pod metrics in backend")
+
+				g.Expect(bodyContent).To(WithFlatMetrics(
+					ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))), "Did not find any kubeletstats pod metrics in backend")
+
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should not deliver runtime container metrics to pod-metrics backend", func() {
 			Consistently(func(g Gomega) {
+				containerMetricNames := slices.Concat(kubeletstats.ContainerMetricsNames, k8scluster.ContainerMetricsNames)
+
 				resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames))))),
+					WithFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(containerMetricNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

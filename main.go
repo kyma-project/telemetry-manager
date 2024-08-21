@@ -121,8 +121,7 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	kymaInputAllowed          bool
-	k8sClusterReceiverAllowed bool
+	kymaInputAllowed bool
 
 	version = "main"
 )
@@ -279,7 +278,6 @@ func main() {
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
 	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
-	flag.BoolVar(&k8sClusterReceiverAllowed, "k8s-cluster-receiver-allowed", false, "Allow collecting cluster level metrics from API Server in kyma")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -548,10 +546,9 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 					},
 					OTLPServiceName: metricOTLPServiceName,
 				},
-				MaxPipelines:              maxMetricPipelines,
-				ModuleVersion:             version,
-				KymaInputAllowed:          kymaInputAllowed,
-				K8sClusterReceiverAllowed: k8sClusterReceiverAllowed,
+				MaxPipelines:     maxMetricPipelines,
+				ModuleVersion:    version,
+				KymaInputAllowed: kymaInputAllowed,
 			},
 			TelemetryNamespace: telemetryNamespace,
 			SelfMonitorName:    selfMonitorName,

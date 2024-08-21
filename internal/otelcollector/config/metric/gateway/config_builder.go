@@ -23,7 +23,6 @@ type BuildOptions struct {
 	GatewayNamespace            string
 	InstrumentationScopeVersion string
 	KymaInputAllowed            bool
-	K8sClusterReceiverAllowed   bool
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
@@ -84,7 +83,7 @@ func declareComponentsForMetricPipeline(
 }
 
 func declareSingletonK8sClusterReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
-	if isRuntimeInputEnabled(pipeline.Spec.Input) && opts.K8sClusterReceiverAllowed {
+	if isRuntimeInputEnabled(pipeline.Spec.Input) {
 		cfg.Receivers.SingletonK8sClusterReceiverCreator = makeSingletonK8sClusterReceiverCreatorConfig(opts.GatewayNamespace)
 	}
 }
@@ -133,7 +132,7 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
 	}
 
-	if isRuntimeInputEnabled(input) && opts.K8sClusterReceiverAllowed {
+	if isRuntimeInputEnabled(input) {
 		cfg.Processors.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
 	}
 }
@@ -166,7 +165,7 @@ func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipe
 	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
 		cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, opts.InstrumentationScopeVersion)
 	}
-	if isRuntimeInputEnabled(pipeline.Spec.Input) && opts.K8sClusterReceiverAllowed {
+	if isRuntimeInputEnabled(pipeline.Spec.Input) {
 		cfg.Processors.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(metric.InputSourceK8sCluster, opts.InstrumentationScopeVersion)
 	}
 }
@@ -191,7 +190,7 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 	input := pipeline.Spec.Input
 
 	// Perform the transform before runtime resource filter as InstrumentationScopeK8sCluster is required for dropping container/pod metrics
-	if isRuntimeInputEnabled(pipeline.Spec.Input) && opts.K8sClusterReceiverAllowed {
+	if isRuntimeInputEnabled(pipeline.Spec.Input) {
 		processors = append(processors, "transform/set-instrumentation-scope-runtime")
 	}
 
@@ -260,7 +259,7 @@ func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput,
 	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-container-metrics")
 	}
-	if isRuntimeInputEnabled(input) && opts.K8sClusterReceiverAllowed {
+	if isRuntimeInputEnabled(input) {
 		processors = append(processors, "filter/drop-k8s-cluster-metrics")
 	}
 
@@ -297,7 +296,7 @@ func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOpti
 		receivers = append(receivers, "singleton_receiver_creator/kymastats")
 	}
 
-	if isRuntimeInputEnabled(pipeline.Spec.Input) && opts.K8sClusterReceiverAllowed {
+	if isRuntimeInputEnabled(pipeline.Spec.Input) {
 		receivers = append(receivers, "singleton_receiver_creator/k8s_cluster")
 	}
 

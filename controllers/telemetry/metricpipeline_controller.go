@@ -83,7 +83,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	}
 
 	agentRBAC := otelcollector.MakeMetricAgentRBAC(types.NamespacedName{Name: config.Agent.BaseName, Namespace: config.Agent.Namespace})
-	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed, config.K8sClusterReceiverAllowed)
+	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed)
 
 	reconciler := metricpipeline.New(
 		client,

@@ -103,7 +103,7 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 	name := "test-gateway"
 	namespace := "test-namespace"
 
-	rbac := MakeMetricGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace}, false, false)
+	rbac := MakeMetricGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace}, false)
 
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
@@ -149,7 +149,7 @@ func TestMakeMetricGatewayRBACWithKymaInputAllowed(t *testing.T) {
 	name := "test-gateway"
 	namespace := "test-namespace"
 
-	rbac := MakeMetricGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace}, true, false)
+	rbac := MakeMetricGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace}, true)
 
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
@@ -169,7 +169,37 @@ func TestMakeMetricGatewayRBACWithKymaInputAllowed(t *testing.T) {
 				Resources: []string{"telemetries"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-		}
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"extensions"},
+				Resources: []string{"daemonsets", "deployments", "replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs", "cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get", "list", "watch"},
+			}}
 
 		require.NotNil(t, cr)
 		require.Equal(t, name, cr.Name)
@@ -222,60 +252,6 @@ func TestMakeMetricGatewayRBACWithKymaInputAllowed(t *testing.T) {
 		require.Equal(t, "rbac.authorization.k8s.io", rb.RoleRef.APIGroup)
 		require.Equal(t, "Role", rb.RoleRef.Kind)
 		require.Equal(t, name, rb.RoleRef.Name)
-	})
-}
-
-func TestMakeMetricGatewayRBACWithK8sClusterReceiverAllowed(t *testing.T) {
-	name := "test-gateway"
-	namespace := "test-namespace"
-
-	metricGWRBAC := MakeMetricGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace}, false, true)
-	t.Run("should have a cluster role", func(t *testing.T) {
-		cr := metricGWRBAC.clusterRole
-		expectedRules := []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"namespaces", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"extensions"},
-				Resources: []string{"daemonsets", "deployments", "replicasets"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"batch"},
-				Resources: []string{"jobs", "cronjobs"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"autoscaling"},
-				Resources: []string{"horizontalpodautoscalers"},
-				Verbs:     []string{"get", "list", "watch"},
-			}}
-
-		require.Equal(t, expectedRules, cr.Rules)
-		require.Equal(t, name, cr.Name)
-		require.Equal(t, namespace, cr.Namespace)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, cr.Labels)
-	})
-
-	t.Run("should have a cluster role binding", func(t *testing.T) {
-		crb := metricGWRBAC.clusterRoleBinding
-		checkClusterRoleBinding(t, crb, name, namespace)
 	})
 }
 
