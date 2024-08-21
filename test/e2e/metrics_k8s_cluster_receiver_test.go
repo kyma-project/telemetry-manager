@@ -34,7 +34,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 			backendK8sClusterContainerMetricsEnabledURL   string
 
 			backendK8sClusterPodMetricsEnabledName  = suite.IDWithSuffix("k8s-cluster-pod-metrics")
-			pipelineK8sClusterPodMetricsEnabledName = suite.IDWithSuffix("k8s-clusterpod-metrics")
+			pipelineK8sClusterPodMetricsEnabledName = suite.IDWithSuffix("k8s-cluster-pod-metrics")
 			backendK8sClusterPodMetricsEnabledURL   string
 		)
 

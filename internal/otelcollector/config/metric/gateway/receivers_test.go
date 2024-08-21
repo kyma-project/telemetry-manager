@@ -61,4 +61,42 @@ func TestReceivers(t *testing.T) {
 		require.Equal(t, "v1alpha1", kymaStatsReceiver.Modules[0].Version)
 		require.Equal(t, "telemetries", kymaStatsReceiver.Modules[0].Resource)
 	})
+
+	t.Run("singleton k8s cluster receiver creator", func(t *testing.T) {
+		gatewayNamespace := "test-namespace"
+		expectedMetricsToDrop := MetricsConfig{
+			K8sContainerStorageRequest:          MetricConfig{false},
+			K8sContainerStorageLimit:            MetricConfig{false},
+			K8sContainerEphemeralStorageRequest: MetricConfig{false},
+			K8sContainerEphemeralStorageLimit:   MetricConfig{false},
+			K8sContainerRestarts:                MetricConfig{false},
+			K8sContainerReady:                   MetricConfig{false},
+		}
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).Build(),
+			},
+			BuildOptions{
+				GatewayNamespace:          gatewayNamespace,
+				K8sClusterReceiverAllowed: true,
+			},
+		)
+		require.NoError(t, err)
+
+		singletonK8sClusterReceiverCreator := collectorConfig.Receivers.SingletonK8sClusterReceiverCreator
+		require.NotNil(t, singletonK8sClusterReceiverCreator)
+		require.Equal(t, "serviceAccount", singletonK8sClusterReceiverCreator.AuthType)
+		require.Equal(t, "telemetry-metric-gateway-k8scluster", singletonK8sClusterReceiverCreator.LeaderElection.LeaseName)
+		require.Equal(t, gatewayNamespace, singletonK8sClusterReceiverCreator.LeaderElection.LeaseNamespace)
+
+		k8sClusterReceiver := singletonK8sClusterReceiverCreator.SingletonK8sClusterReceiver.K8sClusterReceiver
+		require.Equal(t, "serviceAccount", k8sClusterReceiver.AuthType)
+		require.Equal(t, "30s", k8sClusterReceiver.CollectionInterval)
+		require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 1)
+		require.Equal(t, []string{""}, k8sClusterReceiver.NodeConditionsToReport)
+		require.Len(t, k8sClusterReceiver.AllocatableTypesToReport, 2)
+		require.Equal(t, []string{"cpu", "memory"}, k8sClusterReceiver.AllocatableTypesToReport)
+		require.Equal(t, expectedMetricsToDrop, k8sClusterReceiver.Metrics)
+	})
 }
