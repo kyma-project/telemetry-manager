@@ -2,9 +2,10 @@ package metric
 
 import (
 	"fmt"
+	"slices"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
-	"slices"
 )
 
 // WithFlatMetricsDataPoints extracts FlatMetricDataPoints from JSON and applies the matcher to them.
