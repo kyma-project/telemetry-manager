@@ -24,17 +24,17 @@ func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 
 // flattenAllMetricsDataPoints converts pdata.Metrics to a slice of FlatMetricDataPoint.
 func flattenAllMetricsDataPoints(mds []pmetric.Metrics) []FlatMetricDataPoint {
-	var flatMetrics []FlatMetricDataPoint
+	var flatMetricsDataPoints []FlatMetricDataPoint
 
 	for _, md := range mds {
-		flatMetrics = append(flatMetrics, flattenMetrics(md)...)
+		flatMetricsDataPoints = append(flatMetricsDataPoints, flattenMetricsDataPoints(md)...)
 	}
 
-	return flatMetrics
+	return flatMetricsDataPoints
 }
 
-func flattenMetrics(md pmetric.Metrics) []FlatMetricDataPoint {
-	var flatMetrics []FlatMetricDataPoint
+func flattenMetricsDataPoints(md pmetric.Metrics) []FlatMetricDataPoint {
+	var flatMetricsDataPoints []FlatMetricDataPoint
 
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		resourceMetrics := md.ResourceMetrics().At(i)
@@ -44,7 +44,7 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetricDataPoint {
 				metric := scopeMetrics.Metrics().At(k)
 				dataPointsAttributes := getAttributesPerDataPoint(metric)
 				for l := 0; l < len(dataPointsAttributes); l++ {
-					flatMetrics = append(flatMetrics, FlatMetricDataPoint{
+					flatMetricsDataPoints = append(flatMetricsDataPoints, FlatMetricDataPoint{
 						Name:               metric.Name(),
 						Description:        metric.Description(),
 						ScopeName:          scopeMetrics.Scope().Name(),
@@ -59,7 +59,7 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetricDataPoint {
 		}
 	}
 
-	return flatMetrics
+	return flatMetricsDataPoints
 }
 
 // attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
