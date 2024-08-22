@@ -130,7 +130,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				bodyContent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
-			
+
 				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
 
 				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
