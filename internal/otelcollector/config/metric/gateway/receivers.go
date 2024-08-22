@@ -46,7 +46,7 @@ func makeSingletonKymaStatsReceiverCreatorConfig(gatewayNamespace string) *Singl
 }
 
 func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *SingletonK8sClusterReceiverCreator {
-	metricsToDrop := MetricsConfig{
+	metricsToDrop := K8sClusterMetricsConfig{
 		K8sContainerStorageRequest:          MetricConfig{false},
 		K8sContainerStorageLimit:            MetricConfig{false},
 		K8sContainerEphemeralStorageRequest: MetricConfig{false},

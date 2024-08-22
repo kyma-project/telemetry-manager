@@ -51,18 +51,18 @@ type SingletonK8sClusterReceiver struct {
 }
 
 type K8sClusterReceiver struct {
-	AuthType                 string        `yaml:"auth_type"`
-	CollectionInterval       string        `yaml:"collection_interval"`
-	NodeConditionsToReport   []string      `yaml:"node_conditions_to_report"`
-	AllocatableTypesToReport []string      `yaml:"allocatable_types_to_report"`
-	Metrics                  MetricsConfig `yaml:"metrics"`
+	AuthType                 string                  `yaml:"auth_type"`
+	CollectionInterval       string                  `yaml:"collection_interval"`
+	NodeConditionsToReport   []string                `yaml:"node_conditions_to_report"`
+	AllocatableTypesToReport []string                `yaml:"allocatable_types_to_report"`
+	Metrics                  K8sClusterMetricsConfig `yaml:"metrics"`
 }
 
 type MetricConfig struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-type MetricsConfig struct {
+type K8sClusterMetricsConfig struct {
 	// metrics allows enabling/disabling scraped metric.
 	K8sContainerStorageRequest          MetricConfig `yaml:"k8s.container.storage_request"`
 	K8sContainerStorageLimit            MetricConfig `yaml:"k8s.container.storage_limit"`

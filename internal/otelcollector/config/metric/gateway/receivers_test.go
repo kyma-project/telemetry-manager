@@ -64,7 +64,7 @@ func TestReceivers(t *testing.T) {
 
 	t.Run("singleton k8s cluster receiver creator", func(t *testing.T) {
 		gatewayNamespace := "test-namespace"
-		expectedMetricsToDrop := MetricsConfig{
+		expectedMetricsToDrop := K8sClusterMetricsConfig{
 			K8sContainerStorageRequest:          MetricConfig{false},
 			K8sContainerStorageLimit:            MetricConfig{false},
 			K8sContainerEphemeralStorageRequest: MetricConfig{false},
