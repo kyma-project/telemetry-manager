@@ -22,7 +22,7 @@ found=false
 status=""
 conclusion=""
 
-until [[ $status == "completed" || $status == "cancelled" ]]; do
+until [[ $status == "completed" ]]; do
     # Wait for timeout
     if (( SECONDS - START_TIME > TIMEOUT )); then
         echo "Timeout reached: Workflow not found within $(( TIMEOUT/60 )) minutes"
