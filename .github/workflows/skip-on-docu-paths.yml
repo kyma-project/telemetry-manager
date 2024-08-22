@@ -9,22 +9,23 @@ on:
       - "docs/**"
       - "**.md"
 
-PR-Integration-Success:
-  runs-on: ubuntu-latest
-  steps:
-    - name: Success
-      run: |
-        echo "PR Integration is not required"
+jobs:
+  PR-Integration-Success:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: |
+          echo "PR Integration is not required"
 
-PR-Lifecycle-Success:
-  runs-on: ubuntu-latest
-  steps:
-    - name: Success
-      run: |
-        echo "PR Lifecycle is not required"
+  PR-Lifecycle-Success:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: |
+          echo "PR Lifecycle is not required"
 
-PR-Code-Checks-Success:
-  runs-on: ubuntu-latest
-  steps:
-    - name: Success
-      run: echo "PR Code Checks is not required"
+  PR-Code-Checks-Success:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: echo "PR Code Checks is not required"
