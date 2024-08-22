@@ -33,10 +33,10 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 
 ## Preparation
 
-1. Export your Namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
+1. Export your Namespace as a variable with following command:
 
     ```bash
-    export K8S_NAMESPACE="{NAMESPACE}"
+    export K8S_NAMESPACE="loki"
     ```
 
 2. Export the Helm release names that you want to use. It can be any name, but be aware that all resources in the cluster will be prefixed with that name. Run the following command:
@@ -61,13 +61,17 @@ Depending on your scalability needs and storage requirements, you can install Lo
 You install the Loki stack with a Helm upgrade command, which installs the chart if not present yet.
 
 ```bash
-helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEASE} grafana/loki -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/loki-values.yaml
+helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEASE} grafana/loki \
+  -f https://raw.githubusercontent.com/grafana/loki/main/production/helm/loki/single-binary-values.yaml \
+  --set-string 'loki.podLabels.sidecar\.istio\.io/inject=true' \
+  --set 'singleBinary.resources.requests.cpu=1' \
+  --set 'loki.auth_enabled=false'
 ```
 
-The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings. Alternatively, you can create your own `values.yaml` file and adjust the command. The customizations in the prepared `values.yaml` cover the following areas:
-
-- activate the `singleBinary` mode
-- disable additional components that are typically used when running Loki as a central backend.
+The previous command uses an example [values.yaml](https://github.com/grafana/loki/blob/main/production/helm/loki/single-binary-values.yaml) from the Loki repository for setting up Loki in the 'SingleBinary' mode. Additionally, it applies:
+- Istio sidecar injection for Loki instance
+- a reduced CPU request setting for smaller cluster setups
+- disabled multi-tenancy for easier setup
 
 Alternatively, you can create your own `values.yaml` file and adjust the command.
 
@@ -222,10 +226,10 @@ Because Grafana provides a very good Loki integration, you might want to install
 
 ### Add a Link for Grafana to the Kyma Dashboard
 
-1. Download the `dashboard-configmap.yaml` file and change `{GRAFANA_LINK}` to the public URL of your Grafana instance.
+1. Download the `kyma-dashboard-configmap.yaml` file and change `{GRAFANA_LINK}` to the public URL of your Grafana instance.
 
    ```bash
-   curl https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/dashboard-configmap.yaml -o dashboard-configmap.yaml
+   curl https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/dashboard-configmap.yaml -o kyma-dashboard-configmap.yaml
    ```
 
 1. Optionally, adjust the ConfigMap: You can change the label field to change the name of the tab. If you want to move it to another category, change the category tab.

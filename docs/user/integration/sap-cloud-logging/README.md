@@ -286,34 +286,15 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
 ## Set Up Kyma Dashboard Integration
 
-For easier access from the Kyma dashboard, adjust the navigation under **Observability**, and add deep links to the **Pod**, **Deployment**, and **Namespace** views.
+For easier access from the Kyma dashboard, add links to new navigation under **SAP Cloud Logging**, and add deep links to the **Pod**, **Deployment**, and **Namespace** views.
 
-1. Read the SAP Cloud Logging dashboard URL from the Secret:
-
-    ```bash
-    export DASHBOARD_URL=$(kubectl -n sap-cloud-logging-integration get secret sap-cloud-logging --template='{{index .data "dashboards-endpoint" | base64decode}}')
-    ```
-
-2. Download the following ConfigMaps containing the sample configuration:
+1. Apply the ConfigMaps:
 
     ```bash
-    curl -o configmap-navigation.yaml https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/configmap-navigation.yaml
-    curl -o configmap-deeplinks.yaml https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/configmap-deeplinks.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
     ```
 
-3. Replace placeholders in the ConfigMaps with the URL:
-
-    ```bash
-    sed -e "s/{PLACEHOLDER}/$DASHBOARD_URL/" configmap-navigation.yaml
-    sed -e "s/{PLACEHOLDER}/$DASHBOARD_URL/" configmap-deeplinks.yaml
-    ```
-
-4. Apply the ConfigMaps:
-
-    ```bash
-    kubectl apply -f configmap-navigation.yaml
-    kubectl apply -f configmap-deeplinks.yaml
-    ```
+If you're secret has a different name or namespace, then download the file first and adjust the used namespace and name accordingly in the 'dataSources' section of the file.
 
 ## Use SAP Cloud Logging Alerts
 

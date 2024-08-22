@@ -19,7 +19,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 - [Integrate With Dynatrace](#integrate-with-dynatrace)
   - [Overview](#overview)
   - [Table of Content](#table-of-content)
-  - [Prerequisistes](#prerequisistes)
+  - [Prerequisites](#prerequisites)
   - [Prepare the Namespace](#prepare-the-namespace)
   - [Dynatrace Setup](#dynatrace-setup)
   - [Telemetry Module Setup](#telemetry-module-setup)
@@ -27,7 +27,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
     - [Ingest Traces](#ingest-traces)
     - [Ingest Metrics](#ingest-metrics)
 
-## Prerequisistes
+## Prerequisites
 
 - Kyma as the target deployment environment
 - The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
@@ -36,7 +36,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 
 ## Prepare the Namespace
 
-1. Export your namespace you want to use for Dynatrace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
+1. Export your namespace you want to use for Dynatrace as a variable with following command:
 
     ```bash
     export DYNATRACE_NS="dynatrace"
@@ -242,3 +242,15 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
    
   This approach works well with workloads that expose metrics in the typical Prometheus format when not running with Istio.
   If you use Istio, you must disable Istio interception for the relevant metric port with the [traffic.istio.io/excludeInboundPorts](https://istio.io/latest/docs/reference/config/annotations/#TrafficExcludeInboundPorts) annotation. To collect Istio metrics from the envoys themselves, you need additional Dynatrace annotations for every workload. 
+
+## Set Up Kyma Dashboard Integration
+
+For easier access from the Kyma dashboard, add links to new navigation under **Dynatrace**.
+
+1. Apply the ConfigMaps:
+
+    ```bash
+    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/dynatrace/kyma-dashboard-configmap.yaml
+    ```
+
+If you're secret has a different name or namespace, then download the file first and adjust the used namespace and name accordingly in the 'dataSources' section of the file.

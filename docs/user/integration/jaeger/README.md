@@ -29,10 +29,10 @@ Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main
 
 ### Preparation
 
-1. Export your Namespace as a variable. Replace the `{namespace}` placeholder in the following command and run it:
+1. Export your Namespace as a variable with following command::
 
     ```bash
-    export K8S_NAMESPACE="{namespace}"
+    export K8S_NAMESPACE="jaeger"
     ```
 
 1. Export the Helm release name that you want to use. The release name must be unique for the chosen Namespace. Be aware that all resources in the cluster will be prefixed with that name. Run the following command:
