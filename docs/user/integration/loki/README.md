@@ -229,7 +229,7 @@ Because Grafana provides a very good Loki integration, you might want to install
 1. Download the `kyma-dashboard-configmap.yaml` file and change `{GRAFANA_LINK}` to the public URL of your Grafana instance.
 
    ```bash
-   curl https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/dashboard-configmap.yaml -o kyma-dashboard-configmap.yaml
+   curl https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/kyma-dashboard-configmap.yaml -o kyma-dashboard-configmap.yaml
    ```
 
 1. Optionally, adjust the ConfigMap: You can change the label field to change the name of the tab. If you want to move it to another category, change the category tab.
