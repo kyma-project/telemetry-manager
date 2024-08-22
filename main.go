@@ -61,7 +61,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
-	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
@@ -122,14 +121,15 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	kymaInputAllowed bool
+	kymaInputAllowed          bool
+	k8sClusterReceiverAllowed bool
 
 	version = "main"
 )
 
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:3.1.3-44a3707"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.6"
 	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.105.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.1-729b0b4"
 
@@ -188,6 +188,13 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes/spec,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=pods/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=replicationcontrollers,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=replicationcontrollers/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=resourcequotas,verbs=get;list;watch
 //+kubebuilder:rbac:urls=/metrics,verbs=get
 //+kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
@@ -196,6 +203,9 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
 
@@ -210,6 +220,15 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 
 // +kubebuilder:rbac:groups=security.istio.io,resources=peerauthentications,verbs=get;list;watch
 // +kubebuilder:rbac:groups=security.istio.io,namespace=system,resources=peerauthentications,verbs=create;update;patch;delete
+
+//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch
+
+//+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch
+//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch
+
+//+kubebuilder:rbac:groups=extensions,resources=daemonsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=extensions,resources=deployments,verbs=get;list;watch
+//+kubebuilder:rbac:groups=extensions,resources=replicasets,verbs=get;list;watch
 
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
@@ -260,6 +279,7 @@ func main() {
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
 	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
+	flag.BoolVar(&k8sClusterReceiverAllowed, "k8s-cluster-receiver-allowed", false, "Allow collecting cluster level metrics from API Server in kyma")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -528,12 +548,13 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 					},
 					OTLPServiceName: metricOTLPServiceName,
 				},
-				MaxPipelines:  maxMetricPipelines,
-				ModuleVersion: version,
+				MaxPipelines:              maxMetricPipelines,
+				ModuleVersion:             version,
+				KymaInputAllowed:          kymaInputAllowed,
+				K8sClusterReceiverAllowed: k8sClusterReceiverAllowed,
 			},
 			TelemetryNamespace: telemetryNamespace,
 			SelfMonitorName:    selfMonitorName,
-			KymaInputAllowed:   kymaInputAllowed,
 		},
 	)
 	if err != nil {
@@ -582,14 +603,12 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 		validation.NewMaxPipelinesValidator(maxLogPipelines),
 		validation.NewFilesValidator(),
 		admission.NewDecoder(scheme),
-		dryrun.NewDryRunner(client, createDryRunConfig()),
 		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(fluentBitDeniedOutputPlugins), DeniedFilterPlugins: parsePlugins(fluentBitDeniedFilterPlugins)})
 }
 
 func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
 	return logparserwebhook.NewValidatingWebhookHandler(
 		client,
-		dryrun.NewDryRunner(client, createDryRunConfig()),
 		admission.NewDecoder(scheme))
 }
 
@@ -605,13 +624,6 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 		},
 		WebhookScheme: "https",
 		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
-	}
-}
-
-func createDryRunConfig() dryrun.Config {
-	return dryrun.Config{
-		FluentBitConfigMapName: types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: telemetryNamespace},
-		PipelineDefaults:       createPipelineDefaults(),
 	}
 }
 

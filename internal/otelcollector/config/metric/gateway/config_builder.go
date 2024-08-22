@@ -11,14 +11,21 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
+
+const KymaInputAnnotation = "telemetry.kyma-project.io/experimental-kyma-input"
 
 type Builder struct {
 	Reader client.Reader
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpexporter.EnvVars, error) {
+type BuildOptions struct {
+	GatewayNamespace            string
+	InstrumentationScopeVersion string
+	KymaInputAllowed            bool
+}
+
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
 			Service:    config.DefaultService(make(config.Pipelines)),
@@ -45,39 +52,39 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			queueSize,
 			otlpexporter.SignalTypeMetric,
 		)
-		if err := declareComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
+		if err := declareComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars, opts); err != nil {
 			return nil, nil, err
 		}
 
 		pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
-		cfg.Service.Pipelines[pipelineID] = makeServicePipelineConfig(&pipeline)
+		cfg.Service.Pipelines[pipelineID] = makeServicePipelineConfig(&pipeline, opts)
 	}
 
 	return cfg, envVars, nil
 }
 
-func makeReceiversConfig() Receivers {
-	return Receivers{
-		OTLP: config.OTLPReceiver{
-			Protocols: config.ReceiverProtocols{
-				HTTP: config.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPHTTP),
-				},
-				GRPC: config.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPGRPC),
-				},
-			},
-		},
-	}
-}
-
-// declareComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
-func declareComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+// declareComponentsForMetricPipeline enriches a Config (receivers, processors, exporters etc.) with components for a given telemetryv1alpha1.MetricPipeline.
+func declareComponentsForMetricPipeline(
+	ctx context.Context,
+	otlpExporterBuilder *otlpexporter.ConfigBuilder,
+	pipeline *telemetryv1alpha1.MetricPipeline,
+	cfg *Config,
+	envVars otlpexporter.EnvVars,
+	opts BuildOptions,
+) error {
+	declareSingletonKymaStatsReceiverCreator(pipeline, cfg, opts)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
+	declareInstrumentationScopeTransform(pipeline, cfg, opts)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
+}
+
+func declareSingletonKymaStatsReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
+	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
+		cfg.Receivers.SingletonKymaStatsReceiverCreator = makeSingletonKymaStatsReceiverCreatorConfig(opts.GatewayNamespace)
+	}
 }
 
 func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
@@ -143,6 +150,12 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 	}
 }
 
+func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
+	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
+		cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, opts.InstrumentationScopeVersion)
+	}
+}
+
 func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
@@ -157,7 +170,7 @@ func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.
 	return nil
 }
 
-func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
+func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) config.Pipeline {
 	processors := []string{"memory_limiter", "k8sattributes"}
 
 	input := pipeline.Spec.Input
@@ -167,10 +180,14 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
 
+	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
+		processors = append(processors, "transform/set-instrumentation-scope-kyma")
+	}
+
 	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
 
 	return config.Pipeline{
-		Receivers:  []string{"otlp"},
+		Receivers:  makeReceiversIDs(pipeline.Annotations, opts.KymaInputAllowed),
 		Processors: processors,
 		Exporters:  []string{makeOTLPExporterID(pipeline)},
 	}
@@ -248,6 +265,18 @@ func formatNamespaceFilterID(pipelineName string, inputSourceType metric.InputSo
 	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
 }
 
+func makeReceiversIDs(annotations map[string]string, kymaInputAllowed bool) []string {
+	var receivers []string
+
+	receivers = append(receivers, "otlp")
+
+	if isKymaInputEnabled(annotations, kymaInputAllowed) {
+		receivers = append(receivers, "singleton_receiver_creator/kymastats")
+	}
+
+	return receivers
+}
+
 func makeOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 	return otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
 }
@@ -296,4 +325,8 @@ func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInpu
 		!*input.Runtime.Resources.Container.Enabled
 
 	return !isRuntimeContainerMetricsDisabled
+}
+
+func isKymaInputEnabled(annotations map[string]string, kymaInputAllowed bool) bool {
+	return kymaInputAllowed && annotations[KymaInputAnnotation] == "true"
 }

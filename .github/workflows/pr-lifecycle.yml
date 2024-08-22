@@ -43,7 +43,7 @@ jobs:
       - name: Run test on latest tag
         shell: bash
         run: |
-          bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
+          bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Wait for cleanup of test run
         shell: bash
@@ -71,11 +71,20 @@ jobs:
       - name: Run test on current version
         shell: bash
         run: |
-          make install-tools # delete after the tools via go modules are released 
-          bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
+          make install-tools # delete after the tools via go modules are released
+          bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
         if: success() || failure()
         with:
           failure: failure()
+          job-name: ${{ github.job }}
+
+  PR-Lifecycle-Success:
+    needs: manager-upgrade
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: |
+          echo "PR Lifecycle completed successfully"

@@ -91,6 +91,13 @@ func WithSpanSize(spanSize int) Option {
 	}
 }
 
+// WithInterval Reporting interval
+func WithInterval(duration string) Option {
+	return func(spec *corev1.PodSpec) {
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--interval")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, fmt.Sprintf("%v", duration))
+	}
+}
 func NewPod(namespace string, signalType SignalType, opts ...Option) *kitk8s.Pod {
 	return kitk8s.NewPod(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
 }

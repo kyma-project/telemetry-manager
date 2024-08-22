@@ -39,8 +39,6 @@ override:
     path: ^internal/resourcelock$
   - threshold: 86
     path: ^internal/webhookcert$
-  - threshold: 75
-    path: ^webhook/dryrun$
   - threshold: 70
     path: ^webhook/logpipeline
 

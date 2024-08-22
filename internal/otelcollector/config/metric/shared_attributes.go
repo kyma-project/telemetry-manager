@@ -7,16 +7,19 @@ const (
 	InputSourcePrometheus InputSourceType = "prometheus"
 	InputSourceIstio      InputSourceType = "istio"
 	InputSourceOtlp       InputSourceType = "otlp"
+	InputSourceKyma       InputSourceType = "kyma"
 )
 
 const (
 	InstrumentationScopeRuntime    = "io.kyma-project.telemetry/runtime"
 	InstrumentationScopePrometheus = "io.kyma-project.telemetry/prometheus"
 	InstrumentationScopeIstio      = "io.kyma-project.telemetry/istio"
+	InstrumentationScopeKyma       = "io.kyma-project.telemetry/kyma"
 )
 
 var InstrumentationScope = map[InputSourceType]string{
 	InputSourceRuntime:    InstrumentationScopeRuntime,
 	InputSourcePrometheus: InstrumentationScopePrometheus,
 	InputSourceIstio:      InstrumentationScopeIstio,
+	InputSourceKyma:       InstrumentationScopeKyma,
 }

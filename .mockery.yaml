@@ -41,16 +41,6 @@ packages:
   github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober:
     interfaces:
       alertGetter:
-  github.com/kyma-project/telemetry-manager/webhook/dryrun:
-    interfaces:
-      commandRunner:
-      fileWriter:
-  github.com/kyma-project/telemetry-manager/webhook/logparser:
-    interfaces:
-      DryRunner:
-  github.com/kyma-project/telemetry-manager/webhook/logpipeline:
-    interfaces:
-      DryRunner:
   github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation:
     interfaces:
       FilesValidator:

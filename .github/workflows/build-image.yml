@@ -2,7 +2,7 @@ name: Build Image
 
 on:
   pull_request_target:
-    types: [ opened, edited, synchronize, reopened, ready_for_review ]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
     branches:
       - "main"
       - "release-[0-9]+.[0-9]+"
@@ -13,7 +13,6 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
 jobs:
-
   envs:
     runs-on: ubuntu-latest
     outputs:
@@ -26,14 +25,19 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             echo 'TAGS=${{ github.ref_name }}' >> "$GITHUB_OUTPUT"
           else
-            echo 'TAGS=PR-${{ github.event.pull_request.number }}' >> "$GITHUB_OUTPUT"
+            {
+              echo 'tags<<TAGS'
+              echo 'PR-${{ github.event.pull_request.number }}'
+              echo '${{ github.event.pull_request.head.sha }}'
+              echo 'TAGS'
+            } >> "$GITHUB_OUTPUT"
           fi
 
   build-image:
     needs: envs
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
-      name: telemetry-manager 
+      name: telemetry-manager
       dockerfile: Dockerfile
       context: .
       tags: ${{ needs.envs.outputs.tags }}
@@ -53,7 +57,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_HUSKIES_NOTIF_WEBHOOK_URL }}
 
-  list-images:
+  Build-Image-Success:
     needs: build-image
     runs-on: ubuntu-latest
     steps:

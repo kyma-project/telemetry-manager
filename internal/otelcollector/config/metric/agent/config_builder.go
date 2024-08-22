@@ -43,7 +43,7 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(inputs, opts),
-		Processors: makeProcessorsConfig(inputs, opts),
+		Processors: makeProcessorsConfig(inputs, opts.InstrumentationScopeVersion),
 		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
 	}
 }
