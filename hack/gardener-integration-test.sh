@@ -17,7 +17,7 @@ function run-tests-with-git-image () {
     make ginkgo
     make deploy
     hack/deploy-istio.sh
-    ${GINKGO} run --junit-report=junit-report --tags istio --label-filter="integration" test/integration/istio
+    ${GINKGO} run --junit-report=junit-report.xml --tags istio --label-filter="integration" test/integration/istio
 }
 
 function main() {
