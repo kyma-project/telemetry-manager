@@ -8,13 +8,12 @@ metadata:
     busola.io/extension-version: '0.5'
 data:
   dataSources: |-
-    clsSecret:
+    dynatraceSecret:
       resource:
         kind: Secret
         version: v1
-        namespace: sap-cloud-logging-integration
+        namespace: dynatrace
         name: dynakube
-        neamspace: dynatrace
 
   general: |-
     externalNodes:
