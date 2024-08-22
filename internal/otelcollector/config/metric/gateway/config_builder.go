@@ -76,7 +76,7 @@ func declareComponentsForMetricPipeline(
 	declareSingletonK8sClusterReceiverCreator(pipeline, cfg, opts)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
-	declareRuntimeResourcesFilters(pipeline, cfg, opts)
+	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
 	declareInstrumentationScopeTransform(pipeline, cfg, opts)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
@@ -122,7 +122,7 @@ func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *
 	}
 }
 
-func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
+func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
 
 	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
@@ -196,7 +196,7 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 
 	processors = append(processors, makeInputSourceFiltersIDs(input)...)
 	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
-	processors = append(processors, makeRuntimeResourcesFiltersIDs(input, opts)...)
+	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
 
 	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
@@ -250,7 +250,7 @@ func makeNamespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeli
 	return processors
 }
 
-func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, opts BuildOptions) []string {
+func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
 	var processors []string
 
 	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
