@@ -70,6 +70,11 @@ type MetricsConfig struct {
 	K8sContainerEphemeralStorageLimit   MetricConfig `yaml:"k8s.container.ephemeralstorage_limit"`
 	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts"`
 	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready"`
+	K8sNamespacePhase                   MetricConfig `yaml:"k8s.namespace.phase"`
+	OpenShiftAppliedClusterQuotaLimit   MetricConfig `yaml:"openshift.appliedclusterquota.limit"`
+	OpenShiftAppliedClusterQuotaUsed    MetricConfig `yaml:"openshift.appliedclusterquota.used"`
+	OpenShiftClusterQuotaLimit          MetricConfig `yaml:"openshift.clusterquota.limit"`
+	OpenShiftClusterQuotaUsed           MetricConfig `yaml:"openshift.clusterquota.used"`
 }
 
 type ModuleGVR struct {
