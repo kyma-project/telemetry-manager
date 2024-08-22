@@ -106,9 +106,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(bodyContent).To(WithFlatMetrics(
 					ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))), "Did not find any kubeletstats container metrics in backend")
 
-				//g.Expect(resp).To(HaveHTTPBody(
-				//	WithFlatMetrics(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))),
-				//))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -133,9 +130,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				bodyContent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
-				//g.Expect(resp).To(HaveHTTPBody(
-				//	WithFlatMetrics(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))),
-				//))
+			
 				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
 
 				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
