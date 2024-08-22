@@ -288,7 +288,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
 For easier access from the Kyma dashboard, add links to new navigation under **SAP Cloud Logging**, and add deep links to the **Pod**, **Deployment**, and **Namespace** views.
 
-1. Apply the ConfigMaps:
+1. Apply the ConfigMap:
 
     ```bash
     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
