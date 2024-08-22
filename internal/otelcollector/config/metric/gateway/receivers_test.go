@@ -78,8 +78,7 @@ func TestReceivers(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).Build(),
 			},
 			BuildOptions{
-				GatewayNamespace:          gatewayNamespace,
-				K8sClusterReceiverAllowed: true,
+				GatewayNamespace: gatewayNamespace,
 			},
 		)
 		require.NoError(t, err)

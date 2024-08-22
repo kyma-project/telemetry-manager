@@ -327,7 +327,6 @@ func TestProcessors(t *testing.T) {
 			},
 			BuildOptions{
 				InstrumentationScopeVersion: "main",
-				K8sClusterReceiverAllowed:   true,
 			},
 		)
 		require.NoError(t, err)
@@ -353,7 +352,7 @@ func TestProcessors(t *testing.T) {
 					WithRuntimeInput(true).
 					Build(),
 			},
-			BuildOptions{K8sClusterReceiverAllowed: true},
+			BuildOptions{},
 		)
 		require.NoError(t, err)
 

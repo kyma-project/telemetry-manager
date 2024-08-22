@@ -35,8 +35,8 @@ func MakeMetricGatewayRBAC(name types.NamespacedName, kymaInputAllowed bool) Rba
 	return Rbac{
 		clusterRole:        makeMetricGatewayClusterRole(name, kymaInputAllowed),
 		clusterRoleBinding: makeClusterRoleBinding(name),
-		role:               makeMetricGatewayRole(name, kymaInputAllowed),
-		roleBinding:        makeMetricGatewayRoleBinding(name, kymaInputAllowed),
+		role:               makeMetricGatewayRole(name),
+		roleBinding:        makeMetricGatewayRoleBinding(name),
 	}
 }
 
@@ -155,10 +155,7 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 	}
 }
 
-func makeMetricGatewayRole(name types.NamespacedName, kymaInputAllowed bool) *rbacv1.Role {
-	if !kymaInputAllowed {
-		return nil
-	}
+func makeMetricGatewayRole(name types.NamespacedName) *rbacv1.Role {
 
 	return &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
@@ -176,10 +173,7 @@ func makeMetricGatewayRole(name types.NamespacedName, kymaInputAllowed bool) *rb
 	}
 }
 
-func makeMetricGatewayRoleBinding(name types.NamespacedName, kymaInputAllowed bool) *rbacv1.RoleBinding {
-	if !kymaInputAllowed {
-		return nil
-	}
+func makeMetricGatewayRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
 
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
