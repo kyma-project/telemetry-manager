@@ -6,7 +6,7 @@ require (
 	github.com/golangci/golangci-lint v1.60.1
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
 	github.com/onsi/ginkgo/v2 v2.20.0
-	github.com/vektra/mockery/v2 v2.44.1
+	github.com/vektra/mockery/v2 v2.45.0
 	github.com/vladopajic/go-test-coverage/v2 v2.10.1
 	sigs.k8s.io/controller-tools v0.15.0
 	sigs.k8s.io/kustomize/kustomize/v5 v5.4.3
