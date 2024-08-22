@@ -22,7 +22,7 @@ found=false
 status=""
 conclusion=""
 
-until [[ $status == "completed" && $conclusion == "success" ]]; do
+until [[ $status == "completed" || $status == "cancelled" ]]; do
     # Wait for timeout
     if (( SECONDS - START_TIME > TIMEOUT )); then
         echo "Timeout reached: Workflow not found within $(( TIMEOUT/60 )) minutes"
@@ -75,4 +75,9 @@ until [[ $status == "completed" && $conclusion == "success" ]]; do
     sleep 10
 done
 
-echo "Workflow '$WORKFLOW_NAME' completed with conclusion: $conclusion"
+if [ $conclusion != "success" ]; then
+    echo "Workflow $status with conclusion: $conclusion"
+    exit 1
+fi
+
+echo "Workflow '$WORKFLOW_NAME' $status with conclusion: $conclusion"
