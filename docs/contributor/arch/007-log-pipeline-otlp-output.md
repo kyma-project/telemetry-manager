@@ -44,6 +44,10 @@ Kyma users will still be able to use the old `HTTP` output for some time, but it
 
 Since the new field is optional, there's no need for an API version bump.
 
+The existing LogPipeline reconciler differs significantly from the MetricPipeline and TracePipeline reconcilers. Refactoring it would require substantial time and effort. However, given that we will need to support both OTel and Fluent Bit-based LogPipelines for the foreseeable future, the most practical solution is to separate the Fluent Bit and OTel reconcilers in the codebase.
+
+To prevent exposing incomplete features to end users, we can introduce the new v1alpha1 LogPipeline Go struct but manually exclude it from the CRD, limiting it to the development variant only.
+
 ## Consequences
 
 Kyma users will have the flexibility to choose between Fluent Bit and OTel Collector-based outputs, enabling a gradual transition.
