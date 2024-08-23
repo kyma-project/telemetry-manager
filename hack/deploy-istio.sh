@@ -137,8 +137,8 @@ function check_istiod_deployment_ready() {
 }
 
 function main() {
-  #kubectl apply -f "https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-manager.yaml"
-  #kubectl apply -f "https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-default-cr.yaml"
+  kubectl apply -f "https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-manager.yaml"
+  kubectl apply -f "https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-default-cr.yaml"
   ensure_istio_telemetry
   ensure_peer_authentication default "$ISTIO_NAMESPACE" STRICT
   check_istiod_is_ready
