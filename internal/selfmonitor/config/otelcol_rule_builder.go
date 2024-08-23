@@ -58,7 +58,7 @@ func (rb otelCollectorRuleBuilder) exporterDroppedRule() Rule {
 func (rb otelCollectorRuleBuilder) exporterQueueAlmostFullRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterQueueAlmostFull,
-		Expr: div(metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity, ignoring("data_type"), selectService(rb.serviceName)).
+		Expr: div(metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
 			maxBy(labelPipelineName).
 			greaterThan(0.8).
 			build(),

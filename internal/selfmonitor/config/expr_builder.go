@@ -22,7 +22,7 @@ func selectService(serviceName string) labelSelector {
 	}
 }
 
-func ignoring(labels ...string) vectorMatch {
+func ignoringLabelsMatch(labels ...string) vectorMatch {
 	return func() string {
 		return fmt.Sprintf("ignoring(%s)", strings.Join(labels, ","))
 	}
@@ -50,14 +50,14 @@ func rate(metric string, selectors ...labelSelector) *exprBuilder {
 	return eb
 }
 
-func div(nominator, denominator string, opt vectorMatch, selectors ...labelSelector) *exprBuilder {
+func div(nominator, denominator string, vOpt vectorMatch, selectors ...labelSelector) *exprBuilder {
 	for _, s := range selectors {
 		nominator = s(nominator)
 		denominator = s(denominator)
 	}
-	vector := opt()
+	vMatch := vOpt()
 	eb := &exprBuilder{
-		expr: fmt.Sprintf("%s / %s %s", nominator, vector, denominator),
+		expr: fmt.Sprintf("%s / %s %s", nominator, vMatch, denominator),
 	}
 
 	return eb
