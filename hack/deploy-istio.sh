@@ -29,6 +29,10 @@ spec:
 EOF
 }
 
+function is_istio_telemetry_crd_available() {
+  kubectl get crd telemetries.telemetry.istio.io &> /dev/null
+}
+
 function is_istio_telemetry_apply_successful() {
   kubectl get telemetries.telemetry.istio.io access-config -n "$ISTIO_NAMESPACE" &> /dev/null
 }
@@ -39,7 +43,11 @@ function ensure_istio_telemetry() {
 
   for ((attempts=1; attempts<=MAX_ATTEMPTS; attempts++)); do
     echo "Attempting to create Istio Telemetry (Attempt $attempts)..."
-    apply_istio_telemetry
+
+    if is_istio_telemetry_crd_available; then
+      echo "Istio crd available, trying to apply telemetry..."
+      apply_istio_telemetry
+    fi
 
     if is_istio_telemetry_apply_successful; then
       echo "Istio Telemetry created successfully!"
