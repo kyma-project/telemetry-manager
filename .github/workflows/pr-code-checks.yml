@@ -1,21 +1,46 @@
-name: PR Code checks
+name: PR Code Checks
 
 on:
   pull_request:
     branches:
       - "main"
       - "release-*"
-    paths-ignore:
-      - "docs/**"
-      - "**.md"
   workflow_dispatch:
 
 env:
   GITLEAKS_VERSION: 8.18.2
 
 jobs:
+  # This is a workaround to bypass the limitations of the workflow path filter:
+  # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+  check-changed-files:
+    name: Check whether any source code files have been changed
+    outputs:
+      check: ${{ steps.changed-files.outputs.any_modified }}
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.draft == false }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        uses: tj-actions/changed-files@6b2903bdce6310cfbddd87c418f253cf29b2dec9
+        id: changed-files
+        with:
+          files_ignore: |
+            docs/**
+            **/*.md
+            OWNERS
+            CODEOWNERS
+
+      - name: List changed files
+        run: echo '${{ steps.changed-files.outputs.all_changed_files }}' >> $GITHUB_STEP_SUMMARY
+    
   unit-tests:
     runs-on: ubuntu-latest
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -28,6 +53,9 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -40,6 +68,9 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -52,6 +83,9 @@ jobs:
 
   gitleaks:
     runs-on: ubuntu-latest
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,11 +101,12 @@ jobs:
 
   PR-Code-Checks-Success:
     needs:
-      - unit-tests
-      - lint
-      - coverage
-      - gitleaks
+    - unit-tests
+    - lint
+    - coverage
+    - gitleaks
     runs-on: ubuntu-latest
     steps:
-      - name: Hurray
-        run: echo Hurray
+      - name: Success
+        run: |
+          echo "PR Code Checks completed successfully"
