@@ -161,12 +161,10 @@ func makeK8sClusterDropMetrics() *FilterProcessor {
 		"^k8s.daemonset.*",
 		"^k8s.hpa.*",
 		"^k8s.job.*",
-		"^k8s.namespace.*",
 		"^k8s.replicaset.*",
 		"^k8s.replication_controller.*",
 		"^k8s.resource_quota.*",
 		"^k8s.statefulset.*",
-		"^openshift.*",
 		"^k8s.node.*",
 	}
 	metricNameConditions := createIsMatchNameConditions(metricNames)
