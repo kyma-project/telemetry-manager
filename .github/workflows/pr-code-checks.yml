@@ -25,6 +25,7 @@ jobs:
         id: changed-files
         with:
           files_ignore: |
+            .github/**
             docs/**
             **/*.md
             OWNERS
