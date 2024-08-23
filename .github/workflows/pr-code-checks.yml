@@ -5,17 +5,38 @@ on:
     branches:
       - "main"
       - "release-*"
-    paths-ignore:
-      - "docs/**"
-      - "**.md"
   workflow_dispatch:
 
 env:
   GITLEAKS_VERSION: 8.18.2
 
 jobs:
+  check-changed-files:
+    name: Check whether any source code files have been changed
+    outputs:
+      check: ${{ steps.changed-files.outputs.any_modified }}
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.draft == false }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Get changed files
+        uses: tj-actions/changed-files@6b2903bdce6310cfbddd87c418f253cf29b2dec9
+        id: changed-files
+        with:
+          files_ignore: |
+            docs/**
+            **/*.md
+            OWNERS
+            CODEOWNERS
+      - name: List changed files
+        run: echo '${{ steps.changed-files.outputs.all_changed_files }}' >> $GITHUB_STEP_SUMMARY
+    
   unit-tests:
     runs-on: ubuntu-latest
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -28,6 +49,9 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -40,6 +64,9 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -52,6 +79,9 @@ jobs:
 
   gitleaks:
     runs-on: ubuntu-latest
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
