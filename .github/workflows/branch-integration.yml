@@ -51,7 +51,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: success() || failure()
       with:
-        name: ${{ github.job }}-report
+        name: ${{ github.job }}-${{ matrix.k8s_version }}-report
         path: junit-report*.xml
 
     - name: Send slack message on failure
