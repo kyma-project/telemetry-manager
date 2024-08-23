@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 var errUnsupportedLokiOutput = errors.New("the grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README")
