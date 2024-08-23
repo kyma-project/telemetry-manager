@@ -1,5 +1,9 @@
 package k8scluster
 
+import "slices"
+
+var DefaultMetricsNames = slices.Concat(ContainerMetricsNames, PodMetricsNames)
+
 var (
 	ContainerMetricsNames = []string{
 		"k8s.container.cpu_request",
