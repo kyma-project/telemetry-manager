@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
 	"net/http"
 	"slices"
 
@@ -19,6 +18,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
