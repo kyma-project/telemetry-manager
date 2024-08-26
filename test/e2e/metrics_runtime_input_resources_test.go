@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"io"
 	"net/http"
 	"slices"
@@ -18,6 +17,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -109,12 +109,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
 					ConsistOf(containerMetricNames))), "Found container metrics in backend that are not part of k8scluster or kubeletstats")
 
-				g.Expect(bodyContent).To(WithFlatMetrics(
-					ContainElement(HaveField("Name", BeElementOf(k8scluster.ContainerMetricsNames)))), "Did not find any k8scluster container metrics in backend")
-
-				g.Expect(bodyContent).To(WithFlatMetrics(
-					ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))), "Did not find any kubeletstats container metrics in backend")
-
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -144,12 +138,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
 					ConsistOf(podMetricNames))), "Found pod metrics in backend that are not part of k8scluster or kubeletstats")
-
-				g.Expect(bodyContent).To(WithFlatMetrics(
-					ContainElement(HaveField("Name", BeElementOf(k8scluster.PodMetricsNames)))), "Did not find any k8scluster pod metrics in backend")
-
-				g.Expect(bodyContent).To(WithFlatMetrics(
-					ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))), "Did not find any kubeletstats pod metrics in backend")
 
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

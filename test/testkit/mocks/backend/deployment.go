@@ -3,7 +3,6 @@ package backend
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -91,16 +90,6 @@ func (d *Deployment) containers() []corev1.Container {
 			VolumeMounts: []corev1.VolumeMount{
 				{Name: "config", MountPath: "/etc/collector"},
 				{Name: "data", MountPath: d.dataPath},
-			},
-			Resources: corev1.ResourceRequirements{
-				Limits: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.Quantity{Format: "100m"},
-					corev1.ResourceMemory: resource.Quantity{Format: "256Mi"},
-				},
-				Requests: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.Quantity{Format: "50m"},
-					corev1.ResourceMemory: resource.Quantity{Format: "128Mi"},
-				},
 			},
 			Env: []corev1.EnvVar{
 				{
