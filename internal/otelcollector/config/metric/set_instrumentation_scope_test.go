@@ -53,7 +53,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			},
 			inputSource: InputSourceIstio,
 		}, {
-			name: "InputSourceK8sCluster",
+			name: "InputSourceKyma",
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{

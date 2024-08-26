@@ -71,6 +71,9 @@ func TestReceivers(t *testing.T) {
 			K8sContainerEphemeralStorageLimit:   MetricConfig{false},
 			K8sContainerRestarts:                MetricConfig{false},
 			K8sContainerReady:                   MetricConfig{false},
+			K8sNamespacePhase:                   MetricConfig{false},
+			K8sReplicationControllerAvailable:   MetricConfig{false},
+			K8sReplicationControllerDesired:     MetricConfig{false},
 		}
 		collectorConfig, _, err := sut.Build(
 			ctx,

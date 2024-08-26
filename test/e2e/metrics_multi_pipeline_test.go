@@ -124,7 +124,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				bodycontent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(Not(ContainElements(kubeletstats.DefaultMetricsNames)))), "No kubeletstats metrics must be sent to prometheus backend")
+
+				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
+				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(Not(ContainElements(expectedMetrics)))), "No kubeletstats metrics must be sent to prometheus backend")
 				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(Not(ContainElement(And(HaveField("Name", InstrumentationScopeRuntime),
 					HaveField("Version",
 						SatisfyAny(

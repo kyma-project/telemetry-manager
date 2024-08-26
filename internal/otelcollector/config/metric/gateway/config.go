@@ -71,10 +71,8 @@ type K8sClusterMetricsConfig struct {
 	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts"`
 	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready"`
 	K8sNamespacePhase                   MetricConfig `yaml:"k8s.namespace.phase"`
-	OpenShiftAppliedClusterQuotaLimit   MetricConfig `yaml:"openshift.appliedclusterquota.limit"`
-	OpenShiftAppliedClusterQuotaUsed    MetricConfig `yaml:"openshift.appliedclusterquota.used"`
-	OpenShiftClusterQuotaLimit          MetricConfig `yaml:"openshift.clusterquota.limit"`
-	OpenShiftClusterQuotaUsed           MetricConfig `yaml:"openshift.clusterquota.used"`
+	K8sReplicationControllerAvailable   MetricConfig `yaml:"k8s.replication_controller.available"`
+	K8sReplicationControllerDesired     MetricConfig `yaml:"k8s.replication_controller.desired"`
 }
 
 type ModuleGVR struct {

@@ -162,7 +162,6 @@ func makeK8sClusterDropMetrics() *FilterProcessor {
 		"^k8s.hpa.*",
 		"^k8s.job.*",
 		"^k8s.replicaset.*",
-		"^k8s.replication_controller.*",
 		"^k8s.resource_quota.*",
 		"^k8s.statefulset.*",
 		"^k8s.node.*",

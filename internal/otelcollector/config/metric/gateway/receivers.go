@@ -53,6 +53,9 @@ func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *Sing
 		K8sContainerEphemeralStorageLimit:   MetricConfig{false},
 		K8sContainerRestarts:                MetricConfig{false},
 		K8sContainerReady:                   MetricConfig{false},
+		K8sNamespacePhase:                   MetricConfig{false},
+		K8sReplicationControllerAvailable:   MetricConfig{false},
+		K8sReplicationControllerDesired:     MetricConfig{false},
 	}
 
 	return &SingletonK8sClusterReceiverCreator{
