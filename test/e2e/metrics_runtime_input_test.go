@@ -135,7 +135,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 
 				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
-					ConsistOf(WithResourceAttributes(HaveKey(BeElementOf(kubeletstats.MetricResourceAttributes)))),
+					ContainElement(WithResourceAttributes(WithKeys(ContainElements(kubeletstats.MetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

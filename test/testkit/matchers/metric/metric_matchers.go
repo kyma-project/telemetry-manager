@@ -2,6 +2,7 @@ package metric
 
 import (
 	"fmt"
+	"golang.org/x/exp/maps"
 	"slices"
 
 	"github.com/onsi/gomega"
@@ -73,5 +74,16 @@ func WithMetricAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
 func WithType(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetricDataPoint) string {
 		return fm.Type
+	}, matcher)
+}
+
+// WithKeys extracts key from a map[string][string] and applies the matcher to it.
+func WithKeys(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(m map[string]string) []string {
+		var keys []string
+		for _, i := range maps.Keys(m) {
+			keys = append(keys, i)
+		}
+		return keys
 	}, matcher)
 }
