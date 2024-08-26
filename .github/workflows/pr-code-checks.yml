@@ -11,6 +11,8 @@ env:
   GITLEAKS_VERSION: 8.18.2
 
 jobs:
+  # This is a workaround to bypass the limitations of the workflow path filter:
+  # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
   check-changed-files:
     name: Check whether any source code files have been changed
     outputs:
@@ -20,16 +22,17 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
       - name: Get changed files
         uses: tj-actions/changed-files@6b2903bdce6310cfbddd87c418f253cf29b2dec9
         id: changed-files
         with:
           files_ignore: |
-            .github/**
             docs/**
             **/*.md
             OWNERS
             CODEOWNERS
+
       - name: List changed files
         run: echo '${{ steps.changed-files.outputs.all_changed_files }}' >> $GITHUB_STEP_SUMMARY
     
@@ -98,11 +101,12 @@ jobs:
 
   PR-Code-Checks-Success:
     needs:
-      - unit-tests
-      - lint
-      - coverage
-      - gitleaks
+    - unit-tests
+    - lint
+    - coverage
+    - gitleaks
     runs-on: ubuntu-latest
     steps:
-      - name: Hurray
-        run: echo Hurray
+      - name: Success
+        run: |
+          echo "PR Code Checks completed successfully"

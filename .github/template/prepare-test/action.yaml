@@ -20,13 +20,13 @@ runs:
       shell: bash
       run: make provision-k3d
 
-    # wait for the build to succeed so that the manager image is available
-    - name: Wait for the image to be available in the registry
+    # wait for the build to complete so that the manager image is available
+    - name: Wait for the Build Image workflow to complete
       shell: bash
-      run: "./hack/await_image.sh 'PR-${{ github.event.pull_request.number }}'"
+      run: "./hack/await_workflow.sh"
       env:
         GITHUB_TOKEN: "${{ inputs.github-token }}"
-        IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+        COMMIT_SHA: "${{ github.event.pull_request.head.sha }}"
 
     - name: Deploy module release
       if: ${{ inputs.release }}
