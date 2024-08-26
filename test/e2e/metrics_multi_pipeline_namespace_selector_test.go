@@ -3,10 +3,12 @@
 package e2e
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"slices"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -101,7 +103,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		// verify metrics from apps1Ns delivered to backend1
 		It("Should deliver Runtime metrics from app1Ns to backend1", func() {
-			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, kubeletstats.DefaultMetricsNames)
+			expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, expectedMetrics)
 		})
 
 		It("Should deliver Prometheus metrics from app1Ns to backend1", func() {

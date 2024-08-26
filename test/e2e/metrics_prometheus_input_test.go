@@ -3,7 +3,9 @@
 package e2e
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
 	"net/http"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -162,10 +164,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
 				g.Expect(resp).To(HaveHTTPBody(
 					WithFlatMetrics(
 						Not(ContainElement(
-							HaveField("Name", BeElementOf(kubeletstats.DefaultMetricsNames)),
+							HaveField("Name", BeElementOf(expectedMetrics)),
 						)),
 						// Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.DefaultMetricsNames))))),
 					)))
