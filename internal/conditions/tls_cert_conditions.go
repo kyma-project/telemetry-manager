@@ -6,7 +6,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 func EvaluateTLSCertCondition(errValidation error) (status metav1.ConditionStatus, reason, message string) {
