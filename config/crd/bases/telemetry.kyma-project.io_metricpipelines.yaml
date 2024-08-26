@@ -234,6 +234,17 @@ spec:
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
+                          node:
+                            default:
+                              enabled: false
+                            description: Configures node runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
+                                type: boolean
+                            type: object
                           pod:
                             default:
                               enabled: true
