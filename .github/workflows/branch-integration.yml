@@ -46,6 +46,13 @@ jobs:
         GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
         GARDENER_SA_PATH: /tmp/gardener-sa.yaml
         GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
+  
+    - name: Upload Report
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: ${{ github.job }}-${{ matrix.k8s_version }}-report
+        path: junit-report*.xml
 
     - name: Send slack message on failure
       uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117

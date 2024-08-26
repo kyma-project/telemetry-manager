@@ -69,6 +69,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
 
+		It("Should have a running log agent daemonset", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSetName)
+		})
+
 		It("Should have a log backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})

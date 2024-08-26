@@ -314,8 +314,8 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements, 1)
 		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Context)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"main\") where name == \"otelcol/kymastats\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
-		require.Equal(t, "set(name, \"io.kyma-project.telemetry/kyma\") where name == \"otelcol/kymastats\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
+		require.Equal(t, "set(version, \"main\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(name, \"io.kyma-project.telemetry/kyma\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
 
 	})
 

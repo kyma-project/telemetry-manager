@@ -57,7 +57,7 @@ var (
 	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayConfigMap          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 
-	FluentBitDaemonSet              = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitDaemonSetName          = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
 	FluentBitServiceAccount         = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
 	FluentBitClusterRole            = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
 	FluentBitClusterRoleBinding     = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}

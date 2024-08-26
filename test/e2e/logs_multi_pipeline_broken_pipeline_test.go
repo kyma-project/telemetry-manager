@@ -69,6 +69,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, brokenPipelineName)
 		})
 
+		It("Should have running log agent", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSetName)
+		})
+
 		It("Should have a log backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})

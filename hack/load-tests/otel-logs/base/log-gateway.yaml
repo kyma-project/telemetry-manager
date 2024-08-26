@@ -48,7 +48,6 @@ spec:
       containers:
         - args:
             - --config=/conf/relay.yaml
-            - --feature-gates=-confmap.unifyEnvVarExpansion
           env:
             - name: MY_POD_IP
               valueFrom:

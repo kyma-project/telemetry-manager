@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -71,6 +72,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 
 		It("Should have running pipelines", func() {
 			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have a running trace gateway deployment", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have a tlsCertificateAboutToExpire Condition set in pipeline conditions", func() {

@@ -20,8 +20,8 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"otelcol/kubeletstatsreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"otelcol/kubeletstatsreceiver\"",
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
 					},
 				}},
 			},
@@ -33,8 +33,8 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"otelcol/prometheusreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"otelcol/prometheusreceiver\"",
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
 					},
 				}},
 			},
@@ -46,8 +46,8 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"otelcol/prometheusreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/istio\") where name == \"otelcol/prometheusreceiver\"",
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/istio\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
 					},
 				}},
 			},

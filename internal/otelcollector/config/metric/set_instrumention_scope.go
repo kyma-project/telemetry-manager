@@ -7,11 +7,12 @@ import (
 )
 
 var upstreamInstrumentationScopeName = map[InputSourceType]string{
-	InputSourceRuntime:    "otelcol/kubeletstatsreceiver",
-	InputSourcePrometheus: "otelcol/prometheusreceiver",
-	InputSourceIstio:      "otelcol/prometheusreceiver",
-	InputSourceKyma:       "otelcol/kymastats",
-	InputSourceK8sCluster: "otelcol/k8sclusterreceiver",
+
+	InputSourceRuntime:    "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver",
+	InputSourcePrometheus: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
+	InputSourceIstio:      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver",
+	InputSourceKyma:       "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver",
+	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
 }
 
 func MakeInstrumentationScopeProcessor(inputSource InputSourceType, instrumentationScopeVersion string) *TransformProcessor {
