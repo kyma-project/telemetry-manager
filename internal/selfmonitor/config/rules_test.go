@@ -22,7 +22,7 @@ func TestMakeRules(t *testing.T) {
 	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_send_failed_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[1].Expr)
 
 	require.Equal(t, "MetricGatewayExporterQueueAlmostFull", ruleGroup.Rules[2].Alert)
-	require.Equal(t, "max by (pipeline_name) (otelcol_exporter_queue_size{service=\"telemetry-metric-gateway-metrics\"} / otelcol_exporter_queue_capacity{service=\"telemetry-metric-gateway-metrics\"}) > 0.8", ruleGroup.Rules[2].Expr)
+	require.Equal(t, "max by (pipeline_name) (otelcol_exporter_queue_size{service=\"telemetry-metric-gateway-metrics\"} / ignoring(data_type) otelcol_exporter_queue_capacity{service=\"telemetry-metric-gateway-metrics\"}) > 0.8", ruleGroup.Rules[2].Expr)
 
 	require.Equal(t, "MetricGatewayExporterEnqueueFailed", ruleGroup.Rules[3].Alert)
 	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[3].Expr)
@@ -37,7 +37,7 @@ func TestMakeRules(t *testing.T) {
 	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_send_failed_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[6].Expr)
 
 	require.Equal(t, "TraceGatewayExporterQueueAlmostFull", ruleGroup.Rules[7].Alert)
-	require.Equal(t, "max by (pipeline_name) (otelcol_exporter_queue_size{service=\"telemetry-trace-collector-metrics\"} / otelcol_exporter_queue_capacity{service=\"telemetry-trace-collector-metrics\"}) > 0.8", ruleGroup.Rules[7].Expr)
+	require.Equal(t, "max by (pipeline_name) (otelcol_exporter_queue_size{service=\"telemetry-trace-collector-metrics\"} / ignoring(data_type) otelcol_exporter_queue_capacity{service=\"telemetry-trace-collector-metrics\"}) > 0.8", ruleGroup.Rules[7].Expr)
 
 	require.Equal(t, "TraceGatewayExporterEnqueueFailed", ruleGroup.Rules[8].Alert)
 	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[8].Expr)
