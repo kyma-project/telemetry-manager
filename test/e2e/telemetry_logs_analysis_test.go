@@ -168,7 +168,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 
 		It("Should have running agents", func() {
 			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSet)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have running pipelines", func() {

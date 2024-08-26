@@ -66,6 +66,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
+		It("Should have a running metric gateway deployment", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+		})
+
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
