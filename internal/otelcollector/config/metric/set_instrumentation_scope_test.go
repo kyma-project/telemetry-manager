@@ -59,8 +59,8 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"otelcol/kymastats\"",
-						"set(name, \"io.kyma-project.telemetry/kyma\") where name == \"otelcol/kymastats\"",
+						"set(version, \"main\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/kyma\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"",
 					},
 				}},
 			},
@@ -72,8 +72,8 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				MetricStatements: []config.TransformProcessorStatements{{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"otelcol/k8sclusterreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"otelcol/k8sclusterreceiver\"",
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
 					},
 				}},
 			},

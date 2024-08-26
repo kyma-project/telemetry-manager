@@ -336,8 +336,8 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements, 1)
 		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Context)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"main\") where name == \"otelcol/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[0])
-		require.Equal(t, "set(name, \"io.kyma-project.telemetry/runtime\") where name == \"otelcol/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[1])
+		require.Equal(t, "set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[1])
 	})
 	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
 		var k8sClusterMetricsDrop = []string{"instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
