@@ -69,7 +69,7 @@ helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEAS
 ```
 
 The previous command uses an example [values.yaml](https://github.com/grafana/loki/blob/main/production/helm/loki/single-binary-values.yaml) from the Loki repository for setting up Loki in the 'SingleBinary' mode. Additionally, it applies:
-- Istio sidecar injection for Loki instance
+- Istio sidecar injection for the Loki instance
 - a reduced CPU request setting for smaller cluster setups
 - disabled multi-tenancy for easier setup
 

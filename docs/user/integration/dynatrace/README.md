@@ -253,4 +253,4 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/dynatrace/kyma-dashboard-configmap.yaml
     ```
 
-If you're secret has a different name or namespace, then download the file first and adjust the used namespace and name accordingly in the 'dataSources' section of the file.
+2. If your Secret has a different name or namespace, then download the file first and adjust the namespace and name accordingly in the 'dataSources' section of the file.

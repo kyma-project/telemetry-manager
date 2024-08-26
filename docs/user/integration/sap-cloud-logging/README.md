@@ -286,7 +286,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
 ## Set Up Kyma Dashboard Integration
 
-For easier access from the Kyma dashboard, add links to new navigation under **SAP Cloud Logging**, and add deep links to the **Pod**, **Deployment**, and **Namespace** views.
+For easier access from the Kyma dashboard, add links to the navigation under **SAP Cloud Logging**, and add deep links to the **Pod**, **Deployment**, and **Namespace** views.
 
 1. Apply the ConfigMap:
 
@@ -294,7 +294,7 @@ For easier access from the Kyma dashboard, add links to new navigation under **S
     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
     ```
 
-If you're secret has a different name or namespace, then download the file first and adjust the used namespace and name accordingly in the 'dataSources' section of the file.
+2. If your Secret has a different name or namespace, then download the file first and adjust the namespace and name accordingly in the 'dataSources' section of the file.
 
 ## Use SAP Cloud Logging Alerts
 
