@@ -1,4 +1,4 @@
-# Kyma Telemetry Module
+# Telemetry Module
 
 Learn more about the Telemetry Module. Use it to enable observability for your application.
 
