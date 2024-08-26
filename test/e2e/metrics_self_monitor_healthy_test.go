@@ -100,6 +100,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsHealthy), Ord
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
+		It("Ensures the metric gateway deployment is ready", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+		})
+
 		It("Should deliver telemetrygen metrics", func() {
 			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
 		})

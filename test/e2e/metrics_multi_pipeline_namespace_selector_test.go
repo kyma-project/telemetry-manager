@@ -90,13 +90,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
+		It("Should have a running metric agent daemonset", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
-		})
-
-		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		// verify metrics from apps1Ns delivered to backend1
