@@ -117,6 +117,10 @@ type MetricPipelineRuntimeInputResources struct {
 	// +optional
 	// +kubebuilder:default={enabled: true}
 	Container *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"container,omitempty"`
+	// Configures node runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Node *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"node,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResourceEnabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
@@ -124,6 +128,14 @@ type MetricPipelineRuntimeInputResourceEnabledByDefault struct {
 	// If enabled, the runtime metrics for the resource are scraped. The default is `true`.
 	// +optional
 	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// MetricPipelineRuntimeInputResourceDisabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is disabled by default.
+type MetricPipelineRuntimeInputResourceDisabledByDefault struct {
+	// If enabled, the runtime metrics for the resource are scraped. The default is `false`.
+	// +optional
+	// +kubebuilder:default=false
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
