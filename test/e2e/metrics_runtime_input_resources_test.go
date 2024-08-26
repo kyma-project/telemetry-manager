@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"io"
 	"net/http"
 	"slices"
@@ -63,6 +64,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				WithRuntimeInputContainerMetrics(false).
 				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyPodMetricsEnabled.Endpoint())).
 				Build()
+
+			metricProducer := prommetricgen.New(mockNs)
+
+			objs = append(objs, []client.Object{
+				metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+				metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			}...)
+
 			objs = append(objs, &pipelineOnlyPodMetricsEnabled)
 
 			return objs
@@ -98,7 +107,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 				containerMetricNames := slices.Concat(kubeletstats.ContainerMetricsNames, k8scluster.ContainerMetricsNames)
 				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
-					OnlyContainElementsOf(containerMetricNames))), "Found container metrics in backend that are not part of k8scluster or kubeletstats")
+					ConsistOf(containerMetricNames))), "Found container metrics in backend that are not part of k8scluster or kubeletstats")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(
 					ContainElement(HaveField("Name", BeElementOf(k8scluster.ContainerMetricsNames)))), "Did not find any k8scluster container metrics in backend")
@@ -134,7 +143,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
 
 				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
-					OnlyContainElementsOf(podMetricNames))), "Found pod metrics in backend that are not part of k8scluster or kubeletstats")
+					ConsistOf(podMetricNames))), "Found pod metrics in backend that are not part of k8scluster or kubeletstats")
 
 				g.Expect(bodyContent).To(WithFlatMetrics(
 					ContainElement(HaveField("Name", BeElementOf(k8scluster.PodMetricsNames)))), "Did not find any k8scluster pod metrics in backend")

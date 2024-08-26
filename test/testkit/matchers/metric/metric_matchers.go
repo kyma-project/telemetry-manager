@@ -147,9 +147,3 @@ func WithDataPointAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
 func ContainDataPointAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithDataPointAttrs(gomega.ContainElement(matcher))
 }
-
-// OnlyContainElementsOf is an alias to check the given result string slice has to contain exactly the
-// elements from the expected list. The size of the result slice can be different from the expected list.
-func OnlyContainElementsOf(list []string) types.GomegaMatcher {
-	return gomega.HaveEach(gomega.BeElementOf(list))
-}
