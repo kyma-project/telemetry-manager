@@ -169,7 +169,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
 					ContainElement(WithResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName))),
-
 				))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
