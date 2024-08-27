@@ -78,6 +78,11 @@ func (eb *exprBuilder) greaterThan(value float64) *exprBuilder {
 	return eb
 }
 
+func (eb *exprBuilder) equal(value float64) *exprBuilder {
+	eb.expr = fmt.Sprintf("%s == %s", eb.expr, strconv.FormatFloat(value, 'f', -1, 64))
+	return eb
+}
+
 func (eb *exprBuilder) build() string {
 	return eb.expr
 }

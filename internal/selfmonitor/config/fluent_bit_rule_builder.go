@@ -1,5 +1,10 @@
 package config
 
+import (
+	"fmt"
+	"time"
+)
+
 const (
 	fluentBitMetricsServiceName        = "telemetry-fluent-bit-metrics"
 	fluentBitSidecarMetricsServiceName = "telemetry-fluent-bit-exporter-metrics"
@@ -19,10 +24,10 @@ type fluentBitRuleBuilder struct {
 func (rb fluentBitRuleBuilder) rules() []Rule {
 	return []Rule{
 		rb.exporterSentRule(),
-		rb.receiverReadRule(),
 		rb.exporterDroppedRule(),
 		rb.bufferInUseRule(),
 		rb.bufferFullRule(),
+		rb.noLogsDeliveredRule(),
 	}
 }
 
@@ -30,16 +35,6 @@ func (rb fluentBitRuleBuilder) exporterSentRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentExporterSentLogs,
 		Expr: rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
-			sumBy(labelPipelineName).
-			greaterThan(0).
-			build(),
-	}
-}
-
-func (rb fluentBitRuleBuilder) receiverReadRule() Rule {
-	return Rule{
-		Alert: rb.namePrefix() + RuleNameLogAgentReceiverReadLogs,
-		Expr: rate(metricFluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
 			sumBy(labelPipelineName).
 			greaterThan(0).
 			build(),
@@ -71,6 +66,27 @@ func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
 		Expr: instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
 			greaterThan(bufferUsage900MB).
 			build(),
+	}
+}
+
+func (rb fluentBitRuleBuilder) noLogsDeliveredRule() Rule {
+	exporterNotSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		equal(0).
+		build()
+
+	receiverReadExpr := rate(metricFluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		greaterThan(0).
+		build()
+
+	return Rule{
+		Alert: rb.namePrefix() + RuleNameLogAgentNoLogsDelivered,
+		Expr: fmt.Sprintf(`
+%s 
+and 
+%s`, exporterNotSentExpr, receiverReadExpr),
+		For: 3 * time.Minute,
 	}
 }
 

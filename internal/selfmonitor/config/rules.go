@@ -17,10 +17,10 @@ const (
 
 	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
 	RuleNameLogAgentExporterSentLogs    = "AgentExporterSentLogs"
-	RuleNameLogAgentReceiverReadLogs    = "AgentReceiverReadLogs"
 	RuleNameLogAgentExporterDroppedLogs = "AgentExporterDroppedLogs"
 	RuleNameLogAgentBufferInUse         = "AgentBufferInUse"
 	RuleNameLogAgentBufferFull          = "AgentBufferFull"
+	RuleNameLogAgentNoLogsDelivered     = "AgentNoLogsDelivered"
 
 	// Common rule labels
 	labelService      = "service"
@@ -124,6 +124,10 @@ func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName str
 }
 
 func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string, t pipelineType) bool {
+	ruleName, hasRuleName := labelSet[model.AlertStatus]
+	if !hasRuleName {
+		return false
+	}
 	if !matchesRuleName(labelSet, unprefixedRuleName, t) {
 		return false
 	}
