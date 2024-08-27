@@ -86,7 +86,7 @@ func (rb fluentBitRuleBuilder) noLogsDeliveredRule() Rule {
 %s 
 and 
 %s`, exporterNotSentExpr, receiverReadExpr),
-		For: 3 * time.Minute,
+		For: 1 * time.Minute,
 	}
 }
 
