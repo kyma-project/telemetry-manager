@@ -31,12 +31,12 @@ func MakeMetricAgentRBAC(name types.NamespacedName) Rbac {
 	}
 }
 
-func MakeMetricGatewayRBAC(name types.NamespacedName, kymaInputAllowed bool, k8sClusterReceiverAllowed bool) Rbac {
+func MakeMetricGatewayRBAC(name types.NamespacedName, kymaInputAllowed bool) Rbac {
 	return Rbac{
-		clusterRole:        makeMetricGatewayClusterRole(name, kymaInputAllowed, k8sClusterReceiverAllowed),
+		clusterRole:        makeMetricGatewayClusterRole(name, kymaInputAllowed),
 		clusterRoleBinding: makeClusterRoleBinding(name),
-		role:               makeMetricGatewayRole(name, kymaInputAllowed),
-		roleBinding:        makeMetricGatewayRoleBinding(name, kymaInputAllowed),
+		role:               makeMetricGatewayRole(name),
+		roleBinding:        makeMetricGatewayRoleBinding(name),
 	}
 }
 
@@ -83,7 +83,7 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	}
 }
 
-func makeMetricGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bool, k8sClusterReceiverAllowed bool) *rbacv1.ClusterRole {
+func makeMetricGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bool) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -112,31 +112,29 @@ func makeMetricGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bo
 		})
 	}
 
-	if k8sClusterReceiverAllowed {
-		clusterRules := []rbacv1.PolicyRule{{
-			APIGroups: []string{""},
-			Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"apps"},
-			Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"extensions"},
-			Resources: []string{"daemonsets", "deployments", "replicasets"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"batch"},
-			Resources: []string{"jobs", "cronjobs"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"autoscaling"},
-			Resources: []string{"horizontalpodautoscalers"},
-			Verbs:     []string{"get", "list", "watch"},
-		}}
+	k8sClusterRules := []rbacv1.PolicyRule{{
+		APIGroups: []string{""},
+		Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{"apps"},
+		Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{"extensions"},
+		Resources: []string{"daemonsets", "deployments", "replicasets"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{"batch"},
+		Resources: []string{"jobs", "cronjobs"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{"autoscaling"},
+		Resources: []string{"horizontalpodautoscalers"},
+		Verbs:     []string{"get", "list", "watch"},
+	}}
 
-		clusterRole.Rules = append(clusterRole.Rules, clusterRules...)
-	}
+	clusterRole.Rules = append(clusterRole.Rules, k8sClusterRules...)
 
 	return &clusterRole
 }
@@ -157,10 +155,7 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 	}
 }
 
-func makeMetricGatewayRole(name types.NamespacedName, kymaInputAllowed bool) *rbacv1.Role {
-	if !kymaInputAllowed {
-		return nil
-	}
+func makeMetricGatewayRole(name types.NamespacedName) *rbacv1.Role {
 
 	return &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
@@ -178,10 +173,7 @@ func makeMetricGatewayRole(name types.NamespacedName, kymaInputAllowed bool) *rb
 	}
 }
 
-func makeMetricGatewayRoleBinding(name types.NamespacedName, kymaInputAllowed bool) *rbacv1.RoleBinding {
-	if !kymaInputAllowed {
-		return nil
-	}
+func makeMetricGatewayRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
 
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{

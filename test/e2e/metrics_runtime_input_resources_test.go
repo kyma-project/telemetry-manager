@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"net/http"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -13,8 +14,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -60,6 +64,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				WithRuntimeInputContainerMetrics(false).
 				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyPodMetricsEnabled.Endpoint())).
 				Build()
+
+			metricProducer := prommetricgen.New(mockNs)
+
+			objs = append(objs, []client.Object{
+				metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+				metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			}...)
+
 			objs = append(objs, &pipelineOnlyPodMetricsEnabled)
 
 			return objs
@@ -79,6 +91,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineOnlyPodMetricsEnabledName)
 		})
 
+		It("Ensures the metric gateway deployment is ready", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+		})
+
+		It("Ensures the metric agent daemonset is ready", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
 		It("Should have metrics backends running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyContainerMetricsEnabledName, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyPodMetricsEnabledName, Namespace: mockNs})
@@ -89,19 +109,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				containerMetricNames := slices.Concat(kubeletstats.ContainerMetricsNames, k8scluster.ContainerMetricsNames)
+
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames)))),
+					WithFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(containerMetricNames)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should not deliver runtime pod metrics to container-metrics backend", func() {
 			Consistently(func(g Gomega) {
+				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
+
 				resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames))))),
+					WithFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(podMetricNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -111,19 +136,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
+
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(kubeletstats.PodMetricsNames)))),
+					WithFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(podMetricNames)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should not deliver runtime container metrics to pod-metrics backend", func() {
 			Consistently(func(g Gomega) {
+				containerMetricNames := slices.Concat(kubeletstats.ContainerMetricsNames, k8scluster.ContainerMetricsNames)
+
 				resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(kubeletstats.ContainerMetricsNames))))),
+					WithFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(containerMetricNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

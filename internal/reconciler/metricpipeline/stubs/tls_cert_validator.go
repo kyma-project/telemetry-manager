@@ -3,7 +3,7 @@ package stubs
 import (
 	"context"
 
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 type TLSCertValidator struct {

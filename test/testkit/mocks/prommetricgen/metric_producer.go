@@ -187,9 +187,11 @@ func (p *Pod) K8sObject() *corev1.Pod {
 					},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
 							corev1.ResourceMemory: resource.MustParse("100Mi"),
 						},
 						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("50m"),
 							corev1.ResourceMemory: resource.MustParse("32Mi"),
 						},
 					},

@@ -23,18 +23,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	Agent                     otelcollector.AgentConfig
-	Gateway                   otelcollector.GatewayConfig
-	MaxPipelines              int
-	ModuleVersion             string
-	KymaInputAllowed          bool
-	K8sClusterReceiverAllowed bool
+	Agent            otelcollector.AgentConfig
+	Gateway          otelcollector.GatewayConfig
+	MaxPipelines     int
+	ModuleVersion    string
+	KymaInputAllowed bool
 }
 
 type AgentConfigBuilder interface {

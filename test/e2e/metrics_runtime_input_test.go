@@ -66,12 +66,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Ensures the metrics backend is ready", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-		})
-
 		It("Ensures the metric agent daemonset is ready", func() {
 			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
+		It("Ensures the metrics backend is ready", func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Ensures accessibility of metric agent metrics endpoint", func() {

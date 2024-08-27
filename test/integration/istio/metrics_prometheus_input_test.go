@@ -80,12 +80,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-		})
-
 		It("Should have a running metric agent daemonset", func() {
 			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
+		It("Should have a metrics backend running", func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		Context("Verify metric scraping works with annotating pods and services", Ordered, func() {

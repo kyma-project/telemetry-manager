@@ -4,8 +4,8 @@ import (
 	"context"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 type EndpointValidator interface {

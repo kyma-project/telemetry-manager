@@ -5,13 +5,38 @@ on:
     branches:
       - "main"
       - "release-*"
-    paths-ignore:
-      - "docs/**"
-      - "**.md"
   workflow_dispatch:
 
 jobs:
+  # This is a workaround to bypass the limitations of the workflow path filter:
+  # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+  check-changed-files:
+    name: Check whether any source code files have been changed
+    outputs:
+      check: ${{ steps.changed-files.outputs.any_modified }}
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.draft == false }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        uses: tj-actions/changed-files@6b2903bdce6310cfbddd87c418f253cf29b2dec9
+        id: changed-files
+        with:
+          files_ignore: |
+            docs/**
+            **/*.md
+            OWNERS
+            CODEOWNERS
+
+      - name: List changed files
+        run: echo '${{ steps.changed-files.outputs.all_changed_files }}' >> $GITHUB_STEP_SUMMARY
+
   manager-upgrade:
+    needs: 
+    - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -43,7 +68,7 @@ jobs:
       - name: Run test on latest tag
         shell: bash
         run: |
-          bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
+          bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Wait for cleanup of test run
         shell: bash
@@ -52,12 +77,12 @@ jobs:
       - name: Switch back to current revision
         uses: actions/checkout@v4
 
-      # wait for the build to succeed so that the manager image is available
-      - name: Wait for the image to be available in the registry
-        run: "./hack/await_image.sh 'PR-${{ github.event.pull_request.number }}'"
+      # wait for the build to complete so that the manager image is available
+      - name: Wait for the Build Image workflow to complete
+        run: "./hack/await_workflow.sh"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+          COMMIT_SHA: "${{ github.event.pull_request.head.sha }}"
 
       - name: Deploy with current version
         shell: bash
@@ -72,13 +97,14 @@ jobs:
         shell: bash
         run: |
           make install-tools # delete after the tools via go modules are released
-          bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
+          bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
         if: success() || failure()
         with:
           failure: failure()
+          job-name: ${{ github.job }}
 
   PR-Lifecycle-Success:
     needs: manager-upgrade
