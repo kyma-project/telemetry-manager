@@ -2,7 +2,6 @@ package metric
 
 import (
 	"fmt"
-	"golang.org/x/exp/maps"
 	"slices"
 
 	"github.com/onsi/gomega"
@@ -80,9 +79,11 @@ func WithType(matcher types.GomegaMatcher) types.GomegaMatcher {
 // WithKeys extracts key from a map[string][string] and applies the matcher to it.
 func WithKeys(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(m map[string]string) []string {
-		var keys []string
-		for _, i := range maps.Keys(m) {
-			keys = append(keys, i)
+		keys := make([]string, len(m))
+		i := 0
+		for k := range m {
+			keys[i] = k
+			i++
 		}
 		return keys
 	}, matcher)
