@@ -152,7 +152,7 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.MetricPipe
 	}
 }
 
-// Drop the metrics scraped by k8s cluster, except for the pod and container metrics
+// Drop the metrics scraped by k8s cluster, except for the pod, container metrics
 // Complete list of the metrics is here: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
 func makeK8sClusterDropMetrics() *FilterProcessor {
 	metricNames := []string{
@@ -164,7 +164,6 @@ func makeK8sClusterDropMetrics() *FilterProcessor {
 		"^k8s.replicaset.*",
 		"^k8s.resource_quota.*",
 		"^k8s.statefulset.*",
-		"^k8s.node.*",
 	}
 	metricNameConditions := createIsMatchNameConditions(metricNames)
 	return &FilterProcessor{
