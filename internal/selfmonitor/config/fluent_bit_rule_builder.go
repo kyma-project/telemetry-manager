@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -16,6 +15,9 @@ const (
 
 	bufferUsage300MB = 300000000
 	bufferUsage900MB = 900000000
+
+	// alertWaitTime is the time the alert have a pending state before firing
+	alertWaitTime = 1 * time.Minute
 )
 
 type fluentBitRuleBuilder struct {
@@ -70,23 +72,20 @@ func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
 }
 
 func (rb fluentBitRuleBuilder) noLogsDeliveredRule() Rule {
-	exporterNotSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
-		sumBy(labelPipelineName).
-		equal(0).
-		build()
-
 	receiverReadExpr := rate(metricFluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
 		build()
 
+	exporterNotSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		equal(0).
+		build()
+
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentNoLogsDelivered,
-		Expr: fmt.Sprintf(`
-%s 
-and 
-%s`, exporterNotSentExpr, receiverReadExpr),
-		For: 1 * time.Minute,
+		Expr:  and(receiverReadExpr, exporterNotSentExpr),
+		For:   alertWaitTime,
 	}
 }
 

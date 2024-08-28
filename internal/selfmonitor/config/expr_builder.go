@@ -86,3 +86,15 @@ func (eb *exprBuilder) equal(value float64) *exprBuilder {
 func (eb *exprBuilder) build() string {
 	return eb.expr
 }
+
+func and(exprs ...string) string {
+	return strings.Join(wrapInParentheses(exprs), " and ")
+}
+
+func wrapInParentheses(input []string) []string {
+	wrapped := make([]string, len(input))
+	for i, str := range input {
+		wrapped[i] = fmt.Sprintf("(%s)", str)
+	}
+	return wrapped
+}
