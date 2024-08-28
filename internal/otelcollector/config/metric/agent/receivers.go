@@ -38,7 +38,7 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 		AuthType:           "serviceAccount",
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
-		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod},
+		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode},
 		Metrics: KubeletMetricsConfig{
 			ContainerCPUUsage:       KubeletMetricConfig{Enabled: true},
 			ContainerCPUUtilization: KubeletMetricConfig{Enabled: false},
