@@ -62,6 +62,25 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
+			name:         "pending alert",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentBufferFull",
+						},
+						State: promv1.AlertStatePending,
+					},
+				},
+			},
+			expected: LogPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
+		},
+		{
 			name:         "alert missing pipeline_name label",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
