@@ -152,6 +152,14 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.MetricPipe
 	}
 }
 
+func createNamespacesConditions(namespaces []string) []string {
+	var namespacesConditions []string
+	for _, ns := range namespaces {
+		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
+	}
+	return namespacesConditions
+}
+
 // Drop the metrics scraped by k8s cluster, except for the pod, container metrics
 // Complete list of the metrics is here: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
 func makeK8sClusterDropMetrics() *FilterProcessor {
@@ -184,14 +192,6 @@ func createIsMatchNameConditions(names []string) []string {
 		nameConditions = append(nameConditions, ottlexpr.IsMatch("name", name))
 	}
 	return nameConditions
-}
-
-func createNamespacesConditions(namespaces []string) []string {
-	var namespacesConditions []string
-	for _, ns := range namespaces {
-		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
-	}
-	return namespacesConditions
 }
 
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
