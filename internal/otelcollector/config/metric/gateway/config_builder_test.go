@@ -215,6 +215,7 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.NotContains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "singleton_receiver_creator/kymastats")
+			require.NotContains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "singleton_receiver_creator/k8s_cluster")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
 				"filter/drop-if-input-source-runtime",
@@ -328,8 +329,10 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
+				"transform/set-instrumentation-scope-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
+				"filter/drop-k8s-cluster-metrics",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"batch",
@@ -357,9 +360,11 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
+				"transform/set-instrumentation-scope-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-container-metrics",
+				"filter/drop-k8s-cluster-metrics",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"batch",
@@ -387,9 +392,11 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
+				"transform/set-instrumentation-scope-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-pod-metrics",
+				"filter/drop-k8s-cluster-metrics",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"batch",
@@ -581,6 +588,7 @@ func TestMakeConfig(t *testing.T) {
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
+
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
@@ -617,9 +625,11 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Receivers, "otlp")
 		require.Equal(t, []string{"memory_limiter",
 			"k8sattributes",
+			"transform/set-instrumentation-scope-runtime",
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
 			"filter/test-1-filter-by-namespace-runtime-input",
+			"filter/drop-k8s-cluster-metrics",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
 			"batch",

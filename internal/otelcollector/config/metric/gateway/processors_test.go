@@ -296,7 +296,7 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, expectedCondition, runtimeContainerMetricsFilter.Metrics.Metric[0])
 	})
 
-	t.Run("kyma instrumentation scope transform processor", func(t *testing.T) {
+	t.Run("instrumentation scope transform processor for kymastats receiver", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
 			[]telemetryv1alpha1.MetricPipeline{
@@ -317,5 +317,48 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "set(version, \"main\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(name, \"io.kyma-project.telemetry/kyma\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
 
+	})
+
+	t.Run("instrumentation scope transform processor for k8sCluster receiver", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true).Build(),
+			},
+			BuildOptions{
+				InstrumentationScopeVersion: "main",
+			},
+		)
+		require.NoError(t, err)
+
+		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeRuntime.ErrorMode)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements, 1)
+		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Context)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements, 2)
+		require.Equal(t, "set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[1])
+	})
+	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
+		var k8sClusterMetricsDrop = []string{"instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
+			" and (IsMatch(name, \"^k8s.deployment.*\") or IsMatch(name, \"^k8s.cronjob.*\") or IsMatch(name, \"^k8s.daemonset.*\") or IsMatch(name, \"^k8s.hpa.*\") or IsMatch(name, \"^k8s.job.*\")" +
+			" or IsMatch(name, \"^k8s.replicaset.*\") or IsMatch(name, \"^k8s.resource_quota.*\") or IsMatch(name, \"^k8s.statefulset.*\")" +
+			" or IsMatch(name, \"^k8s.node.*\"))"}
+
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		dropK8sClusterMetrics := collectorConfig.Processors.DropK8sClusterMetrics
+		require.NotNil(t, dropK8sClusterMetrics)
+		require.Len(t, dropK8sClusterMetrics.Metrics.Metric, 1)
+		require.Equal(t, k8sClusterMetricsDrop[0], dropK8sClusterMetrics.Metrics.Metric[0])
 	})
 }
