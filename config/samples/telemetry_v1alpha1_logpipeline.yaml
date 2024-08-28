@@ -10,7 +10,7 @@ metadata:
   name: log-sink
   namespace: log-sink
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: log-sink
@@ -76,7 +76,7 @@ spec:
         - image: mingrammer/flog:latest
           name: flog
           args:
-            - -b=1
+            - -b=64
             - -f=json
             - -l
 ---
