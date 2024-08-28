@@ -76,7 +76,7 @@ func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) 
 	bufferInUse := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
 	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
 	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-	noLogsDelivered := !p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+	noLogsDelivered := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
 	return !(bufferInUse || bufferFull || exporterDroppedLogs || noLogsDelivered)
 }
 
