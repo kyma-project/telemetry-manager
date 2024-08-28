@@ -4,15 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
-	"strconv"
-
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"maps"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
@@ -171,7 +169,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Labels:    labels,
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(ports.Metrics),
+				"prometheus.io/port":   fmt.Sprint(ports.Metrics),
 				"prometheus.io/scheme": "http",
 			},
 		},

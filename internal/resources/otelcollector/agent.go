@@ -4,14 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
-	"strconv"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"maps"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -153,8 +151,8 @@ proxyMetadata:
   OUTPUT_CERTS: %s
 `, istioCertPath),
 		"sidecar.istio.io/userVolumeMount":                 fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		"traffic.sidecar.istio.io/includeOutboundPorts":    strconv.Itoa(ports.OTLPGRPC),
-		"traffic.sidecar.istio.io/excludeInboundPorts":     strconv.Itoa(ports.Metrics),
+		"traffic.sidecar.istio.io/includeOutboundPorts":    fmt.Sprint(ports.OTLPGRPC),
+		"traffic.sidecar.istio.io/excludeInboundPorts":     fmt.Sprint(ports.Metrics),
 		"traffic.sidecar.istio.io/includeOutboundIPRanges": "",
 	}
 }

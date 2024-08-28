@@ -14,7 +14,7 @@ const (
 	curlImage       = "europe-docker.pkg.dev/kyma-project/prod/external/curlimages/curl:7.78.0"
 	sourceName      = "source"
 	destinationName = "destination"
-	destinationPort = 80
+	destinationPort = int32(80)
 	appLabelKey     = "app"
 )
 

@@ -1,14 +1,13 @@
 package prommetricgen
 
 import (
-	"maps"
-	"strconv"
-
+	"fmt"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"maps"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 )
@@ -57,10 +56,10 @@ var (
 		MetricHardwareHumidity.Name,
 	}
 
-	metricsPort     = 8080
-	metricsPortName = "http-metrics"
-	metricsEndpoint = "/metrics"
-	selectorLabels  = map[string]string{
+	metricsPort     int32 = 8080
+	metricsPortName       = "http-metrics"
+	metricsEndpoint       = "/metrics"
+	selectorLabels        = map[string]string{
 		"app": "sample-metrics",
 	}
 
@@ -87,7 +86,7 @@ func (mp *MetricProducer) MetricsEndpoint() string {
 	return metricsEndpoint
 }
 
-func (mp *MetricProducer) MetricsPort() int {
+func (mp *MetricProducer) MetricsPort() int32 {
 	return metricsPort
 }
 
@@ -151,7 +150,7 @@ func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
 	return map[string]string{
 		"prometheus.io/scrape": "true",
 		"prometheus.io/path":   metricsEndpoint,
-		"prometheus.io/port":   strconv.Itoa(metricsPort),
+		"prometheus.io/port":   fmt.Sprint(metricsPort),
 		"prometheus.io/scheme": string(scheme),
 	}
 }
@@ -175,7 +174,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
-							ContainerPort: int32(metricsPort),
+							ContainerPort: metricsPort,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
@@ -224,7 +223,7 @@ func (s *Service) K8sObject() *corev1.Service {
 				{
 					Name:       metricsPortName,
 					Protocol:   corev1.ProtocolTCP,
-					Port:       int32(metricsPort),
+					Port:       metricsPort,
 					TargetPort: intstr.FromString(metricsPortName),
 				},
 			},

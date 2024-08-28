@@ -1,6 +1,6 @@
 package ports
 
 const (
-	PrometheusPort = 9090
+	PrometheusPort = int32(9090)
 	AlertingPort   = 9093
 )

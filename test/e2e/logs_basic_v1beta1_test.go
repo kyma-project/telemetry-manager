@@ -3,8 +3,7 @@
 package e2e
 
 import (
-	"strconv"
-
+	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +46,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 						Host: telemetryv1beta1.ValueType{
 							Value: backend.Host(),
 						},
-						Port: strconv.Itoa(backend.Port()),
+						Port: fmt.Sprint(backend.Port()),
 						URI:  "/",
 						TLSConfig: telemetryv1beta1.TLSConfig{
 							Disabled:                  true,
