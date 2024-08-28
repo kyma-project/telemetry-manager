@@ -124,7 +124,7 @@ func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName str
 }
 
 func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string, t pipelineType) bool {
-	ruleName, hasRuleName := labelSet[model.AlertStatus]
+	ruleName, hasRuleName := labelSet[model.AlertNameLabel]
 	if !hasRuleName {
 		return false
 	}
