@@ -66,11 +66,10 @@ func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *Sing
 		},
 		SingletonK8sClusterReceiver: SingletonK8sClusterReceiver{
 			K8sClusterReceiver: K8sClusterReceiver{
-				AuthType:                 "serviceAccount",
-				CollectionInterval:       "30s",
-				AllocatableTypesToReport: []string{"cpu", "memory"},
-				NodeConditionsToReport:   []string{""},
-				Metrics:                  metricsToDrop,
+				AuthType:               "serviceAccount",
+				CollectionInterval:     "30s",
+				NodeConditionsToReport: []string{},
+				Metrics:                metricsToDrop,
 			},
 		},
 	}
