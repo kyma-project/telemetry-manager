@@ -38,8 +38,8 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	}
 }
 
-func makeResolveServiceNameConfig() *TransformProcessor {
-	return &TransformProcessor{
+func makeResolveServiceNameConfig() *metric.TransformProcessor {
+	return &metric.TransformProcessor{
 		ErrorMode:        "ignore",
 		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
 	}
