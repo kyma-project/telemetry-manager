@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -66,6 +67,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have running pipelines", func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have running metric gateway", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metric backend running", func() {

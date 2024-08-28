@@ -5,11 +5,15 @@ import (
 	"errors"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 var errUnsupportedLokiOutput = errors.New("the grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README")
+
+type EndpointValidator interface {
+	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType) error
+}
 
 type TLSCertValidator interface {
 	Validate(ctx context.Context, config tlscert.TLSBundle) error
@@ -20,6 +24,7 @@ type SecretRefValidator interface {
 }
 
 type Validator struct {
+	EndpointValidator  EndpointValidator
 	TLSCertValidator   TLSCertValidator
 	SecretRefValidator SecretRefValidator
 }
@@ -31,6 +36,12 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 
 	if err := v.SecretRefValidator.Validate(ctx, pipeline); err != nil {
 		return err
+	}
+
+	if pipeline.Spec.Output.HTTP != nil {
+		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.HTTP.Host); err != nil {
+			return err
+		}
 	}
 
 	if tlsValidationRequired(pipeline) {

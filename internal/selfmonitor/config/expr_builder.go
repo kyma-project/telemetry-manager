@@ -8,6 +8,8 @@ import (
 
 const defaultRateDuration = "5m"
 
+type vectorMatch func() string
+
 type exprBuilder struct {
 	expr string
 }
@@ -17,6 +19,12 @@ type labelSelector func(string) string
 func selectService(serviceName string) labelSelector {
 	return func(metric string) string {
 		return fmt.Sprintf("%s{%s=\"%s\"}", metric, labelService, serviceName)
+	}
+}
+
+func ignoringLabelsMatch(labels ...string) vectorMatch {
+	return func() string {
+		return fmt.Sprintf("ignoring(%s)", strings.Join(labels, ","))
 	}
 }
 
@@ -42,15 +50,16 @@ func rate(metric string, selectors ...labelSelector) *exprBuilder {
 	return eb
 }
 
-func div(nominator, denominator string, selectors ...labelSelector) *exprBuilder {
+func div(nominator, denominator string, vOpt vectorMatch, selectors ...labelSelector) *exprBuilder {
 	for _, s := range selectors {
 		nominator = s(nominator)
 		denominator = s(denominator)
 	}
-
+	vMatch := vOpt()
 	eb := &exprBuilder{
-		expr: fmt.Sprintf("%s / %s", nominator, denominator),
+		expr: fmt.Sprintf("%s / %s %s", nominator, vMatch, denominator),
 	}
+
 	return eb
 }
 

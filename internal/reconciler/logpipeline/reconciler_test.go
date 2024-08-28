@@ -30,10 +30,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -71,7 +71,11 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
@@ -94,7 +98,11 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
@@ -117,7 +125,11 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
@@ -151,7 +163,11 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
@@ -184,7 +200,11 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsgStub := &conditions.ErrorToMessageConverter{}
 
@@ -220,6 +240,7 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
 		}
@@ -303,7 +324,11 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
@@ -337,7 +362,11 @@ func TestReconcile(t *testing.T) {
 		flowHealthProberStub := &mocks.FlowHealthProber{}
 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-		pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
@@ -472,7 +501,11 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+				pipelineValidatorWithStubs := &Validator{
+					EndpointValidator:  stubs.NewEndpointValidator(nil),
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+				}
 
 				errToMsgStub := &mocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
@@ -587,7 +620,11 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-				pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr)}
+				pipelineValidatorWithStubs := &Validator{
+					EndpointValidator:  stubs.NewEndpointValidator(nil),
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr),
+				}
 
 				errToMsgStub := &mocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
@@ -674,7 +711,11 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub := &mocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
 
-				pipelineValidatorWithStubs := &Validator{TLSCertValidator: stubs.NewTLSCertValidator(nil), SecretRefValidator: stubs.NewSecretRefValidator(nil)}
+				pipelineValidatorWithStubs := &Validator{
+					EndpointValidator:  stubs.NewEndpointValidator(nil),
+					TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					SecretRefValidator: stubs.NewSecretRefValidator(nil),
+				}
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
 
@@ -711,6 +752,7 @@ func TestReconcile(t *testing.T) {
 
 		serverErr := errors.New("failed to get secret: server error")
 		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr}),
 		}

@@ -46,9 +46,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -75,13 +76,14 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-metricpipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
 
 	pipelineValidator := &metricpipeline.Validator{
+		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
 		SecretRefValidator: &secretref.Validator{Client: client},
 		PipelineLock:       pipelineLock,
 	}
 
 	agentRBAC := otelcollector.MakeMetricAgentRBAC(types.NamespacedName{Name: config.Agent.BaseName, Namespace: config.Agent.Namespace})
-	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed, config.K8sClusterReceiverAllowed)
+	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed)
 
 	reconciler := metricpipeline.New(
 		client,

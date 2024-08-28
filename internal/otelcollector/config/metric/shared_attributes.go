@@ -8,6 +8,7 @@ const (
 	InputSourceIstio      InputSourceType = "istio"
 	InputSourceOtlp       InputSourceType = "otlp"
 	InputSourceKyma       InputSourceType = "kyma"
+	InputSourceK8sCluster InputSourceType = "k8s_cluster"
 )
 
 const (
@@ -22,4 +23,5 @@ var InstrumentationScope = map[InputSourceType]string{
 	InputSourcePrometheus: InstrumentationScopePrometheus,
 	InputSourceIstio:      InstrumentationScopeIstio,
 	InputSourceKyma:       InstrumentationScopeKyma,
+	InputSourceK8sCluster: InstrumentationScopeRuntime,
 }

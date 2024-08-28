@@ -39,9 +39,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -93,6 +94,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	}
 
 	pipelineValidator := &logpipeline.Validator{
+		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
 		SecretRefValidator: &secretref.Validator{Client: client},
 	}

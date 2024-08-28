@@ -161,6 +161,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
+		It("Should have a running trace gateway deployment", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+		})
+
 		It("Should have a trace backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})

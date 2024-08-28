@@ -1,6 +1,8 @@
 package gateway
 
-import "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
+import (
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
+)
 
 var scrapeMetrics = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
 
