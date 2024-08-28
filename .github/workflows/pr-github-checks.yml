@@ -72,6 +72,7 @@ jobs:
 
   pr-prevent-kustomization:
     runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.base.ref == 'main' }}
     steps:
       - name: Check-out code
         uses: actions/checkout@v4
@@ -89,6 +90,12 @@ jobs:
   PR-Github-Checks-Success:
     needs: [pr-milestone-check, pr-label-check, pr-title-check, pr-prevent-kustomization]
     runs-on: ubuntu-latest
+    if: |
+      always() &&
+      (needs.pr-milestone-check.result == 'success') && 
+      (needs.pr-label-check.result == 'success') &&
+      (needs.pr-title-check.result == 'success') &&
+      (needs.pr-prevent-kustomization.result == 'success' || needs.pr-prevent-kustomization.result == 'skipped')
     steps:
       - name: PR Github Checks Success
         run: |
