@@ -105,7 +105,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 
 				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(WithAllNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats metrics are sent to runtime backend")
+				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(HaveUniqueNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats metrics are sent to runtime backend")
 
 				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(
 					SatisfyAll(
@@ -131,7 +131,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 
 				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(WithAllNames(Not(ContainElements(expectedMetrics)))), "No kubeletstats metrics must be sent to prometheus backend")
+				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(HaveUniqueNames(Not(ContainElements(expectedMetrics)))), "No kubeletstats metrics must be sent to prometheus backend")
 
 				g.Expect(bodycontent).NotTo(WithFlatMetricsDataPoints(
 					SatisfyAll(
@@ -157,7 +157,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 
 				// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
-				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(WithAllNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
+				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(HaveUniqueNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
 
 				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(
 					SatisfyAll(
@@ -182,7 +182,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(WithAllNames(Not(ContainElements(prommetricgen.DefaultMetricsNames)))), "No prometheus metrics must be sent to runtime backend")
+				g.Expect(bodycontent).To(WithFlatMetricsDataPoints(HaveUniqueNames(Not(ContainElements(prommetricgen.DefaultMetricsNames)))), "No prometheus metrics must be sent to runtime backend")
 
 				g.Expect(bodycontent).NotTo(WithFlatMetricsDataPoints(
 					SatisfyAll(

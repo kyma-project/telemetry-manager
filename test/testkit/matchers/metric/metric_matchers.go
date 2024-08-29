@@ -22,8 +22,9 @@ func WithFlatMetricsDataPoints(matcher types.GomegaMatcher) types.GomegaMatcher 
 	}, matcher)
 }
 
-// WithAllNames extracts metric names from all FlatMetricDataPoints and applies the matcher to them.
-func WithAllNames(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveUniqueNames extracts metric names from all FlatMetricDataPoints and applies the matcher to them.
+// Rename to HaveUniqueNames
+func HaveUniqueNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm []FlatMetricDataPoint) []string {
 		var names []string
 		for _, m := range fm {
