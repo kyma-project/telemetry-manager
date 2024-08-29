@@ -97,9 +97,6 @@ var _ = Describe("WithResourceAttrs", func() {
 
 var _ = Describe("WithName", func() {
 	It("should return the correct name", func() {
-		md := pmetric.NewMetrics()
-		md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics().AppendEmpty().SetName("container.cpu.time")
-
 		Expect(fmdps).Should(ContainElement(WithName(ContainSubstring("container"))))
 	})
 })
@@ -118,15 +115,20 @@ var _ = Describe("WithMetricAttributes", func() {
 	})
 })
 
-var _ = Describe("WithScopeName and WithScopeVersion", func() {
-	It("should apply matcher", func() {
+var _ = Describe("WithScopeName", func() {
+	It("should contain the specified string", func() {
 		Expect(fmdps).Should(ContainElement(WithScopeName(ContainSubstring("container"))))
+	})
+})
+
+var _ = Describe("WithScopeVersion", func() {
+	It("should contain the specified version", func() {
 		Expect(fmdps).Should(ContainElement(WithScopeVersion(ContainSubstring("1.0"))))
 	})
 })
 
 var _ = Describe("WithKeys", func() {
-	It("should apply matcher", func() {
+	It("should have all the keys within the specified list", func() {
 		Expect(fmdps).Should(ContainElement(WithResourceAttributes(WithKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))))
 	})
 })
