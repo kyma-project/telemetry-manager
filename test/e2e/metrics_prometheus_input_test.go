@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"net/http"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,6 +18,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -67,12 +69,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Ensures the metrics backend is ready", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-		})
-
 		It("Ensures the metric agent daemonset is ready", func() {
 			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
+		It("Ensures the metrics backend is ready", func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Ensures the metricpipeline is running", func() {
@@ -162,10 +164,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
 				g.Expect(resp).To(HaveHTTPBody(
 					WithFlatMetrics(
 						Not(ContainElement(
-							HaveField("Name", BeElementOf(kubeletstats.DefaultMetricsNames)),
+							HaveField("Name", BeElementOf(expectedMetrics)),
 						)),
 						// Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.DefaultMetricsNames))))),
 					)))

@@ -68,6 +68,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
+		It("Should have a running trace gateway deployment", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+		})
+
 		It("Should have a running self-monitor", func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})

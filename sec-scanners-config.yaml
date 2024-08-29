@@ -1,10 +1,10 @@
 module-name: telemetry
 protecode:
   - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
-  - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.105.0-main
+  - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.107.0-main
   - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.6
   - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e
-  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.1-729b0b4
+  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c
 whitesource:
   language: golang-mod
   subprojects: false

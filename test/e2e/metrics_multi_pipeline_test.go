@@ -5,6 +5,7 @@ package e2e
 import (
 	"io"
 	"net/http"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,6 +20,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -89,6 +91,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
+		It("Should have a running metric agent daemonset", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
@@ -101,7 +107,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				bodycontent, err := io.ReadAll(resp.Body)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(ConsistOf(kubeletstats.DefaultMetricsNames))), "Not all required kubeletstats metrics are sent to runtime backend")
+				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
+				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats and k8sCluster metrics are sent to runtime backend")
 				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(ConsistOf(And(
 					HaveField("Name", InstrumentationScopeRuntime),
 					HaveField("Version",
@@ -121,7 +128,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				bodycontent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(Not(ContainElements(kubeletstats.DefaultMetricsNames)))), "No kubeletstats metrics must be sent to prometheus backend")
+
+				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
+				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(Not(ContainElements(expectedMetrics)))), "No kubeletstats metrics must be sent to prometheus backend")
 				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(Not(ContainElement(And(HaveField("Name", InstrumentationScopeRuntime),
 					HaveField("Version",
 						SatisfyAny(

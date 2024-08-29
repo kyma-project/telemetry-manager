@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -69,10 +70,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 			assert.TracePipelineHealthy(ctx, k8sClient, pipeline1Name)
 			assert.TracePipelineHealthy(ctx, k8sClient, pipeline2Name)
 		})
+
+		It("Should have a running trace gateway deployment", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+		})
+
 		It("Should have a trace backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
+
 		It("Should verify traces from telemetrygen are delivered", func() {
 			assert.TracesFromNamespaceDelivered(proxyClient, backend1ExportURL, mockNs)
 			assert.TracesFromNamespaceDelivered(proxyClient, backend2ExportURL, mockNs)

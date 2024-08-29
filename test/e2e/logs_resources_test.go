@@ -83,7 +83,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 		It("Should have a DaemonSet owned by the LogPipeline", func() {
 			var daemonSet appsv1.DaemonSet
-			assert.HasOwnerReference(ctx, k8sClient, &daemonSet, kitkyma.FluentBitDaemonSet, ownerReferenceKind, pipelineName)
+			assert.HasOwnerReference(ctx, k8sClient, &daemonSet, kitkyma.FluentBitDaemonSetName, ownerReferenceKind, pipelineName)
 		})
 
 		It("Should have a Network Policy owned by the LogPipeline", func() {
@@ -94,7 +94,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		It("Should have a DaemonSet with correct pod priority class", func() {
 			Eventually(func(g Gomega) {
 				var daemonSet appsv1.DaemonSet
-				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitDaemonSet, &daemonSet)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, kitkyma.FluentBitDaemonSetName, &daemonSet)).To(Succeed())
 
 				g.Expect(daemonSet.Spec.Template.Spec.PriorityClassName).To(Equal("telemetry-priority-class-high"))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -172,7 +172,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 
 			Eventually(func(g Gomega) bool {
 				var daemonSet appsv1.DaemonSet
-				err := k8sClient.Get(ctx, kitkyma.FluentBitDaemonSet, &daemonSet)
+				err := k8sClient.Get(ctx, kitkyma.FluentBitDaemonSetName, &daemonSet)
 				return apierrors.IsNotFound(err)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "DaemonSet still exists")
 

@@ -308,22 +308,22 @@ processors:
         metric_statements:
             - context: scope
               statements:
-                - set(version, "main") where name == "otelcol/kubeletstatsreceiver"
-                - set(name, "io.kyma-project.telemetry/runtime") where name == "otelcol/kubeletstatsreceiver"
+                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(name, "io.kyma-project.telemetry/runtime") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
     transform/set-instrumentation-scope-prometheus:
         error_mode: ignore
         metric_statements:
             - context: scope
               statements:
-                - set(version, "main") where name == "otelcol/prometheusreceiver"
-                - set(name, "io.kyma-project.telemetry/prometheus") where name == "otelcol/prometheusreceiver"
+                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(name, "io.kyma-project.telemetry/prometheus") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
     transform/set-instrumentation-scope-istio:
         error_mode: ignore
         metric_statements:
             - context: scope
               statements:
-                - set(version, "main") where name == "otelcol/prometheusreceiver"
-                - set(name, "io.kyma-project.telemetry/istio") where name == "otelcol/prometheusreceiver"
+                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(name, "io.kyma-project.telemetry/istio") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
