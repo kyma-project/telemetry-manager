@@ -14,7 +14,6 @@ jobs:
   # This is a workaround to bypass the limitations of the workflow path filter:
   # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
   check-changed-files:
-    name: Check whether any source code files have been changed
     outputs:
       check: ${{ steps.changed-files.outputs.any_modified }}
     runs-on: ubuntu-latest
