@@ -62,6 +62,25 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
+			name:         "pending alert",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentBufferFull",
+						},
+						State: promv1.AlertStatePending,
+					},
+				},
+			},
+			expected: LogPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
+		},
+		{
 			name:         "alert missing pipeline_name label",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
@@ -222,13 +241,13 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "receiver read logs and exporter did not send logs firing",
+			name:         "no logs delivered firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentReceiverReadLogs",
+							"alertname":     "LogAgentNoLogsDelivered",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -240,17 +259,10 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "exporter read logs and exporter sent logs firing",
+			name:         "exporter sent logs firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
-					{
-						Labels: model.LabelSet{
-							"alertname":     "LogAgentReceiverReadLogs",
-							"pipeline_name": "cls",
-						},
-						State: promv1.AlertStateFiring,
-					},
 					{
 						Labels: model.LabelSet{
 							"alertname":     "LogAgentExporterSentLogs",

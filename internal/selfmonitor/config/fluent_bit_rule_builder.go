@@ -1,5 +1,9 @@
 package config
 
+import (
+	"time"
+)
+
 const (
 	fluentBitMetricsServiceName        = "telemetry-fluent-bit-metrics"
 	fluentBitSidecarMetricsServiceName = "telemetry-fluent-bit-exporter-metrics"
@@ -11,6 +15,9 @@ const (
 
 	bufferUsage300MB = 300000000
 	bufferUsage900MB = 900000000
+
+	// alertWaitTime is the time the alert have a pending state before firing
+	alertWaitTime = 1 * time.Minute
 )
 
 type fluentBitRuleBuilder struct {
@@ -19,10 +26,10 @@ type fluentBitRuleBuilder struct {
 func (rb fluentBitRuleBuilder) rules() []Rule {
 	return []Rule{
 		rb.exporterSentRule(),
-		rb.receiverReadRule(),
 		rb.exporterDroppedRule(),
 		rb.bufferInUseRule(),
 		rb.bufferFullRule(),
+		rb.noLogsDeliveredRule(),
 	}
 }
 
@@ -30,16 +37,6 @@ func (rb fluentBitRuleBuilder) exporterSentRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentExporterSentLogs,
 		Expr: rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
-			sumBy(labelPipelineName).
-			greaterThan(0).
-			build(),
-	}
-}
-
-func (rb fluentBitRuleBuilder) receiverReadRule() Rule {
-	return Rule{
-		Alert: rb.namePrefix() + RuleNameLogAgentReceiverReadLogs,
-		Expr: rate(metricFluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
 			sumBy(labelPipelineName).
 			greaterThan(0).
 			build(),
@@ -71,6 +68,24 @@ func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
 		Expr: instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
 			greaterThan(bufferUsage900MB).
 			build(),
+	}
+}
+
+func (rb fluentBitRuleBuilder) noLogsDeliveredRule() Rule {
+	receiverReadExpr := rate(metricFluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		greaterThan(0).
+		build()
+
+	exporterNotSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		equal(0).
+		build()
+
+	return Rule{
+		Alert: rb.namePrefix() + RuleNameLogAgentNoLogsDelivered,
+		Expr:  and(receiverReadExpr, exporterNotSentExpr),
+		For:   alertWaitTime,
 	}
 }
 
