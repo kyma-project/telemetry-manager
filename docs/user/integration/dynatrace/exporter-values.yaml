@@ -39,8 +39,20 @@ config:
         statements:
           # convert the <histogram_name>_sum metrics to gauges.
           - convert_sum_to_gauge() where IsMatch(metric.name, ".*_sum")
+      - context: metric
+        statements:
+          # Remove empty resource attributes
+          - delete_key(resource.attributes, "k8s.node.name") where resource.attributes["k8s.node.name"] = ""
+          - delete_key(resource.attributes, "k8s.namespace.name") where resource.attributes["k8s.namespace.name"] = ""
+          - delete_key(resource.attributes, "k8s.cluster.name") where resource.attributes["k8s.cluster.name"] = ""
+      - context: metric
+        statements:
+          # Remove empty attributes
+          - delete_key(attributes, "k8s.node.name") where resource.attributes["k8s.node.name"] = ""
+          - delete_key(attributes, "k8s.namespace.name") where resource.attributes["k8s.namespace.name"] = ""
+          - delete_key(attributes, "k8s.cluster.name") where resource.attributes["k8s.cluster.name"] = ""
 
-    # Selects only one metric for the current collector pod 
+    # Selects only one metric for the current collector pod
     filter:
       error_mode: ignore
       metrics:
