@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -170,7 +171,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Labels:    labels,
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   fmt.Sprint(ports.Metrics),
+				"prometheus.io/port":   strconv.Itoa(int(ports.Metrics)),
 				"prometheus.io/scheme": "http",
 			},
 		},

@@ -1,8 +1,8 @@
 package prommetricgen
 
 import (
-	"fmt"
 	"maps"
+	"strconv"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
@@ -151,7 +151,7 @@ func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
 	return map[string]string{
 		"prometheus.io/scrape": "true",
 		"prometheus.io/path":   metricsEndpoint,
-		"prometheus.io/port":   fmt.Sprint(metricsPort),
+		"prometheus.io/port":   strconv.Itoa(int(metricsPort)),
 		"prometheus.io/scheme": string(scheme),
 	}
 }
