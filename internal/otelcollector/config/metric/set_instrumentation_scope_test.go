@@ -52,6 +52,32 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 				}},
 			},
 			inputSource: InputSourceIstio,
+		}, {
+			name: "InputSourceKyma",
+			want: &TransformProcessor{
+				ErrorMode: "ignore",
+				MetricStatements: []config.TransformProcessorStatements{{
+					Context: "scope",
+					Statements: []string{
+						"set(version, \"main\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/kyma\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"",
+					},
+				}},
+			},
+			inputSource: InputSourceKyma,
+		}, {
+			name: "InputSourceK8sCluster",
+			want: &TransformProcessor{
+				ErrorMode: "ignore",
+				MetricStatements: []config.TransformProcessorStatements{{
+					Context: "scope",
+					Statements: []string{
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+					},
+				}},
+			},
+			inputSource: InputSourceK8sCluster,
 		},
 	}
 

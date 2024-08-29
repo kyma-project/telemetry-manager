@@ -24,9 +24,6 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/args/-
         value: --kyma-input-allowed=true
-      - op: add
-        path: /spec/template/spec/containers/0/args/-
-        value: --k8s-cluster-receiver-allowed=true
     target:
       kind: Deployment
       name: manager

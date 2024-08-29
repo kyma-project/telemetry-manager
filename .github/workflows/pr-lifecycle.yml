@@ -36,6 +36,7 @@ jobs:
   manager-upgrade:
     needs: 
     - check-changed-files
+    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

@@ -3,7 +3,7 @@ package stubs
 import (
 	"context"
 
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
 type SecretRefValidator struct {
