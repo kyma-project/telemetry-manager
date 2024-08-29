@@ -102,7 +102,7 @@ func TestMakeMetricsService(t *testing.T) {
 
 	port, err := strconv.ParseInt(service.Annotations["prometheus.io/port"], 10, 16)
 	require.NoError(t, err)
-	require.Equal(t, int32(port), service.Spec.Ports[0].Port)
+	require.Equal(t, int32(port), service.Spec.Ports[0].Port) //nolint:gosec // parseInt returns int64.  This is a testfile so not part of binary
 }
 
 func TestMakeExporterMetricsService(t *testing.T) {
@@ -123,7 +123,7 @@ func TestMakeExporterMetricsService(t *testing.T) {
 
 	port, err := strconv.ParseInt(service.Annotations["prometheus.io/port"], 10, 16)
 	require.NoError(t, err)
-	require.Equal(t, int32(port), service.Spec.Ports[0].Port)
+	require.Equal(t, int32(port), service.Spec.Ports[0].Port) //nolint:gosec // parseInt returns int64.  This is a testfile so not part of binary
 }
 
 func TestMakeConfigMap(t *testing.T) {

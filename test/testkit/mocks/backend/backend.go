@@ -27,10 +27,10 @@ const (
 	httpLogsPortName   = "http-logs"
 	httpExportPortName = "http-web"
 
-	otlpGRPCPort   = 4317
-	otlpHTTPPort   = 4318
-	httpLogsPort   = 9880
-	httpExportPort = 80
+	otlpGRPCPort   int32 = 4317
+	otlpHTTPPort   int32 = 4318
+	httpLogsPort   int32 = 9880
+	httpExportPort int32 = 80
 )
 
 const (
@@ -124,7 +124,7 @@ func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
 
 	b.otelCollectorConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
-	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(httpExportPort)})
+	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(int(httpExportPort))})
 	b.otlpService = kitk8s.NewService(b.name, b.namespace).
 		WithPort(otlpGRPCPortName, otlpGRPCPort).
 		WithPort(otlpHTTPPortName, otlpHTTPPort).
@@ -154,7 +154,7 @@ func (b *Backend) Name() string {
 }
 
 func (b *Backend) Endpoint() string {
-	addr := net.JoinHostPort(b.Host(), strconv.Itoa(b.Port()))
+	addr := net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
 	return fmt.Sprintf("http://%s", addr)
 }
 
@@ -162,7 +162,7 @@ func (b *Backend) Host() string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
 }
 
-func (b *Backend) Port() int {
+func (b *Backend) Port() int32 {
 	if b.signalType == SignalTypeLogs {
 		return httpLogsPort
 	} else {

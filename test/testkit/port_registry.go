@@ -25,8 +25,8 @@ func (p PortRegistry) Port(name string) int32 {
 }
 
 // AddPort adds a port mapping to the registry.
-func (p PortRegistry) AddPort(name string, port int) PortRegistry {
-	p.Ports[name] = int32(port)
+func (p PortRegistry) AddPort(name string, port int32) PortRegistry {
+	p.Ports[name] = port
 
 	return p
 }

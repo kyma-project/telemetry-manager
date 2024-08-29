@@ -21,6 +21,7 @@ const (
 	RuleNameLogAgentExporterDroppedLogs = "AgentExporterDroppedLogs"
 	RuleNameLogAgentBufferInUse         = "AgentBufferInUse"
 	RuleNameLogAgentBufferFull          = "AgentBufferFull"
+	RuleNameLogAgentNoLogsDelivered     = "AgentNoLogsDelivered"
 
 	// Common rule labels
 	labelService      = "service"
