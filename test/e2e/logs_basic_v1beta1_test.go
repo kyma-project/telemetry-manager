@@ -48,7 +48,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 						Host: telemetryv1beta1.ValueType{
 							Value: backend.Host(),
 						},
-						Port: strconv.Itoa(backend.Port()),
+						Port: strconv.Itoa(int(backend.Port())),
 						URI:  "/",
 						TLSConfig: telemetryv1beta1.TLSConfig{
 							Disabled:                  true,

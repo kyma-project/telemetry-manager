@@ -153,8 +153,8 @@ proxyMetadata:
   OUTPUT_CERTS: %s
 `, istioCertPath),
 		"sidecar.istio.io/userVolumeMount":                 fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		"traffic.sidecar.istio.io/includeOutboundPorts":    strconv.Itoa(ports.OTLPGRPC),
-		"traffic.sidecar.istio.io/excludeInboundPorts":     strconv.Itoa(ports.Metrics),
+		"traffic.sidecar.istio.io/includeOutboundPorts":    strconv.Itoa(int(ports.OTLPGRPC)),
+		"traffic.sidecar.istio.io/excludeInboundPorts":     strconv.Itoa(int(ports.Metrics)),
 		"traffic.sidecar.istio.io/includeOutboundIPRanges": "",
 	}
 }
