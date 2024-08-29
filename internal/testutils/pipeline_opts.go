@@ -140,9 +140,9 @@ func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOptio
 	}
 }
 
-func HTTPPort(port int) HTTPOutputOption {
+func HTTPPort(port int32) HTTPOutputOption {
 	return func(output *telemetryv1alpha1.HTTPOutput) {
-		output.Port = strconv.Itoa(port)
+		output.Port = strconv.Itoa(int(port))
 	}
 }
 

@@ -57,10 +57,10 @@ var (
 		MetricHardwareHumidity.Name,
 	}
 
-	metricsPort     = 8080
-	metricsPortName = "http-metrics"
-	metricsEndpoint = "/metrics"
-	selectorLabels  = map[string]string{
+	metricsPort     int32 = 8080
+	metricsPortName       = "http-metrics"
+	metricsEndpoint       = "/metrics"
+	selectorLabels        = map[string]string{
 		"app": "sample-metrics",
 	}
 
@@ -87,7 +87,7 @@ func (mp *MetricProducer) MetricsEndpoint() string {
 	return metricsEndpoint
 }
 
-func (mp *MetricProducer) MetricsPort() int {
+func (mp *MetricProducer) MetricsPort() int32 {
 	return metricsPort
 }
 
@@ -151,7 +151,7 @@ func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
 	return map[string]string{
 		"prometheus.io/scrape": "true",
 		"prometheus.io/path":   metricsEndpoint,
-		"prometheus.io/port":   strconv.Itoa(metricsPort),
+		"prometheus.io/port":   strconv.Itoa(int(metricsPort)),
 		"prometheus.io/scheme": string(scheme),
 	}
 }
@@ -175,7 +175,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
-							ContainerPort: int32(metricsPort),
+							ContainerPort: metricsPort,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
@@ -226,7 +226,7 @@ func (s *Service) K8sObject() *corev1.Service {
 				{
 					Name:       metricsPortName,
 					Protocol:   corev1.ProtocolTCP,
-					Port:       int32(metricsPort),
+					Port:       metricsPort,
 					TargetPort: intstr.FromString(metricsPortName),
 				},
 			},

@@ -23,7 +23,7 @@ func NewService(name, namespace string) *Service {
 	}
 }
 
-func (s *Service) WithPort(name string, port int) *Service {
+func (s *Service) WithPort(name string, port int32) *Service {
 	s.PortRegistry.AddPort(name, port)
 	return s
 }

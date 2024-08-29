@@ -47,7 +47,7 @@ func (a Client) Token() string {
 }
 
 // ProxyURLForService composes a proxy url for a service.
-func (a Client) ProxyURLForService(namespace, service, path string, port int) string {
+func (a Client) ProxyURLForService(namespace, service, path string, port int32) string {
 	return fmt.Sprintf(
 		`%s/api/v1/namespaces/%s/services/http:%s:%d/proxy/%s`,
 		a.apiURL,
@@ -59,7 +59,7 @@ func (a Client) ProxyURLForService(namespace, service, path string, port int) st
 }
 
 // ProxyURLForPod composes a proxy url for a pod.
-func (a Client) ProxyURLForPod(namespace, pod, path string, port int) string {
+func (a Client) ProxyURLForPod(namespace, pod, path string, port int32) string {
 	return fmt.Sprintf(
 		`%s/api/v1/namespaces/%s/pods/http:%s:%d/proxy/%s`,
 		a.apiURL,
