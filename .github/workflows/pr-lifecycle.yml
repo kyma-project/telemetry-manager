@@ -34,7 +34,7 @@ jobs:
         run: echo '${{ steps.changed-files.outputs.all_changed_files }}' >> $GITHUB_STEP_SUMMARY
 
   manager-upgrade:
-    needs: 
+    needs:
     - check-changed-files
     if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     runs-on: ubuntu-latest
@@ -70,12 +70,12 @@ jobs:
         run: |
           bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
+      - name: Switch back to current revision
+        uses: actions/checkout@v4
+
       - name: Wait for cleanup of test run
         shell: bash
         run: hack/wait-for-namespaces.sh
-
-      - name: Switch back to current revision
-        uses: actions/checkout@v4
 
       # wait for the build to complete so that the manager image is available
       - name: Wait for the Build Image workflow to complete
