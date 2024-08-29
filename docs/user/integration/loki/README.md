@@ -33,7 +33,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 
 ## Preparation
 
-1. Export your Namespace as a variable with following command:
+1. Export your namespace as a variable with the following command:
 
     ```bash
     export K8S_NAMESPACE="loki"

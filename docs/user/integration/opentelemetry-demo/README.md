@@ -30,7 +30,7 @@ Learn how to install the OpenTelemetry [demo application](https://github.com/ope
 
 ### Preparation
 
-1. Export your Namespace as a variable with following command:
+1. Export your namespace as a variable with the following command:
 
     ```bash
     export K8S_NAMESPACE="otel"

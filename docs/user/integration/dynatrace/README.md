@@ -36,7 +36,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 
 ## Prepare the Namespace
 
-1. Export your namespace you want to use for Dynatrace as a variable with following command:
+1. Export the namespace you want to use for Dynatrace as a variable with the following command:
 
     ```bash
     export DYNATRACE_NS="dynatrace"

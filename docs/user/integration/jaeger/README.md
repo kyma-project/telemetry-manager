@@ -29,7 +29,7 @@ Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main
 
 ### Preparation
 
-1. Export your Namespace as a variable with following command:
+1. Export your namespace as a variable with the following command:
 
     ```bash
     export K8S_NAMESPACE="jaeger"
