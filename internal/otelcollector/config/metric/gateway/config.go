@@ -84,6 +84,7 @@ type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
 	K8sAttributes                                *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	DeleteNodeMetricsResourceAttributes          *metric.TransformProcessor     `yaml:"transform/delete-node-metrics-resource-attributes,omitempty"`
 	InsertClusterName                            *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
 	DropDiagnosticMetricsIfInputSourcePrometheus *FilterProcessor               `yaml:"filter/drop-diagnostic-metrics-if-input-source-prometheus,omitempty"`
 	DropDiagnosticMetricsIfInputSourceIstio      *FilterProcessor               `yaml:"filter/drop-diagnostic-metrics-if-input-source-istio,omitempty"`

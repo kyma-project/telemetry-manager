@@ -74,6 +74,7 @@ func declareComponentsForMetricPipeline(
 ) error {
 	declareSingletonKymaStatsReceiverCreator(pipeline, cfg, opts)
 	declareSingletonK8sClusterReceiverCreator(pipeline, cfg, opts)
+	declareDeleteNodeMetricsResourceAttributes(pipeline, cfg)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
@@ -91,6 +92,14 @@ func declareSingletonK8sClusterReceiverCreator(pipeline *telemetryv1alpha1.Metri
 func declareSingletonKymaStatsReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
 	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
 		cfg.Receivers.SingletonKymaStatsReceiverCreator = makeSingletonKymaStatsReceiverCreatorConfig(opts.GatewayNamespace)
+	}
+}
+
+func declareDeleteNodeMetricsResourceAttributes(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+	input := pipeline.Spec.Input
+
+	if isRuntimeInputEnabled(input) && isRuntimeNodeMetricsEnabled(input) {
+		cfg.Processors.DeleteNodeMetricsResourceAttributes = makeDeleteNodeMetricsResourceAttributes()
 	}
 }
 
@@ -195,6 +204,11 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 	}
 
 	processors = append(processors, makeInputSourceFiltersIDs(input)...)
+	// delete the resource attributes for the node metrics before namespace filtering
+	// otherwise, the node metrics will be dropped by the namespace filter because the namespace attribute will be set to kyma-system (namespace of metric agent)
+	if isRuntimeInputEnabled(input) && isRuntimeNodeMetricsEnabled(input) {
+		processors = append(processors, "transform/delete-node-metrics-resource-attributes")
+	}
 	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
@@ -351,6 +365,13 @@ func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInpu
 		!*input.Runtime.Resources.Container.Enabled
 
 	return !isRuntimeContainerMetricsDisabled
+}
+
+func isRuntimeNodeMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Runtime.Resources != nil &&
+		input.Runtime.Resources.Node != nil &&
+		input.Runtime.Resources.Node.Enabled != nil &&
+		*input.Runtime.Resources.Node.Enabled
 }
 
 func isKymaInputEnabled(annotations map[string]string, kymaInputAllowed bool) bool {
