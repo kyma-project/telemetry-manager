@@ -8,8 +8,8 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
-// WithFlatMetricsDataPoints extracts FlatMetricDataPoints from JSON and applies the matcher to them.
-func WithFlatMetricsDataPoints(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveFlatMetricsDataPoints extracts FlatMetricDataPoints from JSON and applies the matcher to them.
+func HaveFlatMetricsDataPoints(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonMetrics []byte) ([]FlatMetricDataPoint, error) {
 		mds, err := unmarshalMetrics(jsonMetrics)
 		if err != nil {
@@ -35,50 +35,50 @@ func HaveUniqueNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
-// WithName extracts name from FlatMetricDataPoint and applies the matcher to it.
-func WithName(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveName extracts name from FlatMetricDataPoint and applies the matcher to it.
+func HaveName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetricDataPoint) string {
 		return fm.Name
 	}, matcher)
 }
 
-// WithScopeName extracts scope name from FlatMetricDataPoint and applies the matcher to it.
-func WithScopeName(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveScopeName extracts scope name from FlatMetricDataPoint and applies the matcher to it.
+func HaveScopeName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetricDataPoint) string {
 		return fm.ScopeName
 	}, matcher)
 }
 
-// WithScopeVersion extracts scope version from FlatMetricDataPoint and applies the matcher to it.
-func WithScopeVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveScopeVersion extracts scope version from FlatMetricDataPoint and applies the matcher to it.
+func HaveScopeVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetricDataPoint) string {
 		return fm.ScopeVersion
 	}, matcher)
 }
 
-// WithResourceAttributes extracts resource attributes from FlatMetricDataPoint and applies the matcher to them.
-func WithResourceAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveResourceAttributes extracts resource attributes from FlatMetricDataPoint and applies the matcher to them.
+func HaveResourceAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetricDataPoint) map[string]string {
 		return fm.ResourceAttributes
 	}, matcher)
 }
 
-// WithMetricAttributes extracts metric attributes from FlatMetricDataPoint and applies the matcher to them.
-func WithMetricAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveMetricAttributes extracts metric attributes from FlatMetricDataPoint and applies the matcher to them.
+func HaveMetricAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetricDataPoint) map[string]string {
 		return fm.MetricAttributes
 	}, matcher)
 }
 
-// WithType extracts type from FlatMetricDataPoint and applies the matcher to it.
-func WithType(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveType extracts type from FlatMetricDataPoint and applies the matcher to it.
+func HaveType(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetricDataPoint) string {
 		return fm.Type
 	}, matcher)
 }
 
-// WithKeys extracts key from a map[string][string] and applies the matcher to it.
-func WithKeys(matcher types.GomegaMatcher) types.GomegaMatcher {
+// HaveKeys extracts key from a map[string][string] and applies the matcher to it.
+func HaveKeys(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(m map[string]string) []string {
 		keys := make([]string, len(m))
 		i := 0

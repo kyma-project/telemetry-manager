@@ -90,10 +90,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
 					ContainElement(SatisfyAll(
-						WithResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)),
-						WithResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
+						HaveResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
 					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), fmt.Sprintf("could not find metrics matching service.name: %s, k8s.pod.name: %s.*", expectedServiceName, givenPodPrefix))
@@ -151,8 +151,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
-					ContainElement(WithResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName))),
+				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+					ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName))),
 				))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -167,8 +167,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
-					ContainElement(WithResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName))),
+				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+					ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName))),
 				))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

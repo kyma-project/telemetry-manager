@@ -31,9 +31,9 @@ func MetricsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendEx
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(
-			WithFlatMetricsDataPoints(ContainElement(SatisfyAll(
-				WithName(BeElementOf(metricNames)),
-				WithResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+			HaveFlatMetricsDataPoints(ContainElement(SatisfyAll(
+				HaveName(BeElementOf(metricNames)),
+				HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
 			))),
 		)
 		err = resp.Body.Close()
@@ -47,8 +47,8 @@ func MetricsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backen
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
-			WithFlatMetricsDataPoints(
-				Not(ContainElement(WithResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+			HaveFlatMetricsDataPoints(
+				Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
 			),
 		))
 		err = resp.Body.Close()

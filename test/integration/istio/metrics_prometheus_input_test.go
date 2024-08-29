@@ -135,11 +135,11 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
+		g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
 			SatisfyAll(
-				ContainElement(WithResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName))),
-				ContainElement(WithName(BeElementOf(prommetricgen.MetricNames))),
-				ContainElement(WithScopeName(ContainSubstring(InstrumentationScopePrometheus))),
+				ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName))),
+				ContainElement(HaveName(BeElementOf(prommetricgen.MetricNames))),
+				ContainElement(HaveScopeName(ContainSubstring(InstrumentationScopePrometheus))),
 			),
 		))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -155,10 +155,10 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
+		g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
 			SatisfyAll(
-				ContainElement(WithName(BeElementOf(prommetricgen.MetricNames))),
-				ContainElement(WithMetricAttributes(HaveKeyWithValue("service", serviceName))),
+				ContainElement(HaveName(BeElementOf(prommetricgen.MetricNames))),
+				ContainElement(HaveMetricAttributes(HaveKeyWithValue("service", serviceName))),
 			),
 		))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

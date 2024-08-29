@@ -112,13 +112,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
 					ContainElement(SatisfyAll(
 						SatisfyAny(
-							WithName(BeElementOf(kubeletstats.PodMetricsNames)),
-							WithName(BeElementOf(kubeletstats.ContainerMetricsNames)),
+							HaveName(BeElementOf(kubeletstats.PodMetricsNames)),
+							HaveName(BeElementOf(kubeletstats.ContainerMetricsNames)),
 						),
-						WithScopeName(ContainSubstring(InstrumentationScopeRuntime)),
+						HaveScopeName(ContainSubstring(InstrumentationScopeRuntime)),
 					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -134,8 +134,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
-					ContainElement(WithResourceAttributes(WithKeys(ContainElements(kubeletstats.MetricResourceAttributes)))),
+				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+					ContainElement(HaveResourceAttributes(HaveKeys(ContainElements(kubeletstats.MetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

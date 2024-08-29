@@ -133,8 +133,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
-					ContainElement(WithName(BeElementOf(istioProxyMetricNames))),
+				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+					ContainElement(HaveName(BeElementOf(istioProxyMetricNames))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -149,15 +149,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
 					SatisfyAll(
-						ContainElement(WithResourceAttributes(SatisfyAll(
+						ContainElement(HaveResourceAttributes(SatisfyAll(
 							HaveKeyWithValue("k8s.namespace.name", app1Ns),
 							HaveKeyWithValue("k8s.pod.name", "destination"),
 							HaveKeyWithValue("k8s.container.name", "istio-proxy"),
 							HaveKeyWithValue("service.name", "destination"),
 						))),
-						ContainElement(WithMetricAttributes(SatisfyAll(
+						ContainElement(HaveMetricAttributes(SatisfyAll(
 							HaveKey(BeElementOf(istioProxyMetricAttributes)),
 							HaveKeyWithValue("source_workload_namespace", app1Ns),
 							HaveKeyWithValue("destination_workload", "destination"),
@@ -172,7 +172,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 							HaveKeyWithValue("request_protocol", "http"),
 							HaveKeyWithValue("connection_security_policy", "mutual_tls"),
 						))),
-						ContainElement(WithScopeName(ContainSubstring(InstrumentationScopeIstio))),
+						ContainElement(HaveScopeName(ContainSubstring(InstrumentationScopeIstio))),
 					),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -203,9 +203,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(WithFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
 					Not(
-						ContainElement(WithName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")))),
+						ContainElement(HaveName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -222,8 +222,8 @@ func verifyMetricIsNotPresent(backendUrl, key, value string) {
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodyContent).NotTo(WithFlatMetricsDataPoints(
-			ContainElement(WithMetricAttributes(HaveKeyWithValue(key, value))),
+		g.Expect(bodyContent).NotTo(HaveFlatMetricsDataPoints(
+			ContainElement(HaveMetricAttributes(HaveKeyWithValue(key, value))),
 		))
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

@@ -113,7 +113,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				containerMetricNames := slices.Concat(kubeletstats.ContainerMetricsNames, k8scluster.ContainerMetricsNames)
 
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(containerMetricNames)))),
+					HaveFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(containerMetricNames)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -126,7 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(podMetricNames))))),
+					HaveFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(podMetricNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -140,7 +140,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
 
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(podMetricNames)))),
+					HaveFlatMetricsDataPoints(ContainElement(HaveField("Name", BeElementOf(podMetricNames)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -153,7 +153,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(containerMetricNames))))),
+					HaveFlatMetricsDataPoints(Not(ContainElement(HaveField("Name", BeElementOf(containerMetricNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

@@ -32,24 +32,24 @@ var fmdps = []FlatMetricDataPoint{
 	},
 }
 
-var _ = Describe("WithFlatMetricsDataPoints", func() {
+var _ = Describe("HaveFlatMetricsDataPoints", func() {
 	It("should apply matcher to valid metrics data", func() {
 		md := pmetric.NewMetrics()
-		Expect(mustMarshalMetrics(md)).Should(WithFlatMetricsDataPoints(ContainElements()))
+		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetricsDataPoints(ContainElements()))
 	})
 
 	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(WithFlatMetricsDataPoints(BeEmpty()))
+		Expect([]byte{}).Should(HaveFlatMetricsDataPoints(BeEmpty()))
 	})
 
 	It("should return error for nil input", func() {
-		success, err := WithFlatMetricsDataPoints(BeEmpty()).Match(nil)
+		success, err := HaveFlatMetricsDataPoints(BeEmpty()).Match(nil)
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
 
 	It("should return error for invalid input type", func() {
-		success, err := WithFlatMetricsDataPoints(BeEmpty()).Match(struct{}{})
+		success, err := HaveFlatMetricsDataPoints(BeEmpty()).Match(struct{}{})
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
@@ -79,7 +79,7 @@ var _ = Describe("WithFlatMetricsDataPoints", func() {
 		pt.SetDoubleValue(1.5)
 		pt.Attributes().PutStr("foo", "bar")
 
-		Expect(mustMarshalMetrics(md)).Should(WithFlatMetricsDataPoints(ContainElement(fmdps[0])))
+		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetricsDataPoints(ContainElement(fmdps[0])))
 	})
 })
 
@@ -89,47 +89,47 @@ var _ = Describe("HaveUniqueNames", func() {
 	})
 })
 
-var _ = Describe("WithResourceAttrs", func() {
+var _ = Describe("HaveResourceAttributes", func() {
 	It("should have the specified key", func() {
-		Expect(fmdps).Should(ContainElement(WithResourceAttributes(HaveKey("k8s.cluster.name"))))
+		Expect(fmdps).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.cluster.name"))))
 	})
 })
 
-var _ = Describe("WithName", func() {
+var _ = Describe("HaveName", func() {
 	It("should return the correct name", func() {
-		Expect(fmdps).Should(ContainElement(WithName(ContainSubstring("container"))))
+		Expect(fmdps).Should(ContainElement(HaveName(ContainSubstring("container"))))
 	})
 })
 
-var _ = Describe("WithType", func() {
+var _ = Describe("HaveType", func() {
 	It("should return the correct type", func() {
-		Expect(fmdps).Should(ContainElement(WithType(Equal(pmetric.MetricTypeGauge.String()))))
+		Expect(fmdps).Should(ContainElement(HaveType(Equal(pmetric.MetricTypeGauge.String()))))
 	})
 })
 
-var _ = Describe("WithMetricAttributes", func() {
+var _ = Describe("HaveMetricAttributes", func() {
 	It("should have the specified key", func() {
 		Expect(fmdps).Should(
-			ContainElement(WithMetricAttributes(HaveKey("foo"))),
+			ContainElement(HaveMetricAttributes(HaveKey("foo"))),
 		)
 	})
 })
 
-var _ = Describe("WithScopeName", func() {
+var _ = Describe("HaveScopeName", func() {
 	It("should contain the specified string", func() {
-		Expect(fmdps).Should(ContainElement(WithScopeName(ContainSubstring("container"))))
+		Expect(fmdps).Should(ContainElement(HaveScopeName(ContainSubstring("container"))))
 	})
 })
 
-var _ = Describe("WithScopeVersion", func() {
+var _ = Describe("HaveScopeVersion", func() {
 	It("should contain the specified version", func() {
-		Expect(fmdps).Should(ContainElement(WithScopeVersion(ContainSubstring("1.0"))))
+		Expect(fmdps).Should(ContainElement(HaveScopeVersion(ContainSubstring("1.0"))))
 	})
 })
 
-var _ = Describe("WithKeys", func() {
+var _ = Describe("HaveKeys", func() {
 	It("should have all the keys within the specified list", func() {
-		Expect(fmdps).Should(ContainElement(WithResourceAttributes(WithKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))))
+		Expect(fmdps).Should(ContainElement(HaveResourceAttributes(HaveKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))))
 	})
 })
 
