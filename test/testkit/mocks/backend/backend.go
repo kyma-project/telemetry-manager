@@ -26,10 +26,10 @@ const (
 	httpLogsPortName   = "http-logs"
 	httpExportPortName = "http-web"
 
-	otlpGRPCPort   = int32(4317)
-	otlpHTTPPort   = int32(4318)
-	httpLogsPort   = int32(9880)
-	httpExportPort = int32(80)
+	otlpGRPCPort   int32 = 4317
+	otlpHTTPPort   int32 = 4318
+	httpLogsPort   int32 = 9880
+	httpExportPort int32 = 80
 )
 
 const (
