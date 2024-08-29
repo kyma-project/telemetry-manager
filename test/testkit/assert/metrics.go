@@ -26,11 +26,11 @@ func MetricsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendEx
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		bodycontent, err := io.ReadAll(resp.Body)
+		bodyContent, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodycontent).To(
+		g.Expect(bodyContent).To(
 			WithFlatMetricsDataPoints(ContainElement(SatisfyAll(
 				WithName(BeElementOf(metricNames)),
 				WithResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
