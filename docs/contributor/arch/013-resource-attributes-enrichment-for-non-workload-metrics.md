@@ -32,7 +32,7 @@ A `Processor + Exporter Pipeline` which contains the rest of the processors and 
 Otherwise, the metrics will bypass the `k8sattribute Processor Pipeline` and will be routed directly to the `Processor + Exporter Pipeline`.
 
 - _Pro_: Clean solution. The non-workload metrics will never have the unwanted resource attributes set to any value.
-- <em>Con</em>: Complex setup.
+- _Con_: Complex setup.
 
 **Option 2: Setting unwanted resource attributes with dummy values**
 
