@@ -12,7 +12,7 @@ Currently, the [k8sattributes processor](https://github.com/open-telemetry/opent
 This is very useful for workload metrics (like Pod and container metrics). However, for non-workload metrics (like Node metrics), the metrics will be incorrectly associated with Metric Agent Pod, because the Metric Agent Pod is the one that emits these metrics.
 
 For example, in the diagram shown below, the `k8s.node.cpu.usage` metric is incorrectly associated with the `telemetry-metric-agent-4ncx9` pod. This creates confusion, as the user might incorrectly think that this metric provides the amount of node CPU consumed by the `telemetry-metric-agent-4ncx9` pod. While in reality, it provides the entire node CPU usage.
-In addition, the metrics from the system namespaces (including `kyma-system` namespace) are excluded by default. Thus, this metric will be dropped by default even if the user enables the collection of node metrics.
+In addition, the metrics from the system namespaces (including `kyma-system` namespace) are excluded by default. Thus, this metric is dropped by default even if the user enables the collection of Node metrics.
 
 ![Node Metric With k8sattributes Processor](../assets/node-metric-with-k8sattributes-processor.png)
 
