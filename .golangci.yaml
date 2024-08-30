@@ -9,6 +9,7 @@ linters:
   # Depreacted linters
     - gomnd
     - execinquery
+    - exportloopref
   # Linters to be enabled after fixing the issues
     - intrange
     - cyclop

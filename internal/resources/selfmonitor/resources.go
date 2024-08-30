@@ -169,7 +169,7 @@ func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 }
 
 func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
-	allowedPorts := []int32{int32(ports.PrometheusPort)}
+	allowedPorts := []int32{ports.PrometheusPort}
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
@@ -387,7 +387,7 @@ func makeResourceRequirements() corev1.ResourceRequirements {
 	}
 }
 
-func (ad *ApplierDeleter) makeService(port int) *corev1.Service {
+func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
@@ -399,8 +399,8 @@ func (ad *ApplierDeleter) makeService(port int) *corev1.Service {
 				{
 					Name:       "http",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       int32(port),
-					TargetPort: intstr.FromInt32(int32(port)),
+					Port:       port,
+					TargetPort: intstr.FromInt32(port),
 				},
 			},
 			Selector: ad.defaultLabels(),
