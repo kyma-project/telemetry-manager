@@ -43,7 +43,7 @@ Then, we can delete all the resource attributes with dummy values in the Metric 
 - <em>Con</em>: If a user deploys his own OTel Collector and sends metrics to the Metric Gateway, then the unwanted resource attributes will not be deleted, as they will not have the dummy values.
 
 
-**Option 3: Directly deleting unwanted resource attributes**
+### Option 3: Directly Deleting unwanted Resource Attributes
 
 We can directly delete the unwanted resource attributes in the Metric Gateway after they have been incorrectly enriched by the k8sattributes processor.
 
