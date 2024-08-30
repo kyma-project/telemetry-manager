@@ -21,7 +21,7 @@ In addition, the metrics from the system namespaces (including `kyma-system` nam
 
 There are different possible solutions to solve this problem:
 
-**Option 1: Using connectors**
+### Option 1: Using Connectors
 
 ![Connectors](../assets/connectors.drawio.svg)
 
