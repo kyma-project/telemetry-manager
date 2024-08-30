@@ -51,7 +51,7 @@ We can directly delete the unwanted resource attributes in the Metric Gateway af
 - <em>Con</em>: If a user deploys his own OTel Collector and sends metrics to the Metric Gateway, he/she might be explicitly setting the resource attributes that we are deleting with custom values.
 
 
-We have decided to adopt option 3 because it is the simplest solution and the probability that a customer deploys his own OTel Collector, sends metrics to the Metric Gateway and sets the resource attributes that we are deleting with custom values is low.
+We have decided to adopt option 3 because it is the simplest solution and the probability that a customer deploys their own OTel Collector, sends metrics to the Metric Gateway, and sets the resource attributes that we are deleting with custom values is low.
 
 In addition, we will need to delete a different set of resource attributes for each non-workload metrics group.
 Therefore, the logic for deleting the unwanted resource attributes will be complex and that is why we will implement a custom processor for this logic instead of using [Transform processors](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor/README.md).
