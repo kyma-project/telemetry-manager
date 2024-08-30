@@ -322,7 +322,7 @@ For metrics ingestion to start automatically, simply apply the following annotat
 | `prometheus.io/path`               | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
 | `prometheus.io/scheme`             | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
 
-An example configuration for a `Service` can like like this:
+An example configuration for a `Service` might be:
 ```yaml
 apiVersion: v1
 kind: Service
