@@ -26,7 +26,7 @@ There are different possible solutions to solve this problem:
 ![Connectors](../assets/connectors.drawio.svg)
 
 We can split our MetricPipeline into 3 sub-pipelines which are connected using [Connectors](https://opentelemetry.io/docs/collector/building/connector/) as shown in the diagram above.
-A `Receiver Pipeline` which contains the receivers components.
+A `Receiver Pipeline`, which contains the receivers components.
 A `k8sattribute Processor Pipeline` which contains only the k8sattributes processor.
 A `Processor + Exporter Pipeline` which contains the rest of the processors and the exporters. The metrics will be routed to the `k8sattribute Processor Pipeline` only if they are workload metrics.
 Otherwise, the metrics will bypass the `k8sattribute Processor Pipeline` and will be routed directly to the `Processor + Exporter Pipeline`.
