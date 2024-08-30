@@ -11,7 +11,7 @@ Accepted
 Currently, the [k8sattributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md) is used in the Metric Gateway to enrich metrics resource attributes with Kubernetes metadata.
 This is very useful for workload metrics (like Pod and container metrics). However, for non-workload metrics (like Node metrics), the metrics will be incorrectly associated with Metric Agent Pod, because the Metric Agent Pod is the one that emits these metrics.
 
-For example, in the diagram shown below, the `k8s.node.cpu.usage` metric is incorrectly associated with the `telemetry-metric-agent-4ncx9` pod. This creates confusion, as the user might incorrectly think that this metric provides the amount of node CPU consumed by the `telemetry-metric-agent-4ncx9` pod. While in reality, it provides the entire node CPU usage.
+For example, in the following diagram, the `k8s.node.cpu.usage`metric is incorrectly associated with the `telemetry-metric-agent-4ncx9` Pod. This creates confusion, because the user might incorrectly think that this metric provides the Node CPU consumed by the `telemetry-metric-agent-4ncx9` Pod. While in reality, it provides the entire Node CPU usage.
 In addition, the metrics from the system namespaces (including `kyma-system` namespace) are excluded by default. Thus, this metric is dropped by default even if the user enables the collection of Node metrics.
 
 ![Node Metric With k8sattributes Processor](../assets/node-metric-with-k8sattributes-processor.png)
@@ -27,8 +27,8 @@ There are different possible solutions to solve this problem:
 
 We can split our MetricPipeline into 3 sub-pipelines which are connected using [Connectors](https://opentelemetry.io/docs/collector/building/connector/) as shown in the diagram above.
 A `Receiver Pipeline`, which contains the receivers components.
-A `k8sattribute Processor Pipeline` which contains only the k8sattributes processor.
-A `Processor + Exporter Pipeline` which contains the rest of the processors and the exporters. The metrics will be routed to the `k8sattribute Processor Pipeline` only if they are workload metrics.
+A `k8sattribute Processor Pipeline`, which contains only the k8sattributes processor.
+A `Processor + Exporter Pipeline`, which contains the rest of the processors and the exporters. The metrics will be routed to the `k8sattribute Processor Pipeline` only if they are workload metrics.
 Otherwise, the metrics will bypass the `k8sattribute Processor Pipeline` and will be routed directly to the `Processor + Exporter Pipeline`.
 
 - _Pro_: Clean solution. The non-workload metrics will never have the unwanted resource attributes set to any value.
@@ -40,8 +40,7 @@ We can explicitly set the unwanted resource attributes with dummy values for non
 Then, we can delete all the resource attributes with dummy values in the Metric Gateway.
 
 - _Pro_: If someone inspects the metrics emitted by the Metric Agent, it will be clear that the resource attributes with the dummy values are not desired.
-- <em>Con</em>: If a user deploys his own OTel Collector and sends metrics to the Metric Gateway, then the unwanted resource attributes will not be deleted, as they will not have the dummy values.
-
+- _Con_: If a user deploys their own OTel Collector and sends metrics to the Metric Gateway, then the unwanted resource attributes will not be deleted, because they will not have the dummy values.
 
 ### Option 3: Directly Deleting unwanted Resource Attributes
 
