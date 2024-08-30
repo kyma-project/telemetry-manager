@@ -106,7 +106,7 @@ jobs:
           if ! ${{ needs.pr-milestone-check.result == 'success' }} &&
           ${{ needs.pr-label-check.result == 'success' }} &&
           ${{ needs.pr-title-check.result == 'success' }} &&
-          (${{ needs.pr-prevent-kustomization.result != 'success' }} || ${{ needs.pr-prevent-kustomization.result != 'skipped' }}); then
+          (${{ needs.pr-prevent-kustomization.result == 'success' }} || ${{ needs.pr-prevent-kustomization.result == 'skipped' }}); then
             echo "PR Github Checks Failed"
             exit 1
           fi
