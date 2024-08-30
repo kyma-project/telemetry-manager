@@ -39,7 +39,7 @@ Otherwise, the metrics will bypass the `k8sattribute Processor Pipeline` and wil
 We can explicitly set the unwanted resource attributes with dummy values for non-workload metrics in the Metric Agent.
 Then, we can delete all the resource attributes with dummy values in the Metric Gateway.
 
-- <em>Pro</em>: If someone inspects the metrics emitted by the Metric Agent, it will be clear that the resource attributes with the dummy values are not desired.
+- _Pro_: If someone inspects the metrics emitted by the Metric Agent, it will be clear that the resource attributes with the dummy values are not desired.
 - <em>Con</em>: If a user deploys his own OTel Collector and sends metrics to the Metric Gateway, then the unwanted resource attributes will not be deleted, as they will not have the dummy values.
 
 
