@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-Currently, the [k8sattributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md) is used in the Metric Gateway to enrich metrics resource attributes with k8s metadata.
+Currently, the [k8sattributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md) is used in the Metric Gateway to enrich metrics resource attributes with Kubernetes metadata.
 This is very useful for workload metrics (e.g. Pod and container metrics). However, for non-workload metrics (e.g. node metrics), the metrics will be incorrectly associated with Metric Agent Pod, since the Metric Agent Pod is the one that emits these metrics.
 
 For example, in the diagram shown below, the `k8s.node.cpu.usage` metric is incorrectly associated with the `telemetry-metric-agent-4ncx9` pod. This creates confusion, as the user might incorrectly think that this metric provides the amount of node CPU consumed by the `telemetry-metric-agent-4ncx9` pod. While in reality, it provides the entire node CPU usage.
