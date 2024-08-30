@@ -34,7 +34,7 @@ Otherwise, the metrics will bypass the `k8sattribute Processor Pipeline` and wil
 - _Pro_: Clean solution. The non-workload metrics will never have the unwanted resource attributes set to any value.
 - _Con_: Complex setup.
 
-**Option 2: Setting unwanted resource attributes with dummy values**
+### Option 2: Setting Unwanted Resource Attributes With Dummy Values
 
 We can explicitly set the unwanted resource attributes with dummy values for non-workload metrics in the Metric Agent.
 Then, we can delete all the resource attributes with dummy values in the Metric Gateway.
