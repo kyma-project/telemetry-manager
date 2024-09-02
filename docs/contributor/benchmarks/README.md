@@ -352,7 +352,7 @@ test results are printed out.
 | 3.1.6 (after optimization) |                  10183                  |                  33117                   |              30358              |        98, 93        |     1, 1      |                  4349                   |                   8935                   |             2779129             |       539, 660       |   0.4, 0.4    |                   5471                   |                   5840                   |             1889836             |       646, 641       |   0.5, 0.6    |                   3224                   |                   1621                   |             4882502             |       686, 649       |   0.3, 0.3    |
 </div>
 
-> **_NOTE:_**  The test results can wary up to 1000KByte/sec in the input and up to 3000KByte/sec output processing rate with single pipeline tests.
+> **NOTE:** The test results can vary up to 1000KByte/sec in the input, and up to 3000KByte/sec in the output processing rate with single pipeline tests.
 > 
 ## Self Monitor
 
