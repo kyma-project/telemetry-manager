@@ -166,7 +166,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
    <div tabs name="istiotraces">
      <details><summary>Script: Istio Traces</summary>
 
-   ```bash
+    ```bash
     kubectl apply -n istio-system -f - <<EOF
     apiVersion: telemetry.istio.io/v1
     kind: Telemetry
@@ -190,7 +190,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
    <div tabs name="distributedtraces">
      <details><summary>Script: Distributed Traces</summary>
 
-   ```bash
+    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: TracePipeline
@@ -235,7 +235,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
    <div tabs name="SAPCloudLogging">
      <details><summary>Script: SAP Cloud Logging</summary>
 
-   ```bash
+    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: MetricPipeline
