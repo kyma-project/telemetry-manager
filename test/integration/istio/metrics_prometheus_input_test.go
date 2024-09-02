@@ -135,7 +135,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+		g.Expect(bodyContent).To(HaveFlatMetrics(
 			SatisfyAll(
 				ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName))),
 				ContainElement(HaveName(BeElementOf(prommetricgen.MetricNames))),
@@ -155,7 +155,7 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+		g.Expect(bodyContent).To(HaveFlatMetrics(
 			SatisfyAll(
 				ContainElement(HaveName(BeElementOf(prommetricgen.MetricNames))),
 				ContainElement(HaveMetricAttributes(HaveKeyWithValue("service", serviceName))),

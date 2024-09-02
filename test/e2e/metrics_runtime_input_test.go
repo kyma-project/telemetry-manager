@@ -112,7 +112,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
 						SatisfyAny(
 							HaveName(BeElementOf(kubeletstats.PodMetricsNames)),
@@ -134,7 +134,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(HaveResourceAttributes(HaveKeys(ContainElements(kubeletstats.MetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

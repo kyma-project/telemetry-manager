@@ -105,19 +105,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 
 				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(HaveUniqueNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats metrics are sent to runtime backend")
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats metrics are sent to runtime backend")
 
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
-					SatisfyAll(
-						ContainElement(HaveScopeName(Equal(InstrumentationScopeRuntime))),
-						ContainElement(HaveScopeVersion(
-							SatisfyAny(
-								ContainSubstring("main"),
-								ContainSubstring("1."),
-								ContainSubstring("PR-"),
-							))),
-					),
-				), "Only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeName(Equal(InstrumentationScopeRuntime)))), "only scope name %v may exist in the runtime backend", InstrumentationScopeRuntime)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeVersion(
+					SatisfyAny(
+						ContainSubstring("main"),
+						ContainSubstring("1."),
+						ContainSubstring("PR-"),
+					)))), "only scope version with substrings %q, %q, %q may exist in the runtime backend", "main", "1.", "PR-")
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -131,9 +127,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 
 				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(HaveUniqueNames(Not(ContainElements(expectedMetrics)))), "No kubeletstats metrics must be sent to prometheus backend")
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(expectedMetrics)))), "No kubeletstats metrics must be sent to prometheus backend")
 
-				g.Expect(bodyContent).NotTo(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).NotTo(HaveFlatMetrics(
 					SatisfyAll(
 						ContainElement(HaveScopeName(Equal(InstrumentationScopeRuntime))),
 						ContainElement(HaveScopeVersion(
@@ -157,19 +153,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 
 				// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(HaveUniqueNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
 
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
-					SatisfyAll(
-						ContainElement(HaveScopeName(Equal(InstrumentationScopePrometheus))),
-						ContainElement(HaveScopeVersion(
-							SatisfyAny(
-								ContainSubstring("main"),
-								ContainSubstring("1."),
-								ContainSubstring("PR-"),
-							))),
-					),
-				), "Only scope '%v' must be sent to the prometheus backend", InstrumentationScopePrometheus)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeName(Equal(InstrumentationScopePrometheus)))), "only scope name '%v' may exist in the prometheus backend", InstrumentationScopePrometheus)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeVersion(
+					SatisfyAny(
+						ContainSubstring("main"),
+						ContainSubstring("1."),
+						ContainSubstring("PR-"))))), "only scope version with substrings %q, %q, %q may exist in the prometheus backend", "main", "1.", "PR-")
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -182,9 +173,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(HaveUniqueNames(Not(ContainElements(prommetricgen.DefaultMetricsNames)))), "No prometheus metrics must be sent to runtime backend")
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.DefaultMetricsNames)))), "No prometheus metrics must be sent to runtime backend")
 
-				g.Expect(bodyContent).NotTo(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).NotTo(HaveFlatMetrics(
 					SatisfyAll(
 						ContainElement(HaveScopeName(Equal(InstrumentationScopePrometheus))),
 						ContainElement(HaveScopeVersion(

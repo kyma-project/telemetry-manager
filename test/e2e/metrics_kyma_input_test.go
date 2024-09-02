@@ -100,7 +100,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				g.Expect(err).NotTo(HaveOccurred())
 
 				// Check the "kyma.module.status.state" metric
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
 						HaveName(Equal("kyma.module.status.state")),
 						HaveMetricAttributes(HaveKey("state")),
@@ -115,7 +115,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				))
 
 				// Check the "kyma.module.status.conditions" metric for the "LogComponentsHealthy" condition type
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
 						HaveName(Equal("kyma.module.status.conditions")),
 						HaveMetricAttributes(HaveKeyWithValue("type", "LogComponentsHealthy")),
@@ -132,7 +132,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				))
 
 				// Check the "kyma.module.status.conditions" metric for the "MetricComponentsHealthy" condition type
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
 						HaveName(Equal("kyma.module.status.conditions")),
 						HaveMetricAttributes(HaveKeyWithValue("type", "MetricComponentsHealthy")),
@@ -149,7 +149,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				))
 
 				// Check the "kyma.module.status.conditions" metric for the "TraceComponentsHealthy" condition type
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
 						HaveName(Equal("kyma.module.status.conditions")),
 						HaveMetricAttributes(HaveKeyWithValue("type", "TraceComponentsHealthy")),
@@ -173,7 +173,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatMetricsDataPoints(SatisfyAll(
+					HaveFlatMetrics(SatisfyAll(
 						Not(ContainElement(HaveName(Equal("kyma.module.status.state")))),
 						Not(ContainElement(HaveName(Equal("kyma.module.status.conditions")))),
 					)),

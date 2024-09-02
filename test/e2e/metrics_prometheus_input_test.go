@@ -89,7 +89,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 				// targets discovered via annotated pods must have no service label
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatMetricsDataPoints(SatisfyAll(
+					HaveFlatMetrics(SatisfyAll(
 						ContainElement(SatisfyAll(
 							HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
 							HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
@@ -116,7 +116,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricsDataPoints(SatisfyAll(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(SatisfyAll(
 					ContainElement(SatisfyAll(
 						HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
 						HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
@@ -147,7 +147,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricsDataPoints(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
 					Not(ContainElement(HaveName(BeElementOf(expectedMetrics)))),
 				)))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -162,7 +162,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricsDataPoints(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
 					Not(ContainElement(HaveName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")))),
 				)))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())

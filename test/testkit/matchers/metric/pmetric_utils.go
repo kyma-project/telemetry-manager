@@ -7,9 +7,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-// FlatMetricDataPoint holds all needed information about a metric data point.
+// FlatMetric holds all needed information about a metric data point.
 // It makes accessing the information easier than using pdata.Metric directly.
-type FlatMetricDataPoint struct {
+type FlatMetric struct {
 	Name, Description, ScopeName, ScopeVersion            string
 	ResourceAttributes, ScopeAttributes, MetricAttributes map[string]string
 	Type                                                  string
@@ -22,19 +22,20 @@ func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 	})
 }
 
-// flattenAllMetricsDataPoints converts pdata.Metrics to a slice of FlatMetricDataPoint.
-func flattenAllMetricsDataPoints(mds []pmetric.Metrics) []FlatMetricDataPoint {
-	var flatMetricsDataPoints []FlatMetricDataPoint
+// flattenAllMetrics flattens an array of pdata.Metrics datapoints to a slice of FlatMetric.
+func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
+	var flatMetrics []FlatMetric
 
 	for _, md := range mds {
-		flatMetricsDataPoints = append(flatMetricsDataPoints, flattenMetricsDataPoints(md)...)
+		flatMetrics = append(flatMetrics, flattenMetrics(md)...)
 	}
 
-	return flatMetricsDataPoints
+	return flatMetrics
 }
 
-func flattenMetricsDataPoints(md pmetric.Metrics) []FlatMetricDataPoint {
-	var flatMetricsDataPoints []FlatMetricDataPoint
+// flattenMetrics converts a single pdata.Metrics datapoint to a slice of FlatMetric
+func flattenMetrics(md pmetric.Metrics) []FlatMetric {
+	var flatMetrics []FlatMetric
 
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		resourceMetrics := md.ResourceMetrics().At(i)
@@ -44,7 +45,7 @@ func flattenMetricsDataPoints(md pmetric.Metrics) []FlatMetricDataPoint {
 				metric := scopeMetrics.Metrics().At(k)
 				dataPointsAttributes := getAttributesPerDataPoint(metric)
 				for l := 0; l < len(dataPointsAttributes); l++ {
-					flatMetricsDataPoints = append(flatMetricsDataPoints, FlatMetricDataPoint{
+					flatMetrics = append(flatMetrics, FlatMetric{
 						Name:               metric.Name(),
 						Description:        metric.Description(),
 						ScopeName:          scopeMetrics.Scope().Name(),
@@ -59,7 +60,7 @@ func flattenMetricsDataPoints(md pmetric.Metrics) []FlatMetricDataPoint {
 		}
 	}
 
-	return flatMetricsDataPoints
+	return flatMetrics
 }
 
 // attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.

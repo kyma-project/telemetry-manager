@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-var fmdps = []FlatMetricDataPoint{
+var fmdps = []FlatMetric{
 	{
 		Name:               "container.cpu.time",
 		Description:        "time of container cpu",
@@ -32,24 +32,24 @@ var fmdps = []FlatMetricDataPoint{
 	},
 }
 
-var _ = Describe("HaveFlatMetricsDataPoints", func() {
+var _ = Describe("HaveFlatMetrics", func() {
 	It("should apply matcher to valid metrics data", func() {
 		md := pmetric.NewMetrics()
-		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetricsDataPoints(ContainElements()))
+		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElements()))
 	})
 
 	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatMetricsDataPoints(BeEmpty()))
+		Expect([]byte{}).Should(HaveFlatMetrics(BeEmpty()))
 	})
 
 	It("should return error for nil input", func() {
-		success, err := HaveFlatMetricsDataPoints(BeEmpty()).Match(nil)
+		success, err := HaveFlatMetrics(BeEmpty()).Match(nil)
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
 
 	It("should return error for invalid input type", func() {
-		success, err := HaveFlatMetricsDataPoints(BeEmpty()).Match(struct{}{})
+		success, err := HaveFlatMetrics(BeEmpty()).Match(struct{}{})
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
@@ -79,7 +79,7 @@ var _ = Describe("HaveFlatMetricsDataPoints", func() {
 		pt.SetDoubleValue(1.5)
 		pt.Attributes().PutStr("foo", "bar")
 
-		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetricsDataPoints(ContainElement(fmdps[0])))
+		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElement(fmdps[0])))
 	})
 })
 

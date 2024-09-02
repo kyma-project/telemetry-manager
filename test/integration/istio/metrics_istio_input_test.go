@@ -133,7 +133,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(HaveName(BeElementOf(istioProxyMetricNames))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -149,7 +149,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					SatisfyAll(
 						ContainElement(HaveResourceAttributes(SatisfyAll(
 							HaveKeyWithValue("k8s.namespace.name", app1Ns),
@@ -203,7 +203,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetricsDataPoints(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					Not(
 						ContainElement(HaveName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")))),
 				))
@@ -222,7 +222,7 @@ func verifyMetricIsNotPresent(backendUrl, key, value string) {
 		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		g.Expect(bodyContent).NotTo(HaveFlatMetricsDataPoints(
+		g.Expect(bodyContent).NotTo(HaveFlatMetrics(
 			ContainElement(HaveMetricAttributes(HaveKeyWithValue(key, value))),
 		))
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
