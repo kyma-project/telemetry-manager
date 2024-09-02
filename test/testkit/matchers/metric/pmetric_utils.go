@@ -8,7 +8,7 @@ import (
 )
 
 // FlatMetric holds all needed information about a metric data point.
-// It makes accessing the information easier than using pdata.Metric directly.
+// It makes accessing the information easier than using pdata.Metric directly and improves the readability of the test output logs.
 type FlatMetric struct {
 	Name, Description, ScopeName, ScopeVersion            string
 	ResourceAttributes, ScopeAttributes, MetricAttributes map[string]string
@@ -23,6 +23,7 @@ func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 }
 
 // flattenAllMetrics flattens an array of pdata.Metrics datapoints to a slice of FlatMetric.
+// It converts the deeply nested pdata.Metrics data structure to a flat struct, to make it more readable in the test output logs.
 func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
 	var flatMetrics []FlatMetric
 
