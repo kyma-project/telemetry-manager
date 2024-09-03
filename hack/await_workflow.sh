@@ -9,9 +9,9 @@ set -o pipefail # prevents errors in a pipeline from being masked
 # Variables (you need to set these)
 REPO_OWNER="kyma-project"
 REPO_NAME="telemetry-manager"
-WORKFLOW_NAME="Build Image"
+CHECK_NAME="build-image"
 
-# retry until workflow conclusion is success and status is completed
+# retry until check conclusion is success and status is completed
 # timeout after 15 minutes
 
 TIMEOUT=900
@@ -25,44 +25,44 @@ conclusion=""
 until [[ $status == "completed" ]]; do
     # Wait for timeout
     if (( SECONDS - START_TIME > TIMEOUT )); then
-        echo "Timeout reached: Workflow not found within $(( TIMEOUT/60 )) minutes"
+        echo "Timeout reached: Check not finished within $(( TIMEOUT/60 )) minutes"
         exit 1
     fi
 
-    echo "Waiting for workflow: $WORKFLOW_NAME"
+    echo "Waiting for check: $CHECK_NAME"
 
-    # Get the latest workflow run status
+    # Get the latest check run status
     response=$(curl -L \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer $GITHUB_TOKEN" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
-        https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/runs)
+        https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/commits/$COMMIT_SHA/check-runs)
 
 
-    # Check if .workflow_runs exists and is not null
-    if [ "$(echo "$response" | jq -r '.workflow_runs')" == "null" ]; then
+    # Check if .check_runs exists and is not null
+    if [ "$(echo "$response" | jq -r '.check_runs')" == "null" ]; then
         echo "$response"
         exit 1
     fi
 
     # Extract all head_sha and status from response and put it into an array
-    workflows=$(echo $response | jq -c '.workflow_runs[] | {name, head_sha, status, conclusion}')
+    checks=$(echo "$response" | jq -c '.check_runs[] | {name, head_sha, status, conclusion}')
 
     # Iterate over the JSON objects
-    while IFS= read -r workflow; do
-        workflow_name=$(echo "$workflow" | jq -r '.name')
-        head_sha=$(echo "$workflow" | jq -r '.head_sha')
-        status=$(echo "$workflow" | jq -r '.status')
-        conclusion=$(echo "$workflow" | jq -r '.conclusion')
+    while IFS= read -r check; dt o
+        check_name=$(echo "$check" | jq -r '.name')
+        head_sha=$(echo "$check" | jq -r '.head_sha')
+        status=$(echo "$check" | jq -r '.status')
+        conclusion=$(echo "$check" | jq -r '.conclusion')
 
-        if [[ "$head_sha" == "$COMMIT_SHA" && "$workflow_name" == "$WORKFLOW_NAME" ]]; then
+        if [[ "$head_sha" == "$COMMIT_SHA" && "$check_name" == "$CHECK_NAME" ]]; then
             found=true
             break
         fi
-    done <<< "$workflows"
+    done <<< "$checks"
 
     if [ "$found" = false ]; then
-        echo "Workflow not found"
+        echo "Check not found"
         exit 1
     fi
 
@@ -75,9 +75,9 @@ until [[ $status == "completed" ]]; do
     sleep 10
 done
 
-if [ $conclusion != "success" ]; then
-    echo "Workflow $status with conclusion: $conclusion"
+if [ "$conclusion" != "success" ]; then
+    echo "Check $status with conclusion: $conclusion"
     exit 1
 fi
 
-echo "Workflow '$WORKFLOW_NAME' $status with conclusion: $conclusion"
+echo "Check '$CHECK_NAME' $status with conclusion: $conclusion"
