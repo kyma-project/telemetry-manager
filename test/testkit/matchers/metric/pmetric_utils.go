@@ -8,7 +8,9 @@ import (
 )
 
 // FlatMetric holds all needed information about a metric data point.
-// It makes accessing the information easier than using pdata.Metric directly and improves the readability of the test output logs.
+// Gomega doesn't handle deeply nested data structure very well and generates large, unreadable diffs when paired with the deeply nested structure of pmetrics.
+//
+// Introducing a go struct with a flat data structure by extracting necessary information from different levels of pmetrics makes accessing the information easier than using pmetric.Metrics directly and improves the readability of the test output logs.
 type FlatMetric struct {
 	Name, Description, ScopeName, ScopeVersion            string
 	ResourceAttributes, ScopeAttributes, MetricAttributes map[string]string
@@ -35,6 +37,7 @@ func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
 }
 
 // flattenMetrics converts a single pdata.Metrics datapoint to a slice of FlatMetric
+// It takes relevant information from different levels of pdata and puts it into a FlatMetric go struct.
 func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 	var flatMetrics []FlatMetric
 
