@@ -49,7 +49,7 @@ until [[ $status == "completed" ]]; do
     checks=$(echo "$response" | jq -c '.check_runs[] | {name, head_sha, status, conclusion}')
 
     # Iterate over the JSON objects
-    while IFS= read -r check; dt o
+    while IFS= read -r check; do
         check_name=$(echo "$check" | jq -r '.name')
         head_sha=$(echo "$check" | jq -r '.head_sha')
         status=$(echo "$check" | jq -r '.status')
