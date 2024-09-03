@@ -64,9 +64,7 @@ func (p *LogPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName 
 }
 
 func (p *LogPipelineProber) noLogsDelivered(alerts []promv1.Alert, pipelineName string) bool {
-	receiverReadLogs := p.isFiring(alerts, config.RuleNameLogAgentReceiverReadLogs, pipelineName)
-	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
-	return receiverReadLogs && !exporterSentLogs
+	return p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
 }
 
 func (p *LogPipelineProber) bufferFillingUp(alerts []promv1.Alert, pipelineName string) bool {
@@ -78,11 +76,8 @@ func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) 
 	bufferInUse := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
 	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
 	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-
-	// The pipeline is healthy if either no logs are being read or all logs are being sent
-	receiverReadLogs := p.isFiring(alerts, config.RuleNameLogAgentReceiverReadLogs, pipelineName)
-	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
-	return !(bufferInUse || bufferFull || exporterDroppedLogs) && (!receiverReadLogs || exporterSentLogs)
+	noLogsDelivered := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+	return !(bufferInUse || bufferFull || exporterDroppedLogs || noLogsDelivered)
 }
 
 func (p *LogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
