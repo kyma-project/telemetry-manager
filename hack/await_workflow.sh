@@ -22,7 +22,7 @@ found=false
 status=""
 conclusion=""
 
-until [[ $found == true ]]; do
+until [[ $found == true && $status == "completed" ]]; do
     # Wait for timeout
     if (( SECONDS - START_TIME > TIMEOUT )); then
         echo "Timeout reached: Check not finished within $(( TIMEOUT/60 )) minutes"
