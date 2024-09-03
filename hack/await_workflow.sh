@@ -62,8 +62,7 @@ until [[ $status == "completed" ]]; do
     done <<< "$checks"
 
     if [ "$found" = false ]; then
-        echo "Check not found"
-        exit 1
+        echo "Check not yet found."
     fi
 
     # Output the results
