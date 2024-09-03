@@ -100,70 +100,54 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				g.Expect(err).NotTo(HaveOccurred())
 
 				// Check the "kyma.module.status.state" metric
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					ContainElement(SatisfyAll(
-						HaveName(Equal("kyma.module.status.state")),
-						HaveMetricAttributes(HaveKey("state")),
-						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")),
-						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
-						HaveScopeVersion(SatisfyAny(
-							Equal("main"),
-							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						)),
-					)),
-				))
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveName(Equal("kyma.module.status.state")))), "metric name should be 'kyma.module.status.state'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKey("state")))), "metric attributes should have key 'state'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)))), "resource attributes should have key 'k8s.namespace.name' with value '%v'", kitkyma.SystemNamespaceName)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")))), "resource attributes should have key 'kyma.module.name' with value 'Telemetry'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveScopeName(Equal(metric.InstrumentationScopeKyma)))), "scope name should be '%v'", metric.InstrumentationScopeKyma)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveScopeVersion(SatisfyAny(
+					Equal("main"),
+					MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+				)))), "scope version should be either 'main' or match the regex '[0-9]+.[0-9]+.[0-9]+'")
 
 				// Check the "kyma.module.status.conditions" metric for the "LogComponentsHealthy" condition type
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					ContainElement(SatisfyAll(
-						HaveName(Equal("kyma.module.status.conditions")),
-						HaveMetricAttributes(HaveKeyWithValue("type", "LogComponentsHealthy")),
-						HaveMetricAttributes(HaveKey("status")),
-						HaveMetricAttributes(HaveKey("reason")),
-						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")),
-						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
-						HaveScopeVersion(SatisfyAny(
-							Equal("main"),
-							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						)),
-					)),
-				))
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveName(Equal("kyma.module.status.conditions")))), "metric name should be 'kyma.module.status.conditions'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKey("status")))), "metric attributes should have key 'status'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKey("reason")))), "metric attributes should have key 'reason'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKeyWithValue("type", "LogComponentsHealthy")))), "metric attributes should have key 'type' with value 'LogComponentsHealthy'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)))), "resource attributes should have key 'k8s.namespace.name' with value '%v'", kitkyma.SystemNamespaceName)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")))), "resource attributes should have key 'kyma.module.name' with value 'Telemetry'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveScopeName(Equal(metric.InstrumentationScopeKyma)))), "scope name should be '%v'", metric.InstrumentationScopeKyma)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveScopeVersion(SatisfyAny(
+					Equal("main"),
+					MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+				)))), "scope version should be either 'main' or match the regex '[0-9]+.[0-9]+.[0-9]+'")
 
 				// Check the "kyma.module.status.conditions" metric for the "MetricComponentsHealthy" condition type
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					ContainElement(SatisfyAll(
-						HaveName(Equal("kyma.module.status.conditions")),
-						HaveMetricAttributes(HaveKeyWithValue("type", "MetricComponentsHealthy")),
-						HaveMetricAttributes(HaveKey("status")),
-						HaveMetricAttributes(HaveKey("reason")),
-						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")),
-						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
-						HaveScopeVersion(SatisfyAny(
-							Equal("main"),
-							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						)),
-					)),
-				))
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveName(Equal("kyma.module.status.conditions")))), "metric name should be 'kyma.module.status.conditions'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKey("status")))), "metric attributes should have key 'status'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKey("reason")))), "metric attributes should have key 'reason'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKeyWithValue("type", "MetricComponentsHealthy")))), "metric attributes should have key 'type' with value 'MetricComponentsHealthy'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)))), "resource attributes should have key 'k8s.namespace.name' with value '%v'", kitkyma.SystemNamespaceName)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")))), "resource attributes should have key 'kyma.module.name' with value 'Telemetry'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveScopeName(Equal(metric.InstrumentationScopeKyma)))), "scope name should be '%v'", metric.InstrumentationScopeKyma)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveScopeVersion(SatisfyAny(
+					Equal("main"),
+					MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+				)))), "scope version should be either 'main' or match the regex '[0-9]+.[0-9]+.[0-9]+'")
 
 				// Check the "kyma.module.status.conditions" metric for the "TraceComponentsHealthy" condition type
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					ContainElement(SatisfyAll(
-						HaveName(Equal("kyma.module.status.conditions")),
-						HaveMetricAttributes(HaveKeyWithValue("type", "TraceComponentsHealthy")),
-						HaveMetricAttributes(HaveKey("status")),
-						HaveMetricAttributes(HaveKey("reason")),
-						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")),
-						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
-						HaveScopeVersion(SatisfyAny(
-							Equal("main"),
-							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						)),
-					)),
-				))
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveName(Equal("kyma.module.status.conditions")))), "metric name should be 'kyma.module.status.conditions'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKey("status")))), "metric attributes should have key 'status'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKey("reason")))), "metric attributes should have key 'reason'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveMetricAttributes(HaveKeyWithValue("type", "TraceComponentsHealthy")))), "metric attributes should have key 'type' with value 'TraceComponentsHealthy'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)))), "resource attributes should have key 'k8s.namespace.name' with value '%v'", kitkyma.SystemNamespaceName)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")))), "resource attributes should have key 'kyma.module.name' with value 'Telemetry'")
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveScopeName(Equal(metric.InstrumentationScopeKyma)))), "scope name should be '%v'", metric.InstrumentationScopeKyma)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveScopeVersion(SatisfyAny(
+					Equal("main"),
+					MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+				)))), "scope version should be either 'main' or match the regex '[0-9]+.[0-9]+.[0-9]+'")
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 

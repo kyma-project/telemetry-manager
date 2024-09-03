@@ -90,12 +90,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					ContainElement(SatisfyAll(
-						HaveResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)),
-						HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
-					)),
-				))
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)))), "resource attributes should have key 'service.name' with value %v", expectedServiceName)
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))))), "resource attributes should have key 'k8s.pod.name' with value containing substring '%v'", givenPodPrefix)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), fmt.Sprintf("could not find metrics matching service.name: %s, k8s.pod.name: %s.*", expectedServiceName, givenPodPrefix))
 		}
 

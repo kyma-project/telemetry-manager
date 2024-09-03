@@ -136,7 +136,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(HaveResourceAttributes(HaveKeys(ContainElements(kubeletstats.MetricResourceAttributes)))),
-				))
+				), "kubeletstats metrics must have the one of the following attributes '%v'", kubeletstats.MetricResourceAttributes)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
