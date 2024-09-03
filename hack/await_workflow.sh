@@ -22,7 +22,7 @@ found=false
 status=""
 conclusion=""
 
-until [[ $status == "completed" ]]; do
+until [[ $found == true ]]; do
     # Wait for timeout
     if (( SECONDS - START_TIME > TIMEOUT )); then
         echo "Timeout reached: Check not finished within $(( TIMEOUT/60 )) minutes"
@@ -63,6 +63,8 @@ until [[ $status == "completed" ]]; do
 
     if [ "$found" = false ]; then
         echo "Check not yet found."
+        sleep 10
+        continue
     fi
 
     # Output the results
@@ -71,7 +73,6 @@ until [[ $status == "completed" ]]; do
     echo "Conclusion: $conclusion"
     echo ""
 
-    sleep 10
 done
 
 if [ "$conclusion" != "success" ]; then
