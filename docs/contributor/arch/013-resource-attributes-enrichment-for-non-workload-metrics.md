@@ -26,11 +26,13 @@ There are different possible solutions to solve this problem:
 
 ![Connectors](../assets/connectors.drawio.svg)
 
-We can split our MetricPipeline into 3 sub-pipelines which are connected using [Connectors](https://opentelemetry.io/docs/collector/building/connector/) as shown in the diagram above.
-A `Receiver Pipeline`, which contains the receivers components.
-A `k8sattribute Processor Pipeline`, which contains only the k8sattributes processor.
-A `Processor + Exporter Pipeline`, which contains the rest of the processors and the exporters. The metrics will be routed to the `k8sattribute Processor Pipeline` only if they are workload metrics.
-Otherwise, the metrics will bypass the `k8sattribute Processor Pipeline` and will be routed directly to the `Processor + Exporter Pipeline`.
+We can split our MetricPipeline into 3 sub-pipelines which are connected using [Connectors](https://opentelemetry.io/docs/collector/configuration/#connectors) as shown in the diagram above.
+An `Input Pipeline`, which contains the `otlp` receiver and `memory_limiter` processor.
+An `Attributes Enrichment Pipeline`, which contains the `k8sattributes` and `transform/resolve-service-name` processors.
+An `Output Pipeline`, which contains the rest of the processors and the `otlp` exporter.
+
+The metrics will be routed to the `Attributes Enrichment Pipeline` only if they are workload metrics.
+Otherwise, the metrics will bypass the `Attributes Enrichment Pipeline` and will be routed directly to the `Output Pipeline`.
 
 Load test using `otel/opentelemetry-collector-contrib:0.107.0` image:
 
