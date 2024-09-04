@@ -100,68 +100,68 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				g.Expect(err).NotTo(HaveOccurred())
 
 				// Check the "kyma.module.status.state" metric
-				g.Expect(bodyContent).To(WithFlatMetrics(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
-						HaveField("Name", "kyma.module.status.state"),
-						HaveField("MetricAttributes", HaveKey("state")),
-						HaveField("ResourceAttributes", HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveField("ResourceAttributes", HaveKeyWithValue("kyma.module.name", "Telemetry")),
-						HaveField("ScopeAndVersion", HaveField("Name", metric.InstrumentationScopeKyma)),
-						HaveField("ScopeAndVersion", HaveField("Version", SatisfyAny(
+						HaveName(Equal("kyma.module.status.state")),
+						HaveMetricAttributes(HaveKey("state")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
+						HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")),
+						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
 							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						))),
+						)),
 					)),
 				))
 
 				// Check the "kyma.module.status.conditions" metric for the "LogComponentsHealthy" condition type
-				g.Expect(bodyContent).To(WithFlatMetrics(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
-						HaveField("Name", "kyma.module.status.conditions"),
-						HaveField("MetricAttributes", HaveKeyWithValue("type", "LogComponentsHealthy")),
-						HaveField("MetricAttributes", HaveKey("status")),
-						HaveField("MetricAttributes", HaveKey("reason")),
-						HaveField("ResourceAttributes", HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveField("ResourceAttributes", HaveKeyWithValue("kyma.module.name", "Telemetry")),
-						HaveField("ScopeAndVersion", HaveField("Name", metric.InstrumentationScopeKyma)),
-						HaveField("ScopeAndVersion", HaveField("Version", SatisfyAny(
+						HaveName(Equal("kyma.module.status.conditions")),
+						HaveMetricAttributes(HaveKeyWithValue("type", "LogComponentsHealthy")),
+						HaveMetricAttributes(HaveKey("status")),
+						HaveMetricAttributes(HaveKey("reason")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
+						HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")),
+						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
 							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						))),
+						)),
 					)),
 				))
 
 				// Check the "kyma.module.status.conditions" metric for the "MetricComponentsHealthy" condition type
-				g.Expect(bodyContent).To(WithFlatMetrics(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
-						HaveField("Name", "kyma.module.status.conditions"),
-						HaveField("MetricAttributes", HaveKeyWithValue("type", "MetricComponentsHealthy")),
-						HaveField("MetricAttributes", HaveKey("status")),
-						HaveField("MetricAttributes", HaveKey("reason")),
-						HaveField("ResourceAttributes", HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveField("ResourceAttributes", HaveKeyWithValue("kyma.module.name", "Telemetry")),
-						HaveField("ScopeAndVersion", HaveField("Name", metric.InstrumentationScopeKyma)),
-						HaveField("ScopeAndVersion", HaveField("Version", SatisfyAny(
+						HaveName(Equal("kyma.module.status.conditions")),
+						HaveMetricAttributes(HaveKeyWithValue("type", "MetricComponentsHealthy")),
+						HaveMetricAttributes(HaveKey("status")),
+						HaveMetricAttributes(HaveKey("reason")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
+						HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")),
+						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
 							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						))),
+						)),
 					)),
 				))
 
 				// Check the "kyma.module.status.conditions" metric for the "TraceComponentsHealthy" condition type
-				g.Expect(bodyContent).To(WithFlatMetrics(
+				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
-						HaveField("Name", "kyma.module.status.conditions"),
-						HaveField("MetricAttributes", HaveKeyWithValue("type", "TraceComponentsHealthy")),
-						HaveField("MetricAttributes", HaveKey("status")),
-						HaveField("MetricAttributes", HaveKey("reason")),
-						HaveField("ResourceAttributes", HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveField("ResourceAttributes", HaveKeyWithValue("kyma.module.name", "Telemetry")),
-						HaveField("ScopeAndVersion", HaveField("Name", metric.InstrumentationScopeKyma)),
-						HaveField("ScopeAndVersion", HaveField("Version", SatisfyAny(
+						HaveName(Equal("kyma.module.status.conditions")),
+						HaveMetricAttributes(HaveKeyWithValue("type", "TraceComponentsHealthy")),
+						HaveMetricAttributes(HaveKey("status")),
+						HaveMetricAttributes(HaveKey("reason")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
+						HaveResourceAttributes(HaveKeyWithValue("kyma.module.name", "Telemetry")),
+						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
 							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-						))),
+						)),
 					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -173,9 +173,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(SatisfyAll(
-						Not(ContainElement(HaveField("Name", "kyma.module.status.state"))),
-						Not(ContainElement(HaveField("Name", "kyma.module.status.conditions"))),
+					HaveFlatMetrics(SatisfyAll(
+						Not(ContainElement(HaveName(Equal("kyma.module.status.state")))),
+						Not(ContainElement(HaveName(Equal("kyma.module.status.conditions")))),
 					)),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
