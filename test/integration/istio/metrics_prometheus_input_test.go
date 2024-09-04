@@ -3,6 +3,7 @@
 package istio
 
 import (
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -129,11 +130,18 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
-			ContainMetric(WithName(BeElementOf(prommetricgen.MetricNames))),
-			ContainScope(WithScopeName(ContainSubstring(InstrumentationScopePrometheus))),
-		))))
+
+		bodyContent, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(bodyContent).To(HaveFlatMetrics(
+			SatisfyAll(
+				ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName))),
+				ContainElement(HaveName(BeElementOf(prommetricgen.MetricNames))),
+				ContainElement(HaveScopeName(ContainSubstring(InstrumentationScopePrometheus))),
+			),
+		))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
@@ -142,10 +150,16 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainMd(
-			ContainMetric(SatisfyAll(
-				WithName(BeElementOf(prommetricgen.MetricNames)),
-				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
-			)))))
+
+		bodyContent, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(bodyContent).To(HaveFlatMetrics(
+			SatisfyAll(
+				ContainElement(HaveName(BeElementOf(prommetricgen.MetricNames))),
+				ContainElement(HaveMetricAttributes(HaveKeyWithValue("service", serviceName))),
+			),
+		))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
