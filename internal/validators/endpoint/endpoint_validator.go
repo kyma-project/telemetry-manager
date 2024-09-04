@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/url"
-	"strconv"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -18,7 +17,7 @@ type Validator struct {
 
 var (
 	ErrValueResolveFailed = errors.New("failed to resolve value")
-	ErrInvalidPort        = errors.New("missing or invalid port")
+	ErrMissingPort        = errors.New("missing port")
 )
 
 type EndpointInvalidError struct {
@@ -80,8 +79,8 @@ func parseEndpoint(endpoint string, withPort bool) (*url.URL, error) {
 
 	if withPort {
 		port := u.Port()
-		if _, err := strconv.Atoi(port); port == "" || err != nil {
-			return nil, &EndpointInvalidError{Err: ErrInvalidPort}
+		if port == "" {
+			return nil, &EndpointInvalidError{Err: ErrMissingPort}
 		}
 	}
 

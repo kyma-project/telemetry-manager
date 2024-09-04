@@ -14,10 +14,16 @@ import (
 )
 
 const (
-	endpointValid             = "http://example.com"
-	endpointInvalid           = "'http://example.com'"
+	endpointValid           = "http://example.com"
+	endpointInvalid         = "'http://example.com'"
+	endpointWithPortValid   = "http://example.com:8080"
+	endpointWithPortMissing = "http://example.com:/"
+	endpointWithPortInvalid = "http://example.com:9abc2"
+
 	endpointMissingErrMessage = "failed to resolve value"
 	endpointInvalidErrMessage = "parse \"'http://example.com'\": first path segment in URL cannot contain colon"
+	portMissingErrMessage     = "missing port"
+	portInvalidErrMessage     = "parse \"http://example.com:9abc2\": invalid port \":9abc2\" after host"
 )
 
 func TestMissingEndpoint(t *testing.T) {
@@ -26,7 +32,7 @@ func TestMissingEndpoint(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	err := validator.Validate(context.Background(), nil)
+	err := validator.Validate(context.Background(), nil, false)
 
 	require.True(t, errors.Is(err, ErrValueResolveFailed))
 	require.EqualError(t, err, endpointMissingErrMessage)
@@ -38,10 +44,21 @@ func TestEmptyEndpoint(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{})
+	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{}, false)
 
 	require.True(t, errors.Is(err, ErrValueResolveFailed))
 	require.EqualError(t, err, endpointMissingErrMessage)
+}
+
+func TestEndpointWithPortMissing(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := Validator{
+		Client: fakeClient,
+	}
+
+	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{Value: endpointWithPortMissing}, true)
+
+	require.True(t, errors.Is(err, ErrMissingPort))
 }
 
 func TestEndpointValueValid(t *testing.T) {
@@ -50,7 +67,18 @@ func TestEndpointValueValid(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{Value: endpointValid})
+	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{Value: endpointValid}, false)
+
+	require.NoError(t, err)
+}
+
+func TestEndpointValueWithPortValid(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := Validator{
+		Client: fakeClient,
+	}
+
+	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{Value: endpointWithPortValid}, true)
 
 	require.NoError(t, err)
 }
@@ -61,10 +89,22 @@ func TestEndpointValueInvalid(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{Value: endpointInvalid})
+	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{Value: endpointInvalid}, false)
 
 	require.True(t, IsEndpointInvalidError(err))
 	require.EqualError(t, err, endpointInvalidErrMessage)
+}
+
+func TestEndpointWithPortInvalid(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := Validator{
+		Client: fakeClient,
+	}
+
+	err := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{Value: endpointWithPortInvalid}, true)
+
+	require.True(t, IsEndpointInvalidError(err))
+	require.EqualError(t, err, portInvalidErrMessage)
 }
 
 func TestEndpointValueFromValid(t *testing.T) {
@@ -88,7 +128,7 @@ func TestEndpointValueFromValid(t *testing.T) {
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}})
+		}}}, false)
 
 	require.NoError(t, err)
 }
@@ -114,7 +154,7 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}})
+		}}}, false)
 
 	require.True(t, IsEndpointInvalidError(err))
 	require.EqualError(t, err, endpointInvalidErrMessage)
@@ -141,7 +181,7 @@ func TestEndpointValueFromMissing(t *testing.T) {
 			Name:      "unknown",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}})
+		}}}, false)
 
 	require.True(t, errors.Is(err, ErrValueResolveFailed))
 	require.EqualError(t, err, endpointMissingErrMessage)

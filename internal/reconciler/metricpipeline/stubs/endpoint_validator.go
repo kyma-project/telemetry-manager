@@ -16,6 +16,6 @@ func NewEndpointValidator(err error) *EndpointValidator {
 	}
 }
 
-func (e *EndpointValidator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType) error {
+func (e *EndpointValidator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, withPort bool) error {
 	return e.err
 }
