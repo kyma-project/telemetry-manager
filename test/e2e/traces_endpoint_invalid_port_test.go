@@ -22,7 +22,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	)
 
 	var (
-		mockNs                = suite.ID()
+		mockNs              = suite.ID()
 		pipelineNameInvalid = suite.IDWithSuffix("invalid")
 		pipelineNameMissing = suite.IDWithSuffix("missing")
 	)
