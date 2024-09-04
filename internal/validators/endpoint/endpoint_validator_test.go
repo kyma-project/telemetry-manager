@@ -16,7 +16,7 @@ import (
 const (
 	endpointValid             = "http://example.com"
 	endpointInvalid           = "'http://example.com'"
-	endpointMissingErrMessage = "either value or secret key reference must be provided"
+	endpointMissingErrMessage = "failed to resolve value"
 	endpointInvalidErrMessage = "parse \"'http://example.com'\": first path segment in URL cannot contain colon"
 )
 
