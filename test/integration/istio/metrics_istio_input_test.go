@@ -3,6 +3,7 @@
 package istio
 
 import (
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -127,8 +128,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(ContainMetric(WithName(BeElementOf(istioProxyMetricNames)))),
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(HaveName(BeElementOf(istioProxyMetricNames))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -138,31 +144,36 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(SatisfyAll(
-						ContainResourceAttrs(SatisfyAll(
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					SatisfyAll(
+						ContainElement(HaveResourceAttributes(SatisfyAll(
 							HaveKeyWithValue("k8s.namespace.name", app1Ns),
 							HaveKeyWithValue("k8s.pod.name", "destination"),
 							HaveKeyWithValue("k8s.container.name", "istio-proxy"),
 							HaveKeyWithValue("service.name", "destination"),
-						)),
-						ContainMetric(SatisfyAll(
-							ContainDataPointAttrs(HaveKey(BeElementOf(istioProxyMetricAttributes))),
-							ContainDataPointAttrs(HaveKeyWithValue("source_workload_namespace", app1Ns)),
-							ContainDataPointAttrs(HaveKeyWithValue("destination_workload", "destination")),
-							ContainDataPointAttrs(HaveKeyWithValue("destination_app", "destination")),
-							ContainDataPointAttrs(HaveKeyWithValue("destination_service_name", "destination")),
-							ContainDataPointAttrs(HaveKeyWithValue("destination_service", fmt.Sprintf("destination.%s.svc.cluster.local", app1Ns))),
-							ContainDataPointAttrs(HaveKeyWithValue("destination_service_namespace", app1Ns)),
-							ContainDataPointAttrs(HaveKeyWithValue("destination_principal", fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns))),
-							ContainDataPointAttrs(HaveKeyWithValue("source_workload", "source")),
-							ContainDataPointAttrs(HaveKeyWithValue("source_principal", fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns))),
-							ContainDataPointAttrs(HaveKeyWithValue("response_code", "200")),
-							ContainDataPointAttrs(HaveKeyWithValue("request_protocol", "http")),
-							ContainDataPointAttrs(HaveKeyWithValue("connection_security_policy", "mutual_tls")),
-						)),
-						ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeIstio))),
-					)),
+						))),
+						ContainElement(HaveMetricAttributes(SatisfyAll(
+							HaveKey(BeElementOf(istioProxyMetricAttributes)),
+							HaveKeyWithValue("source_workload_namespace", app1Ns),
+							HaveKeyWithValue("destination_workload", "destination"),
+							HaveKeyWithValue("destination_app", "destination"),
+							HaveKeyWithValue("destination_service_name", "destination"),
+							HaveKeyWithValue("destination_service", fmt.Sprintf("destination.%s.svc.cluster.local", app1Ns)),
+							HaveKeyWithValue("destination_service_namespace", app1Ns),
+							HaveKeyWithValue("destination_principal", fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns)),
+							HaveKeyWithValue("source_workload", "source"),
+							HaveKeyWithValue("source_principal", fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns)),
+							HaveKeyWithValue("response_code", "200"),
+							HaveKeyWithValue("request_protocol", "http"),
+							HaveKeyWithValue("connection_security_policy", "mutual_tls"),
+						))),
+						ContainElement(HaveScopeName(ContainSubstring(InstrumentationScopeIstio))),
+					),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -187,8 +198,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(ContainMetric(WithName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"))))),
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					Not(
+						ContainElement(HaveName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -200,10 +217,13 @@ func verifyMetricIsNotPresent(backendUrl, key, value string) {
 		resp, err := proxyClient.Get(backendUrl)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).NotTo(HaveHTTPBody(
-			ContainMd(ContainMetric(SatisfyAll(
-				ContainDataPointAttrs(HaveKeyWithValue(key, value)),
-			))),
+
+		bodyContent, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(bodyContent).NotTo(HaveFlatMetrics(
+			ContainElement(HaveMetricAttributes(HaveKeyWithValue(key, value))),
 		))
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
