@@ -5,6 +5,7 @@ package e2e
 import (
 	"io"
 	"net/http"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -112,12 +113,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
+				expectedMetricsNames := slices.Concat(kubeletstats.PodMetricsNames, kubeletstats.ContainerMetricsNames)
+
 				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
-						SatisfyAny(
-							HaveName(BeElementOf(kubeletstats.PodMetricsNames)),
-							HaveName(BeElementOf(kubeletstats.ContainerMetricsNames)),
-						),
+						HaveName(BeElementOf(expectedMetricsNames)),
 						HaveScopeName(ContainSubstring(InstrumentationScopeRuntime)),
 					)),
 				))
@@ -136,7 +136,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(HaveResourceAttributes(HaveKeys(ContainElements(kubeletstats.MetricResourceAttributes)))),
-				), "kubeletstats metrics must have the one of the following attributes '%v'", kubeletstats.MetricResourceAttributes)
+				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 

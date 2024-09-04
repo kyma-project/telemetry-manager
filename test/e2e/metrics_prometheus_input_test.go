@@ -96,22 +96,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
 					HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
-				))), "custom metrics should have the name '%v' and type '%v'", prommetricgen.MetricCPUTemperature.Name, prommetricgen.MetricCPUTemperature.Type.String())
+				))))
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
 					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
-				))), "custom metrics should have the name '%v' and type '%v'", prommetricgen.MetricCPUEnergyHistogram.Name, prommetricgen.MetricCPUEnergyHistogram.Type.String())
+				))))
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
 					HaveType(Equal(prommetricgen.MetricHardwareHumidity.Type.String())),
-				))), "custom metrics should have the name '%v' and type '%v'", prommetricgen.MetricHardwareHumidity.Name, prommetricgen.MetricHardwareHumidity.Type.String())
+				))))
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
 					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
-				))), "custom metrics should have the name '%v' and type '%v'", prommetricgen.MetricHardDiskErrorsTotal.Name, prommetricgen.MetricHardDiskErrorsTotal.Type.String())
+				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -128,25 +128,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 					HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
 					HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
 					HaveMetricAttributes(HaveKey("service")),
-				))), "custom metrics should have the name '%v', type '%v', and metric attribute with key 'service'", prommetricgen.MetricCPUTemperature.Name, prommetricgen.MetricCPUTemperature.Type.String())
+				))))
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
 					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
 					HaveMetricAttributes(HaveKey("service")),
-				))), "custom metrics should have the name '%v', type '%v', and metric attribute with key 'service'", prommetricgen.MetricCPUEnergyHistogram.Name, prommetricgen.MetricCPUEnergyHistogram.Type.String())
+				))))
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
 					HaveType(Equal(prommetricgen.MetricHardwareHumidity.Type.String())),
 					HaveMetricAttributes(HaveKey("service")),
-				))), "custom metrics should have the name '%v' and type '%v', and metric attribute with key 'service'", prommetricgen.MetricHardwareHumidity.Name, prommetricgen.MetricHardwareHumidity.Type.String())
+				))))
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
 					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
 					HaveMetricAttributes(HaveKey("service")),
-				))), "custom metrics should have the name '%v' and type '%v', and metric attribute with key 'service'", prommetricgen.MetricHardDiskErrorsTotal.Name, prommetricgen.MetricHardDiskErrorsTotal.Type.String())
+				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 

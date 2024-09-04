@@ -108,12 +108,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats metrics are sent to runtime backend")
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeName(Equal(InstrumentationScopeRuntime)))), "only scope name %v may exist in the runtime backend", InstrumentationScopeRuntime)
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeVersion(
-					SatisfyAny(
-						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
-					)))), "only scope version with substrings %q, %q, %q may exist in the runtime backend", "main", "1.", "PR-")
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(
+					SatisfyAll(
+						HaveScopeName(Equal(InstrumentationScopeRuntime)),
+						HaveScopeVersion(
+							SatisfyAny(
+								ContainSubstring("main"),
+								ContainSubstring("1."),
+								ContainSubstring("PR-"),
+							)),
+					)),
+				), "only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -155,12 +160,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
 				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeName(Equal(InstrumentationScopePrometheus)))), "only scope name '%v' may exist in the prometheus backend", InstrumentationScopePrometheus)
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeVersion(
-					SatisfyAny(
-						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"))))), "only scope version with substrings %q, %q, %q may exist in the prometheus backend", "main", "1.", "PR-")
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(
+					SatisfyAll(
+						HaveScopeName(Equal(InstrumentationScopePrometheus)),
+						HaveScopeVersion(
+							SatisfyAny(
+								ContainSubstring("main"),
+								ContainSubstring("1."),
+								ContainSubstring("PR-"),
+							)),
+					)),
+				), "Only scope '%v' must be sent to the prometheus backend", InstrumentationScopePrometheus)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
