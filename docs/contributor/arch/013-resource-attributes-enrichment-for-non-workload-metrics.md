@@ -16,6 +16,7 @@ In addition, the metrics from the system namespaces (including `kyma-system` nam
 
 ![Node Metric With k8sattributes Processor](../assets/node-metric-with-k8sattributes-processor.png)
 
+Thus, we need to ensure that non-workload metrics are not enriched with unwanted resource attributes.
 
 ## Decision
 
@@ -31,23 +32,42 @@ A `k8sattribute Processor Pipeline`, which contains only the k8sattributes proce
 A `Processor + Exporter Pipeline`, which contains the rest of the processors and the exporters. The metrics will be routed to the `k8sattribute Processor Pipeline` only if they are workload metrics.
 Otherwise, the metrics will bypass the `k8sattribute Processor Pipeline` and will be routed directly to the `Processor + Exporter Pipeline`.
 
-- _Pro_: Clean solution. The non-workload metrics will never have the unwanted resource attributes set to any value.
-- _Con_: Complex setup.
+Load test using `otel/opentelemetry-collector-contrib:0.107.0` image:
+
+<div class="table-wrapper" markdown="block">
+
+|                       Version/Test | Single Pipeline (ci-metrics) |                              |                     |                      |               | Multi Pipeline (ci-metrics-m) |                              |                     |                      |               | Single Pipeline Backpressure (ci-metrics-b) |                              |                     |                      |               | Multi Pipeline Backpressure (ci-metrics-mb) |                              |                     |                      |               |
+|-----------------------------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:-----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:-------------------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:-------------------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
+|                                    | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec  | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |        Receiver Accepted Metric/sec         | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |        Receiver Accepted Metric/sec         | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
+| Current Setup (Without Connectors) |             4483             |             4482             |          0          |       209, 181       |   1.5, 1.5    |             3376              |            10117             |          0          |       288, 306       |   1.8, 1.7    |                     684                     |             539              |         233         |       831, 835       |   0.4, 0.4    |                    1802                     |             1891             |         509         |      1478, 1480      |   1.3, 1.3    |
+|                    With Connectors |             4211             |             4210             |          1          |       249, 263       |   1.6, 1.6    |             1886              |             5661             |          0          |       391, 378       |   1.3, 1.3    |                     767                     |             582              |         243         |       858, 815       |   0.5, 0.5    |                    1214                     |             1970             |         506         |      1594, 1546      |   1.3, 1.3    |
+
+</div>
+
+- _Pros_: 
+  - Clean solution. The non-workload metrics will never have the unwanted resource attributes set to any value.
+  - This is the recommended solution for doing a conditional routing in an OTel collector pipeline.
+- _Cons_:
+  - Per MetricPipeline, we will have 3 pipelines in the collector instead of 1. So, we will have a more complex setup of the pipeline definitions in combination with the new connector definitions.
 
 ### Option 2: Setting Unwanted Resource Attributes With Dummy Values
 
 We can explicitly set the unwanted resource attributes with dummy values for non-workload metrics in the Metric Agent.
 Then, we can delete all the resource attributes with dummy values in the Metric Gateway.
 
-- _Pro_: If someone inspects the metrics emitted by the Metric Agent, it will be clear that the resource attributes with the dummy values are not desired.
-- _Con_: If a user deploys their own OTel Collector and sends metrics to the Metric Gateway, then the unwanted resource attributes will not be deleted, because they will not have the dummy values.
+- _Pros_:
+  - If someone inspects the metrics emitted by the Metric Agent, it will be clear that the resource attributes with the dummy values are not desired.
+- _Cons_: 
+  - If a user deploys their own OTel Collector and sends metrics to the Metric Gateway, then the unwanted resource attributes will not be deleted, because they will not have the dummy values.
 
 ### Option 3: Directly Deleting unwanted Resource Attributes
 
 We can directly delete the unwanted resource attributes in the Metric Gateway after they have been incorrectly enriched by the k8sattributes processor.
 
-- _Pro_: Simplest solution.
-- _Con_: If a user deploys their own OTel Collector and sends metrics to the Metric Gateway, they might be explicitly setting the resource attributes that we are deleting with custom values.
+- _Pros_:
+  - Simplest solution, because we will just need to add a single processor in the existing for deleting the unwanted resource attributes.
+- _Cons_:
+  - If a user deploys their own OTel Collector and sends metrics to the Metric Gateway, they might be explicitly setting the resource attributes that we are deleting with custom values.
 
 
 We have decided to adopt option 3 because it is the simplest solution and the probability that a customer deploys their own OTel Collector, sends metrics to the Metric Gateway, and sets the resource attributes that we are deleting with custom values is low.
