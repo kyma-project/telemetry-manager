@@ -3,7 +3,10 @@ package endpoint
 import (
 	"context"
 	"errors"
+	"net"
 	"net/url"
+	"strconv"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -11,21 +14,31 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
+const schemePlaceholder = "http://"
+
 type Validator struct {
 	Client client.Reader
 }
 
 var (
 	ErrValueResolveFailed = errors.New("failed to resolve value")
-	ErrMissingPort        = errors.New("missing port")
+	ErrPortMissing        = errors.New("missing port")
+	ErrPortInvalid        = errors.New("invalid port")
 )
 
 type EndpointInvalidError struct {
-	Err error
+	Err                     error
+	RemoveSchemePlaceholder bool
 }
 
 func (eie *EndpointInvalidError) Error() string {
-	return eie.Err.Error()
+	errMessage := eie.Err.Error()
+
+	if eie.RemoveSchemePlaceholder {
+		return strings.Replace(errMessage, schemePlaceholder, "", 1)
+	}
+
+	return errMessage
 }
 
 func (eie *EndpointInvalidError) Unwrap() error {
@@ -75,13 +88,28 @@ func parseEndpoint(endpoint string, withPort bool) (*url.URL, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, &EndpointInvalidError{Err: err}
+	} else if u.Opaque != "" {
+		u, err = url.Parse(schemePlaceholder + endpoint) // try to parse as a URL without scheme
+		if err != nil {
+			return nil, &EndpointInvalidError{Err: err, RemoveSchemePlaceholder: true}
+		}
 	}
 
-	if withPort {
-		port := u.Port()
-		if port == "" {
-			return nil, &EndpointInvalidError{Err: ErrMissingPort}
-		}
+	if !withPort {
+		return u, nil
+	}
+
+	_, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return nil, &EndpointInvalidError{Err: err}
+	}
+
+	if port == "" {
+		return nil, &EndpointInvalidError{Err: ErrPortMissing}
+	}
+
+	if _, err := strconv.Atoi(port); err != nil {
+		return nil, &EndpointInvalidError{Err: ErrPortInvalid}
 	}
 
 	return u, nil

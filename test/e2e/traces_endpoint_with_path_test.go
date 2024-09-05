@@ -19,7 +19,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	const (
 		path     = "/v1/mock"
-		endpoint = "trace-mock"
+		endpoint = "trace-mock:8080"
 	)
 
 	var endpointDataKey string

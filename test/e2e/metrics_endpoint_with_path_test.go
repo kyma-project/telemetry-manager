@@ -19,7 +19,7 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	const (
 		path     = "/v1/mock"
-		endpoint = "metric-mock"
+		endpoint = "metric-mock:8080"
 	)
 
 	var endpointDataKey string
