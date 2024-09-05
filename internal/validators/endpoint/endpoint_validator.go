@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
-const schemePlaceholder = "http://"
+const schemePlaceholder = "grpc://"
 
 type Validator struct {
 	Client client.Reader
@@ -89,7 +89,7 @@ func parseEndpoint(endpoint string, withPort bool) (*url.URL, error) {
 	if err != nil {
 		return nil, &EndpointInvalidError{Err: err}
 	} else if u.Opaque != "" {
-		u, err = url.Parse(schemePlaceholder + endpoint) // try to parse as a URL without scheme
+		u, err = url.Parse(schemePlaceholder + endpoint) // parse a URL without scheme
 		if err != nil {
 			return nil, &EndpointInvalidError{Err: err, RemoveSchemePlaceholder: true}
 		}
