@@ -27,10 +27,10 @@ const (
 	endpointMissingErrMessage = "failed to resolve value"
 	endpointInvalidErrMessage = "parse \"'http://example.com'\": first path segment in URL cannot contain colon"
 	portMissingErrMessage     = "missing port"
-	portInvalid1ErrMessage     = "parse \"http://example.com:9ab2\": invalid port \":9ab2\" after host"
-	portInvalid2ErrMessage     = "address example.com:80:80: too many colons in address"
-	portInvalid3ErrMessage     = "parse \"example.com:9ab2\": invalid port \":9ab2\" after host"
-	portInvalid4ErrMessage     = "address example.com:80:80: too many colons in address"
+	portInvalid1ErrMessage    = "parse \"http://example.com:9ab2\": invalid port \":9ab2\" after host"
+	portInvalid2ErrMessage    = "address example.com:80:80: too many colons in address"
+	portInvalid3ErrMessage    = "parse \"example.com:9ab2\": invalid port \":9ab2\" after host"
+	portInvalid4ErrMessage    = "address example.com:80:80: too many colons in address"
 )
 
 func TestMissingEndpoint(t *testing.T) {
