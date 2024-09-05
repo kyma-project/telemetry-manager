@@ -647,14 +647,14 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 ```bash
 2023-08-29T09:53:07.123Z warn internal/transaction.go:111 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
 ```
-
+<!-- markdown-link-check-disable-next-line -->
 **Cause 1**: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
 
 **Remedy 1**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
 
 - Configure the workload using “STRICT” mTLS mode (for example, by applying a corresponding PeerAuthentication).
 - Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
-
+<!-- markdown-link-check-disable-next-line -->
 **Cause 2**: The Service definition enabling the scrape with Prometheus annotations does not reveal the application protocol to use in the port definition. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
 
 **Remedy 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
