@@ -43,7 +43,7 @@ type SingletonKymaStatsReceiver struct {
 type KymaStatsReceiver struct {
 	AuthType           string      `yaml:"auth_type"`
 	CollectionInterval string      `yaml:"collection_interval"`
-	Modules            []ModuleGVR `yaml:"modules"`
+	Resources          []ModuleGVR `yaml:"resources"`
 }
 
 type SingletonK8sClusterReceiver struct {

@@ -56,10 +56,10 @@ func TestReceivers(t *testing.T) {
 		kymaStatsReceiver := singletonKymaStatsReceiverCreator.SingletonKymaStatsReceiver.KymaStatsReceiver
 		require.Equal(t, "serviceAccount", kymaStatsReceiver.AuthType)
 		require.Equal(t, "30s", kymaStatsReceiver.CollectionInterval)
-		require.Len(t, kymaStatsReceiver.Modules, 1)
-		require.Equal(t, "operator.kyma-project.io", kymaStatsReceiver.Modules[0].Group)
-		require.Equal(t, "v1alpha1", kymaStatsReceiver.Modules[0].Version)
-		require.Equal(t, "telemetries", kymaStatsReceiver.Modules[0].Resource)
+		require.Len(t, kymaStatsReceiver.Resources, 1)
+		require.Equal(t, "operator.kyma-project.io", kymaStatsReceiver.Resources[0].Group)
+		require.Equal(t, "v1alpha1", kymaStatsReceiver.Resources[0].Version)
+		require.Equal(t, "telemetries", kymaStatsReceiver.Resources[0].Resource)
 	})
 
 	t.Run("singleton k8s cluster receiver creator", func(t *testing.T) {
