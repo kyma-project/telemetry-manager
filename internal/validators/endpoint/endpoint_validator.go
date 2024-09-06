@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,7 +28,7 @@ type Validator struct {
 var (
 	ErrValueResolveFailed = errors.New("failed to resolve value")
 	ErrPortMissing        = errors.New("missing port")
-	ErrUnsupportedScheme  = errors.New("unsupported protocol scheme")
+	ErrUnsupportedScheme  = errors.New("missing or unsupported protocol scheme")
 )
 
 type EndpointInvalidError struct {
@@ -110,7 +111,7 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 	}
 
 	// parse a URL without scheme
-	if u.Opaque != "" {
+	if u.Opaque != "" || u.Scheme == "" || u.Host == "" {
 		u, err = url.Parse(SchemePlaceholder + endpoint)
 		if err != nil {
 			return nil, &EndpointInvalidError{Err: err, SchemePlaceholder: SchemePlaceholder}
@@ -120,13 +121,23 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 	return u, nil
 }
 
-func validatePort(host string, allowMissing bool) error {
-	_, port, err := net.SplitHostPort(host)
-	if err != nil {
+func validatePort(endpoint string, allowMissing bool) error {
+	_, port, err := net.SplitHostPort(endpoint)
+	if err != nil && strings.Contains(err.Error(), "missing port in address") {
+		if !allowMissing {
+			return &EndpointInvalidError{Err: ErrPortMissing}
+		} else {
+			return nil
+		}
+	} else if err != nil {
 		return &EndpointInvalidError{Err: err}
 	}
 
-	if port == "" && !allowMissing {
+	if allowMissing {
+		return nil
+	}
+
+	if _, err := strconv.Atoi(port); port == "" || err != nil {
 		return &EndpointInvalidError{Err: ErrPortMissing}
 	}
 
