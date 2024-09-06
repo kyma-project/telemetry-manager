@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"slices"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -60,10 +61,11 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
 
-	cmKey := pipeline.Name + ".conf"
+	sanitizedCMData := sanitizeConfigMap(cm.Data, deployablePipelines)
 
+	cmKey := pipeline.Name + ".conf"
 	if !isLogPipelineDeployable(deployablePipelines, pipeline) {
-		delete(cm.Data, cmKey)
+		delete(sanitizedCMData, cmKey)
 	} else {
 		builderConfig := builder.BuilderConfig{
 			PipelineDefaults: s.config.PipelineDefaults,
@@ -73,12 +75,13 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		if err != nil {
 			return fmt.Errorf("unable to build section: %w", err)
 		}
-		if cm.Data == nil {
-			cm.Data = map[string]string{cmKey: newConfig}
-		} else if oldConfig, hasKey := cm.Data[cmKey]; !hasKey || oldConfig != newConfig {
-			cm.Data[cmKey] = newConfig
+		if sanitizedCMData == nil {
+			sanitizedCMData = map[string]string{cmKey: newConfig}
+		} else if oldConfig, hasKey := sanitizedCMData[cmKey]; !hasKey || oldConfig != newConfig {
+			sanitizedCMData[cmKey] = newConfig
 		}
 	}
+	cm.Data = sanitizedCMData
 
 	if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {
 		return fmt.Errorf("unable to set owner reference for section configmap: %w", err)
@@ -88,6 +91,20 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("unable to update section configmap: %w", err)
 	}
 	return nil
+}
+
+func sanitizeConfigMap(data map[string]string, deployablePipelines []telemetryv1alpha1.LogPipeline) map[string]string {
+	var cmKeys []string
+	for _, p := range deployablePipelines {
+		cmKey := p.Name + ".conf"
+		cmKeys = append(cmKeys, cmKey)
+	}
+	for key := range data {
+		if !slices.Contains(cmKeys, key) {
+			delete(data, key)
+		}
+	}
+	return data
 }
 
 func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
