@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"slices"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,9 +21,6 @@ type syncer struct {
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
-	if !isLogPipelineDeployable(deployableLogPipelines, pipeline) {
-		return nil
-	}
 	log := logf.FromContext(ctx)
 
 	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {
@@ -61,11 +56,10 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
 
-	sanitizedCMData := sanitizeConfigMap(cm.Data, deployablePipelines)
-
 	cmKey := pipeline.Name + ".conf"
-	if !isLogPipelineDeployable(deployablePipelines, pipeline) {
-		delete(sanitizedCMData, cmKey)
+
+	if !isLogPipelineDeployable(deployablePipelines, pipeline) || !pipeline.DeletionTimestamp.IsZero() {
+		delete(cm.Data, cmKey)
 	} else {
 		builderConfig := builder.BuilderConfig{
 			PipelineDefaults: s.config.PipelineDefaults,
@@ -75,13 +69,12 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		if err != nil {
 			return fmt.Errorf("unable to build section: %w", err)
 		}
-		if sanitizedCMData == nil {
-			sanitizedCMData = map[string]string{cmKey: newConfig}
-		} else if oldConfig, hasKey := sanitizedCMData[cmKey]; !hasKey || oldConfig != newConfig {
-			sanitizedCMData[cmKey] = newConfig
+		if cm.Data == nil {
+			cm.Data = map[string]string{cmKey: newConfig}
+		} else if oldConfig, hasKey := cm.Data[cmKey]; !hasKey || oldConfig != newConfig {
+			cm.Data[cmKey] = newConfig
 		}
 	}
-	cm.Data = sanitizedCMData
 
 	if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {
 		return fmt.Errorf("unable to set owner reference for section configmap: %w", err)
@@ -91,20 +84,6 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("unable to update section configmap: %w", err)
 	}
 	return nil
-}
-
-func sanitizeConfigMap(data map[string]string, deployablePipelines []telemetryv1alpha1.LogPipeline) map[string]string {
-	var cmKeys []string
-	for _, p := range deployablePipelines {
-		cmKey := p.Name + ".conf"
-		cmKeys = append(cmKeys, cmKey)
-	}
-	for key := range data {
-		if !slices.Contains(cmKeys, key) {
-			delete(data, key)
-		}
-	}
-	return data
 }
 
 func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
