@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"io"
 	"net/http"
 	"slices"
 
@@ -110,14 +109,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
 
 				containerMetricNames := slices.Concat(kubeletstats.ContainerMetricsNames, k8scluster.ContainerMetricsNames)
-				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
-					ConsistOf(containerMetricNames))), "Found container metrics in backend that are not part of k8scluster or kubeletstats")
 
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatMetrics(ContainElement(HaveField("Name", BeElementOf(containerMetricNames)))),
+				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -129,7 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(podMetricNames))))),
+					HaveFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(podMetricNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -139,15 +136,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
 
 				podMetricNames := slices.Concat(kubeletstats.PodMetricsNames, k8scluster.PodMetricsNames)
 
-				g.Expect(bodyContent).To(WithFlatMetrics(WithNames(
-					ConsistOf(podMetricNames))), "Found pod metrics in backend that are not part of k8scluster or kubeletstats")
-
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatMetrics(ContainElement(HaveField("Name", BeElementOf(podMetricNames)))),
+				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -159,7 +153,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(containerMetricNames))))),
+					HaveFlatMetrics(Not(ContainElement(HaveField("Name", BeElementOf(containerMetricNames))))),
 				))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

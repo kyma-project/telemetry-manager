@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"io"
 	"net/http"
 	"slices"
 
@@ -88,34 +89,29 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 				// targets discovered via annotated pods must have no service label
-				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(SatisfyAll(
-						ContainElement(
-							And(
-								HaveField("Name", prommetricgen.MetricCPUTemperature.Name),
-								HaveField("Type", prommetricgen.MetricCPUTemperature.Type),
-							),
-						),
-						ContainElement(
-							And(
-								HaveField("Name", prommetricgen.MetricCPUEnergyHistogram.Name),
-								HaveField("Type", prommetricgen.MetricCPUEnergyHistogram.Type),
-							),
-						),
-						ContainElement(
-							And(
-								HaveField("Name", prommetricgen.MetricHardwareHumidity.Name),
-								HaveField("Type", prommetricgen.MetricHardwareHumidity.Type),
-							),
-						),
-						ContainElement(
-							And(
-								HaveField("Name", prommetricgen.MetricHardDiskErrorsTotal.Name),
-								HaveField("Type", prommetricgen.MetricHardDiskErrorsTotal.Type),
-							),
-						),
-					)),
-				))
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
+					HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
+					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
+					HaveType(Equal(prommetricgen.MetricHardwareHumidity.Type.String())),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
+					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
+				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -124,38 +120,33 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(SatisfyAll(
-						ContainElement(
-							And(
-								HaveField("Name", prommetricgen.MetricCPUTemperature.Name),
-								HaveField("Type", prommetricgen.MetricCPUTemperature.Type),
-								HaveField("MetricAttributes", HaveKey("service")),
-							),
-						),
-						ContainElement(
-							And(
-								HaveField("Name", prommetricgen.MetricCPUEnergyHistogram.Name),
-								HaveField("Type", prommetricgen.MetricCPUEnergyHistogram.Type),
-								HaveField("MetricAttributes", HaveKey("service")),
-							),
-						),
-						ContainElement(
-							And(
-								HaveField("Name", prommetricgen.MetricHardwareHumidity.Name),
-								HaveField("Type", prommetricgen.MetricHardwareHumidity.Type),
-								HaveField("MetricAttributes", HaveKey("service")),
-							),
-						),
-						ContainElement(
-							And(
-								HaveField("Name", prommetricgen.MetricHardDiskErrorsTotal.Name),
-								HaveField("Type", prommetricgen.MetricHardDiskErrorsTotal.Type),
-								HaveField("MetricAttributes", HaveKey("service")),
-							),
-						),
-					)),
-				))
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
+					HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
+					HaveMetricAttributes(HaveKey("service")),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
+					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
+					HaveMetricAttributes(HaveKey("service")),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
+					HaveType(Equal(prommetricgen.MetricHardwareHumidity.Type.String())),
+					HaveMetricAttributes(HaveKey("service")),
+				))))
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
+					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
+					HaveMetricAttributes(HaveKey("service")),
+				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -165,13 +156,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(
-						Not(ContainElement(
-							HaveField("Name", BeElementOf(expectedMetrics)),
-						)),
-						// Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.DefaultMetricsNames))))),
-					)))
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
+					Not(ContainElement(HaveName(BeElementOf(expectedMetrics)))),
+				)))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -184,13 +171,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					WithFlatMetrics(
-						Not(ContainElement(
-							HaveField("Name", BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")),
-						))),
-					// Not(ContainMd(ContainMetric(WithName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"))))),
-				))
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
+					Not(ContainElement(HaveName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added")))),
+				)))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
