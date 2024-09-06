@@ -39,6 +39,21 @@ func makeSingletonKymaStatsReceiverCreatorConfig(gatewayNamespace string) *Singl
 						Version:  "v1alpha1",
 						Resource: "telemetries",
 					},
+					{
+						Group:    "telemetry.kyma-project.io",
+						Version:  "v1alpha1",
+						Resource: "logpipelines",
+					},
+					{
+						Group:    "telemetry.kyma-project.io",
+						Version:  "v1alpha1",
+						Resource: "metricpipelines",
+					},
+					{
+						Group:    "telemetry.kyma-project.io",
+						Version:  "v1alpha1",
+						Resource: "tracepipelines",
+					},
 				},
 			},
 		},
