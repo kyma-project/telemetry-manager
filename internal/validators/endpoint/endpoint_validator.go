@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,7 +13,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
-const schemePlaceholder = "grpc://"
+const (
+	FluentdProtocolHTTP = "fluentd-http"
+	OtlpProtocolGRPC    = telemetryv1alpha1.OtlpProtocolGRPC
+	OtlpProtocolHTTP    = telemetryv1alpha1.OtlpProtocolHTTP
+	SchemePlaceholder   = "plhd://"
+)
 
 type Validator struct {
 	Client client.Reader
@@ -23,19 +27,19 @@ type Validator struct {
 var (
 	ErrValueResolveFailed = errors.New("failed to resolve value")
 	ErrPortMissing        = errors.New("missing port")
-	ErrPortInvalid        = errors.New("invalid port")
+	ErrUnsupportedScheme  = errors.New("unsupported protocol scheme")
 )
 
 type EndpointInvalidError struct {
-	Err                     error
-	RemoveSchemePlaceholder bool
+	Err               error
+	SchemePlaceholder string
 }
 
 func (eie *EndpointInvalidError) Error() string {
 	errMessage := eie.Err.Error()
 
-	if eie.RemoveSchemePlaceholder {
-		return strings.Replace(errMessage, schemePlaceholder, "", 1)
+	if eie.SchemePlaceholder != "" {
+		return strings.Replace(errMessage, eie.SchemePlaceholder, "", 1)
 	}
 
 	return errMessage
@@ -50,7 +54,7 @@ func IsEndpointInvalidError(err error) bool {
 	return errors.As(err, &errEndpointInvalid)
 }
 
-func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, validatePort bool) error {
+func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error {
 	if endpoint == nil {
 		return &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
@@ -60,8 +64,23 @@ func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.Va
 		return err
 	}
 
-	if _, err = parseEndpoint(endpointValue, validatePort); err != nil {
+	var u *url.URL
+	if u, err = parseEndpoint(endpointValue); err != nil {
 		return err
+	}
+
+	if protocol == FluentdProtocolHTTP {
+		return nil
+	}
+
+	if err := validatePort(u.Host, protocol == OtlpProtocolHTTP); err != nil {
+		return err
+	}
+
+	if protocol == OtlpProtocolHTTP {
+		if err := validateSchemeHTTP(u.Scheme); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -84,33 +103,40 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 	return string(valueFromSecret), nil
 }
 
-func parseEndpoint(endpoint string, validatePort bool) (*url.URL, error) {
+func parseEndpoint(endpoint string) (*url.URL, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, &EndpointInvalidError{Err: err}
-	} else if u.Opaque != "" {
-		u, err = url.Parse(schemePlaceholder + endpoint) // parse a URL without scheme
+	}
+
+	// parse a URL without scheme
+	if u.Opaque != "" {
+		u, err = url.Parse(SchemePlaceholder + endpoint)
 		if err != nil {
-			return nil, &EndpointInvalidError{Err: err, RemoveSchemePlaceholder: true}
+			return nil, &EndpointInvalidError{Err: err, SchemePlaceholder: SchemePlaceholder}
 		}
 	}
 
-	if !validatePort {
-		return u, nil
-	}
-
-	_, port, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return nil, &EndpointInvalidError{Err: err}
-	}
-
-	if port == "" {
-		return nil, &EndpointInvalidError{Err: ErrPortMissing}
-	}
-
-	if _, err := strconv.Atoi(port); err != nil {
-		return nil, &EndpointInvalidError{Err: ErrPortInvalid}
-	}
-
 	return u, nil
+}
+
+func validatePort(host string, allowMissing bool) error {
+	_, port, err := net.SplitHostPort(host)
+	if err != nil {
+		return &EndpointInvalidError{Err: err}
+	}
+
+	if port == "" && !allowMissing {
+		return &EndpointInvalidError{Err: ErrPortMissing}
+	}
+
+	return nil
+}
+
+func validateSchemeHTTP(scheme string) error {
+	if scheme != "http" && scheme != "https" {
+		return &EndpointInvalidError{Err: ErrUnsupportedScheme}
+	}
+
+	return nil
 }

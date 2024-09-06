@@ -9,7 +9,7 @@ import (
 )
 
 type EndpointValidator interface {
-	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, validatePort bool) error
+	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error
 }
 
 type TLSCertValidator interface {
@@ -33,7 +33,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 	}
 
 	if pipeline.Spec.Output.Otlp != nil {
-		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.Otlp.Endpoint, true); err != nil {
+		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.Otlp.Endpoint, pipeline.Spec.Output.Otlp.Protocol); err != nil {
 			return err
 		}
 	}
