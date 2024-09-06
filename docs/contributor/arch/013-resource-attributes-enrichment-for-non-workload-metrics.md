@@ -34,15 +34,28 @@ An `Output Pipeline`, which contains the rest of the processors and the `otlp` e
 The metrics will be routed to the `Attributes Enrichment Pipeline` only if they are workload metrics.
 Otherwise, the metrics will bypass the `Attributes Enrichment Pipeline` and will be routed directly to the `Output Pipeline`.
 
-Load test using `otel/opentelemetry-collector-contrib:0.107.0` image:
-
+Load test using `europe-docker.pkg.dev/kyma-project/dev/kyma-otel-collector:PR-121` image which contains the `routingconnector` and `forwardconnector` components:
+ 
 <div class="table-wrapper" markdown="block">
+
 
 |                       Version/Test | Single Pipeline (ci-metrics) |                              |                     |                      |               | Multi Pipeline (ci-metrics-m) |                              |                     |                      |               | Single Pipeline Backpressure (ci-metrics-b) |                              |                     |                      |               | Multi Pipeline Backpressure (ci-metrics-mb) |                              |                     |                      |               |
 |-----------------------------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:-----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:-------------------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:-------------------------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
 |                                    | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec  | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |        Receiver Accepted Metric/sec         | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |        Receiver Accepted Metric/sec         | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
-| Current Setup (Without Connectors) |             4483             |             4482             |          0          |       209, 181       |   1.5, 1.5    |             3376              |            10117             |          0          |       288, 306       |   1.8, 1.7    |                     812                     |             615              |         301         |       861, 827       |   0.5, 0.4    |                    1802                     |             1891             |         509         |      1478, 1480      |   1.3, 1.3    |
-|                    With Connectors |             4211             |             4210             |          1          |       249, 263       |   1.6, 1.6    |             2464              |             7389             |          0          |       364, 383       |   1.6, 1.7    |                     767                     |             582              |         243         |       858, 815       |   0.5, 0.5    |                    1423                     |             1855             |         505         |      1717, 1687      |   1.3, 1.3    |
+| Current Setup (Without Connectors) |             4458             |             4458             |          0          |       143, 162       |   1.5, 1.5    |             3282              |             9845             |          0          |       219, 256       |   1.8, 1.7    |                     824                     |             638              |         251         |       827, 829       |   0.5, 0.5    |                    1809                     |             1812             |         504         |      1784, 1737      |   1.3, 1.3    |
+|                    With Connectors |             4149             |             4149             |          0          |       192, 163       |   1.7, 1.6    |             2347              |             7042             |          0          |       247, 303       |   1.6, 1.6    |                     772                     |             682              |         172         |       831, 867       |   0.5, 0.4    |                    1383                     |             1848             |         498         |      1719, 1686      |   1.3, 1.3    |
+
+
+
+|                         Version/Test | Single Pipeline (ci-metrics) |                              |                     |                      |               |
+|-------------------------------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
+|                                      | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | 
+| 1.Current Setup (Without Connectors) |             4458             |             4458             |          0          |       143, 162       |   1.5, 1.5    |             
+| 2.Current Setup (Without Connectors) |             4476             |             4476             |          0          |       138, 153       |   1.6, 1.5    |
+| 3.Current Setup (Without Connectors) |             4395             |             4396             |          0          |       146, 163       |   1.6, 1.5    |
+|                   1. With Connectors |             4149             |             4149             |          0          |       192, 163       |   1.7, 1.6    |
+|                   2. With Connectors |             4155             |             4156             |          0          |       174, 182       |   1.7, 1.6    |
+|                   3. With Connectors |             4069             |             4069             |          0          |       191, 181       |   1.6, 1.6    |
 
 </div>
 
