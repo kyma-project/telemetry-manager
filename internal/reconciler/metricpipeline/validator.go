@@ -9,7 +9,7 @@ import (
 )
 
 type EndpointValidator interface {
-	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, withPort bool) error
+	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, validatePort bool) error
 }
 
 type TLSCertValidator interface {

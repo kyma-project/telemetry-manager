@@ -50,7 +50,7 @@ func IsEndpointInvalidError(err error) bool {
 	return errors.As(err, &errEndpointInvalid)
 }
 
-func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, withPort bool) error {
+func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, validatePort bool) error {
 	if endpoint == nil {
 		return &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
@@ -60,7 +60,7 @@ func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.Va
 		return err
 	}
 
-	if _, err = parseEndpoint(endpointValue, withPort); err != nil {
+	if _, err = parseEndpoint(endpointValue, validatePort); err != nil {
 		return err
 	}
 
@@ -84,7 +84,7 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 	return string(valueFromSecret), nil
 }
 
-func parseEndpoint(endpoint string, withPort bool) (*url.URL, error) {
+func parseEndpoint(endpoint string, validatePort bool) (*url.URL, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, &EndpointInvalidError{Err: err}
@@ -95,7 +95,7 @@ func parseEndpoint(endpoint string, withPort bool) (*url.URL, error) {
 		}
 	}
 
-	if !withPort {
+	if !validatePort {
 		return u, nil
 	}
 

@@ -12,7 +12,7 @@ import (
 var errUnsupportedLokiOutput = errors.New("the grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README")
 
 type EndpointValidator interface {
-	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, withPort bool) error
+	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, validatePort bool) error
 }
 
 type TLSCertValidator interface {
