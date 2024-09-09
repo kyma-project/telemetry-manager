@@ -164,6 +164,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		if err = r.deleteResources(ctx); err != nil {
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
+		return err
 	}
 
 	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, reconcilablePipelines); err != nil {
