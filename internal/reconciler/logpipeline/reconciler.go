@@ -147,7 +147,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}()
 
 	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(ctx, &allPipelines); err != nil {
+	if err = r.List(ctx, &allPipelines); err != nil {
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
 	}
 
