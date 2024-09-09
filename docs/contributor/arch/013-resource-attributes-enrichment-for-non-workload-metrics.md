@@ -63,7 +63,7 @@ Load test using `europe-docker.pkg.dev/kyma-project/dev/kyma-otel-collector:PR-1
   - Clean solution. The non-workload metrics will never have the unwanted resource attributes set to any value.
   - This is the recommended solution for doing a conditional routing in an OTel collector pipeline.
 - _Cons_:
-  - Per MetricPipeline, we will have 3 pipelines in the collector instead of 1. So, we will have a more complex setup of the pipeline definitions in combination with the new connector definitions.
+  - Per MetricPipeline, we will have 3 pipelines in the collector instead of 1. So, we will have a more complex setup of the pipeline definitions in combination with the new connectors definitions.
 
 ### Option 2: Setting Unwanted Resource Attributes With Dummy Values
 
@@ -80,9 +80,10 @@ Then, we can delete all the resource attributes with dummy values in the Metric 
 We can directly delete the unwanted resource attributes in the Metric Gateway after they have been incorrectly enriched by the k8sattributes processor.
 
 - _Pros_:
-  - Simplest solution, because we will just need to add a single processor in the existing for deleting the unwanted resource attributes.
+  - Simplest solution, because we will just need to add a single processor in the existing setup for deleting the unwanted resource attributes.
 - _Cons_:
   - If a user deploys their own OTel Collector and sends metrics to the Metric Gateway, they might be explicitly setting the resource attributes that we are deleting with custom values.
+  - If a user sends their own custom non-workload metrics, there is no option for them to skip the unwanted resource attributes.
 
 
 We have decided to adopt option 3 because it is the simplest solution and the probability that a customer deploys their own OTel Collector, sends metrics to the Metric Gateway, and sets the resource attributes that we are deleting with custom values is low.
