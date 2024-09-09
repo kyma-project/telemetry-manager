@@ -34,7 +34,7 @@ An `Output Pipeline`, which contains the rest of the processors and the `otlp` e
 The metrics will be routed to the `Attributes Enrichment Pipeline` only if they are workload metrics.
 Otherwise, the metrics will bypass the `Attributes Enrichment Pipeline` and will be routed directly to the `Output Pipeline`.
 
-Load test using `europe-docker.pkg.dev/kyma-project/dev/kyma-otel-collector:PR-121` image which contains the `routingconnector` and `forwardconnector` components:
+Load test using the image `europe-docker.pkg.dev/kyma-project/dev/kyma-otel-collector:PR-121`, which contains the `routingconnector` and `forwardconnector` components:
  
 <div class="table-wrapper" markdown="block">
 
@@ -75,7 +75,7 @@ Then, we can delete all the resource attributes with dummy values in the Metric 
 - _Cons_: 
   - If a user deploys their own OTel Collector and sends metrics to the Metric Gateway, then the unwanted resource attributes will not be deleted, because they will not have the dummy values.
 
-### Option 3: Directly Deleting unwanted Resource Attributes
+### Option 3: Directly Deleting Unwanted Resource Attributes
 
 We can directly delete the unwanted resource attributes in the Metric Gateway after they have been incorrectly enriched by the k8sattributes processor.
 
