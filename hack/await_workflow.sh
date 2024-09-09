@@ -11,10 +11,11 @@ REPO_OWNER="kyma-project"
 REPO_NAME="telemetry-manager"
 CHECK_NAME="Build-Image-Success"
 
-# retry until check conclusion is success and status is completed
+# retry until check is found and status is completed
 # timeout after 15 minutes
 
 TIMEOUT=900
+QUERY_INTERVAL=10
 
 START_TIME=$SECONDS
 
@@ -63,7 +64,7 @@ until [[ $found == true && $status == "completed" ]]; do
 
     if [ "$found" = false ]; then
         echo "Check not yet found."
-        sleep 10
+        sleep $QUERY_INTERVAL
         continue
     fi
 
