@@ -45,15 +45,8 @@ config:
           # Remove empty resource attributes
           - delete_key(resource.attributes, "k8s.node.name") where resource.attributes["k8s.node.name"] == ""
           - delete_key(resource.attributes, "k8s.namespace.name") where resource.attributes["k8s.namespace.name"] == ""
-          - delete_key(resource.attributes, "k8s.cluster.name") where resource.attributes["k8s.cluster.name"] == ""
-      - context: resource
-        statements:
-          # Remove empty attributes
-          - delete_key(attributes, "k8s.node.name") where attributes["k8s.node.name"] == ""
-          - delete_key(attributes, "k8s.namespace.name") where attributes["k8s.namespace.name"] == ""
-          - delete_key(attributes, "k8s.cluster.name") where attributes["k8s.cluster.name"] == ""
 
-    # Selects only one metric for the current collector pod
+    # Selects only one metric for the current collector Pod
     filter:
       error_mode: ignore
       metrics:
