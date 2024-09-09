@@ -18,13 +18,15 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	const (
-		invalidEndpoint = "'http://example.com'"
+		invalidEndpoint     = "'http://example.com'"
+		invalidEndpointHTTP = "example.com"
 	)
 
 	var (
 		mockNs                = suite.ID()
 		pipelineNameValue     = suite.IDWithSuffix("value")
 		pipelineNameValueFrom = suite.IDWithSuffix("value-from")
+		pipelineNameHTTP      = suite.IDWithSuffix("invalid-http")
 	)
 
 	makeResources := func() []client.Object {
@@ -45,10 +47,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 			Build()
 
+		tracePipelineInvalidEndpointHTTP := testutils.NewTracePipelineBuilder().
+			WithName(pipelineNameHTTP).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(invalidEndpointHTTP),
+				testutils.OTLPProtocol("http"),
+			).
+			Build()
+
 		objs = append(objs,
 			secret.K8sObject(),
 			&tracePipelineInvalidEndpointValue,
 			&tracePipelineInvalidEndpointValueFrom,
+			&tracePipelineInvalidEndpointHTTP,
 		)
 
 		return objs
@@ -72,6 +83,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			})
 
 			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineNameValueFrom, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonEndpointInvalid,
+			})
+
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineNameHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,

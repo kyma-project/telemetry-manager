@@ -22,9 +22,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 	)
 
 	var (
-		mockNs              = suite.ID()
-		pipelineNameInvalid = suite.IDWithSuffix("invalid")
-		pipelineNameMissing = suite.IDWithSuffix("missing")
+		mockNs                  = suite.ID()
+		pipelineNameInvalid     = suite.IDWithSuffix("invalid")
+		pipelineNameMissingGRPC = suite.IDWithSuffix("missing-grpc")
+		pipelineNameMissingHTTP = suite.IDWithSuffix("missing-http")
 	)
 
 	makeResources := func() []client.Object {
@@ -38,16 +39,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 			).
 			Build()
 
-		metricPipelineMissingPort := testutils.NewMetricPipelineBuilder().
-			WithName(pipelineNameMissing).
+		metricPipelineMissingPortGRPC := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineNameMissingGRPC).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(missingPortEndpoint),
 			).
 			Build()
 
+		metricPipelineMissingPortHTTP := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineNameMissingHTTP).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(missingPortEndpoint),
+				testutils.OTLPProtocol("http"),
+			).
+			Build()
+
 		objs = append(objs,
 			&metricPipelineInvalidPort,
-			&metricPipelineMissingPort,
+			&metricPipelineMissingPortGRPC,
+			&metricPipelineMissingPortHTTP,
 		)
 
 		return objs
@@ -70,10 +80,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameMissing, metav1.Condition{
+			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameMissingGRPC, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
+			})
+		})
+
+		It("Should set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol", func() {
+			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameMissingHTTP, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonGatewayConfigured,
 			})
 		})
 	})

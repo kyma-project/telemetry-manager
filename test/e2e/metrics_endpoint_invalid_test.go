@@ -25,6 +25,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 		mockNs                = suite.ID()
 		pipelineNameValue     = suite.IDWithSuffix("value")
 		pipelineNameValueFrom = suite.IDWithSuffix("value-from")
+		pipelineNameHTTP      = suite.IDWithSuffix("invalid-http")
 	)
 
 	makeResources := func() []client.Object {
@@ -45,10 +46,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 			Build()
 
+		metricPipelineInvalidEndpointHTTP := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineNameHTTP).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(invalidEndpoint),
+				testutils.OTLPProtocol("http"),
+			).
+			Build()
+
 		objs = append(objs,
 			secret.K8sObject(),
 			&metricPipelineInvalidEndpointValue,
 			&metricPipelineInvalidEndpointValueFrom,
+			&metricPipelineInvalidEndpointHTTP,
 		)
 
 		return objs
@@ -72,6 +82,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 			})
 
 			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameValueFrom, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonEndpointInvalid,
+			})
+
+			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
