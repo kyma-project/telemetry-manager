@@ -48,7 +48,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
               weight: 100
       containers:
-        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.107.0
+        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.108.0
           args:
           - traces
           - --otlp-insecure
