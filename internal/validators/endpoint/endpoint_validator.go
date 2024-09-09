@@ -18,7 +18,6 @@ const (
 	FluentdProtocolHTTP = "fluentd-http"
 	OtlpProtocolGRPC    = telemetryv1alpha1.OtlpProtocolGRPC
 	OtlpProtocolHTTP    = telemetryv1alpha1.OtlpProtocolHTTP
-	SchemePlaceholder   = "plhd://"
 )
 
 type Validator struct {
@@ -32,18 +31,11 @@ var (
 )
 
 type EndpointInvalidError struct {
-	Err               error
-	SchemePlaceholder string
+	Err error
 }
 
 func (eie *EndpointInvalidError) Error() string {
-	errMessage := eie.Err.Error()
-
-	if eie.SchemePlaceholder != "" {
-		return strings.Replace(errMessage, eie.SchemePlaceholder, "", 1)
-	}
-
-	return errMessage
+	return eie.Err.Error()
 }
 
 func (eie *EndpointInvalidError) Unwrap() error {
@@ -112,10 +104,13 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 
 	// parse a URL without scheme
 	if u.Opaque != "" || u.Scheme == "" || u.Host == "" {
-		u, err = url.Parse(SchemePlaceholder + endpoint)
+		const placeholder = "plhd://"
+		u, err = url.Parse(placeholder + endpoint)
 		if err != nil {
-			return nil, &EndpointInvalidError{Err: err, SchemePlaceholder: SchemePlaceholder}
+			errMsg := strings.Replace(err.Error(), placeholder, "", 1)
+			return nil, &EndpointInvalidError{Err: errors.New(errMsg)}
 		}
+		u.Scheme = ""
 	}
 
 	return u, nil
