@@ -22,9 +22,10 @@ type syncer struct {
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
-	if !isLogPipelineDeployable(deployableLogPipelines, pipeline) {
+	if len(deployableLogPipelines) == 0 {
 		return nil
 	}
+
 	log := logf.FromContext(ctx)
 
 	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {
@@ -62,7 +63,7 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 
 	cmKey := pipeline.Name + ".conf"
 
-	if !isLogPipelineDeployable(deployablePipelines, pipeline) {
+	if !isLogPipelineDeployable(deployablePipelines, pipeline) || !pipeline.DeletionTimestamp.IsZero() {
 		delete(cm.Data, cmKey)
 	} else {
 		builderConfig := builder.BuilderConfig{
