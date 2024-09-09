@@ -4,7 +4,9 @@ go 1.23.1
 
 require (
 	github.com/golangci/golangci-lint v1.61.0
+	github.com/google/yamlfmt v0.13.0
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
+	github.com/mikefarah/yq/v4 v4.44.3
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/vektra/mockery/v2 v2.46.0
 	github.com/vladopajic/go-test-coverage/v2 v2.10.2
@@ -26,7 +28,9 @@ require (
 	github.com/GaijinEntertainment/go-exhaustruct/v3 v3.3.0 // indirect
 	github.com/Masterminds/semver/v3 v3.3.0 // indirect
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.0 // indirect
+	github.com/a8m/envsubst v1.4.2 // indirect
 	github.com/alecthomas/go-check-sumtype v0.1.4 // indirect
+	github.com/alecthomas/participle/v2 v2.1.1 // indirect
 	github.com/alexflint/go-arg v1.4.3 // indirect
 	github.com/alexflint/go-scalar v1.1.0 // indirect
 	github.com/alexkohler/nakedret/v2 v2.0.4 // indirect
@@ -39,7 +43,9 @@ require (
 	github.com/bkielbasa/cyclop v1.2.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blizzy78/varnamelen v0.8.0 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
 	github.com/bombsimon/wsl/v4 v4.4.1 // indirect
+	github.com/braydonk/yaml v0.7.0 // indirect
 	github.com/breml/bidichk v0.2.7 // indirect
 	github.com/breml/errchkjson v0.3.6 // indirect
 	github.com/butuzov/ireturn v0.3.0 // indirect
@@ -55,6 +61,8 @@ require (
 	github.com/daixiang0/gci v0.13.5 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/denis-tingaikin/go-header v0.5.0 // indirect
+	github.com/dimchansky/utfbom v1.1.1 // indirect
+	github.com/elliotchance/orderedmap v1.6.0 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
@@ -81,6 +89,8 @@ require (
 	github.com/go-xmlfmt/xmlfmt v1.1.2 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/goccy/go-json v0.10.3 // indirect
+	github.com/goccy/go-yaml v1.12.0 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
@@ -112,7 +122,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jgautheron/goconst v1.7.1 // indirect
 	github.com/jingyugao/rowserrcheck v1.1.1 // indirect
-	github.com/jinzhu/copier v0.3.5 // indirect
+	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20200119135958-7558a9eaa5af // indirect
 	github.com/jjti/go-spancheck v0.6.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -169,6 +179,7 @@ require (
 	github.com/rs/zerolog v1.29.0 // indirect
 	github.com/ryancurrah/gomodguard v1.3.5 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.5.1 // indirect
+	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
 	github.com/sanposhiho/wastedassign/v2 v2.0.7 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/sashamelentyev/interfacebloat v1.1.0 // indirect
@@ -207,6 +218,7 @@ require (
 	github.com/yagipy/maintidx v1.0.0 // indirect
 	github.com/yeya24/promlinter v0.3.0 // indirect
 	github.com/ykadowak/zerologlint v0.1.5 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	gitlab.com/bosi/decorder v0.4.2 // indirect
 	go-simpler.org/musttag v0.12.2 // indirect
 	go-simpler.org/sloglint v0.7.2 // indirect
@@ -224,10 +236,12 @@ require (
 	golang.org/x/term v0.23.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.5.1 // indirect
