@@ -289,7 +289,7 @@ Telemetry Manager continuously watches the Secret referenced with the **secretKe
 > [!TIP]
 > If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### 4. Activate Prometheus-Based Metrics
+### <a name="_4-activate-prometheus-based-metric">4. Activate Prometheus-Based Metric</a>
 
 > [!NOTE]
 > For the following approach, you must have instrumented your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
@@ -321,6 +321,28 @@ For metrics ingestion to start automatically, simply apply the following annotat
 | `prometheus.io/port` (mandatory)   | `8080`, `9100` | none | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
 | `prometheus.io/path`               | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
 | `prometheus.io/scheme`             | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
+
+ If you're running the Pod targeted by a Service with Istio, Istio must be able to derive the [appProtocol](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol) from the Service port definition; otherwise the communication for scraping the metric endpoint cannot be established. You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
+ For example, see the following `Service` configuration:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  name: sample
+spec:
+  ports:
+  - name: http-metrics
+    appProtocol: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: sample
+  type: ClusterIP
+```
 
 > [!NOTE]
 > The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
@@ -625,13 +647,17 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 ```bash
 2023-08-29T09:53:07.123Z warn internal/transaction.go:111 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
 ```
+<!-- markdown-link-check-disable-next-line -->
+**Cause 1**: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
 
-**Cause**: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#4-activate-prometheus-based-metrics).
-
-**Remedy**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
+**Remedy 1**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
 
 - Configure the workload using “STRICT” mTLS mode (for example, by applying a corresponding PeerAuthentication).
 - Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
+<!-- markdown-link-check-disable-next-line -->
+**Cause 2**: The Service definition enabling the scrape with Prometheus annotations does not reveal the application protocol to use in the port definition. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
+
+**Remedy 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
 
 ### Gateway Buffer Filling Up
 
