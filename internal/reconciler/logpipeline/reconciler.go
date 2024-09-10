@@ -131,27 +131,26 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return ctrl.Result{}, r.doReconcile(ctx, &pipeline)
+	err = r.doReconcile(ctx, &pipeline)
+
+	if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
+		if err != nil {
+			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
+		} else {
+			err = fmt.Errorf("failed to update status: %w", statusErr)
+		}
+	}
+
+	return ctrl.Result{}, err
 }
 
-func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (err error) {
-	// defer the updating of status to ensure that the status is updated regardless of the outcome of the reconciliation
-	defer func() {
-		if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
-			if err != nil {
-				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-			} else {
-				err = fmt.Errorf("failed to update status: %w", statusErr)
-			}
-		}
-	}()
-
+func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := r.List(ctx, &allPipelines); err != nil {
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
 	}
 
-	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
+	if err := ensureFinalizers(ctx, r.Client, pipeline); err != nil {
 		return err
 	}
 
@@ -178,7 +177,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	return err
+	return nil
 }
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, pipelines []telemetryv1alpha1.LogPipeline) error {

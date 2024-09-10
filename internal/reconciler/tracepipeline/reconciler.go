@@ -137,21 +137,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return ctrl.Result{}, r.doReconcile(ctx, &tracePipeline)
+	err = r.doReconcile(ctx, &tracePipeline)
+	if statusErr := r.updateStatus(ctx, tracePipeline.Name); statusErr != nil {
+		if err != nil {
+			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
+		} else {
+			err = fmt.Errorf("failed to update status: %w", statusErr)
+		}
+	}
+	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
 	var err error
-
-	defer func() {
-		if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
-			if err != nil {
-				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-			} else {
-				err = fmt.Errorf("failed to update status: %w", statusErr)
-			}
-		}
-	}()
 
 	if err = r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
