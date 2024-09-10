@@ -105,8 +105,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				// Check the "kyma.resource.status.conditions" metric for the "LogComponentsHealthy" condition type
 				checkTelemtryModuleMetricsConditions(g, bodyContent, "LogComponentsHealthy")
 
-				// Check the "kyma.resource.status.conditions" metric for the "MetricsComponentsHealthy" condition type
-				checkTelemtryModuleMetricsConditions(g, bodyContent, "MetricsComponentsHealthy")
+				// Check the "kyma.resource.status.conditions" metric for the "MetricComponentsHealthy" condition type
+				checkTelemtryModuleMetricsConditions(g, bodyContent, "MetricComponentsHealthy")
 
 				// Check the "kyma.resource.status.conditions" metric for the "TraceComponentsHealthy" condition type
 				checkTelemtryModuleMetricsConditions(g, bodyContent, "TraceComponentsHealthy")
