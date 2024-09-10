@@ -105,7 +105,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 						HaveName(Equal("kyma.resource.status.state")),
 						HaveMetricAttributes(HaveKey("state")),
 						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveResourceAttributes(HaveKeyWithValue("kyma.resource.name", "Telemetry")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", "default")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
 						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
 						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
@@ -122,7 +125,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 						HaveMetricAttributes(HaveKey("status")),
 						HaveMetricAttributes(HaveKey("reason")),
 						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveResourceAttributes(HaveKeyWithValue("kyma.resource.name", "Telemetry")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", "default")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
 						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
 						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
@@ -139,7 +145,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 						HaveMetricAttributes(HaveKey("status")),
 						HaveMetricAttributes(HaveKey("reason")),
 						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveResourceAttributes(HaveKeyWithValue("kyma.resource.name", "Telemetry")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", "default")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
 						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
 						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
@@ -156,7 +165,76 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 						HaveMetricAttributes(HaveKey("status")),
 						HaveMetricAttributes(HaveKey("reason")),
 						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
-						HaveResourceAttributes(HaveKeyWithValue("kyma.resource.name", "Telemetry")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", "default")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
+						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+						HaveScopeVersion(SatisfyAny(
+							Equal("main"),
+							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+						)),
+					)),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Ensures metric pipeline condition metrics are sent to the backend which is receiving metrics from the pipeline with annotation", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendForKymaInputExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				// Check the "kyma.resource.status.conditions" type ConfigurationGenerated for  metricpipeline with annotation
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(SatisfyAll(
+						HaveName(Equal("kyma.resource.status.conditions")),
+						HaveMetricAttributes(HaveKeyWithValue("type", "ConfigurationGenerated")),
+						HaveMetricAttributes(HaveKey("status")),
+						HaveMetricAttributes(HaveKey("reason")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", pipelineWithAnnotationName)),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "telemetry.kyma-project.io")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "metricpipelines")),
+						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+						HaveScopeVersion(SatisfyAny(
+							Equal("main"),
+							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+						)),
+					)),
+				))
+				// Check the "kyma.resource.status.conditions" type AgentHealthy for metricpipeline with annotation
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(SatisfyAll(
+						HaveName(Equal("kyma.resource.status.conditions")),
+						HaveMetricAttributes(HaveKeyWithValue("type", "AgentHealthy")),
+						HaveMetricAttributes(HaveKey("status")),
+						HaveMetricAttributes(HaveKey("reason")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", pipelineWithAnnotationName)),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "telemetry.kyma-project.io")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "metricpipelines")),
+						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
+						HaveScopeVersion(SatisfyAny(
+							Equal("main"),
+							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+						)),
+					)),
+				))
+				// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(SatisfyAll(
+						HaveName(Equal("kyma.resource.status.conditions")),
+						HaveMetricAttributes(HaveKeyWithValue("type", "GatewayHealthy")),
+						HaveMetricAttributes(HaveKey("status")),
+						HaveMetricAttributes(HaveKey("reason")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", pipelineWithAnnotationName)),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "telemetry.kyma-project.io")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "metricpipelines")),
 						HaveScopeName(Equal(metric.InstrumentationScopeKyma)),
 						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
