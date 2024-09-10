@@ -18,7 +18,7 @@ In addition, the metrics from the system namespaces (including `kyma-system` nam
 
 Therefore, we need to ensure that non-workload metrics are not enriched with unwanted resource attributes.
 
-## Decision
+## Possible Solutions
 
 There are different possible solutions to solve this problem:
 
@@ -31,7 +31,7 @@ The `Input Pipeline` contains the `otlp` receiver and `memory_limiter` processor
 The `Attributes Enrichment Pipeline` contains the `k8sattributes` and `transform/resolve-service-name` processors.
 The `Output Pipeline` contains the rest of the processors and the `otlp` exporter.
 
-If the resource attribute `skip-enrichment` is set `true`, the `Routing Connector` will route the metrics to the `Output Pipeline` directly. Otherwise, the `Routing Connector` will route the metrics to the `Attributes Enrichment Pipeline`.
+If the resource attribute `skip-enrichment` is set to `true`, the `Routing Connector` will route the metrics to the `Output Pipeline` directly. Otherwise, the `Routing Connector` will route the metrics to the `Attributes Enrichment Pipeline`.
 The metric agent will insert the resource attribute `skip-enrichment` with the value `true` for non-workload metrics. This will allow the metric gateway to skip enriching the non-workload metrics with unwanted resource attributes.
 
 To check the effect of the new setup on the performance of the metric gateway, [load tests](https://github.com/kyma-project/telemetry-manager/tree/main/docs/contributor/benchmarks#metric-gateway) were executed using version [1.22.0](https://github.com/kyma-project/telemetry-manager/releases/tag/1.22.0) for the telemetry-manager and the OTel collector image `europe-docker.pkg.dev/kyma-project/dev/kyma-otel-collector:PR-121`, which contains the [routingconnector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector) and [forwardconnector](https://github.com/open-telemetry/opentelemetry-collector/tree/main/connector/forwardconnector) components.
@@ -92,6 +92,8 @@ We can directly delete the unwanted resource attributes in the metric gateway af
 - _Cons_:
   - If a user sends their own custom non-workload metrics, there is no option for them to skip the unwanted resource attributes.
   - If a user deploys their own OTel Collector and sends metrics to the metric gateway, they might be explicitly setting the resource attributes that we are deleting with custom values.
+
+## Decision
 
 We have decided to adopt option 1. Although the metric gateway configuration will become more complex, it is the cleanest and recommended solution for doing a conditional routing in an OTel collector pipeline and the only solution which allows users to skip enriching their custom non-workload metrics with unwanted resource attributes.
 
