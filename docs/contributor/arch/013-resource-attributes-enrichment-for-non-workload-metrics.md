@@ -50,7 +50,7 @@ The results of a single execution of the load tests is shown in the table below:
 |                    With Connectors |             4459             |             4461             |          0          |       172, 153       |   1.5, 1.5    |             3166              |             9500             |          0          |       242, 227       |   1.7, 1.7    |                     842                     |             631              |         314         |       908, 921       |   0.5, 0.5    |                    1979                     |             1918             |         509         |      1695, 1712      |   1.4, 1.5    |
 
 
-To check the variation of the load tests results, the load tests were executed 3 times for each setup. The results are shown in the table below:
+To check the variation of the load tests results, the load tests were executed 3 times for each setup for the single pipeline scenario. The results are shown in the table below:
 
 |                         Version/Test | Single Pipeline (ci-metrics) |                              |                     |                      |               |
 |-------------------------------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
