@@ -1,6 +1,6 @@
 # 2. Resource Attributes Enrichment for Non-Workload Metrics
 
-Date: 2024-08-30
+Date: 2024-09-10
 
 ## Status
 
@@ -16,7 +16,7 @@ In addition, the metrics from the system namespaces (including `kyma-system` nam
 
 ![Node Metric With k8sattributes Processor](../assets/node-metric-with-k8sattributes-processor.png)
 
-Thus, we need to ensure that non-workload metrics are not enriched with unwanted resource attributes.
+Therefore, we need to ensure that non-workload metrics are not enriched with unwanted resource attributes.
 
 ## Decision
 
@@ -27,14 +27,18 @@ There are different possible solutions to solve this problem:
 ![Connectors](../assets/connectors.drawio.svg)
 
 We can split our MetricPipeline into 3 sub-pipelines which are connected using [Connectors](https://opentelemetry.io/docs/collector/configuration/#connectors) as shown in the diagram above.
-An `Input Pipeline`, which contains the `otlp` receiver and `memory_limiter` processor.
-An `Attributes Enrichment Pipeline`, which contains the `k8sattributes` and `transform/resolve-service-name` processors.
-An `Output Pipeline`, which contains the rest of the processors and the `otlp` exporter.
+The `Input Pipeline` contains the `otlp` receiver and `memory_limiter` processor.
+The `Attributes Enrichment Pipeline` contains the `k8sattributes` and `transform/resolve-service-name` processors.
+The `Output Pipeline` contains the rest of the processors and the `otlp` exporter.
 
 The metrics will be routed to the `Attributes Enrichment Pipeline` only if they are workload metrics. This can be done by checking if a resource attribute (like `skip-enrichment`) is set `true`.
 Otherwise, the metrics will bypass the `Attributes Enrichment Pipeline` and will be routed directly to the `Output Pipeline`.
 
-To check the effect of the new setup on the performance of the Metric Gateway, [load tests](https://github.com/kyma-project/telemetry-manager/tree/main/docs/contributor/benchmarks#metric-gateway) were executed using the image `europe-docker.pkg.dev/kyma-project/dev/kyma-otel-collector:PR-121`, which contains the `routingconnector` and `forwardconnector` components:
+To check the effect of the new setup on the performance of the Metric Gateway, [load tests](https://github.com/kyma-project/telemetry-manager/tree/main/docs/contributor/benchmarks#metric-gateway) were executed using version [1.22.0](https://github.com/kyma-project/telemetry-manager/releases/tag/1.22.0) for the telemetry-manager and the OTel collector image `europe-docker.pkg.dev/kyma-project/dev/kyma-otel-collector:PR-121`, which contains the [routingconnector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector) and [forwardconnector](https://github.com/open-telemetry/opentelemetry-collector/tree/main/connector/forwardconnector) components.
+For the single Pipeline load tests, the gateway configuration from [here](../assets/single_pipeline_gateway_with_connectors.yaml) was used.
+For the multi Pipeline load tests, the gateway configuration from [here](../assets/multi_pipeline_gateway_with_connectors.yaml) was used.
+
+The results of a single execution of the load tests is shown in the table below:
  
 <div class="table-wrapper" markdown="block">
 
@@ -46,6 +50,7 @@ To check the effect of the new setup on the performance of the Metric Gateway, [
 |                    With Connectors |             4459             |             4461             |          0          |       172, 153       |   1.5, 1.5    |             3166              |             9500             |          0          |       242, 227       |   1.7, 1.7    |                     842                     |             631              |         314         |       908, 921       |   0.5, 0.5    |                    1979                     |             1918             |         509         |      1695, 1712      |   1.4, 1.5    |
 
 
+To check the variation of the load tests results, the load tests were executed 3 times for each setup. The results are shown in the table below:
 
 |                         Version/Test | Single Pipeline (ci-metrics) |                              |                     |                      |               |
 |-------------------------------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
@@ -57,6 +62,7 @@ To check the effect of the new setup on the performance of the Metric Gateway, [
 |                   2. With Connectors |             4476             |             4479             |          0          |       167, 138       |   1.5, 1.5    |
 |                   3. With Connectors |             4471             |             4471             |          0          |       157, 163       |   1.5, 1.5    |
 
+As a conclusion of the load tests results, the performance of the Metric Gateway is not affected by the new setup with Connectors. The results show that the performance of the Metric Gateway is similar for both setups.
 
 </div>
 
