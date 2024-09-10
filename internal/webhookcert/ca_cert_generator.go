@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	rsaKeySize   = 2048
+	rsaKeySize   = 4096
 	duration365d = time.Hour * 24 * 365
 	caCertMaxAge = duration365d
 )
