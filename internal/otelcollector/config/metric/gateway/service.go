@@ -42,7 +42,7 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline,
 		processors = append(processors, "transform/set-instrumentation-scope-kyma")
 	}
 
-	processors = append(processors, "resource/insert-cluster-name", "batch")
+	processors = append(processors, "resource/insert-cluster-name", "resource/delete-skip-enrichment-attribute", "batch")
 
 	return config.Pipeline{
 		Receivers:  []string{formatRoutingConnectorID(pipeline.Name), formatForwardConnectorID(pipeline.Name)},
