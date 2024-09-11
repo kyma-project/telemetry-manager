@@ -353,49 +353,6 @@ func TestReconcile(t *testing.T) {
 		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
 
-	t.Run("loki output is defined", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithLokiOutput().Build()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
-
-		errToMsgStub := &mocks.ErrorToMessageConverter{}
-
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonUnsupportedLokiOutput,
-			"The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
-		)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeFlowHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonSelfMonConfigNotGenerated,
-			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
-		)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
-		require.Error(t, err, "sections configmap should not exist")
-	})
-
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string

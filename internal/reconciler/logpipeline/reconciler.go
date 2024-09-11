@@ -375,7 +375,7 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 }
 
 // getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
-// A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
+// A pipeline is deployable if it is not being deleted, and all secret references exist.
 func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) ([]telemetryv1alpha1.LogPipeline, error) {
 	var reconcilableLogPipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
