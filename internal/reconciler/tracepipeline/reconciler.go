@@ -149,14 +149,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
-	var err error
 
-	if err = r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
+	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
 	}
 
 	var allPipelinesList telemetryv1alpha1.TracePipelineList
-	if err = r.List(ctx, &allPipelinesList); err != nil {
+	if err := r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
 
