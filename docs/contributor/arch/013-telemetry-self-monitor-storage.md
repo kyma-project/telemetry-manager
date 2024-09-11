@@ -1,4 +1,4 @@
-# 8. Telemetry Self Monitor Storage
+# 13. Telemetry Self Monitor Storage
 
 Date: 2024-10-09
 
@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-
+The Telemetry module self-monitor
 
 ### Storage and Retention
 
