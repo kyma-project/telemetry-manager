@@ -20,7 +20,9 @@ Only persistence blocks are deleted even if all those data blocks go beyond the 
 
 ### TSDB Storage architecture and retention
 
-For more information and insight into the Prometheus storage architecture and retention policy, please refer to the [TSDB blog series](https://ganeshvernekar.com/blog/prometheus-tsdb-compaction-and-retention).
+For more information and insight into the Prometheus storage architecture and retention policy, please refer to the [Prometheus TSDB: Compaction and Retention](https://ganeshvernekar.com/blog/prometheus-tsdb-compaction-and-retention).
+The TSDB WAL and checkpoint architecture is described in the [Prometheus TSDB: WAL and Checkpoint](https://ganeshvernekar.com/blog/prometheus-tsdb-wal-and-checkpoint/).
+
 
 ## Consequences
 
