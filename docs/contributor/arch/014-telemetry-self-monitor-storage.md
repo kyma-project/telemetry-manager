@@ -8,14 +8,14 @@ Proposed
 
 ## Context
 
-The Telemetry module self-monitoring is crucial for the overall health of the system. The self-monitoring data is used to detect issues in the Telemetry module and to provide insights into the system's health. The self-monitoring data is stored in a time-series database (TSDB) and is used to generate alerts. 
+The Telemetry module self-monitoring monitors the overall health of the system therefor availability and safe operation of self-monitoring is important. The self-monitoring data is used to detect issues in the Telemetry module and to provide insights into the system's health. The self-monitoring data is stored in a time-series database (TSDB) and is used to generate alerts. 
 The current storage configuration and retention policy for the self-monitoring data are not well-defined. Currently, some installations face the issue that self-monitoring storage fills up and exceeds the storage limit despite the retention policies of 2 hours or 50 MBytes. 
 The Telemetry self-monitoring data is stored in the Prometheus TSDB, which is designed for large-scale deployments. The amount of data collected by the Telemetry self-monitoring is actually small compared to the Prometheus capabilities (a few MBytes). Nevertheless, the storage size and retention policies must be carefully configured.
 
 
 ### Storage and Retention with TSDB
 
-The TSDB storage size-based retention works in a way, it includes data blocks the WAL, checkpoints, m-mapped chunks, and persistent blocks. The TSDB although counts all of those storage blocks to decide any deletion, the WAL, checkpoints, and m-mapped chunks required for normal operation of TSDB.
+The TSDB storage size-based retention works as following, it includes data blocks like the write-ahead-log (WAL), the checkpoints, the m-mapped chunks, and the persistent blocks. The TSDB although counts all of those data blocks to decide perform any retention, the WAL, checkpoints, and m-mapped chunks required for normal operation of TSDB.
 Even if all those data blocks go beyond the configured retention size, only persistence blocks are deleted. The WAL segments can grow up to 128MB before compacting, and Prometheus will keep at least 3 WAL files; so-called 2/3 rules. To ensure that Telemetry self-monitoring doesn't exceed the storage limit, minimum storage volume size should be calculated to be at least 3 * WAL segment size + some more space for other data types.  
 
 ### TSDB Storage architecture and retention
@@ -27,5 +27,3 @@ For the TSDB WAL and checkpoint architecture, see [Prometheus TSDB: WAL and Chec
 ## Consequences
 
 Even though the Telemetry self-monitoring collects very little data for operation (currently, a few MBytes), the storage size must be at least 500MByte for a normal and safe operation.
-
-
