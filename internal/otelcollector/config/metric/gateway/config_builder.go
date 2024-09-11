@@ -58,8 +58,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			return nil, nil, err
 		}
 
-		pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
-		cfg.Service.Pipelines[pipelineID] = makeServicePipelineConfig(&pipeline, opts)
+		inputPipelineID := formatInputPipelineID(pipeline.Name)
+		attributesEnrichmentPipelineID := formatAttributesEnrichmentPipelineID(pipeline.Name)
+		outputPipelineID := formatOutputPipelineID(pipeline.Name)
+		cfg.Service.Pipelines[inputPipelineID] = makeInputPipelineServiceConfig(&pipeline, opts)
+		cfg.Service.Pipelines[attributesEnrichmentPipelineID] = makeAttributesEnrichmentPipelineServiceConfig(pipeline.Name)
+		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline, opts)
 	}
 
 	return cfg, envVars, nil
@@ -207,127 +211,12 @@ func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.
 	return nil
 }
 
-func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) config.Pipeline {
-	processors := []string{"memory_limiter", "k8sattributes"}
-
-	input := pipeline.Spec.Input
-
-	// Perform the transform before runtime resource filter as InstrumentationScopeRuntime is required for dropping container/pod metrics
-	if isRuntimeInputEnabled(pipeline.Spec.Input) {
-		processors = append(processors, "transform/set-instrumentation-scope-runtime")
-	}
-
-	processors = append(processors, makeInputSourceFiltersIDs(input)...)
-	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
-	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
-	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
-
-	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
-		processors = append(processors, "transform/set-instrumentation-scope-kyma")
-	}
-
-	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "batch")
-
-	return config.Pipeline{
-		Receivers:  makeReceiversIDs(pipeline, opts),
-		Processors: processors,
-		Exporters:  []string{formatOTLPExporterID(pipeline)},
-	}
-}
-
-func makeInputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
-	var processors []string
-
-	if !isRuntimeInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-runtime")
-	}
-	if !isPrometheusInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-prometheus")
-	}
-	if !isIstioInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-istio")
-	}
-	if !isOtlpInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-otlp")
-	}
-
-	return processors
-}
-
-func makeNamespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeline *telemetryv1alpha1.MetricPipeline) []string {
-	var processors []string
-
-	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
-		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime))
-	}
-	if isPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
-		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus))
-	}
-	if isIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
-		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio))
-	}
-	if isOtlpInputEnabled(input) && input.Otlp != nil && shouldFilterByNamespace(input.Otlp.Namespaces) {
-		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp))
-	}
-
-	return processors
-}
-
-func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
-	var processors []string
-
-	if isRuntimeInputEnabled(input) && !isRuntimePodMetricsEnabled(input) {
-		processors = append(processors, "filter/drop-runtime-pod-metrics")
-	}
-	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
-		processors = append(processors, "filter/drop-runtime-container-metrics")
-	}
-	if isRuntimeInputEnabled(input) {
-		processors = append(processors, "filter/drop-k8s-cluster-metrics")
-	}
-
-	return processors
-}
-
-func makeDiagnosticMetricFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
-	var processors []string
-
-	if isIstioInputEnabled(input) && !isIstioDiagnosticMetricsEnabled(input) {
-		processors = append(processors, "filter/drop-diagnostic-metrics-if-input-source-istio")
-	}
-	if isPrometheusInputEnabled(input) && !isPrometheusDiagnosticMetricsEnabled(input) {
-		processors = append(processors, "filter/drop-diagnostic-metrics-if-input-source-prometheus")
-	}
-
-	return processors
-}
-
-func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) []string {
-	var receivers []string
-
-	receivers = append(receivers, "otlp")
-
-	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
-		receivers = append(receivers, "singleton_receiver_creator/kymastats")
-	}
-
-	if isRuntimeInputEnabled(pipeline.Spec.Input) {
-		receivers = append(receivers, "singleton_receiver_creator/k8s_cluster")
-	}
-
-	return receivers
-}
-
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
 	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType metric.InputSourceType) string {
 	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
-}
-
-func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
-	return otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
 }
 
 func formatForwardConnectorID(pipelineName string) string {
