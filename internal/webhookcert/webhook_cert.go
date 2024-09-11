@@ -2,7 +2,10 @@ package webhookcert
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/tls"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +20,35 @@ type Config struct {
 	ServiceName  types.NamespacedName
 	CASecretName types.NamespacedName
 	WebhookName  types.NamespacedName
+}
+
+func ValidateCertificateKeySize(ctx context.Context, client client.Client, config Config) error {
+	secret := corev1.Secret{}
+	if err := client.Get(ctx, config.CASecretName, &secret); err != nil {
+		return fmt.Errorf("failed to get secret: %w", err)
+	}
+	key := secret.Data[caKeyFile]
+	crt := secret.Data[caCertFile]
+	if key == nil || crt == nil {
+		return fmt.Errorf("key or cert is nil")
+	}
+	cert, err := tls.LoadX509KeyPair(string(crt), string(key))
+	if err != nil {
+		return fmt.Errorf("failed to load key pair: %w", err)
+	}
+	privateKey := cert.PrivateKey.(*rsa.PrivateKey)
+	if privateKey.N.BitLen() < 4096 {
+		//delete the secret and the validating webhook configuration
+		secretObj := corev1.Secret{ObjectMeta: secret.ObjectMeta}
+		if err = k8sutils.DeleteObject(ctx, client, &secretObj); err != nil {
+			return fmt.Errorf("failed to delete webhook secret: %w", err)
+		}
+		validatingWebhookConfig := admissionregistrationv1.ValidatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: config.WebhookName.Name}}
+		if err = k8sutils.DeleteObject(ctx, client, &validatingWebhookConfig); err != nil {
+			return fmt.Errorf("failed to delete validating webhook configuration: %w", err)
+		}
+	}
+	return nil
 }
 
 func EnsureCertificate(ctx context.Context, client client.Client, config Config) error {
