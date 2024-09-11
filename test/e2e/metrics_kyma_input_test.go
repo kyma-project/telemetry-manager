@@ -155,7 +155,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 						Not(ContainElement(HaveName(Equal("kyma.resource.status.conditions")))),
 					)),
 				))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryConsistentlyScrapeTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
