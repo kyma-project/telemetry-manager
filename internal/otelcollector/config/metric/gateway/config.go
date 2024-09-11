@@ -11,6 +11,7 @@ type Config struct {
 	Receivers  Receivers  `yaml:"receivers"`
 	Processors Processors `yaml:"processors"`
 	Exporters  Exporters  `yaml:"exporters"`
+	Connectors Connectors `yaml:"connectors"`
 }
 
 type Receivers struct {
@@ -122,4 +123,26 @@ type Exporters map[string]Exporter
 
 type Exporter struct {
 	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
+}
+
+type Connectors map[string]any
+
+//type Connectors struct {
+//	ForwardConnectors ForwardConnectors `yaml:",inline"`
+//	RoutingConnectors RoutingConnectors `yaml:",inline"`
+//}
+//
+//type ForwardConnectors map[string]struct{}
+//
+//type RoutingConnectors map[string]RoutingConnector
+
+type RoutingConnector struct {
+	DefaultPipelines []string                     `yaml:"default_pipelines"`
+	ErrorMode        string                       `yaml:"error_mode"`
+	Table            []RoutingConnectorTableEntry `yaml:"table"`
+}
+
+type RoutingConnectorTableEntry struct {
+	Statement string   `yaml:"statement"`
+	Pipelines []string `yaml:"pipelines"`
 }

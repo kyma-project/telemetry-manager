@@ -34,6 +34,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
 		Exporters:  make(Exporters),
+		Connectors: make(Connectors),
+		//Connectors: Connectors{},
 	}
 
 	envVars := make(otlpexporter.EnvVars)
@@ -79,6 +81,7 @@ func declareComponentsForMetricPipeline(
 	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
 	declareInstrumentationScopeTransform(pipeline, cfg, opts)
+	declareConnectors(pipeline.Name, cfg)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
 
@@ -170,6 +173,26 @@ func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipe
 	}
 }
 
+func declareConnectors(pipelineName string, cfg *Config) {
+	//if cfg.Connectors.ForwardConnectors == nil {
+	//	cfg.Connectors.ForwardConnectors = make(ForwardConnectors)
+	//}
+	//forwardConnectorID := formatForwardConnectorID(pipelineName)
+	//cfg.Connectors.ForwardConnectors[forwardConnectorID] = struct{}{}
+	//
+	//if cfg.Connectors.RoutingConnectors == nil {
+	//	cfg.Connectors.RoutingConnectors = make(RoutingConnectors)
+	//}
+	//routingConnectorID := formatRoutingConnectorID(pipelineName)
+	//cfg.Connectors.RoutingConnectors[routingConnectorID] = makeRoutingConnectorConfig(pipelineName)
+
+	forwardConnectorID := formatForwardConnectorID(pipelineName)
+	cfg.Connectors[forwardConnectorID] = struct{}{}
+
+	routingConnectorID := formatRoutingConnectorID(pipelineName)
+	cfg.Connectors[routingConnectorID] = makeRoutingConnectorConfig(pipelineName)
+}
+
 func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
@@ -208,7 +231,7 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts 
 	return config.Pipeline{
 		Receivers:  makeReceiversIDs(pipeline, opts),
 		Processors: processors,
-		Exporters:  []string{makeOTLPExporterID(pipeline)},
+		Exporters:  []string{formatOTLPExporterID(pipeline)},
 	}
 }
 
@@ -279,14 +302,6 @@ func makeDiagnosticMetricFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 	return processors
 }
 
-func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
-	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
-}
-
-func formatNamespaceFilterID(pipelineName string, inputSourceType metric.InputSourceType) string {
-	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
-}
-
 func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) []string {
 	var receivers []string
 
@@ -303,8 +318,36 @@ func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOpti
 	return receivers
 }
 
-func makeOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
+func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
+	return namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
+}
+
+func formatNamespaceFilterID(pipelineName string, inputSourceType metric.InputSourceType) string {
+	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
+}
+
+func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
 	return otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
+}
+
+func formatForwardConnectorID(pipelineName string) string {
+	return fmt.Sprintf("forward/%s", pipelineName)
+}
+
+func formatRoutingConnectorID(pipelineName string) string {
+	return fmt.Sprintf("routing/%s", pipelineName)
+}
+
+func formatInputPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-input", pipelineName)
+}
+
+func formatAttributesEnrichmentPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-attributes-enrichment", pipelineName)
+}
+
+func formatOutputPipelineID(pipelineName string) string {
+	return fmt.Sprintf("metrics/%s-output", pipelineName)
 }
 
 func isPrometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
