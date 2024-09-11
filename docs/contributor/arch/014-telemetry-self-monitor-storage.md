@@ -9,7 +9,7 @@ Proposed
 ## Context
 
 The Telemetry module self-monitoring is crucial for the overall health of the system. The self-monitoring data is used to detect issues in the Telemetry module and to provide insights into the system's health. The self-monitoring data is stored in a time-series database (TSDB) and is used to generate alerts. 
-The current storage architecture and retention policy for the self-monitoring data are not well defined, currently, some installation faces the issue self-monitoring storage fill-up and exceed the storage limit despite the retention policies 2 hours or 50 MBytes. 
+The current storage configuration and retention policy for the self-monitoring data are not well-defined, currently, some installation faces the issue self-monitoring storage fill-up and exceed the storage limit despite the retention policies 2 hours or 50 MBytes. 
 The Telemetry self-monitoring data is stored in the Prometheus TSDB, which is designed for large scale deployments, the amount data collected by the Telemetry self-monitoring is actually small compared to the Prometheus capabilities (currently few MBytes) nevertheless the storage size and retention policies have to be carefully configured.
 
 
