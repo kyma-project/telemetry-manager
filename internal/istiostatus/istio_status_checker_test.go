@@ -26,6 +26,9 @@ func TestIsIstioActive(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "peerauthentications.security.istio.io",
+						Labels: map[string]string{
+							"app": "istio-pilot",
+						},
 					},
 				},
 			},
