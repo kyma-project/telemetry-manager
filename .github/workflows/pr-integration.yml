@@ -177,15 +177,3 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
-
-  PR-Integration-Success:
-    needs:
-    - e2e
-    - e2e-dev
-    - e2e-istio
-    - e2e-self-mon
-    runs-on: ubuntu-latest
-    steps:
-      - name: Success
-        run: |
-          echo "PR Integration completed successfully"
