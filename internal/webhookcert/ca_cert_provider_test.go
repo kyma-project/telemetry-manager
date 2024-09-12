@@ -113,9 +113,10 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:        fakeClient,
-			expiryChecker: &mockCertExpiryChecker{certValid: false},
-			generator:     &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			client:           fakeClient,
+			expiryChecker:    &mockCertExpiryChecker{certValid: false},
+			generator:        &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			keyLengthChecker: &mockCertKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -147,9 +148,10 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:        fakeClient,
-			expiryChecker: &mockCertExpiryChecker{err: errors.New("failed")},
-			generator:     &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			client:           fakeClient,
+			expiryChecker:    &mockCertExpiryChecker{err: errors.New("failed")},
+			generator:        &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			keyLengthChecker: &mockCertKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -181,9 +183,10 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:        fakeClient,
-			expiryChecker: &mockCertExpiryChecker{certValid: true},
-			generator:     &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
+			client:           fakeClient,
+			expiryChecker:    &mockCertExpiryChecker{certValid: true},
+			generator:        &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
+			keyLengthChecker: &mockCertKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
