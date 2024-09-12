@@ -126,16 +126,10 @@ type Exporter struct {
 	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
 }
 
+// Connectors is a map of connectors. The key is the name of the connector. The value is the connector configuration.
+// We need to have a different connector per pipeline, so we need to have a map of connectors.
+// The value needs to be "any" to satisfy different types of connectors.
 type Connectors map[string]any
-
-//type Connectors struct {
-//	ForwardConnectors ForwardConnectors `yaml:",inline"`
-//	RoutingConnectors RoutingConnectors `yaml:",inline"`
-//}
-//
-//type ForwardConnectors map[string]struct{}
-//
-//type RoutingConnectors map[string]RoutingConnector
 
 type RoutingConnector struct {
 	DefaultPipelines []string                     `yaml:"default_pipelines"`

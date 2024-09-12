@@ -35,7 +35,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		Processors: makeProcessorsConfig(),
 		Exporters:  make(Exporters),
 		Connectors: make(Connectors),
-		//Connectors: Connectors{},
 	}
 
 	envVars := make(otlpexporter.EnvVars)
@@ -178,18 +177,6 @@ func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipe
 }
 
 func declareConnectors(pipelineName string, cfg *Config) {
-	//if cfg.Connectors.ForwardConnectors == nil {
-	//	cfg.Connectors.ForwardConnectors = make(ForwardConnectors)
-	//}
-	//forwardConnectorID := formatForwardConnectorID(pipelineName)
-	//cfg.Connectors.ForwardConnectors[forwardConnectorID] = struct{}{}
-	//
-	//if cfg.Connectors.RoutingConnectors == nil {
-	//	cfg.Connectors.RoutingConnectors = make(RoutingConnectors)
-	//}
-	//routingConnectorID := formatRoutingConnectorID(pipelineName)
-	//cfg.Connectors.RoutingConnectors[routingConnectorID] = makeRoutingConnectorConfig(pipelineName)
-
 	forwardConnectorID := formatForwardConnectorID(pipelineName)
 	cfg.Connectors[forwardConnectorID] = struct{}{}
 
