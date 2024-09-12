@@ -108,8 +108,6 @@ type Output struct {
 	Custom string `json:"custom,omitempty"`
 	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 	HTTP *HTTPOutput `json:"http,omitempty"`
-	// The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README ).
-	Loki *LokiOutput `json:"grafana-loki,omitempty"`
 }
 
 // HTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
@@ -132,16 +130,6 @@ type HTTPOutput struct {
 	TLSConfig TLSConfig `json:"tls,omitempty"`
 	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`
-}
-
-// LokiOutput configures an output to the Kyma-internal Loki instance.
-type LokiOutput struct {
-	// Grafana Loki URL.
-	URL ValueType `json:"url,omitempty"`
-	// Labels to set for each log record.
-	Labels map[string]string `json:"labels,omitempty"`
-	// Attributes to be removed from a log record.
-	RemoveKeys []string `json:"removeKeys,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
@@ -204,10 +192,6 @@ func (o *Output) IsHTTPDefined() bool {
 	return o.HTTP != nil && o.HTTP.Host.IsDefined()
 }
 
-func (o *Output) IsLokiDefined() bool {
-	return o.Loki != nil && o.Loki.URL.IsDefined()
-}
-
 func (o *Output) IsAnyDefined() bool {
 	return o.pluginCount() > 0
 }
@@ -222,9 +206,6 @@ func (o *Output) pluginCount() int {
 		plugins++
 	}
 	if o.IsHTTPDefined() {
-		plugins++
-	}
-	if o.IsLokiDefined() {
 		plugins++
 	}
 	return plugins

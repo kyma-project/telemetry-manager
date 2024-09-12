@@ -199,6 +199,21 @@ func TestMakeMetricGatewayRBACWithKymaInputAllowed(t *testing.T) {
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
+				APIGroups: []string{"telemetry.kyma-project.io"},
+				Resources: []string{"metricpipelines"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"telemetry.kyma-project.io"},
+				Resources: []string{"tracepipelines"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"telemetry.kyma-project.io"},
+				Resources: []string{"logpipelines"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
 				APIGroups: []string{""},
 				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
 				Verbs:     []string{"get", "list", "watch"},

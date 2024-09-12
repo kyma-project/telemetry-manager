@@ -91,10 +91,6 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured)
 	}
 
-	if errors.Is(err, errUnsupportedLokiOutput) {
-		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.ConvertErrToMsg(err)
-	}
-
 	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) {
 		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.ConvertErrToMsg(err)
 	}

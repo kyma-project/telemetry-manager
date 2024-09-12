@@ -12,10 +12,6 @@ func getEmitterPostfixByOutput(output *telemetryv1alpha1.Output) string {
 		return "http"
 	}
 
-	if output.IsLokiDefined() {
-		return "grafana-loki"
-	}
-
 	if !output.IsCustomDefined() {
 		return ""
 	}

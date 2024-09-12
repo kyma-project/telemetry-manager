@@ -56,10 +56,34 @@ func TestReceivers(t *testing.T) {
 		kymaStatsReceiver := singletonKymaStatsReceiverCreator.SingletonKymaStatsReceiver.KymaStatsReceiver
 		require.Equal(t, "serviceAccount", kymaStatsReceiver.AuthType)
 		require.Equal(t, "30s", kymaStatsReceiver.CollectionInterval)
-		require.Len(t, kymaStatsReceiver.Modules, 1)
-		require.Equal(t, "operator.kyma-project.io", kymaStatsReceiver.Modules[0].Group)
-		require.Equal(t, "v1alpha1", kymaStatsReceiver.Modules[0].Version)
-		require.Equal(t, "telemetries", kymaStatsReceiver.Modules[0].Resource)
+		require.Len(t, kymaStatsReceiver.Resources, 4)
+		expectedResources := []ModuleGVR{
+			{
+				Group:    "operator.kyma-project.io",
+				Version:  "v1alpha1",
+				Resource: "telemetries",
+			},
+			{
+				Group:    "telemetry.kyma-project.io",
+				Version:  "v1alpha1",
+				Resource: "logpipelines",
+			},
+			{
+				Group:    "telemetry.kyma-project.io",
+				Version:  "v1alpha1",
+				Resource: "metricpipelines",
+			},
+			{
+				Group:    "telemetry.kyma-project.io",
+				Version:  "v1alpha1",
+				Resource: "tracepipelines",
+			},
+		}
+		for i, expectedResource := range expectedResources {
+			require.Equal(t, expectedResource.Group, kymaStatsReceiver.Resources[i].Group)
+			require.Equal(t, expectedResource.Version, kymaStatsReceiver.Resources[i].Version)
+			require.Equal(t, expectedResource.Resource, kymaStatsReceiver.Resources[i].Resource)
+		}
 	})
 
 	t.Run("singleton k8s cluster receiver creator", func(t *testing.T) {

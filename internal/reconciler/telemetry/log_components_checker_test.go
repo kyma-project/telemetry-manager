@@ -110,31 +110,6 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should not be healthy if one pipeline has Loki output defined",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().
-					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(configGeneratedCond).
-					Build(),
-				testutils.NewLogPipelineBuilder().
-					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{
-						Type:    conditions.TypeConfigurationGenerated,
-						Status:  metav1.ConditionFalse,
-						Reason:  conditions.ReasonUnsupportedLokiOutput,
-						Message: "The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
-					}).
-					Build(),
-			},
-			telemetryInDeletion: false,
-			expectedCondition: &metav1.Condition{
-				Type:    conditions.TypeLogComponentsHealthy,
-				Status:  "False",
-				Reason:  "UnsupportedLokiOutput",
-				Message: "The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
-			},
-		},
-		{
 			name: "should prioritize unready ConfigGenerated reason over AgentHealthy reason",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
