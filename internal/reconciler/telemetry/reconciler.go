@@ -124,27 +124,35 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.handleFinalizer(ctx, &telemetry); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to manage finalizer: %w", err)
+	err = r.doReconcile(ctx, &telemetry)
+	if statusErr := r.updateStatus(ctx, &telemetry); statusErr != nil {
+		if err != nil {
+			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
+		} else {
+			err = fmt.Errorf("failed to update status: %w", statusErr)
+		}
 	}
-
-	if err := r.updateStatus(ctx, &telemetry); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to update status: %w", err)
-	}
-
-	if err := r.reconcileWebhook(ctx, &telemetry); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
-	}
-
-	if err = r.reconcileSelfMonitor(ctx, telemetry); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
-	}
-
 	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
-	return ctrl.Result{Requeue: requeue}, nil
+	return ctrl.Result{Requeue: requeue}, err
 }
 
-func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	if err := r.handleFinalizer(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to manage finalizer: %w", err)
+	}
+
+	if err := r.reconcileWebhook(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to reconcile webhook: %w", err)
+	}
+
+	if err := r.reconcileSelfMonitor(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
 	pipelinesPresent, err := r.checkPipelineExist(ctx)
 	if err != nil {
 		return err
@@ -176,7 +184,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
+		k8sutils.NewOwnerReferenceSetter(r.Client, telemetry),
 		selfmonitor.ApplyOptions{
 			AlertRulesFileName:       selfMonitorAlertRuleFileName,
 			AlertRulesYAML:           string(alertRulesYAML),
