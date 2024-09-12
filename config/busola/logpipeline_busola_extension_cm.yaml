@@ -92,19 +92,6 @@ data:
             language: '''plaintext'''
             source: spec.output.custom
             visibility: $exists(spec.output.custom)
-          - name: Grafana-Loki
-            widget: Panel
-            visibility: $not($exists(spec.output.custom) or $exists(spec.output.http))
-            children:
-              - name: URL
-                source: spec.output.`grafana-loki`.url.value
-              - name: Labels
-                widget: Labels
-                source: spec.output.`grafana-loki`.labels
-              - name: Remove keys
-                widget: JoinedArray
-                separator: ','
-                source: spec.output.`grafana-loki`.removeKeys
           - name: HTTP
             widget: Panel
             visibility: $exists(spec.output.http)

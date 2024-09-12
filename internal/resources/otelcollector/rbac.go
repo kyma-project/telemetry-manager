@@ -110,6 +110,21 @@ func makeMetricGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bo
 			Resources: []string{"telemetries"},
 			Verbs:     []string{"get", "list", "watch"},
 		})
+		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
+			APIGroups: []string{"telemetry.kyma-project.io"},
+			Resources: []string{"metricpipelines"},
+			Verbs:     []string{"get", "list", "watch"},
+		})
+		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
+			APIGroups: []string{"telemetry.kyma-project.io"},
+			Resources: []string{"tracepipelines"},
+			Verbs:     []string{"get", "list", "watch"},
+		})
+		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
+			APIGroups: []string{"telemetry.kyma-project.io"},
+			Resources: []string{"logpipelines"},
+			Verbs:     []string{"get", "list", "watch"},
+		})
 	}
 
 	k8sClusterRules := []rbacv1.PolicyRule{{
