@@ -196,6 +196,23 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-3"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 	})
 
+	t.Run("exporters names", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test-1").Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test-2").Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test-3").Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-1")
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-2")
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-3")
+	})
+
 	t.Run("single pipeline topology", func(t *testing.T) {
 		t.Run("with no inputs enabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(
