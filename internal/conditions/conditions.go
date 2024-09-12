@@ -43,7 +43,6 @@ const (
 	// LogPipeline reasons
 	ReasonAgentConfigured        = "AgentConfigured"
 	ReasonSelfMonNoLogsDelivered = "NoLogsDelivered"
-	ReasonUnsupportedLokiOutput  = "UnsupportedLokiOutput"
 
 	// MetricPipeline reasons
 	ReasonMetricAgentNotRequired = "AgentNotRequired"

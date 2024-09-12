@@ -81,16 +81,6 @@ type Filter struct {
 	Custom string `json:"custom,omitempty"`
 }
 
-// LokiOutput configures an output to the Kyma-internal Loki instance.
-type LokiOutput struct {
-	// Grafana Loki URL.
-	URL ValueType `json:"url,omitempty"`
-	// Labels to set for each log record.
-	Labels map[string]string `json:"labels,omitempty"`
-	// Attributes to be removed from a log record.
-	RemoveKeys []string `json:"removeKeys,omitempty"`
-}
-
 // HTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 type HTTPOutput struct {
 	// Defines the host of the HTTP receiver.
@@ -133,8 +123,6 @@ type Output struct {
 	Custom string `json:"custom,omitempty"`
 	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 	HTTP *HTTPOutput `json:"http,omitempty"`
-	// The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README ).
-	Loki *LokiOutput `json:"grafana-loki,omitempty"`
 }
 
 func (i *Input) IsDefined() bool {
@@ -147,10 +135,6 @@ func (o *Output) IsCustomDefined() bool {
 
 func (o *Output) IsHTTPDefined() bool {
 	return o.HTTP != nil && o.HTTP.Host.IsDefined()
-}
-
-func (o *Output) IsLokiDefined() bool {
-	return o.Loki != nil && o.Loki.URL.IsDefined()
 }
 
 func (o *Output) IsAnyDefined() bool {
@@ -167,9 +151,6 @@ func (o *Output) pluginCount() int {
 		plugins++
 	}
 	if o.IsHTTPDefined() {
-		plugins++
-	}
-	if o.IsLokiDefined() {
 		plugins++
 	}
 	return plugins

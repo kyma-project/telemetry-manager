@@ -25,10 +25,6 @@ func (lp *LogPipeline) GetEnvSecretRefs() []SecretKeyRef {
 		refs = appendIfSecretRef(refs, output.HTTP.User)
 		refs = appendIfSecretRef(refs, output.HTTP.Password)
 	}
-	if output.IsLokiDefined() {
-		refs = appendIfSecretRef(refs, output.Loki.URL)
-	}
-
 	return refs
 }
 

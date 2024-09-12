@@ -31,24 +31,9 @@ func TestLogPipelineOutput(t *testing.T) {
 			expectedSingle: true,
 		},
 		{
-			name:           "loki",
-			given:          Output{Loki: &LokiOutput{URL: ValueType{Value: "localhost"}}},
-			expectedLoki:   true,
-			expectedAny:    true,
-			expectedSingle: true,
-		},
-		{
 			name:           "invalid: none defined",
 			given:          Output{},
 			expectedAny:    false,
-			expectedSingle: false,
-		},
-		{
-			name:           "invalid: multiple defined",
-			given:          Output{Custom: "name: null", Loki: &LokiOutput{URL: ValueType{Value: "localhost"}}},
-			expectedCustom: true,
-			expectedLoki:   true,
-			expectedAny:    true,
 			expectedSingle: false,
 		},
 	}
@@ -57,7 +42,6 @@ func TestLogPipelineOutput(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require.Equal(t, test.expectedCustom, test.given.IsCustomDefined())
 			require.Equal(t, test.expectedHTTP, test.given.IsHTTPDefined())
-			require.Equal(t, test.expectedLoki, test.given.IsLokiDefined())
 			require.Equal(t, test.expectedAny, test.given.IsAnyDefined())
 		})
 	}
