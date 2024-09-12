@@ -132,7 +132,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("failed to update status: %w", err)
 	}
 
-	//Delete secret and validatingwebhookconfiguration if key len 2048
 	if err := r.reconcileWebhook(ctx, &telemetry); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
@@ -271,10 +270,6 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	// We skip webhook reconciliation only if no pipelines are remaining. This avoids the risk of certificate expiration while waiting for deletion.
 	if !telemetry.DeletionTimestamp.IsZero() && !r.dependentCRsFound(ctx) {
 		return nil
-	}
-
-	if err := webhookcert.ValidateCertificateKeySize(ctx, r.Client, r.config.Webhook.CertConfig); err != nil {
-		return fmt.Errorf("failed to validate certificate key size: %w", err)
 	}
 
 	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.config.Webhook.CertConfig); err != nil {

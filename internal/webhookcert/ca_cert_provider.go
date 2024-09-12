@@ -25,9 +25,10 @@ type caCertGenerator interface {
 }
 
 type caCertProviderImpl struct {
-	client        client.Client
-	expiryChecker certExpiryChecker
-	generator     caCertGenerator
+	client           client.Client
+	expiryChecker    certExpiryChecker
+	keyLengthChecker caKeyLengthChecker
+	generator        caCertGenerator
 }
 
 func newCACertProvider(client client.Client) *caCertProviderImpl {
@@ -39,6 +40,7 @@ func newCACertProvider(client client.Client) *caCertProviderImpl {
 		generator: &caCertGeneratorImpl{
 			clock: clock,
 		},
+		keyLengthChecker: &caKeyLengthCheckerImpl{},
 	}
 }
 
@@ -84,7 +86,10 @@ func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1
 	}
 
 	certValid, checkErr := p.expiryChecker.checkExpiry(ctx, caCertPEM)
-	return checkErr == nil && certValid
+
+	keyLengthValid, checkErr := p.keyLengthChecker.checkKeyLength(ctx, caCertPEM)
+
+	return checkErr == nil && certValid && keyLengthValid
 }
 
 func (p *caCertProviderImpl) fetchCACert(caSecret *corev1.Secret) ([]byte, error) {
