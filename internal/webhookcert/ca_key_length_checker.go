@@ -2,6 +2,7 @@ package webhookcert
 
 import (
 	"context"
+	"fmt"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -18,7 +19,7 @@ type caKeyLengthCheckerImpl struct {
 func (c *caKeyLengthCheckerImpl) checkKeyLength(ctx context.Context, keyPEM []byte) (bool, error) {
 	key, err := parseKeyPEM(keyPEM)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to parse key PEM: %w", err)
 	}
 
 	if key.N.BitLen() != desiredRSAKeyLength {
