@@ -89,7 +89,7 @@ func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1
 
 	keyLengthValid, checkKeyErr := p.keyLengthChecker.checkKeyLength(ctx, caKeyPEM)
 
-	return checkCertErr == nil && certValid && checkKeyErr == nil && keyLengthValid
+	return checkCertErr == nil && certNotExpired && checkKeyErr == nil && keyLengthValid
 }
 
 func (p *caCertProviderImpl) fetchCACertAndKey(caSecret *corev1.Secret) ([]byte, []byte, error) {
