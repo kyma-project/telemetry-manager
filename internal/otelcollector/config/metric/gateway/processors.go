@@ -16,9 +16,10 @@ func makeProcessorsConfig() Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:      gatewayprocs.K8sAttributesProcessorConfig(),
-		InsertClusterName:  gatewayprocs.InsertClusterNameProcessorConfig(),
-		ResolveServiceName: makeResolveServiceNameConfig(),
+		K8sAttributes:                 gatewayprocs.K8sAttributesProcessorConfig(),
+		InsertClusterName:             gatewayprocs.InsertClusterNameProcessorConfig(),
+		ResolveServiceName:            makeResolveServiceNameConfig(),
+		DeleteSkipEnrichmentAttribute: makeDeleteSkipEnrichmentAttributeConfig(),
 	}
 }
 
@@ -42,6 +43,17 @@ func makeResolveServiceNameConfig() *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:        "ignore",
 		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
+	}
+}
+
+func makeDeleteSkipEnrichmentAttributeConfig() *config.ResourceProcessor {
+	return &config.ResourceProcessor{
+		Attributes: []config.AttributeAction{
+			{
+				Action: "delete",
+				Key:    metric.SkipEnrichmentAttribute,
+			},
+		},
 	}
 }
 
