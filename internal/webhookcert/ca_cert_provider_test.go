@@ -21,11 +21,11 @@ func (g *mockCACertGenerator) generateCert() ([]byte, []byte, error) {
 	return g.cert, g.key, nil
 }
 
-type mockCertKeyLengthChecker struct {
+type mockKeyLengthChecker struct {
 	keyLenValid bool
 }
 
-func (c *mockCertKeyLengthChecker) checkKeyLength(ctx context.Context, keyPEM []byte) (bool, error) {
+func (c *mockKeyLengthChecker) checkKeyLength(ctx context.Context, keyPEM []byte) (bool, error) {
 	return c.keyLenValid, nil
 }
 
@@ -116,7 +116,7 @@ func TestProvideCACert(t *testing.T) {
 			client:           fakeClient,
 			expiryChecker:    &mockCertExpiryChecker{certValid: false},
 			generator:        &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
-			keyLengthChecker: &mockCertKeyLengthChecker{keyLenValid: true},
+			keyLengthChecker: &mockKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -151,7 +151,7 @@ func TestProvideCACert(t *testing.T) {
 			client:           fakeClient,
 			expiryChecker:    &mockCertExpiryChecker{err: errors.New("failed")},
 			generator:        &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
-			keyLengthChecker: &mockCertKeyLengthChecker{keyLenValid: true},
+			keyLengthChecker: &mockKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -186,7 +186,7 @@ func TestProvideCACert(t *testing.T) {
 			client:           fakeClient,
 			expiryChecker:    &mockCertExpiryChecker{certValid: true},
 			generator:        &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
-			keyLengthChecker: &mockCertKeyLengthChecker{keyLenValid: true},
+			keyLengthChecker: &mockKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -220,7 +220,7 @@ func TestProvideCACert(t *testing.T) {
 			client:           fakeClient,
 			generator:        &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 			expiryChecker:    &mockCertExpiryChecker{certValid: true},
-			keyLengthChecker: &mockCertKeyLengthChecker{keyLenValid: false},
+			keyLengthChecker: &mockKeyLengthChecker{keyLenValid: false},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}

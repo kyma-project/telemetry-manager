@@ -7,15 +7,15 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type caKeyLengthChecker interface {
+type keyLengthChecker interface {
 	checkKeyLength(ctx context.Context, keyPEM []byte) (bool, error)
 }
 
-type caKeyLengthCheckerImpl struct {
+type keyLengthCheckerImpl struct {
 }
 
 // checkKeyLength checks if the provided PEM-encoded key has the desired length
-func (c *caKeyLengthCheckerImpl) checkKeyLength(ctx context.Context, keyPEM []byte) (bool, error) {
+func (c *keyLengthCheckerImpl) checkKeyLength(ctx context.Context, keyPEM []byte) (bool, error) {
 	key, err := parseKeyPEM(keyPEM)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse key PEM: %w", err)

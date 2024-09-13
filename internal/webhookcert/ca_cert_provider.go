@@ -27,7 +27,7 @@ type caCertGenerator interface {
 type caCertProviderImpl struct {
 	client           client.Client
 	expiryChecker    certExpiryChecker
-	keyLengthChecker caKeyLengthChecker
+	keyLengthChecker keyLengthChecker
 	generator        caCertGenerator
 }
 
@@ -40,7 +40,7 @@ func newCACertProvider(client client.Client) *caCertProviderImpl {
 		generator: &caCertGeneratorImpl{
 			clock: clock,
 		},
-		keyLengthChecker: &caKeyLengthCheckerImpl{},
+		keyLengthChecker: &keyLengthCheckerImpl{},
 	}
 }
 

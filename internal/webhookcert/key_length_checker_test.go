@@ -27,7 +27,7 @@ func TestCheckKeyLength(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			checker := &caKeyLengthCheckerImpl{}
+			checker := &keyLengthCheckerImpl{}
 			result, err := checker.checkKeyLength(context.TODO(), tc.key)
 			require.NoError(t, err, "failed to check key length")
 			require.Equal(t, tc.expected, result)
