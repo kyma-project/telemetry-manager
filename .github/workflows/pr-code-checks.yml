@@ -97,15 +97,3 @@ jobs:
         env:
           PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PULL_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-
-  PR-Code-Checks-Success:
-    needs:
-    - unit-tests
-    - lint
-    - coverage
-    - gitleaks
-    runs-on: ubuntu-latest
-    steps:
-      - name: Success
-        run: |
-          echo "PR Code Checks completed successfully"
