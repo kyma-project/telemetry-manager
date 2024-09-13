@@ -85,7 +85,7 @@ func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1
 		return false
 	}
 
-	certValid, checkCertErr := p.expiryChecker.checkExpiry(ctx, caCertPEM)
+	certNotExpired, checkCertErr := p.expiryChecker.checkExpiry(ctx, caCertPEM)
 
 	keyLengthValid, checkKeyErr := p.keyLengthChecker.checkKeyLength(ctx, caKeyPEM)
 
@@ -97,13 +97,13 @@ func (p *caCertProviderImpl) fetchCACertAndKey(caSecret *corev1.Secret) ([]byte,
 	if val, found := caSecret.Data[caCertFile]; found {
 		caCertPEM = val
 	} else {
-		return nil, nil, fmt.Errorf("caCert not found: %v", caCertFile)
+		return nil, nil, fmt.Errorf("ca cert not found: %v", caCertFile)
 	}
 
 	if val, found := caSecret.Data[caKeyFile]; found {
 		caKeyPEM = val
 	} else {
-		return nil, nil, fmt.Errorf("caKey not found: %v", caKeyFile)
+		return nil, nil, fmt.Errorf("ca key not found: %v", caKeyFile)
 	}
 
 	return caCertPEM, caKeyPEM, nil
