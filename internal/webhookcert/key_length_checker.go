@@ -7,8 +7,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-const desiredRSAKeyLength = 4096
-
 type caKeyLengthChecker interface {
 	checkKeyLength(ctx context.Context, keyPEM []byte) (bool, error)
 }
@@ -23,10 +21,10 @@ func (c *caKeyLengthCheckerImpl) checkKeyLength(ctx context.Context, keyPEM []by
 		return false, fmt.Errorf("failed to parse key PEM: %w", err)
 	}
 
-	if key.N.BitLen() != desiredRSAKeyLength {
+	if key.N.BitLen() != rsaKeySize {
 		logf.FromContext(ctx).Info("CA key length check failed",
 			"currentLength", key.N.BitLen(),
-			"desiredLength", desiredRSAKeyLength)
+			"desiredLength", rsaKeySize)
 		return false, nil
 	}
 
