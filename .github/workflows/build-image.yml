@@ -56,3 +56,11 @@ jobs:
           payload-file-path: ".github/workflows/slack-message.json"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_HUSKIES_NOTIF_WEBHOOK_URL }}
+
+  Build-Image-Success:
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: List images
+        run: |
+          echo "${{ needs.build-image.outputs.images }}"
