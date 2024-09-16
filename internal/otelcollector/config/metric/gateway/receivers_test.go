@@ -121,8 +121,6 @@ func TestReceivers(t *testing.T) {
 		require.Equal(t, "30s", k8sClusterReceiver.CollectionInterval)
 		require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 1)
 		require.Equal(t, []string{""}, k8sClusterReceiver.NodeConditionsToReport)
-		require.Len(t, k8sClusterReceiver.AllocatableTypesToReport, 2)
-		require.Equal(t, []string{"cpu", "memory"}, k8sClusterReceiver.AllocatableTypesToReport)
 		require.Equal(t, expectedMetricsToDrop, k8sClusterReceiver.Metrics)
 	})
 }
