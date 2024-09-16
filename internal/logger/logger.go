@@ -46,8 +46,8 @@ func newLogger(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Cor
 /*
 This function initialize klog which is used in k8s/go-client
 */
-func initKlog(log *zap.Logger, level zapcore.Level) {
-	zaprLogger := zapr.NewLogger(log)
+func initKlog(logger *zap.Logger, level zapcore.Level) {
+	zaprLogger := zapr.NewLogger(logger)
 	zaprLogger.V((int)(level))
 	klog.SetLogger(zaprLogger)
 }
