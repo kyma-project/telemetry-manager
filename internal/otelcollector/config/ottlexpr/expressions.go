@@ -36,7 +36,3 @@ func HasAttrOnDatapoint(key, value string) string {
 func ScopeNameEquals(name string) string {
 	return fmt.Sprintf("instrumentation_scope.name == \"%s\"", name)
 }
-
-func DeleteMatchingKeys(target, pattern string) string {
-	return fmt.Sprintf("delete_matching_keys(%s, %s)", target, pattern)
-}

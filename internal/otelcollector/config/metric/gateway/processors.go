@@ -194,36 +194,6 @@ func createIsMatchNameConditions(names []string) []string {
 	return nameConditions
 }
 
-func makeDeleteNodeMetricsResourceAttributes() *metric.TransformProcessor {
-	resourceAttributesToDelete := []string{
-		"k8s.daemonset.name",
-		"k8s.namespace.name",
-		"k8s.pod.ip",
-		"k8s.pod.name",
-		"kyma.kubernetes_io_app_name",
-	}
-
-	var statements []string
-	for _, attr := range resourceAttributesToDelete {
-		statements = append(statements, ottlexpr.DeleteMatchingKeys("resource.attributes", fmt.Sprintf("\"%s\"", attr)))
-	}
-
-	transformProcessorStatements := []config.TransformProcessorStatements{
-		{
-			Context: "metric",
-			Conditions: []string{
-				ottlexpr.IsMatch("name", "^k8s.node.*"),
-			},
-			Statements: statements,
-		},
-	}
-
-	return &metric.TransformProcessor{
-		ErrorMode:        "ignore",
-		MetricStatements: transformProcessorStatements,
-	}
-}
-
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
 	return ottlexpr.ScopeNameEquals(metric.InstrumentationScope[inputSourceType])
 }
