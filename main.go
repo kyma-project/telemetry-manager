@@ -291,13 +291,13 @@ func main() {
 	overrides.AtomicLevel().SetLevel(parsedLevel)
 	ctrLogger, err := logger.New(overrides.AtomicLevel())
 
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
+	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
 	if err != nil {
 		os.Exit(1)
 	}
 
 	defer func() {
-		if err = ctrLogger.WithContext().Sync(); err != nil {
+		if err = ctrLogger.Sync(); err != nil {
 			setupLog.Error(err, "Failed to flush logger")
 		}
 	}()
