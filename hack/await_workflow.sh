@@ -9,7 +9,7 @@ set -o pipefail # prevents errors in a pipeline from being masked
 # Variables (you need to set these)
 REPO_OWNER="kyma-project"
 REPO_NAME="telemetry-manager"
-CHECK_NAME="build-image"
+CHECK_NAME="build-image / Build image"
 
 # retry until check is found and status is completed
 # timeout after 15 minutes
