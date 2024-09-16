@@ -30,5 +30,4 @@ COPY --from=builder /prometheus/prometheus /bin/prometheus
 USER       nobody
 EXPOSE     9090
 
-
 ENTRYPOINT [ "/bin/prometheus" ]
