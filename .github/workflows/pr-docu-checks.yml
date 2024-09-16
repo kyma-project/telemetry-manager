@@ -34,11 +34,3 @@ jobs:
       - name: Verify links
         run: |
           md-check-link -q -n 8 -c https://raw.githubusercontent.com/kyma-project/md-check-link/main/.mlc.config.json ./
-
-  PR-Docu-Checks-Success:
-    needs: [verify-manifests, markdown-link-check]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Success
-        run: |
-          echo "PR Docu Checks completed successfully"

@@ -104,11 +104,3 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}
-
-  PR-Lifecycle-Success:
-    needs: manager-upgrade
-    runs-on: ubuntu-latest
-    steps:
-      - name: Success
-        run: |
-          echo "PR Lifecycle completed successfully"
