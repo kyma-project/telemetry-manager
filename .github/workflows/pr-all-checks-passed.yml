@@ -12,7 +12,7 @@ on:
         milestoned,
       ]
 jobs:
-  allchecks:
+  all-checks:
     runs-on: ubuntu-latest
     permissions:
       checks: read
