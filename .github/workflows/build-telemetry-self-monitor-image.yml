@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - self-monitor
     paths:
       - "dependencies/telemetry-self-monitor"
 
