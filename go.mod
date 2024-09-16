@@ -2,8 +2,6 @@ module github.com/kyma-project/telemetry-manager
 
 go 1.23.1
 
-toolchain go1.23.1
-
 require (
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
