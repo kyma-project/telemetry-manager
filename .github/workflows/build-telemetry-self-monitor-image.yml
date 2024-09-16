@@ -11,8 +11,9 @@ on:
       - self-monitor
     paths:
       - "dependencies/telemetry-self-monitor"
+  workflow_dispatch:
  
-      
+
 jobs:
   envs:
     runs-on: ubuntu-latest
