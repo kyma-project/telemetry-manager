@@ -11,6 +11,7 @@ type Config struct {
 	Receivers  Receivers  `yaml:"receivers"`
 	Processors Processors `yaml:"processors"`
 	Exporters  Exporters  `yaml:"exporters"`
+	Connectors Connectors `yaml:"connectors"`
 }
 
 type Receivers struct {
@@ -43,7 +44,7 @@ type SingletonKymaStatsReceiver struct {
 type KymaStatsReceiver struct {
 	AuthType           string      `yaml:"auth_type"`
 	CollectionInterval string      `yaml:"collection_interval"`
-	Modules            []ModuleGVR `yaml:"modules"`
+	Resources          []ModuleGVR `yaml:"resources"`
 }
 
 type SingletonK8sClusterReceiver struct {
@@ -97,6 +98,7 @@ type Processors struct {
 	ResolveServiceName                           *metric.TransformProcessor     `yaml:"transform/resolve-service-name,omitempty"`
 	SetInstrumentationScopeKyma                  *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
 	SetInstrumentationScopeRuntime               *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	DeleteSkipEnrichmentAttribute                *config.ResourceProcessor      `yaml:"resource/delete-skip-enrichment-attribute,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
@@ -116,4 +118,20 @@ type Exporters map[string]Exporter
 
 type Exporter struct {
 	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
+}
+
+// Connectors is a map of connectors. The key is the name of the connector. The value is the connector configuration.
+// We need to have a different connector per pipeline, so we need to have a map of connectors.
+// The value needs to be "any" to satisfy different types of connectors.
+type Connectors map[string]any
+
+type RoutingConnector struct {
+	DefaultPipelines []string                     `yaml:"default_pipelines"`
+	ErrorMode        string                       `yaml:"error_mode"`
+	Table            []RoutingConnectorTableEntry `yaml:"table"`
+}
+
+type RoutingConnectorTableEntry struct {
+	Statement string   `yaml:"statement"`
+	Pipelines []string `yaml:"pipelines"`
 }

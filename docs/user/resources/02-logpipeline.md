@@ -98,16 +98,6 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;system**  | boolean | Set to `true` if collecting from all Namespaces must also include the system Namespaces like kube-system, istio-system, and kyma-system. |
 | **output**  | object | [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified. |
 | **output.&#x200b;custom**  | string | Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode. |
-| **output.&#x200b;grafana-loki**  | object | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README ). |
-| **output.&#x200b;grafana-loki.&#x200b;labels**  | map\[string\]string | Labels to set for each log record. |
-| **output.&#x200b;grafana-loki.&#x200b;removeKeys**  | \[\]string | Attributes to be removed from a log record. |
-| **output.&#x200b;grafana-loki.&#x200b;url**  | object | Grafana Loki URL. |
-| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;value**  | string | The value as plain text. |
-| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
-| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
-| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
-| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
-| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;http**  | object | Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin. |
 | **output.&#x200b;http.&#x200b;compress**  | string | Defines the compression algorithm to use. |
 | **output.&#x200b;http.&#x200b;dedot**  | boolean | Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`. |
@@ -177,7 +167,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **conditions.&#x200b;observedGeneration**  | integer | observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance. |
 | **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty. |
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
-| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
+| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
 | **unsupportedMode**  | boolean | Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode). |
 
 <!-- TABLE-END -->
@@ -202,7 +192,6 @@ The status of the LogPipeline is determined by the condition types `AgentHealthy
 | ConfigurationGenerated | False            | ReferencedSecretMissing      | One or more keys in a referenced Secret are missing: Key 'my-key' in Secret 'my-secret' of Namespace 'my-namespace'"                                                                                                                    |
 | ConfigurationGenerated | False            | TLSCertificateExpired        | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                                              |
 | ConfigurationGenerated | False            | TLSConfigurationInvalid      | TLS configuration invalid                                                                                                                                                                                                               |
-| ConfigurationGenerated | False            | UnsupportedLokiOutput        | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Intergrate with Loki](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README). |
 | ConfigurationGenerated | False            | ValidationFailed             | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                               |
 | TelemetryFlowHealthy   | True             | FlowHealthy                  | No problems detected in the telemetry flow                                                                                                                                                                                              |
 | TelemetryFlowHealthy   | False            | AllDataDropped               | Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                       |

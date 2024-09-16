@@ -171,7 +171,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Labels:    labels,
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(ports.Metrics),
+				"prometheus.io/port":   strconv.Itoa(int(ports.Metrics)),
 				"prometheus.io/scheme": "http",
 			},
 		},

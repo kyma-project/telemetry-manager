@@ -3,7 +3,9 @@
 package e2e
 
 import (
+	"io"
 	"net/http"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -106,11 +108,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				// By default, pod and container metrics are enabled for the runtime input
-				g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-					ContainMetric(WithName(BeElementOf(kubeletstats.PodMetricsNames))),
-					ContainMetric(WithName(BeElementOf(kubeletstats.ContainerMetricsNames))),
-					ContainScope(WithScopeName(ContainSubstring(InstrumentationScopeRuntime))),
-				))))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				expectedMetricsNames := slices.Concat(kubeletstats.PodMetricsNames, kubeletstats.ContainerMetricsNames)
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(SatisfyAll(
+						HaveName(BeElementOf(expectedMetricsNames)),
+						HaveScopeName(ContainSubstring(InstrumentationScopeRuntime)),
+					)),
+				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -119,9 +129,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
 
-					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletstats.MetricResourceAttributes)))),
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(HaveResourceAttributes(HaveKeys(ContainElements(kubeletstats.MetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

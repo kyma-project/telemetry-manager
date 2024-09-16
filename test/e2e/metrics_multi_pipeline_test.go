@@ -91,10 +91,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
-		})
-
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
@@ -105,18 +101,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				bodycontent, err := io.ReadAll(resp.Body)
+				bodyContent, err := io.ReadAll(resp.Body)
 				g.Expect(err).NotTo(HaveOccurred())
+
 				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats and k8sCluster metrics are sent to runtime backend")
-				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(ConsistOf(And(
-					HaveField("Name", InstrumentationScopeRuntime),
-					HaveField("Version",
-						SatisfyAny(
-							ContainSubstring("main"),
-							ContainSubstring("1."),
-							ContainSubstring("PR-"),
-						)))))), "Only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats metrics are sent to runtime backend")
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeName(Equal(InstrumentationScopeRuntime)))), "only scope name %v may exist in the runtime backend", InstrumentationScopeRuntime)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(
+					SatisfyAll(
+						HaveScopeName(Equal(InstrumentationScopeRuntime)),
+						HaveScopeVersion(
+							SatisfyAny(
+								ContainSubstring("main"),
+								ContainSubstring("1."),
+								ContainSubstring("PR-"),
+							)),
+					)),
+				), "only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -125,20 +127,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendPrometheusExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				bodycontent, err := io.ReadAll(resp.Body)
+				bodyContent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
 				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(Not(ContainElements(expectedMetrics)))), "No kubeletstats metrics must be sent to prometheus backend")
-				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(Not(ContainElement(And(HaveField("Name", InstrumentationScopeRuntime),
-					HaveField("Version",
-						SatisfyAny(
-							ContainSubstring("main"),
-							ContainSubstring("1."),
-							ContainSubstring("PR-"),
-						)),
-				))))), "scope '%v' must not be sent to the prometheus backend", InstrumentationScopeRuntime)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(expectedMetrics)))), "No kubeletstats metrics must be sent to prometheus backend")
+
+				g.Expect(bodyContent).NotTo(HaveFlatMetrics(
+					SatisfyAll(
+						ContainElement(HaveScopeName(Equal(InstrumentationScopeRuntime))),
+						ContainElement(HaveScopeVersion(
+							SatisfyAny(
+								ContainSubstring("main"),
+								ContainSubstring("1."),
+								ContainSubstring("PR-"),
+							))),
+					),
+				), "scope '%v' must not be sent to the prometheus backend", InstrumentationScopeRuntime)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -147,20 +153,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendPrometheusExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				bodycontent, err := io.ReadAll(resp.Body)
+				bodyContent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
 				// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
-				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
-				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(ConsistOf(And(HaveField("Name", InstrumentationScopePrometheus),
-					HaveField("Version",
-						SatisfyAny(
-							ContainSubstring("main"),
-							ContainSubstring("1."),
-							ContainSubstring("PR-"),
-						)),
-				)))), "Only scope '%v' must be sent to the prometheus backend", InstrumentationScopePrometheus)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
+
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(
+					SatisfyAll(
+						HaveScopeName(Equal(InstrumentationScopePrometheus)),
+						HaveScopeVersion(
+							SatisfyAny(
+								ContainSubstring("main"),
+								ContainSubstring("1."),
+								ContainSubstring("PR-"),
+							)),
+					)),
+				), "Only scope '%v' must be sent to the prometheus backend", InstrumentationScopePrometheus)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -169,19 +179,23 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				resp, err := proxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				bodycontent, err := io.ReadAll(resp.Body)
+				bodyContent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodycontent).To(WithFlatMetrics(WithNames(Not(ContainElements(prommetricgen.DefaultMetricsNames)))), "No prometheus metrics must be sent to runtime backend")
-				g.Expect(bodycontent).To(WithFlatMetrics(WithScopeAndVersion(Not(ContainElement(And(HaveField("Name", InstrumentationScopePrometheus),
-					HaveField("Version",
-						SatisfyAny(
-							ContainSubstring("main"),
-							ContainSubstring("1."),
-							ContainSubstring("PR-"),
-						)),
-				))))), "'%v' must not be sent to the runtime backend", InstrumentationScopePrometheus)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.DefaultMetricsNames)))), "No prometheus metrics must be sent to runtime backend")
+
+				g.Expect(bodyContent).NotTo(HaveFlatMetrics(
+					SatisfyAll(
+						ContainElement(HaveScopeName(Equal(InstrumentationScopePrometheus))),
+						ContainElement(HaveScopeVersion(
+							SatisfyAny(
+								ContainSubstring("main"),
+								ContainSubstring("1."),
+								ContainSubstring("PR-"),
+							))),
+					),
+				), "'%v' must not be sent to the runtime backend", InstrumentationScopePrometheus)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

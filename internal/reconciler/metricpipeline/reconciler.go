@@ -142,28 +142,25 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return ctrl.Result{}, r.doReconcile(ctx, &metricPipeline)
+	err = r.doReconcile(ctx, &metricPipeline)
+	if statusErr := r.updateStatus(ctx, metricPipeline.Name); statusErr != nil {
+		if err != nil {
+			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
+		} else {
+			err = fmt.Errorf("failed to update status: %w", statusErr)
+		}
+	}
+	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
-	var err error
 
-	defer func() {
-		if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
-			if err != nil {
-				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-			} else {
-				err = fmt.Errorf("failed to update status: %w", statusErr)
-			}
-		}
-	}()
-
-	if err = r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
+	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
 	}
 
 	var allPipelinesList telemetryv1alpha1.MetricPipelineList
-	if err = r.List(ctx, &allPipelinesList); err != nil {
+	if err := r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
 

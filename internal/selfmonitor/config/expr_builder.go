@@ -78,6 +78,23 @@ func (eb *exprBuilder) greaterThan(value float64) *exprBuilder {
 	return eb
 }
 
+func (eb *exprBuilder) equal(value float64) *exprBuilder {
+	eb.expr = fmt.Sprintf("%s == %s", eb.expr, strconv.FormatFloat(value, 'f', -1, 64))
+	return eb
+}
+
 func (eb *exprBuilder) build() string {
 	return eb.expr
+}
+
+func and(exprs ...string) string {
+	return strings.Join(wrapInParentheses(exprs), " and ")
+}
+
+func wrapInParentheses(input []string) []string {
+	wrapped := make([]string, len(input))
+	for i, str := range input {
+		wrapped[i] = fmt.Sprintf("(%s)", str)
+	}
+	return wrapped
 }

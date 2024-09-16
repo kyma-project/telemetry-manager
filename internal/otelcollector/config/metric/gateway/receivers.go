@@ -33,11 +33,26 @@ func makeSingletonKymaStatsReceiverCreatorConfig(gatewayNamespace string) *Singl
 			KymaStatsReceiver: KymaStatsReceiver{
 				AuthType:           "serviceAccount",
 				CollectionInterval: "30s",
-				Modules: []ModuleGVR{
+				Resources: []ModuleGVR{
 					{
 						Group:    "operator.kyma-project.io",
 						Version:  "v1alpha1",
 						Resource: "telemetries",
+					},
+					{
+						Group:    "telemetry.kyma-project.io",
+						Version:  "v1alpha1",
+						Resource: "logpipelines",
+					},
+					{
+						Group:    "telemetry.kyma-project.io",
+						Version:  "v1alpha1",
+						Resource: "metricpipelines",
+					},
+					{
+						Group:    "telemetry.kyma-project.io",
+						Version:  "v1alpha1",
+						Resource: "tracepipelines",
 					},
 				},
 			},

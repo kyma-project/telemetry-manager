@@ -353,49 +353,6 @@ func TestReconcile(t *testing.T) {
 		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
 
-	t.Run("loki output is defined", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithLokiOutput().Build()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		flowHealthProberStub := &mocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
-
-		errToMsgStub := &mocks.ErrorToMessageConverter{}
-
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonUnsupportedLokiOutput,
-			"The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
-		)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeFlowHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonSelfMonConfigNotGenerated,
-			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
-		)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
-		require.Error(t, err, "sections configmap should not exist")
-	})
-
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
@@ -784,6 +741,63 @@ func TestReconcile(t *testing.T) {
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
 		require.Error(t, err, "sections configmap should not exist")
 	})
+
+	t.Run("create 2 pipelines and delete 1 should update sections configmap properly", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().
+			WithName("pipeline1").
+			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+			WithHTTPOutput(testutils.HTTPHost("host")).
+			Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().
+			WithName("pipeline2").
+			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+			WithHTTPOutput(testutils.HTTPHost("host")).
+			Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.LogPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
+
+		errToMsgStub := &mocks.ErrorToMessageConverter{}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline1.Name}})
+		require.NoError(t, err)
+
+		_, err = sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline2.Name}})
+		require.NoError(t, err)
+
+		cm := &corev1.ConfigMap{}
+		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, cm)
+		require.NoError(t, err, "sections configmap must exist")
+		require.Contains(t, cm.Data[pipeline1.Name+".conf"], pipeline1.Name, "sections configmap must contain pipeline1 name")
+		require.Contains(t, cm.Data[pipeline2.Name+".conf"], pipeline2.Name, "sections configmap must contain pipeline2 name")
+
+		pipeline1Deleted := testutils.NewLogPipelineBuilder().
+			WithName("pipeline1").
+			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
+			WithHTTPOutput(testutils.HTTPHost("host")).
+			WithDeletionTimeStamp(metav1.Now()).
+			Build()
+
+		fakeClient.Delete(context.Background(), &pipeline1)
+		pipeline1 = pipeline1Deleted
+		_, err = sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline1.Name}})
+		require.NoError(t, err)
+		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, cm)
+		require.NoError(t, err, "sections configmap must exist")
+		require.NotContains(t, cm.Data[pipeline1.Name+".conf"], pipeline1.Name, "sections configmap must not contain pipeline1")
+		require.Contains(t, cm.Data[pipeline2.Name+".conf"], pipeline2.Name, "sections configmap must contain pipeline2 name")
+	})
+
 }
 
 func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {

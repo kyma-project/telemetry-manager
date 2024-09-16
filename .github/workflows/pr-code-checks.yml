@@ -14,7 +14,6 @@ jobs:
   # This is a workaround to bypass the limitations of the workflow path filter:
   # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
   check-changed-files:
-    name: Check whether any source code files have been changed
     outputs:
       check: ${{ steps.changed-files.outputs.any_modified }}
     runs-on: ubuntu-latest
@@ -98,15 +97,3 @@ jobs:
         env:
           PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PULL_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-
-  PR-Code-Checks-Success:
-    needs:
-    - unit-tests
-    - lint
-    - coverage
-    - gitleaks
-    runs-on: ubuntu-latest
-    steps:
-      - name: Success
-        run: |
-          echo "PR Code Checks completed successfully"

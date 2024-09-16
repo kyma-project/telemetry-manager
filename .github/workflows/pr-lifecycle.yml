@@ -11,7 +11,6 @@ jobs:
   # This is a workaround to bypass the limitations of the workflow path filter:
   # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
   check-changed-files:
-    name: Check whether any source code files have been changed
     outputs:
       check: ${{ steps.changed-files.outputs.any_modified }}
     runs-on: ubuntu-latest
@@ -34,7 +33,7 @@ jobs:
         run: echo '${{ steps.changed-files.outputs.all_changed_files }}' >> $GITHUB_STEP_SUMMARY
 
   manager-upgrade:
-    needs: 
+    needs:
     - check-changed-files
     if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     runs-on: ubuntu-latest
@@ -70,12 +69,12 @@ jobs:
         run: |
           bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
+      - name: Switch back to current revision
+        uses: actions/checkout@v4
+
       - name: Wait for cleanup of test run
         shell: bash
         run: hack/wait-for-namespaces.sh
-
-      - name: Switch back to current revision
-        uses: actions/checkout@v4
 
       # wait for the build to complete so that the manager image is available
       - name: Wait for the Build Image workflow to complete
@@ -105,11 +104,3 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}
-
-  PR-Lifecycle-Success:
-    needs: manager-upgrade
-    runs-on: ubuntu-latest
-    steps:
-      - name: Success
-        run: |
-          echo "PR Lifecycle completed successfully"

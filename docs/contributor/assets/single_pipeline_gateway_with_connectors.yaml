@@ -1,0 +1,149 @@
+apiVersion: v1
+data:
+  relay.conf: |
+    extensions:
+        health_check:
+            endpoint: ${MY_POD_IP}:13133
+        pprof:
+            endpoint: 127.0.0.1:1777
+    service:
+        pipelines:
+            metrics/load-test-1-in:
+                receivers:
+                    - otlp
+                processors:
+                    - memory_limiter
+                exporters:
+                    - routing
+            metrics/load-test-1-cls-attributes-enrichment:
+                receivers:
+                    - routing
+                processors:
+                    - k8sattributes
+                    - transform/resolve-service-name
+                exporters:
+                    - forward
+            metrics/load-test-1-out:
+                receivers:
+                    - routing
+                    - forward
+                processors:
+                    - filter/drop-if-input-source-runtime
+                    - filter/drop-if-input-source-prometheus
+                    - filter/drop-if-input-source-istio
+                    - resource/insert-cluster-name
+                    - batch
+                exporters:
+                    - otlp/load-test-1
+        telemetry:
+            metrics:
+                address: ${MY_POD_IP}:8888
+            logs:
+                level: info
+                encoding: json
+        extensions:
+            - health_check
+            - pprof
+    connectors:
+        forward:
+        routing:
+            default_pipelines: [metrics/load-test-1-cls-attributes-enrichment]
+            error_mode: ignore
+            table:
+              - statement: delete_key(attributes, "skip-enrichment") where attributes["skip-enrichment"] == "true"
+                pipelines: [metrics/load-test-1-out]
+    receivers:
+        otlp:
+            protocols:
+                http:
+                    endpoint: ${MY_POD_IP}:4318
+                grpc:
+                    endpoint: ${MY_POD_IP}:4317
+    processors:
+        batch:
+            send_batch_size: 1024
+            timeout: 10s
+            send_batch_max_size: 1024
+        memory_limiter:
+            check_interval: 1s
+            limit_percentage: 75
+            spike_limit_percentage: 15
+        k8sattributes:
+            auth_type: serviceAccount
+            passthrough: false
+            extract:
+                metadata:
+                    - k8s.pod.name
+                    - k8s.node.name
+                    - k8s.namespace.name
+                    - k8s.deployment.name
+                    - k8s.statefulset.name
+                    - k8s.daemonset.name
+                    - k8s.cronjob.name
+                    - k8s.job.name
+                labels:
+                    - from: pod
+                      key: app.kubernetes.io/name
+                      tag_name: kyma.kubernetes_io_app_name
+                    - from: pod
+                      key: app
+                      tag_name: kyma.app_name
+            pod_association:
+                - sources:
+                    - from: resource_attribute
+                      name: k8s.pod.ip
+                - sources:
+                    - from: resource_attribute
+                      name: k8s.pod.uid
+                - sources:
+                    - from: connection
+        resource/insert-cluster-name:
+            attributes:
+                - action: insert
+                  key: k8s.cluster.name
+                  value: ${KUBERNETES_SERVICE_HOST}
+        filter/drop-if-input-source-runtime:
+            metrics:
+                metric:
+                    - instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
+        filter/drop-if-input-source-prometheus:
+            metrics:
+                metric:
+                    - instrumentation_scope.name == "io.kyma-project.telemetry/prometheus"
+        filter/drop-if-input-source-istio:
+            metrics:
+                metric:
+                    - instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+        transform/resolve-service-name:
+            error_mode: ignore
+            metric_statements:
+                - context: resource
+                  statements:
+                    - set(attributes["service.name"], attributes["kyma.kubernetes_io_app_name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
+                    - set(attributes["service.name"], attributes["kyma.app_name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
+                    - set(attributes["service.name"], attributes["k8s.deployment.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
+                    - set(attributes["service.name"], attributes["k8s.daemonset.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
+                    - set(attributes["service.name"], attributes["k8s.statefulset.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
+                    - set(attributes["service.name"], attributes["k8s.job.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
+                    - set(attributes["service.name"], attributes["k8s.pod.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
+                    - set(attributes["service.name"], "unknown_service") where attributes["service.name"] == nil or attributes["service.name"] == ""
+    exporters:
+        otlp/load-test-1:
+            endpoint: ${OTLP_ENDPOINT_LOAD_TEST_1}
+            tls:
+                insecure: true
+                insecure_skip_verify: true
+            sending_queue:
+                enabled: true
+                queue_size: 256
+            retry_on_failure:
+                enabled: true
+                initial_interval: 5s
+                max_interval: 30s
+                max_elapsed_time: 300s
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: telemetry-metric-gateway
+  name: telemetry-metric-gateway
+  namespace: kyma-system

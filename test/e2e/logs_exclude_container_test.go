@@ -94,11 +94,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				bodycontent, err := io.ReadAll(resp.Body)
+				bodyContent, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(bodycontent).To(Not(BeEmpty()), "No logs found in the backend")
-				g.Expect(bodycontent).To(Not(ContainLd(ContainLogRecord(
+				g.Expect(bodyContent).To(Not(BeEmpty()), "No logs found in the backend")
+				g.Expect(bodyContent).To(Not(ContainLd(ContainLogRecord(
 					WithContainerName(ContainSubstring(loggen.DefaultName)))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())

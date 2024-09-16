@@ -86,39 +86,38 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return ctrl.Result{}, r.doReconcile(ctx, &parser)
+	err = r.doReconcile(ctx, &parser)
+	if statusErr := r.updateStatus(ctx, parser.Name); statusErr != nil {
+		if err != nil {
+			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
+		} else {
+			err = fmt.Errorf("failed to update status: %w", statusErr)
+		}
+	}
+	return ctrl.Result{}, err
 }
 
-func (r *Reconciler) doReconcile(ctx context.Context, parser *telemetryv1alpha1.LogParser) (err error) {
-	// defer the updating of status to ensure that the status is updated regardless of the outcome of the reconciliation
-	defer func() {
-		if statusErr := r.updateStatus(ctx, parser.Name); statusErr != nil {
-			if err != nil {
-				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-			} else {
-				err = fmt.Errorf("failed to update status: %w", statusErr)
-			}
-		}
-	}()
+func (r *Reconciler) doReconcile(ctx context.Context, parser *telemetryv1alpha1.LogParser) error {
 
 	var allParsers telemetryv1alpha1.LogParserList
 	if err := r.List(ctx, &allParsers); err != nil {
 		return fmt.Errorf("failed to list log parsers: %w", err)
 	}
 
-	if err = ensureFinalizer(ctx, r.Client, parser); err != nil {
+	if err := ensureFinalizer(ctx, r.Client, parser); err != nil {
 		return err
 	}
 
-	if err = r.syncer.syncFluentBitConfig(ctx); err != nil {
+	if err := r.syncer.syncFluentBitConfig(ctx); err != nil {
 		return err
 	}
 
-	if err = cleanupFinalizerIfNeeded(ctx, r.Client, parser); err != nil {
+	if err := cleanupFinalizerIfNeeded(ctx, r.Client, parser); err != nil {
 		return err
 	}
 
 	var checksum string
+	var err error
 	if checksum, err = r.calculateConfigChecksum(ctx); err != nil {
 		return err
 	}
@@ -127,7 +126,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, parser *telemetryv1alpha1.
 		return err
 	}
 
-	return err
+	return nil
 }
 
 func (r *Reconciler) calculateConfigChecksum(ctx context.Context) (string, error) {

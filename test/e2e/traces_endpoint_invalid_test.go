@@ -16,22 +16,24 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	const (
-		invalidEndpoint = "'http://example.com'"
+		invalidEndpoint     = "'http://example.com'"
+		invalidEndpointHTTP = "example.com"
 	)
 
 	var (
 		mockNs                = suite.ID()
 		pipelineNameValue     = suite.IDWithSuffix("value")
 		pipelineNameValueFrom = suite.IDWithSuffix("value-from")
+		pipelineNameHTTP      = suite.IDWithSuffix("invalid-http")
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		metricPipelineInvalidEndpointValue := testutils.NewMetricPipelineBuilder().
+		tracePipelineInvalidEndpointValue := testutils.NewTracePipelineBuilder().
 			WithName(pipelineNameValue).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(invalidEndpoint),
@@ -40,21 +42,30 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 
 		endpointKey := "endpoint"
 		secret := kitk8s.NewOpaqueSecret("test", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
-		metricPipelineInvalidEndpointValueFrom := testutils.NewMetricPipelineBuilder().
+		tracePipelineInvalidEndpointValueFrom := testutils.NewTracePipelineBuilder().
 			WithName(pipelineNameValueFrom).
 			WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 			Build()
 
+		tracePipelineInvalidEndpointHTTP := testutils.NewTracePipelineBuilder().
+			WithName(pipelineNameHTTP).
+			WithOTLPOutput(
+				testutils.OTLPEndpoint(invalidEndpointHTTP),
+				testutils.OTLPProtocol("http"),
+			).
+			Build()
+
 		objs = append(objs,
 			secret.K8sObject(),
-			&metricPipelineInvalidEndpointValue,
-			&metricPipelineInvalidEndpointValueFrom,
+			&tracePipelineInvalidEndpointValue,
+			&tracePipelineInvalidEndpointValueFrom,
+			&tracePipelineInvalidEndpointHTTP,
 		)
 
 		return objs
 	}
 
-	Context("When metric pipelines with an invalid Endpoint are created", Ordered, func() {
+	Context("When trace pipelines with an invalid Endpoint are created", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -65,13 +76,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameValue, metav1.Condition{
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineNameValue, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameValueFrom, metav1.Condition{
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineNameValueFrom, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonEndpointInvalid,
+			})
+
+			assert.TracePipelineHasCondition(ctx, k8sClient, pipelineNameHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
