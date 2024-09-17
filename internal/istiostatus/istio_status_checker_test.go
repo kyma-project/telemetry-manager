@@ -7,48 +7,53 @@ import (
 	"github.com/stretchr/testify/assert"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery/fake"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	clienttesting "k8s.io/client-go/testing"
 )
 
 func TestIsIstioActive(t *testing.T) {
 	scheme := clientgoscheme.Scheme
-	_ = apiextensionsv1.AddToScheme(scheme)
-
+	err := apiextensionsv1.AddToScheme(scheme)
+	if err != nil {
+		t.Fatalf("failed to add api extensions v1 scheme: %v", err)
+	}
 	tests := []struct {
-		name string
-		crds []*apiextensionsv1.CustomResourceDefinition
-		want bool
+		name      string
+		resources []*metav1.APIResourceList
+		want      bool
 	}{
 		{
 			name: "should return true if peerauthentication crd found",
-			crds: []*apiextensionsv1.CustomResourceDefinition{
+			resources: []*metav1.APIResourceList{
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "peerauthentications.security.istio.io",
-					},
+					GroupVersion: "peerauthentication.security.istio.io/v1beta1",
+					APIResources: []metav1.APIResource{},
 				},
 			},
 			want: true,
 		},
 		{
 			name: "should return false if peerauthentication not crd found",
-			crds: []*apiextensionsv1.CustomResourceDefinition{},
+			resources: []*metav1.APIResourceList{
+				{
+					GroupVersion: "operator.kyma-project.io/v1beta1",
+					APIResources: []metav1.APIResource{},
+				},
+			},
 			want: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fakeClientBuilder := fake.NewClientBuilder().WithScheme(scheme)
-			for _, crd := range tt.crds {
-				fakeClientBuilder.WithObjects(crd)
+			discovery := fake.FakeDiscovery{
+				Fake: &clienttesting.Fake{
+					Resources: tt.resources,
+				},
 			}
-			fakeClient := fakeClientBuilder.Build()
-
-			isc := &Checker{client: fakeClient}
-
-			got := isc.IsIstioActive(context.Background())
+			checker := NewChecker(&discovery)
+			got := checker.IsIstioActive(context.Background())
 
 			assert.Equal(t, tt.want, got)
 		})
