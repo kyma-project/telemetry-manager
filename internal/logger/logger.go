@@ -9,36 +9,28 @@ import (
 	"k8s.io/klog/v2"
 )
 
-type Logger struct {
-	zapLogger *zap.SugaredLogger
-}
-
 // New returns a logger with the given format and level.
-func New(atomicLevel zap.AtomicLevel) (*Logger, error) {
-	log := newWithAtomicLevel(atomicLevel)
+func New(atomicLevel zap.AtomicLevel) (*zap.Logger, error) {
+	logger := newWithAtomicLevel(atomicLevel)
 	level := atomicLevel.Level()
-	initKlog(log, level)
+	initKlog(logger, level)
 
 	// Redirects logs those are being written using standard logging mechanism to klog
 	// to avoid logs from controller-runtime being pushed to the standard logs.
 	klog.CopyStandardLogTo("ERROR")
 
-	return &Logger{zapLogger: log.zapLogger}, nil
-}
-
-func (l *Logger) WithContext() *zap.SugaredLogger {
-	return l.zapLogger.With(zap.Namespace("context"))
+	return logger, nil
 }
 
 /*
 This function creates logger structure based on given format, atomicLevel and additional cores
 AtomicLevel structure allows to change level dynamically
 */
-func newWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.Core) *Logger {
+func newWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.Core) *zap.Logger {
 	return newLogger(atomicLevel, additionalCores...)
 }
 
-func newLogger(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) *Logger {
+func newLogger(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) *zap.Logger {
 	encoder := getZapEncoder()
 
 	defaultCore := zapcore.NewCore(
@@ -48,14 +40,14 @@ func newLogger(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Cor
 	)
 	cores := append(additionalCores, defaultCore)
 
-	return &Logger{zap.New(zapcore.NewTee(cores...), zap.AddCaller()).Sugar()}
+	return zap.New(zapcore.NewTee(cores...), zap.AddCaller())
 }
 
 /*
 This function initialize klog which is used in k8s/go-client
 */
-func initKlog(log *Logger, level zapcore.Level) {
-	zaprLogger := zapr.NewLogger(log.WithContext().Desugar())
+func initKlog(logger *zap.Logger, level zapcore.Level) {
+	zaprLogger := zapr.NewLogger(logger)
 	zaprLogger.V((int)(level))
 	klog.SetLogger(zaprLogger)
 }

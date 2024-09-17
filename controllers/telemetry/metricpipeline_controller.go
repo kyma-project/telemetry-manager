@@ -26,6 +26,8 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,7 +64,7 @@ type MetricPipelineController struct {
 
 type MetricPipelineControllerConfig struct {
 	metricpipeline.Config
-
+	RestConfig         *rest.Config
 	SelfMonitorName    string
 	TelemetryNamespace string
 }
@@ -84,7 +86,10 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 
 	agentRBAC := otelcollector.MakeMetricAgentRBAC(types.NamespacedName{Name: config.Agent.BaseName, Namespace: config.Agent.Namespace})
 	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed)
-
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
+	if err != nil {
+		return nil, err
+	}
 	reconciler := metricpipeline.New(
 		client,
 		config.Config,
@@ -99,7 +104,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		&otelcollector.GatewayApplierDeleter{Config: config.Gateway, RBAC: gatewayRBAC},
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(client),
+		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
 		pipelineValidator,

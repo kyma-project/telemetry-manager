@@ -25,9 +25,10 @@ type caCertGenerator interface {
 }
 
 type caCertProviderImpl struct {
-	client        client.Client
-	expiryChecker certExpiryChecker
-	generator     caCertGenerator
+	client           client.Client
+	expiryChecker    certExpiryChecker
+	keyLengthChecker keyLengthChecker
+	generator        caCertGenerator
 }
 
 func newCACertProvider(client client.Client) *caCertProviderImpl {
@@ -39,6 +40,7 @@ func newCACertProvider(client client.Client) *caCertProviderImpl {
 		generator: &caCertGeneratorImpl{
 			clock: clock,
 		},
+		keyLengthChecker: &keyLengthCheckerImpl{},
 	}
 }
 
@@ -75,7 +77,7 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 }
 
 func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1.Secret) bool {
-	caCertPEM, err := p.fetchCACert(caSecret)
+	caCertPEM, caKeyPEM, err := p.fetchCACertAndKey(caSecret)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Invalid ca secret. Creating a new one",
 			"secretName", caSecret.Name,
@@ -83,23 +85,28 @@ func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1
 		return false
 	}
 
-	certValid, checkErr := p.expiryChecker.checkExpiry(ctx, caCertPEM)
-	return checkErr == nil && certValid
+	certNotExpired, checkCertErr := p.expiryChecker.checkExpiry(ctx, caCertPEM)
+
+	keyLengthValid, checkKeyErr := p.keyLengthChecker.checkKeyLength(ctx, caKeyPEM)
+
+	return checkCertErr == nil && certNotExpired && checkKeyErr == nil && keyLengthValid
 }
 
-func (p *caCertProviderImpl) fetchCACert(caSecret *corev1.Secret) ([]byte, error) {
-	var caCertPEM []byte
+func (p *caCertProviderImpl) fetchCACertAndKey(caSecret *corev1.Secret) ([]byte, []byte, error) {
+	var caCertPEM, caKeyPEM []byte
 	if val, found := caSecret.Data[caCertFile]; found {
 		caCertPEM = val
 	} else {
-		return nil, fmt.Errorf("key not found: %v", caCertFile)
+		return nil, nil, fmt.Errorf("ca cert not found: %v", caCertFile)
 	}
 
-	if _, found := caSecret.Data[caKeyFile]; !found {
-		return nil, fmt.Errorf("key not found: %v", caKeyFile)
+	if val, found := caSecret.Data[caKeyFile]; found {
+		caKeyPEM = val
+	} else {
+		return nil, nil, fmt.Errorf("ca key not found: %v", caKeyFile)
 	}
 
-	return caCertPEM, nil
+	return caCertPEM, caKeyPEM, nil
 }
 
 func makeCASecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {

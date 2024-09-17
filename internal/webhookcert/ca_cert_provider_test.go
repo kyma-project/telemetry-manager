@@ -21,6 +21,14 @@ func (g *mockCACertGenerator) generateCert() ([]byte, []byte, error) {
 	return g.cert, g.key, nil
 }
 
+type mockKeyLengthChecker struct {
+	keyLenValid bool
+}
+
+func (c *mockKeyLengthChecker) checkKeyLength(ctx context.Context, keyPEM []byte) (bool, error) {
+	return c.keyLenValid, nil
+}
+
 func TestProvideCACert(t *testing.T) {
 	t.Run("should generate new ca cert if no secret found", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
@@ -105,9 +113,10 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:        fakeClient,
-			expiryChecker: &mockCertExpiryChecker{certValid: false},
-			generator:     &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			client:           fakeClient,
+			expiryChecker:    &mockCertExpiryChecker{certValid: false},
+			generator:        &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			keyLengthChecker: &mockKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -139,9 +148,10 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:        fakeClient,
-			expiryChecker: &mockCertExpiryChecker{err: errors.New("failed")},
-			generator:     &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			client:           fakeClient,
+			expiryChecker:    &mockCertExpiryChecker{err: errors.New("failed")},
+			generator:        &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			keyLengthChecker: &mockKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -173,9 +183,10 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:        fakeClient,
-			expiryChecker: &mockCertExpiryChecker{certValid: true},
-			generator:     &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
+			client:           fakeClient,
+			expiryChecker:    &mockCertExpiryChecker{certValid: true},
+			generator:        &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
+			keyLengthChecker: &mockKeyLengthChecker{keyLenValid: true},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -189,6 +200,41 @@ func TestProvideCACert(t *testing.T) {
 		require.Contains(t, secret.Data, "ca.key")
 		require.Equal(t, secret.Data["ca.crt"], fakeCertPEM)
 		require.Equal(t, secret.Data["ca.key"], fakeKeyPEM)
+	})
+
+	t.Run("Should generate new cert if keylength is 2048", func(t *testing.T) {
+
+		fakeCertPEM := []byte{1, 2, 3}
+		fakeKeyPEM := []byte{4, 5, 6}
+		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ca-cert",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{
+				"ca.crt": fakeCertPEM,
+				"ca.key": fakeKeyPEM,
+			},
+		}).Build()
+		sut := caCertProviderImpl{
+			client:           fakeClient,
+			generator:        &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
+			expiryChecker:    &mockCertExpiryChecker{certValid: true},
+			keyLengthChecker: &mockKeyLengthChecker{keyLenValid: false},
+		}
+
+		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
+		_, _, err := sut.provideCert(context.Background(), secretName)
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		fakeClient.Get(context.Background(), secretName, &secret)
+		require.NotNil(t, secret.Data)
+		require.Contains(t, secret.Data, "ca.crt")
+		require.Contains(t, secret.Data, "ca.key")
+		require.Equal(t, secret.Data["ca.crt"], fakeCertPEM)
+		require.Equal(t, secret.Data["ca.key"], fakeKeyPEM)
+
 	})
 }
 

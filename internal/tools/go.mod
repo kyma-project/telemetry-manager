@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.22.5
+go 1.23.1
 
 require (
 	github.com/golangci/golangci-lint v1.60.3
