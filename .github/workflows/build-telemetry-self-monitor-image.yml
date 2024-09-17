@@ -3,16 +3,14 @@ name: Telemetry Self Monitor Image Builder
 on:
   pull_request_target:
     paths:
-      - "dependencies/telemetry-self-monitor"
+      - "dependencies/telemetry-self-monitor/**"
     types: [ opened, edited, synchronize, reopened, ready_for_review ]
   push:
     branches:
       - main
-      - self-monitor
     paths:
       - "dependencies/telemetry-self-monitor/**"
   workflow_dispatch:
- 
 
 jobs:
   envs:
