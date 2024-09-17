@@ -31,17 +31,17 @@ type KubeletStatsReceiver struct {
 	Metrics            KubeletMetricsConfig `yaml:"metrics"`
 }
 
-type KubeletMetricConfig struct {
+type MetricConfig struct {
 	Enabled bool `yaml:"enabled"`
 }
 
 type KubeletMetricsConfig struct {
-	ContainerCPUUsage       KubeletMetricConfig `yaml:"container.cpu.usage"`
-	ContainerCPUUtilization KubeletMetricConfig `yaml:"container.cpu.utilization"`
-	K8sNodeCPUUsage         KubeletMetricConfig `yaml:"k8s.node.cpu.usage"`
-	K8sNodeCPUUtilization   KubeletMetricConfig `yaml:"k8s.node.cpu.utilization"`
-	K8sPodCPUUsage          KubeletMetricConfig `yaml:"k8s.pod.cpu.usage"`
-	K8sPodCPUUtilization    KubeletMetricConfig `yaml:"k8s.pod.cpu.utilization"`
+	ContainerCPUUsage       MetricConfig `yaml:"container.cpu.usage"`
+	ContainerCPUUtilization MetricConfig `yaml:"container.cpu.utilization"`
+	K8sNodeCPUUsage         MetricConfig `yaml:"k8s.node.cpu.usage"`
+	K8sNodeCPUUtilization   MetricConfig `yaml:"k8s.node.cpu.utilization"`
+	K8sPodCPUUsage          MetricConfig `yaml:"k8s.pod.cpu.usage"`
+	K8sPodCPUUtilization    MetricConfig `yaml:"k8s.pod.cpu.utilization"`
 }
 
 type MetricGroupType string
