@@ -1,8 +1,10 @@
 package agent
 
 import (
+	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 )
 
 func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion string) Processors {
@@ -18,6 +20,7 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 
 		if inputs.runtime {
 			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(metric.InputSourceRuntime, instrumentationScopeVersion)
+			processorsConfig.InsertSkipEnrichmentAttribute = makeInsertSkipEnrichmentAttributeProcessor()
 		}
 
 		if inputs.prometheus {
@@ -55,6 +58,23 @@ func makeDeleteServiceNameConfig() *config.ResourceProcessor {
 			{
 				Action: "delete",
 				Key:    "service.name",
+			},
+		},
+	}
+}
+
+func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
+	return &metric.TransformProcessor{
+		ErrorMode: "ignore",
+		MetricStatements: []config.TransformProcessorStatements{
+			{
+				Context: "metric",
+				Statements: []string{
+					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
+				},
+				Conditions: []string{
+					ottlexpr.IsMatch("name", "^k8s.node.*"),
+				},
 			},
 		},
 	}
