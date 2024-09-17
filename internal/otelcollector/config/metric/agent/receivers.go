@@ -40,12 +40,17 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
 		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode},
 		Metrics: KubeletStatsMetricsConfig{
-			ContainerCPUUsage:       MetricConfig{Enabled: true},
-			ContainerCPUUtilization: MetricConfig{Enabled: false},
-			K8sNodeCPUUsage:         MetricConfig{Enabled: true},
-			K8sNodeCPUUtilization:   MetricConfig{Enabled: false},
-			K8sPodCPUUsage:          MetricConfig{Enabled: true},
-			K8sPodCPUUtilization:    MetricConfig{Enabled: false},
+			ContainerCPUUsage:            MetricConfig{Enabled: true},
+			ContainerCPUUtilization:      MetricConfig{Enabled: false},
+			K8sPodCPUUsage:               MetricConfig{Enabled: true},
+			K8sPodCPUUtilization:         MetricConfig{Enabled: false},
+			K8sNodeCPUUsage:              MetricConfig{Enabled: true},
+			K8sNodeCPUUtilization:        MetricConfig{Enabled: false},
+			K8sNodeCPUTime:               MetricConfig{Enabled: false},
+			K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
+			K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
+			K8sNodeMemoryRSS:             MetricConfig{Enabled: false},
+			K8sNodeMemoryWorkingSet:      MetricConfig{Enabled: false},
 		},
 	}
 }
