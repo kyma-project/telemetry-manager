@@ -12,7 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -23,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
 		mockNs = suite.ID()
 
@@ -50,7 +49,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 
 		metricPipelineWithAnnotation := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineWithAnnotationName).
-			WithAnnotations(map[string]string{gateway.KymaInputAnnotation: "true"}).
 			WithOTLPOutput(testutils.OTLPEndpoint(backendForKymaInput.Endpoint())).
 			Build()
 		objs = append(objs, &metricPipelineWithAnnotation)

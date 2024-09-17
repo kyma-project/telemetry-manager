@@ -31,9 +31,9 @@ func MakeMetricAgentRBAC(name types.NamespacedName) Rbac {
 	}
 }
 
-func MakeMetricGatewayRBAC(name types.NamespacedName, kymaInputAllowed bool) Rbac {
+func MakeMetricGatewayRBAC(name types.NamespacedName) Rbac {
 	return Rbac{
-		clusterRole:        makeMetricGatewayClusterRole(name, kymaInputAllowed),
+		clusterRole:        makeMetricGatewayClusterRole(name),
 		clusterRoleBinding: makeClusterRoleBinding(name),
 		role:               makeMetricGatewayRole(name),
 		roleBinding:        makeMetricGatewayRoleBinding(name),
@@ -83,7 +83,7 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	}
 }
 
-func makeMetricGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bool) *rbacv1.ClusterRole {
+func makeMetricGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -104,28 +104,25 @@ func makeMetricGatewayClusterRole(name types.NamespacedName, kymaInputAllowed bo
 		},
 	}
 
-	if kymaInputAllowed {
-		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
-			APIGroups: []string{"operator.kyma-project.io"},
-			Resources: []string{"telemetries"},
-			Verbs:     []string{"get", "list", "watch"},
-		})
-		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
-			APIGroups: []string{"telemetry.kyma-project.io"},
-			Resources: []string{"metricpipelines"},
-			Verbs:     []string{"get", "list", "watch"},
-		})
-		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
-			APIGroups: []string{"telemetry.kyma-project.io"},
-			Resources: []string{"tracepipelines"},
-			Verbs:     []string{"get", "list", "watch"},
-		})
-		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
-			APIGroups: []string{"telemetry.kyma-project.io"},
-			Resources: []string{"logpipelines"},
-			Verbs:     []string{"get", "list", "watch"},
-		})
-	}
+	kymaStatsRules := []rbacv1.PolicyRule{{
+		APIGroups: []string{"operator.kyma-project.io"},
+		Resources: []string{"telemetries"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{"telemetry.kyma-project.io"},
+		Resources: []string{"metricpipelines"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{"telemetry.kyma-project.io"},
+		Resources: []string{"tracepipelines"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{"telemetry.kyma-project.io"},
+		Resources: []string{"logpipelines"},
+		Verbs:     []string{"get", "list", "watch"},
+	}}
+
+	clusterRole.Rules = append(clusterRole.Rules, kymaStatsRules...)
 
 	k8sClusterRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},

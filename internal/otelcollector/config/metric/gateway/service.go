@@ -38,9 +38,7 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline,
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
 
-	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
-		processors = append(processors, "transform/set-instrumentation-scope-kyma")
-	}
+	processors = append(processors, "transform/set-instrumentation-scope-kyma")
 
 	processors = append(processors, "resource/insert-cluster-name", "resource/delete-skip-enrichment-attribute", "batch")
 
@@ -56,9 +54,7 @@ func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOpti
 
 	receivers = append(receivers, "otlp")
 
-	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
-		receivers = append(receivers, "singleton_receiver_creator/kymastats")
-	}
+	receivers = append(receivers, "singleton_receiver_creator/kymastats")
 
 	if isRuntimeInputEnabled(pipeline.Spec.Input) {
 		receivers = append(receivers, "singleton_receiver_creator/k8s_cluster")
