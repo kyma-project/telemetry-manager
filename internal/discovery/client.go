@@ -1,18 +1,13 @@
 package discovery
 
-import "k8s.io/client-go/discovery"
+import (
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
+)
 
-func MakeDiscoveryClient(apiConf APIConfig) (discovery.DiscoveryInterface, error) {
-	if err := apiConf.Validate(); err != nil {
-		return nil, err
-	}
+func MakeDiscoveryClient(restConfig *rest.Config) (discovery.DiscoveryInterface, error) {
 
-	authConf, err := CreateRestConfig(apiConf)
-	if err != nil {
-		return nil, err
-	}
-
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(authConf)
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
 		return nil, err
 	}

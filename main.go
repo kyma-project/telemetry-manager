@@ -440,6 +440,7 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 			PriorityClassName:      fluentBitPriorityClassName,
 			SelfMonitorName:        selfMonitorName,
 			TelemetryNamespace:     telemetryNamespace,
+			RestConfig:             mgr.GetConfig(),
 		},
 	)
 	if err != nil {

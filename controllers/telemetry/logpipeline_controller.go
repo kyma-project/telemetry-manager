@@ -18,6 +18,8 @@ limitations under the License.
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/discovery"
+	"k8s.io/client-go/rest"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,6 +67,7 @@ type LogPipelineControllerConfig struct {
 	PriorityClassName      string
 	SelfMonitorName        string
 	TelemetryNamespace     string
+	RestConfig             *rest.Config
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
@@ -72,7 +75,6 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	if err != nil {
 		return nil, err
 	}
-
 	reconcilerCfg := logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
@@ -99,12 +101,16 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		SecretRefValidator: &secretref.Validator{Client: client},
 	}
 
+	discoveryClient, err := discovery.MakeDiscoveryClient(config.RestConfig)
+	if err != nil {
+		return nil, err
+	}
 	reconciler := logpipeline.New(
 		client,
 		reconcilerCfg,
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
-		istiostatus.NewChecker(client),
+		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{},

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"k8s.io/client-go/rest"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -56,6 +57,7 @@ type Config struct {
 	PipelineDefaults      builder.PipelineDefaults
 	Overrides             overrides.Config
 	DaemonSetConfig       fluentbit.DaemonSetConfig
+	RestConfig            rest.Config
 }
 
 type DaemonSetAnnotator interface {

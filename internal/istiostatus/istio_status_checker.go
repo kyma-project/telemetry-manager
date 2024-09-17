@@ -2,48 +2,32 @@ package istiostatus
 
 import (
 	"context"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/client-go/discovery"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"strings"
 )
 
 type Checker struct {
-	client client.Reader
+	discovery discovery.DiscoveryInterface
 }
 
-const peerAuthenticationIstioCRD = "peerauthentications.security.istio.io"
-
-func NewChecker(client client.Reader) *Checker {
-	return &Checker{
-		client: client,
-	}
-
+func NewChecker(d discovery.DiscoveryInterface) *Checker {
+	return &Checker{discovery: d}
 }
 
 // IsIstioActive checks if Istio is active on the cluster based on the presence of Istio CRDs
 func (isc *Checker) IsIstioActive(ctx context.Context) bool {
-	var crdList apiextensionsv1.CustomResourceDefinitionList
-	//add fieldselector to improve performance with large crds -> doesn't work with fakeclient
-	//listOptions := &client.ListOptions{
-	//	FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": peerAuthenticationIstioCRD}),
-	//}
 
-	//add labelselector to improve performance with large crds by filtering to list only crds with certain labels
-	//use labelselector because the fieldselector doesn't work with the fake client
-	istioLabels := labels.Set{"app": "istio-pilot"}
-	listOptions := &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(istioLabels),
-	}
-	if err := isc.client.List(ctx, &crdList, listOptions); err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to list CRDs to check Istio status")
-		return false
+	groupList, err := isc.discovery.ServerGroups()
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "error getting group list from server")
 	}
 
-	for _, crd := range crdList.Items {
-		if crd.GetName() == peerAuthenticationIstioCRD {
+	for _, group := range groupList.Groups {
+		if strings.Contains(group.Name, ".istio.io") {
 			return true
 		}
 	}
 	return false
+
 }

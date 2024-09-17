@@ -19,6 +19,8 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/discovery"
+	"k8s.io/client-go/rest"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -62,7 +64,7 @@ type MetricPipelineController struct {
 
 type MetricPipelineControllerConfig struct {
 	metricpipeline.Config
-
+	RestConfig         *rest.Config
 	SelfMonitorName    string
 	TelemetryNamespace string
 }
@@ -84,7 +86,10 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 
 	agentRBAC := otelcollector.MakeMetricAgentRBAC(types.NamespacedName{Name: config.Agent.BaseName, Namespace: config.Agent.Namespace})
 	gatewayRBAC := otelcollector.MakeMetricGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace}, config.KymaInputAllowed)
-
+	discoveryClient, err := discovery.MakeDiscoveryClient(config.RestConfig)
+	if err != nil {
+		return nil, err
+	}
 	reconciler := metricpipeline.New(
 		client,
 		config.Config,
@@ -99,7 +104,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		&otelcollector.GatewayApplierDeleter{Config: config.Gateway, RBAC: gatewayRBAC},
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(client),
+		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
 		pipelineValidator,
