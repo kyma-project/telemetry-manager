@@ -440,6 +440,7 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 			PriorityClassName:      fluentBitPriorityClassName,
 			SelfMonitorName:        selfMonitorName,
 			TelemetryNamespace:     telemetryNamespace,
+			RestConfig:             mgr.GetConfig(),
 		},
 	)
 	if err != nil {
@@ -491,6 +492,7 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 				},
 				MaxPipelines: maxTracePipelines,
 			},
+			RestConfig:         mgr.GetConfig(),
 			TelemetryNamespace: telemetryNamespace,
 			SelfMonitorName:    selfMonitorName,
 		},
@@ -550,6 +552,7 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 				ModuleVersion:    version,
 				KymaInputAllowed: kymaInputAllowed,
 			},
+			RestConfig:         mgr.GetConfig(),
 			TelemetryNamespace: telemetryNamespace,
 			SelfMonitorName:    selfMonitorName,
 		},
