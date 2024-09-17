@@ -15,7 +15,7 @@ CHECK_NAME="build-image / Build image"
 # timeout after 15 minutes
 
 TIMEOUT=900
-QUERY_INTERVAL=10
+QUERY_INTERVAL=30
 
 START_TIME=$SECONDS
 
@@ -33,7 +33,7 @@ until [[ $found == true && $status == "completed" ]]; do
     echo "Waiting for check: $CHECK_NAME"
 
     # Get the latest check run status
-    response=$(curl -L \
+    response=$(curl -sL \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer $GITHUB_TOKEN" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
