@@ -98,30 +98,40 @@ func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
 }
 
 func makeDropRuntimePodMetricsConfig() *FilterProcessor {
-	dropMetricRules := []string{
-		ottlexpr.JoinWithAnd(
-			inputSourceEquals(metric.InputSourceRuntime),
-			ottlexpr.IsMatch("name", "^k8s.pod.*"),
-		),
-	}
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
-			Metric: dropMetricRules,
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "^k8s.pod.*"),
+				),
+			},
 		},
 	}
 }
 
 func makeDropRuntimeContainerMetricsConfig() *FilterProcessor {
-	dropMetricRules := []string{
-		ottlexpr.JoinWithAnd(
-			inputSourceEquals(metric.InputSourceRuntime),
-			ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
-		),
-	}
-
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
-			Metric: dropMetricRules,
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
+				),
+			},
+		},
+	}
+}
+
+func makeDropRuntimeNodeMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "^k8s.node.*"),
+				),
+			},
 		},
 	}
 }
