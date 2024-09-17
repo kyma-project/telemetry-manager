@@ -23,19 +23,19 @@ type Receivers struct {
 }
 
 type KubeletStatsReceiver struct {
-	CollectionInterval string               `yaml:"collection_interval"`
-	AuthType           string               `yaml:"auth_type"`
-	Endpoint           string               `yaml:"endpoint"`
-	InsecureSkipVerify bool                 `yaml:"insecure_skip_verify"`
-	MetricGroups       []MetricGroupType    `yaml:"metric_groups"`
-	Metrics            KubeletMetricsConfig `yaml:"metrics"`
+	CollectionInterval string                    `yaml:"collection_interval"`
+	AuthType           string                    `yaml:"auth_type"`
+	Endpoint           string                    `yaml:"endpoint"`
+	InsecureSkipVerify bool                      `yaml:"insecure_skip_verify"`
+	MetricGroups       []MetricGroupType         `yaml:"metric_groups"`
+	Metrics            KubeletStatsMetricsConfig `yaml:"metrics"`
 }
 
 type MetricConfig struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-type KubeletMetricsConfig struct {
+type KubeletStatsMetricsConfig struct {
 	ContainerCPUUsage       MetricConfig `yaml:"container.cpu.usage"`
 	ContainerCPUUtilization MetricConfig `yaml:"container.cpu.utilization"`
 	K8sNodeCPUUsage         MetricConfig `yaml:"k8s.node.cpu.usage"`
