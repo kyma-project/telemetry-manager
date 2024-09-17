@@ -2,9 +2,10 @@ package istiostatus
 
 import (
 	"context"
+	"strings"
+
 	"k8s.io/client-go/discovery"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"strings"
 )
 
 type Checker struct {

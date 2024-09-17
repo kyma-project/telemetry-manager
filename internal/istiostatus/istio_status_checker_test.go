@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	discoveryfake "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/discovery/fake"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clienttesting "k8s.io/client-go/testing"
 )
@@ -47,7 +47,7 @@ func TestIsIstioActive(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			discovery := discoveryfake.FakeDiscovery{
+			discovery := fake.FakeDiscovery{
 				Fake: &clienttesting.Fake{
 					Resources: tt.resources,
 				},
