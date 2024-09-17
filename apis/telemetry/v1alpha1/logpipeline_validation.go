@@ -2,7 +2,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -31,12 +30,6 @@ func (lp *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
 		}
 	}
 
-	if output.IsLokiDefined() {
-		if err := validateLokiOutput(output.Loki); err != nil {
-			return err
-		}
-	}
-
 	return validateCustomOutput(deniedOutputPlugins, output.Custom)
 }
 
@@ -48,20 +41,6 @@ func checkSingleOutputPlugin(output Output) error {
 		return fmt.Errorf("multiple output plugins are defined, you must define only one output plugin")
 	}
 	return nil
-}
-
-func validateLokiOutput(lokiOutput *LokiOutput) error {
-	if lokiOutput.URL.Value != "" && !validURL(lokiOutput.URL.Value) {
-		return fmt.Errorf("invalid hostname '%s'", lokiOutput.URL.Value)
-	}
-	if !lokiOutput.URL.IsDefined() && (len(lokiOutput.Labels) != 0 || len(lokiOutput.RemoveKeys) != 0) {
-		return fmt.Errorf("loki output must have a URL configured")
-	}
-	if secretRefAndValueIsPresent(lokiOutput.URL) {
-		return fmt.Errorf("loki output URL must have either a value or secret key reference")
-	}
-	return nil
-
 }
 
 func validateHTTPOutput(httpOutput *HTTPOutput) error {
@@ -87,21 +66,6 @@ func validateHTTPOutput(httpOutput *HTTPOutput) error {
 		return fmt.Errorf("http output password must have either a value or secret key reference")
 	}
 	return nil
-}
-
-func validURL(host string) bool {
-	host = strings.Trim(host, " ")
-
-	_, err := url.ParseRequestURI(host)
-	if err != nil {
-		return false
-	}
-
-	u, err := url.Parse(host)
-	if err != nil || u.Scheme == "" || u.Host == "" {
-		return false
-	}
-	return true
 }
 
 func validHostname(host string) (bool, error) {

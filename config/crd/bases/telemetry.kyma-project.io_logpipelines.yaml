@@ -153,52 +153,6 @@ spec:
                       Note: If you use a `custom` output, you put the LogPipeline
                       in unsupported mode.'
                     type: string
-                  grafana-loki:
-                    description: The grafana-loki output is not supported anymore.
-                      For integration with a custom Loki installation, use the `custom`
-                      output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README
-                      ).
-                    properties:
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: Labels to set for each log record.
-                        type: object
-                      removeKeys:
-                        description: Attributes to be removed from a log record.
-                        items:
-                          type: string
-                        type: array
-                      url:
-                        description: Grafana Loki URL.
-                        properties:
-                          value:
-                            description: The value as plain text.
-                            type: string
-                          valueFrom:
-                            description: The value as a reference to a resource.
-                            properties:
-                              secretKeyRef:
-                                description: Refers to the value of a specific key
-                                  in a Secret. You must provide `name` and `namespace`
-                                  of the Secret, as well as the name of the `key`.
-                                properties:
-                                  key:
-                                    description: The name of the attribute of the
-                                      Secret holding the referenced value.
-                                    type: string
-                                  name:
-                                    description: The name of the Secret containing
-                                      the referenced value
-                                    type: string
-                                  namespace:
-                                    description: The name of the Namespace containing
-                                      the Secret with the referenced value.
-                                    type: string
-                                type: object
-                            type: object
-                        type: object
-                    type: object
                   http:
                     description: Configures an HTTP-based output compatible with the
                       Fluent Bit HTTP output plugin.

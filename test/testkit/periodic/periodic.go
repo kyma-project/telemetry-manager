@@ -19,6 +19,10 @@ const (
 	// For example, to verify that a certain signal *does not* have provided resource attributes.
 	TelemetryConsistentlyTimeout = time.Second * 20
 
+	//TelemetryConsistentlyScrapeTimeout is used to set the timeout equal to two scrape intervals.
+	//So that we can consistently check for the presence/absence of a metric.
+	TelemetryConsistentlyScrapeTimeout = time.Second * 60
+
 	// DefaultInterval is the default interval duration used when no specialized interval is applicable.
 	DefaultInterval = time.Millisecond * 250
 

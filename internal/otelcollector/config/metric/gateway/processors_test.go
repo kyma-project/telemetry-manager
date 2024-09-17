@@ -96,6 +96,21 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "connection", collectorConfig.Processors.K8sAttributes.PodAssociation[2].Sources[0].From)
 	})
 
+	t.Run("delete skip_enrichment attribute processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		require.Equal(t, 1, len(collectorConfig.Processors.DeleteSkipEnrichmentAttribute.Attributes))
+		require.Equal(t, "delete", collectorConfig.Processors.DeleteSkipEnrichmentAttribute.Attributes[0].Action)
+		require.Equal(t, "io.kyma-project.telemetry.skip_enrichment", collectorConfig.Processors.DeleteSkipEnrichmentAttribute.Attributes[0].Key)
+	})
+
 	t.Run("drop by input source filter", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
@@ -339,6 +354,7 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[1])
 	})
+
 	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
 		var k8sClusterMetricsDrop = []string{"instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
 			" and (IsMatch(name, \"^k8s.deployment.*\") or IsMatch(name, \"^k8s.cronjob.*\") or IsMatch(name, \"^k8s.daemonset.*\") or IsMatch(name, \"^k8s.hpa.*\") or IsMatch(name, \"^k8s.job.*\")" +

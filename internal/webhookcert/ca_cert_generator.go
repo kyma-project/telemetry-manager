@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	rsaKeySize   = 2048
+	rsaKeySize   = 4096
 	duration365d = time.Hour * 24 * 365
 	caCertMaxAge = duration365d
 )
@@ -61,6 +61,7 @@ func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.Pr
 	}
 
 	certDERBytes, err := x509.CreateCertificate(crand.Reader, &caCertTemplate, &caCertTemplate, caKey.Public(), caKey)
+
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create x509 cert: %w", err)
 	}
