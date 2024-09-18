@@ -19,7 +19,7 @@ CHECK_NAME="build-image / Build image"
 # poll every 60 seconds
 
 TIMEOUT=900
-QUERY_INTERVAL=60
+QUERY_INTERVAL=30
 
 START_TIME=$SECONDS
 
