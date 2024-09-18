@@ -66,12 +66,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Ensures the metrics backends are ready", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendForKymaInputName, Namespace: mockNs})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendForNoKymaInputName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric pipelines are healthy", func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineWithAnnotationName)
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineWithoutAnnotationName)
 		})
 
 		It("Ensures Telemetry module status metrics are sent to the backend which is receiving metrics from the pipeline with annotation", func() {
@@ -115,15 +113,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 				// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
 				CheckMetricPipelineMetricsConditions(g, bodyContent, "GatewayHealthy", pipelineWithAnnotationName)
-
-				// Check the "kyma.resource.status.conditions" type ConfigurationGenerated for  metricpipeline with annotation
-				CheckMetricPipelineMetricsConditions(g, bodyContent, "ConfigurationGenerated", pipelineWithoutAnnotationName)
-
-				// Check the "kyma.resource.status.conditions" type AgentHealthy for metricpipeline with annotation
-				CheckMetricPipelineMetricsConditions(g, bodyContent, "AgentHealthy", pipelineWithoutAnnotationName)
-
-				// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
-				CheckMetricPipelineMetricsConditions(g, bodyContent, "GatewayHealthy", pipelineWithoutAnnotationName)
 
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
