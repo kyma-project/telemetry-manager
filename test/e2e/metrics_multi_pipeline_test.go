@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kymastats"
 	"io"
 	"net/http"
 	"slices"
@@ -104,7 +105,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				bodyContent, err := io.ReadAll(resp.Body)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
+				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames, kymastats.ResourceMetricNames)
 				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats metrics are sent to runtime backend")
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeName(Equal(InstrumentationScopeRuntime)))), "only scope name %v may exist in the runtime backend", InstrumentationScopeRuntime)

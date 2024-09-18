@@ -29,10 +29,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		pipelineWithAnnotationName   = suite.IDWithSuffix("with-annotation")
 		backendForKymaInputName      = suite.IDWithSuffix("for-kyma-input")
 		backendForKymaInputExportURL string
-
-		pipelineWithoutAnnotationName  = suite.IDWithSuffix("without-annotation")
-		backendForNoKymaInputName      = suite.IDWithSuffix("for-no-kyma-input")
-		backendForNoKymaInputExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -43,21 +39,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		objs = append(objs, backendForKymaInput.K8sObjects()...)
 		backendForKymaInputExportURL = backendForKymaInput.ExportURL(proxyClient)
 
-		backendForNoKymaInput := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendForNoKymaInputName))
-		objs = append(objs, backendForNoKymaInput.K8sObjects()...)
-		backendForNoKymaInputExportURL = backendForNoKymaInput.ExportURL(proxyClient)
-
 		metricPipelineWithAnnotation := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineWithAnnotationName).
 			WithOTLPOutput(testutils.OTLPEndpoint(backendForKymaInput.Endpoint())).
 			Build()
 		objs = append(objs, &metricPipelineWithAnnotation)
-
-		metricPipelineWithoutAnnotation := testutils.NewMetricPipelineBuilder().
-			WithName(pipelineWithoutAnnotationName).
-			WithOTLPOutput(testutils.OTLPEndpoint(backendForNoKymaInput.Endpoint())).
-			Build()
-		objs = append(objs, &metricPipelineWithoutAnnotation)
 
 		return objs
 	}
@@ -142,19 +128,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures Telemetry module status metrics are not sent to the backend which is receiving metrics from the pipeline without annotation", func() {
-			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(backendForNoKymaInputExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatMetrics(SatisfyAll(
-						Not(ContainElement(HaveName(Equal("kyma.resource.status.state")))),
-						Not(ContainElement(HaveName(Equal("kyma.resource.status.conditions")))),
-					)),
-				))
-			}, periodic.TelemetryConsistentlyScrapeTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
 	})
 })
 
