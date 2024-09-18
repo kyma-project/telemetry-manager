@@ -25,6 +25,7 @@ jobs:
         with:
           files_ignore: |
             docs/**
+            dependencies/**
             **/*.md
             OWNERS
             CODEOWNERS

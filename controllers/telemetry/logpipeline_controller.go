@@ -24,6 +24,8 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,6 +67,7 @@ type LogPipelineControllerConfig struct {
 	PriorityClassName      string
 	SelfMonitorName        string
 	TelemetryNamespace     string
+	RestConfig             *rest.Config
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
@@ -72,7 +75,6 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	if err != nil {
 		return nil, err
 	}
-
 	reconcilerCfg := logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
@@ -99,12 +101,16 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		SecretRefValidator: &secretref.Validator{Client: client},
 	}
 
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
+	if err != nil {
+		return nil, err
+	}
 	reconciler := logpipeline.New(
 		client,
 		reconcilerCfg,
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
-		istiostatus.NewChecker(client),
+		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{},

@@ -27,6 +27,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -56,6 +57,7 @@ type Config struct {
 	PipelineDefaults      builder.PipelineDefaults
 	Overrides             overrides.Config
 	DaemonSetConfig       fluentbit.DaemonSetConfig
+	RestConfig            rest.Config
 }
 
 type DaemonSetAnnotator interface {

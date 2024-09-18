@@ -25,6 +25,8 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,7 +62,7 @@ type TracePipelineController struct {
 
 type TracePipelineControllerConfig struct {
 	tracepipeline.Config
-
+	RestConfig         *rest.Config
 	SelfMonitorName    string
 	TelemetryNamespace string
 }
@@ -81,7 +83,10 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 	}
 
 	gatewayRBAC := otelcollector.MakeTraceGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace})
-
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
+	if err != nil {
+		return nil, err
+	}
 	reconciler := tracepipeline.New(
 		client,
 		config.Config,
@@ -89,7 +94,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		&otelcollector.GatewayApplierDeleter{Config: config.Gateway, RBAC: gatewayRBAC},
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(client),
+		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		pipelineLock,
 		pipelineValidator,
