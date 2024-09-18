@@ -140,7 +140,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
+		It("Ensures runtime metrics from system namespaces are not sent to backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -149,10 +149,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(SatisfyAll(
-					HaveUniqueNames(BeElementOf(kubeletstats.DefaultMetricsNames)),
-					Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)))),
-				)))
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					Not(ContainElement(SatisfyAll(
+						HaveScopeName(Equal(InstrumentationScopeRuntime)),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)))),
+					)))
 			})
 		})
 	})
