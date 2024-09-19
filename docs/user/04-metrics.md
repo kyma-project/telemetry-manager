@@ -347,6 +347,14 @@ spec:
 > [!NOTE]
 > The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
 
+
+### 4. Default Metrics for Telemetry Health
+By default, the metric gateway has the [kymastats receiver](https://github.com/kyma-project/opentelemetry-collector-components/blob/main/receiver/kymastatsreceiver/README.md) enabled. This receiver collects [metrics](https://github.com/kyma-project/opentelemetry-collector-components/blob/main/receiver/kymastatsreceiver/documentation.md) to monitor the health of following resources if they have been deployed:
+- Telemetry
+- Log Pipeline
+- Trace Pipeline
+- Metric Pipeline
+
 ### 5. Activate Runtime Metrics
 
 To enable collection of runtime metrics, define a MetricPipeline that has the `runtime` section enabled as input:
