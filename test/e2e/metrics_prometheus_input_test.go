@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"io"
 	"net/http"
 	"slices"
@@ -163,7 +164,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
-			assert.MetricsFromNamespaceNotDelivered(proxyClient, backendExportURL, kitkyma.SystemNamespaceName)
+			assert.MetricsWithScopeAndNamespaceNotDelivered(proxyClient, backendExportURL, metric.InstrumentationScopePrometheus, kitkyma.SystemNamespaceName)
 		})
 
 		It("Ensures no diagnostic metrics are sent to backend", func() {

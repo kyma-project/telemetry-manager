@@ -56,6 +56,22 @@ func MetricsFromNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backen
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+func MetricsWithScopeAndNamespaceNotDelivered(proxyClient *apiserverproxy.Client, backendExportURL, scope, namespace string) {
+	Consistently(func(g Gomega) {
+		resp, err := proxyClient.Get(backendExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(
+			HaveFlatMetrics(Not(ContainElement(SatisfyAll(
+				HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+				HaveResourceAttributes(HaveKeyWithValue("service", scope)),
+			)))),
+		))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
 func MetricPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline

@@ -141,20 +141,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Ensures runtime metrics from system namespaces are not sent to backend", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					Not(ContainElement(SatisfyAll(
-						HaveScopeName(Equal(InstrumentationScopeRuntime)),
-						HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)))),
-					)))
-			})
+			assert.MetricsWithScopeAndNamespaceNotDelivered(proxyClient, backendExportURL, InstrumentationScopeRuntime, kitkyma.SystemNamespaceName)
 		})
 	})
 })
