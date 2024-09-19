@@ -120,8 +120,9 @@ A typical test result output looks like the following example:
 
 </div>
 
-> **NOTE:** The expected throughput for the TracePipeline receiver is ~20K spans/sec for single pipeline scenario in other hand for multi pipeline scenario the expected throughput is ~13K spans/sec on receiver side and exported data should be 3 time of received spans. The backpressure scenarios should return the exporter queue size as ~512 for both single and multi pipeline scenarios and the TracePipeline instances should not crash.
-> Typical memory usage for TracePipeline instances is in average for single pod ~150MB and CPU usage is ~1.0 for non-backpressure scenarios, with backpressure scenarios the expected memory usage is significantly higher than non-backpressure scenarios on CPU side it should be less than non-backpressure scenarios since fewer data processed and exported compare to non-backpressure scenario. 
+> **NOTE:** The expected throughput for the TracePipeline receiver on the receiver side is ~20K spans/sec for the single-pipeline scenario and ~13K spans/sec for the multi pipeline scenario. Exported data should be 3 times the received spans. The backpressure scenarios should return the exporter queue size as ~512, for both single- and multi-pipeline scenarios; and the TracePipeline instances should not crash.
+> On average, memory usage for TracePipeline instances is ~150MB for a single Pod, and CPU usage is ~1.0 for non-backpressure scenarios.
+> In backpressure scenarios, the behaviour is different: The expected CPU usage should be less than in non-backpressure scenarios, because less data is processed and exported compared to non-backpressure scenarios. The expected memory usage is significantly higher than in non-backpressure scenarios. 
 >
 ## Metrics Test
 
@@ -236,8 +237,8 @@ are printed out.
 
 </div>
 
-> **NOTE:** The expected throughput for the MetricPipeline receiver is ~4K metrics/sec for single pipeline scenario in other hand for multi pipeline scenario the expected throughput is ~3K metrics/sec on receiver side and exported data should be 3 time of received spans. The backpressure scenarios should return the exporter queue size between ~300 and 512 for both single and multi pipeline scenarios and the MetricPipeline instances should not crash.
-> Typical memory usage for MetricPipeline instances is in average for single pod ~150MB and CPU usage is ~1.5 for non-backpressure scenarios (multi pipeline scenario expect slightly higher) , with backpressure scenarios the expected memory usage is significantly higher than non-backpressure scenarios on CPU side it should be less than non-backpressure scenarios since fewer data processed and exported compare to non-backpressure scenario.
+> **NOTE:** The expected throughput for the MetricPipeline receiver on the receiver side is ~4K metrics/sec for single-pipeline scenarios and ~3K metrics/sec for multi-pipeline scenarios. Exported data should be 3 times the received spans. The backpressure scenarios should return the exporter queue size between ~300 and 512 for both, single- and multi-pipeline scenarios; and the MetricPipeline instances should not crash.
+> On average, memory usage for MetricPipeline instancesis ~150MB for a single Pod, and CPU usage is ~1.5 for non-backpressure scenarios (multi pipeline scenario expect slightly higher). In backpressure scenarios, the behaviour is different: The expected CPU usage should be less than in non-backpressure scenarios, because less data is processed and exported compared to non-backpressure scenarios. The expected memory usage is significantly higher than in non-backpressure scenarios.
 
 #### Metric Agent
 
@@ -278,7 +279,7 @@ are printed out.
 |            0.108.1 |             20219              |            20217             |          0          |       743, 751       |   0.2, 0.2    |                     20120                     |            20108             |          6          |       735, 780       |   0.2, 0.2    |
 </div>
 
-> **NOTE:** The expected throughput for the MetricPipeline agent receiver is ~20K metrics/sec, expected memory usage is in average ~700MB and CPU usage is ~0.2 for each instance.
+> **NOTE:** The expected throughput for the MetricPipeline agent receiver is ~20K metrics/sec. Expected memory usage is on average ~700MB, and CPU usage is ~0.2 for each instance.
 >
 ## Log Test (Fluent-Bit)
 
