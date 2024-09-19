@@ -547,7 +547,7 @@ spec:
               input:
                 description: Defines where to collect logs, including selector mechanisms.
                 properties:
-                  application:
+                  runtime:
                     description: Configures in more detail from which containers application
                       logs are enabled as input.
                     properties:
