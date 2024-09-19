@@ -8,38 +8,16 @@ on:
     branches:
       - "main"
       - "release-*"
+    paths-ignore:
+      - 'docs/**'
+      - 'dependencies/**'
+      - '**/*.md'
+      - 'OWNERS'
+      - 'CODEOWNERS'
   workflow_dispatch:
 
 jobs:
-  # This is a workaround to bypass the limitations of the workflow path filter:
-  # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
-  check-changed-files:
-    outputs:
-      check: ${{ steps.changed-files.outputs.any_modified }}
-    runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.draft == false }}
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Get changed files
-        uses: tj-actions/changed-files@6b2903bdce6310cfbddd87c418f253cf29b2dec9
-        id: changed-files
-        with:
-          files_ignore: |
-            docs/**
-            dependencies/**
-            **/*.md
-            OWNERS
-            CODEOWNERS
-
-      - name: List changed files
-        run: echo '${{ steps.changed-files.outputs.all_changed_files }}' >> $GITHUB_STEP_SUMMARY
-
   e2e:
-    needs: 
-    - check-changed-files
-    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,9 +50,6 @@ jobs:
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-dev:
-    needs: 
-    - check-changed-files
-    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -103,9 +78,6 @@ jobs:
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-istio:
-    needs: 
-    - check-changed-files
-    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -132,9 +104,6 @@ jobs:
           job-name: ${{ github.job }}
 
   e2e-self-mon:
-    needs: 
-    - check-changed-files
-    if: ${{ needs.check-changed-files.outputs.check == 'true' }}
     strategy:
       fail-fast: false
       matrix:
