@@ -49,6 +49,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -425,6 +426,20 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
+
+	if err := ctrl.NewWebhookManagedBy(mgr).
+		For(&telemetryv1alpha1.LogPipeline{}).
+		Complete(); err != nil {
+		setupLog.Error(err, "Failed to create v1alpha1 conversion webhook", "webhook", "LogPipeline")
+		os.Exit(1)
+	}
+
+	if err := ctrl.NewWebhookManagedBy(mgr).
+		For(&telemetryv1beta1.LogPipeline{}).
+		Complete(); err != nil {
+		setupLog.Error(err, "Failed to create v1beta1 conversion webhook", "webhook", "LogPipeline")
+		os.Exit(1)
+	}
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
