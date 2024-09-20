@@ -160,13 +160,9 @@ func TestService(t *testing.T) {
 			collectorConfig, _, err := sut.Build(
 				ctx,
 				[]telemetryv1alpha1.MetricPipeline{
-					// Simulate the default scenario for runtime input by enabling both pod and container metrics
-					// NOTE: the pod and container metrics are enabled by default on the CRD level when the runtime input is defined
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
 						WithRuntimeInput(true).
-						WithRuntimeInputPodMetrics(true).
-						WithRuntimeInputContainerMetrics(true).
 						Build(),
 				},
 				BuildOptions{},
@@ -526,13 +522,9 @@ func TestService(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(
 			ctx,
 			[]telemetryv1alpha1.MetricPipeline{
-				// Simulate the default scenario for runtime input by enabling both pod and container metrics
-				// NOTE: the pod and container metrics are enabled by default on the CRD level when the runtime input is defined
 				testutils.NewMetricPipelineBuilder().
 					WithName("test-1").
 					WithRuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).
-					WithRuntimeInputPodMetrics(true).
-					WithRuntimeInputContainerMetrics(true).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithName("test-2").
