@@ -119,8 +119,7 @@ func TestReceivers(t *testing.T) {
 		k8sClusterReceiver := singletonK8sClusterReceiverCreator.SingletonK8sClusterReceiver.K8sClusterReceiver
 		require.Equal(t, "serviceAccount", k8sClusterReceiver.AuthType)
 		require.Equal(t, "30s", k8sClusterReceiver.CollectionInterval)
-		require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 1)
-		require.Equal(t, []string{""}, k8sClusterReceiver.NodeConditionsToReport)
+		require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 0)
 		require.Equal(t, expectedMetricsToDrop, k8sClusterReceiver.Metrics)
 	})
 }
