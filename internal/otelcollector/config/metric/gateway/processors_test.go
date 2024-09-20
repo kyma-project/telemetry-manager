@@ -356,10 +356,9 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
-		var k8sClusterMetricsDrop = []string{"instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
+		k8sClusterMetricsDrop := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
 			" and (IsMatch(name, \"^k8s.deployment.*\") or IsMatch(name, \"^k8s.cronjob.*\") or IsMatch(name, \"^k8s.daemonset.*\") or IsMatch(name, \"^k8s.hpa.*\") or IsMatch(name, \"^k8s.job.*\")" +
-			" or IsMatch(name, \"^k8s.replicaset.*\") or IsMatch(name, \"^k8s.resource_quota.*\") or IsMatch(name, \"^k8s.statefulset.*\")" +
-			" or IsMatch(name, \"^k8s.node.*\"))"}
+			" or IsMatch(name, \"^k8s.replicaset.*\") or IsMatch(name, \"^k8s.resource_quota.*\") or IsMatch(name, \"^k8s.statefulset.*\"))"
 
 		collectorConfig, _, err := sut.Build(
 			ctx,
@@ -375,6 +374,6 @@ func TestProcessors(t *testing.T) {
 		dropK8sClusterMetrics := collectorConfig.Processors.DropK8sClusterMetrics
 		require.NotNil(t, dropK8sClusterMetrics)
 		require.Len(t, dropK8sClusterMetrics.Metrics.Metric, 1)
-		require.Equal(t, k8sClusterMetricsDrop[0], dropK8sClusterMetrics.Metrics.Metric[0])
+		require.Equal(t, k8sClusterMetricsDrop, dropK8sClusterMetrics.Metrics.Metric[0])
 	})
 }
