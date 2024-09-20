@@ -74,7 +74,7 @@ func declareComponentsForMetricPipeline(
 	envVars otlpexporter.EnvVars,
 	opts BuildOptions,
 ) error {
-	declareSingletonKymaStatsReceiverCreator(pipeline, cfg, opts)
+	declareSingletonKymaStatsReceiverCreator(cfg, opts)
 	declareSingletonK8sClusterReceiverCreator(pipeline, cfg, opts)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
@@ -91,7 +91,7 @@ func declareSingletonK8sClusterReceiverCreator(pipeline *telemetryv1alpha1.Metri
 	}
 }
 
-func declareSingletonKymaStatsReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
+func declareSingletonKymaStatsReceiverCreator(cfg *Config, opts BuildOptions) {
 	cfg.Receivers.SingletonKymaStatsReceiverCreator = makeSingletonKymaStatsReceiverCreatorConfig(opts.GatewayNamespace)
 
 }

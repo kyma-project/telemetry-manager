@@ -349,11 +349,27 @@ spec:
 
 
 ### 4. Default Metrics for Telemetry Health
-By default, the metric gateway has the [kymastats receiver](https://github.com/kyma-project/opentelemetry-collector-components/blob/main/receiver/kymastatsreceiver/README.md) enabled. This receiver collects [metrics](https://github.com/kyma-project/opentelemetry-collector-components/blob/main/receiver/kymastatsreceiver/documentation.md) to monitor the health of following resources if they have been deployed:
-- Telemetry
-- Log Pipeline
-- Trace Pipeline
-- Metric Pipeline
+By default, a MetricPipeline emits metrics about the health of all pipelines managed by the Telemetry module. Based on these metrics, you can track the status of every individual pipeline and set up alerting for it. The following metrics are emitted for every pipeline and the Telemetry module itself:
+
+| metric                          | description                                                              | availability                                       |
+|---------------------------------|--------------------------------------------------------------------------|----------------------------------------------------|
+| kyma.resource.status.conditions | value represents status of different conditions reported by the resource | available for both pipeline and telemetry resource |
+| kyma.resource.status.state      | value represents the state of the resource (if present)                  | available for telemetry resource                   |
+
+The following metric attributes are available for the metric that could be used for monitoring:
+
+| Name                     | names                                                                                               |
+|--------------------------|-----------------------------------------------------------------------------------------------------|
+| metric.attributes.Type   | Type of the condition                                                                               |
+| metric.attributes.status | status of the condition                                                                             |
+| k8s.resource.reason      | reason contains a programmatic identifier indicating the reason for the condition's last transition |
+
+
+A typical alert rule looks like the following example:
+```promql
+sum by (k8s_resource_kind, k8s_resource_name) (kyma_resource_status_conditions{type="TelemetryFlowHealthy"} == false)
+```
+
 
 ### 5. Activate Runtime Metrics
 
