@@ -9,6 +9,7 @@ import (
 // ConvertTo converts this LogPipeline to the Hub version (v1beta1).
 func (src *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*telemetryv1beta1.LogPipeline)
+	dst.ObjectMeta = src.ObjectMeta
 
 	srcAppInput := src.Spec.Input.Application
 	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{
@@ -46,6 +47,8 @@ func (src *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	if srcCustomOutput := src.Spec.Output.Custom; srcCustomOutput != "" {
 		dst.Spec.Output.Custom = srcCustomOutput
 	}
+
+	dst.Status = telemetryv1beta1.LogPipelineStatus(src.Status)
 
 	return nil
 }
@@ -91,6 +94,7 @@ func v1Alpha1TLSToV1Beta1(src TLSConfig) telemetryv1beta1.LogPipelineHTTPOutputT
 // ConvertFrom converts from the Hub version (v1beta1) to this version.
 func (dst *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*telemetryv1beta1.LogPipeline)
+	dst.ObjectMeta = src.ObjectMeta
 
 	if srcAppInput := src.Spec.Input.Runtime; srcAppInput != nil {
 		dst.Spec.Input.Application = ApplicationInput{
@@ -127,6 +131,8 @@ func (dst *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	if srcCustomOutput := src.Spec.Output.Custom; srcCustomOutput != "" {
 		dst.Spec.Output.Custom = srcCustomOutput
 	}
+
+	dst.Status = LogPipelineStatus(src.Status)
 
 	return nil
 }
