@@ -311,6 +311,29 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, expectedCondition, runtimeContainerMetricsFilter.Metrics.Metric[0])
 	})
 
+	t.Run("runtime node metrics filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputNodeMetrics(false).
+					Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		expectedDropRuntimeContainerMetricsProcessor := FilterProcessor{
+			Metrics: FilterProcessorMetrics{
+				Metric: []string{
+					"instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" and IsMatch(name, \"^k8s.node.*\")",
+				},
+			},
+		}
+		require.Equal(t, expectedDropRuntimeContainerMetricsProcessor, *collectorConfig.Processors.DropRuntimeNodeMetrics)
+	})
+
 	t.Run("instrumentation scope transform processor for kymastats receiver", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
