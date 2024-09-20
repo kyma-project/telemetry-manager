@@ -362,7 +362,7 @@ The following metric attributes are available for the metric that could be used 
 |--------------------------|-----------------------------------------------------------------------------------------------------|
 | metric.attributes.Type   | Type of the condition                                                                               |
 | metric.attributes.status | status of the condition                                                                             |
-| k8s.resource.reason      | reason contains a programmatic identifier indicating the reason for the condition's last transition |
+| metric.attributes.reason | reason contains a programmatic identifier indicating the reason for the condition's last transition |
 
 
 A typical alert rule looks like the following example:
