@@ -41,6 +41,40 @@ func TestConvertTo(t *testing.T) {
 			},
 			Output: Output{
 				Custom: "custom-output",
+				HTTP: &HTTPOutput{
+					Host: ValueType{
+						Value: "http://localhost",
+					},
+					User: ValueType{
+						Value: "user",
+					},
+					Password: ValueType{
+						ValueFrom: &ValueFromSource{
+							SecretKeyRef: &SecretKeyRef{
+								Name:      "secret-name",
+								Namespace: "secret-namespace",
+								Key:       "secret-key",
+							},
+						},
+					},
+					URI:      "/ingest/v1beta1/logs",
+					Port:     "8080",
+					Compress: "on",
+					Format:   "json",
+					TLSConfig: TLSConfig{
+						SkipCertificateValidation: true,
+						CA: &ValueType{
+							Value: "ca",
+						},
+						Cert: &ValueType{
+							Value: "cert",
+						},
+						Key: &ValueType{
+							Value: "key",
+						},
+					},
+					Dedot: true,
+				},
 			},
 		},
 		Status: LogPipelineStatus{
@@ -65,7 +99,6 @@ func TestConvertTo(t *testing.T) {
 
 	srcAppInput := src.Spec.Input.Application
 	dstRuntimeInput := dst.Spec.Input.Runtime
-
 	require.Equal(t, srcAppInput.Namespaces.Include, dstRuntimeInput.Namespaces.Include, "included namespaces mismatch")
 	require.Equal(t, srcAppInput.Namespaces.Exclude, dstRuntimeInput.Namespaces.Exclude, "excluded namespaces mismatch")
 	require.Equal(t, srcAppInput.Namespaces.System, dstRuntimeInput.Namespaces.System, "system namespaces mismatch")
@@ -82,6 +115,23 @@ func TestConvertTo(t *testing.T) {
 	require.Equal(t, src.Spec.Filters[0].Custom, dst.Spec.Filters[0].Custom, "custom filter mismatch")
 
 	require.Equal(t, src.Spec.Output.Custom, dst.Spec.Output.Custom, "custom output mismatch")
+
+	srcHTTP := src.Spec.Output.HTTP
+	dstHTTP := dst.Spec.Output.HTTP
+	require.Equal(t, srcHTTP.Host.Value, dstHTTP.Host.Value, "HTTP host mismatch")
+	require.Equal(t, srcHTTP.User.Value, dstHTTP.User.Value, "HTTP user mismatch")
+	require.Equal(t, srcHTTP.Password.ValueFrom.SecretKeyRef.Name, dstHTTP.Password.ValueFrom.SecretKeyRef.Name, "HTTP password secret name mismatch")
+	require.Equal(t, srcHTTP.Password.ValueFrom.SecretKeyRef.Namespace, dstHTTP.Password.ValueFrom.SecretKeyRef.Namespace, "HTTP password secret namespace mismatch")
+	require.Equal(t, srcHTTP.Password.ValueFrom.SecretKeyRef.Key, dstHTTP.Password.ValueFrom.SecretKeyRef.Key, "HTTP password secret key mismatch")
+	require.Equal(t, srcHTTP.URI, dstHTTP.URI, "HTTP URI mismatch")
+	require.Equal(t, srcHTTP.Port, dstHTTP.Port, "HTTP port mismatch")
+	require.Equal(t, srcHTTP.Compress, dstHTTP.Compress, "HTTP compress mismatch")
+	require.Equal(t, srcHTTP.Format, dstHTTP.Format, "HTTP format mismatch")
+	require.Equal(t, srcHTTP.TLSConfig.SkipCertificateValidation, dstHTTP.TLSConfig.SkipCertificateValidation, "HTTP TLS skip certificate validation mismatch")
+	require.Equal(t, srcHTTP.TLSConfig.CA.Value, dstHTTP.TLSConfig.CA.Value, "HTTP TLS CA mismatch")
+	require.Equal(t, srcHTTP.TLSConfig.Cert.Value, dstHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
+	require.Equal(t, srcHTTP.TLSConfig.Key.Value, dstHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
+
 	require.Equal(t, src.Status.UnsupportedMode, dst.Status.UnsupportedMode, "status unsupported mode mismatch")
 	require.ElementsMatch(t, src.Status.Conditions, dst.Status.Conditions, "status conditions mismatch")
 }
