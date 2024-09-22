@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 )
 
 // ensureLogPipelineWebhookConfigs creates or updates the ValidatingWebhookConfiguration for the LogPipeline resources.
@@ -20,7 +21,7 @@ func ensureLogPipelineWebhookConfigs(ctx context.Context, c client.Client, caBun
 		return fmt.Errorf("failed to create or update validating webhook configuration: %w", err)
 	}
 
-	if err := patchConversionWebhookConfig(ctx, c, caBundle, config); err != nil {
+	if err := patchConversionWebhookConfig(ctx, c, caBundle); err != nil {
 		return fmt.Errorf("failed to patch conversion webhook configuration: %w", err)
 	}
 
@@ -116,7 +117,7 @@ func makeValidatingWebhookConfig(certificate []byte, config Config) admissionreg
 	}
 }
 
-func patchConversionWebhookConfig(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
+func patchConversionWebhookConfig(ctx context.Context, c client.Client, caBundle []byte) error {
 	var logPipelineCRD apiextensionsv1.CustomResourceDefinition
 	if err := c.Get(ctx, types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &logPipelineCRD); err != nil {
 		return fmt.Errorf("failed to get logpipelines CRD: %w", err)

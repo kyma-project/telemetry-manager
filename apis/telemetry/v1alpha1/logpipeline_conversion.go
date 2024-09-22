@@ -1,14 +1,24 @@
 package v1alpha1
 
 import (
+	"errors"
+
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
+var errSrcTypeUnsupported = errors.New("source type is not LogPipeline v1alpha1")
+var errDstTypeUnsupported = errors.New("destination type is not LogPipeline v1beta1")
+
 // ConvertTo converts this LogPipeline to the Hub version (v1beta1).
-func (src *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*telemetryv1beta1.LogPipeline)
+func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
+	src := lp
+	dst, ok := dstRaw.(*telemetryv1beta1.LogPipeline)
+	if !ok {
+		return errDstTypeUnsupported
+	}
+
 	dst.ObjectMeta = src.ObjectMeta
 
 	srcAppInput := src.Spec.Input.Application
@@ -92,8 +102,15 @@ func v1Alpha1TLSToV1Beta1(src TLSConfig) telemetryv1beta1.LogPipelineHTTPOutputT
 }
 
 // ConvertFrom converts from the Hub version (v1beta1) to this version.
-func (dst *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*telemetryv1beta1.LogPipeline)
+//
+//lint:ignore ST1016 This is a conversion function and "dst" makes sense here.
+func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
+	dst := lp
+	src, ok := srcRaw.(*telemetryv1beta1.LogPipeline)
+	if !ok {
+		return errSrcTypeUnsupported
+	}
+
 	dst.ObjectMeta = src.ObjectMeta
 
 	if srcAppInput := src.Spec.Input.Runtime; srcAppInput != nil {
