@@ -33,6 +33,12 @@ func TestConvertTo(t *testing.T) {
 					KeepOriginalBody: ptr.To(true),
 				},
 			},
+			Files: []FileMount{
+				{Name: "file1", Content: "file1-content"},
+			},
+			Filters: []Filter{
+				{Custom: "name stdout"},
+			},
 			Output: Output{
 				Custom: "custom-output",
 			},
@@ -69,8 +75,15 @@ func TestConvertTo(t *testing.T) {
 	require.Equal(t, srcAppInput.DropLabels, dstRuntimeInput.DropLabels, "drop labels mismatch")
 	require.Equal(t, srcAppInput.KeepOriginalBody, dstRuntimeInput.KeepOriginalBody, "keep original body mismatch")
 
+	require.Len(t, dst.Spec.Files, 1, "expected one file")
+	require.Equal(t, src.Spec.Files[0].Name, dst.Spec.Files[0].Name, "file name mismatch")
+
+	require.Len(t, dst.Spec.Filters, 1, "expected one filter")
+	require.Equal(t, src.Spec.Filters[0].Custom, dst.Spec.Filters[0].Custom, "custom filter mismatch")
+
 	require.Equal(t, src.Spec.Output.Custom, dst.Spec.Output.Custom, "custom output mismatch")
 	require.Equal(t, src.Status.UnsupportedMode, dst.Status.UnsupportedMode, "status unsupported mode mismatch")
+	require.ElementsMatch(t, src.Status.Conditions, dst.Status.Conditions, "status conditions mismatch")
 }
 
 // // TestConvertFrom tests the ConvertFrom method of the LogPipeline
