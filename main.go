@@ -122,7 +122,8 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	kymaInputAllowed bool
+	kymaInputAllowed          bool
+	enableV1Beta1LogPipelines bool
 
 	version = "main"
 )
@@ -146,7 +147,9 @@ func init() {
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
+	if enableV1Beta1LogPipelines {
+		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
+	}
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
@@ -280,6 +283,7 @@ func main() {
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
 	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
+	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -428,18 +432,23 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1alpha1.LogPipeline{}).
-		Complete(); err != nil {
-		setupLog.Error(err, "Failed to create v1alpha1 conversion webhook", "webhook", "LogPipeline")
-		os.Exit(1)
-	}
+	if enableV1Beta1LogPipelines {
+		setupLog.Info("Registering conversion webhooks for LogPipelines")
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1beta1.LogPipeline{}).
-		Complete(); err != nil {
-		setupLog.Error(err, "Failed to create v1beta1 conversion webhook", "webhook", "LogPipeline")
-		os.Exit(1)
+		// Register conversion webhooks for LogPipelines
+		if err := ctrl.NewWebhookManagedBy(mgr).
+			For(&telemetryv1alpha1.LogPipeline{}).
+			Complete(); err != nil {
+			setupLog.Error(err, "Failed to create v1alpha1 conversion webhook", "webhook", "LogPipeline")
+			os.Exit(1)
+		}
+
+		if err := ctrl.NewWebhookManagedBy(mgr).
+			For(&telemetryv1beta1.LogPipeline{}).
+			Complete(); err != nil {
+			setupLog.Error(err, "Failed to create v1beta1 conversion webhook", "webhook", "LogPipeline")
+			os.Exit(1)
+		}
 	}
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
