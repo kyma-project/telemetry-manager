@@ -4,13 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
-// TestConvertTo tests the ConvertTo method of the LogPipeline
 func TestConvertTo(t *testing.T) {
 	src := &LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -90,83 +89,143 @@ func TestConvertTo(t *testing.T) {
 		},
 	}
 
-	dst := &v1beta1.LogPipeline{}
+	dst := &telemetryv1beta1.LogPipeline{}
 
 	err := src.ConvertTo(dst)
 	require.NoError(t, err, "expected no error during ConvertTo")
 
-	require.Equal(t, src.ObjectMeta, dst.ObjectMeta)
-
-	srcAppInput := src.Spec.Input.Application
-	dstRuntimeInput := dst.Spec.Input.Runtime
-	require.Equal(t, srcAppInput.Namespaces.Include, dstRuntimeInput.Namespaces.Include, "included namespaces mismatch")
-	require.Equal(t, srcAppInput.Namespaces.Exclude, dstRuntimeInput.Namespaces.Exclude, "excluded namespaces mismatch")
-	require.Equal(t, srcAppInput.Namespaces.System, dstRuntimeInput.Namespaces.System, "system namespaces mismatch")
-	require.Equal(t, srcAppInput.Containers.Include, dstRuntimeInput.Containers.Include, "included containers mismatch")
-	require.Equal(t, srcAppInput.Containers.Exclude, dstRuntimeInput.Containers.Exclude, "excluded containers mismatch")
-	require.Equal(t, srcAppInput.KeepAnnotations, dstRuntimeInput.KeepAnnotations, "keep annotations mismatch")
-	require.Equal(t, srcAppInput.DropLabels, dstRuntimeInput.DropLabels, "drop labels mismatch")
-	require.Equal(t, srcAppInput.KeepOriginalBody, dstRuntimeInput.KeepOriginalBody, "keep original body mismatch")
-
-	require.Len(t, dst.Spec.Files, 1, "expected one file")
-	require.Equal(t, src.Spec.Files[0].Name, dst.Spec.Files[0].Name, "file name mismatch")
-
-	require.Len(t, dst.Spec.Filters, 1, "expected one filter")
-	require.Equal(t, src.Spec.Filters[0].Custom, dst.Spec.Filters[0].Custom, "custom filter mismatch")
-
-	require.Equal(t, src.Spec.Output.Custom, dst.Spec.Output.Custom, "custom output mismatch")
-
-	srcHTTP := src.Spec.Output.HTTP
-	dstHTTP := dst.Spec.Output.HTTP
-	require.Equal(t, srcHTTP.Host.Value, dstHTTP.Host.Value, "HTTP host mismatch")
-	require.Equal(t, srcHTTP.User.Value, dstHTTP.User.Value, "HTTP user mismatch")
-	require.Equal(t, srcHTTP.Password.ValueFrom.SecretKeyRef.Name, dstHTTP.Password.ValueFrom.SecretKeyRef.Name, "HTTP password secret name mismatch")
-	require.Equal(t, srcHTTP.Password.ValueFrom.SecretKeyRef.Namespace, dstHTTP.Password.ValueFrom.SecretKeyRef.Namespace, "HTTP password secret namespace mismatch")
-	require.Equal(t, srcHTTP.Password.ValueFrom.SecretKeyRef.Key, dstHTTP.Password.ValueFrom.SecretKeyRef.Key, "HTTP password secret key mismatch")
-	require.Equal(t, srcHTTP.URI, dstHTTP.URI, "HTTP URI mismatch")
-	require.Equal(t, srcHTTP.Port, dstHTTP.Port, "HTTP port mismatch")
-	require.Equal(t, srcHTTP.Compress, dstHTTP.Compress, "HTTP compress mismatch")
-	require.Equal(t, srcHTTP.Format, dstHTTP.Format, "HTTP format mismatch")
-	require.Equal(t, srcHTTP.TLSConfig.SkipCertificateValidation, dstHTTP.TLSConfig.SkipCertificateValidation, "HTTP TLS skip certificate validation mismatch")
-	require.Equal(t, srcHTTP.TLSConfig.CA.Value, dstHTTP.TLSConfig.CA.Value, "HTTP TLS CA mismatch")
-	require.Equal(t, srcHTTP.TLSConfig.Cert.Value, dstHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
-	require.Equal(t, srcHTTP.TLSConfig.Key.Value, dstHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
-
-	require.Equal(t, src.Status.UnsupportedMode, dst.Status.UnsupportedMode, "status unsupported mode mismatch")
-	require.ElementsMatch(t, src.Status.Conditions, dst.Status.Conditions, "status conditions mismatch")
+	requireLogPipelinesEquivalent(t, src, dst)
 }
 
-// // TestConvertFrom tests the ConvertFrom method of the LogPipeline
-// func TestConvertFrom(t *testing.T) {
-// 	src := &v1beta1.LogPipeline{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name: "log-pipeline-test",
-// 		},
-// 		Spec: v1beta1.LogPipelineSpec{
-// 			Input: v1beta1.LogPipelineInput{
-// 				Runtime: &v1beta1.LogPipelineRuntimeInput{
-// 					Namespaces: []string{"default", "kube-system"},
-// 					Containers: []string{"nginx", "app"},
-// 				},
-// 			},
-// 			Output: v1beta1.LogPipelineOutput{
-// 				Custom: "custom-output",
-// 			},
-// 		},
-// 		Status: v1beta1.LogPipelineStatus("Running"),
-// 	}
-//
-// 	dst := &LogPipeline{}
-//
-// 	err := dst.ConvertFrom(src)
-// 	require.NoError(t, err, "expected no error during ConvertFrom")
-//
-// 	require.Equal(t, src.ObjectMeta, dst.ObjectMeta, "metadata mismatch")
-// 	require.Equal(t, src.Spec.Input.Runtime.Namespaces, dst.Spec.Input.Application.Namespaces, "input namespaces mismatch")
-// 	require.Equal(t, src.Spec.Output.Custom, dst.Spec.Output.Custom, "custom output mismatch")
-// 	require.Equal(t, string(src.Status), string(dst.Status), "status mismatch")
-// }
-//
+func TestConvertFrom(t *testing.T) {
+	src := &telemetryv1beta1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "log-pipeline-test",
+		},
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Input: telemetryv1beta1.LogPipelineInput{
+				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+					Namespaces: telemetryv1beta1.LogPipelineInputNamespaces{
+						Include: []string{"default", "kube-system"},
+						Exclude: []string{"kube-public"},
+						System:  true,
+					},
+					Containers: telemetryv1beta1.LogPipelineInputContainers{
+						Include: []string{"nginx", "app"},
+						Exclude: []string{"sidecar"},
+					},
+					KeepAnnotations:  true,
+					DropLabels:       true,
+					KeepOriginalBody: ptr.To(true),
+				},
+			},
+			Files: []telemetryv1beta1.LogPipelineFileMount{
+				{Name: "file1", Content: "file1-content"},
+			},
+			Filters: []telemetryv1beta1.LogPipelineFilter{
+				{Custom: "name stdout"},
+			},
+			Output: telemetryv1beta1.LogPipelineOutput{
+				Custom: "custom-output",
+				HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+					Host: telemetryv1beta1.ValueType{
+						Value: "http://localhost",
+					},
+					User: telemetryv1beta1.ValueType{
+						Value: "user",
+					},
+					Password: telemetryv1beta1.ValueType{
+						ValueFrom: &telemetryv1beta1.ValueFromSource{
+							SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
+								Name:      "secret-name",
+								Namespace: "secret-namespace",
+								Key:       "secret-key",
+							},
+						},
+					},
+					URI:      "/ingest/v1beta1/logs",
+					Port:     "8080",
+					Compress: "on",
+					Format:   "json",
+					TLSConfig: telemetryv1beta1.LogPipelineHTTPOutputTLS{
+						SkipCertificateValidation: true,
+						CA: &telemetryv1beta1.ValueType{
+							Value: "ca",
+						},
+						Cert: &telemetryv1beta1.ValueType{
+							Value: "cert",
+						},
+						Key: &telemetryv1beta1.ValueType{
+							Value: "key",
+						},
+					},
+					Dedot: true,
+				},
+			},
+		},
+		Status: telemetryv1beta1.LogPipelineStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:    "LogAgentHealthy",
+					Status:  "True",
+					Reason:  "FluentBitReady",
+					Message: "FluentBit is and collecting logs",
+				},
+			},
+			UnsupportedMode: ptr.To(true),
+		},
+	}
+
+	dst := &LogPipeline{}
+
+	err := dst.ConvertFrom(src)
+	require.NoError(t, err, "expected no error during ConvertTo")
+
+	requireLogPipelinesEquivalent(t, dst, src)
+}
+
+func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1beta1.LogPipeline) {
+	require.Equal(t, x.ObjectMeta, y.ObjectMeta)
+
+	xAppInput := x.Spec.Input.Application
+	yRuntimeInput := y.Spec.Input.Runtime
+	require.Equal(t, xAppInput.Namespaces.Include, yRuntimeInput.Namespaces.Include, "included namespaces mismatch")
+	require.Equal(t, xAppInput.Namespaces.Exclude, yRuntimeInput.Namespaces.Exclude, "excluded namespaces mismatch")
+	require.Equal(t, xAppInput.Namespaces.System, yRuntimeInput.Namespaces.System, "system namespaces mismatch")
+	require.Equal(t, xAppInput.Containers.Include, yRuntimeInput.Containers.Include, "included containers mismatch")
+	require.Equal(t, xAppInput.Containers.Exclude, yRuntimeInput.Containers.Exclude, "excluded containers mismatch")
+	require.Equal(t, xAppInput.KeepAnnotations, yRuntimeInput.KeepAnnotations, "keep annotations mismatch")
+	require.Equal(t, xAppInput.DropLabels, yRuntimeInput.DropLabels, "drop labels mismatch")
+	require.Equal(t, xAppInput.KeepOriginalBody, yRuntimeInput.KeepOriginalBody, "keep original body mismatch")
+
+	require.Len(t, y.Spec.Files, 1, "expected one file")
+	require.Equal(t, x.Spec.Files[0].Name, y.Spec.Files[0].Name, "file name mismatch")
+
+	require.Len(t, y.Spec.Filters, 1, "expected one filter")
+	require.Equal(t, x.Spec.Filters[0].Custom, y.Spec.Filters[0].Custom, "custom filter mismatch")
+
+	require.Equal(t, x.Spec.Output.Custom, y.Spec.Output.Custom, "custom output mismatch")
+
+	xHTTP := x.Spec.Output.HTTP
+	yHTTP := y.Spec.Output.HTTP
+	require.Equal(t, xHTTP.Host.Value, yHTTP.Host.Value, "HTTP host mismatch")
+	require.Equal(t, xHTTP.User.Value, yHTTP.User.Value, "HTTP user mismatch")
+	require.Equal(t, xHTTP.Password.ValueFrom.SecretKeyRef.Name, yHTTP.Password.ValueFrom.SecretKeyRef.Name, "HTTP password secret name mismatch")
+	require.Equal(t, xHTTP.Password.ValueFrom.SecretKeyRef.Namespace, yHTTP.Password.ValueFrom.SecretKeyRef.Namespace, "HTTP password secret namespace mismatch")
+	require.Equal(t, xHTTP.Password.ValueFrom.SecretKeyRef.Key, yHTTP.Password.ValueFrom.SecretKeyRef.Key, "HTTP password secret key mismatch")
+	require.Equal(t, xHTTP.URI, yHTTP.URI, "HTTP URI mismatch")
+	require.Equal(t, xHTTP.Port, yHTTP.Port, "HTTP port mismatch")
+	require.Equal(t, xHTTP.Compress, yHTTP.Compress, "HTTP compress mismatch")
+	require.Equal(t, xHTTP.Format, yHTTP.Format, "HTTP format mismatch")
+	require.Equal(t, xHTTP.TLSConfig.SkipCertificateValidation, yHTTP.TLSConfig.SkipCertificateValidation, "HTTP TLS skip certificate validation mismatch")
+	require.Equal(t, xHTTP.TLSConfig.CA.Value, yHTTP.TLSConfig.CA.Value, "HTTP TLS CA mismatch")
+	require.Equal(t, xHTTP.TLSConfig.Cert.Value, yHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
+	require.Equal(t, xHTTP.TLSConfig.Key.Value, yHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
+
+	require.Equal(t, x.Status.UnsupportedMode, y.Status.UnsupportedMode, "status unsupported mode mismatch")
+	require.ElementsMatch(t, x.Status.Conditions, y.Status.Conditions, "status conditions mismatch")
+}
+
 // // TestRoundTripConversion tests round-trip conversion between and v1beta1
 // func TestRoundTripConversion(t *testing.T) {
 // 	original := &LogPipeline{
