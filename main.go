@@ -147,9 +147,6 @@ func init() {
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
-	if enableV1Beta1LogPipelines {
-		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
-	}
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
@@ -434,7 +431,7 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 
 	if enableV1Beta1LogPipelines {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
-
+		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 		// Register conversion webhooks for LogPipelines
 		if err := ctrl.NewWebhookManagedBy(mgr).
 			For(&telemetryv1alpha1.LogPipeline{}).
