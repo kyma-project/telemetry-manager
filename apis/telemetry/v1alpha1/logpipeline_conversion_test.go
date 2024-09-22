@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -92,9 +93,15 @@ func TestConvertTo(t *testing.T) {
 	dst := &telemetryv1beta1.LogPipeline{}
 
 	err := src.ConvertTo(dst)
-	require.NoError(t, err, "expected no error during ConvertTo")
+	require.NoError(t, err)
 
 	requireLogPipelinesEquivalent(t, src, dst)
+
+	srcAfterRoundTrip := &LogPipeline{}
+	err = srcAfterRoundTrip.ConvertFrom(dst)
+	require.NoError(t, err)
+
+	require.True(t, reflect.DeepEqual(src, srcAfterRoundTrip), "expected source and source after round-trip to be equal")
 }
 
 func TestConvertFrom(t *testing.T) {
@@ -182,6 +189,12 @@ func TestConvertFrom(t *testing.T) {
 	require.NoError(t, err, "expected no error during ConvertTo")
 
 	requireLogPipelinesEquivalent(t, dst, src)
+
+	srcAfterRoundTrip := &telemetryv1beta1.LogPipeline{}
+	err = dst.ConvertTo(srcAfterRoundTrip)
+	require.NoError(t, err, "expected no error during ConvertFrom (round-trip)")
+
+	require.True(t, reflect.DeepEqual(src, srcAfterRoundTrip), "expected source and source after round-trip to be equal")
 }
 
 func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1beta1.LogPipeline) {
