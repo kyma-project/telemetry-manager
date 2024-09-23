@@ -16,7 +16,7 @@ CHECK_NAME="build-image / Build image"
 
 # retry until check is found and status is completed
 # timeout after 15 minutes
-# poll every 60 seconds
+# poll every 45 seconds
 
 TIMEOUT=900
 QUERY_INTERVAL=45
