@@ -121,6 +121,15 @@ func TestEnsureCertificate(t *testing.T) {
 	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].Resources, "logpipelines")
 	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].Resources, "logparsers")
 
+	var crd apiextensionsv1.CustomResourceDefinition
+	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &crd))
+
+	crdCABundle := crd.Spec.Conversion.Webhook.ClientConfig.CABundle
+	require.NotEmpty(t, crdCABundle, "ca bundle must be patched")
+
+	certValid, err = chainChecker.checkRoot(context.Background(), serverCert, crdCABundle)
+	require.NoError(t, err)
+	require.True(t, certValid)
 }
 
 func TestUpdateWebhookCertificate(t *testing.T) {
