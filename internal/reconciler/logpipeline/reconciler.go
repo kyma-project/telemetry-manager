@@ -398,6 +398,12 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
+	// Treat the pipeline as non-reconcilable if the application input is explicitly disabled
+	appInputEnabled := pipeline.Spec.Input.Application.Enabled
+	if appInputEnabled != nil && !*appInputEnabled {
+		return false, nil
+	}
+
 	err := r.pipelineValidator.validate(ctx, pipeline)
 
 	// Pipeline with a certificate that is about to expire is still considered reconcilable
