@@ -18,7 +18,7 @@ type Config struct {
 func EnsureCertificate(ctx context.Context, client client.Client, config Config) error {
 	caCertPEM, caKeyPEM, err := newCACertProvider(client).provideCert(ctx, config.CASecretName)
 	if err != nil {
-		return fmt.Errorf("failed to provider ca cert/key: %w", err)
+		return fmt.Errorf("failed to provide ca cert/key: %w", err)
 	}
 
 	host, alternativeDNSNames := dnsNames(config.ServiceName)
@@ -29,7 +29,7 @@ func EnsureCertificate(ctx context.Context, client client.Client, config Config)
 		caKeyPEM:            caKeyPEM,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to provider server cert/key: %w", err)
+		return fmt.Errorf("failed to provide server cert/key: %w", err)
 	}
 
 	return ensureLogPipelineWebhookConfigs(ctx, client, caCertPEM, config)
