@@ -57,9 +57,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		inputPipelineID := formatInputPipelineID(pipeline.Name)
 		attributesEnrichmentPipelineID := formatAttributesEnrichmentPipelineID(pipeline.Name)
 		outputPipelineID := formatOutputPipelineID(pipeline.Name)
-		cfg.Service.Pipelines[inputPipelineID] = makeInputPipelineServiceConfig(&pipeline, opts)
+		cfg.Service.Pipelines[inputPipelineID] = makeInputPipelineServiceConfig(&pipeline)
 		cfg.Service.Pipelines[attributesEnrichmentPipelineID] = makeAttributesEnrichmentPipelineServiceConfig(pipeline.Name)
-		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline, opts)
+		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline)
 	}
 
 	return cfg, envVars, nil

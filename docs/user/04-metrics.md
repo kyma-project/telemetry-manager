@@ -365,9 +365,9 @@ The following metric attributes are available for the metric that could be used 
 | metric.attributes.reason | reason contains a programmatic identifier indicating the reason for the condition's last transition |
 
 
-A typical alert rule looks like the following example:
+A typical alert rule for looks like the following example. This alert would be triggered if metrics are not delivered to the backend for 5 minutes:
 ```promql
-sum by (k8s_resource_kind, k8s_resource_name) (kyma_resource_status_conditions{type="TelemetryFlowHealthy"} == false)
+ sum by (k8s_resource_name, k8s_resource_kind) (rate(kyma_resource_status_conditions_ratio{type="TelemetryFlowHealthy", status="False"}[5m])) > 0
 ```
 
 

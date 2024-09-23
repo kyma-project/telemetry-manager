@@ -7,9 +7,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
-func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) config.Pipeline {
+func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	return config.Pipeline{
-		Receivers:  makeReceiversIDs(pipeline, opts),
+		Receivers:  makeReceiversIDs(pipeline),
 		Processors: []string{"memory_limiter"},
 		Exporters:  []string{formatRoutingConnectorID(pipeline.Name)},
 	}
@@ -23,7 +23,7 @@ func makeAttributesEnrichmentPipelineServiceConfig(pipelineName string) config.P
 	}
 }
 
-func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) config.Pipeline {
+func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	var processors []string
 
 	input := pipeline.Spec.Input
@@ -49,7 +49,7 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline,
 	}
 }
 
-func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) []string {
+func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline) []string {
 	var receivers []string
 
 	receivers = append(receivers, "otlp")
