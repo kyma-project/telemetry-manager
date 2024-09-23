@@ -102,8 +102,6 @@ func v1Alpha1TLSToV1Beta1(src TLSConfig) telemetryv1beta1.LogPipelineHTTPOutputT
 }
 
 // ConvertFrom converts from the Hub version (v1beta1) to this version.
-//
-//lint:ignore ST1016 This is a conversion function and "dst" makes sense here.
 func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst := lp
 	src, ok := srcRaw.(*telemetryv1beta1.LogPipeline)
