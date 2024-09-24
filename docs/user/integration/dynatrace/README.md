@@ -61,13 +61,15 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
 3. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
 
     ```yaml
-    namespaceSelector:
-      matchExpressions:
-      - key: kubernetes.io/metadata.name
-        operator: NotIn
-        values:
-        - kyma-system
-        - istio-system
+    oneAgent:
+      cloudNativeFullStack:
+        namespaceSelector:
+          matchExpressions:
+          - key: kubernetes.io/metadata.name
+            operator: NotIn
+            values:
+            - kyma-system
+            - istio-system
     ```
 
 4. In the environment, go to **Settings > Cloud and virtualization > Kubernetes** and enable the relevant Kubernetes features, especially `Monitor annotated Prometheus exporters` to collect Istio metrics.
