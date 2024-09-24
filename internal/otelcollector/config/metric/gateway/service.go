@@ -18,7 +18,7 @@ func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline, 
 func makeAttributesEnrichmentPipelineServiceConfig(pipelineName string) config.Pipeline {
 	return config.Pipeline{
 		Receivers:  []string{formatRoutingConnectorID(pipelineName)},
-		Processors: []string{"k8sattributes", "transform/resolve-service-name"},
+		Processors: []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"},
 		Exporters:  []string{formatForwardConnectorID(pipelineName)},
 	}
 }
