@@ -24,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -155,28 +154,10 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return b.Watches(
-		&apiextensionsv1.CustomResourceDefinition{},
-		handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
-		ctrlbuilder.WithPredicates(predicate.CreateOrDelete()),
-	).Watches(
 		&operatorv1alpha1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete()),
 	).Complete(r)
-}
-
-func (r *MetricPipelineController) mapCRDChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	_, ok := object.(*apiextensionsv1.CustomResourceDefinition)
-	if !ok {
-		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected CRD")
-		return nil
-	}
-
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
-	}
-	return requests
 }
 
 func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
