@@ -51,9 +51,6 @@ data:
       - widget: Panel
         name: Applications
         children:
-          - name: Enabled
-            visibility: $exists(spec.input.application.enabled)
-            source: spec.input.application.enabled
           - widget: Panel
             name: Namespaces
             children:
