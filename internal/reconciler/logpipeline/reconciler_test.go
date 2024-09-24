@@ -90,6 +90,33 @@ func TestReconcile(t *testing.T) {
 		require.True(t, *updatedPipeline.Status.UnsupportedMode)
 	})
 
+	t.Run("should set status UnsupportedMode false if does not contains custom plugin", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
+
+		errToMsgStub := &mocks.ErrorToMessageConverter{}
+
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		require.False(t, *updatedPipeline.Status.UnsupportedMode)
+	})
+
 	t.Run("no resources generated if app input disabled", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithApplicationInputDisabled().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
