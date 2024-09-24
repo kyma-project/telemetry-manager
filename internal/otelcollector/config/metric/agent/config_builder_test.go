@@ -48,7 +48,8 @@ func TestBuildAgentConfig(t *testing.T) {
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
 		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
-		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
+		require.Equal(t, "${MY_POD_IP}", collectorConfig.Service.Telemetry.Metrics.Readers.Pull.Exporter.PrometheusExporterConfig.Host)
+		require.Equal(t, int32(8888), collectorConfig.Service.Telemetry.Metrics.Readers.Pull.Exporter.PrometheusExporterConfig.Port)
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {
