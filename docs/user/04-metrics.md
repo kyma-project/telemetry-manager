@@ -351,23 +351,23 @@ spec:
 ### 4. Default Metrics for Telemetry Health
 By default, a MetricPipeline emits metrics about the health of all pipelines managed by the Telemetry module. Based on these metrics, you can track the status of every individual pipeline and set up alerting for it. The following metrics are emitted for every pipeline and the Telemetry module itself:
 
-| metric                          | description                                                              | availability                                       |
-|---------------------------------|--------------------------------------------------------------------------|----------------------------------------------------|
-| kyma.resource.status.conditions | value represents status of different conditions reported by the resource | available for both pipeline and telemetry resource |
-| kyma.resource.status.state      | value represents the state of the resource (if present)                  | available for telemetry resource                   |
+| Metric                          | Description                                                                                                                                              | Availability                                                |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| kyma.resource.status.conditions | Value represents status of different conditions reported by the resource.  Possible values are 'True' => 1, 'False' => 0, and -1 for other status values | Available for both, the pipeline and the telemetry resource |
+| kyma.resource.status.state      | Value represents the state of the resource (if present)                                                                                                  | Available for the telemetry resource                        |
 
-The following metric attributes are available for the metric that could be used for monitoring:
+The following metric attributes are available for monitoring:
 
-| Name                     | names                                                                                               |
-|--------------------------|-----------------------------------------------------------------------------------------------------|
-| metric.attributes.Type   | Type of the condition                                                                               |
-| metric.attributes.status | status of the condition                                                                             |
-| metric.attributes.reason | reason contains a programmatic identifier indicating the reason for the condition's last transition |
+| Name                     | Description                                                                                  |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| metric.attributes.Type   | Type of the condition                                                                        |
+| metric.attributes.status | Status of the condition                                                                      |
+| metric.attributes.reason | Contains a programmatic identifier indicating the reason for the condition's last transition |
 
 
-A typical alert rule for looks like the following example. This alert would be triggered if metrics are not delivered to the backend for 5 minutes:
+A typical alert rule looks like the following example. The alert is triggered if metrics are not delivered to the backend:
 ```promql
- sum by (k8s_resource_name) (rate(kyma_resource_status_conditions{k8s_resource_kind="metricpipelines", type="TelemetryFlowHealthy", status="False"}[5m])) > 0
+ min by (k8s_resource_name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy",k8s_resource_kind="metricpipelines"})) == 0
 ```
 
 
