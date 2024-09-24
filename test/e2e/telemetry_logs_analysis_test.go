@@ -219,6 +219,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 								ContainSubstring("grpc: addrConn.createTransport failed to connect"),
 								ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
 								ContainSubstring("interrupted due to shutdown:"),
+								ContainSubstring("service::telemetry::metrics::address is being deprecated in favor of service::telemetry::metrics::readers"),
 							),
 						)),
 					)))),
