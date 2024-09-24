@@ -118,9 +118,13 @@ A typical test result output looks like the following example:
 |            0.107.0 |            19876            |            19719            |          0          |       184, 96        |     1, 1      |            11993             |            35504            |          0          |       133, 138       |   1.4, 1.4    |                   10081                    |             360             |         512         |      1734, 1722      |   0.5, 0.5    |                   18184                    |             922             |         510         |      1754, 1698      |    0.9, 1     |
 |            0.108.1 |            20175            |            20014            |          0          |       100, 93        |     1, 1      |            12365             |            36603            |          0          |       135, 148       |   1.4, 1.4    |                   10758                    |             332             |         512         |      1722, 1681      |   0.5, 0.5    |                   19163                    |             891             |         510         |      1800, 1757      |     1, 1      |
 
-
 </div>
 
+The expected throughput for the TracePipeline receiver on the receiver side is ~20K spans/sec for the single-pipeline scenario and ~13K spans/sec for the multi pipeline scenario. Exported data should be 3 times the received spans. The backpressure scenarios should return the exporter queue size as ~512, for both single- and multi-pipeline scenarios; and the TracePipeline instances should not crash.
+On average, memory usage for TracePipeline instances is ~150MB for a single Pod, and CPU usage is ~1.0 for non-backpressure scenarios.
+In backpressure scenarios, the behaviour is different: The expected CPU usage should be less than in non-backpressure scenarios, because less data is processed and exported compared to non-backpressure scenarios. The expected memory usage is significantly higher than in non-backpressure scenarios. 
+> **NOTE:** The figures above are the minimum acceptable values. You should always compare your measured results with the previous execution from the table to check for performance degradations, typically indicated by higher CPU or memory usage, lower throughput, or higher queue size.
+> The test execution is automated. If the test results aren't as expected, you should re-execute the test to confirm the results.
 ## Metrics Test
 
 The metrics test consists of two main test scenarios. The first scenario tests the Metric Gateway KPIs, and the second
@@ -234,6 +238,10 @@ are printed out.
 
 </div>
 
+The expected throughput for the MetricPipeline receiver on the receiver side is ~4K metrics/sec for single-pipeline scenarios and ~3K metrics/sec for multi-pipeline scenarios. Exported data should be 3 times the received spans. The backpressure scenarios should return the exporter queue size between ~300 and 512 for both, single- and multi-pipeline scenarios; and the MetricPipeline instances should not crash.
+On average, memory usage for MetricPipeline instances is ~150MB for a single Pod, and CPU usage is ~1.5 for non-backpressure scenarios (slightly higher for multi-pipeline scenarios). In backpressure scenarios, the behaviour is different: The expected CPU usage should be less than in non-backpressure scenarios, because less data is processed and exported compared to non-backpressure scenarios. The expected memory usage is significantly higher than in non-backpressure scenarios.
+> **NOTE:** The figures above are the minimum acceptable values. You should always compare the measured results with the previous execution from the table to check for performance degradations, typically indicated by higher CPU or memory usage, lower throughput, or higher queue size.
+> The test execution is automated. If the test results aren't as expected, you should re-execute the test to confirm the results.
 #### Metric Agent
 
 1. To test the average throughput end-to-end, run:
@@ -273,6 +281,9 @@ are printed out.
 |            0.108.1 |             20219              |            20217             |          0          |       743, 751       |   0.2, 0.2    |                     20120                     |            20108             |          6          |       735, 780       |   0.2, 0.2    |
 </div>
 
+The expected throughput for the MetricPipeline agent receiver is ~20K metrics/sec. Expected memory usage is on average ~700MB, and CPU usage is ~0.2 for each instance.
+> **NOTE:** The figures above are the minimum acceptable values. You should always compare the measured results with the previous execution from the table to check for performance degradations, typically indicated by higher CPU or memory usage, lower throughput, or higher queue size.
+> The test execution is automated. If the test results aren't as expected, you should re-execute the test to confirm the results.
 ## Log Test (Fluent-Bit)
 
 ### Assumptions
