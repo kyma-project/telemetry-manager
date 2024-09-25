@@ -77,10 +77,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainTd(SatisfyAll(
-						ContainResourceAttrs(HaveKeyWithValue("service.name", expectedServiceName)),
-						ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
-					)),
+					HaveFlatTraces(SatisfyAll(ContainElement(
+						HaveResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)),
+						HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
+					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		}
@@ -132,11 +132,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainTd(
-						ContainResourceAttrs(HaveKey(ContainSubstring("kyma"))),
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(
+					Not(ContainElement(
+						HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
 					)),
-				))
+				)))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
