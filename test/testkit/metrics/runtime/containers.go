@@ -34,7 +34,6 @@ var (
 		"k8s.node.name",
 		"k8s.pod.name",
 		"k8s.pod.uid",
-		"kyma.app_name",
 		"service.name",
 	}
 )
