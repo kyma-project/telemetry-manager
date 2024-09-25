@@ -57,6 +57,7 @@ rules:
   resources:
   - customresourcedefinitions
   verbs:
+  - get
   - patch
 - apiGroups:
   - apps

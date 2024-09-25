@@ -8,9 +8,14 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+)
+
+const (
+	webhookServicePort int32 = 443
 )
 
 // ensureLogPipelineWebhookConfigs creates or updates the ValidatingWebhookConfiguration for the LogPipeline resources.
@@ -21,14 +26,15 @@ func ensureLogPipelineWebhookConfigs(ctx context.Context, c client.Client, caBun
 		return fmt.Errorf("failed to create or update validating webhook configuration: %w", err)
 	}
 
-	if err := patchConversionWebhookConfig(ctx, c, caBundle); err != nil {
+	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
+	if err := patchConversionWebhookConfig(ctx, c, conversionWebhookConfig); err != nil {
 		return fmt.Errorf("failed to patch conversion webhook configuration: %w", err)
 	}
 
 	return nil
 }
 
-func makeValidatingWebhookConfig(certificate []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
+func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
 	logPipelinePath := "/validate-logpipeline"
 	logParserPath := "/validate-logparser"
 	failurePolicy := admissionregistrationv1.Fail
@@ -41,7 +47,6 @@ func makeValidatingWebhookConfig(certificate []byte, config Config) admissionreg
 	apiGroups := []string{"telemetry.kyma-project.io"}
 	apiVersions := []string{"v1alpha1"}
 	scope := admissionregistrationv1.AllScopes
-	servicePort := int32(443)
 	timeout := int32(15)
 	labels := map[string]string{
 		"control-plane":              "telemetry-manager",
@@ -63,10 +68,10 @@ func makeValidatingWebhookConfig(certificate []byte, config Config) admissionreg
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      config.ServiceName.Name,
 						Namespace: config.ServiceName.Namespace,
-						Port:      &servicePort,
+						Port:      ptr.To(webhookServicePort),
 						Path:      &logPipelinePath,
 					},
-					CABundle: certificate,
+					CABundle: caBundle,
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
@@ -91,10 +96,10 @@ func makeValidatingWebhookConfig(certificate []byte, config Config) admissionreg
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      config.ServiceName.Name,
 						Namespace: config.ServiceName.Namespace,
-						Port:      &servicePort,
+						Port:      ptr.To(webhookServicePort),
 						Path:      &logParserPath,
 					},
-					CABundle: certificate,
+					CABundle: caBundle,
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
@@ -117,7 +122,25 @@ func makeValidatingWebhookConfig(certificate []byte, config Config) admissionreg
 	}
 }
 
-func patchConversionWebhookConfig(ctx context.Context, c client.Client, caBundle []byte) error {
+func makeConversionWebhookConfig(caBundle []byte, config Config) apiextensionsv1.CustomResourceConversion {
+	return apiextensionsv1.CustomResourceConversion{
+		Strategy: apiextensionsv1.WebhookConverter,
+		Webhook: &apiextensionsv1.WebhookConversion{
+			ClientConfig: &apiextensionsv1.WebhookClientConfig{
+				Service: &apiextensionsv1.ServiceReference{
+					Namespace: config.ServiceName.Namespace,
+					Name:      config.ServiceName.Name,
+					Path:      ptr.To("/convert"),
+					Port:      ptr.To(webhookServicePort),
+				},
+				CABundle: caBundle,
+			},
+			ConversionReviewVersions: []string{"v1"},
+		},
+	}
+}
+
+func patchConversionWebhookConfig(ctx context.Context, c client.Client, conversion apiextensionsv1.CustomResourceConversion) error {
 	var logPipelineCRD apiextensionsv1.CustomResourceDefinition
 	if err := c.Get(ctx, types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &logPipelineCRD); err != nil {
 		return fmt.Errorf("failed to get logpipelines CRD: %w", err)
@@ -125,10 +148,7 @@ func patchConversionWebhookConfig(ctx context.Context, c client.Client, caBundle
 
 	patch := client.MergeFrom(logPipelineCRD.DeepCopy())
 
-	conversion := logPipelineCRD.Spec.Conversion
-	if conversion != nil && conversion.Webhook != nil && conversion.Webhook.ClientConfig != nil {
-		conversion.Webhook.ClientConfig.CABundle = caBundle
-	}
+	logPipelineCRD.Spec.Conversion = &conversion
 
 	return c.Patch(ctx, &logPipelineCRD, patch)
 }
