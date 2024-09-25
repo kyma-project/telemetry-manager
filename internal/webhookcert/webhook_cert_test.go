@@ -52,7 +52,7 @@ var (
 	}
 )
 
-func TestEnsureCertificate(t *testing.T) {
+func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
@@ -120,14 +120,48 @@ func TestEnsureCertificate(t *testing.T) {
 
 	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].Resources, "logpipelines")
 	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].Resources, "logparsers")
+}
+
+func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
+
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+
+	config := Config{
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
+	}
+
+	err = EnsureCertificate(context.TODO(), client, config)
+	require.NoError(t, err)
+
+	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
+	require.NoError(t, err)
 
 	var crd apiextensionsv1.CustomResourceDefinition
 	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &crd))
 
-	crdCABundle := crd.Spec.Conversion.Webhook.ClientConfig.CABundle
-	require.NotEmpty(t, crdCABundle, "ca bundle must be patched")
+	require.Equal(t, apiextensionsv1.WebhookConverter, crd.Spec.Conversion.Strategy)
+	require.Equal(t, webhookService.Name, crd.Spec.Conversion.Webhook.ClientConfig.Service.Name)
+	require.Equal(t, webhookService.Namespace, crd.Spec.Conversion.Webhook.ClientConfig.Service.Namespace)
+	require.Equal(t, int32(443), *crd.Spec.Conversion.Webhook.ClientConfig.Service.Port)
+	require.Equal(t, "/convert", *crd.Spec.Conversion.Webhook.ClientConfig.Service.Path)
 
-	certValid, err = chainChecker.checkRoot(context.Background(), serverCert, crdCABundle)
+	crdCABundle := crd.Spec.Conversion.Webhook.ClientConfig.CABundle
+	require.NotEmpty(t, crdCABundle)
+
+	var chainChecker certChainCheckerImpl
+	certValid, err := chainChecker.checkRoot(context.Background(), serverCert, crdCABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 }
