@@ -347,6 +347,30 @@ spec:
 > [!NOTE]
 > The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
 
+
+### 4. Default Metrics for Telemetry Health
+By default, a MetricPipeline emits metrics about the health of all pipelines managed by the Telemetry module. Based on these metrics, you can track the status of every individual pipeline and set up alerting for it. The following metrics are emitted for every pipeline and the Telemetry module itself:
+
+| Metric                          | Description                                                                                                                                              | Availability                                                |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| kyma.resource.status.conditions | Value represents status of different conditions reported by the resource.  Possible values are 'True' => 1, 'False' => 0, and -1 for other status values | Available for both, the pipeline and the telemetry resource |
+| kyma.resource.status.state      | Value represents the state of the resource (if present)                                                                                                  | Available for the telemetry resource                        |
+
+The following metric attributes are available for monitoring:
+
+| Name                     | Description                                                                                  |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| metric.attributes.Type   | Type of the condition                                                                        |
+| metric.attributes.status | Status of the condition                                                                      |
+| metric.attributes.reason | Contains a programmatic identifier indicating the reason for the condition's last transition |
+
+
+A typical alert rule looks like the following example. The alert is triggered if metrics are not delivered to the backend:
+```promql
+ min by (k8s_resource_name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy",k8s_resource_kind="metricpipelines"})) == 0
+```
+
+
 ### 5. Activate Runtime Metrics
 
 To enable collection of runtime metrics, define a MetricPipeline that has the `runtime` section enabled as input:

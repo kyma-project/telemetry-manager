@@ -17,6 +17,7 @@ service:
         metrics/test-input:
             receivers:
                 - otlp
+                - singleton_receiver_creator/kymastats
             processors:
                 - memory_limiter
             exporters:
@@ -30,6 +31,7 @@ service:
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
                 - filter/drop-if-input-source-otlp
+                - transform/set-instrumentation-scope-kyma
                 - resource/insert-cluster-name
                 - resource/delete-skip-enrichment-attribute
                 - batch
@@ -51,6 +53,28 @@ receivers:
                 endpoint: ${MY_POD_IP}:4318
             grpc:
                 endpoint: ${MY_POD_IP}:4317
+    singleton_receiver_creator/kymastats:
+        auth_type: serviceAccount
+        leader_election:
+            lease_name: telemetry-metric-gateway-kymastats
+            lease_namespace: ""
+        receiver:
+            kymastats:
+                auth_type: serviceAccount
+                collection_interval: 30s
+                resources:
+                    - group: operator.kyma-project.io
+                      version: v1alpha1
+                      resource: telemetries
+                    - group: telemetry.kyma-project.io
+                      version: v1alpha1
+                      resource: logpipelines
+                    - group: telemetry.kyma-project.io
+                      version: v1alpha1
+                      resource: metricpipelines
+                    - group: telemetry.kyma-project.io
+                      version: v1alpha1
+                      resource: tracepipelines
 processors:
     batch:
         send_batch_size: 1024
@@ -127,6 +151,13 @@ processors:
         attributes:
             - action: delete
               pattern: kyma.*
+    transform/set-instrumentation-scope-kyma:
+        error_mode: ignore
+        metric_statements:
+            - context: scope
+              statements:
+                - set(version, "") where name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+                - set(name, "io.kyma-project.telemetry/kyma") where name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
     resource/delete-skip-enrichment-attribute:
         attributes:
             - action: delete
