@@ -59,11 +59,15 @@ type LogPipelineSpec struct {
 // LogPipelineInput describes a log input for a LogPipeline.
 type LogPipelineInput struct {
 	// Configures in more detail from which containers application logs are enabled as input.
-	Runtime *LogPipelineRuntimeInput `json:"runtime,omitempty"`
+	Runtime LogPipelineRuntimeInput `json:"runtime,omitempty"`
 }
 
 // LogPipelineRuntimeInput specifies the default type of Input that handles application logs from runtime containers. It configures in more detail from which containers logs are selected as input.
 type LogPipelineRuntimeInput struct {
+	// If enabled, application logs are collected. The default is `true`.
+	// +optional
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
 	// Describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
 	Namespaces LogPipelineInputNamespaces `json:"namespaces,omitempty"`
 	// Describes whether application logs from specific containers are selected. The options are mutually exclusive.

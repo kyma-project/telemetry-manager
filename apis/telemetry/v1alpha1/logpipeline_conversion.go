@@ -23,7 +23,8 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 
 	srcAppInput := src.Spec.Input.Application
 	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{
-		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+		Runtime: telemetryv1beta1.LogPipelineRuntimeInput{
+			Enabled:          srcAppInput.Enabled,
 			Namespaces:       telemetryv1beta1.LogPipelineInputNamespaces(srcAppInput.Namespaces),
 			Containers:       telemetryv1beta1.LogPipelineInputContainers(srcAppInput.Containers),
 			KeepAnnotations:  srcAppInput.KeepAnnotations,
@@ -111,14 +112,14 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	dst.ObjectMeta = src.ObjectMeta
 
-	if srcAppInput := src.Spec.Input.Runtime; srcAppInput != nil {
-		dst.Spec.Input.Application = ApplicationInput{
-			Namespaces:       InputNamespaces(srcAppInput.Namespaces),
-			Containers:       InputContainers(srcAppInput.Containers),
-			KeepAnnotations:  srcAppInput.KeepAnnotations,
-			DropLabels:       srcAppInput.DropLabels,
-			KeepOriginalBody: srcAppInput.KeepOriginalBody,
-		}
+	srcRuntimeInput := src.Spec.Input.Runtime
+	dst.Spec.Input.Application = ApplicationInput{
+		Enabled:          srcRuntimeInput.Enabled,
+		Namespaces:       InputNamespaces(srcRuntimeInput.Namespaces),
+		Containers:       InputContainers(srcRuntimeInput.Containers),
+		KeepAnnotations:  srcRuntimeInput.KeepAnnotations,
+		DropLabels:       srcRuntimeInput.DropLabels,
+		KeepOriginalBody: srcRuntimeInput.KeepOriginalBody,
 	}
 
 	for _, f := range src.Spec.Files {
