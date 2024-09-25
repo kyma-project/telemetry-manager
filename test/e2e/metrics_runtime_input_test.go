@@ -121,8 +121,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
-			assert.MetricsFromNamespaceNotDelivered(proxyClient, backendExportURL, kitkyma.SystemNamespaceName)
+		It("Ensures runtime metrics from system namespaces are not sent to backend", func() {
+			assert.MetricsWithScopeAndNamespaceNotDelivered(proxyClient, backendExportURL, InstrumentationScopeRuntime, kitkyma.SystemNamespaceName)
 		})
 	})
 })

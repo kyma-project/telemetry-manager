@@ -94,7 +94,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
 		})
 
-		It("Ensures kubeletstats metrics are sent to runtime backend", func() {
+		It("Ensures runtime metrics are sent to runtime backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -102,20 +102,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				bodyContent, err := io.ReadAll(resp.Body)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ConsistOf(runtime.DefaultMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(HaveScopeName(Equal(InstrumentationScopeRuntime)))), "only scope name %v may exist in the runtime backend", InstrumentationScopeRuntime)
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(
-					SatisfyAll(
-						HaveScopeName(Equal(InstrumentationScopeRuntime)),
-						HaveScopeVersion(
-							SatisfyAny(
-								ContainSubstring("main"),
-								ContainSubstring("1."),
-								ContainSubstring("PR-"),
-							)),
-					)),
-				), "only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.DefaultMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
+				checkInstrumentationScopeAndVersion(g, bodyContent, InstrumentationScopeRuntime, InstrumentationScopeKyma)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -156,17 +144,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				// we expect additional elements such as 'go_memstats_gc_sys_bytes'. Therefor we use 'ContainElements' instead of 'ConsistOf'
 				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ContainElements(prommetricgen.DefaultMetricsNames))), "Not all required prometheus metrics are sent to prometheus backend")
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveEach(
-					SatisfyAll(
-						HaveScopeName(Equal(InstrumentationScopePrometheus)),
-						HaveScopeVersion(
-							SatisfyAny(
-								ContainSubstring("main"),
-								ContainSubstring("1."),
-								ContainSubstring("PR-"),
-							)),
-					)),
-				), "Only scope '%v' must be sent to the prometheus backend", InstrumentationScopePrometheus)
+				checkInstrumentationScopeAndVersion(g, bodyContent, InstrumentationScopePrometheus, InstrumentationScopeKyma)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -181,7 +159,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(prommetricgen.DefaultMetricsNames)))), "No prometheus metrics must be sent to runtime backend")
 
-				g.Expect(bodyContent).NotTo(HaveFlatMetrics(
+				g.Expect(bodyContent).NotTo(HaveFlatMetrics(SatisfyAny(
 					SatisfyAll(
 						ContainElement(HaveScopeName(Equal(InstrumentationScopePrometheus))),
 						ContainElement(HaveScopeVersion(
@@ -191,8 +169,35 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 								ContainSubstring("PR-"),
 							))),
 					),
+				),
 				), "'%v' must not be sent to the runtime backend", InstrumentationScopePrometheus)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
+
+func checkInstrumentationScopeAndVersion(g Gomega, body []byte, scope1, scope2 string) {
+
+	g.Expect(body).To(HaveFlatMetrics(HaveEach(
+		SatisfyAny(
+			SatisfyAll(
+				HaveScopeName(Equal(scope1)),
+				HaveScopeVersion(
+					SatisfyAny(
+						ContainSubstring("main"),
+						ContainSubstring("1."),
+						ContainSubstring("PR-"),
+					)),
+			),
+			SatisfyAll(
+				HaveScopeName(Equal(scope2)),
+				HaveScopeVersion(
+					SatisfyAny(
+						ContainSubstring("main"),
+						ContainSubstring("1."),
+						ContainSubstring("PR-"),
+					)),
+			)),
+	),
+	), "only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
+}
