@@ -7,9 +7,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
-func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) config.Pipeline {
+func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	return config.Pipeline{
-		Receivers:  makeReceiversIDs(pipeline, opts),
+		Receivers:  makeReceiversIDs(pipeline),
 		Processors: []string{"memory_limiter"},
 		Exporters:  []string{formatRoutingConnectorID(pipeline.Name)},
 	}
@@ -18,12 +18,12 @@ func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline, 
 func makeAttributesEnrichmentPipelineServiceConfig(pipelineName string) config.Pipeline {
 	return config.Pipeline{
 		Receivers:  []string{formatRoutingConnectorID(pipelineName)},
-		Processors: []string{"k8sattributes", "transform/resolve-service-name"},
+		Processors: []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"},
 		Exporters:  []string{formatForwardConnectorID(pipelineName)},
 	}
 }
 
-func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) config.Pipeline {
+func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	var processors []string
 
 	input := pipeline.Spec.Input
@@ -38,9 +38,7 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline,
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
 
-	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
-		processors = append(processors, "transform/set-instrumentation-scope-kyma")
-	}
+	processors = append(processors, "transform/set-instrumentation-scope-kyma")
 
 	processors = append(processors, "resource/insert-cluster-name", "resource/delete-skip-enrichment-attribute", "batch")
 
@@ -51,14 +49,12 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline,
 	}
 }
 
-func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline, opts BuildOptions) []string {
+func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline) []string {
 	var receivers []string
 
 	receivers = append(receivers, "otlp")
 
-	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
-		receivers = append(receivers, "singleton_receiver_creator/kymastats")
-	}
+	receivers = append(receivers, "singleton_receiver_creator/kymastats")
 
 	if isRuntimeInputEnabled(pipeline.Spec.Input) {
 		receivers = append(receivers, "singleton_receiver_creator/k8s_cluster")

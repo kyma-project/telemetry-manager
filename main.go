@@ -122,7 +122,6 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	kymaInputAllowed          bool
 	enableV1Beta1LogPipelines bool
 
 	version = "main"
@@ -131,7 +130,7 @@ var (
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.8"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.108.1-main"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.109.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
@@ -199,7 +198,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:urls=/metrics,verbs=get
 //+kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
-//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=patch
 
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
@@ -279,7 +278,6 @@ func main() {
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
-	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 
 	flag.Parse()
@@ -570,9 +568,8 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 					},
 					OTLPServiceName: metricOTLPServiceName,
 				},
-				MaxPipelines:     maxMetricPipelines,
-				ModuleVersion:    version,
-				KymaInputAllowed: kymaInputAllowed,
+				MaxPipelines:  maxMetricPipelines,
+				ModuleVersion: version,
 			},
 			RestConfig:         mgr.GetConfig(),
 			TelemetryNamespace: telemetryNamespace,
