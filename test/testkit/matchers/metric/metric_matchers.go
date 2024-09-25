@@ -5,9 +5,10 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 // HaveFlatMetrics extracts FlatMetrics from JSON and applies the matcher to them.
