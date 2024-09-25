@@ -11,6 +11,7 @@ service:
             processors:
                 - k8sattributes
                 - transform/resolve-service-name
+                - resource/drop-kyma-attributes
             exporters:
                 - forward/test
         metrics/test-input:
@@ -141,6 +142,10 @@ processors:
                 - set(attributes["service.name"], attributes["k8s.job.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
                 - set(attributes["service.name"], attributes["k8s.pod.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or IsMatch(attributes["service.name"], "^unknown_service(:.+)?$")
                 - set(attributes["service.name"], "unknown_service") where attributes["service.name"] == nil or attributes["service.name"] == ""
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
     transform/set-instrumentation-scope-kyma:
         error_mode: ignore
         metric_statements:

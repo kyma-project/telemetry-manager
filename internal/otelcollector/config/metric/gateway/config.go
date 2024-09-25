@@ -97,6 +97,7 @@ type Processors struct {
 	DropRuntimeContainerMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-container-metrics,omitempty"`
 	DropK8sClusterMetrics                        *FilterProcessor               `yaml:"filter/drop-k8s-cluster-metrics,omitempty"`
 	ResolveServiceName                           *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
+	DropKymaAttributes                           *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 	SetInstrumentationScopeKyma                  *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
 	SetInstrumentationScopeRuntime               *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 	DeleteSkipEnrichmentAttribute                *config.ResourceProcessor      `yaml:"resource/delete-skip-enrichment-attribute,omitempty"`
