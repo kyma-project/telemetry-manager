@@ -80,6 +80,8 @@ until [[ $found == true && $status == "completed" ]]; do
     echo "Job URL: $html_url"
     echo ""
 
+    sleep $QUERY_INTERVAL
+
 done
 
 if [ "$conclusion" != "success" ]; then
