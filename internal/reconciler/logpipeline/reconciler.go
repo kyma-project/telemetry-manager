@@ -158,11 +158,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines.Items)
 	if err != nil {
-		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
+		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
 	}
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
-		if err = r.deleteResources(ctx); err != nil {
+		if err = r.deleteFluentBitResources(ctx); err != nil {
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
 	}
@@ -171,7 +171,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	if err = r.reconcileFluentBit(ctx, pipeline, reconcilablePipelines); err != nil {
+	if err = r.createOrUpdateFluentBitResources(ctx, pipeline, reconcilablePipelines); err != nil {
 		return err
 	}
 
@@ -182,7 +182,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return nil
 }
 
-func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, pipelines []telemetryv1alpha1.LogPipeline) error {
+func (r *Reconciler) createOrUpdateFluentBitResources(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, pipelines []telemetryv1alpha1.LogPipeline) error {
 	if len(pipelines) == 0 {
 		return nil
 	}
@@ -251,7 +251,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	return nil
 }
 
-func (r *Reconciler) deleteResources(ctx context.Context) error {
+func (r *Reconciler) deleteFluentBitResources(ctx context.Context) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
@@ -395,6 +395,12 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 
 func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return false, nil
+	}
+
+	// Treat the pipeline as non-reconcilable if the application input is explicitly disabled
+	appInputEnabled := pipeline.Spec.Input.Application.Enabled
+	if appInputEnabled != nil && !*appInputEnabled {
 		return false, nil
 	}
 
