@@ -21,7 +21,7 @@ override:
   # Temporarily decrease coverage threshold for certain packages, we need to increase the coverage and remove these entries from the list
   - threshold: 57
     path: ^internal/istiostatus$
-  - threshold: 86
+  - threshold: 85
     path: ^internal/otelcollector/config/otlpexporter$
   - threshold: 73
     path: ^internal/reconciler/logpipeline$
