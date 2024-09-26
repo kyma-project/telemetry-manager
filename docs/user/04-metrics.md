@@ -434,7 +434,7 @@ If Pod metrics are enabled, the following metrics are collected:
 - From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
   - `k8s.pod.phase`
 
-If Container metrics are enabled, the following metrics are collected:
+If container metrics are enabled, the following metrics are collected:
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `container.cpu.time`
   - `container.cpu.usage`
@@ -453,7 +453,7 @@ If Container metrics are enabled, the following metrics are collected:
   - `k8s.container.memory_request`
   - `k8s.container.memory_limit`
 
-If node metrics are enabled, the following metrics are collected:
+If Node metrics are enabled, the following metrics are collected:
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `k8s.node.cpu.usage`
   - `k8s.node.filesystem.available`

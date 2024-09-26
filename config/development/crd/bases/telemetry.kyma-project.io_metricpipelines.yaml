@@ -239,7 +239,7 @@ spec:
                           node:
                             default:
                               enabled: false
-                            description: Configures node runtime metrics scraping.
+                            description: Configures Node runtime metrics scraping.
                             properties:
                               enabled:
                                 default: false
@@ -841,7 +841,7 @@ spec:
                           node:
                             default:
                               enabled: false
-                            description: Configures node runtime metrics scraping.
+                            description: Configures Node runtime metrics scraping.
                             properties:
                               enabled:
                                 default: false
