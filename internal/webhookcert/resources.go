@@ -18,9 +18,9 @@ const (
 	webhookServicePort int32 = 443
 )
 
-// ensureLogPipelineWebhookConfigs creates or updates the ValidatingWebhookConfiguration for the LogPipeline resources.
-// additionally it patches the conversion webhook configuration with the CA bundle.
-func ensureLogPipelineWebhookConfigs(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
+// applyWebhookConfigResources creates or updates a ValidatingWebhookConfiguration for the LogPipeline/LogParser resources.
+// additionally it patches a LogPipeline conversion webhook configuration.
+func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
 	validatingWebhookConfig := makeValidatingWebhookConfig(caBundle, config)
 	if err := k8sutils.CreateOrUpdateValidatingWebhookConfiguration(ctx, c, &validatingWebhookConfig); err != nil {
 		return fmt.Errorf("failed to create or update validating webhook configuration: %w", err)
