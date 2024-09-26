@@ -35,24 +35,53 @@ func ensureLogPipelineWebhookConfigs(ctx context.Context, c client.Client, caBun
 }
 
 func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
-	logPipelinePath := "/validate-logpipeline"
-	logParserPath := "/validate-logparser"
-	failurePolicy := admissionregistrationv1.Fail
-	matchPolicy := admissionregistrationv1.Exact
-	sideEffects := admissionregistrationv1.SideEffectClassNone
-	operations := []admissionregistrationv1.OperationType{
-		admissionregistrationv1.Create,
-		admissionregistrationv1.Update,
-	}
 	apiGroups := []string{"telemetry.kyma-project.io"}
 	apiVersions := []string{"v1alpha1"}
-	scope := admissionregistrationv1.AllScopes
-	timeout := int32(15)
+	webhookTimeout := int32(15)
 	labels := map[string]string{
 		"control-plane":              "telemetry-manager",
 		"app.kubernetes.io/instance": "telemetry",
 		"app.kubernetes.io/name":     "manager",
 		"kyma-project.io/component":  "controller",
+	}
+
+	createWebhook := func(name, path string, resources []string) admissionregistrationv1.ValidatingWebhook {
+		return admissionregistrationv1.ValidatingWebhook{
+			AdmissionReviewVersions: []string{"v1beta1", "v1"},
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
+					Name:      config.ServiceName.Name,
+					Namespace: config.ServiceName.Namespace,
+					Port:      ptr.To(webhookServicePort),
+					Path:      &path,
+				},
+				CABundle: caBundle,
+			},
+			FailurePolicy:  ptr.To(admissionregistrationv1.Fail),
+			MatchPolicy:    ptr.To(admissionregistrationv1.Exact),
+			Name:           name,
+			SideEffects:    ptr.To(admissionregistrationv1.SideEffectClassNone),
+			TimeoutSeconds: &webhookTimeout,
+			Rules: []admissionregistrationv1.RuleWithOperations{
+				{
+					Operations: []admissionregistrationv1.OperationType{
+						admissionregistrationv1.Create,
+						admissionregistrationv1.Update,
+					},
+					Rule: admissionregistrationv1.Rule{
+						APIGroups:   apiGroups,
+						APIVersions: apiVersions,
+						Scope:       ptr.To(admissionregistrationv1.AllScopes),
+						Resources:   resources,
+					},
+				},
+			},
+		}
+	}
+
+	webhooks := []admissionregistrationv1.ValidatingWebhook{
+		createWebhook("validation.logpipelines.telemetry.kyma-project.io", "/validate-logpipeline", []string{"logpipelines"}),
+		createWebhook("validation.logparsers.telemetry.kyma-project.io", "/validate-logparser", []string{"logparsers"}),
 	}
 
 	return admissionregistrationv1.ValidatingWebhookConfiguration{
@@ -61,64 +90,7 @@ func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregist
 			Name:   config.WebhookName.Name,
 			Labels: labels,
 		},
-		Webhooks: []admissionregistrationv1.ValidatingWebhook{
-			{
-				AdmissionReviewVersions: []string{"v1beta1", "v1"},
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Name:      config.ServiceName.Name,
-						Namespace: config.ServiceName.Namespace,
-						Port:      ptr.To(webhookServicePort),
-						Path:      &logPipelinePath,
-					},
-					CABundle: caBundle,
-				},
-				FailurePolicy:  &failurePolicy,
-				MatchPolicy:    &matchPolicy,
-				Name:           "validation.logpipelines.telemetry.kyma-project.io",
-				SideEffects:    &sideEffects,
-				TimeoutSeconds: &timeout,
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logpipelines"},
-						},
-					},
-				},
-			},
-			{
-				AdmissionReviewVersions: []string{"v1beta1", "v1"},
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Name:      config.ServiceName.Name,
-						Namespace: config.ServiceName.Namespace,
-						Port:      ptr.To(webhookServicePort),
-						Path:      &logParserPath,
-					},
-					CABundle: caBundle,
-				},
-				FailurePolicy:  &failurePolicy,
-				MatchPolicy:    &matchPolicy,
-				Name:           "validation.logparsers.telemetry.kyma-project.io",
-				SideEffects:    &sideEffects,
-				TimeoutSeconds: &timeout,
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logparsers"},
-						},
-					},
-				},
-			},
-		},
+		Webhooks: webhooks,
 	}
 }
 
