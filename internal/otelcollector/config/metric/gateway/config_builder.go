@@ -133,6 +133,9 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
 		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
 	}
+	if isRuntimeInputEnabled(input) && !isRuntimeNodeMetricsEnabled(input) {
+		cfg.Processors.DropRuntimeNodeMetrics = makeDropRuntimeNodeMetricsConfig()
+	}
 
 	if isRuntimeInputEnabled(input) {
 		cfg.Processors.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
@@ -265,4 +268,13 @@ func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInpu
 		!*input.Runtime.Resources.Container.Enabled
 
 	return !isRuntimeContainerMetricsDisabled
+}
+
+func isRuntimeNodeMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	// Runtime node metrics are disabled by default
+	// If any of the fields (Resources, Node or Enabled) is nil, the node metrics will be disabled
+	return input.Runtime.Resources != nil &&
+		input.Runtime.Resources.Node != nil &&
+		input.Runtime.Resources.Node.Enabled != nil &&
+		*input.Runtime.Resources.Node.Enabled
 }

@@ -96,6 +96,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;runtime.&#x200b;resources**  | object | Describes the Kubernetes resources for which runtime metrics are scraped. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;container**  | object | Configures container runtime metrics scraping. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;container.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;node**  | object | Configures Node runtime metrics scraping. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;node.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod**  | object | Configures Pod runtime metrics scraping. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
 | **output**  | object | Configures the metric gateway. |

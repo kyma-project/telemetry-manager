@@ -390,11 +390,8 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and Pods are collected.
-
-If you want to disable the collection of the Pod or container metrics, define the `resources` section in the `runtime` input.
-
-- The following example drops the runtime Pod metrics and only collects runtime container metrics:
+By default, container and Pod metrics are collected.
+To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input:
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -407,32 +404,66 @@ If you want to disable the collection of the Pod or container metrics, define th
         enabled: true
         resources:
           pod:
-            enabled: false
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com:4317
-  ```
-
-- The following example drops the runtime container metrics and only collects runtime Pod metrics:
-
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    input:
-      runtime:
-        enabled: true
-        resources:
+            enabled: true
           container:
             enabled: false
+          node:
+            enabled: false
     output:
       otlp:
         endpoint:
           value: https://backend.example.com:4317
   ```
+With this, only the Pod metrics are collected.
+
+If Pod metrics are enabled, the following metrics are collected:
+- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
+  - `k8s.pod.cpu.capacity`
+  - `k8s.pod.cpu.usage`
+  - `k8s.pod.filesystem.available`
+  - `k8s.pod.filesystem.capacity`
+  - `k8s.pod.filesystem.usage`
+  - `k8s.pod.memory.available`
+  - `k8s.pod.memory.major_page_faults`
+  - `k8s.pod.memory.page_faults`
+  - `k8s.pod.memory.rss`
+  - `k8s.pod.memory.usage`
+  - `k8s.pod.memory.working_set`
+  - `k8s.pod.network.errors`
+  - `k8s.pod.network.io`
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.pod.phase`
+
+If container metrics are enabled, the following metrics are collected:
+- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
+  - `container.cpu.time`
+  - `container.cpu.usage`
+  - `container.filesystem.available`
+  - `container.filesystem.capacity`
+  - `container.filesystem.usage`
+  - `container.memory.available`
+  - `container.memory.major_page_faults`
+  - `container.memory.page_faults`
+  - `container.memory.rss`
+  - `container.memory.usage`
+  - `container.memory.working_set`
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.container.cpu_request`
+  - `k8s.container.cpu_limit`
+  - `k8s.container.memory_request`
+  - `k8s.container.memory_limit`
+
+If Node metrics are enabled, the following metrics are collected:
+- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
+  - `k8s.node.cpu.usage`
+  - `k8s.node.filesystem.available`
+  - `k8s.node.filesystem.capacity`
+  - `k8s.node.filesystem.usage`
+  - `k8s.node.memory.available`
+  - `k8s.node.memory.usage`
+  - `k8s.node.network.errors`
+  - `k8s.node.network.io`
+
 
 ### 6. Activate Istio Metrics
 

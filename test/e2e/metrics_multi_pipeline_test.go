@@ -5,7 +5,6 @@ package e2e
 import (
 	"io"
 	"net/http"
-	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,11 +17,9 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
-	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
-	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kymastats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -97,7 +94,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
 		})
 
-		It("Ensures runtime and kyma stats metrics are sent to runtime backend", func() {
+		It("Ensures runtime metrics are sent to runtime backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -105,9 +102,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				bodyContent, err := io.ReadAll(resp.Body)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames, kymastats.ResourceMetricNames)
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(ConsistOf(expectedMetrics))), "Not all required kubeletstats metrics are sent to runtime backend")
-
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.DefaultMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
 				checkInstrumentationScopeAndVersion(g, bodyContent, InstrumentationScopeRuntime, InstrumentationScopeKyma)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -121,9 +116,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
-				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(expectedMetrics))))), "No runtime metrics must be sent to prometheus backend")
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNames(Not(ContainElements(runtime.DefaultMetricsNames)))), "No runtime metrics must be sent to prometheus backend")
 
 				g.Expect(bodyContent).NotTo(HaveFlatMetrics(
 					SatisfyAll(

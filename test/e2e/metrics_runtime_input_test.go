@@ -5,7 +5,6 @@ package e2e
 import (
 	"io"
 	"net/http"
-	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -21,8 +20,8 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -113,29 +112,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				expectedMetricsNames := slices.Concat(kubeletstats.PodMetricsNames, kubeletstats.ContainerMetricsNames)
-
 				g.Expect(bodyContent).To(HaveFlatMetrics(
 					ContainElement(SatisfyAll(
-						HaveName(BeElementOf(expectedMetricsNames)),
+						HaveName(BeElementOf(runtime.DefaultMetricsNames)),
 						HaveScopeName(ContainSubstring(InstrumentationScopeRuntime)),
 					)),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Checks for correct attributes in kubeletstats metrics", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					ContainElement(HaveResourceAttributes(HaveKeys(ContainElements(kubeletstats.MetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

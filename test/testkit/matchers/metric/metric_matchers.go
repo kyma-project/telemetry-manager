@@ -2,10 +2,13 @@ package metric
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 // HaveFlatMetrics extracts FlatMetrics from JSON and applies the matcher to them.
@@ -23,15 +26,27 @@ func HaveFlatMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
 }
 
 // HaveUniqueNames extracts metric names from all FlatMetrics and applies the matcher to them.
-// Rename to HaveUniqueNames
 func HaveUniqueNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm []FlatMetric) []string {
-		var names []string
+		names := make(map[string]struct{})
 		for _, m := range fm {
-			names = append(names, m.Name)
+			names[m.Name] = struct{}{}
 		}
-		slices.Sort(names)
-		return slices.Compact(names)
+		return slices.Sorted(maps.Keys(names))
+	}, matcher)
+}
+
+// HaveUniqueNamesForRuntimeScope extracts metric names from FlatMetrics with runtime scope and applies the matcher to them.
+func HaveUniqueNamesForRuntimeScope(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fm []FlatMetric) []string {
+		names := make(map[string]struct{})
+		for _, m := range fm {
+			if m.ScopeName != metric.InstrumentationScopeRuntime {
+				continue
+			}
+			names[m.Name] = struct{}{}
+		}
+		return slices.Sorted(maps.Keys(names))
 	}, matcher)
 }
 
@@ -77,15 +92,9 @@ func HaveType(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
-// HaveKeys extracts key from a map[string][string] and applies the matcher to it.
+// HaveKeys extracts keys from a map[string][string] and applies the matcher to them.
 func HaveKeys(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(m map[string]string) []string {
-		keys := make([]string, len(m))
-		i := 0
-		for k := range m {
-			keys[i] = k
-			i++
-		}
-		return keys
+		return slices.Sorted(maps.Keys(m))
 	}, matcher)
 }
