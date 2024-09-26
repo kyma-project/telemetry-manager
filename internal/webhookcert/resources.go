@@ -118,7 +118,7 @@ func patchConversionWebhookConfig(ctx context.Context, c client.Client, conversi
 		return fmt.Errorf("failed to get logpipelines CRD: %w", err)
 	}
 
-	patch := client.StrategicMergeFrom(logPipelineCRD.DeepCopy())
+	patch := client.MergeFrom(logPipelineCRD.DeepCopy())
 
 	logPipelineCRD.Spec.Conversion = &conversion
 
