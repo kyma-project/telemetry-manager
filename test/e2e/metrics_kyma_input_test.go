@@ -12,7 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -23,17 +22,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
 		mockNs = suite.ID()
 
 		pipelineWithAnnotationName   = suite.IDWithSuffix("with-annotation")
 		backendForKymaInputName      = suite.IDWithSuffix("for-kyma-input")
 		backendForKymaInputExportURL string
-
-		pipelineWithoutAnnotationName  = suite.IDWithSuffix("without-annotation")
-		backendForNoKymaInputName      = suite.IDWithSuffix("for-no-kyma-input")
-		backendForNoKymaInputExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -44,22 +39,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 		objs = append(objs, backendForKymaInput.K8sObjects()...)
 		backendForKymaInputExportURL = backendForKymaInput.ExportURL(proxyClient)
 
-		backendForNoKymaInput := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendForNoKymaInputName))
-		objs = append(objs, backendForNoKymaInput.K8sObjects()...)
-		backendForNoKymaInputExportURL = backendForNoKymaInput.ExportURL(proxyClient)
-
 		metricPipelineWithAnnotation := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineWithAnnotationName).
-			WithAnnotations(map[string]string{gateway.KymaInputAnnotation: "true"}).
 			WithOTLPOutput(testutils.OTLPEndpoint(backendForKymaInput.Endpoint())).
 			Build()
 		objs = append(objs, &metricPipelineWithAnnotation)
-
-		metricPipelineWithoutAnnotation := testutils.NewMetricPipelineBuilder().
-			WithName(pipelineWithoutAnnotationName).
-			WithOTLPOutput(testutils.OTLPEndpoint(backendForNoKymaInput.Endpoint())).
-			Build()
-		objs = append(objs, &metricPipelineWithoutAnnotation)
 
 		return objs
 	}
@@ -82,12 +66,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 
 		It("Ensures the metrics backends are ready", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendForKymaInputName, Namespace: mockNs})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendForNoKymaInputName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric pipelines are healthy", func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineWithAnnotationName)
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineWithoutAnnotationName)
 		})
 
 		It("Ensures Telemetry module status metrics are sent to the backend which is receiving metrics from the pipeline with annotation", func() {
@@ -132,31 +114,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelExperimental),
 				// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
 				CheckMetricPipelineMetricsConditions(g, bodyContent, "GatewayHealthy", pipelineWithAnnotationName)
 
-				// Check the "kyma.resource.status.conditions" type ConfigurationGenerated for  metricpipeline with annotation
-				CheckMetricPipelineMetricsConditions(g, bodyContent, "ConfigurationGenerated", pipelineWithoutAnnotationName)
-
-				// Check the "kyma.resource.status.conditions" type AgentHealthy for metricpipeline with annotation
-				CheckMetricPipelineMetricsConditions(g, bodyContent, "AgentHealthy", pipelineWithoutAnnotationName)
-
-				// Check the "kyma.resource.status.conditions" type GatewayHealthy for metricpipeline with annotation
-				CheckMetricPipelineMetricsConditions(g, bodyContent, "GatewayHealthy", pipelineWithoutAnnotationName)
-
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures Telemetry module status metrics are not sent to the backend which is receiving metrics from the pipeline without annotation", func() {
-			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(backendForNoKymaInputExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatMetrics(SatisfyAll(
-						Not(ContainElement(HaveName(Equal("kyma.resource.status.state")))),
-						Not(ContainElement(HaveName(Equal("kyma.resource.status.conditions")))),
-					)),
-				))
-			}, periodic.TelemetryConsistentlyScrapeTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
 	})
 })
 

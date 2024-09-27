@@ -23,25 +23,30 @@ type Receivers struct {
 }
 
 type KubeletStatsReceiver struct {
-	CollectionInterval string               `yaml:"collection_interval"`
-	AuthType           string               `yaml:"auth_type"`
-	Endpoint           string               `yaml:"endpoint"`
-	InsecureSkipVerify bool                 `yaml:"insecure_skip_verify"`
-	MetricGroups       []MetricGroupType    `yaml:"metric_groups"`
-	Metrics            KubeletMetricsConfig `yaml:"metrics"`
+	CollectionInterval string                    `yaml:"collection_interval"`
+	AuthType           string                    `yaml:"auth_type"`
+	Endpoint           string                    `yaml:"endpoint"`
+	InsecureSkipVerify bool                      `yaml:"insecure_skip_verify"`
+	MetricGroups       []MetricGroupType         `yaml:"metric_groups"`
+	Metrics            KubeletStatsMetricsConfig `yaml:"metrics"`
 }
 
-type KubeletMetricConfig struct {
+type MetricConfig struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-type KubeletMetricsConfig struct {
-	ContainerCPUUsage       KubeletMetricConfig `yaml:"container.cpu.usage"`
-	ContainerCPUUtilization KubeletMetricConfig `yaml:"container.cpu.utilization"`
-	K8sNodeCPUUsage         KubeletMetricConfig `yaml:"k8s.node.cpu.usage"`
-	K8sNodeCPUUtilization   KubeletMetricConfig `yaml:"k8s.node.cpu.utilization"`
-	K8sPodCPUUsage          KubeletMetricConfig `yaml:"k8s.pod.cpu.usage"`
-	K8sPodCPUUtilization    KubeletMetricConfig `yaml:"k8s.pod.cpu.utilization"`
+type KubeletStatsMetricsConfig struct {
+	ContainerCPUUsage            MetricConfig `yaml:"container.cpu.usage"`
+	ContainerCPUUtilization      MetricConfig `yaml:"container.cpu.utilization"`
+	K8sPodCPUUsage               MetricConfig `yaml:"k8s.pod.cpu.usage"`
+	K8sPodCPUUtilization         MetricConfig `yaml:"k8s.pod.cpu.utilization"`
+	K8sNodeCPUUsage              MetricConfig `yaml:"k8s.node.cpu.usage"`
+	K8sNodeCPUUtilization        MetricConfig `yaml:"k8s.node.cpu.utilization"`
+	K8sNodeCPUTime               MetricConfig `yaml:"k8s.node.cpu.time"`
+	K8sNodeMemoryMajorPageFaults MetricConfig `yaml:"k8s.node.memory.major_page_faults"`
+	K8sNodeMemoryPageFaults      MetricConfig `yaml:"k8s.node.memory.page_faults"`
+	K8sNodeMemoryRSS             MetricConfig `yaml:"k8s.node.memory.rss"`
+	K8sNodeMemoryWorkingSet      MetricConfig `yaml:"k8s.node.memory.working_set"`
 }
 
 type MetricGroupType string
@@ -49,6 +54,7 @@ type MetricGroupType string
 const (
 	MetricGroupTypeContainer MetricGroupType = "container"
 	MetricGroupTypePod       MetricGroupType = "pod"
+	MetricGroupTypeNode      MetricGroupType = "node"
 )
 
 type PrometheusReceiver struct {
@@ -121,6 +127,7 @@ type Processors struct {
 	SetInstrumentationScopeRuntime    *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 	SetInstrumentationScopePrometheus *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
 	SetInstrumentationScopeIstio      *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
+	InsertSkipEnrichmentAttribute     *metric.TransformProcessor `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
 }
 
 type Exporters struct {

@@ -9,8 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -34,16 +37,34 @@ var (
 		"app.kubernetes.io/name":     "manager",
 		"kyma-project.io/component":  "controller",
 	}
+	logPipelinesCRD = apiextensionsv1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "logpipelines.telemetry.kyma-project.io",
+		},
+		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+			Conversion: &apiextensionsv1.CustomResourceConversion{
+				Strategy: apiextensionsv1.WebhookConverter,
+				Webhook: &apiextensionsv1.WebhookConversion{
+					ClientConfig: &apiextensionsv1.WebhookClientConfig{},
+				},
+			},
+		},
+	}
 )
 
-func TestEnsureCertificate(t *testing.T) {
-	client := fake.NewClientBuilder().Build()
+func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
+
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
 	}(certDir)
+
 	config := Config{
 		CertDir:      certDir,
 		ServiceName:  webhookService,
@@ -99,10 +120,57 @@ func TestEnsureCertificate(t *testing.T) {
 
 	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].Resources, "logpipelines")
 	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].Resources, "logparsers")
+}
 
+func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
+
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+
+	config := Config{
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
+	}
+
+	err = EnsureCertificate(context.TODO(), client, config)
+	require.NoError(t, err)
+
+	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
+	require.NoError(t, err)
+
+	var crd apiextensionsv1.CustomResourceDefinition
+	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &crd))
+
+	require.Equal(t, apiextensionsv1.WebhookConverter, crd.Spec.Conversion.Strategy)
+	require.Equal(t, webhookService.Name, crd.Spec.Conversion.Webhook.ClientConfig.Service.Name)
+	require.Equal(t, webhookService.Namespace, crd.Spec.Conversion.Webhook.ClientConfig.Service.Namespace)
+	require.Equal(t, int32(443), *crd.Spec.Conversion.Webhook.ClientConfig.Service.Port)
+	require.Equal(t, "/convert", *crd.Spec.Conversion.Webhook.ClientConfig.Service.Path)
+
+	crdCABundle := crd.Spec.Conversion.Webhook.ClientConfig.CABundle
+	require.NotEmpty(t, crdCABundle)
+
+	var chainChecker certChainCheckerImpl
+	certValid, err := chainChecker.checkRoot(context.Background(), serverCert, crdCABundle)
+	require.NoError(t, err)
+	require.True(t, certValid)
 }
 
 func TestUpdateWebhookCertificate(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+
 	logPipelinePath := "/validate-logpipeline"
 	logParserPath := "/validate-logparser"
 	failurePolicy := admissionregistrationv1.Fail
@@ -119,7 +187,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	timeout := int32(15)
 	certificate := []byte("123")
 
-	initialValidatingWebhookConfiguration := &admissionregistrationv1.ValidatingWebhookConfiguration{
+	initialValidatingWebhookConfiguration := admissionregistrationv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
@@ -185,7 +253,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 			},
 		},
 	}
-	client := fake.NewClientBuilder().WithObjects(initialValidatingWebhookConfiguration).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &initialValidatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -225,7 +293,10 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 }
 
 func TestCreateSecret(t *testing.T) {
-	client := fake.NewClientBuilder().Build()
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -252,7 +323,10 @@ func TestCreateSecret(t *testing.T) {
 }
 
 func TestReuseExistingCertificate(t *testing.T) {
-	client := fake.NewClientBuilder().Build()
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)

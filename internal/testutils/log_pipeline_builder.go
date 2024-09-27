@@ -51,6 +51,11 @@ func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder
 	return b
 }
 
+func (b *LogPipelineBuilder) WithApplicationInputDisabled() *LogPipelineBuilder {
+	b.input.Application.Enabled = ptr.To(false)
+	return b
+}
+
 func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPipelineBuilder {
 	b.input.Application.Containers.Include = containers
 	return b

@@ -5,22 +5,21 @@ package e2e
 import (
 	"io"
 	"net/http"
-	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/otel/k8scluster"
-	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -150,20 +149,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures no kubeletstats metrics are sent to backend", func() {
+		It("Ensures no runtime metrics are sent to backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				expectedMetrics := slices.Concat(kubeletstats.DefaultMetricsNames, k8scluster.DefaultMetricsNames)
 				g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
-					Not(ContainElement(HaveName(BeElementOf(expectedMetrics)))),
+					Not(ContainElement(HaveName(BeElementOf(runtime.DefaultMetricsNames)))),
 				)))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
-			assert.MetricsFromNamespaceNotDelivered(proxyClient, backendExportURL, kitkyma.SystemNamespaceName)
+			assert.MetricsWithScopeAndNamespaceNotDelivered(proxyClient, backendExportURL, metric.InstrumentationScopePrometheus, kitkyma.SystemNamespaceName)
 		})
 
 		It("Ensures no diagnostic metrics are sent to backend", func() {

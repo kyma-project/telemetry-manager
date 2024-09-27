@@ -311,15 +311,37 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, expectedCondition, runtimeContainerMetricsFilter.Metrics.Metric[0])
 	})
 
+	t.Run("runtime node metrics filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputNodeMetrics(false).
+					Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		expectedDropRuntimeContainerMetricsProcessor := FilterProcessor{
+			Metrics: FilterProcessorMetrics{
+				Metric: []string{
+					"instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" and IsMatch(name, \"^k8s.node.*\")",
+				},
+			},
+		}
+		require.Equal(t, expectedDropRuntimeContainerMetricsProcessor, *collectorConfig.Processors.DropRuntimeNodeMetrics)
+	})
+
 	t.Run("instrumentation scope transform processor for kymastats receiver", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
 			[]telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{KymaInputAnnotation: "true"}).Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test").Build(),
 			},
 			BuildOptions{
 				InstrumentationScopeVersion: "main",
-				KymaInputAllowed:            true,
 			},
 		)
 		require.NoError(t, err)
@@ -356,10 +378,9 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
-		var k8sClusterMetricsDrop = []string{"instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
+		k8sClusterMetricsDrop := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
 			" and (IsMatch(name, \"^k8s.deployment.*\") or IsMatch(name, \"^k8s.cronjob.*\") or IsMatch(name, \"^k8s.daemonset.*\") or IsMatch(name, \"^k8s.hpa.*\") or IsMatch(name, \"^k8s.job.*\")" +
-			" or IsMatch(name, \"^k8s.replicaset.*\") or IsMatch(name, \"^k8s.resource_quota.*\") or IsMatch(name, \"^k8s.statefulset.*\")" +
-			" or IsMatch(name, \"^k8s.node.*\"))"}
+			" or IsMatch(name, \"^k8s.replicaset.*\") or IsMatch(name, \"^k8s.resource_quota.*\") or IsMatch(name, \"^k8s.statefulset.*\"))"
 
 		collectorConfig, _, err := sut.Build(
 			ctx,
@@ -375,6 +396,6 @@ func TestProcessors(t *testing.T) {
 		dropK8sClusterMetrics := collectorConfig.Processors.DropK8sClusterMetrics
 		require.NotNil(t, dropK8sClusterMetrics)
 		require.Len(t, dropK8sClusterMetrics.Metrics.Metric, 1)
-		require.Equal(t, k8sClusterMetricsDrop[0], dropK8sClusterMetrics.Metrics.Metric[0])
+		require.Equal(t, k8sClusterMetricsDrop, dropK8sClusterMetrics.Metrics.Metric[0])
 	})
 }

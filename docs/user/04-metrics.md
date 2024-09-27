@@ -347,6 +347,30 @@ spec:
 > [!NOTE]
 > The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
 
+
+### 4. Default Metrics for Telemetry Health
+By default, a MetricPipeline emits metrics about the health of all pipelines managed by the Telemetry module. Based on these metrics, you can track the status of every individual pipeline and set up alerting for it. The following metrics are emitted for every pipeline and the Telemetry module itself:
+
+| Metric                          | Description                                                                                                                                              | Availability                                                |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| kyma.resource.status.conditions | Value represents status of different conditions reported by the resource.  Possible values are 'True' => 1, 'False' => 0, and -1 for other status values | Available for both, the pipeline and the telemetry resource |
+| kyma.resource.status.state      | Value represents the state of the resource (if present)                                                                                                  | Available for the telemetry resource                        |
+
+The following metric attributes are available for monitoring:
+
+| Name                     | Description                                                                                  |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| metric.attributes.Type   | Type of the condition                                                                        |
+| metric.attributes.status | Status of the condition                                                                      |
+| metric.attributes.reason | Contains a programmatic identifier indicating the reason for the condition's last transition |
+
+
+A typical alert rule looks like the following example. The alert is triggered if metrics are not delivered to the backend:
+```promql
+ min by (k8s_resource_name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy",k8s_resource_kind="metricpipelines"})) == 0
+```
+
+
 ### 5. Activate Runtime Metrics
 
 To enable collection of runtime metrics, define a MetricPipeline that has the `runtime` section enabled as input:
@@ -366,11 +390,8 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and Pods are collected.
-
-If you want to disable the collection of the Pod or container metrics, define the `resources` section in the `runtime` input.
-
-- The following example drops the runtime Pod metrics and only collects runtime container metrics:
+By default, container and Pod metrics are collected.
+To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input:
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -383,32 +404,66 @@ If you want to disable the collection of the Pod or container metrics, define th
         enabled: true
         resources:
           pod:
-            enabled: false
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com:4317
-  ```
-
-- The following example drops the runtime container metrics and only collects runtime Pod metrics:
-
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    input:
-      runtime:
-        enabled: true
-        resources:
+            enabled: true
           container:
             enabled: false
+          node:
+            enabled: false
     output:
       otlp:
         endpoint:
           value: https://backend.example.com:4317
   ```
+With this, only the Pod metrics are collected.
+
+If Pod metrics are enabled, the following metrics are collected:
+- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
+  - `k8s.pod.cpu.capacity`
+  - `k8s.pod.cpu.usage`
+  - `k8s.pod.filesystem.available`
+  - `k8s.pod.filesystem.capacity`
+  - `k8s.pod.filesystem.usage`
+  - `k8s.pod.memory.available`
+  - `k8s.pod.memory.major_page_faults`
+  - `k8s.pod.memory.page_faults`
+  - `k8s.pod.memory.rss`
+  - `k8s.pod.memory.usage`
+  - `k8s.pod.memory.working_set`
+  - `k8s.pod.network.errors`
+  - `k8s.pod.network.io`
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.pod.phase`
+
+If container metrics are enabled, the following metrics are collected:
+- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
+  - `container.cpu.time`
+  - `container.cpu.usage`
+  - `container.filesystem.available`
+  - `container.filesystem.capacity`
+  - `container.filesystem.usage`
+  - `container.memory.available`
+  - `container.memory.major_page_faults`
+  - `container.memory.page_faults`
+  - `container.memory.rss`
+  - `container.memory.usage`
+  - `container.memory.working_set`
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.container.cpu_request`
+  - `k8s.container.cpu_limit`
+  - `k8s.container.memory_request`
+  - `k8s.container.memory_limit`
+
+If Node metrics are enabled, the following metrics are collected:
+- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
+  - `k8s.node.cpu.usage`
+  - `k8s.node.filesystem.available`
+  - `k8s.node.filesystem.capacity`
+  - `k8s.node.filesystem.usage`
+  - `k8s.node.memory.available`
+  - `k8s.node.memory.usage`
+  - `k8s.node.network.errors`
+  - `k8s.node.network.io`
+
 
 ### 6. Activate Istio Metrics
 

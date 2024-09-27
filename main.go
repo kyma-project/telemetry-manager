@@ -49,6 +49,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -121,7 +122,7 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	kymaInputAllowed bool
+	enableV1Beta1LogPipelines bool
 
 	version = "main"
 )
@@ -196,6 +197,8 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups="",resources=resourcequotas,verbs=get;list;watch
 //+kubebuilder:rbac:urls=/metrics,verbs=get
 //+kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
+
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;patch
 
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
@@ -282,7 +285,7 @@ func run() error {
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
-	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
+	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -440,6 +443,25 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
+	if enableV1Beta1LogPipelines {
+		setupLog.Info("Registering conversion webhooks for LogPipelines")
+		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
+		// Register conversion webhooks for LogPipelines
+		if err := ctrl.NewWebhookManagedBy(mgr).
+			For(&telemetryv1alpha1.LogPipeline{}).
+			Complete(); err != nil {
+			setupLog.Error(err, "Failed to create v1alpha1 conversion webhook", "webhook", "LogPipeline")
+			os.Exit(1)
+		}
+
+		if err := ctrl.NewWebhookManagedBy(mgr).
+			For(&telemetryv1beta1.LogPipeline{}).
+			Complete(); err != nil {
+			setupLog.Error(err, "Failed to create v1beta1 conversion webhook", "webhook", "LogPipeline")
+			os.Exit(1)
+		}
+	}
+
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
 		reconcileTriggerChan,
@@ -563,9 +585,8 @@ func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-
 					},
 					OTLPServiceName: metricOTLPServiceName,
 				},
-				MaxPipelines:     maxMetricPipelines,
-				ModuleVersion:    version,
-				KymaInputAllowed: kymaInputAllowed,
+				MaxPipelines:  maxMetricPipelines,
+				ModuleVersion: version,
 			},
 			RestConfig:         mgr.GetConfig(),
 			TelemetryNamespace: telemetryNamespace,

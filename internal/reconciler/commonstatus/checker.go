@@ -41,7 +41,7 @@ func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, na
 
 	err := prober.IsReady(ctx, namespacedName)
 	if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to probe trace gateway - set condition as not healthy")
+		logf.FromContext(ctx).V(1).Error(err, "Failed to probe gateway - set condition as not healthy")
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonGatewayNotReady
 		msg = errToMsgCon.Convert(err)

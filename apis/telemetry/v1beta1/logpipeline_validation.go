@@ -33,7 +33,7 @@ func (lp *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
 	return validateCustomOutput(deniedOutputPlugins, output.Custom)
 }
 
-func checkSingleOutputPlugin(output Output) error {
+func checkSingleOutputPlugin(output LogPipelineOutput) error {
 	if !output.IsAnyDefined() {
 		return fmt.Errorf("no output plugin is defined, you must define one output plugin")
 	}
@@ -43,7 +43,7 @@ func checkSingleOutputPlugin(output Output) error {
 	return nil
 }
 
-func validateHTTPOutput(httpOutput *HTTPOutput) error {
+func validateHTTPOutput(httpOutput *LogPipelineHTTPOutput) error {
 	isValidHostname, err := validHostname(httpOutput.Host.Value)
 
 	if err != nil {
@@ -155,12 +155,12 @@ func (lp *LogPipeline) validateInput() error {
 		return nil
 	}
 
-	var containers = input.Application.Containers
+	var containers = input.Runtime.Containers
 	if len(containers.Include) > 0 && len(containers.Exclude) > 0 {
 		return fmt.Errorf("invalid log pipeline definition: Cannot define both 'input.application.containers.include' and 'input.application.containers.exclude'")
 	}
 
-	var namespaces = input.Application.Namespaces
+	var namespaces = input.Runtime.Namespaces
 	if (len(namespaces.Include) > 0 && len(namespaces.Exclude) > 0) ||
 		(len(namespaces.Include) > 0 && namespaces.System) ||
 		(len(namespaces.Exclude) > 0 && namespaces.System) {
