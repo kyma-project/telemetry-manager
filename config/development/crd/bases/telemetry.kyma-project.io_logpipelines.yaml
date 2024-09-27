@@ -552,7 +552,7 @@ spec:
               input:
                 description: Defines where to collect logs, including selector mechanisms.
                 properties:
-                  application:
+                  runtime:
                     description: Configures in more detail from which containers application
                       logs are enabled as input.
                     properties:
@@ -576,6 +576,11 @@ spec:
                       dropLabels:
                         description: Defines whether to drop all Kubernetes labels.
                           The default is `false`.
+                        type: boolean
+                      enabled:
+                        default: true
+                        description: If enabled, application logs are collected. The
+                          default is `true`.
                         type: boolean
                       keepAnnotations:
                         description: Defines whether to keep all Kubernetes annotations.

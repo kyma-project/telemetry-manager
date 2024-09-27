@@ -43,14 +43,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 				Name: pipelineName,
 			},
 			Spec: telemetryv1beta1.LogPipelineSpec{
-				Output: telemetryv1beta1.Output{
-					HTTP: &telemetryv1beta1.HTTPOutput{
+				Output: telemetryv1beta1.LogPipelineOutput{
+					HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
 						Host: telemetryv1beta1.ValueType{
 							Value: backend.Host(),
 						},
 						Port: strconv.Itoa(int(backend.Port())),
 						URI:  "/",
-						TLSConfig: telemetryv1beta1.TLSConfig{
+						TLSConfig: telemetryv1beta1.LogPipelineHTTPOutputTLS{
 							Disabled:                  true,
 							SkipCertificateValidation: true,
 						},
