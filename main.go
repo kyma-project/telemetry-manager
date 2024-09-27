@@ -292,24 +292,9 @@ func run() error {
 		return fmt.Errorf("invalid flag provided: %w", err)
 	}
 
-	parsedLevel, err := zapcore.ParseLevel(logLevel)
-	if err != nil {
-		return fmt.Errorf("invalid log level: %w", err)
+	if err := initLogger(); err != nil {
+		return fmt.Errorf("failed to initialize logger: %w", err)
 	}
-
-	overrides.AtomicLevel().SetLevel(parsedLevel)
-	ctrLogger, err := logger.New(overrides.AtomicLevel())
-
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
-	if err != nil {
-		return fmt.Errorf("failed to create logger: %w", err)
-	}
-
-	defer func() {
-		if syncErr := ctrLogger.Sync(); syncErr != nil {
-			setupLog.Error(syncErr, "Failed to flush logger")
-		}
-	}()
 
 	syncPeriod := 1 * time.Minute
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -406,6 +391,29 @@ func run() error {
 	return nil
 }
 
+func initLogger() error {
+	parsedLevel, err := zapcore.ParseLevel(logLevel)
+	if err != nil {
+		return fmt.Errorf("invalid log level: %w", err)
+	}
+
+	overrides.AtomicLevel().SetLevel(parsedLevel)
+	ctrLogger, err := logger.New(overrides.AtomicLevel())
+
+	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
+	if err != nil {
+		return fmt.Errorf("failed to create logger: %w", err)
+	}
+
+	defer func() {
+		if syncErr := ctrLogger.Sync(); syncErr != nil {
+			setupLog.Error(syncErr, "Failed to flush logger")
+		}
+	}()
+
+	return nil
+}
+
 func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) error {
 	setupLog.WithValues("version", version).Info("Starting with telemetry manager controller")
 
@@ -450,15 +458,13 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 		if err := ctrl.NewWebhookManagedBy(mgr).
 			For(&telemetryv1alpha1.LogPipeline{}).
 			Complete(); err != nil {
-			setupLog.Error(err, "Failed to create v1alpha1 conversion webhook", "webhook", "LogPipeline")
-			os.Exit(1)
+			return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
 		}
 
 		if err := ctrl.NewWebhookManagedBy(mgr).
 			For(&telemetryv1beta1.LogPipeline{}).
 			Complete(); err != nil {
-			setupLog.Error(err, "Failed to create v1beta1 conversion webhook", "webhook", "LogPipeline")
-			os.Exit(1)
+			return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
 		}
 	}
 
