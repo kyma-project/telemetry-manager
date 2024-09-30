@@ -3,6 +3,7 @@ package trace
 import (
 	"encoding/hex"
 	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -170,25 +171,6 @@ func mustMarshalTraces(td ptrace.Traces) []byte {
 	}
 	return bytes
 }
-
-//func newSpanID() pcommon.SpanID {
-//	var rngSeed int64
-//	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-//	randSource := rand.New(rand.NewSource(rngSeed)) //nolint:gosec // random number generator is sufficient.
-//	sid := pcommon.SpanID{}
-//	_, _ = randSource.Read(sid[:])
-//	return sid
-//}
-//
-//func newTraceID() pcommon.TraceID {
-//	var rngSeed int64
-//	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-//	randSource := rand.New(rand.NewSource(rngSeed)) //nolint:gosec // random number generator is sufficient.
-//	tid := pcommon.TraceID{}
-//	_, _ = randSource.Read(tid[:])
-//
-//	return tid
-//}
 
 func newTraceIDWithInput(s string) (pcommon.TraceID, error) {
 	decoded, err := hex.DecodeString(s)
