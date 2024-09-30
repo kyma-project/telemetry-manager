@@ -77,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatTraces(SatisfyAll(ContainElement(
+					HaveFlatTraces(ContainElement(SatisfyAll(
 						HaveResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)),
 						HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
 					))),
