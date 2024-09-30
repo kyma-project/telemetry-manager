@@ -88,8 +88,13 @@ var _ = Describe("HaveFlatTraces", func() {
 		s := scope.Spans().AppendEmpty()
 		s.SetName("ingress")
 
-		s.SetTraceID(newTraceIDWithInput("92192b91842ba1873d247b7dbc6766b7"))
-		s.SetSpanID(newSpanIDWithInput("3d5417cb19489c26"))
+		//set trace and span ID
+		tID, err := newTraceIDWithInput("92192b91842ba1873d247b7dbc6766b7")
+		Expect(err).ToNot(HaveOccurred())
+		sID, err := newSpanIDWithInput("3d5417cb19489c26")
+		Expect(err).ToNot(HaveOccurred())
+		s.SetTraceID(tID)
+		s.SetSpanID(sID)
 
 		//set span attributes
 		s.Attributes().PutStr("response_size", "31")
@@ -101,7 +106,7 @@ var _ = Describe("HaveFlatTraces", func() {
 })
 
 var _ = Describe("HaveName", func() {
-	It("should should apply matcher", func() {
+	It("should apply matcher", func() {
 		Expect(fts).Should(ContainElement(HaveName(Equal("ingress"))))
 	})
 })
@@ -185,27 +190,27 @@ func mustMarshalTraces(td ptrace.Traces) []byte {
 //	return tid
 //}
 
-func newTraceIDWithInput(s string) pcommon.TraceID {
+func newTraceIDWithInput(s string) (pcommon.TraceID, error) {
 	decoded, err := hex.DecodeString(s)
 	if err != nil {
-		fmt.Errorf("error while decoding string: %w", err)
+		return pcommon.TraceID{}, fmt.Errorf("error while decoding string: %w", err)
 	}
 	if len(decoded) != 16 {
-		fmt.Errorf("traceID length does not match 16 bytes")
+		return pcommon.TraceID{}, fmt.Errorf("traceID length does not match 16 bytes")
 	}
 	tID := pcommon.TraceID{}
 	copy(tID[:], decoded)
-	return tID
+	return tID, nil
 }
-func newSpanIDWithInput(s string) pcommon.SpanID {
+func newSpanIDWithInput(s string) (pcommon.SpanID, error) {
 	decoded, err := hex.DecodeString(s)
 	if err != nil {
-		fmt.Errorf("error while decoding string: %w", err)
+		return pcommon.SpanID{}, fmt.Errorf("error while decoding string: %w", err)
 	}
 	if len(decoded) != 8 {
-		fmt.Errorf("spanID length does not match 8 bytes")
+		return pcommon.SpanID{}, fmt.Errorf("spanID length does not match 8 bytes")
 	}
 	sID := pcommon.SpanID{}
 	copy(sID[:], decoded)
-	return sID
+	return sID, nil
 }
