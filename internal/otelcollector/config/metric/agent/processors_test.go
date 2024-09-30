@@ -7,6 +7,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
@@ -18,7 +20,7 @@ func TestProcessors(t *testing.T) {
 		},
 	}
 
-	t.Run("delete service name", func(t *testing.T) {
+	t.Run("delete service name processor", func(t *testing.T) {
 		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
 		}, BuildOptions{})
@@ -49,17 +51,6 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, collectorConfig.Processors.Batch.SendBatchSize, 1024)
 		require.Equal(t, collectorConfig.Processors.Batch.SendBatchMaxSize, 1024)
 		require.Equal(t, collectorConfig.Processors.Batch.Timeout, "10s")
-	})
-
-	t.Run("insert input source runtime", func(t *testing.T) {
-		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).Build(),
-		}, BuildOptions{})
-
-		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-		require.Len(t, collectorConfig.Processors.DeleteServiceName.Attributes, 1)
-		require.Equal(t, "delete", collectorConfig.Processors.DeleteServiceName.Attributes[0].Action)
-		require.Equal(t, "service.name", collectorConfig.Processors.DeleteServiceName.Attributes[0].Key)
 	})
 
 	t.Run("set instrumentation scope runtime", func(t *testing.T) {
@@ -107,4 +98,21 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "set(name, \"io.kyma-project.telemetry/istio\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[1])
 	})
 
+	t.Run("insert skip enrichment attribute processor", func(t *testing.T) {
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
+		}, BuildOptions{})
+
+		expectedInsertSkipEnrichmentAttributeProcessor := metric.TransformProcessor{
+			ErrorMode: "ignore",
+			MetricStatements: []config.TransformProcessorStatements{
+				{
+					Context:    "metric",
+					Statements: []string{"set(resource.attributes[\"io.kyma-project.telemetry.skip_enrichment\"], \"true\")"},
+					Conditions: []string{"IsMatch(name, \"^k8s.node.*\")"},
+				},
+			},
+		}
+		require.Equal(t, expectedInsertSkipEnrichmentAttributeProcessor, *collectorConfig.Processors.InsertSkipEnrichmentAttribute)
+	})
 }

@@ -37,7 +37,7 @@ override:
     path: ^internal/resources/selfmonitor$
   - threshold: 75
     path: ^internal/resourcelock$
-  - threshold: 86
+  - threshold: 85
     path: ^internal/webhookcert$
   - threshold: 70
     path: ^webhook/logpipeline

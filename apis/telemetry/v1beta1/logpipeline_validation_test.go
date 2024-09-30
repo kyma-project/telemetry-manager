@@ -10,7 +10,7 @@ import (
 func TestContainsNoOutputPlugins(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Output: Output{},
+			Output: LogPipelineOutput{},
 		}}
 
 	vc := getLogPipelineValidationConfig()
@@ -23,9 +23,9 @@ func TestContainsNoOutputPlugins(t *testing.T) {
 func TestContainsMultipleOutputPlugins(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: `Name	http`,
-				HTTP: &HTTPOutput{
+				HTTP: &LogPipelineHTTPOutput{
 					Host: ValueType{
 						Value: "localhost",
 					},
@@ -43,7 +43,7 @@ func TestDeniedOutputPlugins(t *testing.T) {
 	logPipeline := &LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: LogPipelineSpec{
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: `
    Name    lua`,
 			},
@@ -61,7 +61,7 @@ func TestValidateCustomOutput(t *testing.T) {
 
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: `
    name    http`,
 			},
@@ -77,7 +77,7 @@ func TestValidateCustomHasForbiddenParameter(t *testing.T) {
 
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: `
    name    http
 	storage.total_limit_size 10G`,
@@ -93,7 +93,7 @@ func TestValidateCustomHasForbiddenParameter(t *testing.T) {
 func TestValidateCustomOutputsContainsNoName(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: `
 	Regex   .*`,
 			},
@@ -110,8 +110,8 @@ func TestValidateCustomOutputsContainsNoName(t *testing.T) {
 func TestBothValueAndValueFromPresent(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Output: Output{
-				HTTP: &HTTPOutput{
+			Output: LogPipelineOutput{
+				HTTP: &LogPipelineHTTPOutput{
 					Host: ValueType{
 						Value: "localhost",
 						ValueFrom: &ValueFromSource{
@@ -134,8 +134,8 @@ func TestBothValueAndValueFromPresent(t *testing.T) {
 func TestValueFromSecretKeyRef(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Output: Output{
-				HTTP: &HTTPOutput{
+			Output: LogPipelineOutput{
+				HTTP: &LogPipelineHTTPOutput{
 					Host: ValueType{
 						ValueFrom: &ValueFromSource{
 							SecretKeyRef: &SecretKeyRef{
@@ -161,7 +161,7 @@ func TestValidateCustomFilter(t *testing.T) {
 	logPipeline := &LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: LogPipelineSpec{
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: `
     Name    http`,
 			},
@@ -176,7 +176,7 @@ func TestValidateCustomFilter(t *testing.T) {
 func TestValidateCustomFiltersContainsNoName(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Filters: []Filter{
+			Filters: []LogPipelineFilter{
 				{Custom: `
     Match   *`,
 				},
@@ -193,7 +193,7 @@ func TestValidateCustomFiltersContainsNoName(t *testing.T) {
 func TestValidateCustomFiltersContainsMatch(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Filters: []Filter{
+			Filters: []LogPipelineFilter{
 				{Custom: `
     Name    grep
     Match   *`,
@@ -213,7 +213,7 @@ func TestDeniedFilterPlugins(t *testing.T) {
 	logPipeline := &LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: LogPipelineSpec{
-			Filters: []Filter{
+			Filters: []LogPipelineFilter{
 				{Custom: `
     Name    lua`,
 				},
@@ -231,12 +231,12 @@ func TestDeniedFilterPlugins(t *testing.T) {
 func TestValidateWithValidInputIncludes(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: ApplicationInput{
-					Namespaces: InputNamespaces{
+			Input: LogPipelineInput{
+				Runtime: LogPipelineRuntimeInput{
+					Namespaces: LogPipelineInputNamespaces{
 						Include: []string{"namespace-1", "namespace-2"},
 					},
-					Containers: InputContainers{
+					Containers: LogPipelineInputContainers{
 						Include: []string{"container-1"},
 					},
 				},
@@ -250,12 +250,12 @@ func TestValidateWithValidInputIncludes(t *testing.T) {
 func TestValidateWithValidInputExcludes(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: ApplicationInput{
-					Namespaces: InputNamespaces{
+			Input: LogPipelineInput{
+				Runtime: LogPipelineRuntimeInput{
+					Namespaces: LogPipelineInputNamespaces{
 						Exclude: []string{"namespace-1", "namespace-2"},
 					},
-					Containers: InputContainers{
+					Containers: LogPipelineInputContainers{
 						Exclude: []string{"container-1"},
 					},
 				},
@@ -270,12 +270,12 @@ func TestValidateWithValidInputExcludes(t *testing.T) {
 func TestValidateWithValidInputIncludeContainersSystemFlag(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: ApplicationInput{
-					Namespaces: InputNamespaces{
+			Input: LogPipelineInput{
+				Runtime: LogPipelineRuntimeInput{
+					Namespaces: LogPipelineInputNamespaces{
 						System: true,
 					},
-					Containers: InputContainers{
+					Containers: LogPipelineInputContainers{
 						Include: []string{"container-1"},
 					},
 				},
@@ -290,12 +290,12 @@ func TestValidateWithValidInputIncludeContainersSystemFlag(t *testing.T) {
 func TestValidateWithValidInputExcludeContainersSystemFlag(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: ApplicationInput{
-					Namespaces: InputNamespaces{
+			Input: LogPipelineInput{
+				Runtime: LogPipelineRuntimeInput{
+					Namespaces: LogPipelineInputNamespaces{
 						System: true,
 					},
-					Containers: InputContainers{
+					Containers: LogPipelineInputContainers{
 						Exclude: []string{"container-1"},
 					},
 				},
@@ -310,9 +310,9 @@ func TestValidateWithValidInputExcludeContainersSystemFlag(t *testing.T) {
 func TestValidateWithInvalidNamespaceSelectors(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: ApplicationInput{
-					Namespaces: InputNamespaces{
+			Input: LogPipelineInput{
+				Runtime: LogPipelineRuntimeInput{
+					Namespaces: LogPipelineInputNamespaces{
 						Include: []string{"namespace-1", "namespace-2"},
 						Exclude: []string{"namespace-3"},
 					},
@@ -328,9 +328,9 @@ func TestValidateWithInvalidNamespaceSelectors(t *testing.T) {
 func TestValidateWithInvalidIncludeSystemFlag(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: ApplicationInput{
-					Namespaces: InputNamespaces{
+			Input: LogPipelineInput{
+				Runtime: LogPipelineRuntimeInput{
+					Namespaces: LogPipelineInputNamespaces{
 						Include: []string{"namespace-1", "namespace-2"},
 						System:  true,
 					},
@@ -346,9 +346,9 @@ func TestValidateWithInvalidIncludeSystemFlag(t *testing.T) {
 func TestValidateWithInvalidExcludeSystemFlag(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: ApplicationInput{
-					Namespaces: InputNamespaces{
+			Input: LogPipelineInput{
+				Runtime: LogPipelineRuntimeInput{
+					Namespaces: LogPipelineInputNamespaces{
 						Exclude: []string{"namespace-3"},
 						System:  true,
 					},
@@ -364,9 +364,9 @@ func TestValidateWithInvalidExcludeSystemFlag(t *testing.T) {
 func TestValidateWithInvalidContainerSelectors(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: ApplicationInput{
-					Containers: InputContainers{
+			Input: LogPipelineInput{
+				Runtime: LogPipelineRuntimeInput{
+					Containers: LogPipelineInputContainers{
 						Include: []string{"container-1", "container-2"},
 						Exclude: []string{"container-3"},
 					},
