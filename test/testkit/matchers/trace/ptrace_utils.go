@@ -65,18 +65,18 @@ func attributeToMap(attrs pcommon.Map) map[string]string {
 	return attrMap
 }
 
-func getSpans(td ptrace.Traces) []ptrace.Span {
-	var spans []ptrace.Span
-
-	for i := 0; i < td.ResourceSpans().Len(); i++ {
-		resourceSpans := td.ResourceSpans().At(i)
-		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
-			scopeSpans := resourceSpans.ScopeSpans().At(j)
-			for k := 0; k < scopeSpans.Spans().Len(); k++ {
-				spans = append(spans, scopeSpans.Spans().At(k))
-			}
-		}
-	}
-
-	return spans
-}
+//func getSpans(td ptrace.Traces) []ptrace.Span {
+//	var spans []ptrace.Span
+//
+//	for i := 0; i < td.ResourceSpans().Len(); i++ {
+//		resourceSpans := td.ResourceSpans().At(i)
+//		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+//			scopeSpans := resourceSpans.ScopeSpans().At(j)
+//			for k := 0; k < scopeSpans.Spans().Len(); k++ {
+//				spans = append(spans, scopeSpans.Spans().At(k))
+//			}
+//		}
+//	}
+//
+//	return spans
+//}
