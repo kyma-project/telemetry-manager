@@ -101,6 +101,7 @@ func VerifyServiceNameAttr(proxyClient *apiserverproxy.Client, backendExportURL,
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
 			HaveFlatTraces(ContainElement(SatisfyAll(
@@ -115,6 +116,7 @@ func VerifyNoKymaAttributes(proxyClient *apiserverproxy.Client, backendExportURL
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(
 			Not(ContainElement(
