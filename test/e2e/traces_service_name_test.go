@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"net/http"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,7 +16,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -71,73 +68,50 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			assert.TracePipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatTraces(ContainElement(SatisfyAll(
-						HaveResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)),
-						HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
-					))),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		}
-
 		It("Should set undefined service.name attribute to app.kubernetes.io/name label value", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithBothLabelsName, servicenamebundle.KubeAppLabelValue)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.PodWithBothLabelsName, servicenamebundle.KubeAppLabelValue)
 		})
 
 		It("Should set undefined service.name attribute to app label value", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithAppLabelName, servicenamebundle.AppLabelValue)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.PodWithAppLabelName, servicenamebundle.AppLabelValue)
 		})
 
 		It("Should set undefined service.name attribute to Deployment name", func() {
-			verifyServiceNameAttr(servicenamebundle.DeploymentName, servicenamebundle.DeploymentName)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.DeploymentName, servicenamebundle.DeploymentName)
 		})
 
 		It("Should set undefined service.name attribute to StatefulSet name", func() {
-			verifyServiceNameAttr(servicenamebundle.StatefulSetName, servicenamebundle.StatefulSetName)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.StatefulSetName, servicenamebundle.StatefulSetName)
 		})
 
 		It("Should set undefined service.name attribute to DaemonSet name", func() {
-			verifyServiceNameAttr(servicenamebundle.DaemonSetName, servicenamebundle.DaemonSetName)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.DaemonSetName, servicenamebundle.DaemonSetName)
 		})
 
 		It("Should set undefined service.name attribute to Job name", func() {
-			verifyServiceNameAttr(servicenamebundle.JobName, servicenamebundle.JobName)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.JobName, servicenamebundle.JobName)
 		})
 
 		It("Should set undefined service.name attribute to Pod name", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
 		})
 
 		It("Should enrich service.name attribute when its value is unknown_service", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
 		})
 
 		It("Should enrich service.name attribute when its value is following the unknown_service:<process.executable.name> pattern", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServicePatternName, servicenamebundle.PodWithUnknownServicePatternName)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.PodWithUnknownServicePatternName, servicenamebundle.PodWithUnknownServicePatternName)
 		})
 
 		It("Should NOT enrich service.name attribute when its value is not following the unknown_service:<process.executable.name> pattern", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithInvalidStartForUnknownServicePatternName, servicenamebundle.AttrWithInvalidStartForUnknownServicePattern)
-			verifyServiceNameAttr(servicenamebundle.PodWithInvalidEndForUnknownServicePatternName, servicenamebundle.AttrWithInvalidEndForUnknownServicePattern)
-			verifyServiceNameAttr(servicenamebundle.PodWithMissingProcessForUnknownServicePatternName, servicenamebundle.AttrWithMissingProcessForUnknownServicePattern)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.PodWithInvalidStartForUnknownServicePatternName, servicenamebundle.AttrWithInvalidStartForUnknownServicePattern)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.PodWithInvalidEndForUnknownServicePatternName, servicenamebundle.AttrWithInvalidEndForUnknownServicePattern)
+			assert.VerifyServiceNameAttr(proxyClient, backendExportURL, servicenamebundle.PodWithMissingProcessForUnknownServicePatternName, servicenamebundle.AttrWithMissingProcessForUnknownServicePattern)
 		})
 
 		It("Should have no kyma resource attributes", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(
-					Not(ContainElement(
-						HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
-					)),
-				)))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			assert.VerifyNoKymaAttributes(proxyClient, backendExportURL)
 		})
 	})
 })

@@ -96,3 +96,30 @@ func TracePipelineConditionReasonsTransition(ctx context.Context, k8sClient clie
 		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
 }
+
+func VerifyServiceNameAttr(proxyClient *apiserverproxy.Client, backendExportURL, givenPodPrefix, expectedServiceName string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(backendExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(
+			HaveFlatTraces(ContainElement(SatisfyAll(
+				HaveResourceAttributes(HaveKeyWithValue("service.name", expectedServiceName)),
+				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
+			))),
+		))
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+func VerifyNoKymaAttributes(proxyClient *apiserverproxy.Client, backendExportURL string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(backendExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(
+			Not(ContainElement(
+				HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))),
+			)),
+		)))
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
