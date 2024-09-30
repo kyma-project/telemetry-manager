@@ -39,7 +39,7 @@ func TracesFromNamespacesNotDelivered(proxyClient *apiserverproxy.Client, backen
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatTraces(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", BeElementOf(namespaces))))),
+			HaveFlatTraces(Not(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", BeElementOf(namespaces)))))),
 		))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
