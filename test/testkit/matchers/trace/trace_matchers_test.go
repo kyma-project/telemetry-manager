@@ -143,7 +143,7 @@ var _ = Describe("HaveResourceAttributes", func() {
 	})
 })
 
-var _ = Describe("HaveSpanAttrs", func() {
+var _ = Describe("HaveSpanAttributes", func() {
 	It("should apply matcher", func() {
 		Expect(fts).Should(ContainElement(HaveSpanAttributes(HaveKey("response_size"))))
 	})
