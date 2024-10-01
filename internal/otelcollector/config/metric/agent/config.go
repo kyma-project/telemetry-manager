@@ -55,6 +55,7 @@ const (
 	MetricGroupTypeContainer MetricGroupType = "container"
 	MetricGroupTypePod       MetricGroupType = "pod"
 	MetricGroupTypeNode      MetricGroupType = "node"
+	MetricGroupTypeVolume    MetricGroupType = "volume"
 )
 
 type PrometheusReceiver struct {
