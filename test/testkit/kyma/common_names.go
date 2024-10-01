@@ -13,7 +13,7 @@ const (
 
 	MetricGatewayBaseName = "telemetry-metric-gateway"
 	MetricAgentBaseName   = "telemetry-metric-agent"
-	TraceGatewayBaseName  = "telemetry-trace-collector"
+	TraceGatewayBaseName  = "telemetry-trace-gateway"
 	FluentBitBaseName     = "telemetry-fluent-bit"
 	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
