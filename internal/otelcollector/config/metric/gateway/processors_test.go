@@ -379,8 +379,7 @@ func TestProcessors(t *testing.T) {
 
 	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
 		k8sClusterMetricsDrop := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
-			" and (IsMatch(name, \"^k8s.deployment.*\") or IsMatch(name, \"^k8s.cronjob.*\") or IsMatch(name, \"^k8s.daemonset.*\") or IsMatch(name, \"^k8s.hpa.*\") or IsMatch(name, \"^k8s.job.*\")" +
-			" or IsMatch(name, \"^k8s.replicaset.*\") or IsMatch(name, \"^k8s.resource_quota.*\") or IsMatch(name, \"^k8s.statefulset.*\"))"
+			" and IsMatch(name, \"^k8s.(deployment|cronjob|daemonset|hpa|job|replicaset|resource_quota|statefulset).*\")"
 
 		collectorConfig, _, err := sut.Build(
 			ctx,
