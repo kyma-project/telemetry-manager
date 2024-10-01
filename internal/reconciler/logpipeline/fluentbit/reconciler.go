@@ -97,16 +97,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(ctx, &allPipelines); err != nil {
-		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
-	}
-
-	if err := ensureFinalizers(ctx, r.Client, pipeline); err != nil {
+	allPipelines, err := logpipeline.GetPipelinesForType(ctx, r.Client, r.SupportedOutput())
+	if err != nil {
 		return err
 	}
 
-	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines.Items)
+	err = ensureFinalizers(ctx, r.Client, pipeline)
+	if err != nil {
+		return err
+	}
+
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
 	}
@@ -331,7 +332,7 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) ([]telemetryv1alpha1.LogPipeline, error) {
 	var reconcilableLogPipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
-		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
+		isReconcilable, err := r.IsReconcilable(ctx, &allPipelines[i])
 		if err != nil {
 			return nil, err
 		}
@@ -343,7 +344,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	return reconcilableLogPipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
+func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}

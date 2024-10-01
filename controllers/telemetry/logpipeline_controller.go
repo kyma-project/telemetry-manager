@@ -41,6 +41,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	fluentbit2 "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -107,11 +108,13 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		return nil, err
 	}
 	fbReconciler := fluentbit2.New(client, fluentbitConfig, &workloadstatus.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(discoveryClient), pipelineValidator, &conditions.ErrorToMessageConverter{})
+	otelReconciler := otel.New(client, &conditions.ErrorToMessageConverter{})
 
 	reconciler := logpipeline.New(
 		client,
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
 		fbReconciler,
+		otelReconciler,
 	)
 
 	return &LogPipelineController{

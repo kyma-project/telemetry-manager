@@ -18,6 +18,7 @@ package logpipeline
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -27,6 +28,10 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+)
+
+var (
+	ErrUnsupportedOutputType = fmt.Errorf("unsupported output type")
 )
 
 type OutputType int
@@ -101,20 +106,36 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	outputType := getOutputType(&pipeline)
-	switch outputType {
-	case OTel:
-		err = r.reconcilers[OTel].Reconcile(ctx, &pipeline)
-	case FluentBit:
-		err = r.reconcilers[FluentBit].Reconcile(ctx, &pipeline)
+	outputType := GetOutputType(&pipeline)
+	reconciler, ok := r.reconcilers[outputType]
+
+	if !ok {
+		return ctrl.Result{}, fmt.Errorf("%w: %v", ErrUnsupportedOutputType, outputType)
 	}
+
+	err = reconciler.Reconcile(ctx, &pipeline)
 
 	return ctrl.Result{}, err
 }
 
-func getOutputType(t *telemetryv1alpha1.LogPipeline) OutputType {
+func GetOutputType(t *telemetryv1alpha1.LogPipeline) OutputType {
 	if t.Spec.Output.Otlp != nil {
 		return OTel
 	}
 	return FluentBit
+}
+
+func GetPipelinesForType(ctx context.Context, client client.Client, outputType OutputType) ([]telemetryv1alpha1.LogPipeline, error) {
+	var allPipelines telemetryv1alpha1.LogPipelineList
+	if err := client.List(ctx, &allPipelines); err != nil {
+		return nil, fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
+	}
+
+	var filteredList []telemetryv1alpha1.LogPipeline
+	for _, lp := range allPipelines.Items {
+		if GetOutputType(&lp) == outputType {
+			filteredList = append(filteredList, lp)
+		}
+	}
+	return filteredList, nil
 }

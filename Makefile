@@ -49,7 +49,7 @@ KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
 MOCKERY          := $(TOOLS_BIN_DIR)/mockery
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
 YQ               := $(TOOLS_BIN_DIR)/yq
-YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
+STRINGER         := $(TOOLS_BIN_DIR)/stringer
 
 # Sub-makefile
 include hack/make/provision.mk
@@ -105,8 +105,9 @@ manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole a
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(MOCKERY)
+	$(STRINGER) --type OutputType internal/reconciler/logpipeline/reconciler.go
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt

@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -110,7 +109,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
@@ -139,7 +138,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
@@ -169,7 +168,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
@@ -208,7 +207,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
@@ -247,7 +246,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
@@ -289,7 +288,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
@@ -376,7 +375,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
@@ -512,7 +511,7 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 				var pl1 telemetryv1alpha1.LogPipeline
-				require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+				require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 				err := sut.Reconcile(context.Background(), &pl1)
 				require.NoError(t, err)
 
@@ -633,7 +632,7 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 				var pl1 telemetryv1alpha1.LogPipeline
-				require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+				require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 				err := sut.Reconcile(context.Background(), &pl1)
 				require.NoError(t, err)
 
@@ -725,7 +724,7 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 				var pl1 telemetryv1alpha1.LogPipeline
-				require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+				require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 				err := sut.Reconcile(context.Background(), &pl1)
 				require.NoError(t, err)
 
@@ -767,7 +766,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.True(t, errors.Is(err, serverErr))
 
@@ -822,12 +821,12 @@ func TestReconcile(t *testing.T) {
 		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline1.Name}}.NamespacedName, &pl1))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
 		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		var pl2 telemetryv1alpha1.LogPipeline
-		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline2.Name}}.NamespacedName, &pl2))
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline2.Name}, &pl2))
 		err = sut.Reconcile(context.Background(), &pl2)
 		require.NoError(t, err)
 
@@ -845,6 +844,8 @@ func TestReconcile(t *testing.T) {
 			Build()
 
 		fakeClient.Delete(context.Background(), &pipeline1)
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
+		err = sut.Reconcile(context.Background(), &pl1)
 		pipeline1 = pipeline1Deleted
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, cm)
 		require.NoError(t, err, "sections configmap must exist")
