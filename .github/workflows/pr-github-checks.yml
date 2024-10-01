@@ -44,11 +44,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Check if kind label matches pr title prefix
+        if: always()
         run: |
           kind_label=$( gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | grep '^kind/')
           kind_label_to_pr_title_prefix='{"kind/bug":"fix","kind/feature":"feat","kind/docs":"docs","kind/chore":"chore","kind/flaky-test":"test","kind/missing-test":"test","kind/failing-test":"test","kind/deps":"deps"}'
           prefix=$(echo $kind_label_to_pr_title_prefix | jq -r ".\"$kind_label\"")
           echo "${{ github.event.pull_request.title }}" | grep '^'$prefix || (echo "PR title should start with $prefix"; exit 1)
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Check for do-not-merge label
+        if: always()
+        run: |
+          gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | \
+          grep -q '^do-not-merge/$' && (echo "do-not-merge label detected -> preventing merge by failing the job"; exit 1)
         env:
           GH_TOKEN: ${{ github.token }}
 
