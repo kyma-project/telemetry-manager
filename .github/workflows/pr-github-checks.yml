@@ -11,7 +11,7 @@ on:
       - edited
       - synchronize
       - labeled
-      - milestoned
+      - unlabeled
   workflow_dispatch:
 
 jobs:
