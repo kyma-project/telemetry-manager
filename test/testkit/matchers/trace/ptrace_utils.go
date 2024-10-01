@@ -8,8 +8,8 @@ import (
 )
 
 type FlatTrace struct {
-	Name, TraceID, SpanID, ScopeName, ScopeVersion      string
-	ResourceAttributes, ScopeAttributes, SpanAttributes map[string]string
+	Name                               string
+	ResourceAttributes, SpanAttributes map[string]string
 }
 
 func unmarshalTraces(jsonlMetrics []byte) ([]ptrace.Traces, error) {
@@ -40,12 +40,7 @@ func flattenTraces(td ptrace.Traces) []FlatTrace {
 				for l := 0; l < spans.Attributes().Len(); l++ {
 					flatTraces = append(flatTraces, FlatTrace{
 						Name:               spans.Name(),
-						TraceID:            spans.TraceID().String(),
-						SpanID:             spans.SpanID().String(),
-						ScopeName:          scopeSpans.Scope().Name(),
-						ScopeVersion:       scopeSpans.Scope().Version(),
 						ResourceAttributes: attributeToMap(resourceSpans.Resource().Attributes()),
-						ScopeAttributes:    attributeToMap(scopeSpans.Scope().Attributes()),
 						SpanAttributes:     attributeToMap(spans.Attributes()),
 					})
 				}
@@ -64,19 +59,3 @@ func attributeToMap(attrs pcommon.Map) map[string]string {
 	})
 	return attrMap
 }
-
-//func getSpans(td ptrace.Traces) []ptrace.Span {
-//	var spans []ptrace.Span
-//
-//	for i := 0; i < td.ResourceSpans().Len(); i++ {
-//		resourceSpans := td.ResourceSpans().At(i)
-//		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
-//			scopeSpans := resourceSpans.ScopeSpans().At(j)
-//			for k := 0; k < scopeSpans.Spans().Len(); k++ {
-//				spans = append(spans, scopeSpans.Spans().At(k))
-//			}
-//		}
-//	}
-//
-//	return spans
-//}
