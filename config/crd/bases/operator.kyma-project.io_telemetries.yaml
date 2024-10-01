@@ -8,11 +8,15 @@ metadata:
 spec:
   group: operator.kyma-project.io
   names:
+    categories:
+    - kyma
+    - kyma-modules
+    - kyma-telemetry
     kind: Telemetry
     listKind: TelemetryList
     plural: telemetries
     singular: telemetry
-  scope: Namespaced
+  scope: Namespace
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.generation
