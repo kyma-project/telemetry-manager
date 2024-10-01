@@ -1,4 +1,4 @@
-package logpipeline
+package fluentbit
 
 import (
 	"context"

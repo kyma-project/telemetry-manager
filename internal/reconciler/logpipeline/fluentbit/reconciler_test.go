@@ -1,4 +1,4 @@
-package logpipeline
+package fluentbit
 
 import (
 	"context"
@@ -79,8 +79,10 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -106,8 +108,10 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -133,8 +137,10 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		// check Fluent Bit sections configmap as an indicator of resources generation
@@ -161,8 +167,10 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -198,8 +206,10 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -235,8 +245,10 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -275,8 +287,10 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -360,8 +374,10 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -494,8 +510,10 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &mocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				var pl1 telemetryv1alpha1.LogPipeline
+				require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+				err := sut.Reconcile(context.Background(), &pl1)
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -613,8 +631,10 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &mocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				var pl1 telemetryv1alpha1.LogPipeline
+				require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+				err := sut.Reconcile(context.Background(), &pl1)
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -703,8 +723,10 @@ func TestReconcile(t *testing.T) {
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				var pl1 telemetryv1alpha1.LogPipeline
+				require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+				err := sut.Reconcile(context.Background(), &pl1)
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -743,8 +765,10 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.True(t, errors.Is(err, serverErr))
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
@@ -795,11 +819,16 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &mocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, overridesHandlerStub, pipelineValidatorWithStubs, errToMsgStub)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline1.Name}})
+		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+
+		var pl1 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline1.Name}}.NamespacedName, &pl1))
+		err := sut.Reconcile(context.Background(), &pl1)
 		require.NoError(t, err)
 
-		_, err = sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline2.Name}})
+		var pl2 telemetryv1alpha1.LogPipeline
+		require.NoError(t, fakeClient.Get(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline2.Name}}.NamespacedName, &pl2))
+		err = sut.Reconcile(context.Background(), &pl2)
 		require.NoError(t, err)
 
 		cm := &corev1.ConfigMap{}
@@ -817,8 +846,6 @@ func TestReconcile(t *testing.T) {
 
 		fakeClient.Delete(context.Background(), &pipeline1)
 		pipeline1 = pipeline1Deleted
-		_, err = sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline1.Name}})
-		require.NoError(t, err)
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, cm)
 		require.NoError(t, err, "sections configmap must exist")
 		require.NotContains(t, cm.Data[pipeline1.Name+".conf"], pipeline1.Name, "sections configmap must not contain pipeline1")
@@ -934,7 +961,7 @@ func TestCalculateChecksum(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithObjects(&dsConfig, &sectionsConfig, &filesConfig, &luaConfig, &parsersConfig, &envSecret, &certSecret).Build()
 
-	r := New(client, config, nil, nil, nil, nil, nil, nil)
+	r := New(client, config, nil, nil, nil, nil, nil)
 	ctx := context.Background()
 
 	checksum, err := r.calculateChecksum(ctx)
