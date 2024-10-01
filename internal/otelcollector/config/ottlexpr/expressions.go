@@ -21,6 +21,10 @@ func JoinWithOr(parts ...string) string {
 	return fmt.Sprintf("(%s)", strings.Join(parts, " or "))
 }
 
+func JoinWithRegExpOr(parts ...string) string {
+	return fmt.Sprintf("(%s)", strings.Join(parts, "|"))
+}
+
 func JoinWithAnd(parts ...string) string {
 	return strings.Join(parts, " and ")
 }

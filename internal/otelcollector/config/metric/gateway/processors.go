@@ -183,38 +183,30 @@ func createNamespacesConditions(namespaces []string) []string {
 	return namespacesConditions
 }
 
-// Drop the metrics scraped by k8s cluster, except for the pod, container metrics
+// Drop the metrics scraped by k8s cluster which are not workload related, So all besides the pod and container metrics
 // Complete list of the metrics is here: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
 func makeK8sClusterDropMetrics() *FilterProcessor {
 	metricNames := []string{
-		"^k8s.deployment.*",
-		"^k8s.cronjob.*",
-		"^k8s.daemonset.*",
-		"^k8s.hpa.*",
-		"^k8s.job.*",
-		"^k8s.replicaset.*",
-		"^k8s.resource_quota.*",
-		"^k8s.statefulset.*",
+		"deployment",
+		"cronjob",
+		"daemonset",
+		"hpa",
+		"job",
+		"replicaset",
+		"resource_quota",
+		"statefulset",
 	}
-	metricNameConditions := createIsMatchNameConditions(metricNames)
+
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
 				ottlexpr.JoinWithAnd(
 					inputSourceEquals(metric.InputSourceRuntime),
-					ottlexpr.JoinWithOr(metricNameConditions...),
+					ottlexpr.IsMatch("name", fmt.Sprintf("^k8s.%s.*", ottlexpr.JoinWithRegExpOr(metricNames...))),
 				),
 			},
 		},
 	}
-}
-
-func createIsMatchNameConditions(names []string) []string {
-	var nameConditions []string
-	for _, name := range names {
-		nameConditions = append(nameConditions, ottlexpr.IsMatch("name", name))
-	}
-	return nameConditions
 }
 
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
