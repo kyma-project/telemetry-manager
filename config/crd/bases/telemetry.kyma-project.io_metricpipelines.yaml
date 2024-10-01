@@ -222,6 +222,8 @@ spec:
                             enabled: false
                           pod:
                             enabled: true
+                          volume:
+                            enabled: false
                         description: Describes the Kubernetes resources for which
                           runtime metrics are scraped.
                         properties:
@@ -256,6 +258,17 @@ spec:
                                 default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
+                                type: boolean
+                            type: object
+                          volume:
+                            default:
+                              enabled: false
+                            description: Configures Volume runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
                                 type: boolean
                             type: object
                         type: object

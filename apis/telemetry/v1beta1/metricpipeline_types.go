@@ -90,7 +90,7 @@ type MetricPipelineRuntimeInput struct {
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Describes the Kubernetes resources for which runtime metrics are scraped.
 	// +optional
-	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}}
+	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}}
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
 }
 
@@ -108,6 +108,10 @@ type MetricPipelineRuntimeInputResources struct {
 	// +optional
 	// +kubebuilder:default={enabled: false}
 	Node *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"node,omitempty"`
+	// Configures Volume runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Volume *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"volume,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResourceEnabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
