@@ -16,7 +16,7 @@ The Telemetry self-monitoring data is stored in the Prometheus TSDB, which is de
 ### Storage and Retention with TSDB
 
 The TSDB storage size-based retention works as follows: It includes data blocks like the write-ahead-log (WAL), the checkpoints, the m-mapped chunks, and the persistent blocks. The TSDB counts all those data blocks to decide performing any retention.
-Even if the size of all those data blocks exceeds the configured retention size, only persistence blocks are deleted because the WAL, checkpoints, and m-mapped chunks are needed for normal operation of TSDB. The WAL segments can grow up to 128MB before compacting, and Prometheus will keep at least 3 WAL files; [so-called 2/3 rules](https://ganeshvernekar.com/blog/prometheus-tsdb-wal-and-checkpoint/#wal-truncation). To ensure that Telemetry self-monitoring doesn't exceed the storage limit, minimum storage volume size should be calculated to be at least 3 * WAL segment size + some more space for the other data types.  
+Even if the size of all those data blocks exceeds the configured retention size, only persistence blocks are deleted because the WAL, checkpoints, and m-mapped chunks are needed for normal operation of TSDB. The WAL segments can grow up to 128MB before compacting, and Prometheus will keep at least 3 WAL files; [so-called 2/3 rules](https://ganeshvernekar.com/blog/prometheus-tsdb-wal-and-checkpoint/#wal-truncation). To ensure that Telemetry self-monitoring doesn't exceed the storage limit, minimum storage volume size should be calculated to be at least 3 * WAL segment size * 2 + some more space for the other data types.  
 
 ### TSDB Storage architecture and retention
 
@@ -26,4 +26,4 @@ For the TSDB WAL and checkpoint architecture, see [Prometheus TSDB: WAL and Chec
 
 ## Consequences
 
-Even though the Telemetry self-monitoring collects very little data for operation (currently, a few MBytes), the storage size must be at least 500MByte for a normal and safe operation.
+Even though the Telemetry self-monitoring collects very little data for operation (currently, a few MBytes), the storage size must be at least 1000MByte for a normal and safe operation.
