@@ -9,7 +9,6 @@ spec:
   group: telemetry.kyma-project.io
   names:
     categories:
-    - kyma
     - kyma-telemetry
     - kyma-telemetry-pipelines
     kind: TracePipeline

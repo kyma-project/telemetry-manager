@@ -120,7 +120,7 @@ type OTLPEndpoints struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Namespaced,categories={kyma,kyma-modules,kyma-telemetry}
+// +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="generation",type="integer",JSONPath=".metadata.generation"
 // +kubebuilder:printcolumn:name="age",type="date",JSONPath=".metadata.creationTimestamp"
