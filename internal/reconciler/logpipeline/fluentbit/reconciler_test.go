@@ -846,6 +846,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient.Delete(context.Background(), &pipeline1)
 		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
 		err = sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, err)
 		pipeline1 = pipeline1Deleted
 		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, cm)
 		require.NoError(t, err, "sections configmap must exist")

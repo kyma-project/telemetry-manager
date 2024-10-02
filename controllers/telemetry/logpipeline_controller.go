@@ -40,7 +40,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
-	fluentbit2 "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
+	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -77,7 +77,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	if err != nil {
 		return nil, err
 	}
-	fluentbitConfig := fluentbit2.Config{
+	fluentbitConfig := logpipelinefluentbit.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
 		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: config.TelemetryNamespace},
@@ -97,7 +97,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		},
 	}
 
-	pipelineValidator := &fluentbit2.Validator{
+	pipelineValidator := &logpipelinefluentbit.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
 		SecretRefValidator: &secretref.Validator{Client: client},
@@ -107,7 +107,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	if err != nil {
 		return nil, err
 	}
-	fbReconciler := fluentbit2.New(client, fluentbitConfig, &workloadstatus.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(discoveryClient), pipelineValidator, &conditions.ErrorToMessageConverter{})
+	fbReconciler := logpipelinefluentbit.New(client, fluentbitConfig, &workloadstatus.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(discoveryClient), pipelineValidator, &conditions.ErrorToMessageConverter{})
 	otelReconciler := otel.New(client, &conditions.ErrorToMessageConverter{})
 
 	reconciler := logpipeline.New(
