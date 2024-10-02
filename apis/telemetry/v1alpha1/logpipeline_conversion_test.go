@@ -215,6 +215,42 @@ func TestConvertFrom(t *testing.T) {
 					},
 					Dedot: true,
 				},
+				OTLP: &telemetryv1beta1.OTLPOutput{
+					Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+					Endpoint: telemetryv1beta1.ValueType{Value: "localhost:4317"},
+					Path:     "/v1/logs",
+					Authentication: &telemetryv1beta1.AuthenticationOptions{Basic: &telemetryv1beta1.BasicAuthOptions{
+						User: telemetryv1beta1.ValueType{
+							Value: "user",
+						},
+						Password: telemetryv1beta1.ValueType{
+							Value: "password",
+						},
+					}},
+					Headers: []telemetryv1beta1.Header{
+						{
+							Name: "header1",
+							ValueType: telemetryv1beta1.ValueType{
+								Value: "value1",
+							},
+							Prefix: "prefix1",
+						},
+						{
+							Name: "header2",
+							ValueType: telemetryv1beta1.ValueType{
+								Value: "value2",
+							},
+							Prefix: "prefix2",
+						},
+					},
+					TLS: &telemetryv1beta1.OTLPTLS{
+						Insecure:           true,
+						InsecureSkipVerify: true,
+						CA:                 &telemetryv1beta1.ValueType{Value: "ca"},
+						Cert:               &telemetryv1beta1.ValueType{Value: "cert"},
+						Key:                &telemetryv1beta1.ValueType{Value: "key"},
+					},
+				},
 			},
 		},
 		Status: telemetryv1beta1.LogPipelineStatus{
@@ -283,6 +319,8 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 
 	xOTLP := x.Spec.Output.Otlp
 	yOTLP := y.Spec.Output.OTLP
+	require.NotNil(t, xOTLP, "expected OTLP output")
+	require.NotNil(t, yOTLP, "expected OTLP output")
 	require.Equal(t, xOTLP.Protocol, string(yOTLP.Protocol), "OTLP protocol mismatch")
 	require.Equal(t, xOTLP.Endpoint.Value, yOTLP.Endpoint.Value, "OTLP endpoint mismatch")
 	require.Equal(t, xOTLP.Path, yOTLP.Path, "OTLP path mismatch")
