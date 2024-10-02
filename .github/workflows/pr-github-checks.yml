@@ -31,7 +31,7 @@ jobs:
         if: always()
         run: |
           gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | \
-          grep -q '^area/' || (echo "area label missing"; exit 1)
+          grep -q '^area\/' || (echo "area label missing"; exit 1)
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -39,7 +39,7 @@ jobs:
         if: always()
         run: |
           gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | \
-          grep -q '^kind/' || (echo "kind label missing"; exit 1)
+          grep -q '^kind\/' || (echo "kind label missing"; exit 1)
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -57,7 +57,7 @@ jobs:
         if: always()
         run: |
           gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | \
-          grep -q '^do-not-merge/$' && (echo "do-not-merge label detected -> preventing merge by failing the job"; exit 1)
+          grep -q '^do-not-merge\/' && (echo "do-not-merge label detected -> preventing merge by failing the job"; exit 1)
         env:
           GH_TOKEN: ${{ github.token }}
 
