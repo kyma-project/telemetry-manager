@@ -1,15 +1,6 @@
 name: PR Github Checks
 
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - edited
-      - synchronize
-      - labeled
-      - unlabeled
-      - milestoned
   pull_request_target:
     branches:
       - "main"
@@ -63,7 +54,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Check for do-not-merge label
+      - name: Check that there is no do-not-merge label
         if: always()
         run: |
           labels=$(gh api --jq '.labels.[]' /repos/${{ github.repository }}/pulls/${{ github.event.number }} )
