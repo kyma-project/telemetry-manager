@@ -75,6 +75,7 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 				},
 				Conditions: []string{
 					ottlexpr.IsMatch("name", "^k8s.node.*"),
+					ottlexpr.IsMatch("name", "^k8s.volume.*"),
 				},
 			},
 		},
