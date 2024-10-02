@@ -66,9 +66,10 @@ jobs:
       - name: Check for do-not-merge label
         if: always()
         run: |
-          labels=$(gh api --jq '.labels.[])
-          echo "Labels found: $labels"
-          ! echo "$labels" | select(.name | startswith("do-not-merge"))' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | jq -n "input.name"
+          labels=$(gh api --jq '.labels.[]' /repos/${{ github.repository }}/pulls/${{ github.event.number }} )
+          echo "Labels found: $( echo $labels | jq -r '.name' )"
+
+          ! echo "$labels" | jq 'select(.name | startswith("do-not-merge"))' | jq -n "input.name"
         env:
           GH_TOKEN: ${{ github.token }}
 
