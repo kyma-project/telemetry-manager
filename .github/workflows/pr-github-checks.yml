@@ -1,6 +1,15 @@
 name: PR Github Checks
 
 on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+      - labeled
+      - unlabeled
+      - milestoned
   pull_request_target:
     branches:
       - "main"
