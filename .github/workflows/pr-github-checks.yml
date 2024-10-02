@@ -12,6 +12,7 @@ on:
       - synchronize
       - labeled
       - unlabeled
+      - milestoned
   workflow_dispatch:
 
 jobs:
@@ -56,8 +57,7 @@ jobs:
       - name: Check for do-not-merge label
         if: always()
         run: |
-          gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | \
-          grep -q '^do-not-merge\/' && (echo "do-not-merge label detected -> preventing merge by failing the job"; exit 1)
+          ! (gh api --jq '.labels.[] | select(.name | startswith("do-not-merge"))' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | jq . -e )
         env:
           GH_TOKEN: ${{ github.token }}
 
