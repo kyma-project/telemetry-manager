@@ -37,8 +37,8 @@ var testScenarios = []struct {
 	errMsgFluentdHTTP string
 }{
 	{
-		name:     "with scheme: valid endpoint with path",
-		endpoint: "https://this.is.an.example.sap/e/9c631924-e2a7-1f27-00af-10d26bd1a03a:4317",
+		name:     "with scheme: valid endpoint with path and port",
+		endpoint: "https://foo.bar/foo/bar:4317",
 
 		errOtlpGRPC:    nil,
 		errMsgOtlpGRPC: "",
