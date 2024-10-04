@@ -8,7 +8,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/vektra/mockery/v2 v2.46.0
 	github.com/vladopajic/go-test-coverage/v2 v2.10.2
-	sigs.k8s.io/controller-tools v0.16.2
+	sigs.k8s.io/controller-tools v0.16.3
 	sigs.k8s.io/kustomize/kustomize/v5 v5.4.3
 )
 
