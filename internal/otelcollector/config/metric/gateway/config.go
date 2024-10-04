@@ -52,11 +52,10 @@ type SingletonK8sClusterReceiver struct {
 }
 
 type K8sClusterReceiver struct {
-	AuthType                 string                  `yaml:"auth_type"`
-	CollectionInterval       string                  `yaml:"collection_interval"`
-	NodeConditionsToReport   []string                `yaml:"node_conditions_to_report"`
-	AllocatableTypesToReport []string                `yaml:"allocatable_types_to_report"`
-	Metrics                  K8sClusterMetricsConfig `yaml:"metrics"`
+	AuthType               string                  `yaml:"auth_type"`
+	CollectionInterval     string                  `yaml:"collection_interval"`
+	NodeConditionsToReport []string                `yaml:"node_conditions_to_report"`
+	Metrics                K8sClusterMetricsConfig `yaml:"metrics"`
 }
 
 type MetricConfig struct {
@@ -95,8 +94,10 @@ type Processors struct {
 	DropIfInputSourceOtlp                        *FilterProcessor               `yaml:"filter/drop-if-input-source-otlp,omitempty"`
 	DropRuntimePodMetrics                        *FilterProcessor               `yaml:"filter/drop-runtime-pod-metrics,omitempty"`
 	DropRuntimeContainerMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-container-metrics,omitempty"`
+	DropRuntimeNodeMetrics                       *FilterProcessor               `yaml:"filter/drop-runtime-node-metrics,omitempty"`
 	DropK8sClusterMetrics                        *FilterProcessor               `yaml:"filter/drop-k8s-cluster-metrics,omitempty"`
-	ResolveServiceName                           *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
+	ResolveServiceName                           *metric.TransformProcessor     `yaml:"transform/resolve-service-name,omitempty"`
+	DropKymaAttributes                           *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 	SetInstrumentationScopeKyma                  *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
 	SetInstrumentationScopeRuntime               *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 	DeleteSkipEnrichmentAttribute                *config.ResourceProcessor      `yaml:"resource/delete-skip-enrichment-attribute,omitempty"`
@@ -113,11 +114,6 @@ type FilterProcessor struct {
 
 type FilterProcessorMetrics struct {
 	Metric []string `yaml:"metric,omitempty"`
-}
-
-type TransformProcessor struct {
-	ErrorMode        string                                `yaml:"error_mode"`
-	MetricStatements []config.TransformProcessorStatements `yaml:"metric_statements"`
 }
 
 type Exporters map[string]Exporter

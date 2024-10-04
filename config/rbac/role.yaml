@@ -59,7 +59,7 @@ rules:
   verbs:
   - get
   - list
-  - watch
+  - patch
 - apiGroups:
   - apps
   resources:

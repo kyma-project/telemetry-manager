@@ -206,6 +206,24 @@ func (b *MetricPipelineBuilder) WithRuntimeInputContainerMetrics(enable bool) *M
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithRuntimeInputNodeMetrics(enable bool) *MetricPipelineBuilder {
+	if b.inRuntime == nil {
+		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
+	}
+
+	if b.inRuntime.Resources == nil {
+		b.inRuntime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
+	}
+
+	if b.inRuntime.Resources.Node == nil {
+		b.inRuntime.Resources.Node = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceDisabledByDefault{}
+	}
+
+	b.inRuntime.Resources.Node.Enabled = &enable
+
+	return b
+}
+
 func (b *MetricPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
 	for _, opt := range opts {
 		opt(b.outOTLP)

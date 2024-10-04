@@ -23,7 +23,7 @@ patches:
   - patch: |-
       - op: add
         path: /spec/template/spec/containers/0/args/-
-        value: --kyma-input-allowed=true
+        value: --enable-v1beta1-log-pipelines=true
     target:
       kind: Deployment
       name: manager

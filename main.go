@@ -49,6 +49,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -121,15 +122,15 @@ var (
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
 
-	kymaInputAllowed bool
+	enableV1Beta1LogPipelines bool
 
 	version = "main"
 )
 
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240605-7743c77e"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.6"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.108.1-main"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.8"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.109.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
@@ -197,7 +198,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:urls=/metrics,verbs=get
 //+kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
-//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;patch
 
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
@@ -232,6 +233,13 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func main() {
+	if err := run(); err != nil {
+		setupLog.Error(err, "Manager exited with error")
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
@@ -277,30 +285,16 @@ func main() {
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
-	flag.BoolVar(&kymaInputAllowed, "kyma-input-allowed", false, "Allow collecting status metrics for Kyma Telemetry module")
+	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
-		setupLog.Error(err, "Invalid flag provided")
-		os.Exit(1)
-	}
-	parsedLevel, err := zapcore.ParseLevel(logLevel)
-	if err != nil {
-		os.Exit(1)
-	}
-	overrides.AtomicLevel().SetLevel(parsedLevel)
-	ctrLogger, err := logger.New(overrides.AtomicLevel())
-
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
-	if err != nil {
-		os.Exit(1)
+		return fmt.Errorf("invalid flag provided: %w", err)
 	}
 
-	defer func() {
-		if err = ctrLogger.Sync(); err != nil {
-			setupLog.Error(err, "Failed to flush logger")
-		}
-	}()
+	if err := initLogger(); err != nil {
+		return fmt.Errorf("failed to initialize logger: %w", err)
+	}
 
 	syncPeriod := 1 * time.Minute
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -340,39 +334,45 @@ func main() {
 			},
 		},
 	})
-
 	if err != nil {
-		setupLog.Error(err, "Failed to start manager")
-		os.Exit(1)
+		return fmt.Errorf("failed to start manager: %w", err)
 	}
 
 	tracePipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	enableTracingController(mgr, tracePipelineReconcileTriggerChan)
+	if err := enableTracePipelineController(mgr, tracePipelineReconcileTriggerChan); err != nil {
+		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
+	}
 
 	metricPipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	enableMetricsController(mgr, metricPipelineReconcileTriggerChan)
+	if err := enableMetricPipelineController(mgr, metricPipelineReconcileTriggerChan); err != nil {
+		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
+	}
 
 	logPipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	enableLoggingController(mgr, logPipelineReconcileTriggerChan)
+	if err := enableLogPipelineController(mgr, logPipelineReconcileTriggerChan); err != nil {
+		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
+	}
 
 	webhookConfig := createWebhookConfig()
 	selfMonitorConfig := createSelfMonitoringConfig()
 
-	enableTelemetryModuleController(mgr, webhookConfig, selfMonitorConfig)
+	if err := enableTelemetryModuleController(mgr, webhookConfig, selfMonitorConfig); err != nil {
+		return fmt.Errorf("failed to enable telemetry module controller: %w", err)
+	}
 
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", mgr.GetWebhookServer().StartedChecker()); err != nil {
-		setupLog.Error(err, "Failed to set up health check")
-		os.Exit(1)
+		return fmt.Errorf("failed to add health check: %w", err)
 	}
 	if err := mgr.AddReadyzCheck("readyz", mgr.GetWebhookServer().StartedChecker()); err != nil {
-		setupLog.Error(err, "Failed to set up ready check")
-		os.Exit(1)
+		return fmt.Errorf("failed to add ready check: %w", err)
 	}
 
 	if enableWebhook {
-		enableWebhookServer(mgr, webhookConfig)
+		if err := enableWebhookServer(mgr, webhookConfig); err != nil {
+			return fmt.Errorf("failed to enable webhook server: %w", err)
+		}
 	}
 
 	if enableWebhook {
@@ -385,15 +385,39 @@ func main() {
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "Failed to run manager")
-		os.Exit(1)
+		return fmt.Errorf("failed to start manager: %w", err)
 	}
+
+	return nil
 }
 
-func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) {
+func initLogger() error {
+	parsedLevel, err := zapcore.ParseLevel(logLevel)
+	if err != nil {
+		return fmt.Errorf("invalid log level: %w", err)
+	}
+
+	overrides.AtomicLevel().SetLevel(parsedLevel)
+	ctrLogger, err := logger.New(overrides.AtomicLevel())
+
+	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
+	if err != nil {
+		return fmt.Errorf("failed to create logger: %w", err)
+	}
+
+	defer func() {
+		if syncErr := ctrLogger.Sync(); syncErr != nil {
+			setupLog.Error(syncErr, "Failed to flush logger")
+		}
+	}()
+
+	return nil
+}
+
+func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) error {
 	setupLog.WithValues("version", version).Info("Starting with telemetry manager controller")
 
-	telemetryPipleineController := operator.NewTelemetryController(
+	telemetryController := operator.NewTelemetryController(
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		operator.TelemetryControllerConfig{
@@ -414,17 +438,35 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 		},
 	)
 
-	if err := telemetryPipleineController.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
-		os.Exit(1)
+	if err := telemetryController.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup telemetry controller: %w", err)
 	}
+
+	return nil
 }
 
-func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
+func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Starting with logging controllers")
 
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
+
+	if enableV1Beta1LogPipelines {
+		setupLog.Info("Registering conversion webhooks for LogPipelines")
+		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
+		// Register conversion webhooks for LogPipelines
+		if err := ctrl.NewWebhookManagedBy(mgr).
+			For(&telemetryv1alpha1.LogPipeline{}).
+			Complete(); err != nil {
+			return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
+		}
+
+		if err := ctrl.NewWebhookManagedBy(mgr).
+			For(&telemetryv1beta1.LogPipeline{}).
+			Complete(); err != nil {
+			return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
+		}
+	}
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
@@ -444,12 +486,11 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 		},
 	)
 	if err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
-		os.Exit(1)
+		return fmt.Errorf("failed to create logpipeline controller: %w", err)
 	}
+
 	if err := logPipelineController.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to setup controller", "controller", "LogPipeline")
-		os.Exit(1)
+		return fmt.Errorf("failed to setup logpipeline controller: %w", err)
 	}
 
 	logParserController := telemetrycontrollers.NewLogParserController(
@@ -458,12 +499,13 @@ func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 			TelemetryNamespace: telemetryNamespace,
 		})
 	if err := logParserController.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "LogParser")
-		os.Exit(1)
+		return fmt.Errorf("failed to setup logparser controller: %w", err)
 	}
+
+	return nil
 }
 
-func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
+func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Starting with tracing controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
@@ -498,16 +540,17 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 		},
 	)
 	if err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "TracePipeline")
-		os.Exit(1)
+		return fmt.Errorf("failed to create tracepipeline controller: %w", err)
 	}
+
 	if err := tracePipelineController.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to setup controller", "controller", "TracePipeline")
-		os.Exit(1)
+		return fmt.Errorf("failed to setup tracepipeline controller: %w", err)
 	}
+
+	return nil
 }
 
-func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
+func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Starting with metrics controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
@@ -548,9 +591,8 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 					},
 					OTLPServiceName: metricOTLPServiceName,
 				},
-				MaxPipelines:     maxMetricPipelines,
-				ModuleVersion:    version,
-				KymaInputAllowed: kymaInputAllowed,
+				MaxPipelines:  maxMetricPipelines,
+				ModuleVersion: version,
 			},
 			RestConfig:         mgr.GetConfig(),
 			TelemetryNamespace: telemetryNamespace,
@@ -558,31 +600,32 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 		},
 	)
 	if err != nil {
-		setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
-		os.Exit(1)
+		return fmt.Errorf("failed to create metricpipeline controller: %w", err)
 	}
+
 	if err := metricPipelineController.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to setup controller", "controller", "MetricPipeline")
-		os.Exit(1)
+		return fmt.Errorf("failed to setup metricpipeline controller: %w", err)
 	}
+
+	return nil
 }
 
-func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) {
+func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) error {
 	// Create own client since manager might not be started while using
 	clientOptions := client.Options{
 		Scheme: scheme,
 	}
 	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
 	if err != nil {
-		setupLog.Error(err, "Failed to create client")
-		os.Exit(1)
+		return fmt.Errorf("failed to create webhook client: %w", err)
 	}
 
 	if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); err != nil {
-		setupLog.Error(err, "Failed to ensure webhook cert")
-		os.Exit(1)
+		return fmt.Errorf("failed to ensure webhook cert: %w", err)
 	}
+
 	setupLog.Info("Ensured webhook cert")
+	return nil
 }
 
 func setNamespaceFieldSelector() fields.Selector {

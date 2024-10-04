@@ -33,13 +33,30 @@ func TestReceivers(t *testing.T) {
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
 		}, BuildOptions{})
 
-		require.NotNil(t, collectorConfig.Receivers.KubeletStats)
-		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
-		require.Equal(t, true, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
-		require.Equal(t, "https://${MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
-
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
 		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
+
+		expectedKubeletStatsReceiver := KubeletStatsReceiver{
+			CollectionInterval: "30s",
+			AuthType:           "serviceAccount",
+			Endpoint:           "https://${MY_NODE_NAME}:10250",
+			InsecureSkipVerify: true,
+			MetricGroups:       []MetricGroupType{"container", "pod", "node"},
+			Metrics: KubeletStatsMetricsConfig{
+				ContainerCPUUsage:            MetricConfig{Enabled: true},
+				ContainerCPUUtilization:      MetricConfig{Enabled: false},
+				K8sPodCPUUsage:               MetricConfig{Enabled: true},
+				K8sPodCPUUtilization:         MetricConfig{Enabled: false},
+				K8sNodeCPUUsage:              MetricConfig{Enabled: true},
+				K8sNodeCPUUtilization:        MetricConfig{Enabled: false},
+				K8sNodeCPUTime:               MetricConfig{Enabled: false},
+				K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
+				K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
+				K8sNodeMemoryRSS:             MetricConfig{Enabled: false},
+				K8sNodeMemoryWorkingSet:      MetricConfig{Enabled: false},
+			},
+		}
+		require.Equal(t, expectedKubeletStatsReceiver, *collectorConfig.Receivers.KubeletStats)
 	})
 
 	t.Run("prometheus input enabled", func(t *testing.T) {

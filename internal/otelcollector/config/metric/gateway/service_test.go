@@ -24,9 +24,7 @@ func TestService(t *testing.T) {
 				[]telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(false).Build(),
 				},
-				BuildOptions{
-					KymaInputAllowed: true,
-				},
+				BuildOptions{},
 			)
 			require.NoError(t, err)
 
@@ -34,12 +32,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -48,6 +46,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-if-input-source-otlp",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -69,18 +68,19 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -102,12 +102,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -115,6 +115,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -136,12 +137,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -149,6 +150,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -160,13 +162,9 @@ func TestService(t *testing.T) {
 			collectorConfig, _, err := sut.Build(
 				ctx,
 				[]telemetryv1alpha1.MetricPipeline{
-					// Simulate the default scenario for runtime input by enabling both pod and container metrics
-					// NOTE: the pod and container metrics are enabled by default on the CRD level when the runtime input is defined
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
 						WithRuntimeInput(true).
-						WithRuntimeInputPodMetrics(true).
-						WithRuntimeInputContainerMetrics(true).
 						Build(),
 				},
 				BuildOptions{},
@@ -177,12 +175,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -190,7 +188,9 @@ func TestService(t *testing.T) {
 				"transform/set-instrumentation-scope-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
+				"filter/drop-runtime-node-metrics",
 				"filter/drop-k8s-cluster-metrics",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -216,12 +216,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -230,7 +230,9 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-container-metrics",
+				"filter/drop-runtime-node-metrics",
 				"filter/drop-k8s-cluster-metrics",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -256,12 +258,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -270,7 +272,53 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-pod-metrics",
+				"filter/drop-runtime-node-metrics",
 				"filter/drop-k8s-cluster-metrics",
+				"transform/set-instrumentation-scope-kyma",
+				"resource/insert-cluster-name",
+				"resource/delete-skip-enrichment-attribute",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test-output"].Processors)
+			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Exporters)
+		})
+
+		t.Run("with runtime input enabled and only node metrics enabled", func(t *testing.T) {
+			collectorConfig, _, err := sut.Build(
+				ctx,
+				[]telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test").
+						WithRuntimeInput(true).
+						WithRuntimeInputPodMetrics(false).
+						WithRuntimeInputContainerMetrics(false).
+						WithRuntimeInputNodeMetrics(true).
+						Build(),
+				},
+				BuildOptions{},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-input")
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
+
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
+			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
+
+			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
+
+			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
+			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-runtime",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"filter/drop-runtime-pod-metrics",
+				"filter/drop-runtime-container-metrics",
+				"filter/drop-k8s-cluster-metrics",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -292,18 +340,19 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -325,12 +374,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -338,6 +387,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -359,12 +409,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -372,6 +422,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -393,12 +444,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -406,6 +457,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -427,48 +479,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
-			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
-			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
-
-			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
-			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
-
-			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
-			require.Equal(t, []string{
-				"filter/drop-if-input-source-runtime",
-				"filter/drop-if-input-source-prometheus",
-				"filter/drop-if-input-source-istio",
-				"resource/insert-cluster-name",
-				"resource/delete-skip-enrichment-attribute",
-				"batch",
-			}, collectorConfig.Service.Pipelines["metrics/test-output"].Processors)
-			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Exporters)
-		})
-
-		t.Run("with kyma input annotation existing and kyma input is allowed", func(t *testing.T) {
-			collectorConfig, _, err := sut.Build(
-				ctx,
-				[]telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{KymaInputAnnotation: "true"}).Build(),
-				},
-				BuildOptions{
-					KymaInputAllowed: true,
-				},
-			)
-			require.NoError(t, err)
-
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-input")
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
-
 			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -484,11 +500,11 @@ func TestService(t *testing.T) {
 			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Exporters)
 		})
 
-		t.Run("with kyma input annotation existing and kyma input is not allowed", func(t *testing.T) {
+		t.Run("with otlp input explicitly enabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(
 				ctx,
 				[]telemetryv1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().WithName("test").WithAnnotations(map[string]string{KymaInputAnnotation: "true"}).Build(),
+					testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPInput(true).Build(),
 				},
 				BuildOptions{},
 			)
@@ -498,12 +514,12 @@ func TestService(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
 
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
 			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
 
 			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
-			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
 			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
@@ -511,25 +527,23 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
+				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test-output"].Processors)
 			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Exporters)
 		})
+
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(
 			ctx,
 			[]telemetryv1alpha1.MetricPipeline{
-				// Simulate the default scenario for runtime input by enabling both pod and container metrics
-				// NOTE: the pod and container metrics are enabled by default on the CRD level when the runtime input is defined
 				testutils.NewMetricPipelineBuilder().
 					WithName("test-1").
 					WithRuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).
-					WithRuntimeInputPodMetrics(true).
-					WithRuntimeInputContainerMetrics(true).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithName("test-2").
@@ -549,12 +563,12 @@ func TestService(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-1-attributes-enrichment")
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-1-output")
 
-		require.Equal(t, []string{"otlp", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-1-input"].Receivers)
+		require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-1-input"].Receivers)
 		require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-1-input"].Processors)
 		require.Equal(t, []string{"routing/test-1"}, collectorConfig.Service.Pipelines["metrics/test-1-input"].Exporters)
 
 		require.Equal(t, []string{"routing/test-1"}, collectorConfig.Service.Pipelines["metrics/test-1-attributes-enrichment"].Receivers)
-		require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-1-attributes-enrichment"].Processors)
+		require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-1-attributes-enrichment"].Processors)
 		require.Equal(t, []string{"forward/test-1"}, collectorConfig.Service.Pipelines["metrics/test-1-attributes-enrichment"].Exporters)
 
 		require.Equal(t, []string{"routing/test-1", "forward/test-1"}, collectorConfig.Service.Pipelines["metrics/test-1-output"].Receivers)
@@ -563,7 +577,9 @@ func TestService(t *testing.T) {
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
 			"filter/test-1-filter-by-namespace-runtime-input",
+			"filter/drop-runtime-node-metrics",
 			"filter/drop-k8s-cluster-metrics",
+			"transform/set-instrumentation-scope-kyma",
 			"resource/insert-cluster-name",
 			"resource/delete-skip-enrichment-attribute",
 			"batch",
@@ -575,12 +591,12 @@ func TestService(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-2-attributes-enrichment")
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-2-output")
 
-		require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-2-input"].Receivers)
+		require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-2-input"].Receivers)
 		require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-2-input"].Processors)
 		require.Equal(t, []string{"routing/test-2"}, collectorConfig.Service.Pipelines["metrics/test-2-input"].Exporters)
 
 		require.Equal(t, []string{"routing/test-2"}, collectorConfig.Service.Pipelines["metrics/test-2-attributes-enrichment"].Receivers)
-		require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-2-attributes-enrichment"].Processors)
+		require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-2-attributes-enrichment"].Processors)
 		require.Equal(t, []string{"forward/test-2"}, collectorConfig.Service.Pipelines["metrics/test-2-attributes-enrichment"].Exporters)
 
 		require.Equal(t, []string{"routing/test-2", "forward/test-2"}, collectorConfig.Service.Pipelines["metrics/test-2-output"].Receivers)
@@ -589,6 +605,7 @@ func TestService(t *testing.T) {
 			"filter/drop-if-input-source-istio",
 			"filter/test-2-filter-by-namespace-prometheus-input",
 			"filter/drop-diagnostic-metrics-if-input-source-prometheus",
+			"transform/set-instrumentation-scope-kyma",
 			"resource/insert-cluster-name",
 			"resource/delete-skip-enrichment-attribute",
 			"batch",
@@ -600,12 +617,12 @@ func TestService(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-3-attributes-enrichment")
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-3-output")
 
-		require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/test-3-input"].Receivers)
+		require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats"}, collectorConfig.Service.Pipelines["metrics/test-3-input"].Receivers)
 		require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-3-input"].Processors)
 		require.Equal(t, []string{"routing/test-3"}, collectorConfig.Service.Pipelines["metrics/test-3-input"].Exporters)
 
 		require.Equal(t, []string{"routing/test-3"}, collectorConfig.Service.Pipelines["metrics/test-3-attributes-enrichment"].Receivers)
-		require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name"}, collectorConfig.Service.Pipelines["metrics/test-3-attributes-enrichment"].Processors)
+		require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-3-attributes-enrichment"].Processors)
 		require.Equal(t, []string{"forward/test-3"}, collectorConfig.Service.Pipelines["metrics/test-3-attributes-enrichment"].Exporters)
 
 		require.Equal(t, []string{"routing/test-3", "forward/test-3"}, collectorConfig.Service.Pipelines["metrics/test-3-output"].Receivers)
@@ -613,6 +630,7 @@ func TestService(t *testing.T) {
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-diagnostic-metrics-if-input-source-istio",
+			"transform/set-instrumentation-scope-kyma",
 			"resource/insert-cluster-name",
 			"resource/delete-skip-enrichment-attribute",
 			"batch",

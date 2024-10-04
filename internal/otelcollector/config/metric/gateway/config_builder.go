@@ -13,8 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
-const KymaInputAnnotation = "telemetry.kyma-project.io/experimental-kyma-input"
-
 type Builder struct {
 	Reader client.Reader
 }
@@ -22,7 +20,6 @@ type Builder struct {
 type BuildOptions struct {
 	GatewayNamespace            string
 	InstrumentationScopeVersion string
-	KymaInputAllowed            bool
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
@@ -60,9 +57,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		inputPipelineID := formatInputPipelineID(pipeline.Name)
 		attributesEnrichmentPipelineID := formatAttributesEnrichmentPipelineID(pipeline.Name)
 		outputPipelineID := formatOutputPipelineID(pipeline.Name)
-		cfg.Service.Pipelines[inputPipelineID] = makeInputPipelineServiceConfig(&pipeline, opts)
+		cfg.Service.Pipelines[inputPipelineID] = makeInputPipelineServiceConfig(&pipeline)
 		cfg.Service.Pipelines[attributesEnrichmentPipelineID] = makeAttributesEnrichmentPipelineServiceConfig(pipeline.Name)
-		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline, opts)
+		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline)
 	}
 
 	return cfg, envVars, nil
@@ -77,7 +74,7 @@ func declareComponentsForMetricPipeline(
 	envVars otlpexporter.EnvVars,
 	opts BuildOptions,
 ) error {
-	declareSingletonKymaStatsReceiverCreator(pipeline, cfg, opts)
+	declareSingletonKymaStatsReceiverCreator(cfg, opts)
 	declareSingletonK8sClusterReceiverCreator(pipeline, cfg, opts)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
@@ -94,10 +91,9 @@ func declareSingletonK8sClusterReceiverCreator(pipeline *telemetryv1alpha1.Metri
 	}
 }
 
-func declareSingletonKymaStatsReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
-	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
-		cfg.Receivers.SingletonKymaStatsReceiverCreator = makeSingletonKymaStatsReceiverCreatorConfig(opts.GatewayNamespace)
-	}
+func declareSingletonKymaStatsReceiverCreator(cfg *Config, opts BuildOptions) {
+	cfg.Receivers.SingletonKymaStatsReceiverCreator = makeSingletonKymaStatsReceiverCreatorConfig(opts.GatewayNamespace)
+
 }
 
 func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
@@ -137,6 +133,9 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 	if isRuntimeInputEnabled(input) && !isRuntimeContainerMetricsEnabled(input) {
 		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
 	}
+	if isRuntimeInputEnabled(input) && !isRuntimeNodeMetricsEnabled(input) {
+		cfg.Processors.DropRuntimeNodeMetrics = makeDropRuntimeNodeMetricsConfig()
+	}
 
 	if isRuntimeInputEnabled(input) {
 		cfg.Processors.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
@@ -168,9 +167,8 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 }
 
 func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
-	if isKymaInputEnabled(pipeline.Annotations, opts.KymaInputAllowed) {
-		cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, opts.InstrumentationScopeVersion)
-	}
+	cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, opts.InstrumentationScopeVersion)
+
 	if isRuntimeInputEnabled(pipeline.Spec.Input) {
 		cfg.Processors.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(metric.InputSourceK8sCluster, opts.InstrumentationScopeVersion)
 	}
@@ -272,6 +270,11 @@ func isRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInpu
 	return !isRuntimeContainerMetricsDisabled
 }
 
-func isKymaInputEnabled(annotations map[string]string, kymaInputAllowed bool) bool {
-	return kymaInputAllowed && annotations[KymaInputAnnotation] == "true"
+func isRuntimeNodeMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	// Runtime node metrics are disabled by default
+	// If any of the fields (Resources, Node or Enabled) is nil, the node metrics will be disabled
+	return input.Runtime.Resources != nil &&
+		input.Runtime.Resources.Node != nil &&
+		input.Runtime.Resources.Node.Enabled != nil &&
+		*input.Runtime.Resources.Node.Enabled
 }
