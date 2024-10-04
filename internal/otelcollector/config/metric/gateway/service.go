@@ -113,6 +113,9 @@ func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 	if isRuntimeInputEnabled(input) && !isRuntimeNodeMetricsEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-node-metrics")
 	}
+	if isRuntimeInputEnabled(input) && !isRuntimeVolumeMetricsEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-volume-metrics")
+	}
 	if isRuntimeInputEnabled(input) {
 		processors = append(processors, "filter/drop-k8s-cluster-metrics")
 	}

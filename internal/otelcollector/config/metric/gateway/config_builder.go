@@ -136,6 +136,9 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 	if isRuntimeInputEnabled(input) && !isRuntimeNodeMetricsEnabled(input) {
 		cfg.Processors.DropRuntimeNodeMetrics = makeDropRuntimeNodeMetricsConfig()
 	}
+	if isRuntimeInputEnabled(input) && !isRuntimeVolumeMetricsEnabled(input) {
+		cfg.Processors.DropRuntimeVolumeMetrics = makeDropRuntimeVolumeMetricsConfig()
+	}
 
 	if isRuntimeInputEnabled(input) {
 		cfg.Processors.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
@@ -277,4 +280,13 @@ func isRuntimeNodeMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bo
 		input.Runtime.Resources.Node != nil &&
 		input.Runtime.Resources.Node.Enabled != nil &&
 		*input.Runtime.Resources.Node.Enabled
+}
+
+func isRuntimeVolumeMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	// Runtime volume metrics are disabled by default
+	// If any of the fields (Resources, Volume or Enabled) is nil, the volume metrics will be disabled
+	return input.Runtime.Resources != nil &&
+		input.Runtime.Resources.Volume != nil &&
+		input.Runtime.Resources.Volume.Enabled != nil &&
+		*input.Runtime.Resources.Volume.Enabled
 }
