@@ -5,9 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
