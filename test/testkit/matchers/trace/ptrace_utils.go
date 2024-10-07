@@ -23,7 +23,7 @@ func unmarshalTraces(jsonlMetrics []byte) ([]ptrace.Traces, error) {
 	})
 }
 
-// flattenAllTraces flattens an array of ptrace.Traces datapoints to a slice of FlatTrace.
+// flattenAllTraces flattens an array of ptrace.Traces to a slice of FlatTrace.
 // It converts the deeply nested ptrace.Traces data structure to a flat struct, to make it more readable in the test output logs.
 func flattenAllTraces(tds []ptrace.Traces) []FlatTrace {
 	var flatTraces []FlatTrace
@@ -34,7 +34,7 @@ func flattenAllTraces(tds []ptrace.Traces) []FlatTrace {
 	return flatTraces
 }
 
-// flattenTraces converts a single ptrace.Traces datapoint to a slice of FlatTrace
+// flattenTraces converts a single ptrace.Traces to a slice of FlatTrace
 // It takes relevant information from different levels of pdata and puts it into a FlatTrace go struct.
 func flattenTraces(td ptrace.Traces) []FlatTrace {
 	var flatTraces []FlatTrace
