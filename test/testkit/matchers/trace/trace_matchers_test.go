@@ -65,12 +65,10 @@ var _ = Describe("HaveFlatTraces", func() {
 		attrs.PutStr("service.name", "backend")
 		attrs.PutStr("k8s.pod.ip", "10.42.1.76")
 		attrs.PutStr("k8s.deployment.name", "backend")
-		//set scope version, name and attributes
-		scope := rt.ScopeSpans().AppendEmpty()
-		scope.Scope().SetName("container")
-		scope.Scope().SetVersion("1.0")
 
-		//set span name, traceID, spanID
+		scope := rt.ScopeSpans().AppendEmpty()
+
+		//set span name
 		s := scope.Spans().AppendEmpty()
 		s.SetName("ingress")
 
