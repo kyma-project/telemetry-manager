@@ -314,10 +314,8 @@ spec:
                       type: object
                   type: object
                   x-kubernetes-validations:
-                    - message: Switching output types is not supported
-                      rule: has(self.http) == has(oldSelf.http)
-                    - message: Switching output types is not supported
-                      rule: has(self.custom) == has(oldSelf.custom)
+                    - message: Exactly one output must be defined
+                      rule: (!has(self.custom) && !has(self.http)) || !(has(self.custom) && has(self.http))
                 variables:
                   description: A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections.
                   items:
