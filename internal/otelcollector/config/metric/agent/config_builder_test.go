@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"os"
 	"path/filepath"
 	"testing"
@@ -46,9 +48,22 @@ func TestBuildAgentConfig(t *testing.T) {
 	t.Run("telemetry", func(t *testing.T) {
 		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, BuildOptions{})
 
+		metricreaders := []config.MetricReader{
+			{
+				Pull: config.PullMetricReader{
+					Exporter: config.MetricExporter{
+						Prometheus: config.PrometheusMetricExporter{
+							Host: "${MY_POD_IP}",
+							Port: ports.Metrics,
+						},
+					},
+				},
+			},
+		}
+
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
 		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
-		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
+		require.Equal(t, metricreaders, collectorConfig.Service.Telemetry.Metrics.Readers)
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {
