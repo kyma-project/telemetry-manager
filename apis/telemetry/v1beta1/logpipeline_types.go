@@ -106,10 +106,11 @@ type LogPipelineFilter struct {
 	Custom string `json:"custom,omitempty"`
 }
 
-// LogPipelineOutput describes a Fluent Bit output configuration section.
-// +kubebuilder:validation:XValidation:rule="has(self.http) == has(oldSelf.http)", message="Switching output types is not supported"
-// +kubebuilder:validation:XValidation:rule="has(self.otlp) == has(oldSelf.otlp)", message="Switching output types is not supported"
-// +kubebuilder:validation:XValidation:rule="has(self.custom) == has(oldSelf.custom)", message="Switching output types is not supported"
+// Output describes a Fluent Bit output configuration section.
+// +kubebuilder:validation:XValidation:rule="has(self.otlp) == has(oldSelf.otlp)", message="Switching to or away from OTLP output is not supported"
+// +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.http)) || !(has(self.custom) && has(self.http))", message="Exactly one output must be defined"
+// +kubebuilder:validation:XValidation:rule="(!has(self.custom) && !has(self.otlp)) || ! (has(self.custom) && has(self.otlp))", message="Exactly one output must be defined"
+// +kubebuilder:validation:XValidation:rule="(!has(self.http) && !has(self.otlp)) || ! (has(self.http) && has(self.otlp))", message="Exactly one output must be defined"
 type LogPipelineOutput struct {
 	// Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode.
 	Custom string `json:"custom,omitempty"`
