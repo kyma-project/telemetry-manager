@@ -5,86 +5,38 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-func WithTds(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlTraces []byte) ([]ptrace.Traces, error) {
-		tds, err := unmarshalTraces(jsonlTraces)
+func HaveFlatTraces(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonTraces []byte) ([]FlatTrace, error) {
+		tds, err := unmarshalTraces(jsonTraces)
 		if err != nil {
-			return nil, fmt.Errorf("WithTds requires a valid OTLP JSON document: %w", err)
+			return nil, fmt.Errorf("HaveFlatTraces requires a valid OTLP JSON document: %w", err)
 		}
 
-		return tds, nil
+		ft := flattenAllTraces(tds)
+		return ft, nil
+	}, matcher)
+
+}
+
+// HaveName extracts name from FlatTrace and applies the matcher to it.
+func HaveName(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(ft FlatTrace) string {
+		return ft.Name
 	}, matcher)
 }
 
-// ContainTd is an alias for WithTds(gomega.ContainElement()).
-func ContainTd(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithTds(gomega.ContainElement(matcher))
-}
-
-// ConsistOfTds is an alias for WithTds(gomega.ConsistOf()).
-func ConsistOfTds(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithTds(gomega.ConsistOf(matcher))
-}
-
-func WithResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(td ptrace.Traces) ([]map[string]any, error) {
-		var rawAttrs []map[string]any
-		for i := 0; i < td.ResourceSpans().Len(); i++ {
-			rawAttrs = append(rawAttrs, td.ResourceSpans().At(i).Resource().Attributes().AsRaw())
-		}
-		return rawAttrs, nil
+// HaveResourceAttributes extracts resource attributes from FlatTrace and applies the matcher to them.
+func HaveResourceAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(ft FlatTrace) map[string]string {
+		return ft.ResourceAttributes
 	}, matcher)
 }
 
-// ContainResourceAttrs is an alias for WithResourceAttrs(gomega.ContainElement()).
-func ContainResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithResourceAttrs(gomega.ContainElement(matcher))
-}
-
-func WithSpans(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(td ptrace.Traces) ([]ptrace.Span, error) {
-		return getSpans(td), nil
-	}, matcher)
-}
-
-// ContainSpan is an alias for WithSpans(gomega.ContainElement()).
-func ContainSpan(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithSpans(gomega.ContainElement(matcher))
-}
-
-// ConsistOfSpans is an alias for WithSpans(gomega.ConsistOf()).
-func ConsistOfSpans(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithSpans(gomega.ConsistOf(matcher))
-}
-
-func WithTraceID(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(s ptrace.Span) pcommon.TraceID {
-		return s.TraceID()
-	}, matcher)
-}
-
-func WithSpanIDs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(spans []ptrace.Span) []pcommon.SpanID {
-		var spansIDs []pcommon.SpanID
-		for _, span := range spans {
-			spansIDs = append(spansIDs, span.SpanID())
-		}
-		return spansIDs
-	}, matcher)
-}
-
-func WithSpanID(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(s ptrace.Span) pcommon.SpanID {
-		return s.SpanID()
-	}, matcher)
-}
-
-func WithSpanAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(s ptrace.Span) map[string]any {
-		return s.Attributes().AsRaw()
+// HaveSpanAttributes extracts span attributes from FlatTrace and applies the matcher to them.
+func HaveSpanAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(ft FlatTrace) map[string]string {
+		return ft.SpanAttributes
 	}, matcher)
 }
