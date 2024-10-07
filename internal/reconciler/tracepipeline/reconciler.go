@@ -39,6 +39,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const defaultReplicaCount int32 = 2
@@ -130,6 +131,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if overrideConfig.Tracing.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
+	}
+
+	// TODO: Delete this logic after next release on regular
+	if err := r.cleanUpOldTraceCollectorResources(ctx); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to clean up old trace collector resources: %w", err)
 	}
 
 	var tracePipeline telemetryv1alpha1.TracePipeline
@@ -285,4 +291,22 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		}
 	}
 	return defaultReplicaCount
+}
+
+func (r *Reconciler) cleanUpOldTraceCollectorResources(ctx context.Context) error {
+	// TODO: Create the deletion function that deletes the deployment, nwpol, RBAC, serv, deploy, configmap, ...
+	oldTraceCollectorResourcesNames := []string{
+		"TODO",
+	}
+
+	for _, resourceName := range oldTraceCollectorResourcesNames {
+		if err := r.Delete(ctx, k8sutils.NewNamespacedName(r.config.Gateway.Namespace, resourceName)); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return fmt.Errorf("failed to delete old trace collector resources %s in namespace %s: %w", resourceName, r.config.Gateway.Namespace, err)
+		}
+	}
+
+	return nil
 }
