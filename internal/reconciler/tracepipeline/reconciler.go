@@ -22,6 +22,11 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -294,17 +299,64 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 }
 
 func (r *Reconciler) cleanUpOldTraceCollectorResources(ctx context.Context) error {
-	// TODO: Create the deletion function that deletes the deployment, nwpol, RBAC, serv, deploy, configmap, ...
-	oldTraceCollectorResourcesNames := []string{
-		"TODO",
+	oldTraceCollectorResources := []client.Object{
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "telemetry-trace-collector",
+			},
+		},
+		&rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "telemetry-trace-collector",
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector-metrics",
+				Namespace: "kyma-system",
+			},
+		},
+		&networkingv1.NetworkPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&istiosecurityclientv1.PeerAuthentication{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
 	}
 
-	for _, resourceName := range oldTraceCollectorResourcesNames {
-		if err := r.Delete(ctx, k8sutils.NewNamespacedName(r.config.Gateway.Namespace, resourceName)); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return fmt.Errorf("failed to delete old trace collector resources %s in namespace %s: %w", resourceName, r.config.Gateway.Namespace, err)
+	for _, oldResource := range oldTraceCollectorResources {
+		if err := r.Delete(ctx, oldResource); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete one of the old trace collector resources: %w", err)
 		}
 	}
 
