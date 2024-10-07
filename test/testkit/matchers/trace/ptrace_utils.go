@@ -7,6 +7,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
+// FlatTrace holds all needed information about a trace.
+// Gomega doesn't handle deeply nested data structure very well and generates large, unreadable diffs when paired with the deeply nested structure of pmetrics.
+//
+// Introducing a go struct with a flat data structure by extracting necessary information from different levels of ptraces makes accessing the information easier than using ptrace.Traces directly and improves the readability of the test output logs.
 type FlatTrace struct {
 	Name                               string
 	ResourceAttributes, SpanAttributes map[string]string
@@ -19,6 +23,8 @@ func unmarshalTraces(jsonlMetrics []byte) ([]ptrace.Traces, error) {
 	})
 }
 
+// flattenAllTraces flattens an array of ptrace.Traces datapoints to a slice of FlatTrace.
+// It converts the deeply nested ptrace.Traces data structure to a flat struct, to make it more readable in the test output logs.
 func flattenAllTraces(tds []ptrace.Traces) []FlatTrace {
 	var flatTraces []FlatTrace
 
@@ -28,6 +34,8 @@ func flattenAllTraces(tds []ptrace.Traces) []FlatTrace {
 	return flatTraces
 }
 
+// flattenTraces converts a single ptrace.Traces datapoint to a slice of FlatTrace
+// It takes relevant information from different levels of pdata and puts it into a FlatTrace go struct.
 func flattenTraces(td ptrace.Traces) []FlatTrace {
 	var flatTraces []FlatTrace
 
@@ -36,14 +44,12 @@ func flattenTraces(td ptrace.Traces) []FlatTrace {
 		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
 			scopeSpans := resourceSpans.ScopeSpans().At(j)
 			for k := 0; k < scopeSpans.Spans().Len(); k++ {
-				spans := scopeSpans.Spans().At(k)
-				for l := 0; l < spans.Attributes().Len(); l++ {
-					flatTraces = append(flatTraces, FlatTrace{
-						Name:               spans.Name(),
-						ResourceAttributes: attributeToMap(resourceSpans.Resource().Attributes()),
-						SpanAttributes:     attributeToMap(spans.Attributes()),
-					})
-				}
+				span := scopeSpans.Spans().At(k)
+				flatTraces = append(flatTraces, FlatTrace{
+					Name:               span.Name(),
+					ResourceAttributes: attributeToMap(resourceSpans.Resource().Attributes()),
+					SpanAttributes:     attributeToMap(span.Attributes()),
+				})
 			}
 		}
 	}
