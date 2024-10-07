@@ -23,12 +23,13 @@ type Receivers struct {
 }
 
 type KubeletStatsReceiver struct {
-	CollectionInterval string                    `yaml:"collection_interval"`
-	AuthType           string                    `yaml:"auth_type"`
-	Endpoint           string                    `yaml:"endpoint"`
-	InsecureSkipVerify bool                      `yaml:"insecure_skip_verify"`
-	MetricGroups       []MetricGroupType         `yaml:"metric_groups"`
-	Metrics            KubeletStatsMetricsConfig `yaml:"metrics"`
+	CollectionInterval  string                    `yaml:"collection_interval"`
+	AuthType            string                    `yaml:"auth_type"`
+	Endpoint            string                    `yaml:"endpoint"`
+	InsecureSkipVerify  bool                      `yaml:"insecure_skip_verify"`
+	MetricGroups        []MetricGroupType         `yaml:"metric_groups"`
+	Metrics             KubeletStatsMetricsConfig `yaml:"metrics"`
+	ExtraMetadataLabels []string                  `yaml:"extra_metadata_labels,omitempty"`
 }
 
 type MetricConfig struct {

@@ -52,6 +52,7 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 			K8sNodeMemoryRSS:             MetricConfig{Enabled: false},
 			K8sNodeMemoryWorkingSet:      MetricConfig{Enabled: false},
 		},
+		ExtraMetadataLabels: []string{"k8s.volume.type"},
 	}
 }
 
