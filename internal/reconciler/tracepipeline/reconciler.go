@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,7 +45,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const defaultReplicaCount int32 = 2
@@ -346,12 +346,16 @@ func (r *Reconciler) cleanUpOldTraceCollectorResources(ctx context.Context) erro
 				Namespace: "kyma-system",
 			},
 		},
-		&istiosecurityclientv1.PeerAuthentication{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "telemetry-trace-collector",
-				Namespace: "kyma-system",
-			},
-		},
+	}
+
+	if r.istioStatusChecker.IsIstioActive(ctx) {
+		oldTraceCollectorResources = append(oldTraceCollectorResources,
+			&istiosecurityclientv1.PeerAuthentication{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "telemetry-trace-collector",
+					Namespace: "kyma-system",
+				},
+			})
 	}
 
 	for _, oldResource := range oldTraceCollectorResources {
