@@ -11,6 +11,7 @@ on:
       - edited
       - synchronize
       - labeled
+      - unlabeled
       - milestoned
   workflow_dispatch:
 
@@ -31,7 +32,7 @@ jobs:
         if: always()
         run: |
           gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | \
-          grep -q '^area/' || (echo "area label missing"; exit 1)
+          grep -q '^area\/' || (echo "area label missing"; exit 1)
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -39,16 +40,27 @@ jobs:
         if: always()
         run: |
           gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | \
-          grep -q '^kind/' || (echo "kind label missing"; exit 1)
+          grep -q '^kind\/' || (echo "kind label missing"; exit 1)
         env:
           GH_TOKEN: ${{ github.token }}
 
       - name: Check if kind label matches pr title prefix
+        if: always()
         run: |
           kind_label=$( gh api --jq '.labels.[].name' /repos/${{ github.repository }}/pulls/${{ github.event.number }} | grep '^kind/')
           kind_label_to_pr_title_prefix='{"kind/bug":"fix","kind/feature":"feat","kind/docs":"docs","kind/chore":"chore","kind/flaky-test":"test","kind/missing-test":"test","kind/failing-test":"test","kind/deps":"deps"}'
           prefix=$(echo $kind_label_to_pr_title_prefix | jq -r ".\"$kind_label\"")
           echo "${{ github.event.pull_request.title }}" | grep '^'$prefix || (echo "PR title should start with $prefix"; exit 1)
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Check that there is no do-not-merge label
+        if: always()
+        run: |
+          labels=$(gh api --jq '.labels.[]' /repos/${{ github.repository }}/pulls/${{ github.event.number }} )
+          echo "Labels found: $( echo $labels | jq -r '.name' )"
+
+          ! echo "$labels" | jq 'select(.name | startswith("do-not-merge"))' | jq -n "input.name"
         env:
           GH_TOKEN: ${{ github.token }}
 
