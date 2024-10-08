@@ -22,6 +22,7 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 		if inputs.runtime {
 			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(metric.InputSourceRuntime, instrumentationScopeVersion)
 			processorsConfig.InsertSkipEnrichmentAttribute = makeInsertSkipEnrichmentAttributeProcessor()
+			processorsConfig.DropNonPVCVolumesMetrics = makeDropNonPVCVolumesMetricsProcessor()
 		}
 
 		if inputs.prometheus {
@@ -76,6 +77,20 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 				Conditions: []string{
 					ottlexpr.IsMatch("name", "^k8s.node.*"),
 				},
+			},
+		},
+	}
+}
+
+func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					// identify volume metrics by checking existence of "k8s.volume.name" resource attribute
+					ottlexpr.ResourceAttributeNotNil("k8s.volume.name"),
+					ottlexpr.ResourceAttributeNotEquals("k8s.volume.type", "persistentVolumeClaim"),
+				),
 			},
 		},
 	}
