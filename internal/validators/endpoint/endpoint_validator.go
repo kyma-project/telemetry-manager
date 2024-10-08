@@ -66,7 +66,8 @@ func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.Va
 		return nil
 	}
 
-	if err := validatePort(u.Host, protocol == OtlpProtocolHTTP); err != nil {
+	var hostport = u.Host + u.Path
+	if err := validatePort(hostport, protocol == OtlpProtocolHTTP); err != nil {
 		return err
 	}
 
@@ -116,8 +117,8 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 	return u, nil
 }
 
-func validatePort(endpoint string, allowMissing bool) error {
-	_, port, err := net.SplitHostPort(endpoint)
+func validatePort(hostport string, allowMissing bool) error {
+	_, port, err := net.SplitHostPort(hostport)
 	if err != nil && strings.Contains(err.Error(), "missing port in address") {
 		if !allowMissing {
 			return &EndpointInvalidError{Err: ErrPortMissing}
