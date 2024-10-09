@@ -107,6 +107,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	if err != nil {
 		return nil, err
 	}
+	
 	fbReconciler := logpipelinefluentbit.New(client, fluentbitConfig, &workloadstatus.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(discoveryClient), pipelineValidator, &conditions.ErrorToMessageConverter{})
 	otelReconciler := otel.New(client, &conditions.ErrorToMessageConverter{})
 
