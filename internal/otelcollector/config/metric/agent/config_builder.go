@@ -164,7 +164,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = config.Pipeline{
 			Receivers:  []string{"kubeletstats"},
-			Processors: []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"},
+			Processors: makeRuntimePipelineProcessorsIDs(inputs.runtimeResources),
 			Exporters:  []string{"otlp"},
 		}
 	}
@@ -186,4 +186,16 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	}
 
 	return pipelinesConfig
+}
+
+func makeRuntimePipelineProcessorsIDs(runtimeResources runtimeResourcesEnabled) []string {
+	processors := []string{"memory_limiter"}
+
+	if runtimeResources.volume {
+		processors = append(processors, "filter/drop-non-pvc-volumes-metrics")
+	}
+
+	processors = append(processors, "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch")
+
+	return processors
 }

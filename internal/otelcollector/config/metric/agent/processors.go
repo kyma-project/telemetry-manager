@@ -22,7 +22,9 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 		if inputs.runtime {
 			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(metric.InputSourceRuntime, instrumentationScopeVersion)
 			processorsConfig.InsertSkipEnrichmentAttribute = makeInsertSkipEnrichmentAttributeProcessor()
-			processorsConfig.DropNonPVCVolumesMetrics = makeDropNonPVCVolumesMetricsProcessor()
+			if inputs.runtimeResources.volume {
+				processorsConfig.DropNonPVCVolumesMetrics = makeDropNonPVCVolumesMetricsProcessor()
+			}
 		}
 
 		if inputs.prometheus {
