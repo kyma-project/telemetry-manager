@@ -78,6 +78,7 @@ func enableIstioMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) boo
 	return false
 }
 
+//nolint:mnd // hardcoded values
 func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
 	return Exporters{
 		OTLP: config.OTLPExporter{

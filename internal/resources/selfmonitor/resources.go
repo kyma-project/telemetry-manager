@@ -325,18 +325,24 @@ func makePodSpec(baseName, image, configPath, configFile string, opts ...commonr
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/-/healthy", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
 					},
-					FailureThreshold: 5, PeriodSeconds: 5, TimeoutSeconds: 3, SuccessThreshold: 1,
+					FailureThreshold: 5, //nolint:mnd // 5 failures
+					PeriodSeconds:    5, //nolint:mnd // 5 seconds
+					TimeoutSeconds:   3, //nolint:mnd // 3 seconds
+					SuccessThreshold: 1, //nolint:mnd // 1 success
 				},
 				ReadinessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
 					},
-					FailureThreshold: 3, PeriodSeconds: 5, TimeoutSeconds: 3, SuccessThreshold: 1,
+					FailureThreshold: 3, //nolint:mnd // 3 failures
+					PeriodSeconds:    5, //nolint:mnd // 5 seconds
+					TimeoutSeconds:   3, //nolint:mnd // 3 seconds
+					SuccessThreshold: 1, //nolint:mnd // 1 success
 				},
 			},
 		},
 		ServiceAccountName:            baseName,
-		TerminationGracePeriodSeconds: ptr.To(int64(300)),
+		TerminationGracePeriodSeconds: ptr.To(int64(300)), //nolint:mnd // 300 seconds
 		SecurityContext: &corev1.PodSecurityContext{
 			RunAsUser:    ptr.To(prometheusUser),
 			RunAsNonRoot: ptr.To(true),

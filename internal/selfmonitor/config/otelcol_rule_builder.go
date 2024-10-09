@@ -60,7 +60,7 @@ func (rb otelCollectorRuleBuilder) exporterQueueAlmostFullRule() Rule {
 		Alert: rb.namePrefix + RuleNameGatewayExporterQueueAlmostFull,
 		Expr: div(metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
 			maxBy(labelPipelineName).
-			greaterThan(0.8).
+			greaterThan(0.8). //nolint:mnd // alert on 80% full
 			build(),
 	}
 }

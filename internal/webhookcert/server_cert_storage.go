@@ -30,10 +30,11 @@ func (s serverCertStorageImpl) load() ([]byte, []byte, error) {
 }
 
 func (s serverCertStorageImpl) save(certPEM, keyPEM []byte) error {
-	if err := os.WriteFile(s.certFilePath(), certPEM, 0600); err != nil {
+	const permUserRW = 0600
+	if err := os.WriteFile(s.certFilePath(), certPEM, permUserRW); err != nil {
 		return fmt.Errorf("failed to save cert: %w", err)
 	}
-	if err := os.WriteFile(s.keyFilePath(), keyPEM, 0600); err != nil {
+	if err := os.WriteFile(s.keyFilePath(), keyPEM, permUserRW); err != nil {
 		return fmt.Errorf("failed to save key: %w", err)
 	}
 	return nil

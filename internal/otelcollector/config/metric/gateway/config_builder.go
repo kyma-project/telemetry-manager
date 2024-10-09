@@ -35,7 +35,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	envVars := make(otlpexporter.EnvVars)
-	queueSize := 256 / len(pipelines)
+	const maxQueueSize = 256
+	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
 		pipeline := pipelines[i]

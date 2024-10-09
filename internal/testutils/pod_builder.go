@@ -49,10 +49,11 @@ func (pb *PodBuilder) WithImageNotFound() *PodBuilder {
 }
 
 func (pb *PodBuilder) WithOOMStatus() *PodBuilder {
+	const oomKilledExitCode = 137 // 128+9 (SIGKILL)
 	pb.status = &corev1.PodStatus{
 		Phase:             corev1.PodRunning,
 		Conditions:        createPodReadyConditions(corev1.ConditionFalse),
-		ContainerStatuses: createContainerStatus("OOMKilled", "Container was OOM killed", "OOMKilled", 137),
+		ContainerStatuses: createContainerStatus("OOMKilled", "Container was OOM killed", "OOMKilled", oomKilledExitCode),
 	}
 	return pb
 }
@@ -111,10 +112,11 @@ func (pb *PodBuilder) WithPendingStatus() *PodBuilder {
 }
 
 func (pb *PodBuilder) WithNonZeroExitStatus() *PodBuilder {
+	const containerFailedExitCode = 2
 	pb.status = &corev1.PodStatus{
 		Phase:             corev1.PodRunning,
 		Conditions:        createPodReadyConditions(corev1.ConditionFalse),
-		ContainerStatuses: createContainerStatus("Error", "Container failed", "Error", 2),
+		ContainerStatuses: createContainerStatus("Error", "Container failed", "Error", containerFailedExitCode),
 	}
 	return pb
 }

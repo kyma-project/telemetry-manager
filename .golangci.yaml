@@ -6,11 +6,11 @@ run:
 linters:
   enable-all: true
   disable:
-  # Depreacted linters
+    # Depreacted linters
     - gomnd
     - execinquery
     - exportloopref
-  # Linters to be enabled after fixing the issues
+    # Linters to be enabled after fixing the issues
     - cyclop
     - depguard
     - exhaustive
@@ -23,7 +23,6 @@ linters:
     - godox
     - err113
     - gofumpt
-    - mnd
     - ireturn
     - lll
     - maintidx
@@ -200,6 +199,14 @@ issues:
       linters:
         - errcheck
         - dupl
+    - path: ^internal/testutils
+      linters:
+        - mnd
+        - err113
+    - path: ^test/testkit
+      linters:
+        - mnd
+        - err113
     - path: _test\.go
       text: "shadow: declaration of \"ctx\" shadows declaration at line ([\\d]+)"
       linters:
@@ -208,20 +215,20 @@ issues:
       text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
       linters:
         - govet
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: internal/k8sutils/utils.go
     # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: test/testkit/matchers/(log|metric|trace)_matchers.go
-    - linters: [errcheck]
+    - linters: [ errcheck ]
       path: test/testkit/otel/traces/traces.go
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: test/testkit/assert/(deployment|daemon_set|metrics|traces).go
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: main.go
     - linters:
         - importas

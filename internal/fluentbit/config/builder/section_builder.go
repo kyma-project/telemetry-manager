@@ -91,7 +91,7 @@ func (sb *SectionBuilder) Build() string {
 		}
 		return sb.params[i].Value < sb.params[j].Value
 	})
-	indentation := strings.Repeat(" ", 4)
+	indentation := strings.Repeat(" ", 4) //nolint:mnd // 4 spaces per indentation level
 	for _, p := range sb.params {
 		sb.builder.WriteString(fmt.Sprintf("%s%s%s%s",
 			indentation,

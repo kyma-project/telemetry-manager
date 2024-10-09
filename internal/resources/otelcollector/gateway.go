@@ -212,7 +212,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 		PodAntiAffinity: &corev1.PodAntiAffinity{
 			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
 				{
-					Weight: 100,
+					Weight: 100, //nolint:mnd // 100% weight
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						TopologyKey: "kubernetes.io/hostname",
 						LabelSelector: &metav1.LabelSelector{
@@ -221,7 +221,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 					},
 				},
 				{
-					Weight: 100,
+					Weight: 100, //nolint:mnd // 100% weight
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						TopologyKey: "topology.kubernetes.io/zone",
 						LabelSelector: &metav1.LabelSelector{
