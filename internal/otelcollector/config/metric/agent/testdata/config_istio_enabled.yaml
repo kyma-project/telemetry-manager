@@ -296,6 +296,19 @@ receivers:
                       action: keep
                   kubernetes_sd_configs:
                     - role: pod
+    singleton_receiver_creator/k8s_cluster:
+        auth_type: serviceAccount
+        leader_election:
+          lease_name: telemetry-metric-gateway-k8scluster
+          lease_namespace: "test-namespace"
+          receiver:
+            k8s_cluster:
+              auth_type: serviceAccount
+              collection_interval: 30s
+              node_conditions_to_report: []
+              metrics:
+
+
 processors:
     batch:
         send_batch_size: 1024

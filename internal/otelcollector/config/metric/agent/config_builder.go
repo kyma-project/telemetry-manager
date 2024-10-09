@@ -28,6 +28,7 @@ type BuildOptions struct {
 	IstioEnabled                bool
 	IstioCertPath               string
 	InstrumentationScopeVersion string
+	AgentNamespace              string
 }
 
 func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {

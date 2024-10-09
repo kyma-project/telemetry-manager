@@ -29,7 +29,12 @@ service:
                 - otlp
     telemetry:
         metrics:
-            address: ${MY_POD_IP}:8888
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
         logs:
             level: info
             encoding: json
@@ -65,10 +70,35 @@ receivers:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
-            k8s.node.memory.rss:
-                enabled: false
-            k8s.node.memory.working_set:
-                enabled: false
+    singleton_receiver_creator/k8s_cluster:
+        auth_type: serviceAccount
+        leader_election:
+            lease_name: telemetry-metric-gateway-k8scluster
+            lease_namespace: ""
+        receiver:
+            k8s_cluster:
+                auth_type: serviceAccount
+                collection_interval: 30s
+                node_conditions_to_report: [ ]
+            metrics:
+                k8s.container.storage_request:
+                    enabled: false
+                k8s.container.storage_limit:
+                    enabled: false
+                k8s.container.ephemeralstorage_request:
+                    enabled: false
+                k8s.container.ephemeralstorage_limit:
+                    enabled: false
+                k8s.container.restarts:
+                    enabled: false
+                k8s.container.ready:
+                    enabled: false
+                k8s.namespace.phase:
+                    enabled: false
+                k8s.replication_controller.available:
+                    enabled: false
+                k8s.replication_controller.desired:
+                    enabled: false
     prometheus/app-pods:
         config:
             scrape_configs:

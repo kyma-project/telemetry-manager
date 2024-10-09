@@ -16,10 +16,11 @@ type Config struct {
 }
 
 type Receivers struct {
-	KubeletStats          *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
-	PrometheusAppPods     *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
-	PrometheusAppServices *PrometheusReceiver   `yaml:"prometheus/app-services,omitempty"`
-	PrometheusIstio       *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
+	KubeletStats                       *KubeletStatsReceiver               `yaml:"kubeletstats,omitempty"`
+	PrometheusAppPods                  *PrometheusReceiver                 `yaml:"prometheus/app-pods,omitempty"`
+	PrometheusAppServices              *PrometheusReceiver                 `yaml:"prometheus/app-services,omitempty"`
+	PrometheusIstio                    *PrometheusReceiver                 `yaml:"prometheus/istio,omitempty"`
+	SingletonK8sClusterReceiverCreator *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8s_cluster,omitempty"`
 }
 
 type KubeletStatsReceiver struct {
@@ -56,6 +57,36 @@ const (
 	MetricGroupTypePod       MetricGroupType = "pod"
 	MetricGroupTypeNode      MetricGroupType = "node"
 )
+
+type K8sClusterMetricsConfig struct {
+	// metrics allows enabling/disabling scraped metric.
+	K8sContainerStorageRequest          MetricConfig `yaml:"k8s.container.storage_request"`
+	K8sContainerStorageLimit            MetricConfig `yaml:"k8s.container.storage_limit"`
+	K8sContainerEphemeralStorageRequest MetricConfig `yaml:"k8s.container.ephemeralstorage_request"`
+	K8sContainerEphemeralStorageLimit   MetricConfig `yaml:"k8s.container.ephemeralstorage_limit"`
+	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts"`
+	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready"`
+	K8sNamespacePhase                   MetricConfig `yaml:"k8s.namespace.phase"`
+	K8sReplicationControllerAvailable   MetricConfig `yaml:"k8s.replication_controller.available"`
+	K8sReplicationControllerDesired     MetricConfig `yaml:"k8s.replication_controller.desired"`
+}
+
+type K8sClusterReceiver struct {
+	AuthType               string                  `yaml:"auth_type"`
+	CollectionInterval     string                  `yaml:"collection_interval"`
+	NodeConditionsToReport []string                `yaml:"node_conditions_to_report"`
+	Metrics                K8sClusterMetricsConfig `yaml:"metrics"`
+}
+
+type SingletonK8sClusterReceiver struct {
+	K8sClusterReceiver K8sClusterReceiver `yaml:"k8s_cluster"`
+}
+
+type SingletonK8sClusterReceiverCreator struct {
+	AuthType                    string                      `yaml:"auth_type"`
+	LeaderElection              metric.LeaderElection       `yaml:"leader_election"`
+	SingletonK8sClusterReceiver SingletonK8sClusterReceiver `yaml:"receiver"`
+}
 
 type PrometheusReceiver struct {
 	Config PrometheusConfig `yaml:"config"`
