@@ -80,7 +80,7 @@ func enableRuntimeResourcesMetricsScraping(pipelines []telemetryv1alpha1.MetricP
 func enableRuntimePodMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimePodMetricsEnabled(input) {
+		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimePodInputEnabled(input) {
 			return true
 		}
 	}
@@ -90,7 +90,7 @@ func enableRuntimePodMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 func enableRuntimeContainerMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeContainerMetricsEnabled(input) {
+		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeContainerInputEnabled(input) {
 			return true
 		}
 	}
@@ -100,7 +100,7 @@ func enableRuntimeContainerMetricsScraping(pipelines []telemetryv1alpha1.MetricP
 func enableRuntimeNodeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeNodeMetricsEnabled(input) {
+		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeNodeInputEnabled(input) {
 			return true
 		}
 	}
@@ -110,7 +110,7 @@ func enableRuntimeNodeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 func enableRuntimeVolumeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeVolumeMetricsEnabled(input) {
+		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeVolumeInputEnabled(input) {
 			return true
 		}
 	}

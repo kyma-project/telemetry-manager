@@ -14,19 +14,19 @@ func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio != nil && input.Istio.Enabled
 }
 
-func IsOtlpInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsOTLPInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Otlp == nil || !input.Otlp.Disabled
 }
 
-func IsPrometheusDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsPrometheusDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Prometheus.DiagnosticMetrics != nil && input.Prometheus.DiagnosticMetrics.Enabled
 }
 
-func IsIstioDiagnosticMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsIstioDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio.DiagnosticMetrics != nil && input.Istio.DiagnosticMetrics.Enabled
 }
 
-func IsRuntimePodMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimePodInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	// Define first isRuntimePodMetricsDisabled to ensure that the runtime pod metrics will be enabled by default
 	// in case any of the fields (Resources, Pod or Enabled) is nil
 	isRuntimePodMetricsDisabled := input.Runtime.Resources != nil &&
@@ -37,7 +37,7 @@ func IsRuntimePodMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) boo
 	return !isRuntimePodMetricsDisabled
 }
 
-func IsRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeContainerInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	// Define first isRuntimeContainerMetricsDisabled to ensure that the runtime container metrics will be enabled by default
 	// in case any of the fields (Resources, Pod or Enabled) is nil
 	isRuntimeContainerMetricsDisabled := input.Runtime.Resources != nil &&
@@ -48,7 +48,7 @@ func IsRuntimeContainerMetricsEnabled(input telemetryv1alpha1.MetricPipelineInpu
 	return !isRuntimeContainerMetricsDisabled
 }
 
-func IsRuntimeNodeMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeNodeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	// Runtime node metrics are disabled by default
 	// If any of the fields (Resources, Node or Enabled) is nil, the node metrics will be disabled
 	return input.Runtime.Resources != nil &&
@@ -57,7 +57,7 @@ func IsRuntimeNodeMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bo
 		*input.Runtime.Resources.Node.Enabled
 }
 
-func IsRuntimeVolumeMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeVolumeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	// Runtime volume metrics are disabled by default
 	// If any of the fields (Resources, Volume or Enabled) is nil, the volume metrics will be disabled
 	return input.Runtime.Resources != nil &&
