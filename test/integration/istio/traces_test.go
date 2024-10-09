@@ -194,11 +194,11 @@ func verifyIstioSpans(backendURL, namespace string) {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
-			ContainSpan(WithSpanAttrs(HaveKeyWithValue("component", "proxy"))),
-			ContainSpan(WithSpanAttrs(HaveKeyWithValue("istio.namespace", namespace))),
-		))))
+			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
+			HaveSpanAttributes(HaveKeyWithValue("istio.namespace", namespace)),
+		)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
@@ -207,13 +207,12 @@ func verifyCustomIstiofiedAppSpans(backendURL, name, namespace string) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify sample app by serviceName attribute
-			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", name)),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
-		))))
+			HaveResourceAttributes(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+		)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
@@ -222,11 +221,11 @@ func verifyCustomAppSpans(backendURL, name, namespace string) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify sample app by serviceName attribute
-			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", name)),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
-		))))
+			HaveResourceAttributes(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+		)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
