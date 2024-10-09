@@ -152,7 +152,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.Equal(t, name, dep.Name)
 	require.Equal(t, namespace, dep.Namespace)
 
-	//labels
+	// labels
 	require.Equal(t, map[string]string{
 		"app.kubernetes.io/name": name,
 	}, dep.Labels, "must have expected deployment labels")
@@ -164,11 +164,11 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 		"sidecar.istio.io/inject": "false",
 	}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
-	//annotations
+	// annotations
 	podAnnotations := dep.Spec.Template.ObjectMeta.Annotations
 	require.NotEmpty(t, podAnnotations["checksum/Config"])
 
-	//self-monitor container
+	// self-monitor container
 	require.Len(t, dep.Spec.Template.Spec.Containers, 1)
 	container := dep.Spec.Template.Spec.Containers[0]
 
@@ -180,7 +180,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.True(t, cpuLimit.Equal(*resources.Limits.Cpu()), "cpu limit should be defined")
 	require.True(t, memoryLimit.Equal(*resources.Limits.Memory()), "memory limit should be defined")
 
-	//security contexts
+	// security contexts
 	podSecurityContext := dep.Spec.Template.Spec.SecurityContext
 	require.NotNil(t, podSecurityContext, "pod security context must be defined")
 	require.NotZero(t, podSecurityContext.RunAsUser, "must run as non-root")
@@ -194,7 +194,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
 	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
 
-	//command args
+	// command args
 
 	expectedArgs := []string{
 		"--storage.tsdb.retention.time=" + retentionTime,

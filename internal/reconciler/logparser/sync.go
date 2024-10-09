@@ -32,15 +32,17 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context) error {
 		return fmt.Errorf("unable to list parsers: %w", err)
 	}
 	fluentBitParsersConfig := builder.BuildFluentBitParsersConfig(&logParsers)
-	if fluentBitParsersConfig == "" {
+
+	switch {
+	case fluentBitParsersConfig == "":
 		data := make(map[string]string)
 		data[parsersConfigMapKey] = ""
 		cm.Data = data
-	} else if cm.Data == nil {
+	case cm.Data == nil:
 		data := make(map[string]string)
 		data[parsersConfigMapKey] = fluentBitParsersConfig
 		cm.Data = data
-	} else {
+	default:
 		if oldConfig, hasKey := cm.Data[parsersConfigMapKey]; !hasKey || oldConfig != fluentBitParsersConfig {
 			cm.Data[parsersConfigMapKey] = fluentBitParsersConfig
 		}

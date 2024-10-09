@@ -258,7 +258,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Equal(t, gatewayNamespace, dep.Namespace)
 		require.Equal(t, replicas, *dep.Spec.Replicas)
 
-		//labels
+		// labels
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": gatewayName,
 		}, dep.Labels, "must have expected deployment labels")
@@ -270,11 +270,11 @@ func TestApplyGatewayResources(t *testing.T) {
 			"sidecar.istio.io/inject": "false",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
-		//annotations
+		// annotations
 		podAnnotations := dep.Spec.Template.ObjectMeta.Annotations
 		require.NotEmpty(t, podAnnotations["checksum/config"])
 
-		//collector container
+		// collector container
 		require.Len(t, dep.Spec.Template.Spec.Containers, 1)
 		container := dep.Spec.Template.Spec.Containers[0]
 
@@ -303,7 +303,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
 		require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
 
-		//security contexts
+		// security contexts
 		podSecurityContext := dep.Spec.Template.Spec.SecurityContext
 		require.NotNil(t, podSecurityContext, "pod security context must be defined")
 		require.NotZero(t, podSecurityContext.RunAsUser, "must run as non-root")
@@ -391,7 +391,7 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 			"sidecar.istio.io/inject": "true",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
-		//annotations
+		// annotations
 		podAnnotations := dep.Spec.Template.ObjectMeta.Annotations
 		require.NotEmpty(t, podAnnotations["checksum/config"])
 		require.Equal(t, "TPROXY", podAnnotations["sidecar.istio.io/interceptionMode"])

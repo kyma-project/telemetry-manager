@@ -17,8 +17,7 @@ var (
 // WithLabel is a functional option for attaching a label value.
 func WithLabel(label, value string) testkit.OptFunc {
 	return func(opt testkit.Opt) {
-		switch x := opt.(type) {
-		case Labels:
+		if x, ok := opt.(Labels); ok {
 			x[label] = value
 		}
 	}

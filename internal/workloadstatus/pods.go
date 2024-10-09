@@ -34,7 +34,7 @@ func checkPodStatus(ctx context.Context, c client.Client, namespace string, sele
 	}
 
 	for _, pod := range pods.Items {
-		//check if Pod is in running state & all containers are ready.
+		// check if Pod is in running state & all containers are ready.
 		podReadyCondition := findPodCondition(pod.Status.Conditions, corev1.PodReady)
 		if pod.Status.Phase == corev1.PodRunning && podReadyCondition.Status == corev1.ConditionTrue {
 			continue

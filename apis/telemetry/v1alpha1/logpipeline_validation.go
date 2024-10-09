@@ -8,6 +8,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 )
 
+var (
+	validHostName = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
+)
+
 func (lp *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
 	if err := lp.validateOutput(vc.DeniedOutPutPlugins); err != nil {
 		return err
@@ -44,11 +48,7 @@ func checkSingleOutputPlugin(output Output) error {
 }
 
 func validateHTTPOutput(httpOutput *HTTPOutput) error {
-	isValidHostname, err := validHostname(httpOutput.Host.Value)
-
-	if err != nil {
-		return fmt.Errorf("error validating hostname: %w", err)
-	}
+	isValidHostname := validHostname(httpOutput.Host.Value)
 
 	if httpOutput.Host.Value != "" && !isValidHostname {
 		return fmt.Errorf("invalid hostname '%s'", httpOutput.Host.Value)
@@ -68,10 +68,9 @@ func validateHTTPOutput(httpOutput *HTTPOutput) error {
 	return nil
 }
 
-func validHostname(host string) (bool, error) {
+func validHostname(host string) bool {
 	host = strings.Trim(host, " ")
-	re, err := regexp.Compile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
-	return re.MatchString(host), err
+	return validHostName.MatchString(host)
 }
 
 func validateCustomOutput(deniedOutputPlugin []string, content string) error {

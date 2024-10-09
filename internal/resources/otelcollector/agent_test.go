@@ -189,7 +189,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, agentName, ds.Name)
 		require.Equal(t, agentNamespace, ds.Namespace)
 
-		//labels
+		// labels
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": agentName,
 		}, ds.Labels, "must have expected daemonset labels")
@@ -201,7 +201,7 @@ func TestApplyAgentResources(t *testing.T) {
 			"sidecar.istio.io/inject": "true",
 		}, ds.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
-		//annotations
+		// annotations
 		podAnnotations := ds.Spec.Template.ObjectMeta.Annotations
 		require.NotEmpty(t, podAnnotations["checksum/config"])
 		require.Equal(t, "# configure an env variable OUTPUT_CERTS to write certificates to the given folder\nproxyMetadata:\n  OUTPUT_CERTS: /etc/istio-output-certs\n", podAnnotations["proxy.istio.io/config"])
@@ -211,7 +211,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, "8888", podAnnotations["traffic.sidecar.istio.io/excludeInboundPorts"])
 		require.Equal(t, "", podAnnotations["traffic.sidecar.istio.io/includeOutboundIPRanges"])
 
-		//collector container
+		// collector container
 		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
 		container := ds.Spec.Template.Spec.Containers[0]
 
@@ -226,7 +226,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
 		require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
 
-		//security contexts
+		// security contexts
 		podSecurityContext := ds.Spec.Template.Spec.SecurityContext
 		require.NotNil(t, podSecurityContext, "pod security context must be defined")
 		require.NotZero(t, podSecurityContext.RunAsUser, "must run as non-root")

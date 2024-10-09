@@ -103,11 +103,12 @@ func (cm *ConfigMap) Name() string {
 
 func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	var configTemplate string
-	if cm.signalType == SignalTypeLogs {
+	switch {
+	case cm.signalType == SignalTypeLogs:
 		configTemplate = LogConfigTemplate
-	} else if cm.certs != nil {
+	case cm.certs != nil:
 		configTemplate = tlsConfigTemplate
-	} else {
+	default:
 		configTemplate = metricsAndTracesConfigTemplate
 	}
 	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
