@@ -429,7 +429,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 - **Throughput**: Assuming an average span with 40 attributes with 64 characters, the maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceded, spans are refused. To increase the maximum throughput, manually scale out the gateway by increasing the number of replicas.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
-- **No Guaranteed Delivery**: The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
+- **No Guaranteed Delivery**: The used buffers are volatile. If the OTel Collector instance crashes, trace data can be lost.
 - **Multiple TracePipeline Support**: The maximum amount of TracePipeline resources is 3.
 - **System Span Filtering**: System-related spans reported by Istio are filtered out without the opt-out option, for example:
   - Any communication of applications to the Telemetry gateways
@@ -522,4 +522,4 @@ If you just want to see traces for one particular request, you can manually forc
 
 **Cause**: Gateway cannot receive spans at the given rate.
 
-**Remedy**: Manually scale out the gateway by increasing the number of replicas for the Trace gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Remedy**: Manually scale out the gateway by increasing the number of replicas for the trace gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
