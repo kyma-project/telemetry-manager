@@ -289,7 +289,7 @@ Telemetry Manager continuously watches the Secret referenced with the **secretKe
 > [!TIP]
 > If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### <a name="_4-activate-prometheus-based-metric">4. Activate Prometheus-Based Metric</a>
+### <a name="_4-activate-prometheus-based-metrics">4. Activate Prometheus-Based Metrics</a>
 
 > [!NOTE]
 > For the following approach, you must have instrumented your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
