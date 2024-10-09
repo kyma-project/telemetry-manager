@@ -186,7 +186,7 @@ func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayAp
 	cpuRequest := deploymentConfig.BaseCPURequest.DeepCopy()
 	cpuLimit := deploymentConfig.BaseCPULimit.DeepCopy()
 
-	for i := 0; i < opts.ResourceRequirementsMultiplier; i++ {
+	for range opts.ResourceRequirementsMultiplier {
 		memoryRequest.Add(deploymentConfig.DynamicMemoryRequest)
 		memoryLimit.Add(deploymentConfig.DynamicMemoryLimit)
 		cpuRequest.Add(deploymentConfig.DynamicCPURequest)

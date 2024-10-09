@@ -39,11 +39,11 @@ func flattenAllTraces(tds []ptrace.Traces) []FlatTrace {
 func flattenTraces(td ptrace.Traces) []FlatTrace {
 	var flatTraces []FlatTrace
 
-	for i := 0; i < td.ResourceSpans().Len(); i++ {
+	for i := range td.ResourceSpans().Len() {
 		resourceSpans := td.ResourceSpans().At(i)
-		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+		for j := range resourceSpans.ScopeSpans().Len() {
 			scopeSpans := resourceSpans.ScopeSpans().At(j)
-			for k := 0; k < scopeSpans.Spans().Len(); k++ {
+			for k := range scopeSpans.Spans().Len() {
 				span := scopeSpans.Spans().At(k)
 				flatTraces = append(flatTraces, FlatTrace{
 					Name:               span.Name(),
