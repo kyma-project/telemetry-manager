@@ -55,8 +55,6 @@ func TestReceivers(t *testing.T) {
 				K8sNodeCPUTime:               MetricConfig{Enabled: false},
 				K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
 				K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
-				K8sNodeMemoryRSS:             MetricConfig{Enabled: false},
-				K8sNodeMemoryWorkingSet:      MetricConfig{Enabled: false},
 			},
 		}
 

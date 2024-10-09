@@ -40,7 +40,24 @@ type Telemetry struct {
 }
 
 type Metrics struct {
-	Address string `yaml:"address"`
+	Readers []MetricReader `yaml:"readers"`
+}
+
+type MetricReader struct {
+	Pull PullMetricReader `yaml:"pull"`
+}
+
+type PullMetricReader struct {
+	Exporter MetricExporter `yaml:"exporter"`
+}
+
+type MetricExporter struct {
+	Prometheus PrometheusMetricExporter `yaml:"prometheus"`
+}
+
+type PrometheusMetricExporter struct {
+	Host string `yaml:"host"`
+	Port int32  `yaml:"port"`
 }
 
 type Logs struct {
@@ -51,7 +68,18 @@ type Logs struct {
 func DefaultService(pipelines Pipelines) Service {
 	telemetry := Telemetry{
 		Metrics: Metrics{
-			Address: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.Metrics),
+			Readers: []MetricReader{
+				{
+					Pull: PullMetricReader{
+						Exporter: MetricExporter{
+							Prometheus: PrometheusMetricExporter{
+								Host: fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
+								Port: ports.Metrics,
+							},
+						},
+					},
+				},
+			},
 		},
 		Logs: Logs{
 			Level:    "info",

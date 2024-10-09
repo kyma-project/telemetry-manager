@@ -79,26 +79,26 @@ receivers:
             k8s_cluster:
                 auth_type: serviceAccount
                 collection_interval: 30s
-                node_conditions_to_report: [ ]
-            metrics:
-                k8s.container.storage_request:
-                    enabled: false
-                k8s.container.storage_limit:
-                    enabled: false
-                k8s.container.ephemeralstorage_request:
-                    enabled: false
-                k8s.container.ephemeralstorage_limit:
-                    enabled: false
-                k8s.container.restarts:
-                    enabled: false
-                k8s.container.ready:
-                    enabled: false
-                k8s.namespace.phase:
-                    enabled: false
-                k8s.replication_controller.available:
-                    enabled: false
-                k8s.replication_controller.desired:
-                    enabled: false
+                node_conditions_to_report: []
+                metrics:
+                    k8s.container.storage_request:
+                        enabled: false
+                    k8s.container.storage_limit:
+                        enabled: false
+                    k8s.container.ephemeralstorage_request:
+                        enabled: false
+                    k8s.container.ephemeralstorage_limit:
+                        enabled: false
+                    k8s.container.restarts:
+                        enabled: false
+                    k8s.container.ready:
+                        enabled: false
+                    k8s.namespace.phase:
+                        enabled: false
+                    k8s.replication_controller.available:
+                        enabled: false
+                    k8s.replication_controller.desired:
+                        enabled: false
     prometheus/app-pods:
         config:
             scrape_configs:

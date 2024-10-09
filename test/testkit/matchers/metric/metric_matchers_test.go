@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-var fmdps = []FlatMetric{
+var fms = []FlatMetric{
 	{
 		Name:               "container.cpu.time",
 		Description:        "time of container cpu",
@@ -54,7 +54,7 @@ var _ = Describe("HaveFlatMetrics", func() {
 		Expect(success).Should(BeFalse())
 	})
 
-	It("should return a FlatMetricDataPoints structure", func() {
+	It("should return a FlatMetric struct", func() {
 		md := pmetric.NewMetrics()
 
 		rm := md.ResourceMetrics().AppendEmpty()
@@ -79,37 +79,37 @@ var _ = Describe("HaveFlatMetrics", func() {
 		pt.SetDoubleValue(1.5)
 		pt.Attributes().PutStr("foo", "bar")
 
-		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElement(fmdps[0])))
+		Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElement(fms[0])))
 	})
 })
 
 var _ = Describe("HaveUniqueNames", func() {
 	It("should return unique names", func() {
-		Expect(fmdps).Should(HaveUniqueNames(ConsistOf("container.cpu.time", "container.cpu.usage")))
+		Expect(fms).Should(HaveUniqueNames(ConsistOf("container.cpu.time", "container.cpu.usage")))
 	})
 })
 
 var _ = Describe("HaveResourceAttributes", func() {
 	It("should have the specified key", func() {
-		Expect(fmdps).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.cluster.name"))))
+		Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.cluster.name"))))
 	})
 })
 
 var _ = Describe("HaveName", func() {
 	It("should return the correct name", func() {
-		Expect(fmdps).Should(ContainElement(HaveName(ContainSubstring("container"))))
+		Expect(fms).Should(ContainElement(HaveName(ContainSubstring("container"))))
 	})
 })
 
 var _ = Describe("HaveType", func() {
 	It("should return the correct type", func() {
-		Expect(fmdps).Should(ContainElement(HaveType(Equal(pmetric.MetricTypeGauge.String()))))
+		Expect(fms).Should(ContainElement(HaveType(Equal(pmetric.MetricTypeGauge.String()))))
 	})
 })
 
 var _ = Describe("HaveMetricAttributes", func() {
 	It("should have the specified key", func() {
-		Expect(fmdps).Should(
+		Expect(fms).Should(
 			ContainElement(HaveMetricAttributes(HaveKey("foo"))),
 		)
 	})
@@ -117,19 +117,19 @@ var _ = Describe("HaveMetricAttributes", func() {
 
 var _ = Describe("HaveScopeName", func() {
 	It("should contain the specified string", func() {
-		Expect(fmdps).Should(ContainElement(HaveScopeName(ContainSubstring("container"))))
+		Expect(fms).Should(ContainElement(HaveScopeName(ContainSubstring("container"))))
 	})
 })
 
 var _ = Describe("HaveScopeVersion", func() {
 	It("should contain the specified version", func() {
-		Expect(fmdps).Should(ContainElement(HaveScopeVersion(ContainSubstring("1.0"))))
+		Expect(fms).Should(ContainElement(HaveScopeVersion(ContainSubstring("1.0"))))
 	})
 })
 
 var _ = Describe("HaveKeys", func() {
 	It("should have all the keys within the specified list", func() {
-		Expect(fmdps).Should(ContainElement(HaveResourceAttributes(HaveKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))))
+		Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKeys(ContainElements("k8s.cluster.name", "k8s.deployment.name")))))
 	})
 })
 

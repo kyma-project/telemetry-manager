@@ -75,7 +75,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			WithPort("grpc-otlp", ports.OTLPGRPC).
 			WithPort("http-metrics", ports.Metrics)
 		metricServiceURL = proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics)
-		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
+		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")))
 
 		// Abusing metrics provider for istio traces
 		istiofiedApp := prommetricgen.New(istiofiedAppNs, prommetricgen.WithName(istiofiedAppName))
@@ -113,7 +113,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			verifyAppIsRunning(appNs, map[string]string{"app": "sample-metrics"})
 		})
 
-		It("Should have a running trace collector deployment", func() {
+		It("Should have a running trace gateway deployment", func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
@@ -122,7 +122,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			assert.TracePipelineHealthy(ctx, k8sClient, pipeline2Name)
 		})
 
-		It("Trace collector with should answer requests", func() {
+		It("Trace gateway with should answer requests", func() {
 			By("Calling metrics service", func() {
 				Eventually(func(g Gomega) {
 					resp, err := proxyClient.Get(metricServiceURL)
@@ -194,11 +194,11 @@ func verifyIstioSpans(backendURL, namespace string) {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
-			ContainSpan(WithSpanAttrs(HaveKeyWithValue("component", "proxy"))),
-			ContainSpan(WithSpanAttrs(HaveKeyWithValue("istio.namespace", namespace))),
-		))))
+			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
+			HaveSpanAttributes(HaveKeyWithValue("istio.namespace", namespace)),
+		)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
@@ -207,13 +207,12 @@ func verifyCustomIstiofiedAppSpans(backendURL, name, namespace string) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify sample app by serviceName attribute
-			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", name)),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
-		))))
+			HaveResourceAttributes(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+		)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
@@ -222,11 +221,11 @@ func verifyCustomAppSpans(backendURL, name, namespace string) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify sample app by serviceName attribute
-			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", name)),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
-		))))
+			HaveResourceAttributes(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
+		)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

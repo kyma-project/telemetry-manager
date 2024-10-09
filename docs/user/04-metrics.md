@@ -322,8 +322,10 @@ For metrics ingestion to start automatically, simply apply the following annotat
 | `prometheus.io/path`               | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
 | `prometheus.io/scheme`             | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
 
- If you're running the Pod targeted by a Service with Istio, Istio must be able to derive the [appProtocol](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol) from the Service port definition; otherwise the communication for scraping the metric endpoint cannot be established. You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
- For example, see the following `Service` configuration:
+If you're running the Pod targeted by a Service with Istio, Istio must be able to derive the [appProtocol](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol) from the Service port definition; otherwise the communication for scraping the metric endpoint cannot be established. You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
+
+For example, see the following `Service` configuration:
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -347,16 +349,18 @@ spec:
 > [!NOTE]
 > The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
 
+### 5. Monitor Pipeline Health
 
-### 4. Default Metrics for Telemetry Health
-By default, a MetricPipeline emits metrics about the health of all pipelines managed by the Telemetry module. Based on these metrics, you can track the status of every individual pipeline and set up alerting for it. The following metrics are emitted for every pipeline and the Telemetry module itself:
+By default, a MetricPipeline emits metrics about the health of all pipelines managed by the Telemetry module. Based on these metrics, you can track the status of every individual pipeline and set up alerting for it.
+
+Metrics for Pipelines and the Telemetry Module:
 
 | Metric                          | Description                                                                                                                                              | Availability                                                |
 |---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
-| kyma.resource.status.conditions | Value represents status of different conditions reported by the resource.  Possible values are 'True' => 1, 'False' => 0, and -1 for other status values | Available for both, the pipeline and the telemetry resource |
-| kyma.resource.status.state      | Value represents the state of the resource (if present)                                                                                                  | Available for the telemetry resource                        |
+| kyma.resource.status.conditions | Value represents status of different conditions reported by the resource.  Possible values are 1 ("True"), 0 ("False"), and -1 (other status values) | Available for both, the pipeline and the Telemetry resource |
+| kyma.resource.status.state      | Value represents the state of the resource (if present)                                                                                                  | Available for the Telemetry resource                        |
 
-The following metric attributes are available for monitoring:
+Metric Attributes for Monitoring:
 
 | Name                     | Description                                                                                  |
 |--------------------------|----------------------------------------------------------------------------------------------|
@@ -364,14 +368,13 @@ The following metric attributes are available for monitoring:
 | metric.attributes.status | Status of the condition                                                                      |
 | metric.attributes.reason | Contains a programmatic identifier indicating the reason for the condition's last transition |
 
+To set up alerting, use an alert rule. In the following example, the alert is triggered if metrics are not delivered to the backend:
 
-A typical alert rule looks like the following example. The alert is triggered if metrics are not delivered to the backend:
 ```promql
  min by (k8s_resource_name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy",k8s_resource_kind="metricpipelines"})) == 0
 ```
 
-
-### 5. Activate Runtime Metrics
+### 6. Activate Runtime Metrics
 
 To enable collection of runtime metrics, define a MetricPipeline that has the `runtime` section enabled as input:
 
@@ -391,7 +394,9 @@ spec:
 ```
 
 By default, container and Pod metrics are collected.
-To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input:
+To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
+
+The following example collects only the Pod metrics:
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -414,9 +419,9 @@ To enable or disable the collection of metrics for a specific resource, use the 
         endpoint:
           value: https://backend.example.com:4317
   ```
-With this, only the Pod metrics are collected.
 
-If Pod metrics are enabled, the following metrics are collected:
+If you enable Pod metrics, the following metrics are collected:
+
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `k8s.pod.cpu.capacity`
   - `k8s.pod.cpu.usage`
@@ -435,6 +440,7 @@ If Pod metrics are enabled, the following metrics are collected:
   - `k8s.pod.phase`
 
 If container metrics are enabled, the following metrics are collected:
+
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `container.cpu.time`
   - `container.cpu.usage`
@@ -463,9 +469,11 @@ If Node metrics are enabled, the following metrics are collected:
   - `k8s.node.memory.usage`
   - `k8s.node.network.errors`
   - `k8s.node.network.io`
+  - `k8s.node.memory.rss`
+  - `k8s.node.memory.working_set`
 
 
-### 6. Activate Istio Metrics
+### 7. Activate Istio Metrics
 
 To enable collection of Istio metrics, define a MetricPipeline that has the `istio` section enabled as input:
 
@@ -486,7 +494,7 @@ spec:
 
 With this, the agent starts collecting all Istio metrics from Istio sidecars.
 
-### 7. Deactivate OTLP Metrics
+### 8. Deactivate OTLP Metrics
 
 By default, `otlp` input is enabled.
 
@@ -511,7 +519,7 @@ spec:
 
 With this, the agent starts collecting all Istio metrics from Istio sidecars, and the push-based OTLP metrics are dropped.
 
-### 8. Add Filters
+### 9. Add Filters
 
 To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
@@ -564,7 +572,7 @@ spec:
 >
 > However, if the namespace selector is not defined for the `istio` and `otlp` input, then metrics from system namespaces are included by default.
 
-### 9. Activate Diagnostic Metrics
+### 10. Activate Diagnostic Metrics
 
 If you use the `prometheus` or `istio` input, for every metric source typical scrape metrics are produced, such as `up`, `scrape_duration_seconds`, `scrape_samples_scraped`, `scrape_samples_post_metric_relabeling`, and `scrape_series_added`.
 
@@ -613,7 +621,7 @@ If you want to use them for debugging and diagnostic purposes, you can activate 
 > [!NOTE]
 > Diagnostic metrics are only available for inputs `prometheus` and `istio`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
-### 10. Deploy the Pipeline
+### 11. Deploy the Pipeline
 
 To activate the MetricPipeline, apply the `metricpipeline.yaml` resource file in your cluster:
 

@@ -17,10 +17,10 @@ type Config struct {
 
 type Receivers struct {
 	KubeletStats                       *KubeletStatsReceiver               `yaml:"kubeletstats,omitempty"`
+	SingletonK8sClusterReceiverCreator *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8s_cluster,omitempty"`
 	PrometheusAppPods                  *PrometheusReceiver                 `yaml:"prometheus/app-pods,omitempty"`
 	PrometheusAppServices              *PrometheusReceiver                 `yaml:"prometheus/app-services,omitempty"`
 	PrometheusIstio                    *PrometheusReceiver                 `yaml:"prometheus/istio,omitempty"`
-	SingletonK8sClusterReceiverCreator *SingletonK8sClusterReceiverCreator `yaml:"singleton_receiver_creator/k8s_cluster,omitempty"`
 }
 
 type KubeletStatsReceiver struct {
@@ -46,8 +46,6 @@ type KubeletStatsMetricsConfig struct {
 	K8sNodeCPUTime               MetricConfig `yaml:"k8s.node.cpu.time"`
 	K8sNodeMemoryMajorPageFaults MetricConfig `yaml:"k8s.node.memory.major_page_faults"`
 	K8sNodeMemoryPageFaults      MetricConfig `yaml:"k8s.node.memory.page_faults"`
-	K8sNodeMemoryRSS             MetricConfig `yaml:"k8s.node.memory.rss"`
-	K8sNodeMemoryWorkingSet      MetricConfig `yaml:"k8s.node.memory.working_set"`
 }
 
 type MetricGroupType string
