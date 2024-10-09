@@ -197,7 +197,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		It("Should disable the reconciliation of the tracepipeline", func() {
-			assertPipelineReconciliationDisabled(ctx, k8sClient, "telemetry-trace-collector", appNameLabelKey)
+			assertPipelineReconciliationDisabled(ctx, k8sClient, "telemetry-trace-gateway", appNameLabelKey)
 		})
 
 		It("Should disable the reconciliation of the telemetry CR", func() {

@@ -10,6 +10,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -197,6 +198,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+
+		// TODO: Remove after next release on regular (2/2)
+		It("Should have deleted old trace-collector resources", Label(suite.LabelOperational), func() {
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}, &corev1.ServiceAccount{})).To(Not(Succeed()))
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "telemetry-trace-collector"}, &rbacv1.ClusterRoleBinding{})).To(Not(Succeed()))
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "telemetry-trace-collector"}, &rbacv1.ClusterRole{})).To(Not(Succeed()))
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "telemetry-trace-collector-metrics", Namespace: "kyma-system"}, &corev1.Service{})).To(Not(Succeed()))
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}, &networkingv1.NetworkPolicy{})).To(Not(Succeed()))
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}, &corev1.Secret{})).To(Not(Succeed()))
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}, &corev1.ConfigMap{})).To(Not(Succeed()))
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}, &appsv1.Deployment{})).To(Not(Succeed()))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})

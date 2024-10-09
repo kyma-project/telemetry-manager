@@ -67,7 +67,7 @@ func (pb *PodBuilder) WithCrashBackOffStatus() *PodBuilder {
 				State: corev1.ContainerState{
 					Waiting: &corev1.ContainerStateWaiting{
 						Reason:  "CrashLoopBackOff",
-						Message: "back-off 1m20s restarting failed container=collector pod=telemetry-trace-collector-757759865f-wnx7h_kyma-system(9525d87f-7e91-402c-995d-6f64fda1c2c6)",
+						Message: "back-off 1m20s restarting failed container=collector pod=telemetry-trace-gateway-757759865f-wnx7h_kyma-system(9525d87f-7e91-402c-995d-6f64fda1c2c6)",
 					},
 				},
 				LastTerminationState: corev1.ContainerState{
