@@ -9,7 +9,7 @@ import (
 
 func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	return config.Pipeline{
-		Receivers:  makeReceiversIDs(pipeline),
+		Receivers:  makeReceiversIDs(),
 		Processors: []string{"memory_limiter"},
 		Exporters:  []string{formatRoutingConnectorID(pipeline.Name)},
 	}
@@ -49,16 +49,12 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline)
 	}
 }
 
-func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline) []string {
+func makeReceiversIDs() []string {
 	var receivers []string
 
 	receivers = append(receivers, "otlp")
 
 	receivers = append(receivers, "singleton_receiver_creator/kymastats")
-
-	if isRuntimeInputEnabled(pipeline.Spec.Input) {
-		receivers = append(receivers, "singleton_receiver_creator/k8s_cluster")
-	}
 
 	return receivers
 }

@@ -105,7 +105,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 
 	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = config.Pipeline{
-			Receivers:  []string{"kubeletstats"},
+			Receivers:  []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"},
 			Processors: []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"},
 			Exporters:  []string{"otlp"},
 		}

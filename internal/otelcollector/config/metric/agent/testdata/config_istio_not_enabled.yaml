@@ -19,6 +19,7 @@ service:
         metrics/runtime:
             receivers:
                 - kubeletstats
+                - singleton_receiver_creator/k8s_cluster
             processors:
                 - memory_limiter
                 - resource/delete-service-name
