@@ -1,6 +1,7 @@
 package apiserverproxy
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -76,7 +77,7 @@ func (a Client) Get(proxyURL string) (*http.Response, error) {
 		TLSClientConfig: a.tlsClientConfig,
 	}}
 
-	req, err := http.NewRequest(http.MethodGet, proxyURL, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, proxyURL, nil)
 	if err != nil {
 		return nil, err
 	}

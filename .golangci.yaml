@@ -32,7 +32,6 @@ linters:
     - mirror
     - nestif
     - nlreturn
-    - noctx
     - nonamedreturns
     - paralleltest
     - perfsprint

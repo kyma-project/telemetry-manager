@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -157,7 +158,7 @@ func TestHandler(t *testing.T) {
 				WithLogPipelineSubscriber(logPipelineEvents),
 				WithLogger(noopLogger))
 
-			req, err := http.NewRequest(tc.requestMethod, "/", tc.requestBody)
+			req, err := http.NewRequestWithContext(context.Background(), tc.requestMethod, "/", tc.requestBody)
 			require.NoError(t, err)
 
 			rr := httptest.NewRecorder()
