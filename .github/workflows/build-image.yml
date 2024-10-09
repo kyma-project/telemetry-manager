@@ -12,6 +12,7 @@ on:
       - '**/*.md'
       - 'OWNERS'
       - 'CODEOWNERS'
+      - 'external-images.yaml'
   push:
     branches:
       - "main"
@@ -24,6 +25,7 @@ on:
       - '**/*.md'
       - 'OWNERS'
       - 'CODEOWNERS'
+      - 'external-images.yaml'
 jobs:
   envs:
     runs-on: ubuntu-latest
