@@ -1,114 +1,102 @@
 package trace
 
 import (
-	crand "crypto/rand"
-	"encoding/binary"
-	"math/rand"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-var _ = Describe("WithTds", func() {
+var fts = []FlatTrace{
+	{
+		Name: "ingress",
+		ResourceAttributes: map[string]string{
+			"service.name":        "backend",
+			"k8s.pod.ip":          "10.42.1.76",
+			"k8s.deployment.name": "backend",
+		},
+		SpanAttributes: map[string]string{
+			"response_size":           "31",
+			"upstream_cluster.name":   "inbound|4317||",
+			"istio.canonical_service": "backend",
+		},
+	},
+	{
+		Name: "ingress-2",
+		ResourceAttributes: map[string]string{
+			"service.name":        "monitoring-custom-metrics",
+			"k8s.pod.ip":          "10.42.1.73",
+			"k8s.deployment.name": "istio",
+		},
+		SpanAttributes: map[string]string{
+			"response_size":           "32",
+			"upstream_cluster.name":   "inbound|4318||",
+			"istio.canonical_service": "istio",
+		},
+	},
+}
+
+var _ = Describe("HaveFlatTraces", func() {
 	It("should apply matcher to valid trace data", func() {
 		td := ptrace.NewTraces()
-		Expect(mustMarshalTraces(td)).Should(WithTds(ContainElements()))
+		Expect(mustMarshalTraces(td)).Should(HaveFlatTraces(ContainElements()))
 	})
 
 	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(WithTds(BeEmpty()))
+		Expect([]byte{}).Should(HaveFlatTraces(BeEmpty()))
 	})
 
 	It("should return error for nil input", func() {
-		success, err := WithTds(BeEmpty()).Match(nil)
+		success, err := HaveFlatTraces(BeEmpty()).Match(nil)
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
 
 	It("should return error for invalid input type", func() {
-		success, err := WithTds(BeEmpty()).Match(struct{}{})
+		success, err := HaveFlatTraces(BeEmpty()).Match(struct{}{})
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
-})
 
-var _ = Describe("WithResourceAttrs", func() {
-	It("should apply matcher", func() {
+	It("should return a FlatTrace struct", func() {
 		td := ptrace.NewTraces()
-		rm := td.ResourceSpans().AppendEmpty()
-		attrs := rm.Resource().Attributes()
-		attrs.PutStr("k8s.cluster.name", "cluster-01")
-		attrs.PutStr("k8s.deployment.name", "nginx")
+		//set resource attributes
+		rt := td.ResourceSpans().AppendEmpty()
+		attrs := rt.Resource().Attributes()
+		attrs.PutStr("service.name", "backend")
+		attrs.PutStr("k8s.pod.ip", "10.42.1.76")
+		attrs.PutStr("k8s.deployment.name", "backend")
 
-		Expect(mustMarshalTraces(td)).Should(ContainTd(WithResourceAttrs(ContainElement(HaveKey("k8s.cluster.name")))))
+		scope := rt.ScopeSpans().AppendEmpty()
+
+		//set span name
+		s := scope.Spans().AppendEmpty()
+		s.SetName("ingress")
+
+		//set span attributes
+		s.Attributes().PutStr("response_size", "31")
+		s.Attributes().PutStr("upstream_cluster.name", "inbound|4317||")
+		s.Attributes().PutStr("istio.canonical_service", "backend")
+
+		Expect(mustMarshalTraces(td)).Should(HaveFlatTraces(ContainElements(fts[0])))
 	})
 })
 
-var _ = Describe("WithSpans", func() {
+var _ = Describe("HaveName", func() {
 	It("should apply matcher", func() {
-		td := ptrace.NewTraces()
-		rs := td.ResourceSpans().AppendEmpty()
-		spans := rs.ScopeSpans().AppendEmpty().Spans()
-		spans.AppendEmpty()
-		spans.AppendEmpty()
-
-		Expect(mustMarshalTraces(td)).Should(ContainTd(WithSpans(HaveLen(2))))
+		Expect(fts).Should(ContainElement(HaveName(Equal("ingress"))))
 	})
 })
 
-var _ = Describe("WithTraceID", func() {
+var _ = Describe("HaveResourceAttributes", func() {
 	It("should apply matcher", func() {
-		td := ptrace.NewTraces()
-		rs := td.ResourceSpans().AppendEmpty()
-		spans := rs.ScopeSpans().AppendEmpty().Spans()
 
-		traceID := newTraceID()
-		spans.AppendEmpty().SetTraceID(traceID)
-
-		Expect(mustMarshalTraces(td)).Should(ContainTd(ContainSpan(WithTraceID(Equal(traceID)))))
+		Expect(fts).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))))
 	})
 })
 
-var _ = Describe("WithSpanID", func() {
+var _ = Describe("HaveSpanAttributes", func() {
 	It("should apply matcher", func() {
-		td := ptrace.NewTraces()
-		rs := td.ResourceSpans().AppendEmpty()
-		spans := rs.ScopeSpans().AppendEmpty().Spans()
-
-		spanID := newSpanID()
-		spans.AppendEmpty().SetSpanID(spanID)
-
-		Expect(mustMarshalTraces(td)).Should(ContainTd(ContainSpan(WithSpanID(Equal(spanID)))))
-	})
-})
-
-var _ = Describe("WithSpanIDs", func() {
-	It("should apply matcher", func() {
-		td := ptrace.NewTraces()
-		rs := td.ResourceSpans().AppendEmpty()
-		spans := rs.ScopeSpans().AppendEmpty().Spans()
-
-		spanIDs := []pcommon.SpanID{newSpanID(), newSpanID()}
-		spans.AppendEmpty().SetSpanID(spanIDs[0])
-		spans.AppendEmpty().SetSpanID(spanIDs[1])
-
-		Expect(mustMarshalTraces(td)).Should(ContainTd(WithSpans(WithSpanIDs(ConsistOf(spanIDs)))))
-	})
-})
-
-var _ = Describe("WithSpanAttrs", func() {
-	It("should apply matcher", func() {
-		td := ptrace.NewTraces()
-		rs := td.ResourceSpans().AppendEmpty()
-		spans := rs.ScopeSpans().AppendEmpty().Spans()
-
-		span := spans.AppendEmpty()
-		attrs := span.Attributes()
-		attrs.PutStr("color", "red")
-
-		Expect(mustMarshalTraces(td)).Should(ContainTd(ContainSpan(WithSpanAttrs(HaveKey("color")))))
+		Expect(fts).Should(ContainElement(HaveSpanAttributes(HaveKey("response_size"))))
 	})
 })
 
@@ -119,23 +107,4 @@ func mustMarshalTraces(td ptrace.Traces) []byte {
 		panic(err)
 	}
 	return bytes
-}
-
-func newSpanID() pcommon.SpanID {
-	var rngSeed int64
-	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-	randSource := rand.New(rand.NewSource(rngSeed)) //nolint:gosec // random number generator is sufficient.
-	sid := pcommon.SpanID{}
-	_, _ = randSource.Read(sid[:])
-	return sid
-}
-
-func newTraceID() pcommon.TraceID {
-	var rngSeed int64
-	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-	randSource := rand.New(rand.NewSource(rngSeed)) //nolint:gosec // random number generator is sufficient.
-	tid := pcommon.TraceID{}
-	_, _ = randSource.Read(tid[:])
-
-	return tid
 }

@@ -16,7 +16,7 @@ func HaveFlatMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonMetrics []byte) ([]FlatMetric, error) {
 		mds, err := unmarshalMetrics(jsonMetrics)
 		if err != nil {
-			return nil, fmt.Errorf("WithMds requires a valid OTLP JSON document: %w", err)
+			return nil, fmt.Errorf("HaveFlatMetrics requires a valid OTLP JSON document: %w", err)
 		}
 
 		fm := flattenAllMetrics(mds)
