@@ -14,6 +14,7 @@ on:
       - '**/*.md'
       - 'OWNERS'
       - 'CODEOWNERS'
+      - 'external-images.yaml'
   workflow_dispatch:
 
 jobs:
