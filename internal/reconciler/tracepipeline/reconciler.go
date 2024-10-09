@@ -138,7 +138,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	// TODO: Delete this logic after next release on regular (+ increase coverage threshold back to 74%)
+	// TODO: Remove after next release on regular (1/2) (+ increase coverage threshold back to 74%)
 	if err := r.cleanUpOldTraceCollectorResources(ctx); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to clean up old trace collector resources: %w", err)
 	}
