@@ -126,7 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		).K8sObject()
 		traceServiceInternalSpansGen := telemetrygen.NewPod(traceServiceInternalSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
-			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-trace-collector"),
+			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-trace-gateway"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
 
