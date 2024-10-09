@@ -358,16 +358,12 @@ func (r *Reconciler) cleanUpOldTraceCollectorResources(ctx context.Context) erro
 			})
 	}
 
-	var errs error = nil
+	var errs error
 	for _, oldResource := range oldTraceCollectorResources {
 		if err := r.Delete(ctx, oldResource); err != nil && !apierrors.IsNotFound(err) {
 			errs = errors.Join(errs, fmt.Errorf("failed to delete old trace collector resource: %w", err))
 		}
 	}
 
-	if errs != nil {
-		return errs
-	}
-
-	return nil
+	return errs
 }
