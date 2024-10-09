@@ -467,8 +467,6 @@ If Node metrics are enabled, the following metrics are collected:
   - `k8s.node.filesystem.usage`
   - `k8s.node.memory.available`
   - `k8s.node.memory.usage`
-  - `k8s.node.network.errors`
-  - `k8s.node.network.io`
   - `k8s.node.memory.rss`
   - `k8s.node.memory.working_set`
 
