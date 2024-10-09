@@ -138,7 +138,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	// TODO: Delete this logic after next release on regular
+	// TODO: Delete this logic after next release on regular (+ increase coverage threshold back to 74%)
 	if err := r.cleanUpOldTraceCollectorResources(ctx); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to clean up old trace collector resources: %w", err)
 	}
@@ -358,10 +358,15 @@ func (r *Reconciler) cleanUpOldTraceCollectorResources(ctx context.Context) erro
 			})
 	}
 
+	var errs error = nil
 	for _, oldResource := range oldTraceCollectorResources {
 		if err := r.Delete(ctx, oldResource); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete one of the old trace collector resources: %w", err)
+			errs = errors.Join(errs, fmt.Errorf("failed to delete old trace collector resource: %w", err))
 		}
+	}
+
+	if errs != nil {
+		return errs
 	}
 
 	return nil
