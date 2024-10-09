@@ -19,11 +19,15 @@ threshold:
 # specific to more general rules.
 override:
   # Temporarily decrease coverage threshold for certain packages, we need to increase the coverage and remove these entries from the list
-  - threshold: 57
+  - threshold: 87
     path: ^internal/istiostatus$
-  - threshold: 86
+  - threshold: 87
     path: ^internal/otelcollector/config/otlpexporter$
-  - threshold: 73
+  - threshold: 77
+    path: ^internal/reconciler/logpipeline/fluentbit$
+  - threshold: 0
+    path: ^internal/reconciler/logpipeline/otel$
+  - threshold: 82
     path: ^internal/reconciler/logpipeline$
   - threshold: 77
     path: ^internal/reconciler/metricpipeline$
@@ -33,30 +37,30 @@ override:
     path: ^internal/reconciler/tracepipeline$
   - threshold: 82
     path: ^internal/resources/otelcollector$
-  - threshold: 75
+  - threshold: 78
     path: ^internal/resources/selfmonitor$
   - threshold: 75
     path: ^internal/resourcelock$
   - threshold: 85
     path: ^internal/webhookcert$
-  - threshold: 70
+  - threshold: 73
     path: ^webhook/logpipeline
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
   # Exclude files or packages matching their paths
   paths:
-    - ^apis                # apis should in general only contain Go structs and not unit tested
-    - ^controllers         # controllers are covered by e2e tests
+    - ^apis # apis should in general only contain Go structs and not unit tested
+    - ^controllers # controllers are covered by e2e tests
     - main
     - mocks
     - stubs
-    - ^internal/k8sutils   # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
+    - ^internal/k8sutils # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
     - internal/logger
-    - ^internal/reconciler/logparser  # logparser reconciler will be removed soon
-    - ^test                # e2e and integration tests
-    - webhook/logparser    # logparser will be removed soon
-    - ^internal/testutils  # some functions in testutils are being used in e2e tests only
+    - ^internal/reconciler/logparser # logparser reconciler will be removed soon
+    - ^test # e2e and integration tests
+    - webhook/logparser # logparser will be removed soon
+    - ^internal/testutils # some functions in testutils are being used in e2e tests only
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by
