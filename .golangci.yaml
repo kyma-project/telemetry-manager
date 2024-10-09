@@ -28,7 +28,6 @@ linters:
     - ireturn
     - lll
     - maintidx
-    - makezero
     - mirror
     - nestif
     - nlreturn

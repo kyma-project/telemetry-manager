@@ -39,7 +39,7 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 			deployment := createDeployment(test.desiredScheduled, test.numberReady)
 			replicaSet := createReplicaSet(test.desiredScheduled, test.numberReady, *deployment)
 
-			itemList := make([]appsv1.ReplicaSet, 1)
+			itemList := make([]appsv1.ReplicaSet, 0)
 
 			itemList = append(itemList, *replicaSet)
 			rsList := &appsv1.ReplicaSetList{
@@ -148,7 +148,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 			deployment := createDeployment(test.desiredScheduled, test.numberReady)
 			replicaSet := createReplicaSet(test.desiredScheduled, test.numberReady, *deployment)
 
-			itemList := make([]appsv1.ReplicaSet, 1)
+			itemList := make([]appsv1.ReplicaSet, 0)
 
 			itemList = append(itemList, *replicaSet)
 			rsList := &appsv1.ReplicaSetList{
@@ -230,7 +230,7 @@ func TestDeploymentSetRollout(t *testing.T) {
 		Items: pods,
 	}
 
-	replicaSets := make([]appsv1.ReplicaSet, 1)
+	replicaSets := make([]appsv1.ReplicaSet, 0)
 	replicaSets = append(replicaSets, *replicaSet)
 	rsList := &appsv1.ReplicaSetList{
 		Items: replicaSets,
