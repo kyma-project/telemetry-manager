@@ -82,6 +82,10 @@ receivers:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
+            k8s.node.network.io:
+                enabled: false
+            k8s.node.network.errors:
+                enabled: false
     singleton_receiver_creator/k8s_cluster:
         auth_type: serviceAccount
         leader_election:
