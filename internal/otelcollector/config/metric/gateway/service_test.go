@@ -158,7 +158,7 @@ func TestService(t *testing.T) {
 			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Exporters)
 		})
 
-		t.Run("with runtime input enabled", func(t *testing.T) {
+		t.Run("with runtime input enabled and default resources metrics enabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(
 				ctx,
 				[]telemetryv1alpha1.MetricPipeline{
