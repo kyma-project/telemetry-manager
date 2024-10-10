@@ -59,6 +59,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %w", err)
 		}
 	}
+
 	return nil
 }
 

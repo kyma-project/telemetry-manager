@@ -23,6 +23,7 @@ func (etc *ErrorToMessageConverter) Convert(err error) string {
 		if pipe.Reason == "" {
 			return fmt.Sprintf(podIsPending, pipe.ContainerName, pipe.Message, pipe.ContainerName)
 		}
+
 		return fmt.Sprintf(podIsPending, pipe.ContainerName, pipe.Reason, pipe.ContainerName)
 	}
 

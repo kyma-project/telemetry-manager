@@ -77,6 +77,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	if err != nil {
 		return nil, err
 	}
+
 	fluentbitConfig := logpipelinefluentbit.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},

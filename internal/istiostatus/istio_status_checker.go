@@ -18,7 +18,6 @@ func NewChecker(d discovery.DiscoveryInterface) *Checker {
 
 // IsIstioActive checks if Istio is active on the cluster based on the presence of Istio CRDs
 func (isc *Checker) IsIstioActive(ctx context.Context) bool {
-
 	groupList, err := isc.discovery.ServerGroups()
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "error getting group list from server")
@@ -29,6 +28,6 @@ func (isc *Checker) IsIstioActive(ctx context.Context) bool {
 			return true
 		}
 	}
-	return false
 
+	return false
 }

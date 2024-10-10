@@ -55,6 +55,7 @@ func enablePrometheusMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -65,6 +66,7 @@ func enableRuntimeMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) b
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -75,9 +77,11 @@ func enableIstioMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) boo
 			return true
 		}
 	}
+
 	return false
 }
 
+//nolint:mnd // hardcoded values
 func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
 	return Exporters{
 		OTLP: config.OTLPExporter{

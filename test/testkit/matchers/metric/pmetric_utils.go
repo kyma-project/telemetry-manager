@@ -41,14 +41,15 @@ func flattenAllMetrics(mds []pmetric.Metrics) []FlatMetric {
 func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 	var flatMetrics []FlatMetric
 
-	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+	for i := range md.ResourceMetrics().Len() {
 		resourceMetrics := md.ResourceMetrics().At(i)
-		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
+		for j := range resourceMetrics.ScopeMetrics().Len() {
 			scopeMetrics := resourceMetrics.ScopeMetrics().At(j)
-			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
+			for k := range scopeMetrics.Metrics().Len() {
 				metric := scopeMetrics.Metrics().At(k)
 				dataPointsAttributes := getAttributesPerDataPoint(metric)
-				for l := 0; l < len(dataPointsAttributes); l++ {
+
+				for l := range dataPointsAttributes {
 					flatMetrics = append(flatMetrics, FlatMetric{
 						Name:               metric.Name(),
 						Description:        metric.Description(),
@@ -70,10 +71,12 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 // attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
 func attributeToMap(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
+
 	attrs.Range(func(k string, v pcommon.Value) bool {
 		attrMap[k] = v.AsString()
 		return true
 	})
+
 	return attrMap
 }
 
@@ -82,21 +85,23 @@ func getAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
 
 	switch m.Type() {
 	case pmetric.MetricTypeSum:
-		for i := 0; i < m.Sum().DataPoints().Len(); i++ {
+		for i := range m.Sum().DataPoints().Len() {
 			attrsPerDataPoint = append(attrsPerDataPoint, m.Sum().DataPoints().At(i).Attributes())
 		}
 	case pmetric.MetricTypeGauge:
-		for i := 0; i < m.Gauge().DataPoints().Len(); i++ {
+		for i := range m.Gauge().DataPoints().Len() {
 			attrsPerDataPoint = append(attrsPerDataPoint, m.Gauge().DataPoints().At(i).Attributes())
 		}
 	case pmetric.MetricTypeHistogram:
-		for i := 0; i < m.Histogram().DataPoints().Len(); i++ {
+		for i := range m.Histogram().DataPoints().Len() {
 			attrsPerDataPoint = append(attrsPerDataPoint, m.Histogram().DataPoints().At(i).Attributes())
 		}
 	case pmetric.MetricTypeSummary:
-		for i := 0; i < m.Summary().DataPoints().Len(); i++ {
+		for i := range m.Summary().DataPoints().Len() {
 			attrsPerDataPoint = append(attrsPerDataPoint, m.Summary().DataPoints().At(i).Attributes())
 		}
+	case pmetric.MetricTypeEmpty, pmetric.MetricTypeExponentialHistogram:
+		// do nothing
 	}
 
 	return attrsPerDataPoint

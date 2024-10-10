@@ -54,6 +54,7 @@ func ConsistOfLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
 func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) string {
 		kubernetesAttrs := getKubernetesAttributes(lr)
+
 		containerName, hasContainerName := kubernetesAttrs.Get("container_name")
 		if !hasContainerName || containerName.Type() != pcommon.ValueTypeStr {
 			return ""
@@ -66,6 +67,7 @@ func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
 func WithNamespace(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) string {
 		kubernetesAttrs := getKubernetesAttributes(lr)
+
 		namespaceName, hasNamespaceName := kubernetesAttrs.Get("namespace_name")
 		if !hasNamespaceName || namespaceName.Type() != pcommon.ValueTypeStr {
 			return ""
@@ -78,6 +80,7 @@ func WithNamespace(matcher types.GomegaMatcher) types.GomegaMatcher {
 func WithPodName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) string {
 		kubernetesAttrs := getKubernetesAttributes(lr)
+
 		podName, hasPodName := kubernetesAttrs.Get("pod_name")
 		if !hasPodName || podName.Type() != pcommon.ValueTypeStr {
 			return ""
@@ -90,6 +93,7 @@ func WithPodName(matcher types.GomegaMatcher) types.GomegaMatcher {
 func WithLevel(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) string {
 		const levelAttrKey = "level"
+
 		levelAttr, hasLevelAttr := lr.Attributes().Get(levelAttrKey)
 		if !hasLevelAttr || levelAttr.Type() != pcommon.ValueTypeStr {
 			return ""
@@ -102,6 +106,7 @@ func WithLevel(matcher types.GomegaMatcher) types.GomegaMatcher {
 func WithTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) time.Time {
 		const timestampAttrKey = "timestamp"
+
 		timestampAttr, hasTimestampAttr := lr.Attributes().Get(timestampAttrKey)
 		if !hasTimestampAttr || timestampAttr.Type() != pcommon.ValueTypeStr {
 			return time.Time{}
@@ -119,10 +124,12 @@ func WithTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 func WithKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
 		kubernetesAttrs := getKubernetesAttributes(lr)
+
 		annotationAttrs, hasAnnotations := kubernetesAttrs.Get("annotations")
 		if !hasAnnotations || annotationAttrs.Type() != pcommon.ValueTypeMap {
 			return nil
 		}
+
 		return annotationAttrs.Map().AsRaw()
 	}, matcher)
 }
@@ -130,10 +137,12 @@ func WithKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher 
 func WithKubernetesLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
 		kubernetesAttrs := getKubernetesAttributes(lr)
+
 		labelAttrs, hasLabels := kubernetesAttrs.Get("labels")
 		if !hasLabels || labelAttrs.Type() != pcommon.ValueTypeMap {
 			return nil
 		}
+
 		return labelAttrs.Map().AsRaw()
 	}, matcher)
 }

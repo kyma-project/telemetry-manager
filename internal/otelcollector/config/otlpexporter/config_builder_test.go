@@ -179,5 +179,4 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 	require.Equal(t, envVars["OTLP_TLS_CA_PEM_TEST"], []byte("test ca cert pem"))
 	require.Equal(t, envVars["OTLP_TLS_CERT_PEM_TEST"], []byte("test client cert pem"))
 	require.Equal(t, envVars["OTLP_TLS_KEY_PEM_TEST"], []byte("test client key pem"))
-
 }

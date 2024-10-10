@@ -43,6 +43,7 @@ func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporter, 
 	}
 
 	exportersConfig := makeExportersConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
+
 	return exportersConfig, envVars, nil
 }
 
@@ -72,10 +73,12 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName 
 		otlpExporterConfig.Endpoint = ""
 		otlpExporterConfig.MetricsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
+
 	if len(otlpOutput.Path) > 0 && SignalTypeTrace == signalType {
 		otlpExporterConfig.Endpoint = ""
 		otlpExporterConfig.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
+
 	return &otlpExporterConfig
 }
 
@@ -106,9 +109,11 @@ func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipe
 	if output.TLS.CA.IsDefined() {
 		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSCaVariable(pipelineName))
 	}
+
 	if output.TLS.Cert.IsDefined() {
 		cfg.CertPem = fmt.Sprintf("${%s}", makeTLSCertVariable(pipelineName))
 	}
+
 	if output.TLS.Key.IsDefined() {
 		cfg.KeyPem = fmt.Sprintf("${%s}", makeTLSKeyVariable(pipelineName))
 	}
@@ -118,6 +123,7 @@ func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipe
 
 func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
+
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
 		basicAuthHeaderVariable := makeBasicAuthHeaderVariable(pipelineName)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
@@ -126,6 +132,7 @@ func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[
 	for _, header := range output.Headers {
 		headers[header.Name] = fmt.Sprintf("${%s}", makeHeaderVariable(header, pipelineName))
 	}
+
 	return headers
 }
 

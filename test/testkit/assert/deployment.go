@@ -23,10 +23,12 @@ func DeploymentReady(ctx context.Context, k8sClient client.Client, name types.Na
 
 func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
 	var deployment appsv1.Deployment
+
 	err := k8sClient.Get(ctx, name, &deployment)
 	if err != nil {
 		return false, fmt.Errorf("failed to get deployment: %w", err)
 	}
+
 	listOptions := client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
 		Namespace:     name.Namespace,

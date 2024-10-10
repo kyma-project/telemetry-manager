@@ -24,6 +24,7 @@ func NewPeerAuthentication(name, namespace string) *PeerAuthentication {
 func (d *PeerAuthentication) K8sObject(labelOpts ...testkit.OptFunc) *istiosecurityclientv1.PeerAuthentication {
 	labels := ProcessLabelOptions(labelOpts...)
 	workLoadSelector := istiotypev1beta1.WorkloadSelector{MatchLabels: labels}
+
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{Name: d.name, Namespace: d.namespace},
 		Spec: istiosecurityv1.PeerAuthentication{

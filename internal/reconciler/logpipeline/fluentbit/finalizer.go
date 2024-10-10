@@ -20,13 +20,16 @@ func ensureFinalizers(ctx context.Context, client client.Client, pipeline *telem
 	}
 
 	var changed bool
+
 	if !controllerutil.ContainsFinalizer(pipeline, sectionsFinalizer) {
 		controllerutil.AddFinalizer(pipeline, sectionsFinalizer)
+
 		changed = true
 	}
 
 	if len(pipeline.Spec.Files) > 0 && !controllerutil.ContainsFinalizer(pipeline, filesFinalizer) {
 		controllerutil.AddFinalizer(pipeline, filesFinalizer)
+
 		changed = true
 	}
 
@@ -43,13 +46,16 @@ func cleanupFinalizersIfNeeded(ctx context.Context, client client.Client, pipeli
 	}
 
 	var changed bool
+
 	if controllerutil.ContainsFinalizer(pipeline, sectionsFinalizer) {
 		controllerutil.RemoveFinalizer(pipeline, sectionsFinalizer)
+
 		changed = true
 	}
 
 	if controllerutil.ContainsFinalizer(pipeline, filesFinalizer) {
 		controllerutil.RemoveFinalizer(pipeline, filesFinalizer)
+
 		changed = true
 	}
 

@@ -52,6 +52,7 @@ func AtomicLevel() zap.AtomicLevel {
 	once.Do(func() {
 		atomicLevel = zap.NewAtomicLevel()
 	})
+
 	return atomicLevel
 }
 
@@ -62,6 +63,7 @@ func New(client client.Reader, config HandlerConfig, opts ...Option) *Handler {
 	}
 
 	WithAtomicLevel(AtomicLevel())(h)
+
 	for _, opt := range opts {
 		opt(h)
 	}
@@ -104,6 +106,7 @@ func (h *Handler) loadOverridesConfig(ctx context.Context) (*Config, error) {
 
 func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 	var cm corev1.ConfigMap
+
 	cmName := types.NamespacedName{
 		Name:      configMapName,
 		Namespace: h.config.SystemNamespace,
@@ -112,11 +115,14 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 		if apierrors.IsNotFound(err) {
 			return "", nil
 		}
+
 		return "", fmt.Errorf("failed to get overrides configmap: %w", err)
 	}
+
 	if data, ok := cm.Data[configKey]; ok {
 		return data, nil
 	}
+
 	return "", nil
 }
 
@@ -126,6 +132,7 @@ func (h *Handler) syncLogLevel(config GlobalConfig) error {
 		newLogLevel = h.defaultLevel
 	} else {
 		var err error
+
 		newLogLevel, err = zapcore.ParseLevel(config.LogLevel)
 		if err != nil {
 			return fmt.Errorf("failed to parse zap level: %w", err)
@@ -133,5 +140,6 @@ func (h *Handler) syncLogLevel(config GlobalConfig) error {
 	}
 
 	h.atomicLevel.SetLevel(newLogLevel)
+
 	return nil
 }

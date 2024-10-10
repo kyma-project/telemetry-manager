@@ -77,7 +77,6 @@ func New(client client.Client, config Config, prober commonstatus.DaemonSetProbe
 			config: config,
 		},
 	}
-
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
@@ -111,8 +110,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
 	}
+
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
+
 		if err = r.deleteFluentBitResources(ctx); err != nil {
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
@@ -137,6 +138,7 @@ func (r *Reconciler) createOrUpdateFluentBitResources(ctx context.Context, pipel
 	if len(pipelines) == 0 {
 		return nil
 	}
+
 	ownerRefSetter := k8sutils.NewOwnerReferenceSetter(r.Client, pipeline)
 
 	serviceAccount := commonresources.MakeServiceAccount(r.config.DaemonSet)
@@ -180,6 +182,7 @@ func (r *Reconciler) createOrUpdateFluentBitResources(ctx context.Context, pipel
 	}
 
 	var checksum string
+
 	var err error
 	if checksum, err = r.calculateChecksum(ctx); err != nil {
 		return fmt.Errorf("failed to calculate config checksum: %w", err)
@@ -194,6 +197,7 @@ func (r *Reconciler) createOrUpdateFluentBitResources(ctx context.Context, pipel
 	if r.istioStatusChecker.IsIstioActive(ctx) {
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
+
 	networkPolicy := commonresources.MakeNetworkPolicy(r.config.DaemonSet, allowedPorts, fluentbit.Labels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, ownerRefSetter, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
@@ -331,11 +335,13 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 // A pipeline is deployable if it is not being deleted, and all secret references exist.
 func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) ([]telemetryv1alpha1.LogPipeline, error) {
 	var reconcilableLogPipelines []telemetryv1alpha1.LogPipeline
+
 	for i := range allPipelines {
 		isReconcilable, err := r.IsReconcilable(ctx, &allPipelines[i])
 		if err != nil {
 			return nil, err
 		}
+
 		if isReconcilable {
 			reconcilableLogPipelines = append(reconcilableLogPipelines, allPipelines[i])
 		}

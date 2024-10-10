@@ -32,7 +32,9 @@ type serverCertProviderImpl struct {
 
 func newServerCertProvider(certDir string) *serverCertProviderImpl {
 	clock := realClock{}
+
 	const duration1d = 24 * time.Hour
+
 	return &serverCertProviderImpl{
 		expiryChecker: &certExpiryCheckerImpl{softExpiryOffset: duration1d, clock: realClock{}},
 		chainChecker:  &certChainCheckerImpl{},
@@ -45,9 +47,12 @@ func newServerCertProvider(certDir string) *serverCertProviderImpl {
 
 func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverCertConfig) ([]byte, []byte, error) {
 	var err error
+
 	var serverCertPEM, serverKeyPEM []byte
 	serverCertPEM, serverKeyPEM, err = p.storage.load()
+
 	var shouldCreateNew bool
+
 	if err != nil || len(serverCertPEM) == 0 || len(serverKeyPEM) == 0 {
 		shouldCreateNew = true
 	} else {

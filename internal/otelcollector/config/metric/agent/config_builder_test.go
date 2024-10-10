@@ -298,6 +298,7 @@ func TestBuildAgentConfig(t *testing.T) {
 				if tt.overwriteGoldenFile {
 					err = os.WriteFile(goldenFilePath, configYAML, 0600)
 					require.NoError(t, err, "failed to overwrite golden file")
+
 					return
 				}
 

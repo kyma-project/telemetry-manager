@@ -75,7 +75,6 @@ func New(
 	overridesHandler OverridesHandler,
 	reconcilers ...LogPipelineReconciler,
 ) *Reconciler {
-
 	reconcilersMap := make(map[OutputType]LogPipelineReconciler)
 	for _, r := range reconcilers {
 		reconcilersMap[r.SupportedOutput()] = r
@@ -122,6 +121,7 @@ func GetOutputType(t *telemetryv1alpha1.LogPipeline) OutputType {
 	if t.Spec.Output.Otlp != nil {
 		return OTel
 	}
+
 	return FluentBit
 }
 
@@ -132,10 +132,12 @@ func GetPipelinesForType(ctx context.Context, client client.Client, outputType O
 	}
 
 	var filteredList []telemetryv1alpha1.LogPipeline
+
 	for _, lp := range allPipelines.Items {
 		if GetOutputType(&lp) == outputType {
 			filteredList = append(filteredList, lp)
 		}
 	}
+
 	return filteredList, nil
 }

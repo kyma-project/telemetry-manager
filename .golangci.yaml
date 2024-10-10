@@ -6,34 +6,27 @@ run:
 linters:
   enable-all: true
   disable:
-  # Depreacted linters
+    # Depreacted linters
     - gomnd
     - execinquery
     - exportloopref
-  # Linters to be enabled after fixing the issues
-    - intrange
+    # Linters to be enabled after fixing the issues
     - cyclop
     - depguard
-    - exhaustive
     - exhaustruct
     - forcetypeassert
     - funlen
     - gochecknoglobals
     - goconst
-    - gocritic
     - godot
     - godox
     - err113
     - gofumpt
-    - mnd
     - ireturn
     - lll
     - maintidx
-    - makezero
     - mirror
     - nestif
-    - nlreturn
-    - noctx
     - nonamedreturns
     - paralleltest
     - perfsprint
@@ -45,9 +38,8 @@ linters:
     - thelper
     - tparallel
     - varnamelen
-    - whitespace
     - wrapcheck
-    - wsl
+    - nlreturn
 
 linters-settings:
   dupl:
@@ -194,6 +186,9 @@ linters-settings:
     # The max complexity while enabling this linter is 15. Please check if this can be reduced. Increase the threshold only if it is absolutely necessary.
     min-complexity: 15
 
+  wsl:
+    allow-trailing-comment: true
+
 issues:
   exclude:
     # Check this issue for more info: https://github.com/kyoh86/scopelint/issues/4
@@ -204,6 +199,15 @@ issues:
       linters:
         - errcheck
         - dupl
+        - err113
+    - path: ^internal/testutils
+      linters:
+        - mnd
+        - err113
+    - path: ^test/testkit
+      linters:
+        - mnd
+        - err113
     - path: _test\.go
       text: "shadow: declaration of \"ctx\" shadows declaration at line ([\\d]+)"
       linters:
@@ -212,20 +216,20 @@ issues:
       text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
       linters:
         - govet
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: internal/k8sutils/utils.go
     # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: test/testkit/matchers/(log|metric|trace)_matchers.go
-    - linters: [errcheck]
+    - linters: [ errcheck ]
       path: test/testkit/otel/traces/traces.go
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: test/testkit/assert/(deployment|daemon_set|metrics|traces).go
-    - linters: [dupl]
+    - linters: [ dupl ]
       path: main.go
     - linters:
         - importas

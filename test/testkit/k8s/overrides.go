@@ -63,7 +63,7 @@ func (o *Overrides) WithCollectAgentLogs(collectAgentLogs bool) *Overrides {
 
 func (o *Overrides) K8sObject() *corev1.ConfigMap {
 	config := overridesTemplate
-	config = strings.Replace(config, "{{ PAUSED }}", strconv.FormatBool(o.paused), -1)
+	config = strings.ReplaceAll(config, "{{ PAUSED }}", strconv.FormatBool(o.paused))
 	config = strings.Replace(config, "{{ LEVEL }}", string(o.level), 1)
 	config = strings.Replace(config, "{{ AGENT_LOGS }}", strconv.FormatBool(o.collectAgentLogs), 1)
 

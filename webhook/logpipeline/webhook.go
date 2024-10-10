@@ -74,6 +74,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 
 	if err := v.validateLogPipeline(ctx, logPipeline); err != nil {
 		log.Error(err, "LogPipeline rejected")
+
 		return admission.Response{
 			AdmissionResponse: admissionv1.AdmissionResponse{
 				Allowed: false,
@@ -85,6 +86,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 			},
 		}
 	}
+
 	var warnMsg []string
 
 	if logPipeline.ContainsCustomPlugin() {

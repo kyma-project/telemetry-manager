@@ -37,6 +37,7 @@ func (s *VirtualService) WithFaultAbortPercentage(percentage float64) *VirtualSe
 func (s *VirtualService) WithFaultDelay(percentage float64, delay time.Duration) *VirtualService {
 	s.faultDelayPercentage = percentage
 	s.faultDelayFixedDelay = delay
+
 	return s
 }
 

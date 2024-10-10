@@ -168,7 +168,6 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 }
 
 func makeMetricGatewayRole(name types.NamespacedName) *rbacv1.Role {
-
 	return &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -186,7 +185,6 @@ func makeMetricGatewayRole(name types.NamespacedName) *rbacv1.Role {
 }
 
 func makeMetricGatewayRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
-
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,

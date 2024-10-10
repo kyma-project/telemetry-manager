@@ -50,5 +50,6 @@ func setOwnerReference(owner metav1.Object, ownee client.Object, scheme *runtime
 	if err := controllerutil.SetOwnerReference(owner, ownee, scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
+
 	return nil
 }

@@ -56,6 +56,7 @@ func TestReceivers(t *testing.T) {
 		require.Equal(t, "serviceAccount", kymaStatsReceiver.AuthType)
 		require.Equal(t, "30s", kymaStatsReceiver.CollectionInterval)
 		require.Len(t, kymaStatsReceiver.Resources, 4)
+
 		expectedResources := []ModuleGVR{
 			{
 				Group:    "operator.kyma-project.io",

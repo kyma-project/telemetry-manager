@@ -11,6 +11,7 @@ func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 
 	keepAnnotations := appInput.KeepAnnotations
 	keepLabels := !appInput.DropLabels
+
 	keepOriginalBody := true
 	if appInput.KeepOriginalBody != nil {
 		keepOriginalBody = *appInput.KeepOriginalBody
@@ -34,5 +35,6 @@ func fluentBitBool(b bool) string {
 	if b {
 		return "on"
 	}
+
 	return "off"
 }

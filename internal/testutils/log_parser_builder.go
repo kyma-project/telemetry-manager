@@ -38,6 +38,7 @@ func (b *LogParserBuilder) Build() telemetryv1alpha1.LogParser {
 	if name == "" {
 		name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
+
 	return telemetryv1alpha1.LogParser{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,

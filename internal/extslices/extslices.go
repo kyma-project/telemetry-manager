@@ -5,5 +5,6 @@ func TransformFunc[S1 ~[]E1, E1, E2 any](s S1, transform func(E1) E2) []E2 {
 	for i, e := range s {
 		results[i] = transform(e)
 	}
+
 	return results
 }

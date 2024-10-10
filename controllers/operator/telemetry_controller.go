@@ -104,6 +104,7 @@ func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Obje
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to ValidatingWebhookConfiguration")
 		return nil
 	}
+
 	if webhook.Name != r.config.Webhook.CertConfig.WebhookName.Name {
 		return nil
 	}
@@ -117,6 +118,7 @@ func (r *TelemetryController) mapLogPipeline(ctx context.Context, object client.
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to LogPipeline")
 		return nil
 	}
+
 	if len(logPipeline.Status.Conditions) == 0 {
 		return nil
 	}
@@ -130,6 +132,7 @@ func (r *TelemetryController) mapTracePipeline(ctx context.Context, object clien
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to TracePipeline")
 		return nil
 	}
+
 	if len(tracePipeline.Status.Conditions) == 0 {
 		return nil
 	}
@@ -143,6 +146,7 @@ func (r *TelemetryController) mapMetricPipeline(ctx context.Context, object clie
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to MetricPipeline")
 		return nil
 	}
+
 	if len(metricPipeline.Status.Conditions) == 0 {
 		return nil
 	}
@@ -152,6 +156,7 @@ func (r *TelemetryController) mapMetricPipeline(ctx context.Context, object clie
 
 func (r *TelemetryController) createTelemetryRequests(ctx context.Context) []reconcile.Request {
 	var telemetries operatorv1alpha1.TelemetryList
+
 	err := r.List(ctx, &telemetries)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to list Telemetry CRs")

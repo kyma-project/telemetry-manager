@@ -22,6 +22,7 @@ func TestNewOwnerReferenceSetter(t *testing.T) {
 		require.NoError(t, ownerRefSetter.Create(ctx, obj))
 
 		var got corev1.ConfigMap
+
 		require.NoError(t, interceptedClient.Get(ctx, types.NamespacedName{Name: "dummy-1"}, &got))
 		require.NotNil(t, got.OwnerReferences)
 		require.Len(t, got.OwnerReferences, 1)
@@ -35,6 +36,7 @@ func TestNewOwnerReferenceSetter(t *testing.T) {
 		require.NoError(t, ownerRefSetter.Update(ctx, obj))
 
 		var got corev1.ConfigMap
+
 		require.NoError(t, interceptedClient.Get(ctx, types.NamespacedName{Name: "dummy-2"}, &got))
 		require.NotNil(t, got.OwnerReferences)
 		require.Len(t, got.OwnerReferences, 1)

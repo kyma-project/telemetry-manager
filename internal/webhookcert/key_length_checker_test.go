@@ -40,5 +40,6 @@ func generateKey(t *testing.T, keyLen int) []byte {
 	require.NoError(t, err, "failed to generate key")
 	encodedKey, err := encodeKeyPEM(key)
 	require.NoError(t, err, "failed to encode key")
+
 	return encodedKey
 }

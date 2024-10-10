@@ -60,6 +60,7 @@ func TestProvideCACert(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
+
 		fakeClient.Get(context.Background(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
@@ -91,6 +92,7 @@ func TestProvideCACert(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
+
 		fakeClient.Get(context.Background(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
@@ -126,6 +128,7 @@ func TestProvideCACert(t *testing.T) {
 		require.Equal(t, fakeNewKeyPEM, keyPEM)
 
 		var secret corev1.Secret
+
 		fakeClient.Get(context.Background(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
@@ -161,6 +164,7 @@ func TestProvideCACert(t *testing.T) {
 		require.Equal(t, fakeNewKeyPEM, keyPEM)
 
 		var secret corev1.Secret
+
 		fakeClient.Get(context.Background(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
@@ -194,6 +198,7 @@ func TestProvideCACert(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
+
 		fakeClient.Get(context.Background(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
@@ -203,7 +208,6 @@ func TestProvideCACert(t *testing.T) {
 	})
 
 	t.Run("Should generate new cert if keylength is 2048", func(t *testing.T) {
-
 		fakeCertPEM := []byte{1, 2, 3}
 		fakeKeyPEM := []byte{4, 5, 6}
 		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
@@ -228,19 +232,20 @@ func TestProvideCACert(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
+
 		fakeClient.Get(context.Background(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
 		require.Contains(t, secret.Data, "ca.key")
 		require.Equal(t, secret.Data["ca.crt"], fakeCertPEM)
 		require.Equal(t, secret.Data["ca.key"], fakeKeyPEM)
-
 	})
 }
 
 func generateCACertKey(creationTime time.Time) ([]byte, []byte) {
 	generator := &caCertGeneratorImpl{clock: mockClock{t: creationTime}}
 	cert, key, _ := generator.generateCert()
+
 	return cert, key
 }
 
@@ -252,5 +257,6 @@ func generateCACert(creationTime time.Time) []byte {
 func generateServerCert(caCert, caKey []byte, creationTime time.Time) []byte {
 	generator := &serverCertGeneratorImpl{clock: mockClock{t: creationTime}}
 	cert, _, _ := generator.generateCert(serverCertConfig{caCertPEM: caCert, caKeyPEM: caKey})
+
 	return cert
 }

@@ -29,15 +29,19 @@ func generateCustomOutput(output *telemetryv1alpha1.Output, fsBufferLimit string
 	sb := NewOutputSectionBuilder()
 	customOutputParams := parseMultiline(output.Custom)
 	aliasPresent := customOutputParams.ContainsKey("alias")
+
 	for _, p := range customOutputParams {
 		sb.AddConfigParam(p.Key, p.Value)
 	}
+
 	if !aliasPresent {
 		sb.AddConfigParam("alias", name)
 	}
+
 	sb.AddConfigParam("match", fmt.Sprintf("%s.*", name))
 	sb.AddConfigParam("storage.total_limit_size", fsBufferLimit)
 	sb.AddConfigParam("retry_limit", retryLimit)
+
 	return sb.Build()
 }
 
@@ -58,10 +62,12 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 		value := resolveValue(httpOutput.Host, name)
 		sb.AddConfigParam("host", value)
 	}
+
 	if httpOutput.Password.IsDefined() {
 		value := resolveValue(httpOutput.Password, name)
 		sb.AddConfigParam("http_passwd", value)
 	}
+
 	if httpOutput.User.IsDefined() {
 		value := resolveValue(httpOutput.User, name)
 		sb.AddConfigParam("http_user", value)
@@ -71,19 +77,24 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 	if httpOutput.TLSConfig.Disabled {
 		tlsEnabled = "off"
 	}
+
 	sb.AddConfigParam("tls", tlsEnabled)
+
 	tlsVerify := "on"
 	if httpOutput.TLSConfig.SkipCertificateValidation {
 		tlsVerify = "off"
 	}
+
 	sb.AddConfigParam("tls.verify", tlsVerify)
 
 	if httpOutput.TLSConfig.CA.IsDefined() {
 		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
 	}
+
 	if httpOutput.TLSConfig.Cert.IsDefined() {
 		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
 	}
+
 	if httpOutput.TLSConfig.Key.IsDefined() {
 		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
 	}
@@ -95,9 +106,11 @@ func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string 
 	if value.Value != "" {
 		return value.Value
 	}
+
 	if value.ValueFrom != nil && value.ValueFrom.IsSecretKeyRef() {
 		secretKeyRef := value.ValueFrom.SecretKeyRef
 		return fmt.Sprintf("${%s}", FormatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
 	}
+
 	return ""
 }

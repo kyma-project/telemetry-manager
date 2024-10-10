@@ -59,7 +59,7 @@ var _ = Describe("HaveFlatTraces", func() {
 
 	It("should return a FlatTrace struct", func() {
 		td := ptrace.NewTraces()
-		//set resource attributes
+		// set resource attributes
 		rt := td.ResourceSpans().AppendEmpty()
 		attrs := rt.Resource().Attributes()
 		attrs.PutStr("service.name", "backend")
@@ -68,11 +68,11 @@ var _ = Describe("HaveFlatTraces", func() {
 
 		scope := rt.ScopeSpans().AppendEmpty()
 
-		//set span name
+		// set span name
 		s := scope.Spans().AppendEmpty()
 		s.SetName("ingress")
 
-		//set span attributes
+		// set span attributes
 		s.Attributes().PutStr("response_size", "31")
 		s.Attributes().PutStr("upstream_cluster.name", "inbound|4317||")
 		s.Attributes().PutStr("istio.canonical_service", "backend")
@@ -102,9 +102,11 @@ var _ = Describe("HaveSpanAttributes", func() {
 
 func mustMarshalTraces(td ptrace.Traces) []byte {
 	var marshaler ptrace.JSONMarshaler
+
 	bytes, err := marshaler.MarshalTraces(td)
 	if err != nil {
 		panic(err)
 	}
+
 	return bytes
 }

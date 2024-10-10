@@ -94,21 +94,26 @@ func compareTransformProcessor(got, want *TransformProcessor) bool {
 	if got.ErrorMode != want.ErrorMode {
 		return false
 	}
+
 	if len(got.MetricStatements) != len(want.MetricStatements) {
 		return false
 	}
+
 	for i, statement := range got.MetricStatements {
 		if statement.Context != want.MetricStatements[i].Context {
 			return false
 		}
+
 		if len(statement.Statements) != len(want.MetricStatements[i].Statements) {
 			return false
 		}
+
 		for j, s := range statement.Statements {
 			if s != want.MetricStatements[i].Statements[j] {
 				return false
 			}
 		}
 	}
+
 	return true
 }

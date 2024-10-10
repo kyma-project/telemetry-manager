@@ -37,6 +37,7 @@ func (s *mockServerCertStorage) load() ([]byte, []byte, error) {
 func (s *mockServerCertStorage) save(certPEM, keyPEM []byte) error {
 	s.certPEM = certPEM
 	s.keyPEM = keyPEM
+
 	return nil
 }
 

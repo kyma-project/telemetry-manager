@@ -26,13 +26,16 @@ func (c *certExpiryCheckerImpl) checkExpiry(ctx context.Context, certPEM []byte)
 
 	nowTime := c.clock.now().UTC()
 	hardExpiryTime := cert.NotAfter.UTC()
+
 	softExpiryTime := hardExpiryTime.Add(-1 * c.softExpiryOffset)
 	if nowTime.Before(softExpiryTime) {
 		return true, nil
 	}
+
 	logf.FromContext(ctx).Info("Cert expiry check failed",
 		"nowTime", nowTime,
 		"hardExpiryTime", hardExpiryTime,
 		"softExpiryTime", softExpiryTime)
+
 	return false, nil
 }

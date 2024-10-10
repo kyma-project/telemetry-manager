@@ -156,11 +156,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			err = fmt.Errorf("failed to update status: %w", statusErr)
 		}
 	}
+
 	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
-
 	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
 	}
@@ -177,9 +177,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up trace pipeline resources: all trace pipelines are non-reconcilable")
+
 		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
+
 		return nil
 	}
 
@@ -193,6 +195,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 // getReconcilablePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
 func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline) ([]telemetryv1alpha1.TracePipeline, error) {
 	var reconcilablePipelines []telemetryv1alpha1.TracePipeline
+
 	for i := range allPipelines {
 		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
 		if err != nil {
@@ -203,6 +206,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 			reconcilablePipelines = append(reconcilablePipelines, allPipelines[i])
 		}
 	}
+
 	return reconcilablePipelines, nil
 }
 
@@ -279,6 +283,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
 		return defaultReplicaCount
 	}
+
 	for i := range telemetries.Items {
 		telemetrySpec := telemetries.Items[i].Spec
 		if telemetrySpec.Trace == nil {
@@ -295,6 +300,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 			return static.Replicas
 		}
 	}
+
 	return defaultReplicaCount
 }
 
@@ -359,6 +365,7 @@ func (r *Reconciler) cleanUpOldTraceCollectorResources(ctx context.Context) erro
 	}
 
 	var errs error
+
 	for _, oldResource := range oldTraceCollectorResources {
 		if err := r.Delete(ctx, oldResource); err != nil && !apierrors.IsNotFound(err) {
 			errs = errors.Join(errs, fmt.Errorf("failed to delete old trace collector resource: %w", err))

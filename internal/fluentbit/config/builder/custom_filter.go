@@ -28,6 +28,7 @@ func createCustomFilters(pipeline *telemetryv1alpha1.LogPipeline, filterType str
 		for _, p := range customFilterParams {
 			builder.AddConfigParam(p.Key, p.Value)
 		}
+
 		builder.AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name))
 		filters = append(filters, builder.Build())
 	}

@@ -10,8 +10,7 @@ type secretOptions struct {
 
 func WithStringData(key, value string) testkit.OptFunc {
 	return func(options testkit.Opt) {
-		switch opt := options.(type) {
-		case secretOptions:
+		if opt, ok := options.(secretOptions); ok {
 			opt.stringData[key] = value
 		}
 	}

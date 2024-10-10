@@ -228,6 +228,7 @@ func validateCertificate(cert *x509.Certificate, now time.Time) error {
 	if now.After(certExpiry) {
 		return &CertExpiredError{Expiry: certExpiry, IsCa: false}
 	}
+
 	if certExpiry.Sub(now) <= twoWeeks {
 		return &CertAboutToExpireError{Expiry: certExpiry, IsCa: false}
 	}
@@ -244,6 +245,7 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 	if now.After(caExpiry) {
 		return &CertExpiredError{Expiry: caExpiry, IsCa: true}
 	}
+
 	if caExpiry.Sub(now) <= twoWeeks {
 		return &CertAboutToExpireError{Expiry: caExpiry, IsCa: true}
 	}
@@ -253,6 +255,7 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 
 func resolveValues(ctx context.Context, c client.Reader, tls TLSBundle) ([]byte, []byte, []byte, error) {
 	var certPEM, keyPEM, caPEM []byte
+
 	var err error
 
 	if tls.Cert != nil {

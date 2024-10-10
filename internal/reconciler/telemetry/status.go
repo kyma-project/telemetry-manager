@@ -67,6 +67,7 @@ func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operator
 		} else {
 			telemetry.Status.State = operatorv1alpha1.StateDeleting
 		}
+
 		return
 	}
 
@@ -106,6 +107,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, telemetr
 	if err != nil {
 		return nil, fmt.Errorf("failed to check trace components: %w", err)
 	}
+
 	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonComponentsRunning {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
@@ -118,6 +120,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, telemet
 	if err != nil {
 		return nil, fmt.Errorf("failed to check trace components: %w", err)
 	}
+
 	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonComponentsRunning {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
@@ -144,5 +147,6 @@ func (r *Reconciler) resourcesExist(ctx context.Context, list client.ObjectList)
 		// no kind found
 		return errors.Is(err, &meta.NoKindMatchError{})
 	}
+
 	return meta.LenList(list) > 0
 }

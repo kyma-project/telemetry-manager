@@ -160,9 +160,11 @@ func (o *Output) pluginCount() int {
 	if o.IsCustomDefined() {
 		plugins++
 	}
+
 	if o.IsHTTPDefined() {
 		plugins++
 	}
+
 	return plugins
 }
 
@@ -214,6 +216,7 @@ func (lp *LogPipeline) ContainsCustomPlugin() bool {
 			return true
 		}
 	}
+
 	return lp.Spec.Output.IsCustomDefined()
 }
 
