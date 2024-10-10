@@ -90,7 +90,7 @@ receivers:
     singleton_receiver_creator/k8s_cluster:
         auth_type: serviceAccount
         leader_election:
-            lease_name: telemetry-metric-gateway-k8scluster
+            lease_name: telemetry-metric-agent-k8scluster
             lease_namespace: ""
         receiver:
             k8s_cluster:
