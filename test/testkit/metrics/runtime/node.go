@@ -10,17 +10,12 @@ var (
 		"k8s.node.filesystem.usage",
 		"k8s.node.memory.available",
 		"k8s.node.memory.usage",
-		"k8s.node.network.errors",
-		"k8s.node.network.io",
+		"k8s.node.memory.rss",
+		"k8s.node.memory.working_set",
 	}
 
 	NodeMetricsResourceAttributes = []string{
 		"k8s.cluster.name",
 		"k8s.node.name",
-	}
-
-	NodeMetricsAttributes = map[string][]string{
-		"k8s.node.network.errors": {"interface", "direction"},
-		"k8s.node.network.io":     {"interface", "direction"},
 	}
 )

@@ -45,8 +45,8 @@ type KubeletStatsMetricsConfig struct {
 	K8sNodeCPUTime               MetricConfig `yaml:"k8s.node.cpu.time"`
 	K8sNodeMemoryMajorPageFaults MetricConfig `yaml:"k8s.node.memory.major_page_faults"`
 	K8sNodeMemoryPageFaults      MetricConfig `yaml:"k8s.node.memory.page_faults"`
-	K8sNodeMemoryRSS             MetricConfig `yaml:"k8s.node.memory.rss"`
-	K8sNodeMemoryWorkingSet      MetricConfig `yaml:"k8s.node.memory.working_set"`
+	K8sNodeNetworkIO             MetricConfig `yaml:"k8s.node.network.io"`
+	K8sNodeNetworkErrors         MetricConfig `yaml:"k8s.node.network.errors"`
 }
 
 type MetricGroupType string

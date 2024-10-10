@@ -40,7 +40,12 @@ service:
                 - otlp
     telemetry:
         metrics:
-            address: ${MY_POD_IP}:8888
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
         logs:
             level: info
             encoding: json
@@ -76,9 +81,9 @@ receivers:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
-            k8s.node.memory.rss:
+            k8s.node.network.io:
                 enabled: false
-            k8s.node.memory.working_set:
+            k8s.node.network.errors:
                 enabled: false
     prometheus/app-pods:
         config:
@@ -314,7 +319,7 @@ processors:
             metric:
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("source_workload", "telemetry-metric-agent")
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-metric-gateway")
-                - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-trace-collector")
+                - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-trace-gateway")
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         metric_statements:
