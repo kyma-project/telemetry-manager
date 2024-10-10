@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
