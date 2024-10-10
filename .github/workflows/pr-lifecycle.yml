@@ -58,10 +58,12 @@ jobs:
 
       # wait for the build to complete so that the manager image is available
       - name: Wait for the Build Image workflow to complete
-        run: "./hack/await_workflow.sh"
+        run: "./hack/await_image.sh" "${{ github.event.number }}"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           COMMIT_SHA: "${{ github.event.pull_request.head.sha }}"
+          QUERY_INTERVAL: 30
+          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
       - name: Deploy with current version
         shell: bash
