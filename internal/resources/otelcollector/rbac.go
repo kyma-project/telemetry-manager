@@ -26,7 +26,7 @@ func MakeMetricAgentRBAC(name types.NamespacedName) Rbac {
 	return Rbac{
 		clusterRole:        makeMetricAgentClusterRole(name),
 		clusterRoleBinding: makeClusterRoleBinding(name),
-		role:               nil,
+		role:               makeMetricAgentRole(name),
 		roleBinding:        nil,
 	}
 }
@@ -169,6 +169,18 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 	}
 }
 
+func makeMetricAgentRole(name types.NamespacedName) *rbacv1.Role {
+
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Rules: makeLeasePolicyRule(),
+	}
+}
+
 func makeMetricGatewayRole(name types.NamespacedName) *rbacv1.Role {
 
 	return &rbacv1.Role{
@@ -177,12 +189,16 @@ func makeMetricGatewayRole(name types.NamespacedName) *rbacv1.Role {
 			Namespace: name.Namespace,
 			Labels:    defaultLabels(name.Name),
 		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"coordination.k8s.io"},
-				Resources: []string{"leases"},
-				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
-			},
+		Rules: makeLeasePolicyRule(),
+	}
+}
+
+func makeLeasePolicyRule() []rbacv1.PolicyRule {
+	return []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"coordination.k8s.io"},
+			Resources: []string{"leases"},
+			Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
 		},
 	}
 }

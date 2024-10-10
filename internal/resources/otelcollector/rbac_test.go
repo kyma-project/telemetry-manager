@@ -111,7 +111,21 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 
 	t.Run("should not have a role", func(t *testing.T) {
 		r := rbac.role
-		require.Nil(t, r)
+		expectedRules := []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+		}
+
+		require.NotNil(t, r)
+		require.Equal(t, name, r.Name)
+		require.Equal(t, namespace, r.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, r.Labels)
+		require.Equal(t, expectedRules, r.Rules)
 	})
 
 	t.Run("should not have a role binding", func(t *testing.T) {
