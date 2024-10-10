@@ -31,6 +31,7 @@ func flattenAllTraces(tds []ptrace.Traces) []FlatTrace {
 	for _, td := range tds {
 		flatTraces = append(flatTraces, flattenTraces(td)...)
 	}
+
 	return flatTraces
 }
 
@@ -53,15 +54,18 @@ func flattenTraces(td ptrace.Traces) []FlatTrace {
 			}
 		}
 	}
+
 	return flatTraces
 }
 
 // attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
 func attributeToMap(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
+
 	attrs.Range(func(k string, v pcommon.Value) bool {
 		attrMap[k] = v.AsString()
 		return true
 	})
+
 	return attrMap
 }

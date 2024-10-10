@@ -21,6 +21,7 @@ func MakeConfig(builderCfg BuilderConfig) Config {
 	promConfig.AlertingConfig = makeAlertConfig(builderCfg.WebhookURL, builderCfg.WebhookScheme)
 	promConfig.RuleFiles = []string{builderCfg.ConfigPath + builderCfg.AlertRuleFileName}
 	promConfig.ScrapeConfigs = makeScrapeConfig(builderCfg.ScrapeNamespace)
+
 	return promConfig
 }
 

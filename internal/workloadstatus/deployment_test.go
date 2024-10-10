@@ -36,6 +36,7 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.summary, func(t *testing.T) {
 			t.Parallel()
+
 			deployment := createDeployment(test.desiredScheduled, test.numberReady)
 			replicaSet := createReplicaSet(test.desiredScheduled, test.numberReady, *deployment)
 
@@ -52,6 +53,7 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList, podList).Build()
 			sut := DeploymentProber{fakeClient}
+
 			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			if test.expectedError != nil {
 				require.EqualError(t, err, test.expectedError.Error())
@@ -166,7 +168,6 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 			require.True(t, test.expectedError(err))
 		})
 	}
-
 }
 
 func TestDeploymentNotCreated(t *testing.T) {

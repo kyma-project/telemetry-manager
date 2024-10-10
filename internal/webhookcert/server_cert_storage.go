@@ -17,15 +17,19 @@ type serverCertStorageImpl struct {
 
 func (s serverCertStorageImpl) load() ([]byte, []byte, error) {
 	var err error
+
 	var certPEM, keyPEM []byte
+
 	certPEM, err = os.ReadFile(s.certFilePath())
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load cert: %w", err)
 	}
+
 	keyPEM, err = os.ReadFile(s.keyFilePath())
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load key: %w", err)
 	}
+
 	return certPEM, keyPEM, nil
 }
 
@@ -34,9 +38,11 @@ func (s serverCertStorageImpl) save(certPEM, keyPEM []byte) error {
 	if err := os.WriteFile(s.certFilePath(), certPEM, permUserRW); err != nil {
 		return fmt.Errorf("failed to save cert: %w", err)
 	}
+
 	if err := os.WriteFile(s.keyFilePath(), keyPEM, permUserRW); err != nil {
 		return fmt.Errorf("failed to save key: %w", err)
 	}
+
 	return nil
 }
 

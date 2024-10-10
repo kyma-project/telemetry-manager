@@ -76,6 +76,7 @@ func checkPodPendingState(status corev1.PodStatus) *PodIsPendingError {
 			if c.State.Waiting.Reason == "PodInitializing" || c.State.Waiting.Reason == "ContainerCreating" {
 				return nil
 			}
+
 			if c.State.Waiting.Reason != "" {
 				return &PodIsPendingError{
 					ContainerName: c.Name,
@@ -83,6 +84,7 @@ func checkPodPendingState(status corev1.PodStatus) *PodIsPendingError {
 					Message:       c.State.Waiting.Message,
 				}
 			}
+
 			return &PodIsPendingError{
 				ContainerName: c.Name,
 				Reason:        "",
@@ -117,7 +119,6 @@ func checkPodsWaitingState(status corev1.PodStatus, c corev1.ContainerStatus) *P
 			Reason:        lastTerminatedState.Reason,
 			Message:       c.State.Waiting.Message,
 		}
-
 	}
 
 	// handle rest of error states when lastTerminatedState is not set
@@ -130,5 +131,6 @@ func findPodCondition(conditions []corev1.PodCondition, s corev1.PodConditionTyp
 			return c
 		}
 	}
+
 	return corev1.PodCondition{}
 }

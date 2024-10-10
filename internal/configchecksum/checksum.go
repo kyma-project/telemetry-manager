@@ -44,6 +44,7 @@ func sortConfigMaps(unsorted []corev1.ConfigMap) []corev1.ConfigMap {
 	sort.Slice(sorted, func(i, j int) bool {
 		return less(&sorted[i].ObjectMeta, &sorted[j].ObjectMeta)
 	})
+
 	return sorted
 }
 
@@ -53,6 +54,7 @@ func sortSecrets(unsorted []corev1.Secret) []corev1.Secret {
 	sort.Slice(sorted, func(i, j int) bool {
 		return less(&sorted[i].ObjectMeta, &sorted[j].ObjectMeta)
 	})
+
 	return sorted
 }
 
@@ -61,7 +63,9 @@ func sortKeys[V any](m map[string]V) []string {
 	for k := range m {
 		keys = append(keys, k)
 	}
+
 	sort.Strings(keys)
+
 	return keys
 }
 
@@ -69,5 +73,6 @@ func less(x, y *metav1.ObjectMeta) bool {
 	if x.Namespace != y.Namespace {
 		return x.Namespace < y.Namespace
 	}
+
 	return x.Name < y.Name
 }

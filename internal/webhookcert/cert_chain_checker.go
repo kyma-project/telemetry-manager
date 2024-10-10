@@ -22,6 +22,7 @@ type certChainCheckerImpl struct {
 
 func (c *certChainCheckerImpl) checkRoot(ctx context.Context, serverCertPEM []byte, caCertPEM []byte) (bool, error) {
 	roots := x509.NewCertPool()
+
 	ok := roots.AppendCertsFromPEM(caCertPEM)
 	if !ok {
 		return false, ErrCAParsingFailed

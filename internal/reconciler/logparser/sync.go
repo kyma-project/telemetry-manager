@@ -31,6 +31,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to list parsers: %w", err)
 	}
+
 	fluentBitParsersConfig := builder.BuildFluentBitParsersConfig(&logParsers)
 
 	switch {

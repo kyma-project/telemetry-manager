@@ -23,6 +23,7 @@ func encodeCertPEM(certDER []byte) ([]byte, error) {
 	if err := pem.Encode(&buffer, &pem.Block{Type: pemBlockTypeCert, Bytes: certDER}); err != nil {
 		return nil, err
 	}
+
 	return buffer.Bytes(), nil
 }
 
@@ -31,6 +32,7 @@ func encodeKeyPEM(key *rsa.PrivateKey) ([]byte, error) {
 	if err := pem.Encode(&buffer, &pem.Block{Type: pemBlockTypeKey, Bytes: x509.MarshalPKCS1PrivateKey(key)}); err != nil {
 		return nil, err
 	}
+
 	return buffer.Bytes(), nil
 }
 

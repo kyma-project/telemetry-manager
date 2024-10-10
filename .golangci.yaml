@@ -27,7 +27,6 @@ linters:
     - maintidx
     - mirror
     - nestif
-    - nlreturn
     - nonamedreturns
     - paralleltest
     - perfsprint
@@ -39,9 +38,8 @@ linters:
     - thelper
     - tparallel
     - varnamelen
-    - whitespace
     - wrapcheck
-    - wsl
+    - nlreturn
 
 linters-settings:
   dupl:
@@ -187,6 +185,9 @@ linters-settings:
     # Default: 30
     # The max complexity while enabling this linter is 15. Please check if this can be reduced. Increase the threshold only if it is absolutely necessary.
     min-complexity: 15
+
+  wsl:
+    allow-trailing-comment: true
 
 issues:
   exclude:

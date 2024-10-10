@@ -35,6 +35,7 @@ func sanitizeSpecID(filePath string) string {
 	fileName := path.Base(filePath)
 	specID := strings.TrimSuffix(fileName, "_test.go")
 	specID = strings.ReplaceAll(specID, "_", "-")
+
 	return specID
 }
 

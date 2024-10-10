@@ -18,9 +18,11 @@ func (lp *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
 	if err := lp.validateOutput(vc.DeniedOutPutPlugins); err != nil {
 		return err
 	}
+
 	if err := lp.validateFilters(vc.DeniedFilterPlugins); err != nil {
 		return err
 	}
+
 	return lp.validateInput()
 }
 
@@ -43,9 +45,11 @@ func checkSingleOutputPlugin(output LogPipelineOutput) error {
 	if !output.IsAnyDefined() {
 		return fmt.Errorf("no output plugin is defined, you must define one output plugin")
 	}
+
 	if !output.IsSingleDefined() {
 		return fmt.Errorf("multiple output plugins are defined, you must define only one output plugin")
 	}
+
 	return nil
 }
 
@@ -55,18 +59,23 @@ func validateHTTPOutput(httpOutput *LogPipelineHTTPOutput) error {
 	if httpOutput.Host.Value != "" && !isValidHostname {
 		return fmt.Errorf("invalid hostname '%s'", httpOutput.Host.Value)
 	}
+
 	if httpOutput.URI != "" && !strings.HasPrefix(httpOutput.URI, "/") {
 		return fmt.Errorf("uri must start with /")
 	}
+
 	if secretRefAndValueIsPresent(httpOutput.Host) {
 		return fmt.Errorf("http output host must have either a value or secret key reference")
 	}
+
 	if secretRefAndValueIsPresent(httpOutput.User) {
 		return fmt.Errorf("http output user must have either a value or secret key reference")
 	}
+
 	if secretRefAndValueIsPresent(httpOutput.Password) {
 		return fmt.Errorf("http output password must have either a value or secret key reference")
 	}
+
 	return nil
 }
 
@@ -118,6 +127,7 @@ func (lp *LogPipeline) validateFilters(deniedFilterPlugins []string) error {
 			return err
 		}
 	}
+
 	return nil
 }
 

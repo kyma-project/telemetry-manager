@@ -36,6 +36,7 @@ func instant(metric string, selectors ...labelSelector) *exprBuilder {
 	eb := &exprBuilder{
 		expr: metric,
 	}
+
 	return eb
 }
 
@@ -47,6 +48,7 @@ func rate(metric string, selectors ...labelSelector) *exprBuilder {
 	eb := &exprBuilder{
 		expr: fmt.Sprintf("rate(%s[%s])", metric, defaultRateDuration),
 	}
+
 	return eb
 }
 
@@ -55,6 +57,7 @@ func div(nominator, denominator string, vOpt vectorMatch, selectors ...labelSele
 		nominator = s(nominator)
 		denominator = s(denominator)
 	}
+
 	vMatch := vOpt()
 	eb := &exprBuilder{
 		expr: fmt.Sprintf("%s / %s %s", nominator, vMatch, denominator),
@@ -96,5 +99,6 @@ func wrapInParentheses(input []string) []string {
 	for i, str := range input {
 		wrapped[i] = fmt.Sprintf("(%s)", str)
 	}
+
 	return wrapped
 }

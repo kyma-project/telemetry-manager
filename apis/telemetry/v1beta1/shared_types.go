@@ -15,6 +15,7 @@ func (v *ValueType) IsDefined() bool {
 	if v == nil {
 		return false
 	}
+
 	if v.Value != "" {
 		return true
 	}

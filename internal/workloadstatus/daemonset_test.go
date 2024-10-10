@@ -91,6 +91,7 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
 
 			sut := DaemonSetProber{fakeClient}
+
 			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			if tc.expectedError != nil {
 				require.Equal(t, tc.expectedError, err)
@@ -102,7 +103,6 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 }
 
 func TestDaemonSet_WithErrorAssert(t *testing.T) {
-
 	tests := []struct {
 		summary            string
 		updatedScheduled   int32
@@ -219,7 +219,6 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			sut := DaemonSetProber{fakeClient}
 			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			require.True(t, tc.expectedError(err))
-
 		})
 	}
 }

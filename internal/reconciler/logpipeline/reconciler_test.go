@@ -21,6 +21,7 @@ func TestGetOutputType(t *testing.T) {
 	type args struct {
 		t *telemetryv1alpha1.LogPipeline
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -132,7 +133,6 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 	})
 	require.ErrorIs(t, err, ErrUnsupportedOutputType)
 	require.NotNil(t, res)
-
 }
 
 // putting it here to avoid circular imports

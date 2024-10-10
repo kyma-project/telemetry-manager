@@ -7,5 +7,6 @@ func MakeEnvVarCompliant(input string) string {
 	result = strings.ToUpper(result)
 	result = strings.ReplaceAll(result, ".", "_")
 	result = strings.ReplaceAll(result, "-", "_")
+
 	return result
 }

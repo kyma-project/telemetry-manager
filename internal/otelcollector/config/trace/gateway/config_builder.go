@@ -30,6 +30,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 	}
 
 	envVars := make(otlpexporter.EnvVars)
+
 	const maxQueueSize = 256
 	queueSize := maxQueueSize / len(pipelines)
 

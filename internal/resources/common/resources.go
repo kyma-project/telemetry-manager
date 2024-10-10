@@ -21,6 +21,7 @@ func MakeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 			Namespace: name.Namespace,
 		},
 	}
+
 	return &serviceAccount
 }
 
@@ -37,6 +38,7 @@ func MakeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 			Name:     name.Name,
 		},
 	}
+
 	return &clusterRoleBinding
 }
 
@@ -103,6 +105,7 @@ func WithResources(resources corev1.ResourceRequirements) PodSpecOption {
 func WithGoMemLimitEnvVar(memory resource.Quantity) PodSpecOption {
 	memoryLimit := memory.DeepCopy()
 	goMemLimit := memoryLimit.Value() / 100 * 80 //nolint:mnd // 80% of the container memory limit
+
 	return func(pod *corev1.PodSpec) {
 		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
 			Name:  config.EnvVarGoMemLimit,

@@ -182,6 +182,7 @@ func createNamespacesConditions(namespaces []string) []string {
 	for _, ns := range namespaces {
 		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
 	}
+
 	return namespacesConditions
 }
 

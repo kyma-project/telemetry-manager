@@ -159,6 +159,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 	if value, ok := os.LookupEnv(envVar); ok {
 		return value
 	}
+
 	return defaultValue
 }
 
@@ -292,6 +293,7 @@ func run() error {
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 
 	flag.Parse()
+
 	if err := validateFlags(); err != nil {
 		return fmt.Errorf("invalid flag provided: %w", err)
 	}
@@ -301,6 +303,7 @@ func run() error {
 	}
 
 	syncPeriod := 1 * time.Minute
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: ":8080"},
@@ -369,6 +372,7 @@ func run() error {
 	if err := mgr.AddHealthzCheck("healthz", mgr.GetWebhookServer().StartedChecker()); err != nil {
 		return fmt.Errorf("failed to add health check: %w", err)
 	}
+
 	if err := mgr.AddReadyzCheck("readyz", mgr.GetWebhookServer().StartedChecker()); err != nil {
 		return fmt.Errorf("failed to add ready check: %w", err)
 	}
@@ -405,6 +409,7 @@ func initLogger() error {
 	ctrLogger, err := logger.New(overrides.AtomicLevel())
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
+
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}
@@ -619,6 +624,7 @@ func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookCon
 	clientOptions := client.Options{
 		Scheme: scheme,
 	}
+
 	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
 	if err != nil {
 		return fmt.Errorf("failed to create webhook client: %w", err)
@@ -629,6 +635,7 @@ func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookCon
 	}
 
 	setupLog.Info("Ensured webhook cert")
+
 	return nil
 }
 
@@ -640,6 +647,7 @@ func validateFlags() error {
 	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
 		return ErrInvalidLogLevel
 	}
+
 	return nil
 }
 

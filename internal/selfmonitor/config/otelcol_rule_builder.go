@@ -35,6 +35,7 @@ func (rb otelCollectorRuleBuilder) formatMetricName(baseMetricName string) strin
 
 func (rb otelCollectorRuleBuilder) exporterSentRule() Rule {
 	metric := rb.formatMetricName(metricOtelCollectorExporterSent)
+
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterSentData,
 		Expr: rate(metric, selectService(rb.serviceName)).
@@ -46,6 +47,7 @@ func (rb otelCollectorRuleBuilder) exporterSentRule() Rule {
 
 func (rb otelCollectorRuleBuilder) exporterDroppedRule() Rule {
 	metric := rb.formatMetricName(metricOtelCollectorExporterSendFailed)
+
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterDroppedData,
 		Expr: rate(metric, selectService(rb.serviceName)).
@@ -67,6 +69,7 @@ func (rb otelCollectorRuleBuilder) exporterQueueAlmostFullRule() Rule {
 
 func (rb otelCollectorRuleBuilder) exporterEnqueueFailedRule() Rule {
 	metric := rb.formatMetricName(metricOtelCollectorExporterEnqueueFailed)
+
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterEnqueueFailed,
 		Expr: rate(metric, selectService(rb.serviceName)).
@@ -78,6 +81,7 @@ func (rb otelCollectorRuleBuilder) exporterEnqueueFailedRule() Rule {
 
 func (rb otelCollectorRuleBuilder) receiverRefusedRule() Rule {
 	metric := rb.formatMetricName(metricOtelCollectorReceiverRefused)
+
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayReceiverRefusedData,
 		Expr: rate(metric, selectService(rb.serviceName)).

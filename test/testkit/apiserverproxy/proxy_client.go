@@ -26,10 +26,12 @@ func NewClient(config *rest.Config) (*Client, error) {
 	}
 
 	var tlsClientConfig *tls.Config
+
 	tlsClientConfig, err = transport.TLSConfigFor(transportConfig)
 	if tlsClientConfig == nil || err != nil {
 		tlsClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
+
 	tlsClientConfig.InsecureSkipVerify = true
 
 	return &Client{

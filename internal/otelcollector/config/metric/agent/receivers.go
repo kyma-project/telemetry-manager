@@ -31,8 +31,11 @@ func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 }
 
 func makeKubeletStatsConfig() *KubeletStatsReceiver {
-	const collectionInterval = "30s"
-	const portKubelet = 10250
+	const (
+		collectionInterval = "30s"
+		portKubelet        = 10250
+	)
+
 	return &KubeletStatsReceiver{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",

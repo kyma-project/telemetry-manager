@@ -102,9 +102,11 @@ var _ = Describe("HaveSpanAttributes", func() {
 
 func mustMarshalTraces(td ptrace.Traces) []byte {
 	var marshaler ptrace.JSONMarshaler
+
 	bytes, err := marshaler.MarshalTraces(td)
 	if err != nil {
 		panic(err)
 	}
+
 	return bytes
 }

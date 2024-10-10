@@ -20,6 +20,7 @@ func NewPodBuilder(name, namespace string) *PodBuilder {
 		name:      name,
 		namespace: namespace,
 	}
+
 	return pb
 }
 
@@ -29,7 +30,6 @@ func (pb *PodBuilder) WithLabels(labels map[string]string) *PodBuilder {
 }
 
 func (pb *PodBuilder) WithImageNotFound() *PodBuilder {
-
 	pb.status = &corev1.PodStatus{
 		Phase:      corev1.PodPending,
 		Conditions: createPodReadyConditions(corev1.ConditionFalse),
@@ -45,6 +45,7 @@ func (pb *PodBuilder) WithImageNotFound() *PodBuilder {
 			},
 		},
 	}
+
 	return pb
 }
 
@@ -55,6 +56,7 @@ func (pb *PodBuilder) WithOOMStatus() *PodBuilder {
 		Conditions:        createPodReadyConditions(corev1.ConditionFalse),
 		ContainerStatuses: createContainerStatus("OOMKilled", "Container was OOM killed", "OOMKilled", oomKilledExitCode),
 	}
+
 	return pb
 }
 
@@ -84,6 +86,7 @@ func (pb *PodBuilder) WithCrashBackOffStatus() *PodBuilder {
 			},
 		},
 	}
+
 	return pb
 }
 
@@ -93,6 +96,7 @@ func (pb *PodBuilder) WithEvictedStatus() *PodBuilder {
 		Reason:  "Evicted",
 		Message: "The node was low on resource: memory. Container collector was using 100Mi, which exceeds its request of 0.",
 	}
+
 	return pb
 }
 
@@ -108,6 +112,7 @@ func (pb *PodBuilder) WithPendingStatus() *PodBuilder {
 			},
 		},
 	}
+
 	return pb
 }
 
@@ -118,6 +123,7 @@ func (pb *PodBuilder) WithNonZeroExitStatus() *PodBuilder {
 		Conditions:        createPodReadyConditions(corev1.ConditionFalse),
 		ContainerStatuses: createContainerStatus("Error", "Container failed", "Error", containerFailedExitCode),
 	}
+
 	return pb
 }
 
@@ -126,6 +132,7 @@ func (pb *PodBuilder) WithRunningStatus() *PodBuilder {
 		Phase:      corev1.PodRunning,
 		Conditions: createPodReadyConditions(corev1.ConditionTrue),
 	}
+
 	return pb
 }
 func (pb *PodBuilder) Build() corev1.Pod {
@@ -133,6 +140,7 @@ func (pb *PodBuilder) Build() corev1.Pod {
 		pb.labels = make(map[string]string)
 		pb.labels["app"] = "foo"
 	}
+
 	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pb.name,
@@ -156,6 +164,7 @@ func (pb *PodBuilder) Build() corev1.Pod {
 	if len(pod.Status.ContainerStatuses) != 0 && pb.withExpiredThreshold {
 		pod.Status.ContainerStatuses[0].LastTerminationState.Terminated.StartedAt = metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	}
+
 	return pod
 }
 
@@ -192,5 +201,6 @@ func createPodReadyConditions(status corev1.ConditionStatus) []corev1.PodConditi
 	}
 	conditions := []corev1.PodCondition{}
 	conditions = append(conditions, condition)
+
 	return conditions
 }

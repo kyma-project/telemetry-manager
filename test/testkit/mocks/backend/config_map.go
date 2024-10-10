@@ -103,6 +103,7 @@ func (cm *ConfigMap) Name() string {
 
 func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	var configTemplate string
+
 	switch {
 	case cm.signalType == SignalTypeLogs:
 		configTemplate = LogConfigTemplate
@@ -111,10 +112,12 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	default:
 		configTemplate = metricsAndTracesConfigTemplate
 	}
+
 	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
 	config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
 
 	data := make(map[string]string)
+
 	if cm.certs != nil && cm.signalType != SignalTypeLogs {
 		certPem := strings.ReplaceAll(cm.certs.ServerCertPem.String(), "\n", "\\n")
 		keyPem := strings.ReplaceAll(cm.certs.ServerKeyPem.String(), "\n", "\\n")

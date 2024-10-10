@@ -165,6 +165,7 @@ func TestHandler(t *testing.T) {
 			handler.ServeHTTP(rr, req)
 
 			require.Equal(t, tc.expectedStatus, rr.Code)
+
 			if tc.metricPipelinesToReconcile != nil {
 				require.NotEmpty(t, metricPipelineEvents)
 				require.ElementsMatch(t, tc.metricPipelinesToReconcile, readAllNamesFromChannel(metricPipelineEvents))
@@ -193,6 +194,7 @@ func TestHandler(t *testing.T) {
 
 func readAllNamesFromChannel(ch <-chan event.GenericEvent) []string {
 	var names []string
+
 	for {
 		select {
 		case event := <-ch:

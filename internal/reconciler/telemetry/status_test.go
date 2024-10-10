@@ -253,6 +253,7 @@ func TestUpdateStatus(t *testing.T) {
 			_ = clientgoscheme.AddToScheme(scheme)
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			_ = operatorv1alpha1.AddToScheme(scheme)
+
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.telemetry).WithStatusSubresource(tt.telemetry).Build()
 			for _, res := range tt.resources {
 				require.NoError(t, fakeClient.Create(context.Background(), res))
@@ -261,6 +262,7 @@ func TestUpdateStatus(t *testing.T) {
 			mockLogsChecker := &mocks.ComponentHealthChecker{}
 			mockMetricsChecker := &mocks.ComponentHealthChecker{}
 			mockTracesChecker := &mocks.ComponentHealthChecker{}
+
 			mockLogsChecker.On("Check", mock.Anything, mock.Anything).Return(tt.logsCheckerReturn, tt.logsCheckerError)
 			mockMetricsChecker.On("Check", mock.Anything, mock.Anything).Return(tt.metricsCheckerReturn, tt.metricsCheckerError)
 			mockTracesChecker.On("Check", mock.Anything, mock.Anything).Return(tt.tracesCheckerReturn, tt.tracesCheckerError)
@@ -287,8 +289,10 @@ func TestUpdateStatus(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+
 			require.Equal(t, tt.expectedState, tt.telemetry.Status.State)
 			require.Len(t, tt.telemetry.Status.Conditions, len(tt.expectedConditions))
+
 			for i, expectedCond := range tt.expectedConditions {
 				actualCond := tt.telemetry.Status.Conditions[i]
 				require.Equal(t, expectedCond.Type, actualCond.Type)
@@ -297,6 +301,7 @@ func TestUpdateStatus(t *testing.T) {
 				require.Equal(t, expectedCond.Message, actualCond.Message)
 				require.NotZero(t, actualCond.LastTransitionTime)
 			}
+
 			require.Equal(t, tt.expectedEndpoints, tt.telemetry.Status.GatewayEndpoints)
 		})
 	}
