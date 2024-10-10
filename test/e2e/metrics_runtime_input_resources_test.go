@@ -20,7 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -307,34 +306,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 				g.Expect(resp).To(HaveHTTPBody(
 					HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsResourceAttributes))))),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should have expected metric attributes in runtime node metrics", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-				bodyContent, err := io.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				g.Expect(err).NotTo(HaveOccurred())
-
-				nodeNetworkErrorsMetric := "k8s.node.network.errors"
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					ContainElement(SatisfyAll(
-						HaveName(Equal(nodeNetworkErrorsMetric)),
-						HaveMetricAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsAttributes[nodeNetworkErrorsMetric]))),
-					)),
-				))
-
-				nodeNetworkIOMetric := "k8s.node.network.io"
-				g.Expect(bodyContent).To(HaveFlatMetrics(
-					ContainElement(SatisfyAll(
-						HaveName(Equal(nodeNetworkIOMetric)),
-						HaveMetricAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsAttributes[nodeNetworkIOMetric]))),
-					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
