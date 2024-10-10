@@ -109,7 +109,7 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		checkClusterRoleBinding(t, crb, name, namespace)
 	})
 
-	t.Run("should not have a role", func(t *testing.T) {
+	t.Run("should have a role", func(t *testing.T) {
 		r := rbac.role
 		expectedRules := []rbacv1.PolicyRule{
 			{
@@ -128,9 +128,11 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		require.Equal(t, expectedRules, r.Rules)
 	})
 
-	t.Run("should not have a role binding", func(t *testing.T) {
+	t.Run("should have a role binding", func(t *testing.T) {
 		rb := rbac.roleBinding
-		require.Nil(t, rb)
+		require.NotNil(t, rb)
+
+		checkRoleBinding(t, rb, name, namespace)
 	})
 }
 

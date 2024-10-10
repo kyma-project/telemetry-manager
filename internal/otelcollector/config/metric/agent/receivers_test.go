@@ -76,7 +76,7 @@ func TestReceivers(t *testing.T) {
 		singletonK8sClusterReceiverCreator := collectorConfig.Receivers.SingletonK8sClusterReceiverCreator
 		require.NotNil(t, singletonK8sClusterReceiverCreator)
 		require.Equal(t, "serviceAccount", singletonK8sClusterReceiverCreator.AuthType)
-		require.Equal(t, "telemetry-metric-gateway-k8scluster", singletonK8sClusterReceiverCreator.LeaderElection.LeaseName)
+		require.Equal(t, "telemetry-metric-agent-k8scluster", singletonK8sClusterReceiverCreator.LeaderElection.LeaseName)
 		require.Equal(t, agentNamespace, singletonK8sClusterReceiverCreator.LeaderElection.LeaseNamespace)
 
 		k8sClusterReceiver := singletonK8sClusterReceiverCreator.SingletonK8sClusterReceiver.K8sClusterReceiver

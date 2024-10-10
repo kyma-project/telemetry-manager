@@ -26,8 +26,8 @@ func MakeMetricAgentRBAC(name types.NamespacedName) Rbac {
 	return Rbac{
 		clusterRole:        makeMetricAgentClusterRole(name),
 		clusterRoleBinding: makeClusterRoleBinding(name),
-		role:               makeMetricAgentRole(name),
-		roleBinding:        nil,
+		role:               makeMetricRole(name),
+		roleBinding:        makeMetricRoleBinding(name),
 	}
 }
 
@@ -35,8 +35,8 @@ func MakeMetricGatewayRBAC(name types.NamespacedName) Rbac {
 	return Rbac{
 		clusterRole:        makeMetricGatewayClusterRole(name),
 		clusterRoleBinding: makeClusterRoleBinding(name),
-		role:               makeMetricGatewayRole(name),
-		roleBinding:        makeMetricGatewayRoleBinding(name),
+		role:               makeMetricRole(name),
+		roleBinding:        makeMetricRoleBinding(name),
 	}
 }
 
@@ -169,7 +169,7 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 	}
 }
 
-func makeMetricAgentRole(name types.NamespacedName) *rbacv1.Role {
+func makeMetricRole(name types.NamespacedName) *rbacv1.Role {
 
 	return &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
@@ -177,33 +177,16 @@ func makeMetricAgentRole(name types.NamespacedName) *rbacv1.Role {
 			Namespace: name.Namespace,
 			Labels:    defaultLabels(name.Name),
 		},
-		Rules: makeLeasePolicyRule(),
-	}
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+		}}
 }
 
-func makeMetricGatewayRole(name types.NamespacedName) *rbacv1.Role {
-
-	return &rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
-		},
-		Rules: makeLeasePolicyRule(),
-	}
-}
-
-func makeLeasePolicyRule() []rbacv1.PolicyRule {
-	return []rbacv1.PolicyRule{
-		{
-			APIGroups: []string{"coordination.k8s.io"},
-			Resources: []string{"leases"},
-			Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
-		},
-	}
-}
-
-func makeMetricGatewayRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
+func makeMetricRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
 
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
