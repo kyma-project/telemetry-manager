@@ -13,7 +13,7 @@ linters:
     # Linters to be enabled after fixing the issues
     - cyclop
     - depguard
-    - exhaustive
+#    - exhaustive
     - exhaustruct
     - forcetypeassert
     - funlen

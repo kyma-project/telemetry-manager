@@ -97,6 +97,8 @@ func getAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
 		for i := range m.Summary().DataPoints().Len() {
 			attrsPerDataPoint = append(attrsPerDataPoint, m.Summary().DataPoints().At(i).Attributes())
 		}
+	case pmetric.MetricTypeEmpty, pmetric.MetricTypeExponentialHistogram:
+		// do nothing
 	}
 
 	return attrsPerDataPoint
