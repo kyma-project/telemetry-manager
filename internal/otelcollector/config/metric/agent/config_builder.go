@@ -28,6 +28,7 @@ type BuildOptions struct {
 	IstioEnabled                bool
 	IstioCertPath               string
 	InstrumentationScopeVersion string
+	AgentNamespace              string
 }
 
 func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {
@@ -104,8 +105,8 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 
 	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = config.Pipeline{
-			Receivers:  []string{"kubeletstats"},
-			Processors: []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"},
+			Receivers:  []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"},
+			Processors: []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}

@@ -183,32 +183,6 @@ func createNamespacesConditions(namespaces []string) []string {
 	return namespacesConditions
 }
 
-// Drop the metrics scraped by k8s cluster which are not workload related, So all besides the pod and container metrics
-// Complete list of the metrics is here: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
-func makeK8sClusterDropMetrics() *FilterProcessor {
-	metricNames := []string{
-		"deployment",
-		"cronjob",
-		"daemonset",
-		"hpa",
-		"job",
-		"replicaset",
-		"resource_quota",
-		"statefulset",
-	}
-
-	return &FilterProcessor{
-		Metrics: FilterProcessorMetrics{
-			Metric: []string{
-				ottlexpr.JoinWithAnd(
-					inputSourceEquals(metric.InputSourceRuntime),
-					ottlexpr.IsMatch("name", fmt.Sprintf("^k8s.%s.*", ottlexpr.JoinWithRegExpOr(metricNames...))),
-				),
-			},
-		},
-	}
-}
-
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
 	return ottlexpr.ScopeNameEquals(metric.InstrumentationScope[inputSourceType])
 }

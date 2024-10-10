@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
@@ -25,7 +26,7 @@ func makeReceiversConfig() Receivers {
 func makeSingletonKymaStatsReceiverCreatorConfig(gatewayNamespace string) *SingletonKymaStatsReceiverCreator {
 	return &SingletonKymaStatsReceiverCreator{
 		AuthType: "serviceAccount",
-		LeaderElection: LeaderElection{
+		LeaderElection: metric.LeaderElection{
 			LeaseName:      "telemetry-metric-gateway-kymastats",
 			LeaseNamespace: gatewayNamespace,
 		},
@@ -55,36 +56,6 @@ func makeSingletonKymaStatsReceiverCreatorConfig(gatewayNamespace string) *Singl
 						Resource: "tracepipelines",
 					},
 				},
-			},
-		},
-	}
-}
-
-func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *SingletonK8sClusterReceiverCreator {
-	metricsToDrop := K8sClusterMetricsConfig{
-		K8sContainerStorageRequest:          MetricConfig{false},
-		K8sContainerStorageLimit:            MetricConfig{false},
-		K8sContainerEphemeralStorageRequest: MetricConfig{false},
-		K8sContainerEphemeralStorageLimit:   MetricConfig{false},
-		K8sContainerRestarts:                MetricConfig{false},
-		K8sContainerReady:                   MetricConfig{false},
-		K8sNamespacePhase:                   MetricConfig{false},
-		K8sReplicationControllerAvailable:   MetricConfig{false},
-		K8sReplicationControllerDesired:     MetricConfig{false},
-	}
-
-	return &SingletonK8sClusterReceiverCreator{
-		AuthType: "serviceAccount",
-		LeaderElection: LeaderElection{
-			LeaseName:      "telemetry-metric-gateway-k8scluster",
-			LeaseNamespace: gatewayNamespace,
-		},
-		SingletonK8sClusterReceiver: SingletonK8sClusterReceiver{
-			K8sClusterReceiver: K8sClusterReceiver{
-				AuthType:               "serviceAccount",
-				CollectionInterval:     "30s",
-				NodeConditionsToReport: []string{},
-				Metrics:                metricsToDrop,
 			},
 		},
 	}
