@@ -183,6 +183,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=nodes/metrics,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=nodes/stats,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes/proxy,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch

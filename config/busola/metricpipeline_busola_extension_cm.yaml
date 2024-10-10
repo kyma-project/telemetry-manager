@@ -112,6 +112,9 @@ data:
                   - name: Node
                     visibility: $exists(spec.input.runtime.resources.node)
                     source: spec.input.runtime.resources.node.enabled
+                  - name: Volume
+                    visibility: $exists(spec.input.runtime.resources.volume)
+                    source: spec.input.runtime.resources.volume.enabled
           - name: OTLP
             widget: Panel
             visibility: $exists(spec.input.otlp)
@@ -343,6 +346,9 @@ data:
                 simple: true
               - name: Enable Node Metrics
                 path: node.enabled
+                simple: true
+              - name: Enable Volume Metrics
+                path: volume.enabled
                 simple: true
         - name: OTLP
           path: otlp
