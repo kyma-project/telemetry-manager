@@ -79,7 +79,7 @@ func declareComponentsForMetricPipeline(
 	declareInputSourceFilters(pipeline, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
-	declareInstrumentationScopeTransform(pipeline, cfg, opts)
+	declareInstrumentationScopeTransform(cfg, opts)
 	declareConnectors(pipeline.Name, cfg)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
@@ -129,10 +129,6 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 	if isRuntimeInputEnabled(input) && !isRuntimeNodeMetricsEnabled(input) {
 		cfg.Processors.DropRuntimeNodeMetrics = makeDropRuntimeNodeMetricsConfig()
 	}
-
-	if isRuntimeInputEnabled(input) {
-		cfg.Processors.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
-	}
 }
 
 func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
@@ -159,12 +155,8 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 	}
 }
 
-func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
+func declareInstrumentationScopeTransform(cfg *Config, opts BuildOptions) {
 	cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, opts.InstrumentationScopeVersion)
-
-	if isRuntimeInputEnabled(pipeline.Spec.Input) {
-		cfg.Processors.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(metric.InputSourceK8sCluster, opts.InstrumentationScopeVersion)
-	}
 }
 
 func declareConnectors(pipelineName string, cfg *Config) {

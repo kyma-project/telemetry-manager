@@ -159,6 +159,7 @@ type Processors struct {
 	SetInstrumentationScopePrometheus *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
 	SetInstrumentationScopeIstio      *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
 	InsertSkipEnrichmentAttribute     *metric.TransformProcessor `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
+	DropK8sClusterMetrics             *FilterProcessor           `yaml:"filter/drop-k8s-cluster-metrics,omitempty"`
 }
 
 type Exporters struct {

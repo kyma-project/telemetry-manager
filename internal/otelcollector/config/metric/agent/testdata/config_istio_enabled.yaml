@@ -36,6 +36,7 @@ service:
                 - resource/delete-service-name
                 - transform/set-instrumentation-scope-runtime
                 - transform/insert-skip-enrichment-attribute
+                - filter/drop-k8s-cluster-metrics
                 - batch
             exporters:
                 - otlp
@@ -355,8 +356,11 @@ processors:
         metric_statements:
             - context: scope
               statements:
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-                - set(name, "io.kyma-project.telemetry/runtime") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(version, "main")
+                - set(name, "io.kyma-project.telemetry/runtime")
+              conditions:
+                - IsMatch(name, "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver")
+                - IsMatch(name, "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver")
     transform/set-instrumentation-scope-prometheus:
         error_mode: ignore
         metric_statements:
@@ -379,6 +383,10 @@ processors:
                 - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
               conditions:
                 - IsMatch(name, "^k8s.node.*")
+    filter/drop-k8s-cluster-metrics:
+        metrics:
+            metric:
+                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.(deployment|cronjob|daemonset|hpa|job|replicaset|resource_quota|statefulset).*")
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
