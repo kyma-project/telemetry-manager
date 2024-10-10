@@ -71,7 +71,7 @@ func getRefsInOTLPOutput(OTLPOut *OTLPOutput) []SecretKeyRef {
 		refs = appendIfSecretRef(refs, header.ValueType)
 	}
 
-	if OTLPOut.TLS != nil && !OTLPOut.TLS.Insecure {
+	if OTLPOut.TLS != nil && !OTLPOut.TLS.Disabled {
 		if OTLPOut.TLS.CA != nil {
 			refs = appendIfSecretRef(refs, *OTLPOut.TLS.CA)
 		}
