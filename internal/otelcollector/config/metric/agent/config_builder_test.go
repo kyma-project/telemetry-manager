@@ -89,7 +89,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
@@ -140,7 +140,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 3)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
@@ -182,7 +182,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
@@ -200,7 +200,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
@@ -252,7 +252,7 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 2)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
