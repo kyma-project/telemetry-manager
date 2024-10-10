@@ -66,12 +66,10 @@ func TestProcessors(t *testing.T) {
 				{
 					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\")",
-						"set(name, \"io.kyma-project.telemetry/runtime\")",
-					},
-					Conditions: []string{
-						"IsMatch(name, \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\")",
-						"IsMatch(name, \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\")",
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
 					},
 				},
 			},

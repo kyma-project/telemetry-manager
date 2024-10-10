@@ -20,18 +20,18 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
 
 		if inputs.runtime {
-			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentScopeRuntime(instrumentationScopeVersion, metric.InputSourceRuntime, metric.InputSourceK8sCluster)
+			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceRuntime, metric.InputSourceK8sCluster)
 			processorsConfig.InsertSkipEnrichmentAttribute = makeInsertSkipEnrichmentAttributeProcessor()
 			processorsConfig.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
 		}
 
 		if inputs.prometheus {
-			processorsConfig.SetInstrumentationScopePrometheus = metric.MakeInstrumentationScopeProcessor(metric.InputSourcePrometheus, instrumentationScopeVersion)
+			processorsConfig.SetInstrumentationScopePrometheus = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourcePrometheus)
 		}
 
 		if inputs.istio {
 			processorsConfig.DropInternalCommunication = makeFilterToDropMetricsForTelemetryComponents()
-			processorsConfig.SetInstrumentationScopeIstio = metric.MakeInstrumentationScopeProcessor(metric.InputSourceIstio, instrumentationScopeVersion)
+			processorsConfig.SetInstrumentationScopeIstio = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceIstio)
 		}
 	}
 
