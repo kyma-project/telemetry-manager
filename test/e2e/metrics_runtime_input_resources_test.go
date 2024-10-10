@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -21,24 +20,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"io"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
-	Context("When metric pipelines with non-default runtime input resources configuration exist", Ordered, func() {
+	Context("When a metric pipeline with ONLY container metrics enabled exists", Ordered, func() {
 		var (
-			mockNs = suite.ID()
+			mockNs = suite.IDWithSuffix("container-metrics")
 
 			backendOnlyContainerMetricsEnabledName  = suite.IDWithSuffix("container-metrics")
 			pipelineOnlyContainerMetricsEnabledName = suite.IDWithSuffix("container-metrics")
 			backendOnlyContainerMetricsEnabledURL   string
-
-			backendOnlyPodMetricsEnabledName  = suite.IDWithSuffix("pod-metrics")
-			pipelineOnlyPodMetricsEnabledName = suite.IDWithSuffix("pod-metrics")
-			backendOnlyPodMetricsEnabledURL   string
-
-			backendOnlyNodeMetricsEnabledName  = suite.IDWithSuffix("node-metrics")
-			pipelineOnlyNodeMetricsEnabledName = suite.IDWithSuffix("node-metrics")
-			backendOnlyNodeMetricsEnabledURL   string
 		)
 
 		makeResources := func() []client.Object {
@@ -55,37 +47,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 				WithRuntimeInputContainerMetrics(true).
 				WithRuntimeInputPodMetrics(false).
 				WithRuntimeInputNodeMetrics(false).
+				WithRuntimeInputVolumeMetrics(false).
 				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyContainerMetricsEnabled.Endpoint())).
 				Build()
 			objs = append(objs, &pipelineOnlyContainerMetricsEnabled)
-
-			backendOnlyPodMetricsEnabled := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendOnlyPodMetricsEnabledName))
-			objs = append(objs, backendOnlyPodMetricsEnabled.K8sObjects()...)
-			backendOnlyPodMetricsEnabledURL = backendOnlyPodMetricsEnabled.ExportURL(proxyClient)
-
-			pipelineOnlyPodMetricsEnabled := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineOnlyPodMetricsEnabledName).
-				WithRuntimeInput(true).
-				WithRuntimeInputPodMetrics(true).
-				WithRuntimeInputContainerMetrics(false).
-				WithRuntimeInputNodeMetrics(false).
-				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyPodMetricsEnabled.Endpoint())).
-				Build()
-			objs = append(objs, &pipelineOnlyPodMetricsEnabled)
-
-			backendOnlyNodeMetricsEnabled := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendOnlyNodeMetricsEnabledName))
-			objs = append(objs, backendOnlyNodeMetricsEnabled.K8sObjects()...)
-			backendOnlyNodeMetricsEnabledURL = backendOnlyNodeMetricsEnabled.ExportURL(proxyClient)
-
-			pipelineOnlyNodeMetricsEnabled := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineOnlyNodeMetricsEnabledName).
-				WithRuntimeInput(true).
-				WithRuntimeInputNodeMetrics(true).
-				WithRuntimeInputPodMetrics(false).
-				WithRuntimeInputContainerMetrics(false).
-				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyNodeMetricsEnabled.Endpoint())).
-				Build()
-			objs = append(objs, &pipelineOnlyNodeMetricsEnabled)
 
 			metricProducer := prommetricgen.New(mockNs)
 
@@ -108,7 +73,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have healthy pipelines", func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineOnlyContainerMetricsEnabledName)
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineOnlyPodMetricsEnabledName)
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
@@ -121,141 +85,255 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have metrics backends running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyContainerMetricsEnabledName, Namespace: mockNs})
+		})
+
+		It("Should deliver ONLY runtime container metrics to container-metrics backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.ContainerMetricsNames))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should have expected resource attributes in runtime container metrics", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.ContainerMetricsResourceAttributes))))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+	})
+
+	Context("When a metric pipeline with ONLY pod metrics enabled exists", Ordered, func() {
+		var (
+			mockNs = suite.IDWithSuffix("pod-metrics")
+
+			backendOnlyPodMetricsEnabledName  = suite.IDWithSuffix("pod-metrics")
+			pipelineOnlyPodMetricsEnabledName = suite.IDWithSuffix("pod-metrics")
+			backendOnlyPodMetricsEnabledURL   string
+		)
+
+		makeResources := func() []client.Object {
+			var objs []client.Object
+			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+
+			backendOnlyPodMetricsEnabled := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendOnlyPodMetricsEnabledName))
+			objs = append(objs, backendOnlyPodMetricsEnabled.K8sObjects()...)
+			backendOnlyPodMetricsEnabledURL = backendOnlyPodMetricsEnabled.ExportURL(proxyClient)
+
+			pipelineOnlyPodMetricsEnabled := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineOnlyPodMetricsEnabledName).
+				WithRuntimeInput(true).
+				WithRuntimeInputContainerMetrics(false).
+				WithRuntimeInputPodMetrics(true).
+				WithRuntimeInputNodeMetrics(false).
+				WithRuntimeInputVolumeMetrics(false).
+				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyPodMetricsEnabled.Endpoint())).
+				Build()
+			objs = append(objs, &pipelineOnlyPodMetricsEnabled)
+
+			metricProducer := prommetricgen.New(mockNs)
+
+			objs = append(objs, []client.Object{
+				metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+				metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			}...)
+
+			return objs
+		}
+
+		BeforeAll(func() {
+			k8sObjects := makeResources()
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have healthy pipelines", func() {
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineOnlyPodMetricsEnabledName)
+		})
+
+		It("Ensures the metric gateway deployment is ready", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+		})
+
+		It("Ensures the metric agent daemonset is ready", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
+		It("Should have metrics backends running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyPodMetricsEnabledName, Namespace: mockNs})
 		})
 
-		Context("Runtime container metrics", func() {
-			It("Should deliver ONLY runtime container metrics to container-metrics backend", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		It("Should deliver ONLY runtime pod metrics to pod-metrics backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.ContainerMetricsNames))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
-
-			It("Should have expected resource attributes in runtime container metrics", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyContainerMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.ContainerMetricsResourceAttributes))))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.PodMetricsNames))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		Context("Runtime pod metrics", func() {
-			It("Should deliver ONLY runtime pod metrics to pod-metrics backend", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		It("Should have expected resource attributes in runtime pod metrics", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.PodMetricsNames))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
-
-			It("Should have expected resource attributes in runtime pod metrics", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.PodMetricsResourceAttributes))))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
-
-			It("Should have expected metric attributes in runtime pod metrics", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-					bodyContent, err := io.ReadAll(resp.Body)
-					defer resp.Body.Close()
-					g.Expect(err).NotTo(HaveOccurred())
-
-					podNetworkErrorsMetric := "k8s.pod.network.errors"
-					g.Expect(bodyContent).To(HaveFlatMetrics(
-						ContainElement(SatisfyAll(
-							HaveName(Equal(podNetworkErrorsMetric)),
-							HaveMetricAttributes(HaveKeys(ConsistOf(runtime.PodMetricsAttributes[podNetworkErrorsMetric]))),
-						)),
-					))
-
-					podNetworkIOMetric := "k8s.pod.network.io"
-					g.Expect(bodyContent).To(HaveFlatMetrics(
-						ContainElement(SatisfyAll(
-							HaveName(Equal(podNetworkIOMetric)),
-							HaveMetricAttributes(HaveKeys(ConsistOf(runtime.PodMetricsAttributes[podNetworkIOMetric]))),
-						)),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.PodMetricsResourceAttributes))))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		Context("Runtime node metrics", func() {
-			It("Should deliver ONLY runtime node metrics to node-metrics backend", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		It("Should have expected metric attributes in runtime pod metrics", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendOnlyPodMetricsEnabledURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.NodeMetricsNames))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				podNetworkErrorsMetric := "k8s.pod.network.errors"
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(SatisfyAll(
+						HaveName(Equal(podNetworkErrorsMetric)),
+						HaveMetricAttributes(HaveKeys(ConsistOf(runtime.PodMetricsAttributes[podNetworkErrorsMetric]))),
+					)),
+				))
+
+				podNetworkIOMetric := "k8s.pod.network.io"
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(SatisfyAll(
+						HaveName(Equal(podNetworkIOMetric)),
+						HaveMetricAttributes(HaveKeys(ConsistOf(runtime.PodMetricsAttributes[podNetworkIOMetric]))),
+					)),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+	})
+
+	Context("When a metric pipeline with ONLY node metrics enabled exists", Ordered, func() {
+		var (
+			mockNs = suite.IDWithSuffix("node-metrics")
+
+			backendOnlyNodeMetricsEnabledName  = suite.IDWithSuffix("node-metrics")
+			pipelineOnlyNodeMetricsEnabledName = suite.IDWithSuffix("node-metrics")
+			backendOnlyNodeMetricsEnabledURL   string
+		)
+
+		makeResources := func() []client.Object {
+			var objs []client.Object
+			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+
+			backendOnlyNodeMetricsEnabled := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendOnlyNodeMetricsEnabledName))
+			objs = append(objs, backendOnlyNodeMetricsEnabled.K8sObjects()...)
+			backendOnlyNodeMetricsEnabledURL = backendOnlyNodeMetricsEnabled.ExportURL(proxyClient)
+
+			pipelineOnlyNodeMetricsEnabled := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineOnlyNodeMetricsEnabledName).
+				WithRuntimeInput(true).
+				WithRuntimeInputContainerMetrics(false).
+				WithRuntimeInputPodMetrics(false).
+				WithRuntimeInputNodeMetrics(true).
+				WithRuntimeInputVolumeMetrics(false).
+				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyNodeMetricsEnabled.Endpoint())).
+				Build()
+			objs = append(objs, &pipelineOnlyNodeMetricsEnabled)
+
+			return objs
+		}
+
+		BeforeAll(func() {
+			k8sObjects := makeResources()
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
 
-			It("Should have expected resource attributes in runtime node metrics", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		It("Should have healthy pipelines", func() {
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineOnlyNodeMetricsEnabledName)
+		})
 
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsResourceAttributes))))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
+		It("Ensures the metric gateway deployment is ready", func() {
+			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+		})
 
-			It("Should have expected metric attributes in runtime node metrics", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		It("Ensures the metric agent daemonset is ready", func() {
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
 
-					bodyContent, err := io.ReadAll(resp.Body)
-					defer resp.Body.Close()
-					g.Expect(err).NotTo(HaveOccurred())
+		It("Should have metrics backends running", func() {
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: mockNs})
+		})
 
-					nodeNetworkErrorsMetric := "k8s.node.network.errors"
-					g.Expect(bodyContent).To(HaveFlatMetrics(
-						ContainElement(SatisfyAll(
-							HaveName(Equal(nodeNetworkErrorsMetric)),
-							HaveMetricAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsAttributes[nodeNetworkErrorsMetric]))),
-						)),
-					))
+		It("Should deliver ONLY runtime node metrics to node-metrics backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-					nodeNetworkIOMetric := "k8s.node.network.io"
-					g.Expect(bodyContent).To(HaveFlatMetrics(
-						ContainElement(SatisfyAll(
-							HaveName(Equal(nodeNetworkIOMetric)),
-							HaveMetricAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsAttributes[nodeNetworkIOMetric]))),
-						)),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.NodeMetricsNames))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should have expected resource attributes in runtime node metrics", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsResourceAttributes))))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should have expected metric attributes in runtime node metrics", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				nodeNetworkErrorsMetric := "k8s.node.network.errors"
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(SatisfyAll(
+						HaveName(Equal(nodeNetworkErrorsMetric)),
+						HaveMetricAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsAttributes[nodeNetworkErrorsMetric]))),
+					)),
+				))
+
+				nodeNetworkIOMetric := "k8s.node.network.io"
+				g.Expect(bodyContent).To(HaveFlatMetrics(
+					ContainElement(SatisfyAll(
+						HaveName(Equal(nodeNetworkIOMetric)),
+						HaveMetricAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsAttributes[nodeNetworkIOMetric]))),
+					)),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
