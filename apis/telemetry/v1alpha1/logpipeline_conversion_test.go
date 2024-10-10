@@ -76,6 +76,52 @@ func TestConvertTo(t *testing.T) {
 					},
 					Dedot: true,
 				},
+				Otlp: &OtlpOutput{
+					Protocol: OtlpProtocolGRPC,
+					Endpoint: ValueType{
+						Value: "localhost:4317",
+					},
+					Path: "/v1/logs",
+					Authentication: &AuthenticationOptions{
+						Basic: &BasicAuthOptions{
+							User: ValueType{
+								Value: "user",
+							},
+							Password: ValueType{
+								Value: "password",
+							},
+						},
+					},
+					Headers: []Header{
+						{
+							Name: "header1",
+							ValueType: ValueType{
+								Value: "value1",
+							},
+							Prefix: "prefix1",
+						},
+						{
+							Name: "header2",
+							ValueType: ValueType{
+								Value: "value2",
+							},
+							Prefix: "prefix2",
+						},
+					},
+					TLS: &OtlpTLS{
+						Insecure:           true,
+						InsecureSkipVerify: true,
+						CA: &ValueType{
+							Value: "ca",
+						},
+						Cert: &ValueType{
+							Value: "cert",
+						},
+						Key: &ValueType{
+							Value: "key",
+						},
+					},
+				},
 			},
 		},
 		Status: LogPipelineStatus{
@@ -169,6 +215,42 @@ func TestConvertFrom(t *testing.T) {
 					},
 					Dedot: true,
 				},
+				OTLP: &telemetryv1beta1.OTLPOutput{
+					Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+					Endpoint: telemetryv1beta1.ValueType{Value: "localhost:4317"},
+					Path:     "/v1/logs",
+					Authentication: &telemetryv1beta1.AuthenticationOptions{Basic: &telemetryv1beta1.BasicAuthOptions{
+						User: telemetryv1beta1.ValueType{
+							Value: "user",
+						},
+						Password: telemetryv1beta1.ValueType{
+							Value: "password",
+						},
+					}},
+					Headers: []telemetryv1beta1.Header{
+						{
+							Name: "header1",
+							ValueType: telemetryv1beta1.ValueType{
+								Value: "value1",
+							},
+							Prefix: "prefix1",
+						},
+						{
+							Name: "header2",
+							ValueType: telemetryv1beta1.ValueType{
+								Value: "value2",
+							},
+							Prefix: "prefix2",
+						},
+					},
+					TLS: &telemetryv1beta1.OTLPTLS{
+						Insecure:           true,
+						InsecureSkipVerify: true,
+						CA:                 &telemetryv1beta1.ValueType{Value: "ca"},
+						Cert:               &telemetryv1beta1.ValueType{Value: "cert"},
+						Key:                &telemetryv1beta1.ValueType{Value: "key"},
+					},
+				},
 			},
 		},
 		Status: telemetryv1beta1.LogPipelineStatus{
@@ -234,6 +316,28 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Equal(t, xHTTP.TLSConfig.CA.Value, yHTTP.TLSConfig.CA.Value, "HTTP TLS CA mismatch")
 	require.Equal(t, xHTTP.TLSConfig.Cert.Value, yHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
 	require.Equal(t, xHTTP.TLSConfig.Key.Value, yHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
+
+	xOTLP := x.Spec.Output.Otlp
+	yOTLP := y.Spec.Output.OTLP
+	require.NotNil(t, xOTLP, "expected OTLP output")
+	require.NotNil(t, yOTLP, "expected OTLP output")
+	require.Equal(t, xOTLP.Protocol, string(yOTLP.Protocol), "OTLP protocol mismatch")
+	require.Equal(t, xOTLP.Endpoint.Value, yOTLP.Endpoint.Value, "OTLP endpoint mismatch")
+	require.Equal(t, xOTLP.Path, yOTLP.Path, "OTLP path mismatch")
+	require.Equal(t, xOTLP.Authentication.Basic.User.Value, yOTLP.Authentication.Basic.User.Value, "OTLP basic auth user mismatch")
+	require.Equal(t, xOTLP.Authentication.Basic.Password.Value, yOTLP.Authentication.Basic.Password.Value, "OTLP basic auth password mismatch")
+	require.Len(t, yOTLP.Headers, 2, "expected two headers")
+	require.Equal(t, xOTLP.Headers[0].Name, yOTLP.Headers[0].Name, "OTLP header name mismatch")
+	require.Equal(t, xOTLP.Headers[0].ValueType.Value, yOTLP.Headers[0].ValueType.Value, "OTLP header value mismatch")
+	require.Equal(t, xOTLP.Headers[0].Prefix, yOTLP.Headers[0].Prefix, "OTLP header prefix mismatch")
+	require.Equal(t, xOTLP.Headers[1].Name, yOTLP.Headers[1].Name, "OTLP header name mismatch")
+	require.Equal(t, xOTLP.Headers[1].ValueType.Value, yOTLP.Headers[1].ValueType.Value, "OTLP header value mismatch")
+	require.Equal(t, xOTLP.Headers[1].Prefix, yOTLP.Headers[1].Prefix, "OTLP header prefix mismatch")
+	require.Equal(t, xOTLP.TLS.Insecure, yOTLP.TLS.Insecure, "OTLP TLS insecure mismatch")
+	require.Equal(t, xOTLP.TLS.InsecureSkipVerify, yOTLP.TLS.InsecureSkipVerify, "OTLP TLS insecure skip verify mismatch")
+	require.Equal(t, xOTLP.TLS.CA.Value, yOTLP.TLS.CA.Value, "OTLP TLS CA mismatch")
+	require.Equal(t, xOTLP.TLS.Cert.Value, yOTLP.TLS.Cert.Value, "OTLP TLS cert mismatch")
+	require.Equal(t, xOTLP.TLS.Key.Value, yOTLP.TLS.Key.Value, "OTLP TLS key mismatch")
 
 	require.Equal(t, x.Status.UnsupportedMode, y.Status.UnsupportedMode, "status unsupported mode mismatch")
 	require.ElementsMatch(t, x.Status.Conditions, y.Status.Conditions, "status conditions mismatch")

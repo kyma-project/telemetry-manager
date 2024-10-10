@@ -31,19 +31,19 @@ func TestMakeRules(t *testing.T) {
 	require.Equal(t, "sum by (receiver) (rate(otelcol_receiver_refused_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[4].Expr)
 
 	require.Equal(t, "TraceGatewayExporterSentData", ruleGroup.Rules[5].Alert)
-	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_sent_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[5].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_sent_spans{service=\"telemetry-trace-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[5].Expr)
 
 	require.Equal(t, "TraceGatewayExporterDroppedData", ruleGroup.Rules[6].Alert)
-	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_send_failed_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[6].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_send_failed_spans{service=\"telemetry-trace-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[6].Expr)
 
 	require.Equal(t, "TraceGatewayExporterQueueAlmostFull", ruleGroup.Rules[7].Alert)
-	require.Equal(t, "max by (pipeline_name) (otelcol_exporter_queue_size{service=\"telemetry-trace-collector-metrics\"} / ignoring(data_type) otelcol_exporter_queue_capacity{service=\"telemetry-trace-collector-metrics\"}) > 0.8", ruleGroup.Rules[7].Expr)
+	require.Equal(t, "max by (pipeline_name) (otelcol_exporter_queue_size{service=\"telemetry-trace-gateway-metrics\"} / ignoring(data_type) otelcol_exporter_queue_capacity{service=\"telemetry-trace-gateway-metrics\"}) > 0.8", ruleGroup.Rules[7].Expr)
 
 	require.Equal(t, "TraceGatewayExporterEnqueueFailed", ruleGroup.Rules[8].Alert)
-	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[8].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_spans{service=\"telemetry-trace-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[8].Expr)
 
 	require.Equal(t, "TraceGatewayReceiverRefusedData", ruleGroup.Rules[9].Alert)
-	require.Equal(t, "sum by (receiver) (rate(otelcol_receiver_refused_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[9].Expr)
+	require.Equal(t, "sum by (receiver) (rate(otelcol_receiver_refused_spans{service=\"telemetry-trace-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[9].Expr)
 
 	require.Equal(t, "LogAgentExporterSentLogs", ruleGroup.Rules[10].Alert)
 	require.Equal(t, "sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service=\"telemetry-fluent-bit-metrics\"}[5m])) > 0", ruleGroup.Rules[10].Expr)

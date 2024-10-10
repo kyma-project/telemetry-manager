@@ -173,7 +173,7 @@ function wait_for_resources() {
 }
 
 function wait_for_trace_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-trace-collector
+    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway
     kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-load-generator
     kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-receiver
 }
@@ -204,7 +204,7 @@ function wait_for_otel_log_resources() {
 }
 
 function wait_for_selfmonitor_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-trace-collector
+    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway
     kubectl -n kyma-system rollout status deployment telemetry-metric-gateway
     kubectl -n kyma-system rollout status daemonset telemetry-metric-agent
     kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit
@@ -257,18 +257,18 @@ EOF
 
 function get_result_and_cleanup_trace() {
   RESULT_TYPE="span"
-  QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_spans{service="telemetry-trace-collector-metrics"}[20m])))'
+  QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_spans{service="telemetry-trace-gateway-metrics"}[20m])))'
   QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans{exporter=~"otlp/load-test.*"}[20m])))'
-  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-collector-metrics"}))'
-  QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}[20m])) by (pod) / 1024 / 1024)'
-  QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}[20m])) by (pod), 0.1)'
+  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-gateway-metrics"}))'
+  QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-gateway"}[20m])) by (pod) / 1024 / 1024)'
+  QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-gateway"}[20m])) by (pod), 0.1)'
 
   RESULT_RECEIVED=$(curl -fs --data-urlencode "$QUERY_RECEIVED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_EXPORTED=$(curl -fs --data-urlencode "$QUERY_EXPORTED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
-  RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-collector -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+  RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
   kill %1
 

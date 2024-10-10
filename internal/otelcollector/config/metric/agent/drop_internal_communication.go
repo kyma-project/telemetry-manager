@@ -7,7 +7,7 @@ import (
 var (
 	dropMetricsWithSourceMetricAgent        = ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "istio.*"), ottlexpr.HasAttrOnDatapoint("source_workload", "telemetry-metric-agent"))
 	dropMetricsWithDestinationTraceGateway  = ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "istio.*"), ottlexpr.HasAttrOnDatapoint("destination_workload", "telemetry-metric-gateway"))
-	dropMetricsWithDestinationMetricGateway = ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "istio.*"), ottlexpr.HasAttrOnDatapoint("destination_workload", "telemetry-trace-collector"))
+	dropMetricsWithDestinationMetricGateway = ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "istio.*"), ottlexpr.HasAttrOnDatapoint("destination_workload", "telemetry-trace-gateway"))
 )
 
 func makeFilterToDropMetricsForTelemetryComponents() *FilterProcessor {

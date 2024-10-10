@@ -48,6 +48,8 @@ GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
 KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
 MOCKERY          := $(TOOLS_BIN_DIR)/mockery
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
+YQ               := $(TOOLS_BIN_DIR)/yq
+STRINGER         := $(TOOLS_BIN_DIR)/stringer
 
 # Sub-makefile
 include hack/make/provision.mk
@@ -90,18 +92,22 @@ crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder
 	$(TABLE_GEN) --crd-filename ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: manifests
-manifests: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
+manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
 	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=config/crd/bases
 	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=config/crd/bases
+	$(YQ) eval 'del(.. | select(has("otlp")).otlp)' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
+	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("otlp")) )' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
+
 
 .PHONY: manifests-dev
 manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(MOCKERY)
+	$(STRINGER) --type OutputType internal/reconciler/logpipeline/reconciler.go
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
