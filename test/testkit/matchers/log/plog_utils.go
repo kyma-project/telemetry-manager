@@ -1,9 +1,10 @@
 package log
 
 import (
+	"time"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
-	"time"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
