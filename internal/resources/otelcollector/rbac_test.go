@@ -72,6 +72,27 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
 				Verbs:           []string{"get"},
 			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"extensions"},
+				Resources: []string{"daemonsets", "deployments", "replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs", "cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 		}
 
 		require.NotNil(t, cr)
@@ -136,27 +157,6 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 			{
 				APIGroups: []string{"telemetry.kyma-project.io"},
 				Resources: []string{"logpipelines"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"extensions"},
-				Resources: []string{"daemonsets", "deployments", "replicasets"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"batch"},
-				Resources: []string{"jobs", "cronjobs"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"autoscaling"},
-				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get", "list", "watch"},
 			}}
 
