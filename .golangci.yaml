@@ -13,7 +13,6 @@ linters:
     # Linters to be enabled after fixing the issues
     - cyclop
     - depguard
-#    - exhaustive
     - exhaustruct
     - forcetypeassert
     - funlen
@@ -199,6 +198,7 @@ issues:
       linters:
         - errcheck
         - dupl
+        - err113
     - path: ^internal/testutils
       linters:
         - mnd

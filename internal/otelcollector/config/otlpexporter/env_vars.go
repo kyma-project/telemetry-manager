@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -21,6 +22,10 @@ const (
 	tlsConfigCertVariablePrefix   = "OTLP_TLS_CERT_PEM"
 	tlsConfigKeyVariablePrefix    = "OTLP_TLS_KEY_PEM"
 	tlsConfigCaVariablePrefix     = "OTLP_TLS_CA_PEM"
+)
+
+var (
+	ErrValueOrSecretRefUndefined = errors.New("either value or secret key reference must be defined")
 )
 
 func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
@@ -161,7 +166,7 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
 	}
 
-	return nil, fmt.Errorf("either value or secret key reference must be defined")
+	return nil, ErrValueOrSecretRefUndefined
 }
 
 func makeOtlpEndpointVariable(pipelineName string) string {

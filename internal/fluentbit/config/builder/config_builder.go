@@ -8,6 +8,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 )
 
+var (
+	ErrUndefinedOutputPlugin = fmt.Errorf("output plugin not defined")
+)
+
 type PipelineDefaults struct {
 	InputTag          string
 	MemoryBufferLimit string
@@ -92,7 +96,7 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 
 func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
 	if !pipeline.Spec.Output.IsAnyDefined() {
-		return fmt.Errorf("output plugin not defined")
+		return ErrUndefinedOutputPlugin
 	}
 	return nil
 }

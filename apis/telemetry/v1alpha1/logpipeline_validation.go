@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -9,7 +10,8 @@ import (
 )
 
 var (
-	validHostName = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
+	validHostName                = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
+	ErrInvalidPipelineDefinition = errors.New("invalid log pipeline definition")
 )
 
 func (lp *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
@@ -156,14 +158,14 @@ func (lp *LogPipeline) validateInput() error {
 
 	var containers = input.Application.Containers
 	if len(containers.Include) > 0 && len(containers.Exclude) > 0 {
-		return fmt.Errorf("invalid log pipeline definition: Cannot define both 'input.application.containers.include' and 'input.application.containers.exclude'")
+		return fmt.Errorf("%w: Cannot define both 'input.application.containers.include' and 'input.application.containers.exclude'", ErrInvalidPipelineDefinition)
 	}
 
 	var namespaces = input.Application.Namespaces
 	if (len(namespaces.Include) > 0 && len(namespaces.Exclude) > 0) ||
 		(len(namespaces.Include) > 0 && namespaces.System) ||
 		(len(namespaces.Exclude) > 0 && namespaces.System) {
-		return fmt.Errorf("invalid log pipeline definition: Can only define one 'input.application.namespaces' selector - either 'include', 'exclude', or 'system'")
+		return fmt.Errorf("%w: Can only define one 'input.application.namespaces' selector - either 'include', 'exclude', or 'system'", ErrInvalidPipelineDefinition)
 	}
 
 	return nil

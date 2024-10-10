@@ -72,6 +72,8 @@ import (
 )
 
 var (
+	ErrInvalidLogLevel = errors.New("--log-level has to be one of debug, info, warn, error, fatal")
+
 	certDir            string
 	logLevel           string
 	scheme             = runtime.NewScheme()
@@ -636,7 +638,7 @@ func setNamespaceFieldSelector() fields.Selector {
 
 func validateFlags() error {
 	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
-		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")
+		return ErrInvalidLogLevel
 	}
 	return nil
 }
