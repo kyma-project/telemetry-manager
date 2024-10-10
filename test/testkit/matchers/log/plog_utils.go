@@ -72,7 +72,6 @@ func attributeToMap(attrs pcommon.Map) map[string]string {
 	return attrMap
 }
 
-
 // mapKubernetesMapAttributes converts the kubernetes attributes from a LogRecord which are of type
 // ValueTypeMap into a map using the string representation of the keys and 	map representation of the values
 func mapKubernetesMapAttributes(key string, attrs pcommon.Map) map[string]any {
