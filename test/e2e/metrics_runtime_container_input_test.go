@@ -25,10 +25,10 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a metric pipeline with ONLY container metrics enabled exists", Ordered, func() {
 		var (
-			mockNs = suite.IDWithSuffix("container-metrics")
+			mockNs = suite.ID()
 
-			backendOnlyContainerMetricsEnabledName  = suite.IDWithSuffix("container-metrics")
-			pipelineOnlyContainerMetricsEnabledName = suite.IDWithSuffix("container-metrics")
+			backendOnlyContainerMetricsEnabledName  = suite.ID()
+			pipelineOnlyContainerMetricsEnabledName = suite.ID()
 			backendOnlyContainerMetricsEnabledURL   string
 		)
 

@@ -27,10 +27,10 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a metric pipeline with ONLY volume metrics enabled exists", Ordered, func() {
 		var (
-			mockNs = suite.IDWithSuffix("volume-metrics")
+			mockNs = suite.ID()
 
-			backendOnlyVolumeMetricsEnabledName  = suite.IDWithSuffix("volume-metrics")
-			pipelineOnlyVolumeMetricsEnabledName = suite.IDWithSuffix("volume-metrics")
+			backendOnlyVolumeMetricsEnabledName  = suite.ID()
+			pipelineOnlyVolumeMetricsEnabledName = suite.ID()
 			backendOnlyVolumeMetricsEnabledURL   string
 
 			pvName                  = suite.IDWithSuffix("pv")
