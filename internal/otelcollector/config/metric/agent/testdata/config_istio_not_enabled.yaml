@@ -70,6 +70,10 @@ receivers:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
+            k8s.node.network.io:
+                enabled: false
+            k8s.node.network.errors:
+                enabled: false
     prometheus/app-pods:
         config:
             scrape_configs:

@@ -9,6 +9,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 )
 
 type LogPipelineBuilder struct {
@@ -24,6 +25,7 @@ type LogPipelineBuilder struct {
 	filters []telemetryv1alpha1.Filter
 
 	httpOutput   *telemetryv1alpha1.HTTPOutput
+	otlpOutput   *telemetryv1alpha1.OtlpOutput
 	customOutput string
 
 	statusConditions []metav1.Condition
@@ -32,7 +34,6 @@ type LogPipelineBuilder struct {
 func NewLogPipelineBuilder() *LogPipelineBuilder {
 	return &LogPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		labels:     make(map[string]string),
 	}
 }
 
@@ -109,6 +110,14 @@ func (b *LogPipelineBuilder) WithHTTPOutput(opts ...HTTPOutputOption) *LogPipeli
 	return b
 }
 
+func (b *LogPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *LogPipelineBuilder {
+	b.otlpOutput = defaultOTLPOutput()
+	for _, opt := range opts {
+		opt(b.otlpOutput)
+	}
+	return b
+}
+
 func (b *LogPipelineBuilder) WithCustomOutput(custom string) *LogPipelineBuilder {
 	b.customOutput = custom
 	return b
@@ -133,7 +142,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	if b.name == "" {
 		b.name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
-	if b.httpOutput == nil && b.customOutput == "" {
+	if b.httpOutput == nil && b.customOutput == "" && b.otlpOutput == nil {
 		b.httpOutput = defaultHTTPOutput()
 	}
 
@@ -149,6 +158,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Output: telemetryv1alpha1.Output{
 				HTTP:   b.httpOutput,
 				Custom: b.customOutput,
+				Otlp:   b.otlpOutput,
 			},
 		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
@@ -171,6 +181,19 @@ func defaultHTTPOutput() *telemetryv1alpha1.HTTPOutput {
 		TLSConfig: telemetryv1alpha1.TLSConfig{
 			Disabled:                  true,
 			SkipCertificateValidation: true,
+		},
+	}
+}
+func defaultOTLPOutput() *telemetryv1alpha1.OtlpOutput {
+	return &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "127.0.0.1:4317"},
+		Protocol: endpoint.OtlpProtocolGRPC,
+		TLS: &telemetryv1alpha1.OtlpTLS{
+			Insecure:           true,
+			InsecureSkipVerify: true,
+			CA:                 nil,
+			Cert:               nil,
+			Key:                nil,
 		},
 	}
 }

@@ -5,6 +5,11 @@ on:
     branches:
       - "main"
       - "release-*"
+    paths-ignore:
+      - 'dependencies/**'
+      - 'OWNERS'
+      - 'CODEOWNERS'
+      - 'external-images.yaml'
   workflow_dispatch:
 
 jobs:

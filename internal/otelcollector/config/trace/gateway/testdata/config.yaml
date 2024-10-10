@@ -86,7 +86,7 @@ processors:
         traces:
             span:
                 - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-fluent-bit"
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-trace-collector"
+                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-trace-gateway"
                 - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-metric-gateway"
                 - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-metric-agent"
                 - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "istio-system" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress.*") == true) and attributes["istio.canonical_service"] == "istio-ingressgateway" and IsMatch(attributes["http.url"], "https:\\/\\/healthz\\..+\\/healthz\\/ready") == true

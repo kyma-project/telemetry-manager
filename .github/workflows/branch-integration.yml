@@ -11,6 +11,7 @@ on:
       - '**/*.md'
       - 'OWNERS'
       - 'CODEOWNERS'
+      - 'external-images.yaml'
   workflow_dispatch:
 
 jobs:
@@ -49,7 +50,7 @@ jobs:
         GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
         GARDENER_SA_PATH: /tmp/gardener-sa.yaml
         GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
-  
+
     - name: Upload Report
       uses: actions/upload-artifact@v4
       if: success() || failure()
