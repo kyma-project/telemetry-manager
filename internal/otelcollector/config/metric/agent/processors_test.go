@@ -124,7 +124,7 @@ func TestProcessors(t *testing.T) {
 		expectedDropNonPVCVolumesMetricsProcessor := FilterProcessor{
 			Metrics: FilterProcessorMetrics{
 				Metric: []string{
-					"resource.attributes[\"k8s.volume.name\"] != nil and resource.attributes[\"k8s.volume.type\"] != \"persistentVolumeClaim\"",
+					`resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"`,
 				},
 			},
 		}

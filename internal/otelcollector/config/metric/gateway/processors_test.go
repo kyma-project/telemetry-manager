@@ -350,7 +350,7 @@ func TestProcessors(t *testing.T) {
 		expectedDropRuntimeVolumeMetricsProcessor := FilterProcessor{
 			Metrics: FilterProcessorMetrics{
 				Metric: []string{
-					"instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" and IsMatch(name, \"^k8s.volume.*\")",
+					`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.volume.*")`,
 				},
 			},
 		}
