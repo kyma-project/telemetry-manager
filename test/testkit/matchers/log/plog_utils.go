@@ -11,12 +11,12 @@ import (
 
 type FlatLog struct {
 	LogRecordAttributes            map[string]string
+	Timestamp                      time.Time
 	LogRecordBody                  string
 	Level                          string
 	PodName                        string
 	ContainerName                  string
 	NamespaceName                  string
-	Timestamp                      time.Time
 	KubernetesLabelAttributes      map[string]any
 	KubernetesAnnotationAttributes map[string]any
 }
@@ -46,16 +46,18 @@ func flattenLogs(ld plog.Logs) []FlatLog {
 			scopeLogs := resourceLogs.ScopeLogs().At(j)
 			for k := 0; k < scopeLogs.LogRecords().Len(); k++ {
 				lr := scopeLogs.LogRecords().At(k)
+				k8sAttrs := getKubernetesAttributes(lr)
+
 				flatLogs = append(flatLogs, FlatLog{
 					LogRecordAttributes:            attributeToMap(lr.Attributes()),
+					Timestamp:                      getTimestamp(attributeToMap(lr.Attributes())),
 					LogRecordBody:                  lr.Body().AsString(),
-					Level:                          attributeToMap(lr.Attributes())["level"],
-					PodName:                        attributeToMap(getKubernetesAttributes(lr))["pod_name"],
-					ContainerName:                  attributeToMap(getKubernetesAttributes(lr))["container_name"],
-					NamespaceName:                  attributeToMap(getKubernetesAttributes(lr))["namespace_name"],
-					Timestamp:                      getTimestamp(attributeToMap(getKubernetesAttributes(lr))),
-					KubernetesLabelAttributes:      mapKubernetesMapAttributes("labels", getKubernetesAttributes(lr)),
-					KubernetesAnnotationAttributes: mapKubernetesMapAttributes("annotations", getKubernetesAttributes(lr)),
+					Level:                          getAttribute("level", lr.Attributes()),
+					PodName:                        getAttribute("pod_name", k8sAttrs),
+					ContainerName:                  getAttribute("container_name", k8sAttrs),
+					NamespaceName:                  getAttribute("namespace_name", k8sAttrs),
+					KubernetesLabelAttributes:      mapKubernetesMapAttributes("labels", k8sAttrs),
+					KubernetesAnnotationAttributes: mapKubernetesMapAttributes("annotations", k8sAttrs),
 				})
 			}
 		}
@@ -81,6 +83,14 @@ func mapKubernetesMapAttributes(key string, attrs pcommon.Map) map[string]any {
 		return nil
 	}
 	return attr.Map().AsRaw()
+}
+
+func getAttribute(name string, p pcommon.Map) string {
+	attr, hasAttr := p.Get(name)
+	if !hasAttr || attr.Type() != pcommon.ValueTypeStr {
+		return ""
+	}
+	return attr.Str()
 }
 
 func getTimestamp(lr map[string]string) time.Time {
