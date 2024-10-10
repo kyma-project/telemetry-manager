@@ -125,7 +125,7 @@ func getKubernetesAttributes(lr plog.LogRecord) pcommon.Map {
 	const kubernetesAttrKey = "kubernetes"
 	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
 	if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
-		return pcommon.Map{}
+		return pcommon.NewMap()
 	}
 	return kubernetesAttrs.Map()
 }
