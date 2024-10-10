@@ -185,7 +185,6 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
-				"transform/set-instrumentation-scope-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-node-metrics",
@@ -225,7 +224,6 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
-				"transform/set-instrumentation-scope-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-container-metrics",
@@ -266,7 +264,6 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
-				"transform/set-instrumentation-scope-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-pod-metrics",
@@ -309,7 +306,6 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
-				"transform/set-instrumentation-scope-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-pod-metrics",
@@ -569,7 +565,6 @@ func TestService(t *testing.T) {
 
 		require.Equal(t, []string{"routing/test-1", "forward/test-1"}, collectorConfig.Service.Pipelines["metrics/test-1-output"].Receivers)
 		require.Equal(t, []string{
-			"transform/set-instrumentation-scope-runtime",
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
 			"filter/test-1-filter-by-namespace-runtime-input",

@@ -28,11 +28,6 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline)
 
 	input := pipeline.Spec.Input
 
-	// Perform the transform before runtime resource filter as InstrumentationScopeRuntime is required for dropping container/pod metrics
-	if isRuntimeInputEnabled(pipeline.Spec.Input) {
-		processors = append(processors, "transform/set-instrumentation-scope-runtime")
-	}
-
 	processors = append(processors, makeInputSourceFiltersIDs(input)...)
 	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
