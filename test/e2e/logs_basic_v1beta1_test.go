@@ -50,7 +50,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 						},
 						Port: strconv.Itoa(int(backend.Port())),
 						URI:  "/",
-						TLSConfig: telemetryv1beta1.LogPipelineHTTPOutputTLS{
+						TLSConfig: telemetryv1beta1.OutputTLS{
 							Disabled:                  true,
 							SkipCertificateValidation: true,
 						},

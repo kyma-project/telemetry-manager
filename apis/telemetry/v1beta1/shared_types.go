@@ -59,10 +59,10 @@ type Header struct {
 
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
 type OTLPTLS struct {
-	// Defines whether to send requests using plaintext instead of TLS.
-	Insecure bool `json:"insecure,omitempty"`
+	// Defines whether to send requests using plaintext instead of TLS. Default is false.
+	Disabled bool `json:"disabled,omitempty"`
 	// Defines whether to skip server certificate verification when using TLS.
-	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+	SkipCertificateValidation bool `json:"SkipCertificateValidation,omitempty"`
 	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
 	CA *ValueType `json:"ca,omitempty"`
 	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
@@ -95,7 +95,7 @@ type OTLPOutput struct {
 	// Defines custom headers to be added to outgoing HTTP or GRPC requests.
 	Headers []Header `json:"headers,omitempty"`
 	// Defines TLS options for the OTLP output.
-	TLS *OTLPTLS `json:"tls,omitempty"`
+	TLS *OutputTLS `json:"tls,omitempty"`
 }
 
 type AuthenticationOptions struct {
