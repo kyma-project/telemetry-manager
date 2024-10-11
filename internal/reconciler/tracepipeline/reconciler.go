@@ -22,6 +22,12 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -130,6 +136,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if overrideConfig.Tracing.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
+	}
+
+	// TODO: Remove after next release on regular (1/2) (+ increase coverage threshold back to 74%)
+	if err := r.cleanUpOldTraceCollectorResources(ctx); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to clean up old trace collector resources: %w", err)
 	}
 
 	var tracePipeline telemetryv1alpha1.TracePipeline
@@ -285,4 +296,74 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		}
 	}
 	return defaultReplicaCount
+}
+
+func (r *Reconciler) cleanUpOldTraceCollectorResources(ctx context.Context) error {
+	oldTraceCollectorResources := []client.Object{
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "telemetry-trace-collector",
+			},
+		},
+		&rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "telemetry-trace-collector",
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector-metrics",
+				Namespace: "kyma-system",
+			},
+		},
+		&networkingv1.NetworkPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			},
+		},
+	}
+
+	if r.istioStatusChecker.IsIstioActive(ctx) {
+		oldTraceCollectorResources = append(oldTraceCollectorResources,
+			&istiosecurityclientv1.PeerAuthentication{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "telemetry-trace-collector",
+					Namespace: "kyma-system",
+				},
+			})
+	}
+
+	var errs error
+	for _, oldResource := range oldTraceCollectorResources {
+		if err := r.Delete(ctx, oldResource); err != nil && !apierrors.IsNotFound(err) {
+			errs = errors.Join(errs, fmt.Errorf("failed to delete old trace collector resource: %w", err))
+		}
+	}
+
+	return errs
 }

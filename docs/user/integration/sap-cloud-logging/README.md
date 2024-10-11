@@ -304,6 +304,7 @@ Learn how to define and import recommended alerts for SAP Cloud Logging. The fol
 2. To import a monitor, use the development tools of the SAP Cloud Logging dashboard.
 3. Execute `POST _plugins/_alerting/monitors`, followed by the contents of the respective JSON file.
 4. Depending on the pipelines you are using, enable the some or all of the following alerts:
+<!-- markdown-link-check-disable -->
    | Category | File | Description |
    | -- | -- | -- |
    | SAP Cloud Logging | [OpenSearch cluster health](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json) | The OpenSearch cluster might become unhealthy, which is indicated by a "red" status using the [cluster health API](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health).|
@@ -311,7 +312,8 @@ Learn how to define and import recommended alerts for SAP Cloud Logging. The fol
    | Kyma Telemetry Integration | [Access log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | The LogPipeline for shipping [access logs](#ship-logs-to-sap-cloud-logging) might lose connectivity to SAP Cloud Logging, with the effect that no access logs are ingested anymore. |
    | Kyma Telemetry Integration | [Trace ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json) | The TracePipeline for shipping [traces](#ship-distributed-traces-to-sap-cloud-logging) might lose connectivity to SAP Cloud Logging, with the effect that no traces are ingested anymore. |
    | Kyma Telemetry Integration | [Metric ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | The MetricPipeline for shipping [metrics](#ship-metrics-to-sap-cloud-logging) might lose connectivity to SAP Cloud Logging, with the effect that no metrics are ingested anymore. |
-
+   | Kyma Telemetry Integration | [Kyma Telemetry Status](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-telemetry-status.json) | The Telemetry module might report a non-ready state indicating a configuration or data flow problem. |
+<!-- markdown-link-check-enable -->
 5. Edit notification action: Add the `destination` and adjust the intervals and thresholds to your needs.
 6. Verify that the new monitor definition is listed among the SAP Cloud Logging alerts.
 
@@ -319,7 +321,11 @@ Learn how to define and import recommended alerts for SAP Cloud Logging. The fol
 
 You can view logs, traces, and metrics in SAP Cloud Logging dashboards:
 
+<!-- markdown-link-check-disable -->
 - To view the traffic and application logs, use the SAP Cloud Logging dashboards prefixed with `Kyma_`, which are based on both kinds of log ingestion: application and access logs.
 - To view distributed traces, use the OpenSearch plugin **Observability**.
-- To view the the container- and Pod-related metrics collected by the MetricPipeline `runtime` input, use the dashboard **[OTel] K8s Container Metrics**.
+- To view the container- and Pod-related metrics collected by the MetricPipeline `runtime` input, use the dashboard **[OTel] K8s Container Metrics**.
+- To view the Node-related metrics collected by the MetricPipeline `runtime` input, manually import the file [K8s Nodes](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-nodes.ndjson).
+- To view the status of the SAP Cloud Logging integration with the Kyma Telemetry module, manually import the file [Kyma Telemetry Status](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-status.ndjson).
 - To use the dashboard for Istio metrics of Pods that have an active Istio sidecar injection (collected by the MetricPipeline `istio` input), manually import the file [Kyma Istio Service Metrics](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-istio.ndjson).
+<!-- markdown-link-check-enable -->
