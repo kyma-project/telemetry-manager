@@ -52,6 +52,8 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 			K8sNodeCPUTime:               MetricConfig{Enabled: false},
 			K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
 			K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
+			K8sNodeNetworkIO:             MetricConfig{Enabled: false},
+			K8sNodeNetworkErrors:         MetricConfig{Enabled: false},
 		},
 	}
 }

@@ -201,7 +201,7 @@ func TestConvertFrom(t *testing.T) {
 					Port:     "8080",
 					Compress: "on",
 					Format:   "json",
-					TLSConfig: telemetryv1beta1.LogPipelineHTTPOutputTLS{
+					TLSConfig: telemetryv1beta1.OutputTLS{
 						SkipCertificateValidation: true,
 						CA: &telemetryv1beta1.ValueType{
 							Value: "ca",
@@ -243,12 +243,12 @@ func TestConvertFrom(t *testing.T) {
 							Prefix: "prefix2",
 						},
 					},
-					TLS: &telemetryv1beta1.OTLPTLS{
-						Insecure:           true,
-						InsecureSkipVerify: true,
-						CA:                 &telemetryv1beta1.ValueType{Value: "ca"},
-						Cert:               &telemetryv1beta1.ValueType{Value: "cert"},
-						Key:                &telemetryv1beta1.ValueType{Value: "key"},
+					TLS: &telemetryv1beta1.OutputTLS{
+						Disabled:                  true,
+						SkipCertificateValidation: true,
+						CA:                        &telemetryv1beta1.ValueType{Value: "ca"},
+						Cert:                      &telemetryv1beta1.ValueType{Value: "cert"},
+						Key:                       &telemetryv1beta1.ValueType{Value: "key"},
 					},
 				},
 			},
@@ -334,8 +334,8 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Equal(t, xOTLP.Headers[1].Name, yOTLP.Headers[1].Name, "OTLP header name mismatch")
 	require.Equal(t, xOTLP.Headers[1].ValueType.Value, yOTLP.Headers[1].ValueType.Value, "OTLP header value mismatch")
 	require.Equal(t, xOTLP.Headers[1].Prefix, yOTLP.Headers[1].Prefix, "OTLP header prefix mismatch")
-	require.Equal(t, xOTLP.TLS.Insecure, yOTLP.TLS.Insecure, "OTLP TLS insecure mismatch")
-	require.Equal(t, xOTLP.TLS.InsecureSkipVerify, yOTLP.TLS.InsecureSkipVerify, "OTLP TLS insecure skip verify mismatch")
+	require.Equal(t, xOTLP.TLS.Insecure, yOTLP.TLS.Disabled, "OTLP TLS insecure mismatch")
+	require.Equal(t, xOTLP.TLS.InsecureSkipVerify, yOTLP.TLS.SkipCertificateValidation, "OTLP TLS insecure skip verify mismatch")
 	require.Equal(t, xOTLP.TLS.CA.Value, yOTLP.TLS.CA.Value, "OTLP TLS CA mismatch")
 	require.Equal(t, xOTLP.TLS.Cert.Value, yOTLP.TLS.Cert.Value, "OTLP TLS cert mismatch")
 	require.Equal(t, xOTLP.TLS.Key.Value, yOTLP.TLS.Key.Value, "OTLP TLS key mismatch")
