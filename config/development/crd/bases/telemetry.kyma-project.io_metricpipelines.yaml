@@ -1125,13 +1125,9 @@ spec:
                                     type: object
                                 type: object
                             type: object
-                          insecure:
-                            description: Defines whether to send requests using plaintext
-                              instead of TLS.
-                            type: boolean
-                          insecureSkipVerify:
-                            description: Defines whether to skip server certificate
-                              verification when using TLS.
+                          disabled:
+                            description: Indicates if TLS is disabled or enabled.
+                              Default is `false`.
                             type: boolean
                           key:
                             description: Defines the client key to use when using
@@ -1164,6 +1160,10 @@ spec:
                                     type: object
                                 type: object
                             type: object
+                          skipCertificateValidation:
+                            description: If `true`, the validation of certificates
+                              is skipped. Default is `false`.
+                            type: boolean
                         type: object
                         x-kubernetes-validations:
                         - message: Can define either both 'cert' and 'key', or neither
