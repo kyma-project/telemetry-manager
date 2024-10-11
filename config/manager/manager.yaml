@@ -32,7 +32,7 @@ spec:
         - /manager
         args:
         - --cert-dir=/tmp
-        - --fluent-bit-priority-class-name=telemetry-priority-class-high
+        - --fluent-bit-priority-class=telemetry-priority-class-high
         - --metric-gateway-priority-class=telemetry-priority-class
         - --trace-gateway-priority-class=telemetry-priority-class
         - --self-monitor-priority-class=telemetry-priority-class

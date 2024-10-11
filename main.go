@@ -103,7 +103,7 @@ var (
 	fluentBitMemoryRequest       string
 	fluentBitImage               string
 	fluentBitExporterImage       string
-	fluentBitPriorityClassName   string
+	fluentBitPriorityClass       string
 
 	metricGatewayPriorityClass        string
 	metricGatewayCPULimit             string
@@ -240,7 +240,7 @@ func run() error {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
-	
+
 	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOtelImage, "Image for OpenTelemetry Collector")
 
 	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
@@ -263,6 +263,7 @@ func run() error {
 	flag.StringVar(&metricGatewayMemoryRequest, "metric-gateway-memory-request", "32Mi", "Memory request for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayDynamicMemoryRequest, "metric-gateway-dynamic-memory-request", "0", "Additional memory request for metrics OpenTelemetry Collector per MetricPipeline")
 
+	flag.StringVar(&fluentBitPriorityClass, "fluent-bit-priority-class", "", "Priority class name for logs Fluent Bit")
 	flag.StringVar(&fluentBitDeniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
 	flag.StringVar(&fluentBitDeniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
@@ -273,7 +274,6 @@ func run() error {
 	flag.StringVar(&fluentBitMemoryRequest, "fluent-bit-memory-request", "50Mi", "Memory request for fluent-bit")
 	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
 
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
@@ -472,7 +472,7 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 			FluentBitMemoryRequest: fluentBitMemoryRequest,
 			FluentBitImage:         fluentBitImage,
 			PipelineDefaults:       createPipelineDefaults(),
-			PriorityClassName:      fluentBitPriorityClassName,
+			PriorityClassName:      fluentBitPriorityClass,
 			SelfMonitorName:        selfMonitorName,
 			TelemetryNamespace:     telemetryNamespace,
 			RestConfig:             mgr.GetConfig(),
