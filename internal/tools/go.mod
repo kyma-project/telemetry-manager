@@ -3,6 +3,7 @@ module github.com/kyma-project/telemetry-manager/internal/tools
 go 1.23.1
 
 require (
+	github.com/bombsimon/wsl/v4 v4.4.1
 	github.com/golangci/golangci-lint v1.61.0
 	github.com/google/yamlfmt v0.13.0
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
@@ -45,7 +46,6 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blizzy78/varnamelen v0.8.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
-	github.com/bombsimon/wsl/v4 v4.4.1 // indirect
 	github.com/braydonk/yaml v0.7.0 // indirect
 	github.com/breml/bidichk v0.2.7 // indirect
 	github.com/breml/errchkjson v0.3.6 // indirect

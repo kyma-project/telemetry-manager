@@ -18,4 +18,5 @@ import (
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 	_ "sigs.k8s.io/kustomize/kustomize/v5"
+    _ "github.com/bombsimon/wsl/v4/cmd/wsl"
 )
