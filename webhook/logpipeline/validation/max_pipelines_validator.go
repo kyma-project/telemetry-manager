@@ -14,9 +14,11 @@ type maxPipelinesValidator struct {
 	maxPipelines int
 }
 
-func NewMaxPipelinesValidator(maxPipelines int) MaxPipelinesValidator {
+const maxLogPipelines int = 3
+
+func NewMaxPipelinesValidator() MaxPipelinesValidator {
 	return &maxPipelinesValidator{
-		maxPipelines: maxPipelines,
+		maxPipelines: maxLogPipelines,
 	}
 }
 

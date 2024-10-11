@@ -67,13 +67,15 @@ type TracePipelineControllerConfig struct {
 	TelemetryNamespace string
 }
 
+const maxTracePipelines int = 3
+
 func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config TracePipelineControllerConfig) (*TracePipelineController, error) {
 	flowHealthProber, err := prober.NewTracePipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
 
-	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-tracepipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
+	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-tracepipeline-lock", Namespace: config.Gateway.Namespace}, maxTracePipelines)
 
 	pipelineValidator := &tracepipeline.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},

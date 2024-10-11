@@ -51,7 +51,6 @@ const defaultReplicaCount int32 = 2
 
 type Config struct {
 	Gateway      otelcollector.GatewayConfig
-	MaxPipelines int
 }
 
 type GatewayConfigBuilder interface {
