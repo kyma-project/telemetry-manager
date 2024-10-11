@@ -380,7 +380,303 @@ spec:
                             type: object
                         type: object
                     type: object
+                  otlp:
+                    description: Defines an output using the OpenTelemetry protocol.
+                    properties:
+                      authentication:
+                        description: Defines authentication options for the OTLP output
+                        properties:
+                          basic:
+                            description: Activates `Basic` authentication for the
+                              destination providing relevant Secrets.
+                            properties:
+                              password:
+                                description: Contains the basic auth password or a
+                                  Secret reference.
+                                properties:
+                                  value:
+                                    description: The value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: The value as a reference to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: Refers to the value of a specific
+                                          key in a Secret. You must provide `name`
+                                          and `namespace` of the Secret, as well as
+                                          the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: The name of the attribute
+                                              of the Secret holding the referenced
+                                              value.
+                                            type: string
+                                          name:
+                                            description: The name of the Secret containing
+                                              the referenced value
+                                            type: string
+                                          namespace:
+                                            description: The name of the Namespace
+                                              containing the Secret with the referenced
+                                              value.
+                                            type: string
+                                        type: object
+                                    type: object
+                                type: object
+                              user:
+                                description: Contains the basic auth username or a
+                                  Secret reference.
+                                properties:
+                                  value:
+                                    description: The value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: The value as a reference to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: Refers to the value of a specific
+                                          key in a Secret. You must provide `name`
+                                          and `namespace` of the Secret, as well as
+                                          the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: The name of the attribute
+                                              of the Secret holding the referenced
+                                              value.
+                                            type: string
+                                          name:
+                                            description: The name of the Secret containing
+                                              the referenced value
+                                            type: string
+                                          namespace:
+                                            description: The name of the Namespace
+                                              containing the Secret with the referenced
+                                              value.
+                                            type: string
+                                        type: object
+                                    type: object
+                                type: object
+                            required:
+                            - password
+                            - user
+                            type: object
+                        type: object
+                      endpoint:
+                        description: Defines the host and port (<host>:<port>) of
+                          an OTLP endpoint.
+                        properties:
+                          value:
+                            description: The value as plain text.
+                            type: string
+                          valueFrom:
+                            description: The value as a reference to a resource.
+                            properties:
+                              secretKeyRef:
+                                description: Refers to the value of a specific key
+                                  in a Secret. You must provide `name` and `namespace`
+                                  of the Secret, as well as the name of the `key`.
+                                properties:
+                                  key:
+                                    description: The name of the attribute of the
+                                      Secret holding the referenced value.
+                                    type: string
+                                  name:
+                                    description: The name of the Secret containing
+                                      the referenced value
+                                    type: string
+                                  namespace:
+                                    description: The name of the Namespace containing
+                                      the Secret with the referenced value.
+                                    type: string
+                                type: object
+                            type: object
+                        type: object
+                      headers:
+                        description: Defines custom headers to be added to outgoing
+                          HTTP or GRPC requests.
+                        items:
+                          properties:
+                            name:
+                              description: Defines the header name.
+                              type: string
+                            prefix:
+                              description: Defines an optional header value prefix.
+                                The prefix is separated from the value by a space
+                                character.
+                              type: string
+                            value:
+                              description: The value as plain text.
+                              type: string
+                            valueFrom:
+                              description: The value as a reference to a resource.
+                              properties:
+                                secretKeyRef:
+                                  description: Refers to the value of a specific key
+                                    in a Secret. You must provide `name` and `namespace`
+                                    of the Secret, as well as the name of the `key`.
+                                  properties:
+                                    key:
+                                      description: The name of the attribute of the
+                                        Secret holding the referenced value.
+                                      type: string
+                                    name:
+                                      description: The name of the Secret containing
+                                        the referenced value
+                                      type: string
+                                    namespace:
+                                      description: The name of the Namespace containing
+                                        the Secret with the referenced value.
+                                      type: string
+                                  type: object
+                              type: object
+                          required:
+                          - name
+                          type: object
+                        type: array
+                      path:
+                        description: Defines OTLP export URL path (only for the HTTP
+                          protocol). This value overrides auto-appended paths /v1/metrics
+                          and /v1/traces
+                        type: string
+                      protocol:
+                        default: grpc
+                        description: Defines the OTLP protocol (http or grpc). Default
+                          is grpc.
+                        enum:
+                        - grpc
+                        - http
+                        minLength: 1
+                        type: string
+                      tls:
+                        description: Defines TLS options for the OTLP output.
+                        properties:
+                          ca:
+                            description: Defines an optional CA certificate for server
+                              certificate verification when using TLS. The certificate
+                              must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          cert:
+                            description: Defines a client certificate to use when
+                              using TLS. The certificate must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          insecure:
+                            description: Defines whether to send requests using plaintext
+                              instead of TLS.
+                            type: boolean
+                          insecureSkipVerify:
+                            description: Defines whether to skip server certificate
+                              verification when using TLS.
+                            type: boolean
+                          key:
+                            description: Defines the client key to use when using
+                              TLS. The key must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Can define either both 'cert' and 'key', or neither
+                          rule: has(self.cert) == has(self.key)
+                    required:
+                    - endpoint
+                    type: object
+                    x-kubernetes-validations:
+                    - message: Path is only available with HTTP protocol
+                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
+                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
+                        == 'http')
                 type: object
+                x-kubernetes-validations:
+                - message: Switching to or away from OTLP output is not supported
+                  rule: has(self.otlp) == has(oldSelf.otlp)
+                - message: Exactly one output must be defined
+                  rule: (!has(self.custom) && !has(self.http)) || !(has(self.custom)
+                    && has(self.http))
+                - message: Exactly one output must be defined
+                  rule: (!has(self.custom) && !has(self.otlp)) || ! (has(self.custom)
+                    && has(self.otlp))
+                - message: Exactly one output must be defined
+                  rule: (!has(self.http) && !has(self.otlp)) || ! (has(self.http)
+                    && has(self.otlp))
               variables:
                 description: A list of mappings from Kubernetes Secret keys to environment
                   variables. Mapped keys are mounted as environment variables, so
@@ -850,7 +1146,302 @@ spec:
                             type: object
                         type: object
                     type: object
+                  otlp:
+                    description: Defines an output using the OpenTelemetry protocol.
+                    properties:
+                      authentication:
+                        description: Defines authentication options for the OTLP output
+                        properties:
+                          basic:
+                            description: Activates `Basic` authentication for the
+                              destination providing relevant Secrets.
+                            properties:
+                              password:
+                                description: Contains the basic auth password or a
+                                  Secret reference.
+                                properties:
+                                  value:
+                                    description: The value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: The value as a reference to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: Refers to the value of a specific
+                                          key in a Secret. You must provide `name`
+                                          and `namespace` of the Secret, as well as
+                                          the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: The name of the attribute
+                                              of the Secret holding the referenced
+                                              value.
+                                            type: string
+                                          name:
+                                            description: The name of the Secret containing
+                                              the referenced value
+                                            type: string
+                                          namespace:
+                                            description: The name of the Namespace
+                                              containing the Secret with the referenced
+                                              value.
+                                            type: string
+                                        type: object
+                                    type: object
+                                type: object
+                              user:
+                                description: Contains the basic auth username or a
+                                  Secret reference.
+                                properties:
+                                  value:
+                                    description: The value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: The value as a reference to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: Refers to the value of a specific
+                                          key in a Secret. You must provide `name`
+                                          and `namespace` of the Secret, as well as
+                                          the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: The name of the attribute
+                                              of the Secret holding the referenced
+                                              value.
+                                            type: string
+                                          name:
+                                            description: The name of the Secret containing
+                                              the referenced value
+                                            type: string
+                                          namespace:
+                                            description: The name of the Namespace
+                                              containing the Secret with the referenced
+                                              value.
+                                            type: string
+                                        type: object
+                                    type: object
+                                type: object
+                            required:
+                            - password
+                            - user
+                            type: object
+                        type: object
+                      endpoint:
+                        description: Defines the host and port (<host>:<port>) of
+                          an OTLP endpoint.
+                        properties:
+                          value:
+                            description: The value as plain text.
+                            type: string
+                          valueFrom:
+                            description: The value as a reference to a resource.
+                            properties:
+                              secretKeyRef:
+                                description: Refers to the value of a specific key
+                                  in a Secret. You must provide `name` and `namespace`
+                                  of the Secret, as well as the name of the `key`.
+                                properties:
+                                  key:
+                                    description: The name of the attribute of the
+                                      Secret holding the referenced value.
+                                    type: string
+                                  name:
+                                    description: The name of the Secret containing
+                                      the referenced value
+                                    type: string
+                                  namespace:
+                                    description: The name of the Namespace containing
+                                      the Secret with the referenced value.
+                                    type: string
+                                type: object
+                            type: object
+                        type: object
+                      headers:
+                        description: Defines custom headers to be added to outgoing
+                          HTTP or GRPC requests.
+                        items:
+                          properties:
+                            name:
+                              description: Defines the header name.
+                              type: string
+                            prefix:
+                              description: Defines an optional header value prefix.
+                                The prefix is separated from the value by a space
+                                character.
+                              type: string
+                            value:
+                              description: The value as plain text.
+                              type: string
+                            valueFrom:
+                              description: The value as a reference to a resource.
+                              properties:
+                                secretKeyRef:
+                                  description: Refers to the value of a specific key
+                                    in a Secret. You must provide `name` and `namespace`
+                                    of the Secret, as well as the name of the `key`.
+                                  properties:
+                                    key:
+                                      description: The name of the attribute of the
+                                        Secret holding the referenced value.
+                                      type: string
+                                    name:
+                                      description: The name of the Secret containing
+                                        the referenced value
+                                      type: string
+                                    namespace:
+                                      description: The name of the Namespace containing
+                                        the Secret with the referenced value.
+                                      type: string
+                                  type: object
+                              type: object
+                          required:
+                          - name
+                          type: object
+                        type: array
+                      path:
+                        description: Defines OTLP export URL path (only for the HTTP
+                          protocol). This value overrides auto-appended paths /v1/metrics
+                          and /v1/traces
+                        type: string
+                      protocol:
+                        default: grpc
+                        description: Defines the OTLP protocol (http or grpc). Default
+                          is grpc.
+                        enum:
+                        - grpc
+                        - http
+                        type: string
+                      tls:
+                        description: Defines TLS options for the OTLP output.
+                        properties:
+                          ca:
+                            description: Defines an optional CA certificate for server
+                              certificate verification when using TLS. The certificate
+                              must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          cert:
+                            description: Defines a client certificate to use when
+                              using TLS. The certificate must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          disabled:
+                            description: Indicates if TLS is disabled or enabled.
+                              Default is `false`.
+                            type: boolean
+                          key:
+                            description: Defines the client key to use when using
+                              TLS. The key must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          skipCertificateValidation:
+                            description: If `true`, the validation of certificates
+                              is skipped. Default is `false`.
+                            type: boolean
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Can define either both 'cert' and 'key', or neither
+                          rule: has(self.cert) == has(self.key)
+                    required:
+                    - endpoint
+                    type: object
+                    x-kubernetes-validations:
+                    - message: Path is only available with HTTP protocol
+                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
+                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
+                        == 'http')
                 type: object
+                x-kubernetes-validations:
+                - message: Switching to or away from OTLP output is not supported
+                  rule: has(self.otlp) == has(oldSelf.otlp)
+                - message: Exactly one output must be defined
+                  rule: (!has(self.custom) && !has(self.http)) || !(has(self.custom)
+                    && has(self.http))
+                - message: Exactly one output must be defined
+                  rule: (!has(self.custom) && !has(self.otlp)) || ! (has(self.custom)
+                    && has(self.otlp))
+                - message: Exactly one output must be defined
+                  rule: (!has(self.http) && !has(self.otlp)) || ! (has(self.http)
+                    && has(self.otlp))
               variables:
                 description: A list of mappings from Kubernetes Secret keys to environment
                   variables. Mapped keys are mounted as environment variables, so

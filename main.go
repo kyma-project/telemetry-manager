@@ -130,7 +130,7 @@ var (
 const (
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.9"
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241001-21f80ba0"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.109.0-main"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
@@ -245,17 +245,17 @@ func run() error {
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
 
-	flag.StringVar(&traceGatewayImage, "trace-collector-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayCPULimit, "trace-collector-cpu-limit", "700m", "CPU limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "500m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryLimit, "trace-collector-memory-limit", "500Mi", "Memory limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "1500Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayCPURequest, "trace-collector-cpu-request", "100m", "CPU request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-collector-dynamic-cpu-request", "100m", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
+	flag.StringVar(&traceGatewayImage, "trace-gateway-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayCPULimit, "trace-gateway-cpu-limit", "700m", "CPU limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-gateway-dynamic-cpu-limit", "500m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayMemoryLimit, "trace-gateway-memory-limit", "500Mi", "Memory limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-gateway-dynamic-memory-limit", "1500Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayCPURequest, "trace-gateway-cpu-request", "100m", "CPU request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-gateway-dynamic-cpu-request", "100m", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayMemoryRequest, "trace-gateway-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-gateway-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
+	flag.IntVar(&maxTracePipelines, "trace-gateway-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
@@ -516,7 +516,7 @@ func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 				Gateway: otelcollector.GatewayConfig{
 					Config: otelcollector.Config{
 						Namespace: telemetryNamespace,
-						BaseName:  "telemetry-trace-collector",
+						BaseName:  "telemetry-trace-gateway",
 					},
 					Deployment: otelcollector.DeploymentConfig{
 						Image:                traceGatewayImage,

@@ -128,7 +128,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
     > [!WARNING]
     > Be cautious when you configure the **randomSamplingPercentage**:
     > - Could cause high volume of traces.
-    > - The Kyma trace collector component does not scale automatically.
+    > - The Kyma trace gateway component does not scale automatically.
 
 1. Deploy the TracePipeline:
 
