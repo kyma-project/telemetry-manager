@@ -137,6 +137,19 @@ func makeDropRuntimeNodeMetricsConfig() *FilterProcessor {
 	}
 }
 
+func makeDropRuntimeVolumeMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "^k8s.volume.*"),
+				),
+			},
+		},
+	}
+}
+
 func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
 }
