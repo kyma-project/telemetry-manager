@@ -13,6 +13,14 @@ func ResourceAttributeEquals(key, value string) string {
 	return fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", key, value)
 }
 
+func ResourceAttributeNotEquals(key, value string) string {
+	return fmt.Sprintf("resource.attributes[\"%s\"] != \"%s\"", key, value)
+}
+
+func ResourceAttributeNotNil(key string) string {
+	return fmt.Sprintf("resource.attributes[\"%s\"] != nil", key)
+}
+
 func NameAttributeEquals(name string) string {
 	return fmt.Sprintf("name == \"%s\"", name)
 }

@@ -31,7 +31,7 @@ Optionally, the Telemetry module provides a DaemonSet of an OTel Collector actin
 1. An application (exposing metrics in OTLP) sends metrics to the central metric gateway service.
 2. An application (exposing metrics in Prometheus protocol) activates the agent to scrape the metrics with an annotation-based configuration.
 3. Additionally, you can activate the agent to pull metrics of each Istio sidecar.
-4. The agent supports collecting container metrics from the Kubelet and Kubernetes APIServer.
+4. The agent supports collecting metrics from the Kubelet and Kubernetes APIServer.
 5. The agent converts and sends all collected metric data to the gateway in OTLP.
 6. The gateway discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
 7. Telemetry Manager configures the agent and gateway according to the `MetricPipeline` resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
@@ -289,7 +289,7 @@ Telemetry Manager continuously watches the Secret referenced with the **secretKe
 > [!TIP]
 > If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### <a name="_4-activate-prometheus-based-metric">4. Activate Prometheus-Based Metric</a>
+### <a name="_4-activate-prometheus-based-metrics">4. Activate Prometheus-Based Metrics</a>
 
 > [!NOTE]
 > For the following approach, you must have instrumented your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
@@ -414,13 +414,15 @@ The following example collects only the Pod metrics:
             enabled: false
           node:
             enabled: false
+          volume:
+            enabled: false
     output:
       otlp:
         endpoint:
           value: https://backend.example.com:4317
   ```
 
-If you enable Pod metrics, the following metrics are collected:
+If Pod metrics are enabled, the following metrics are collected:
 
 - From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
   - `k8s.pod.cpu.capacity`
@@ -467,11 +469,16 @@ If Node metrics are enabled, the following metrics are collected:
   - `k8s.node.filesystem.usage`
   - `k8s.node.memory.available`
   - `k8s.node.memory.usage`
-  - `k8s.node.network.errors`
-  - `k8s.node.network.io`
   - `k8s.node.memory.rss`
   - `k8s.node.memory.working_set`
 
+If Volume metrics are enabled, the following metrics are collected:
+- From the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
+  - `k8s.volume.available`
+  - `k8s.volume.capacity`
+  - `k8s.volume.inodes`
+  - `k8s.volume.inodes.free`
+  - `k8s.volume.inodes.used`
 
 ### 7. Activate Istio Metrics
 
