@@ -77,13 +77,15 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Len(t, collectorConfig.Service.Pipelines, 0)
 		})
 
-		t.Run("runtime input enabled", func(t *testing.T) {
+		t.Run("runtime input enabled with default resources metrics enabled ", func(t *testing.T) {
 			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
 			}, BuildOptions{})
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.NotNil(t, collectorConfig.Processors.InsertSkipEnrichmentAttribute)
+			require.Nil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
 			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
 			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 
@@ -91,6 +93,25 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
+		})
+
+		t.Run("runtime input enabled with volume metrics enabled ", func(t *testing.T) {
+			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputVolumeMetrics(true).Build(),
+			}, BuildOptions{})
+
+			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
+			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+			require.NotNil(t, collectorConfig.Processors.InsertSkipEnrichmentAttribute)
+			require.NotNil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+
+			require.Len(t, collectorConfig.Service.Pipelines, 1)
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
+			require.Equal(t, []string{"kubeletstats"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
 

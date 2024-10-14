@@ -21,7 +21,7 @@ func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 	}
 
 	if inputs.runtime {
-		receiversConfig.KubeletStats = makeKubeletStatsConfig()
+		receiversConfig.KubeletStats = makeKubeletStatsConfig(inputs.runtimeResources)
 		receiversConfig.SingletonK8sClusterReceiverCreator = makeSingletonK8sClusterReceiverCreatorConfig(opts.AgentNamespace)
 	}
 
@@ -32,7 +32,7 @@ func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 	return receiversConfig
 }
 
-func makeKubeletStatsConfig() *KubeletStatsReceiver {
+func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletStatsReceiver {
 	const collectionInterval = "30s"
 	const portKubelet = 10250
 	return &KubeletStatsReceiver{
@@ -40,7 +40,7 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 		AuthType:           "serviceAccount",
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
-		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode},
+		MetricGroups:       makeKubeletStatsMetricGroups(runtimeResources),
 		Metrics: KubeletStatsMetricsConfig{
 			ContainerCPUUsage:            MetricConfig{Enabled: true},
 			ContainerCPUUtilization:      MetricConfig{Enabled: false},
@@ -54,9 +54,11 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 			K8sNodeNetworkIO:             MetricConfig{Enabled: false},
 			K8sNodeNetworkErrors:         MetricConfig{Enabled: false},
 		},
+		ExtraMetadataLabels: []string{"k8s.volume.type"},
 	}
 }
 
+<<<<<<< HEAD
 func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *SingletonK8sClusterReceiverCreator {
 	metricsToDrop := K8sClusterMetricsConfig{
 		K8sContainerStorageRequest:          MetricConfig{false},
@@ -85,6 +87,25 @@ func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *Sing
 			},
 		},
 	}
+=======
+func makeKubeletStatsMetricGroups(runtimeResources runtimeResourcesEnabled) []MetricGroupType {
+	var metricGroups []MetricGroupType
+
+	if runtimeResources.container {
+		metricGroups = append(metricGroups, MetricGroupTypeContainer)
+	}
+	if runtimeResources.pod {
+		metricGroups = append(metricGroups, MetricGroupTypePod)
+	}
+	if runtimeResources.node {
+		metricGroups = append(metricGroups, MetricGroupTypeNode)
+	}
+	if runtimeResources.volume {
+		metricGroups = append(metricGroups, MetricGroupTypeVolume)
+	}
+
+	return metricGroups
+>>>>>>> main
 }
 
 func makePrometheusConfigForPods(opts BuildOptions) *PrometheusReceiver {

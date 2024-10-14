@@ -23,6 +23,9 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceRuntime, metric.InputSourceK8sCluster)
 			processorsConfig.InsertSkipEnrichmentAttribute = makeInsertSkipEnrichmentAttributeProcessor()
 			processorsConfig.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
+			if inputs.runtimeResources.volume {
+				processorsConfig.DropNonPVCVolumesMetrics = makeDropNonPVCVolumesMetricsProcessor()
+			}
 		}
 
 		if inputs.prometheus {
@@ -82,6 +85,7 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 	}
 }
 
+<<<<<<< HEAD
 // Drop the metrics scraped by k8s cluster which are not workload related, So all besides the pod and container metrics
 // Complete list of the metrics is here: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
 func makeK8sClusterDropMetrics() *FilterProcessor {
@@ -96,12 +100,21 @@ func makeK8sClusterDropMetrics() *FilterProcessor {
 		"statefulset",
 	}
 
+=======
+func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
+>>>>>>> main
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
 				ottlexpr.JoinWithAnd(
+<<<<<<< HEAD
 					ottlexpr.ScopeNameEquals(metric.InstrumentationScope[metric.InputSourceRuntime]),
 					ottlexpr.IsMatch("name", fmt.Sprintf("^k8s.%s.*", ottlexpr.JoinWithRegExpOr(metricNames...))),
+=======
+					// identify volume metrics by checking existence of "k8s.volume.name" resource attribute
+					ottlexpr.ResourceAttributeNotNil("k8s.volume.name"),
+					ottlexpr.ResourceAttributeNotEquals("k8s.volume.type", "persistentVolumeClaim"),
+>>>>>>> main
 				),
 			},
 		},

@@ -24,12 +24,13 @@ type Receivers struct {
 }
 
 type KubeletStatsReceiver struct {
-	CollectionInterval string                    `yaml:"collection_interval"`
-	AuthType           string                    `yaml:"auth_type"`
-	Endpoint           string                    `yaml:"endpoint"`
-	InsecureSkipVerify bool                      `yaml:"insecure_skip_verify"`
-	MetricGroups       []MetricGroupType         `yaml:"metric_groups"`
-	Metrics            KubeletStatsMetricsConfig `yaml:"metrics"`
+	CollectionInterval  string                    `yaml:"collection_interval"`
+	AuthType            string                    `yaml:"auth_type"`
+	Endpoint            string                    `yaml:"endpoint"`
+	InsecureSkipVerify  bool                      `yaml:"insecure_skip_verify"`
+	MetricGroups        []MetricGroupType         `yaml:"metric_groups"`
+	Metrics             KubeletStatsMetricsConfig `yaml:"metrics"`
+	ExtraMetadataLabels []string                  `yaml:"extra_metadata_labels,omitempty"`
 }
 
 type MetricConfig struct {
@@ -56,6 +57,7 @@ const (
 	MetricGroupTypeContainer MetricGroupType = "container"
 	MetricGroupTypePod       MetricGroupType = "pod"
 	MetricGroupTypeNode      MetricGroupType = "node"
+	MetricGroupTypeVolume    MetricGroupType = "volume"
 )
 
 type K8sClusterMetricsConfig struct {
@@ -160,6 +162,7 @@ type Processors struct {
 	SetInstrumentationScopeIstio      *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
 	InsertSkipEnrichmentAttribute     *metric.TransformProcessor `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
 	DropK8sClusterMetrics             *FilterProcessor           `yaml:"filter/drop-k8s-cluster-metrics,omitempty"`
+	DropNonPVCVolumesMetrics          *FilterProcessor           `yaml:"filter/drop-non-pvc-volumes-metrics,omitempty"`
 }
 
 type Exporters struct {

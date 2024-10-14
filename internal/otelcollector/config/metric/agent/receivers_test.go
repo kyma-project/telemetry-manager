@@ -28,7 +28,7 @@ func TestReceivers(t *testing.T) {
 		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
 	})
 
-	t.Run("runtime input enabled", func(t *testing.T) {
+	t.Run("runtime input enabled verify k8sClusterReciever", func(t *testing.T) {
 		agentNamespace := "test-namespace"
 		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
@@ -85,6 +85,98 @@ func TestReceivers(t *testing.T) {
 		require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 0)
 		require.Equal(t, expectedMetricsToDrop, k8sClusterReceiver.Metrics)
 		require.Equal(t, expectedMetricsToDrop, collectorConfig.Receivers.SingletonK8sClusterReceiverCreator.SingletonK8sClusterReceiver.K8sClusterReceiver.Metrics)
+	})
+
+	t.Run("runtime input enabled verify kubeletStatsReceiver", func(t *testing.T) {
+		tests := []struct {
+			name                 string
+			pipeline             telemetryv1alpha1.MetricPipeline
+			expectedMetricGroups []MetricGroupType
+		}{
+			{
+				name:                 "default resources enabled",
+				pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
+				expectedMetricGroups: []MetricGroupType{"container", "pod"},
+			},
+			{
+				name: "only pod metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputPodMetrics(true).
+					WithRuntimeInputNodeMetrics(false).
+					WithRuntimeInputVolumeMetrics(false).
+					Build(),
+				expectedMetricGroups: []MetricGroupType{"pod"},
+			},
+			{
+				name: "only container metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputNodeMetrics(false).
+					WithRuntimeInputVolumeMetrics(false).
+					Build(),
+				expectedMetricGroups: []MetricGroupType{"container"},
+			},
+			{
+				name: "only node metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputNodeMetrics(true).
+					WithRuntimeInputVolumeMetrics(false).
+					Build(),
+				expectedMetricGroups: []MetricGroupType{"node"},
+			},
+			{
+				name: "only volume metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputNodeMetrics(false).
+					WithRuntimeInputVolumeMetrics(true).
+					Build(),
+				expectedMetricGroups: []MetricGroupType{"volume"},
+			},
+		}
+
+		for _, test := range tests {
+			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+				test.pipeline,
+			}, BuildOptions{})
+
+			require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
+			require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
+
+			expectedKubeletStatsReceiver := KubeletStatsReceiver{
+				CollectionInterval: "30s",
+				AuthType:           "serviceAccount",
+				Endpoint:           "https://${MY_NODE_NAME}:10250",
+				InsecureSkipVerify: true,
+				MetricGroups:       test.expectedMetricGroups,
+				Metrics: KubeletStatsMetricsConfig{
+					ContainerCPUUsage:            MetricConfig{Enabled: true},
+					ContainerCPUUtilization:      MetricConfig{Enabled: false},
+					K8sPodCPUUsage:               MetricConfig{Enabled: true},
+					K8sPodCPUUtilization:         MetricConfig{Enabled: false},
+					K8sNodeCPUUsage:              MetricConfig{Enabled: true},
+					K8sNodeCPUUtilization:        MetricConfig{Enabled: false},
+					K8sNodeCPUTime:               MetricConfig{Enabled: false},
+					K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
+					K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
+					K8sNodeNetworkIO:             MetricConfig{Enabled: false},
+					K8sNodeNetworkErrors:         MetricConfig{Enabled: false},
+				},
+				ExtraMetadataLabels: []string{
+					"k8s.volume.type",
+				},
+			}
+			require.Equal(t, expectedKubeletStatsReceiver, *collectorConfig.Receivers.KubeletStats)
+		}
 	})
 
 	t.Run("prometheus input enabled", func(t *testing.T) {

@@ -158,7 +158,7 @@ func TestService(t *testing.T) {
 			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Exporters)
 		})
 
-		t.Run("with runtime input enabled", func(t *testing.T) {
+		t.Run("with runtime input enabled and default resources metrics enabled", func(t *testing.T) {
 			collectorConfig, _, err := sut.Build(
 				ctx,
 				[]telemetryv1alpha1.MetricPipeline{
@@ -188,6 +188,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-node-metrics",
+				"filter/drop-runtime-volume-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
@@ -204,6 +205,9 @@ func TestService(t *testing.T) {
 						WithName("test").
 						WithRuntimeInput(true).
 						WithRuntimeInputContainerMetrics(false).
+						WithRuntimeInputPodMetrics(true).
+						WithRuntimeInputNodeMetrics(false).
+						WithRuntimeInputVolumeMetrics(false).
 						Build(),
 				},
 				BuildOptions{},
@@ -228,6 +232,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-container-metrics",
 				"filter/drop-runtime-node-metrics",
+				"filter/drop-runtime-volume-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
@@ -243,7 +248,10 @@ func TestService(t *testing.T) {
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
 						WithRuntimeInput(true).
+						WithRuntimeInputContainerMetrics(true).
 						WithRuntimeInputPodMetrics(false).
+						WithRuntimeInputNodeMetrics(false).
+						WithRuntimeInputVolumeMetrics(false).
 						Build(),
 				},
 				BuildOptions{},
@@ -268,6 +276,7 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-pod-metrics",
 				"filter/drop-runtime-node-metrics",
+				"filter/drop-runtime-volume-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
@@ -283,9 +292,10 @@ func TestService(t *testing.T) {
 					testutils.NewMetricPipelineBuilder().
 						WithName("test").
 						WithRuntimeInput(true).
-						WithRuntimeInputPodMetrics(false).
 						WithRuntimeInputContainerMetrics(false).
+						WithRuntimeInputPodMetrics(false).
 						WithRuntimeInputNodeMetrics(true).
+						WithRuntimeInputVolumeMetrics(false).
 						Build(),
 				},
 				BuildOptions{},
@@ -310,6 +320,52 @@ func TestService(t *testing.T) {
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-pod-metrics",
 				"filter/drop-runtime-container-metrics",
+				"filter/drop-runtime-volume-metrics",
+				"transform/set-instrumentation-scope-kyma",
+				"resource/insert-cluster-name",
+				"resource/delete-skip-enrichment-attribute",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test-output"].Processors)
+			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Exporters)
+		})
+
+		t.Run("with runtime input enabled and only volume metrics enabled", func(t *testing.T) {
+			collectorConfig, _, err := sut.Build(
+				ctx,
+				[]telemetryv1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().
+						WithName("test").
+						WithRuntimeInput(true).
+						WithRuntimeInputContainerMetrics(false).
+						WithRuntimeInputPodMetrics(false).
+						WithRuntimeInputNodeMetrics(false).
+						WithRuntimeInputVolumeMetrics(true).
+						Build(),
+				},
+				BuildOptions{},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-input")
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-attributes-enrichment")
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-output")
+
+			require.Equal(t, []string{"otlp", "singleton_receiver_creator/kymastats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/test-input"].Receivers)
+			require.Equal(t, []string{"memory_limiter"}, collectorConfig.Service.Pipelines["metrics/test-input"].Processors)
+			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-input"].Exporters)
+
+			require.Equal(t, []string{"routing/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Receivers)
+			require.Equal(t, []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Processors)
+			require.Equal(t, []string{"forward/test"}, collectorConfig.Service.Pipelines["metrics/test-attributes-enrichment"].Exporters)
+
+			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
+			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-runtime",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"filter/drop-runtime-pod-metrics",
+				"filter/drop-runtime-container-metrics",
+				"filter/drop-runtime-node-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
@@ -569,6 +625,7 @@ func TestService(t *testing.T) {
 			"filter/drop-if-input-source-istio",
 			"filter/test-1-filter-by-namespace-runtime-input",
 			"filter/drop-runtime-node-metrics",
+			"filter/drop-runtime-volume-metrics",
 			"transform/set-instrumentation-scope-kyma",
 			"resource/insert-cluster-name",
 			"resource/delete-skip-enrichment-attribute",

@@ -140,4 +140,18 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, k8sClusterMetricsDrop, dropK8sClusterMetrics.Metrics.Metric[0])
 	})
 
+	t.Run("drop non-PVC volumes metrics processor", func(t *testing.T) {
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputVolumeMetrics(true).Build(),
+		}, BuildOptions{})
+
+		expectedDropNonPVCVolumesMetricsProcessor := FilterProcessor{
+			Metrics: FilterProcessorMetrics{
+				Metric: []string{
+					`resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"`,
+				},
+			},
+		}
+		require.Equal(t, expectedDropNonPVCVolumesMetricsProcessor, *collectorConfig.Processors.DropNonPVCVolumesMetrics)
+	})
 }
