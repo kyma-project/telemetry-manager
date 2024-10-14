@@ -100,6 +100,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;node.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod**  | object | Configures Pod runtime metrics scraping. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume**  | object | Configures Volume runtime metrics scraping. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **output**  | object | Configures the metric gateway. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
