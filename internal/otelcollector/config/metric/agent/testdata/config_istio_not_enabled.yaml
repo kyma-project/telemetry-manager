@@ -50,7 +50,6 @@ receivers:
         metric_groups:
             - container
             - pod
-            - node
         metrics:
             container.cpu.usage:
                 enabled: true
@@ -74,6 +73,8 @@ receivers:
                 enabled: false
             k8s.node.network.errors:
                 enabled: false
+        extra_metadata_labels:
+            - k8s.volume.type
     prometheus/app-pods:
         config:
             scrape_configs:
