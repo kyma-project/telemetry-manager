@@ -105,22 +105,6 @@ func getTimestamp(lr map[string]string) time.Time {
 	return timestamp
 }
 
-func getLogRecords(ld plog.Logs) []plog.LogRecord {
-	var logRecords []plog.LogRecord
-
-	for i := 0; i < ld.ResourceLogs().Len(); i++ {
-		resourceLogs := ld.ResourceLogs().At(i)
-		for j := 0; j < resourceLogs.ScopeLogs().Len(); j++ {
-			scopeLogs := resourceLogs.ScopeLogs().At(j)
-			for k := 0; k < scopeLogs.LogRecords().Len(); k++ {
-				logRecords = append(logRecords, scopeLogs.LogRecords().At(k))
-			}
-		}
-	}
-
-	return logRecords
-}
-
 func getKubernetesAttributes(lr plog.LogRecord) pcommon.Map {
 	const kubernetesAttrKey = "kubernetes"
 	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
