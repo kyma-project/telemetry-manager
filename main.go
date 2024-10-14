@@ -57,7 +57,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
@@ -81,20 +80,8 @@ var (
 	telemetryNamespace string
 	enableWebhook      bool
 
-	maxLogPipelines    int
-	maxTracePipelines  int
-	maxMetricPipelines int
-
-	traceGatewayImage                string
-	traceGatewayPriorityClass        string
-	traceGatewayCPULimit             string
-	traceGatewayDynamicCPULimit      string
-	traceGatewayMemoryLimit          string
-	traceGatewayDynamicMemoryLimit   string
-	traceGatewayCPURequest           string
-	traceGatewayDynamicCPURequest    string
-	traceGatewayMemoryRequest        string
-	traceGatewayDynamicMemoryRequest string
+	traceGatewayImage         string
+	traceGatewayPriorityClass string
 
 	fluentBitDeniedFilterPlugins string
 	fluentBitDeniedOutputPlugins string
@@ -248,15 +235,6 @@ func run() error {
 
 	flag.StringVar(&traceGatewayImage, "trace-gateway-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayCPULimit, "trace-gateway-cpu-limit", "700m", "CPU limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-gateway-dynamic-cpu-limit", "500m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryLimit, "trace-gateway-memory-limit", "500Mi", "Memory limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-gateway-dynamic-memory-limit", "1500Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayCPURequest, "trace-gateway-cpu-request", "100m", "CPU request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-gateway-dynamic-cpu-request", "100m", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryRequest, "trace-gateway-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-gateway-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.IntVar(&maxTracePipelines, "trace-gateway-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
@@ -268,7 +246,6 @@ func run() error {
 	flag.StringVar(&metricGatewayDynamicCPURequest, "metric-gateway-dynamic-cpu-request", "0", "Additional CPU request for metrics OpenTelemetry Collector per MetricPipeline")
 	flag.StringVar(&metricGatewayMemoryRequest, "metric-gateway-memory-request", "32Mi", "Memory request for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayDynamicMemoryRequest, "metric-gateway-dynamic-memory-request", "0", "Additional memory request for metrics OpenTelemetry Collector per MetricPipeline")
-	flag.IntVar(&maxMetricPipelines, "metric-gateway-pipelines", 3, "Maximum number of MetricPipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&fluentBitDeniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
 	flag.StringVar(&fluentBitDeniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
@@ -281,7 +258,6 @@ func run() error {
 	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
-	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
@@ -513,31 +489,11 @@ func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.TracePipelineControllerConfig{
-			Config: tracepipeline.Config{
-				Gateway: otelcollector.GatewayConfig{
-					Config: otelcollector.Config{
-						Namespace: telemetryNamespace,
-						BaseName:  "telemetry-trace-gateway",
-					},
-					Deployment: otelcollector.DeploymentConfig{
-						Image:                traceGatewayImage,
-						PriorityClassName:    traceGatewayPriorityClass,
-						BaseCPULimit:         resource.MustParse(traceGatewayCPULimit),
-						DynamicCPULimit:      resource.MustParse(traceGatewayDynamicCPULimit),
-						BaseMemoryLimit:      resource.MustParse(traceGatewayMemoryLimit),
-						DynamicMemoryLimit:   resource.MustParse(traceGatewayDynamicMemoryLimit),
-						BaseCPURequest:       resource.MustParse(traceGatewayCPURequest),
-						DynamicCPURequest:    resource.MustParse(traceGatewayDynamicCPURequest),
-						BaseMemoryRequest:    resource.MustParse(traceGatewayMemoryRequest),
-						DynamicMemoryRequest: resource.MustParse(traceGatewayDynamicMemoryRequest),
-					},
-					OTLPServiceName: traceOTLPServiceName,
-				},
-				MaxPipelines: maxTracePipelines,
-			},
-			RestConfig:         mgr.GetConfig(),
-			TelemetryNamespace: telemetryNamespace,
-			SelfMonitorName:    selfMonitorName,
+			SelfMonitorName:               selfMonitorName,
+			TelemetryNamespace:            telemetryNamespace,
+			TraceGatewayImage:             traceGatewayImage,
+			TraceGatewayPriorityClassName: traceGatewayPriorityClass,
+			TraceGatewayServiceName:       traceOTLPServiceName,
 		},
 	)
 	if err != nil {
@@ -592,7 +548,6 @@ func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-
 					},
 					OTLPServiceName: metricOTLPServiceName,
 				},
-				MaxPipelines:  maxMetricPipelines,
 				ModuleVersion: version,
 			},
 			RestConfig:         mgr.GetConfig(),
@@ -641,6 +596,9 @@ func validateFlags() error {
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
+	// TODO: Align max log pipeline enforcement with the method used in the TracePipeline/MetricPipeline controllers,
+	// replacing the current validating webhook approach.
+	const maxLogPipelines = 5
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
 		validation.NewVariablesValidator(client),

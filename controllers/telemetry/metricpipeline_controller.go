@@ -54,15 +54,21 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
+const (
+	maxMetricPipelines = 3
+)
+
 // MetricPipelineController reconciles a MetricPipeline object
 type MetricPipelineController struct {
 	client.Client
+
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *metricpipeline.Reconciler
 }
 
 type MetricPipelineControllerConfig struct {
 	metricpipeline.Config
+
 	RestConfig         *rest.Config
 	SelfMonitorName    string
 	TelemetryNamespace string
@@ -74,7 +80,14 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		return nil, err
 	}
 
-	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-metricpipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
+	pipelineLock := resourcelock.New(
+		client,
+		types.NamespacedName{
+			Name:      "telemetry-metricpipeline-lock",
+			Namespace: config.Gateway.Namespace,
+		},
+		maxMetricPipelines,
+	)
 
 	pipelineValidator := &metricpipeline.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
