@@ -19,6 +19,7 @@ func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, input
 	for _, i := range inputSource {
 		statements = append(statements, makeInstrumentationStatement(i, instrumentationScopeVersion)...)
 	}
+
 	return &TransformProcessor{
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{

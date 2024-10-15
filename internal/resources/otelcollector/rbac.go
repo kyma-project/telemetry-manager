@@ -186,7 +186,6 @@ func makeMetricRole(name types.NamespacedName) *rbacv1.Role {
 }
 
 func makeMetricRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
-
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,

@@ -74,6 +74,7 @@ func TestProcessors(t *testing.T) {
 				},
 			},
 		}
+
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
 		require.Equal(t, expectedSetInstrumentationScopeRuntime, *collectorConfig.Processors.SetInstrumentationScopeRuntime)
 	})

@@ -390,5 +390,4 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "set(version, \"main\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(name, \"io.kyma-project.telemetry/kyma\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
 	})
-
 }

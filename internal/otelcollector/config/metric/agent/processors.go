@@ -101,6 +101,7 @@ func makeK8sClusterDropMetrics() *FilterProcessor {
 		"resource_quota",
 		"statefulset",
 	}
+
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
