@@ -11,7 +11,6 @@ var (
 )
 
 func makeFilterToDropMetricsForTelemetryComponents() *FilterProcessor {
-
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{

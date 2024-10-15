@@ -60,36 +60,41 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 
 	t.Run("Deployment should not be present", func(t *testing.T) {
 		var deps appsv1.DeploymentList
+
 		require.NoError(t, client.List(ctx, &deps))
 		require.Len(t, deps.Items, 0)
 	})
 
 	t.Run("Configmap should not be present", func(t *testing.T) {
 		var cms corev1.ConfigMapList
+
 		require.NoError(t, client.List(ctx, &cms))
 		require.Len(t, cms.Items, 0)
 	})
 	t.Run("role should not be present", func(t *testing.T) {
 		var roles rbacv1.RoleList
+
 		require.NoError(t, client.List(ctx, &roles))
 		require.Len(t, roles.Items, 0)
 	})
 	t.Run("role binding should not be present", func(t *testing.T) {
 		var roleBindings rbacv1.RoleBindingList
+
 		require.NoError(t, client.List(ctx, &roleBindings))
 		require.Len(t, roleBindings.Items, 0)
 	})
 	t.Run("network policy should not be present", func(t *testing.T) {
 		var nwPs networkingv1.NetworkPolicyList
+
 		require.NoError(t, client.List(ctx, &nwPs))
 		require.Len(t, nwPs.Items, 0)
 	})
 	t.Run("service should not be present", func(t *testing.T) {
 		var svcList corev1.ServiceList
+
 		require.NoError(t, client.List(ctx, &svcList))
 		require.Len(t, svcList.Items, 0)
 	})
-
 }
 
 func TestApplySelfMonitorResources(t *testing.T) {
@@ -140,11 +145,11 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	t.Run("should create service", func(t *testing.T) {
 		verifyService(ctx, t, client)
 	})
-
 }
 
 func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.Client) {
 	var deps appsv1.DeploymentList
+
 	require.NoError(t, client.List(ctx, &deps))
 	require.Len(t, deps.Items, 1)
 
@@ -152,7 +157,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.Equal(t, name, dep.Name)
 	require.Equal(t, namespace, dep.Namespace)
 
-	//labels
+	// labels
 	require.Equal(t, map[string]string{
 		"app.kubernetes.io/name": name,
 	}, dep.Labels, "must have expected deployment labels")
@@ -164,11 +169,11 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 		"sidecar.istio.io/inject": "false",
 	}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
-	//annotations
+	// annotations
 	podAnnotations := dep.Spec.Template.ObjectMeta.Annotations
 	require.NotEmpty(t, podAnnotations["checksum/Config"])
 
-	//self-monitor container
+	// self-monitor container
 	require.Len(t, dep.Spec.Template.Spec.Containers, 1)
 	container := dep.Spec.Template.Spec.Containers[0]
 
@@ -180,7 +185,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.True(t, cpuLimit.Equal(*resources.Limits.Cpu()), "cpu limit should be defined")
 	require.True(t, memoryLimit.Equal(*resources.Limits.Memory()), "memory limit should be defined")
 
-	//security contexts
+	// security contexts
 	podSecurityContext := dep.Spec.Template.Spec.SecurityContext
 	require.NotNil(t, podSecurityContext, "pod security context must be defined")
 	require.NotZero(t, podSecurityContext.RunAsUser, "must run as non-root")
@@ -194,7 +199,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
 	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
 
-	//command args
+	// command args
 
 	expectedArgs := []string{
 		"--storage.tsdb.retention.time=" + retentionTime,
@@ -208,6 +213,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 
 func verifyConfigMapIsPresent(ctx context.Context, t *testing.T, client client.Client) {
 	var cms corev1.ConfigMapList
+
 	require.NoError(t, client.List(ctx, &cms))
 	require.Len(t, cms.Items, 1)
 
@@ -223,6 +229,7 @@ func verifyConfigMapIsPresent(ctx context.Context, t *testing.T, client client.C
 
 func verifyRoleIsPresent(ctx context.Context, t *testing.T, client client.Client) {
 	var rs rbacv1.RoleList
+
 	require.NoError(t, client.List(ctx, &rs))
 	require.Len(t, rs.Items, 1)
 
@@ -245,6 +252,7 @@ func verifyRoleIsPresent(ctx context.Context, t *testing.T, client client.Client
 
 func verifyRoleBindingIsPresent(ctx context.Context, t *testing.T, client client.Client) {
 	var rbs rbacv1.RoleBindingList
+
 	require.NoError(t, client.List(ctx, &rbs))
 	require.Len(t, rbs.Items, 1)
 
@@ -260,6 +268,7 @@ func verifyRoleBindingIsPresent(ctx context.Context, t *testing.T, client client
 
 func verifyServiceAccountIsPresent(ctx context.Context, t *testing.T, client client.Client) {
 	var sas corev1.ServiceAccountList
+
 	require.NoError(t, client.List(ctx, &sas))
 	require.Len(t, sas.Items, 1)
 
@@ -273,8 +282,8 @@ func verifyServiceAccountIsPresent(ctx context.Context, t *testing.T, client cli
 }
 
 func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client) {
-
 	var nps networkingv1.NetworkPolicyList
+
 	require.NoError(t, client.List(ctx, &nps))
 	require.Len(t, nps.Items, 1)
 
@@ -294,6 +303,7 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 	require.Equal(t, "0.0.0.0/0", np.Spec.Ingress[0].From[0].IPBlock.CIDR)
 	require.Equal(t, "::/0", np.Spec.Ingress[0].From[1].IPBlock.CIDR)
 	require.Len(t, np.Spec.Ingress[0].Ports, 1)
+
 	tcpProtocol := corev1.ProtocolTCP
 	port9090 := intstr.FromInt32(9090)
 	require.Equal(t, []networkingv1.NetworkPolicyPort{
@@ -310,6 +320,7 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 
 func verifyService(ctx context.Context, t *testing.T, client client.Client) {
 	var svcList corev1.ServiceList
+
 	require.NoError(t, client.List(ctx, &svcList))
 	require.Len(t, svcList.Items, 1)
 

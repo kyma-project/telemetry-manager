@@ -17,11 +17,11 @@ func unmarshalLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
 func getLogRecords(ld plog.Logs) []plog.LogRecord {
 	var logRecords []plog.LogRecord
 
-	for i := 0; i < ld.ResourceLogs().Len(); i++ {
+	for i := range ld.ResourceLogs().Len() {
 		resourceLogs := ld.ResourceLogs().At(i)
-		for j := 0; j < resourceLogs.ScopeLogs().Len(); j++ {
+		for j := range resourceLogs.ScopeLogs().Len() {
 			scopeLogs := resourceLogs.ScopeLogs().At(j)
-			for k := 0; k < scopeLogs.LogRecords().Len(); k++ {
+			for k := range scopeLogs.LogRecords().Len() {
 				logRecords = append(logRecords, scopeLogs.LogRecords().At(k))
 			}
 		}
@@ -32,9 +32,11 @@ func getLogRecords(ld plog.Logs) []plog.LogRecord {
 
 func getKubernetesAttributes(lr plog.LogRecord) pcommon.Map {
 	const kubernetesAttrKey = "kubernetes"
+
 	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
 	if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
 		return pcommon.NewMap()
 	}
+
 	return kubernetesAttrs.Map()
 }

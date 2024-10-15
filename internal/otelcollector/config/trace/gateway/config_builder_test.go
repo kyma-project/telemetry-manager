@@ -30,6 +30,7 @@ func TestBuildConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
+
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
@@ -72,6 +73,7 @@ func TestBuildConfig(t *testing.T) {
 		require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
 
 		require.Contains(t, envVars, "BASIC_AUTH_HEADER_TEST_BASIC_AUTH")
+
 		expectedBasicAuthHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("user:password")))
 		require.Equal(t, expectedBasicAuthHeader, string(envVars["BASIC_AUTH_HEADER_TEST_BASIC_AUTH"]))
 	})

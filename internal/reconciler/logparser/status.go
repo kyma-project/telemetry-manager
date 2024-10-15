@@ -31,8 +31,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 	if err := r.Status().Update(ctx, &parser); err != nil {
 		return fmt.Errorf("failed to update LogParser status: %w", err)
 	}
-	return nil
 
+	return nil
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
