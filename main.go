@@ -32,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -55,9 +54,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -95,16 +92,8 @@ var (
 	fluentBitExporterImage       string
 	fluentBitPriorityClassName   string
 
-	metricGatewayImage                string
-	metricGatewayPriorityClass        string
-	metricGatewayCPULimit             string
-	metricGatewayDynamicCPULimit      string
-	metricGatewayMemoryLimit          string
-	metricGatewayDynamicMemoryLimit   string
-	metricGatewayCPURequest           string
-	metricGatewayDynamicCPURequest    string
-	metricGatewayMemoryRequest        string
-	metricGatewayDynamicMemoryRequest string
+	metricGatewayImage         string
+	metricGatewayPriorityClass string
 
 	selfMonitorImage         string
 	selfMonitorPriorityClass string
@@ -243,14 +232,6 @@ func run() error {
 
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayCPULimit, "metric-gateway-cpu-limit", "900m", "CPU limit for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayDynamicCPULimit, "metric-gateway-dynamic-cpu-limit", "100m", "Additional CPU limit for metrics OpenTelemetry Collector per MetricPipeline")
-	flag.StringVar(&metricGatewayMemoryLimit, "metric-gateway-memory-limit", "512Mi", "Memory limit for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayDynamicMemoryLimit, "metric-gateway-dynamic-memory-limit", "512Mi", "Additional memory limit for metrics OpenTelemetry Collector per MetricPipeline")
-	flag.StringVar(&metricGatewayCPURequest, "metric-gateway-cpu-request", "25m", "CPU request for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayDynamicCPURequest, "metric-gateway-dynamic-cpu-request", "0", "Additional CPU request for metrics OpenTelemetry Collector per MetricPipeline")
-	flag.StringVar(&metricGatewayMemoryRequest, "metric-gateway-memory-request", "32Mi", "Memory request for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayDynamicMemoryRequest, "metric-gateway-dynamic-memory-request", "0", "Additional memory request for metrics OpenTelemetry Collector per MetricPipeline")
 
 	flag.StringVar(&fluentBitDeniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
 	flag.StringVar(&fluentBitDeniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
@@ -524,45 +505,13 @@ func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.MetricPipelineControllerConfig{
-			Config: metricpipeline.Config{
-				Agent: otelcollector.AgentConfig{
-					Config: otelcollector.Config{
-						Namespace: telemetryNamespace,
-						BaseName:  "telemetry-metric-agent",
-					},
-					DaemonSet: otelcollector.DaemonSetConfig{
-						Image:             metricGatewayImage,
-						PriorityClassName: metricGatewayPriorityClass,
-						CPULimit:          resource.MustParse("1"),
-						MemoryLimit:       resource.MustParse("1200Mi"),
-						CPURequest:        resource.MustParse("15m"),
-						MemoryRequest:     resource.MustParse("50Mi"),
-					},
-				},
-				Gateway: otelcollector.GatewayConfig{
-					Config: otelcollector.Config{
-						Namespace: telemetryNamespace,
-						BaseName:  "telemetry-metric-gateway",
-					},
-					Deployment: otelcollector.DeploymentConfig{
-						Image:                metricGatewayImage,
-						PriorityClassName:    metricGatewayPriorityClass,
-						BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
-						DynamicCPULimit:      resource.MustParse(metricGatewayDynamicCPULimit),
-						BaseMemoryLimit:      resource.MustParse(metricGatewayMemoryLimit),
-						DynamicMemoryLimit:   resource.MustParse(metricGatewayDynamicMemoryLimit),
-						BaseCPURequest:       resource.MustParse(metricGatewayCPURequest),
-						DynamicCPURequest:    resource.MustParse(metricGatewayDynamicCPURequest),
-						BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
-						DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
-					},
-					OTLPServiceName: metricOTLPServiceName,
-				},
-				ModuleVersion: version,
-			},
-			RestConfig:         mgr.GetConfig(),
-			TelemetryNamespace: telemetryNamespace,
-			SelfMonitorName:    selfMonitorName,
+			MetricGatewayImage:             metricGatewayImage,
+			MetricGatewayPriorityClassName: metricGatewayPriorityClass,
+			MetricGatewayServiceName:       metricOTLPServiceName,
+			ModuleVersion:                  version,
+			RestConfig:                     mgr.GetConfig(),
+			SelfMonitorName:                selfMonitorName,
+			TelemetryNamespace:             telemetryNamespace,
 		},
 	)
 	if err != nil {

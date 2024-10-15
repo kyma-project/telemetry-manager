@@ -55,8 +55,7 @@ import (
 )
 
 const (
-	maxTracePipelines = 3
-
+	maxTracePipelines    = 3
 	traceGatewayBaseName = "telemetry-trace-gateway"
 )
 
@@ -121,7 +120,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 			TraceGatewayNamespace: config.TelemetryNamespace,
 		},
 		flowHealthProber,
-		newGatewayApplierDeleter(config),
+		newTraceGatewayApplierDeleter(config),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
@@ -137,7 +136,7 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 	}, nil
 }
 
-func newGatewayApplierDeleter(config TracePipelineControllerConfig) *otelcollector.GatewayApplierDeleter {
+func newTraceGatewayApplierDeleter(config TracePipelineControllerConfig) *otelcollector.GatewayApplierDeleter {
 	rbac := otelcollector.MakeTraceGatewayRBAC(
 		types.NamespacedName{
 			Name:      traceGatewayBaseName,
