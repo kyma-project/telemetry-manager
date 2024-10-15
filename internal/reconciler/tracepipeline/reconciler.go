@@ -50,8 +50,8 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	TraceGatewayName      string
-	TraceGatewayNamespace string
+	TraceGatewayName   string
+	TelemetryNamespace string
 }
 
 type GatewayConfigBuilder interface {

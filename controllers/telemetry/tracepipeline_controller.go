@@ -113,12 +113,13 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		return nil, err
 	}
 
+	reconcilerConfig := tracepipeline.Config{
+		TraceGatewayName:   traceGatewayBaseName,
+		TelemetryNamespace: config.TelemetryNamespace,
+	}
 	reconciler := tracepipeline.New(
 		client,
-		tracepipeline.Config{
-			TraceGatewayName:      traceGatewayBaseName,
-			TraceGatewayNamespace: config.TelemetryNamespace,
-		},
+		reconcilerConfig,
 		flowHealthProber,
 		newTraceGatewayApplierDeleter(config),
 		&gateway.Builder{Reader: client},

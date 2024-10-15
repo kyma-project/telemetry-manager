@@ -123,10 +123,11 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	}
 
 	reconcilerConfig := metricpipeline.Config{
+		AgentName:          metricAgentBaseName,
+		GatewayName:        metricGatewayBaseName,
 		ModuleVersion:      config.ModuleVersion,
 		TelemetryNamespace: config.TelemetryNamespace,
 	}
-
 	reconciler := metricpipeline.New(
 		client,
 		reconcilerConfig,

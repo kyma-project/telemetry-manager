@@ -46,8 +46,8 @@ func TestReconcile(t *testing.T) {
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
 	testConfig := Config{
-		TraceGatewayName:      "gateway",
-		TraceGatewayNamespace: "default",
+		TraceGatewayName:   "gateway",
+		TelemetryNamespace: "default",
 	}
 
 	t.Run("trace gateway probing failed", func(t *testing.T) {
