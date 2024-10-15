@@ -8,6 +8,7 @@ package tools
 // on how to pin tooling dependencies to a go.mod file.
 // This ensures that all systems use the same version of tools in addition to regular dependencies.
 import (
+	_ "github.com/bombsimon/wsl/v4/cmd/wsl"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/yamlfmt/cmd/yamlfmt"
 	_ "github.com/kyma-project/kyma/hack/table-gen"
@@ -18,5 +19,4 @@ import (
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 	_ "sigs.k8s.io/kustomize/kustomize/v5"
-    _ "github.com/bombsimon/wsl/v4/cmd/wsl"
 )
