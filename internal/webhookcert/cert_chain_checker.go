@@ -9,6 +9,10 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+var (
+	ErrCAParsingFailed = errors.New("failed to parse root certificate")
+)
+
 type certChainChecker interface {
 	checkRoot(ctx context.Context, serverCertPEM []byte, caCertPEM []byte) (bool, error)
 }
@@ -18,9 +22,10 @@ type certChainCheckerImpl struct {
 
 func (c *certChainCheckerImpl) checkRoot(ctx context.Context, serverCertPEM []byte, caCertPEM []byte) (bool, error) {
 	roots := x509.NewCertPool()
+
 	ok := roots.AppendCertsFromPEM(caCertPEM)
 	if !ok {
-		return false, errors.New("failed to parse root certificate")
+		return false, ErrCAParsingFailed
 	}
 
 	serverCert, err := parseCertPEM(serverCertPEM)

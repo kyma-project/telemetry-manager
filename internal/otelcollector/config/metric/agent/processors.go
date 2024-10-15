@@ -23,6 +23,7 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceRuntime, metric.InputSourceK8sCluster)
 			processorsConfig.InsertSkipEnrichmentAttribute = makeInsertSkipEnrichmentAttributeProcessor()
 			processorsConfig.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
+
 			if inputs.runtimeResources.volume {
 				processorsConfig.DropNonPVCVolumesMetrics = makeDropNonPVCVolumesMetricsProcessor()
 			}
@@ -41,6 +42,7 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 	return processorsConfig
 }
 
+//nolint:mnd // hardcoded values
 func makeBatchProcessorConfig() *config.BatchProcessor {
 	return &config.BatchProcessor{
 		SendBatchSize:    1024,
@@ -49,6 +51,7 @@ func makeBatchProcessorConfig() *config.BatchProcessor {
 	}
 }
 
+//nolint:mnd // hardcoded values
 func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "1s",

@@ -13,6 +13,7 @@ func (p *ParameterList) ContainsKey(key string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -28,5 +29,6 @@ func (p *ParameterList) GetByKey(key string) *Parameter {
 			return &param
 		}
 	}
+
 	return nil
 }

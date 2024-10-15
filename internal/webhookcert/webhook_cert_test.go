@@ -149,6 +149,7 @@ func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	var crd apiextensionsv1.CustomResourceDefinition
+
 	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &crd))
 
 	require.Equal(t, apiextensionsv1.WebhookConverter, crd.Spec.Conversion.Strategy)
@@ -257,10 +258,12 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
+
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
 	}(certDir)
+
 	config := Config{
 		CertDir:      certDir,
 		ServiceName:  webhookService,
@@ -275,6 +278,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+
 	key := types.NamespacedName{
 		Name: name,
 	}
@@ -300,10 +304,12 @@ func TestCreateSecret(t *testing.T) {
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
+
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
 	}(certDir)
+
 	config := Config{
 		CertDir:      certDir,
 		ServiceName:  webhookService,
@@ -330,10 +336,12 @@ func TestReuseExistingCertificate(t *testing.T) {
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
+
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
 	}(certDir)
+
 	config := Config{
 		CertDir:      certDir,
 		ServiceName:  webhookService,

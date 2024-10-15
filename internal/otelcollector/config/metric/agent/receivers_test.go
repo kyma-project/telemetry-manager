@@ -202,12 +202,14 @@ func TestReceivers(t *testing.T) {
 
 				require.NotNil(t, receivers.PrometheusAppPods)
 				require.Len(t, receivers.PrometheusAppPods.Config.ScrapeConfigs, len(tt.expectedPodScrapeJobs))
+
 				for i := range receivers.PrometheusAppPods.Config.ScrapeConfigs {
 					require.Equal(t, tt.expectedPodScrapeJobs[i], receivers.PrometheusAppPods.Config.ScrapeConfigs[i].JobName)
 				}
 
 				require.NotNil(t, receivers.PrometheusAppServices)
 				require.Len(t, receivers.PrometheusAppServices.Config.ScrapeConfigs, len(tt.expectedServiceScrapeJobs))
+
 				for i := range receivers.PrometheusAppServices.Config.ScrapeConfigs {
 					require.Equal(t, tt.expectedServiceScrapeJobs[i], receivers.PrometheusAppServices.Config.ScrapeConfigs[i].JobName)
 				}

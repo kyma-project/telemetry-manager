@@ -24,6 +24,7 @@ func makeProcessorsConfig() Processors {
 	}
 }
 
+//nolint:mnd // hardcoded values
 func makeBatchProcessorConfig() *config.BatchProcessor {
 	return &config.BatchProcessor{
 		SendBatchSize:    1024,
@@ -32,6 +33,7 @@ func makeBatchProcessorConfig() *config.BatchProcessor {
 	}
 }
 
+//nolint:mnd // hardcoded values
 func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "1s",
@@ -193,6 +195,7 @@ func createNamespacesConditions(namespaces []string) []string {
 	for _, ns := range namespaces {
 		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
 	}
+
 	return namespacesConditions
 }
 

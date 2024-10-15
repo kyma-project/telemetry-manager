@@ -19,12 +19,14 @@ type logComponentsChecker struct {
 
 func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var logPipelines telemetryv1alpha1.LogPipelineList
+
 	err := l.client.List(ctx, &logPipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogPipelines: %w", err)
 	}
 
 	var logParsers telemetryv1alpha1.LogParserList
+
 	err = l.client.List(ctx, &logParsers)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogParsers: %w", err)
@@ -66,6 +68,7 @@ func (l *logComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pipel
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -91,6 +94,7 @@ func (l *logComponentsChecker) checkForFirstUnhealthyPipelineCondition(pipelines
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -103,6 +107,7 @@ func (l *logComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []t
 			Message: conditions.MessageForLogPipeline(conditions.ReasonNoPipelineDeployed),
 		}
 	}
+
 	return nil
 }
 
@@ -125,5 +130,6 @@ func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines
 			}),
 		}
 	}
+
 	return nil
 }

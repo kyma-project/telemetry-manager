@@ -35,7 +35,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 	}
 
 	envVars := make(otlpexporter.EnvVars)
-	queueSize := 256 / len(pipelines)
+
+	const maxQueueSize = 256
+	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
 		pipeline := pipelines[i]
@@ -81,12 +83,12 @@ func declareComponentsForMetricPipeline(
 	declareNamespaceFilters(pipeline, cfg)
 	declareInstrumentationScopeTransform(cfg, opts)
 	declareConnectors(pipeline.Name, cfg)
+
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
 
 func declareSingletonKymaStatsReceiverCreator(cfg *Config, opts BuildOptions) {
 	cfg.Receivers.SingletonKymaStatsReceiverCreator = makeSingletonKymaStatsReceiverCreatorConfig(opts.GatewayNamespace)
-
 }
 
 func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
@@ -95,6 +97,7 @@ func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipel
 	if metric.IsPrometheusInputEnabled(input) && !metric.IsPrometheusDiagnosticInputEnabled(input) {
 		cfg.Processors.DropDiagnosticMetricsIfInputSourcePrometheus = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourcePrometheus))
 	}
+
 	if metric.IsIstioInputEnabled(input) && !metric.IsIstioDiagnosticInputEnabled(input) {
 		cfg.Processors.DropDiagnosticMetricsIfInputSourceIstio = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourceIstio))
 	}
@@ -106,12 +109,15 @@ func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *
 	if !metric.IsRuntimeInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
+
 	if !metric.IsPrometheusInputEnabled(input) {
 		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
+
 	if !metric.IsIstioInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
 	}
+
 	if !metric.IsOTLPInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
 	}
@@ -123,12 +129,15 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimePodInputEnabled(input) {
 		cfg.Processors.DropRuntimePodMetrics = makeDropRuntimePodMetricsConfig()
 	}
+
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeContainerInputEnabled(input) {
 		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
 	}
+
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeNodeInputEnabled(input) {
 		cfg.Processors.DropRuntimeNodeMetrics = makeDropRuntimeNodeMetricsConfig()
 	}
+
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeVolumeInputEnabled(input) {
 		cfg.Processors.DropRuntimeVolumeMetrics = makeDropRuntimeVolumeMetricsConfig()
 	}
@@ -144,14 +153,17 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
 	}
+
 	if metric.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespacePrometheusInputConfig(pipeline.Spec.Input.Prometheus.Namespaces)
 	}
+
 	if metric.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceIstioInputConfig(pipeline.Spec.Input.Istio.Namespaces)
 	}
+
 	if metric.IsOTLPInputEnabled(input) && input.Otlp != nil && shouldFilterByNamespace(input.Otlp.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)

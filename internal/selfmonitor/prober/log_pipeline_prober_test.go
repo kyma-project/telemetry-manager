@@ -291,6 +291,7 @@ func TestLogPipelineProber(t *testing.T) {
 			} else {
 				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
 			}
+
 			sut.getter = alertGetterMock
 
 			result, err := sut.Probe(context.Background(), tc.pipelineName)

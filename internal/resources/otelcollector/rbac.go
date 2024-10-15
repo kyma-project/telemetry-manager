@@ -170,7 +170,6 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 }
 
 func makeMetricRole(name types.NamespacedName) *rbacv1.Role {
-
 	return &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
