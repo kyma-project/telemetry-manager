@@ -40,6 +40,7 @@ func flattenAllLogs(lds []plog.Logs) []FlatLog {
 	for _, ld := range lds {
 		flatLogs = append(flatLogs, flattenLogs(ld)...)
 	}
+
 	return flatLogs
 }
 
@@ -48,11 +49,11 @@ func flattenAllLogs(lds []plog.Logs) []FlatLog {
 func flattenLogs(ld plog.Logs) []FlatLog {
 	var flatLogs []FlatLog
 
-	for i := 0; i < ld.ResourceLogs().Len(); i++ {
+	for i := range ld.ResourceLogs().Len() {
 		resourceLogs := ld.ResourceLogs().At(i)
-		for j := 0; j < resourceLogs.ScopeLogs().Len(); j++ {
+		for j := range resourceLogs.ScopeLogs().Len() {
 			scopeLogs := resourceLogs.ScopeLogs().At(j)
-			for k := 0; k < scopeLogs.LogRecords().Len(); k++ {
+			for k := range scopeLogs.LogRecords().Len() {
 				lr := scopeLogs.LogRecords().At(k)
 				k8sAttrs := getKubernetesAttributes(lr)
 
@@ -70,20 +71,25 @@ func flattenLogs(ld plog.Logs) []FlatLog {
 			}
 		}
 	}
+
 	return flatLogs
 }
 
 // attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
 func attributeToMap(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
+
 	attrs.Range(func(k string, v pcommon.Value) bool {
-		//only take if value is not of type map, to reduce nesting and avoid duplication of kubernetes attributes
+		// only take if value is not of type map, to reduce nesting and avoid duplication of kubernetes attributes
 		if v.Type() == pcommon.ValueTypeMap {
 			return false
 		}
+
 		attrMap[k] = v.AsString()
+
 		return true
 	})
+
 	return attrMap
 }
 
@@ -94,6 +100,7 @@ func mapKubernetesAttributes(key string, attrs pcommon.Map) map[string]any {
 	if !hasAttr || attr.Type() != pcommon.ValueTypeMap {
 		return nil
 	}
+
 	return attr.Map().AsRaw()
 }
 
@@ -104,6 +111,7 @@ func getAttribute(key string, p pcommon.Map) string {
 	if !hasAttr || attr.Type() != pcommon.ValueTypeStr {
 		return ""
 	}
+
 	return attr.Str()
 }
 
@@ -112,14 +120,17 @@ func parseTimestamp(ts string) time.Time {
 	if err != nil {
 		return time.Time{}
 	}
+
 	return timestamp
 }
 
 func getKubernetesAttributes(lr plog.LogRecord) pcommon.Map {
 	const kubernetesAttrKey = "kubernetes"
+
 	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
 	if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
 		return pcommon.NewMap()
 	}
+
 	return kubernetesAttrs.Map()
 }
