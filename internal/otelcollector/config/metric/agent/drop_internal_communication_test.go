@@ -11,6 +11,7 @@ func TestDropIstioInternalMetrics(t *testing.T) {
 	expectedDropMetricsWithSourceMetricAgent := "IsMatch(name, \"istio.*\") and HasAttrOnDatapoint(\"source_workload\", \"telemetry-metric-agent\")"
 	expectedDropMetricsWithDestinationTraceGateway := "IsMatch(name, \"istio.*\") and HasAttrOnDatapoint(\"destination_workload\", \"telemetry-metric-gateway\")"
 	expectedDropMetricsWithDestinationMetricGateway := "IsMatch(name, \"istio.*\") and HasAttrOnDatapoint(\"destination_workload\", \"telemetry-trace-gateway\")"
+
 	require.Len(t, dropFilter.Metrics.Metric, 3)
 	require.Equal(t, []string{expectedDropMetricsWithSourceMetricAgent, expectedDropMetricsWithDestinationTraceGateway, expectedDropMetricsWithDestinationMetricGateway}, dropFilter.Metrics.Metric)
 }

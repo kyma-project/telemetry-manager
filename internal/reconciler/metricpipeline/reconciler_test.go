@@ -967,7 +967,6 @@ func TestReconcile(t *testing.T) {
 				}
 			})
 		}
-
 	})
 
 	t.Run("a request to the Kubernetes API server has failed when validating the secret references", func(t *testing.T) {
@@ -1059,6 +1058,7 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		serverErr := errors.New("failed to get lock: server error")
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
@@ -1304,6 +1304,7 @@ func TestReconcile(t *testing.T) {
 					require.Equal(t, tt.expectedReason, cond.Reason)
 					require.Equal(t, tt.expectedMessage, cond.Message)
 				}
+
 				if tt.probeAgentErr != nil {
 					cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 					require.Equal(t, tt.expectedStatus, cond.Status)

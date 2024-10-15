@@ -121,6 +121,7 @@ func New(namespace string, opts ...Option) *MetricProducer {
 	for _, opt := range opts {
 		opt(mp)
 	}
+
 	return mp
 }
 

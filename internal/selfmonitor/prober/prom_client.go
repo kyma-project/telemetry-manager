@@ -55,6 +55,7 @@ func newPrometheusClient(selfMonitorName types.NamespacedName) (promv1.API, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Prometheus client: %w", err)
 	}
+
 	return promv1.NewAPI(client), nil
 }
 

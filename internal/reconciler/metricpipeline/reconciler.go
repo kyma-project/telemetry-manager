@@ -148,11 +148,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			err = fmt.Errorf("failed to update status: %w", statusErr)
 		}
 	}
+
 	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
-
 	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
 	}
@@ -169,12 +169,15 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up metric pipeline resources: all metric pipelines are non-reconcilable")
+
 		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
+
 		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
 			return fmt.Errorf("failed to delete agent resources: %w", err)
 		}
+
 		return nil
 	}
 
@@ -194,6 +197,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 // getReconcilablePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
 func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline) ([]telemetryv1alpha1.MetricPipeline, error) {
 	var reconcilablePipelines []telemetryv1alpha1.MetricPipeline
+
 	for i := range allPipelines {
 		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
 		if err != nil {
@@ -204,6 +208,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 			reconcilablePipelines = append(reconcilablePipelines, allPipelines[i])
 		}
 	}
+
 	return reconcilablePipelines, nil
 }
 
@@ -234,6 +239,7 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	isRuntimeInputEnabled := input.Runtime != nil && input.Runtime.Enabled
 	isPrometheusInputEnabled := input.Prometheus != nil && input.Prometheus.Enabled
 	isIstioInputEnabled := input.Istio != nil && input.Istio.Enabled
+
 	return isRuntimeInputEnabled || isPrometheusInputEnabled || isIstioInputEnabled
 }
 
@@ -318,6 +324,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
 		return defaultReplicaCount
 	}
+
 	for i := range telemetries.Items {
 		telemetrySpec := telemetries.Items[i].Spec
 		if telemetrySpec.Metric == nil {
@@ -334,6 +341,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 			return static.Replicas
 		}
 	}
+
 	return defaultReplicaCount
 }
 

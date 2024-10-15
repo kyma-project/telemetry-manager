@@ -110,7 +110,9 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		PipelineLock:       pipelineLock,
 	}
 
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(&config.Config)
+	gatewayRBAC := otelcollector.MakeTraceGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace})
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -222,12 +224,15 @@ func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, objec
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
 	}
+
 	return requests
 }
 
 func (r *TracePipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
 	var pipelines telemetryv1alpha1.TracePipelineList
+
 	var requests []reconcile.Request
+
 	err := r.List(ctx, &pipelines)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list TracePipelines: %w", err)

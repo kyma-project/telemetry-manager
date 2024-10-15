@@ -44,6 +44,7 @@ func TestApplyAgentResources(t *testing.T) {
 
 	t.Run("should create service account", func(t *testing.T) {
 		var sas corev1.ServiceAccountList
+
 		require.NoError(t, client.List(ctx, &sas))
 		require.Len(t, sas.Items, 1)
 
@@ -58,6 +59,7 @@ func TestApplyAgentResources(t *testing.T) {
 
 	t.Run("should create cluster role", func(t *testing.T) {
 		var crs rbacv1.ClusterRoleList
+
 		require.NoError(t, client.List(ctx, &crs))
 		require.Len(t, crs.Items, 1)
 
@@ -73,6 +75,7 @@ func TestApplyAgentResources(t *testing.T) {
 
 	t.Run("should create cluster role binding", func(t *testing.T) {
 		var crbs rbacv1.ClusterRoleBindingList
+
 		require.NoError(t, client.List(ctx, &crbs))
 		require.Len(t, crbs.Items, 1)
 
@@ -96,6 +99,7 @@ func TestApplyAgentResources(t *testing.T) {
 
 	t.Run("should create metrics service", func(t *testing.T) {
 		var svcs corev1.ServiceList
+
 		require.NoError(t, client.List(ctx, &svcs))
 		require.Len(t, svcs.Items, 1)
 
@@ -127,6 +131,7 @@ func TestApplyAgentResources(t *testing.T) {
 
 	t.Run("should create network policy", func(t *testing.T) {
 		var nps networkingv1.NetworkPolicyList
+
 		require.NoError(t, client.List(ctx, &nps))
 		require.Len(t, nps.Items, 1)
 
@@ -146,6 +151,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, "0.0.0.0/0", np.Spec.Ingress[0].From[0].IPBlock.CIDR)
 		require.Equal(t, "::/0", np.Spec.Ingress[0].From[1].IPBlock.CIDR)
 		require.Len(t, np.Spec.Ingress[0].Ports, 2)
+
 		tcpProtocol := corev1.ProtocolTCP
 		port5555 := intstr.FromInt32(5555)
 		port6666 := intstr.FromInt32(6666)
@@ -167,6 +173,7 @@ func TestApplyAgentResources(t *testing.T) {
 
 	t.Run("should create collector config configmap", func(t *testing.T) {
 		var cms corev1.ConfigMapList
+
 		require.NoError(t, client.List(ctx, &cms))
 		require.Len(t, cms.Items, 1)
 
@@ -182,6 +189,7 @@ func TestApplyAgentResources(t *testing.T) {
 
 	t.Run("should create a daemonset", func(t *testing.T) {
 		var dss appsv1.DaemonSetList
+
 		require.NoError(t, client.List(ctx, &dss))
 		require.Len(t, dss.Items, 1)
 
@@ -189,7 +197,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, agentName, ds.Name)
 		require.Equal(t, agentNamespace, ds.Namespace)
 
-		//labels
+		// labels
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": agentName,
 		}, ds.Labels, "must have expected daemonset labels")
@@ -201,7 +209,7 @@ func TestApplyAgentResources(t *testing.T) {
 			"sidecar.istio.io/inject": "true",
 		}, ds.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
-		//annotations
+		// annotations
 		podAnnotations := ds.Spec.Template.ObjectMeta.Annotations
 		require.NotEmpty(t, podAnnotations["checksum/config"])
 		require.Equal(t, "# configure an env variable OUTPUT_CERTS to write certificates to the given folder\nproxyMetadata:\n  OUTPUT_CERTS: /etc/istio-output-certs\n", podAnnotations["proxy.istio.io/config"])
@@ -211,7 +219,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, "8888", podAnnotations["traffic.sidecar.istio.io/excludeInboundPorts"])
 		require.Equal(t, "", podAnnotations["traffic.sidecar.istio.io/includeOutboundIPRanges"])
 
-		//collector container
+		// collector container
 		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
 		container := ds.Spec.Template.Spec.Containers[0]
 
@@ -226,7 +234,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
 		require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
 
-		//security contexts
+		// security contexts
 		podSecurityContext := ds.Spec.Template.Spec.SecurityContext
 		require.NotNil(t, podSecurityContext, "pod security context must be defined")
 		require.NotZero(t, podSecurityContext.RunAsUser, "must run as non-root")

@@ -14,18 +14,19 @@ type DaemonSetProber struct {
 }
 
 func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedName) error {
-
 	var ds appsv1.DaemonSet
 	if err := dsp.Get(ctx, name, &ds); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ErrDaemonSetNotFound
 		}
+
 		return ErrDaemonSetFetching
 	}
 
 	updated := ds.Status.UpdatedNumberScheduled
 	desired := ds.Status.DesiredNumberScheduled
 	ready := ds.Status.NumberReady
+
 	if updated == desired && ready >= desired {
 		return nil
 	}

@@ -91,6 +91,7 @@ func TestValidateLimitExceeded(t *testing.T) {
 
 func TestIsNewPipeline(t *testing.T) {
 	var validator maxPipelinesValidator
+
 	pipeline1 := telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "pipeline-1",
