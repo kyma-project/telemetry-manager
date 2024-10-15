@@ -219,10 +219,18 @@ spec:
                         default:
                           container:
                             enabled: true
+                          daemonSet:
+                            enabled: false
+                          deployment:
+                            enabled: false
+                          job:
+                            enabled: false
                           node:
                             enabled: false
                           pod:
                             enabled: true
+                          statefulSet:
+                            enabled: false
                           volume:
                             enabled: false
                         description: Describes the Kubernetes resources for which
@@ -878,10 +886,18 @@ spec:
                         default:
                           container:
                             enabled: true
+                          daemonSet:
+                            enabled: false
+                          deployment:
+                            enabled: false
+                          job:
+                            enabled: false
                           node:
                             enabled: false
                           pod:
                             enabled: true
+                          statefulSet:
+                            enabled: false
                           volume:
                             enabled: false
                         description: Describes the Kubernetes resources for which

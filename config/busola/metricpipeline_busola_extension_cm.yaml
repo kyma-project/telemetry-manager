@@ -115,6 +115,18 @@ data:
                   - name: Volume
                     visibility: $exists(spec.input.runtime.resources.volume)
                     source: spec.input.runtime.resources.volume.enabled
+                  - name: DaemonSet
+                    visibility: $exists(spec.input.runtime.resources.daemonSet)
+                    source: spec.input.runtime.resources.daemonSet.enabled
+                  - name: Deployment
+                    visibility: $exists(spec.input.runtime.resources.deployment)
+                    source: spec.input.runtime.resources.deployment.enabled
+                  - name: StatefulSet
+                    visibility: $exists(spec.input.runtime.resources.statefulSet)
+                    source: spec.input.runtime.resources.statefulSet.enabled
+                  - name: Job
+                    visibility: $exists(spec.input.runtime.resources.job)
+                    source: spec.input.runtime.resources.job.enabled
           - name: OTLP
             widget: Panel
             visibility: $exists(spec.input.otlp)

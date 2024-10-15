@@ -90,7 +90,7 @@ type MetricPipelineRuntimeInput struct {
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Describes the Kubernetes resources for which runtime metrics are scraped.
 	// +optional
-	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}}
+	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}, daemonSet: {enabled: false}, deployment: {enabled: false}, statefulSet: {enabled: false}, job: {enabled: false}}
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
 }
 
