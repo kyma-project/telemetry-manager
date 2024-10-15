@@ -81,7 +81,7 @@ type TracePipelineControllerConfig struct {
 	RestConfig                    *rest.Config
 	SelfMonitorName               string
 	TelemetryNamespace            string
-	TraceGatewayImage             string
+	OTelCollectorImage            string
 	TraceGatewayPriorityClassName string
 	TraceGatewayServiceName       string
 }
@@ -149,7 +149,7 @@ func newTraceGatewayApplierDeleter(config TracePipelineControllerConfig) *otelco
 			Namespace: config.TelemetryNamespace,
 		},
 		Deployment: otelcollector.DeploymentConfig{
-			Image:                config.TraceGatewayImage,
+			Image:                config.OTelCollectorImage,
 			PriorityClassName:    config.TraceGatewayPriorityClassName,
 			BaseCPULimit:         traceGatewayBaseCPULimit,
 			DynamicCPULimit:      traceGatewayDynamicCPULimit,

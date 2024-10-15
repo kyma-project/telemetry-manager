@@ -66,47 +66,37 @@ import (
 )
 
 var (
-	ErrInvalidLogLevel = errors.New("--log-level has to be one of debug, info, warn, error, fatal")
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
+	version  = "main"
 
-	certDir            string
-	logLevel           string
-	scheme             = runtime.NewScheme()
-	setupLog           = ctrl.Log.WithName("setup")
-	telemetryNamespace string
-
-	traceGatewayImage         string
-	traceGatewayPriorityClass string
-
-	fluentBitImage             string
+	// Operator flags
+	certDir                    string
+	enableV1Beta1LogPipelines  bool
 	fluentBitExporterImage     string
+	fluentBitImage             string
 	fluentBitPriorityClassName string
-
-	metricGatewayImage         string
+	logLevel                   string
+	otelCollectorImage         string
 	metricGatewayPriorityClass string
-
-	selfMonitorImage         string
-	selfMonitorPriorityClass string
-
-	enableV1Beta1LogPipelines bool
-
-	version = "main"
+	selfMonitorImage           string
+	selfMonitorPriorityClass   string
+	telemetryNamespace         string
+	traceGatewayPriorityClass  string
 )
 
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241001-21f80ba0"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.8"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
+	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
+	selfMonitorName       = "telemetry-self-monitor"
 	traceOTLPServiceName  = "telemetry-otlp-traces"
 	webhookServiceName    = "telemetry-manager-webhook"
 
-	selfMonitorName = "telemetry-self-monitor"
-
-	defaultMaxNumberOfPipelines    = 3
-	defaultMaxNumberOfLogPipelines = 5
-	webhookServerPort              = 9443
+	webhookServerPort = 9443
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -211,24 +201,18 @@ func main() {
 }
 
 func run() error {
-	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
+	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
-
-	flag.StringVar(&traceGatewayImage, "trace-gateway-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-
-	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
-
-	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
+	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
-
+	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
+	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
+	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOTelCollectorImage, "Image for OpenTelemetry Collector")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
-
-	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
+	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
+	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
 
 	flag.Parse()
 
@@ -451,9 +435,9 @@ func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		reconcileTriggerChan,
 		telemetrycontrollers.TracePipelineControllerConfig{
 			RestConfig:                    mgr.GetConfig(),
+			OTelCollectorImage:            otelCollectorImage,
 			SelfMonitorName:               selfMonitorName,
 			TelemetryNamespace:            telemetryNamespace,
-			TraceGatewayImage:             traceGatewayImage,
 			TraceGatewayPriorityClassName: traceGatewayPriorityClass,
 			TraceGatewayServiceName:       traceOTLPServiceName,
 		},
@@ -476,10 +460,10 @@ func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.MetricPipelineControllerConfig{
-			MetricGatewayImage:             metricGatewayImage,
 			MetricGatewayPriorityClassName: metricGatewayPriorityClass,
 			MetricGatewayServiceName:       metricOTLPServiceName,
 			ModuleVersion:                  version,
+			OTelCollectorImage:             otelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),
 			SelfMonitorName:                selfMonitorName,
 			TelemetryNamespace:             telemetryNamespace,

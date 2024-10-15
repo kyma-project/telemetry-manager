@@ -86,7 +86,7 @@ type MetricPipelineController struct {
 }
 
 type MetricPipelineControllerConfig struct {
-	MetricGatewayImage             string
+	OTelCollectorImage             string
 	MetricGatewayPriorityClassName string
 	MetricGatewayServiceName       string
 	ModuleVersion                  string
@@ -169,7 +169,7 @@ func newMetricAgentApplierDeleter(config MetricPipelineControllerConfig) *otelco
 			Namespace: config.TelemetryNamespace,
 		},
 		DaemonSet: otelcollector.DaemonSetConfig{
-			Image:             config.MetricGatewayImage,
+			Image:             config.OTelCollectorImage,
 			PriorityClassName: config.MetricGatewayPriorityClassName,
 			CPULimit:          metricAgentCPULimit,
 			MemoryLimit:       metricAgentMemoryLimit,
@@ -198,7 +198,7 @@ func newMetricGatewayApplierDeleter(config MetricPipelineControllerConfig) *otel
 			Namespace: config.TelemetryNamespace,
 		},
 		Deployment: otelcollector.DeploymentConfig{
-			Image:                config.MetricGatewayImage,
+			Image:                config.OTelCollectorImage,
 			PriorityClassName:    config.MetricGatewayPriorityClassName,
 			BaseCPULimit:         metricGatewayBaseCPULimit,
 			DynamicCPULimit:      metricGatewayDynamicCPULimit,
