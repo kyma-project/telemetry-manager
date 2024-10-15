@@ -498,6 +498,7 @@ func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.TracePipelineControllerConfig{
+			RestConfig:                    mgr.GetConfig(),
 			SelfMonitorName:               selfMonitorName,
 			TelemetryNamespace:            telemetryNamespace,
 			TraceGatewayImage:             traceGatewayImage,
@@ -611,6 +612,7 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 	// TODO: Align max log pipeline enforcement with the method used in the TracePipeline/MetricPipeline controllers,
 	// replacing the current validating webhook approach.
 	const maxLogPipelines = 5
+
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
 		validation.NewVariablesValidator(client),

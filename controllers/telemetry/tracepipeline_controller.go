@@ -79,8 +79,7 @@ type TracePipelineController struct {
 }
 
 type TracePipelineControllerConfig struct {
-	rest.Config
-
+	RestConfig                    *rest.Config
 	SelfMonitorName               string
 	TelemetryNamespace            string
 	TraceGatewayImage             string
@@ -109,8 +108,6 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		SecretRefValidator: &secretref.Validator{Client: client},
 		PipelineLock:       pipelineLock,
 	}
-
-	gatewayRBAC := otelcollector.MakeTraceGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace})
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
