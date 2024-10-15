@@ -75,6 +75,7 @@ func attributeToMap(attrs pcommon.Map) map[string]string {
 		if v.Type() != pcommon.ValueTypeMap {
 			attrMap[k] = v.AsString()
 		}
+
 		return true
 	})
 

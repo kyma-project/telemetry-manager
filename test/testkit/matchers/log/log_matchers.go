@@ -49,9 +49,11 @@ func HaveTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) time.Time {
 		ts := fl.LogRecordAttributes["timestamp"]
 		timestamp, err := time.Parse(time.RFC3339, ts)
+
 		if err != nil {
-			fmt.Errorf("failed to parse timestamp: %w", err)
+			panic(err)
 		}
+
 		return timestamp
 	}, matcher)
 }
