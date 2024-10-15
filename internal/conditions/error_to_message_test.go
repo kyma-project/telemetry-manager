@@ -61,6 +61,7 @@ func TestErrorConverter(t *testing.T) {
 		},
 	}
 	etc := &ErrorToMessageConverter{}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := etc.Convert(tt.err)

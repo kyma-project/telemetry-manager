@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -157,13 +158,14 @@ func TestHandler(t *testing.T) {
 				WithLogPipelineSubscriber(logPipelineEvents),
 				WithLogger(noopLogger))
 
-			req, err := http.NewRequest(tc.requestMethod, "/", tc.requestBody)
+			req, err := http.NewRequestWithContext(context.Background(), tc.requestMethod, "/", tc.requestBody)
 			require.NoError(t, err)
 
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)
 
 			require.Equal(t, tc.expectedStatus, rr.Code)
+
 			if tc.metricPipelinesToReconcile != nil {
 				require.NotEmpty(t, metricPipelineEvents)
 				require.ElementsMatch(t, tc.metricPipelinesToReconcile, readAllNamesFromChannel(metricPipelineEvents))
@@ -192,6 +194,7 @@ func TestHandler(t *testing.T) {
 
 func readAllNamesFromChannel(ch <-chan event.GenericEvent) []string {
 	var names []string
+
 	for {
 		select {
 		case event := <-ch:

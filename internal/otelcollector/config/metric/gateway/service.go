@@ -69,12 +69,15 @@ func makeInputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []st
 	if !metric.IsRuntimeInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
+
 	if !metric.IsPrometheusInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
+
 	if !metric.IsIstioInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
+
 	if !metric.IsOTLPInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}
@@ -88,12 +91,15 @@ func makeNamespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeli
 	if metric.IsRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime))
 	}
+
 	if metric.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
 		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus))
 	}
+
 	if metric.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
 		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio))
 	}
+
 	if metric.IsOTLPInputEnabled(input) && input.Otlp != nil && shouldFilterByNamespace(input.Otlp.Namespaces) {
 		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp))
 	}
@@ -107,15 +113,19 @@ func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimePodInputEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-pod-metrics")
 	}
+
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeContainerInputEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-container-metrics")
 	}
+
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeNodeInputEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-node-metrics")
 	}
+
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeVolumeInputEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-volume-metrics")
 	}
+
 	if metric.IsRuntimeInputEnabled(input) {
 		processors = append(processors, "filter/drop-k8s-cluster-metrics")
 	}
@@ -129,6 +139,7 @@ func makeDiagnosticMetricFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 	if metric.IsIstioInputEnabled(input) && !metric.IsIstioDiagnosticInputEnabled(input) {
 		processors = append(processors, "filter/drop-diagnostic-metrics-if-input-source-istio")
 	}
+
 	if metric.IsPrometheusInputEnabled(input) && !metric.IsPrometheusDiagnosticInputEnabled(input) {
 		processors = append(processors, "filter/drop-diagnostic-metrics-if-input-source-prometheus")
 	}
