@@ -65,7 +65,6 @@ type LogPipelineControllerConfig struct {
 	FluentBitMemoryLimit   string
 	FluentBitMemoryRequest string
 	FluentBitImage         string
-	PipelineDefaults       builder.PipelineDefaults
 	PriorityClassName      string
 	SelfMonitorName        string
 	TelemetryNamespace     string
@@ -86,7 +85,12 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		EnvSecret:             types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: config.TelemetryNamespace},
 		OutputTLSConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: config.TelemetryNamespace},
 		DaemonSet:             types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
-		PipelineDefaults:      config.PipelineDefaults,
+		PipelineDefaults: builder.PipelineDefaults{
+			InputTag:          "tele",
+			MemoryBufferLimit: "10M",
+			StorageType:       "filesystem",
+			FsBufferLimit:     "1G",
+		},
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:    config.FluentBitImage,
 			ExporterImage:     config.ExporterImage,

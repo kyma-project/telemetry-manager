@@ -50,7 +50,6 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
@@ -78,8 +77,6 @@ var (
 	traceGatewayImage         string
 	traceGatewayPriorityClass string
 
-	fluentBitMemoryBufferLimit string
-	fluentBitFsBufferLimit     string
 	fluentBitCPULimit          string
 	fluentBitMemoryLimit       string
 	fluentBitCPURequest        string
@@ -228,8 +225,6 @@ func run() error {
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
 
-	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
-	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
 	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
 	flag.StringVar(&fluentBitMemoryLimit, "fluent-bit-memory-limit", "1Gi", "Memory limit for fluent-bit")
 	flag.StringVar(&fluentBitCPURequest, "fluent-bit-cpu-request", "100m", "CPU request for fluent-bit")
@@ -434,7 +429,6 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 			FluentBitMemoryLimit:   fluentBitMemoryLimit,
 			FluentBitMemoryRequest: fluentBitMemoryRequest,
 			FluentBitImage:         fluentBitImage,
-			PipelineDefaults:       createPipelineDefaults(),
 			PriorityClassName:      fluentBitPriorityClassName,
 			SelfMonitorName:        selfMonitorName,
 			TelemetryNamespace:     telemetryNamespace,
@@ -578,15 +572,6 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 		},
 		WebhookScheme: "https",
 		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
-	}
-}
-
-func createPipelineDefaults() builder.PipelineDefaults {
-	return builder.PipelineDefaults{
-		InputTag:          "tele",
-		MemoryBufferLimit: fluentBitMemoryBufferLimit,
-		StorageType:       "filesystem",
-		FsBufferLimit:     fluentBitFsBufferLimit,
 	}
 }
 
