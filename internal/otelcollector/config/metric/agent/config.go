@@ -49,6 +49,22 @@ type KubeletStatsMetricsConfig struct {
 	K8sNodeMemoryPageFaults      MetricConfig `yaml:"k8s.node.memory.page_faults"`
 	K8sNodeNetworkIO             MetricConfig `yaml:"k8s.node.network.io"`
 	K8sNodeNetworkErrors         MetricConfig `yaml:"k8s.node.network.errors"`
+	// Disable HPA Metrics by default
+	K8sHPACurrentReplicas MetricConfig `yaml:"k8s.hpa.current_replicas"`
+	K8sHPADesiredReplicas MetricConfig `yaml:"k8s.hpa.desired_replicas"`
+	K8sHPAMinReplicas     MetricConfig `yaml:"k8s.hpa.min_replicas"`
+	K8sHPAMaxReplicas     MetricConfig `yaml:"k8s.hpa.max_replicas"`
+	// Disable ReplicaSet metrics by default
+	K8sReplicaSetAvailable MetricConfig `yaml:"k8s.replicaset.available"`
+	K8sReplicaSetDesired   MetricConfig `yaml:"k8s.replicaset.desired"`
+	// Disable Replication Controller metrics by default
+	K8sReplicationControllerAvailable MetricConfig `yaml:"k8s.replication_controller.available"`
+	K8sReplicationControllerDesired   MetricConfig `yaml:"k8s.replication_controller.desired"`
+	// Disable Resource Quota metrics by default
+	K8sResourceQuotaHardLimits MetricConfig `yaml:"k8s.resource_quota.hard_limits"`
+	K8sResourceQuotaUsed       MetricConfig `yaml:"k8s.resource_quota.used"`
+	// Disable Cronjob metrics by default
+	K8sCronJobActiveJobs MetricConfig `yaml:"k8s.cronjob.active_jobs"`
 }
 
 type MetricGroupType string
