@@ -9,7 +9,7 @@ import (
 
 func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
 	return config.Pipeline{
-		Receivers:  makeReceiversIDs(pipeline),
+		Receivers:  makeReceiversIDs(),
 		Processors: []string{"memory_limiter"},
 		Exporters:  []string{formatRoutingConnectorID(pipeline.Name)},
 	}
@@ -28,11 +28,6 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline)
 
 	input := pipeline.Spec.Input
 
-	// Perform the transform before runtime resource filter as InstrumentationScopeRuntime is required for dropping container/pod metrics
-	if metric.IsRuntimeInputEnabled(pipeline.Spec.Input) {
-		processors = append(processors, "transform/set-instrumentation-scope-runtime")
-	}
-
 	processors = append(processors, makeInputSourceFiltersIDs(input)...)
 	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
@@ -49,16 +44,12 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline)
 	}
 }
 
-func makeReceiversIDs(pipeline *telemetryv1alpha1.MetricPipeline) []string {
+func makeReceiversIDs() []string {
 	var receivers []string
 
 	receivers = append(receivers, "otlp")
 
 	receivers = append(receivers, "singleton_receiver_creator/kymastats")
-
-	if metric.IsRuntimeInputEnabled(pipeline.Spec.Input) {
-		receivers = append(receivers, "singleton_receiver_creator/k8s_cluster")
-	}
 
 	return receivers
 }
@@ -124,10 +115,6 @@ func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeVolumeInputEnabled(input) {
 		processors = append(processors, "filter/drop-runtime-volume-metrics")
-	}
-
-	if metric.IsRuntimeInputEnabled(input) {
-		processors = append(processors, "filter/drop-k8s-cluster-metrics")
 	}
 
 	return processors
