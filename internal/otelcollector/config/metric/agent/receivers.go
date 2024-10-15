@@ -58,7 +58,6 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 	}
 }
 
-<<<<<<< HEAD
 func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *SingletonK8sClusterReceiverCreator {
 	metricsToDrop := K8sClusterMetricsConfig{
 		K8sContainerStorageRequest:          MetricConfig{false},
@@ -87,7 +86,8 @@ func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *Sing
 			},
 		},
 	}
-=======
+}
+
 func makeKubeletStatsMetricGroups(runtimeResources runtimeResourcesEnabled) []MetricGroupType {
 	var metricGroups []MetricGroupType
 
@@ -105,7 +105,6 @@ func makeKubeletStatsMetricGroups(runtimeResources runtimeResourcesEnabled) []Me
 	}
 
 	return metricGroups
->>>>>>> main
 }
 
 func makePrometheusConfigForPods(opts BuildOptions) *PrometheusReceiver {

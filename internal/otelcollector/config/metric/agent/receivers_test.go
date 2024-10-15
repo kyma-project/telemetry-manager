@@ -28,7 +28,7 @@ func TestReceivers(t *testing.T) {
 		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
 	})
 
-	t.Run("runtime input enabled verify k8sClusterReciever", func(t *testing.T) {
+	t.Run("runtime input enabled verify k8sClusterReceiver", func(t *testing.T) {
 		agentNamespace := "test-namespace"
 		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
@@ -38,27 +38,6 @@ func TestReceivers(t *testing.T) {
 
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
 		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
-
-		expectedKubeletStatsReceiver := KubeletStatsReceiver{
-			CollectionInterval: "30s",
-			AuthType:           "serviceAccount",
-			Endpoint:           "https://${MY_NODE_NAME}:10250",
-			InsecureSkipVerify: true,
-			MetricGroups:       []MetricGroupType{"container", "pod", "node"},
-			Metrics: KubeletStatsMetricsConfig{
-				ContainerCPUUsage:            MetricConfig{Enabled: true},
-				ContainerCPUUtilization:      MetricConfig{Enabled: false},
-				K8sPodCPUUsage:               MetricConfig{Enabled: true},
-				K8sPodCPUUtilization:         MetricConfig{Enabled: false},
-				K8sNodeCPUUsage:              MetricConfig{Enabled: true},
-				K8sNodeCPUUtilization:        MetricConfig{Enabled: false},
-				K8sNodeCPUTime:               MetricConfig{Enabled: false},
-				K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
-				K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
-				K8sNodeNetworkIO:             MetricConfig{Enabled: false},
-				K8sNodeNetworkErrors:         MetricConfig{Enabled: false},
-			},
-		}
 
 		expectedMetricsToDrop := K8sClusterMetricsConfig{
 			K8sContainerStorageRequest:          MetricConfig{false},
@@ -72,7 +51,6 @@ func TestReceivers(t *testing.T) {
 			K8sReplicationControllerDesired:     MetricConfig{false},
 		}
 
-		require.Equal(t, expectedKubeletStatsReceiver, *collectorConfig.Receivers.KubeletStats)
 		singletonK8sClusterReceiverCreator := collectorConfig.Receivers.SingletonK8sClusterReceiverCreator
 		require.NotNil(t, singletonK8sClusterReceiverCreator)
 		require.Equal(t, "serviceAccount", singletonK8sClusterReceiverCreator.AuthType)
