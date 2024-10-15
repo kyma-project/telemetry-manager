@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrUndefinedOutputPlugin = fmt.Errorf("output plugin not defined")
+	ErrUndefinedOutputPlugin = errors.New("output plugin not defined")
 )
 
 type PipelineDefaults struct {
