@@ -75,7 +75,6 @@ var (
 	scheme             = runtime.NewScheme()
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
-	enableWebhook      bool
 
 	traceGatewayImage         string
 	traceGatewayPriorityClass string
@@ -225,7 +224,6 @@ func run() error {
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
-	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
 
 	flag.StringVar(&traceGatewayImage, "trace-gateway-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
@@ -335,20 +333,16 @@ func run() error {
 		return fmt.Errorf("failed to add ready check: %w", err)
 	}
 
-	if enableWebhook {
-		if err := enableWebhookServer(mgr, webhookConfig); err != nil {
-			return fmt.Errorf("failed to enable webhook server: %w", err)
-		}
+	if err := enableWebhookServer(mgr, webhookConfig); err != nil {
+		return fmt.Errorf("failed to enable webhook server: %w", err)
 	}
 
-	if enableWebhook {
-		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
-			mgr.GetClient(),
-			selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
-			selfmonitorwebhook.WithMetricPipelineSubscriber(metricPipelineReconcileTriggerChan),
-			selfmonitorwebhook.WithLogPipelineSubscriber(logPipelineReconcileTriggerChan),
-			selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
-	}
+	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
+		mgr.GetClient(),
+		selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
+		selfmonitorwebhook.WithMetricPipelineSubscriber(metricPipelineReconcileTriggerChan),
+		selfmonitorwebhook.WithLogPipelineSubscriber(logPipelineReconcileTriggerChan),
+		selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
