@@ -1,8 +1,6 @@
 package log
 
 import (
-	"time"
-
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 
@@ -16,11 +14,7 @@ import (
 type FlatLog struct {
 	LogRecordAttributes            map[string]string
 	LogRecordBody                  string
-	Timestamp                      time.Time
-	Level                          string
-	PodName                        string
-	ContainerName                  string
-	NamespaceName                  string
+	KubernetesAttributes           map[string]string
 	KubernetesLabelAttributes      map[string]any
 	KubernetesAnnotationAttributes map[string]any
 }
@@ -58,15 +52,12 @@ func flattenLogs(ld plog.Logs) []FlatLog {
 				k8sAttrs := getKubernetesAttributes(lr)
 
 				flatLogs = append(flatLogs, FlatLog{
+					// log record doesn't contain kubernetes attributes
 					LogRecordAttributes:            attributeToMap(lr.Attributes()),
 					LogRecordBody:                  lr.Body().AsString(),
-					Timestamp:                      parseTimestamp(getAttribute("timestamp", lr.Attributes())),
-					Level:                          getAttribute("level", lr.Attributes()),
-					PodName:                        getAttribute("pod_name", k8sAttrs),
-					ContainerName:                  getAttribute("container_name", k8sAttrs),
-					NamespaceName:                  getAttribute("namespace_name", k8sAttrs),
-					KubernetesLabelAttributes:      mapKubernetesAttributes("labels", k8sAttrs),
-					KubernetesAnnotationAttributes: mapKubernetesAttributes("annotations", k8sAttrs),
+					KubernetesAttributes:           attributeToMap(k8sAttrs),
+					KubernetesLabelAttributes:      getKubernetesMaps("labels", k8sAttrs),
+					KubernetesAnnotationAttributes: getKubernetesMaps("annotations", k8sAttrs),
 				})
 			}
 		}
@@ -81,47 +72,24 @@ func attributeToMap(attrs pcommon.Map) map[string]string {
 
 	attrs.Range(func(k string, v pcommon.Value) bool {
 		// only take if value is not of type map, to reduce nesting and avoid duplication of kubernetes attributes
-		if v.Type() == pcommon.ValueTypeMap {
-			return false
+		if v.Type() != pcommon.ValueTypeMap {
+			attrMap[k] = v.AsString()
 		}
-
-		attrMap[k] = v.AsString()
-
 		return true
 	})
 
 	return attrMap
 }
 
-// mapKubernetesAttributes converts the kubernetes attributes from a LogRecord which are of type
+// getKubernetesMaps converts the kubernetes attributes from a LogRecord which are of type
 // ValueTypeMap into a map using the string representation of the keys and any representation of the values
-func mapKubernetesAttributes(key string, attrs pcommon.Map) map[string]any {
+func getKubernetesMaps(key string, attrs pcommon.Map) map[string]any {
 	attr, hasAttr := attrs.Get(key)
 	if !hasAttr || attr.Type() != pcommon.ValueTypeMap {
 		return nil
 	}
 
 	return attr.Map().AsRaw()
-}
-
-// getAttribute takes an input key and returns the map value associated with the key if it exists, and returns
-// an empty string if it doesn't
-func getAttribute(key string, p pcommon.Map) string {
-	attr, hasAttr := p.Get(key)
-	if !hasAttr || attr.Type() != pcommon.ValueTypeStr {
-		return ""
-	}
-
-	return attr.Str()
-}
-
-func parseTimestamp(ts string) time.Time {
-	timestamp, err := time.Parse(time.RFC3339, ts)
-	if err != nil {
-		return time.Time{}
-	}
-
-	return timestamp
 }
 
 func getKubernetesAttributes(lr plog.LogRecord) pcommon.Map {

@@ -23,19 +23,19 @@ func HaveFlatLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 func HaveContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string {
-		return fl.ContainerName
+		return fl.KubernetesAttributes["container_name"]
 	}, matcher)
 }
 
 func HaveNamespace(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string {
-		return fl.NamespaceName
+		return fl.KubernetesAttributes["namespace_name"]
 	}, matcher)
 }
 
 func HavePodName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string {
-		return fl.PodName
+		return fl.KubernetesAttributes["pod_name"]
 	}, matcher)
 }
 
@@ -47,13 +47,18 @@ func HaveLogRecordAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 func HaveTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) time.Time {
-		return fl.Timestamp
+		ts := fl.LogRecordAttributes["timestamp"]
+		timestamp, err := time.Parse(time.RFC3339, ts)
+		if err != nil {
+			fmt.Errorf("failed to parse timestamp: %w", err)
+		}
+		return timestamp
 	}, matcher)
 }
 
 func HaveLevel(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string {
-		return fl.Level
+		return fl.LogRecordAttributes["level"]
 	}, matcher)
 }
 
