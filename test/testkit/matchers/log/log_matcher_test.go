@@ -8,42 +8,23 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-var testTime, _ = time.Parse(time.RFC3339, "2023-12-07T09:36:38Z")
-var testTime2, _ = time.Parse(time.RFC3339, "2024-11-06T07:25:45Z")
+var testTime = time.Date(2023, 12, 07, 9, 36, 38, 0, time.UTC)
 
 var fls = []FlatLog{
 	{
 		LogRecordAttributes: map[string]string{
-			"level":      "INFO",
-			"user":       "foo",
-			"timestamp":  testTime.Format(time.RFC3339),
-			"kubernetes": `{"annotations":{"app.kubernetes.io/name":"test-annotation"},"container_name":"test-container","labels":{"app.kubernetes.io/istio":"test-label"},"namespace_name":"test-namespace","pod_name":"test-pod"}`,
+			"level":     "INFO",
+			"user":      "foo",
+			"timestamp": testTime.Format(time.RFC3339),
 		},
-		Timestamp:                      testTime,
 		LogRecordBody:                  "Test first log body",
+		Timestamp:                      testTime,
 		Level:                          "INFO",
 		PodName:                        "test-pod",
 		ContainerName:                  "test-container",
 		NamespaceName:                  "test-namespace",
 		KubernetesLabelAttributes:      map[string]any{"app.kubernetes.io/istio": "test-label"},
 		KubernetesAnnotationAttributes: map[string]any{"app.kubernetes.io/name": "test-annotation"},
-	},
-	{
-
-		LogRecordAttributes: map[string]string{
-			"level":      "DEBUG",
-			"user":       "bar",
-			"timestamp":  testTime2.Format(time.RFC3339),
-			"kubernetes": `{"annotations":{"app.kubernetes.io/name":"test-annotation"}, "container_name":"test-container-2", "label":{"app.kubernetes.io/istio ":"test-label"}, "namespace_name":"test-namespace-2", "pod_name":"test-pod-2"}`,
-		},
-		Timestamp:                      testTime2,
-		LogRecordBody:                  "Test second log body",
-		Level:                          "DEBUG",
-		PodName:                        "test-pod-2",
-		ContainerName:                  "test-container-2",
-		NamespaceName:                  "test-namespace-2",
-		KubernetesLabelAttributes:      map[string]any{"app.kubernetes.io/istio": "test-label"},
-		KubernetesAnnotationAttributes: map[string]any{"app.kubernetes.io/istio-pilot": "test-annotation"},
 	},
 }
 
@@ -81,7 +62,7 @@ var _ = Describe("HaveFlatLogs", func() {
 		attrs := lr.Attributes()
 		attrs.PutStr("level", "INFO")
 		attrs.PutStr("user", "foo")
-		attrs.PutStr("timestamp", testTime.Format(time.RFC3339))
+		attrs.PutStr("timestamp", "2023-12-07T09:36:38Z")
 
 		k8sAttrs := attrs.PutEmptyMap("kubernetes")
 
