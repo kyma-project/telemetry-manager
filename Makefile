@@ -50,6 +50,7 @@ MOCKERY          := $(TOOLS_BIN_DIR)/mockery
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
 YQ               := $(TOOLS_BIN_DIR)/yq
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
+WSL				 := $(TOOLS_BIN_DIR)/wsl
 
 # Sub-makefile
 include hack/make/provision.mk
@@ -75,7 +76,8 @@ help: ## Display this help.
 
 
 ##@ Development
-lint-autofix: $(GOLANGCI_LINT)
+lint-autofix: $(GOLANGCI_LINT) $(WSL)
+	-$(WSL) --fix ./...
 	$(GOLANGCI_LINT) run --fix
 
 lint: $(GOLANGCI_LINT)

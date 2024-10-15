@@ -282,8 +282,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 func testWebhookReconciliation() {
 	var oldUID types.UID
+
 	By("Deleting ValidatingWebhookConfiguration", func() {
 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 		oldUID = validatingWebhookConfiguration.UID
 		Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())

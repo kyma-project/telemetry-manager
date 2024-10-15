@@ -41,6 +41,7 @@ func TestConnectors(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Connectors, "routing/test")
+
 		expectedRoutingConnector := RoutingConnector{
 			DefaultPipelines: []string{"metrics/test-attributes-enrichment"},
 			ErrorMode:        "ignore",

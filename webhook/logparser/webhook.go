@@ -54,6 +54,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 
 	if err := v.validateLogParser(logParser); err != nil {
 		log.Error(err, "LogParser rejected")
+
 		return admission.Response{
 			AdmissionResponse: admissionv1.AdmissionResponse{
 				Allowed: false,
@@ -65,6 +66,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 			},
 		}
 	}
+
 	return admission.Allowed("LogParser validation successful")
 }
 

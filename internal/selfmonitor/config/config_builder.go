@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const defaultInterval = 30 * time.Second
+
 type BuilderConfig struct {
 	ScrapeNamespace   string
 	WebhookURL        string
@@ -19,13 +21,14 @@ func MakeConfig(builderCfg BuilderConfig) Config {
 	promConfig.AlertingConfig = makeAlertConfig(builderCfg.WebhookURL, builderCfg.WebhookScheme)
 	promConfig.RuleFiles = []string{builderCfg.ConfigPath + builderCfg.AlertRuleFileName}
 	promConfig.ScrapeConfigs = makeScrapeConfig(builderCfg.ScrapeNamespace)
+
 	return promConfig
 }
 
 func makeGlobalConfig() GlobalConfig {
 	return GlobalConfig{
-		ScraperInterval:    30 * time.Second,
-		EvaluationInterval: 30 * time.Second,
+		ScraperInterval:    defaultInterval,
+		EvaluationInterval: defaultInterval,
 	}
 }
 

@@ -61,6 +61,7 @@ func (m *metricComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pi
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -86,6 +87,7 @@ func (m *metricComponentsChecker) checkForFirstUnhealthyPipelineCondition(pipeli
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -98,6 +100,7 @@ func (m *metricComponentsChecker) checkForNoPipelineDeployedCondition(pipelines 
 			Message: conditions.MessageForMetricPipeline(conditions.ReasonNoPipelineDeployed),
 		}
 	}
+
 	return nil
 }
 
@@ -115,5 +118,6 @@ func (m *metricComponentsChecker) checkForResourceBlocksDeletionCondition(pipeli
 			}),
 		}
 	}
+
 	return nil
 }

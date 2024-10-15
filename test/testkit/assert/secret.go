@@ -26,9 +26,11 @@ func SecretHasKeyValue(ctx context.Context, k8sClient client.Client, name types.
 
 func secretExists(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (*corev1.Secret, error) {
 	var secret corev1.Secret
+
 	err := k8sClient.Get(ctx, name, &secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get secret: %w", err)
 	}
+
 	return &secret, nil
 }

@@ -33,7 +33,9 @@ type caCertProviderImpl struct {
 
 func newCACertProvider(client client.Client) *caCertProviderImpl {
 	clock := realClock{}
+
 	const duration30d = 30 * 24 * time.Hour
+
 	return &caCertProviderImpl{
 		client:        client,
 		expiryChecker: &certExpiryCheckerImpl{clock: realClock{}, softExpiryOffset: duration30d},
@@ -46,11 +48,14 @@ func newCACertProvider(client client.Client) *caCertProviderImpl {
 
 func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
 	var caSecret corev1.Secret
+
 	var shouldCreateNew bool
+
 	if err := p.client.Get(ctx, caSecretName, &caSecret); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return nil, nil, fmt.Errorf("failed to find ca cert caSecretName: %w", err)
 		}
+
 		shouldCreateNew = true
 	} else {
 		shouldCreateNew = !p.checkCASecret(ctx, &caSecret)
@@ -70,6 +75,7 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 		if err = k8sutils.CreateOrUpdateSecret(ctx, p.client, &newSecret); err != nil {
 			return nil, nil, fmt.Errorf("failed to create ca cert caSecretName: %w", err)
 		}
+
 		return caCertPEM, caKeyPEM, nil
 	}
 
@@ -82,6 +88,7 @@ func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1
 		logf.FromContext(ctx).Error(err, "Invalid ca secret. Creating a new one",
 			"secretName", caSecret.Name,
 			"secretNamespace", caSecret.Namespace)
+
 		return false
 	}
 

@@ -25,6 +25,7 @@ func (lp *LogPipeline) GetEnvSecretRefs() []SecretKeyRef {
 		refs = appendIfSecretRef(refs, output.HTTP.User)
 		refs = appendIfSecretRef(refs, output.HTTP.Password)
 	}
+
 	return refs
 }
 
@@ -37,9 +38,11 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 		if tlsConfig.CA != nil {
 			refs = appendIfSecretRef(refs, *tlsConfig.CA)
 		}
+
 		if tlsConfig.Cert != nil {
 			refs = appendIfSecretRef(refs, *tlsConfig.Cert)
 		}
+
 		if tlsConfig.Key != nil {
 			refs = appendIfSecretRef(refs, *tlsConfig.Key)
 		}
@@ -74,9 +77,11 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
 		if otlpOut.TLS.CA != nil {
 			refs = appendIfSecretRef(refs, *otlpOut.TLS.CA)
 		}
+
 		if otlpOut.TLS.Cert != nil {
 			refs = appendIfSecretRef(refs, *otlpOut.TLS.Cert)
 		}
+
 		if otlpOut.TLS.Key != nil {
 			refs = appendIfSecretRef(refs, *otlpOut.TLS.Key)
 		}
@@ -89,5 +94,6 @@ func appendIfSecretRef(secretKeyRefs []SecretKeyRef, valueType ValueType) []Secr
 	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
 		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
 	}
+
 	return secretKeyRefs
 }

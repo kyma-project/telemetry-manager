@@ -22,6 +22,7 @@ func ResolveServiceNameStatements() []config.TransformProcessorStatements {
 	for _, attr := range attributes {
 		statements = append(statements, inferServiceNameFromAttr(attr))
 	}
+
 	statements = append(statements, setDefaultServiceName())
 
 	return []config.TransformProcessorStatements{
@@ -44,6 +45,7 @@ func inferServiceNameFromAttr(attrKey string) string {
 		serviceNameNotDefinedBasicCondition,
 		ottlexpr.IsMatch("attributes[\"service.name\"]", "^unknown_service(:.+)?$"),
 	)
+
 	return fmt.Sprintf(
 		"set(attributes[\"service.name\"], attributes[\"%s\"]) where %s",
 		attrKey,

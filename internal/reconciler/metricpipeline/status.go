@@ -79,7 +79,6 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-
 	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
@@ -160,14 +159,18 @@ func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 	if probeResult.AllDataDropped {
 		return conditions.ReasonSelfMonAllDataDropped
 	}
+
 	if probeResult.SomeDataDropped {
 		return conditions.ReasonSelfMonSomeDataDropped
 	}
+
 	if probeResult.QueueAlmostFull {
 		return conditions.ReasonSelfMonBufferFillingUp
 	}
+
 	if probeResult.Throttling {
 		return conditions.ReasonSelfMonGatewayThrottling
 	}
+
 	return conditions.ReasonSelfMonFlowHealthy
 }

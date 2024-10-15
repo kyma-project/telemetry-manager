@@ -40,6 +40,7 @@ func (j *Job) K8sObject() *batchv1.Job {
 
 	podSpec := j.podSpec
 	podSpec.RestartPolicy = corev1.RestartPolicyNever
+
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      j.name,
