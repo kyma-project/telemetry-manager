@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
