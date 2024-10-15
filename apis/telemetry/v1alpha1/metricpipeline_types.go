@@ -125,6 +125,22 @@ type MetricPipelineRuntimeInputResources struct {
 	// +optional
 	// +kubebuilder:default={enabled: false}
 	Volume *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"volume,omitempty"`
+	// Configures DaemonSet runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	DaemonSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"daemonSet,omitempty"`
+	// Configures Deployment runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Deployment *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"deployment,omitempty"`
+	// Configures StatefulSet runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	StatefulSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"statefulSet,omitempty"`
+	// Configures Job runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Job *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"job,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResourceEnabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
