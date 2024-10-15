@@ -268,17 +268,17 @@ func run() error {
 	}
 
 	tracePipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	if err := enableTracePipelineController(mgr, tracePipelineReconcileTriggerChan); err != nil {
+	if err := setupTracePipelineController(mgr, tracePipelineReconcileTriggerChan); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
 	metricPipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	if err := enableMetricPipelineController(mgr, metricPipelineReconcileTriggerChan); err != nil {
+	if err := setupMetricPipelineController(mgr, metricPipelineReconcileTriggerChan); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
 	logPipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	if err := enableLogPipelineController(mgr, logPipelineReconcileTriggerChan); err != nil {
+	if err := setupLogPipelineController(mgr, logPipelineReconcileTriggerChan); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
@@ -316,6 +316,8 @@ func run() error {
 		selfmonitorwebhook.WithLogPipelineSubscriber(logPipelineReconcileTriggerChan),
 		selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 
+	setupLog.Info("Starting manager", "version", version)
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
 	}
@@ -348,7 +350,7 @@ func initLogger() error {
 }
 
 func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) error {
-	setupLog.WithValues("version", version).Info("Starting with telemetry manager controller")
+	setupLog.Info("Setting up telemetry controller")
 
 	telemetryController := operator.NewTelemetryController(
 		mgr.GetClient(),
@@ -378,9 +380,7 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 	return nil
 }
 
-func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	setupLog.Info("Starting with logging controllers")
-
+func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	if enableV1Beta1LogPipelines {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
@@ -398,6 +398,8 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 		}
 	}
 
+	setupLog.Info("Setting up logpipeline controller")
+
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
 		reconcileTriggerChan,
@@ -405,9 +407,9 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 			ExporterImage:      fluentBitExporterImage,
 			FluentBitImage:     fluentBitImage,
 			PriorityClassName:  fluentBitPriorityClassName,
+			RestConfig:         mgr.GetConfig(),
 			SelfMonitorName:    selfMonitorName,
 			TelemetryNamespace: telemetryNamespace,
-			RestConfig:         mgr.GetConfig(),
 		},
 	)
 	if err != nil {
@@ -418,11 +420,15 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 		return fmt.Errorf("failed to setup logpipeline controller: %w", err)
 	}
 
+	setupLog.Info("Setting up logparser controller")
+
 	logParserController := telemetrycontrollers.NewLogParserController(
 		mgr.GetClient(),
 		telemetrycontrollers.LogParserControllerConfig{
 			TelemetryNamespace: telemetryNamespace,
-		})
+		},
+	)
+
 	if err := logParserController.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup logparser controller: %w", err)
 	}
@@ -430,8 +436,8 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 	return nil
 }
 
-func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	setupLog.Info("Starting with tracing controller")
+func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
 		mgr.GetClient(),
@@ -456,8 +462,8 @@ func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 	return nil
 }
 
-func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	setupLog.Info("Starting with metrics controller")
+func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
 		mgr.GetClient(),
