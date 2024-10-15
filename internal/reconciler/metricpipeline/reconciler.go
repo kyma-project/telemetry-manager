@@ -293,7 +293,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.config.ModuleVersion,
-		AgentNamespace:              r.config.Agent.Namespace,
+		AgentNamespace:              r.config.TelemetryNamespace,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
