@@ -1,6 +1,7 @@
 package apiserverproxy
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -25,10 +26,12 @@ func NewClient(config *rest.Config) (*Client, error) {
 	}
 
 	var tlsClientConfig *tls.Config
+
 	tlsClientConfig, err = transport.TLSConfigFor(transportConfig)
 	if tlsClientConfig == nil || err != nil {
 		tlsClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
+
 	tlsClientConfig.InsecureSkipVerify = true
 
 	return &Client{
@@ -76,7 +79,7 @@ func (a Client) Get(proxyURL string) (*http.Response, error) {
 		TLSClientConfig: a.tlsClientConfig,
 	}}
 
-	req, err := http.NewRequest(http.MethodGet, proxyURL, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, proxyURL, nil)
 	if err != nil {
 		return nil, err
 	}

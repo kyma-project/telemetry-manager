@@ -97,6 +97,7 @@ func (lp *LogProducer) podSpec() corev1.PodSpec {
 	if lp.load == LoadLow {
 		return lp.alpineSpec()
 	}
+
 	return lp.flogSpec()
 }
 
@@ -126,10 +127,12 @@ done`
 
 func (lp *LogProducer) flogSpec() corev1.PodSpec {
 	const bytePerSecond = "10485760"
+
 	args := []string{fmt.Sprintf("-b=%s", bytePerSecond), "-l"}
 	if lp.useJSON {
 		args = append(args, "-f=json")
 	}
+
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{

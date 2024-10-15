@@ -18,6 +18,7 @@ func ensureFinalizer(ctx context.Context, client client.Client, parser *telemetr
 		}
 
 		controllerutil.AddFinalizer(parser, finalizer)
+
 		return client.Update(ctx, parser)
 	}
 

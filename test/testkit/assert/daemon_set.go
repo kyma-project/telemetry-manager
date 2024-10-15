@@ -23,13 +23,16 @@ func DaemonSetReady(ctx context.Context, k8sClient client.Client, name types.Nam
 
 func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
 	var daemonSet appsv1.DaemonSet
+
 	err := k8sClient.Get(ctx, name, &daemonSet)
 	if err != nil {
 		return false, fmt.Errorf("failed to get daemonset: %w", err)
 	}
+
 	listOptions := client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(daemonSet.Spec.Selector.MatchLabels),
 		Namespace:     name.Namespace,
 	}
+
 	return PodsReady(ctx, k8sClient, listOptions)
 }

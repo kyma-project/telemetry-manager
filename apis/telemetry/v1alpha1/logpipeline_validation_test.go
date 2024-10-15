@@ -58,7 +58,6 @@ func TestDeniedOutputPlugins(t *testing.T) {
 }
 
 func TestValidateCustomOutput(t *testing.T) {
-
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
 			Output: Output{
@@ -74,7 +73,6 @@ func TestValidateCustomOutput(t *testing.T) {
 }
 
 func TestValidateCustomHasForbiddenParameter(t *testing.T) {
-
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
 			Output: Output{

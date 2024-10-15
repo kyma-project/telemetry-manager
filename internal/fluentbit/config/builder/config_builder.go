@@ -1,11 +1,16 @@
 package builder
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
+)
+
+var (
+	ErrUndefinedOutputPlugin = errors.New("output plugin not defined")
 )
 
 type PipelineDefaults struct {
@@ -37,6 +42,7 @@ func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config Builde
 	excludePath := createExcludePath(pipeline, config.CollectAgentLogs)
 
 	var sb strings.Builder
+
 	sb.WriteString(createInputSection(pipeline, includePath, excludePath))
 	// skip if the filter is a multiline filter, multiline filter should be first filter in the pipeline filter chain
 	// see for more details https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace
@@ -87,12 +93,14 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
 func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
 	if !pipeline.Spec.Output.IsAnyDefined() {
-		return fmt.Errorf("output plugin not defined")
+		return ErrUndefinedOutputPlugin
 	}
+
 	return nil
 }

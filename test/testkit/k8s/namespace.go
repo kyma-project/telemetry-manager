@@ -29,6 +29,7 @@ func WithIstioInjection() func(*Namespace) {
 		if n.labels == nil {
 			n.labels = make(map[string]string)
 		}
+
 		n.labels["istio-injection"] = "enabled"
 	}
 }

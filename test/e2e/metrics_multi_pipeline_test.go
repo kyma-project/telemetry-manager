@@ -177,7 +177,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 })
 
 func checkInstrumentationScopeAndVersion(g Gomega, body []byte, scope1, scope2 string) {
-
 	g.Expect(body).To(HaveFlatMetrics(HaveEach(
 		SatisfyAny(
 			SatisfyAll(

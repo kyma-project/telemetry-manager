@@ -32,6 +32,7 @@ func HaveUniqueNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 		for _, m := range fm {
 			names[m.Name] = struct{}{}
 		}
+
 		return slices.Sorted(maps.Keys(names))
 	}, matcher)
 }
@@ -40,12 +41,15 @@ func HaveUniqueNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 func HaveUniqueNamesForRuntimeScope(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fm []FlatMetric) []string {
 		names := make(map[string]struct{})
+
 		for _, m := range fm {
 			if m.ScopeName != metric.InstrumentationScopeRuntime {
 				continue
 			}
+
 			names[m.Name] = struct{}{}
 		}
+
 		return slices.Sorted(maps.Keys(names))
 	}, matcher)
 }

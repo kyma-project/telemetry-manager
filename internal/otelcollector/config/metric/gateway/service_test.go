@@ -591,7 +591,6 @@ func TestService(t *testing.T) {
 			}, collectorConfig.Service.Pipelines["metrics/test-output"].Processors)
 			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Exporters)
 		})
-
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {

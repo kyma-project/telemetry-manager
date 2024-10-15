@@ -14,10 +14,12 @@ import (
 
 func TestIsIstioActive(t *testing.T) {
 	scheme := clientgoscheme.Scheme
+
 	err := apiextensionsv1.AddToScheme(scheme)
 	if err != nil {
 		t.Fatalf("failed to add api extensions v1 scheme: %v", err)
 	}
+
 	tests := []struct {
 		name      string
 		resources []*metav1.APIResourceList

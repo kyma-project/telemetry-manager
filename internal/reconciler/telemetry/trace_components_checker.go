@@ -19,6 +19,7 @@ type traceComponentsChecker struct {
 
 func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var tracePipelines telemetryv1alpha1.TracePipelineList
+
 	err := t.client.List(ctx, &tracePipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of TracePipelines: %w", err)
@@ -60,6 +61,7 @@ func (t *traceComponentsChecker) checkForFirstAboutToExpirePipelineCondition(pip
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -85,6 +87,7 @@ func (t *traceComponentsChecker) checkForFirstUnhealthyPipelineCondition(pipelin
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -97,6 +100,7 @@ func (t *traceComponentsChecker) checkForNoPipelineDeployedCondition(pipelines [
 			Message: conditions.MessageForTracePipeline(conditions.ReasonNoPipelineDeployed),
 		}
 	}
+
 	return nil
 }
 
@@ -114,5 +118,6 @@ func (t *traceComponentsChecker) checkForResourceBlocksDeletionCondition(pipelin
 			}),
 		}
 	}
+
 	return nil
 }

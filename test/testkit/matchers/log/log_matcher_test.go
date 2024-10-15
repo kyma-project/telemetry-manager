@@ -144,9 +144,11 @@ var _ = Describe("HaveLogBody", func() {
 
 func mustMarshalLogs(ld plog.Logs) []byte {
 	var marshaler plog.JSONMarshaler
+
 	bytes, err := marshaler.MarshalLogs(ld)
 	if err != nil {
 		panic(err)
 	}
+
 	return bytes
 }

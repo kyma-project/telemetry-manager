@@ -65,6 +65,7 @@ func enableRuntimeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) 
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -84,6 +85,7 @@ func enableRuntimePodMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -94,6 +96,7 @@ func enableRuntimeContainerMetricsScraping(pipelines []telemetryv1alpha1.MetricP
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -104,6 +107,7 @@ func enableRuntimeNodeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -114,6 +118,7 @@ func enableRuntimeVolumeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipe
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -124,6 +129,7 @@ func enablePrometheusMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -134,9 +140,11 @@ func enableIstioMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bo
 			return true
 		}
 	}
+
 	return false
 }
 
+//nolint:mnd // all static config from here
 func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
 	return Exporters{
 		OTLP: config.OTLPExporter{
