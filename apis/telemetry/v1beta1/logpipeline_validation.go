@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	validHostNameRE              = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
+	validHostNamePattern         = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
 	ErrInvalidPipelineDefinition = errors.New("invalid log pipeline definition")
 )
 
@@ -81,7 +81,7 @@ func validateHTTPOutput(httpOutput *LogPipelineHTTPOutput) error {
 
 func validHostname(host string) bool {
 	host = strings.Trim(host, " ")
-	return validHostNameRE.MatchString(host)
+	return validHostNamePattern.MatchString(host)
 }
 
 func validateCustomOutput(deniedOutputPlugin []string, content string) error {
