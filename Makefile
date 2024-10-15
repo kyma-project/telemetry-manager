@@ -85,8 +85,6 @@ lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) version
 	GO111MODULE=on $(GOLANGCI_LINT) run
 
-	$(GOLANGCI_LINT) run --fix
-
 .PHONY: crd-docs-gen
 crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder
 	$(TABLE_GEN) --crd-filename ./config/crd/bases/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
