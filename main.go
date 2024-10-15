@@ -22,7 +22,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-logr/zapr"
@@ -79,17 +78,15 @@ var (
 	traceGatewayImage         string
 	traceGatewayPriorityClass string
 
-	fluentBitDeniedFilterPlugins string
-	fluentBitDeniedOutputPlugins string
-	fluentBitMemoryBufferLimit   string
-	fluentBitFsBufferLimit       string
-	fluentBitCPULimit            string
-	fluentBitMemoryLimit         string
-	fluentBitCPURequest          string
-	fluentBitMemoryRequest       string
-	fluentBitImage               string
-	fluentBitExporterImage       string
-	fluentBitPriorityClassName   string
+	fluentBitMemoryBufferLimit string
+	fluentBitFsBufferLimit     string
+	fluentBitCPULimit          string
+	fluentBitMemoryLimit       string
+	fluentBitCPURequest        string
+	fluentBitMemoryRequest     string
+	fluentBitImage             string
+	fluentBitExporterImage     string
+	fluentBitPriorityClassName string
 
 	metricGatewayImage         string
 	metricGatewayPriorityClass string
@@ -231,8 +228,6 @@ func run() error {
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
 
-	flag.StringVar(&fluentBitDeniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
-	flag.StringVar(&fluentBitDeniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
 	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
 	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
@@ -562,7 +557,7 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 		validation.NewMaxPipelinesValidator(maxLogPipelines),
 		validation.NewFilesValidator(),
 		admission.NewDecoder(scheme),
-		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(fluentBitDeniedOutputPlugins), DeniedFilterPlugins: parsePlugins(fluentBitDeniedFilterPlugins)})
+	)
 }
 
 func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
@@ -595,13 +590,8 @@ func createPipelineDefaults() builder.PipelineDefaults {
 	}
 }
 
-func parsePlugins(s string) []string {
-	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
-}
-
 func createWebhookConfig() telemetry.WebhookConfig {
 	return telemetry.WebhookConfig{
-		Enabled: enableWebhook,
 		CertConfig: webhookcert.Config{
 			CertDir: certDir,
 			ServiceName: types.NamespacedName{
