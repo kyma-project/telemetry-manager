@@ -77,10 +77,6 @@ var (
 	traceGatewayImage         string
 	traceGatewayPriorityClass string
 
-	fluentBitCPULimit          string
-	fluentBitMemoryLimit       string
-	fluentBitCPURequest        string
-	fluentBitMemoryRequest     string
 	fluentBitImage             string
 	fluentBitExporterImage     string
 	fluentBitPriorityClassName string
@@ -225,10 +221,6 @@ func run() error {
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
 
-	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
-	flag.StringVar(&fluentBitMemoryLimit, "fluent-bit-memory-limit", "1Gi", "Memory limit for fluent-bit")
-	flag.StringVar(&fluentBitCPURequest, "fluent-bit-cpu-request", "100m", "CPU request for fluent-bit")
-	flag.StringVar(&fluentBitMemoryRequest, "fluent-bit-memory-request", "50Mi", "Memory request for fluent-bit")
 	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
@@ -423,16 +415,12 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.LogPipelineControllerConfig{
-			ExporterImage:          fluentBitExporterImage,
-			FluentBitCPULimit:      fluentBitCPULimit,
-			FluentBitCPURequest:    fluentBitCPURequest,
-			FluentBitMemoryLimit:   fluentBitMemoryLimit,
-			FluentBitMemoryRequest: fluentBitMemoryRequest,
-			FluentBitImage:         fluentBitImage,
-			PriorityClassName:      fluentBitPriorityClassName,
-			SelfMonitorName:        selfMonitorName,
-			TelemetryNamespace:     telemetryNamespace,
-			RestConfig:             mgr.GetConfig(),
+			ExporterImage:      fluentBitExporterImage,
+			FluentBitImage:     fluentBitImage,
+			PriorityClassName:  fluentBitPriorityClassName,
+			SelfMonitorName:    selfMonitorName,
+			TelemetryNamespace: telemetryNamespace,
+			RestConfig:         mgr.GetConfig(),
 		},
 	)
 	if err != nil {

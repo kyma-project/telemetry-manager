@@ -50,6 +50,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
+var (
+	fluentBitCPULimit      = resource.MustParse("1")
+	fluentBitMemoryLimit   = resource.MustParse("1Gi")
+	fluentBitCPURequest    = resource.MustParse("100m")
+	fluentBitMemoryRequest = resource.MustParse("50Mi")
+)
+
 // LogPipelineController reconciles a LogPipeline object
 type LogPipelineController struct {
 	client.Client
@@ -59,16 +66,12 @@ type LogPipelineController struct {
 }
 
 type LogPipelineControllerConfig struct {
-	ExporterImage          string
-	FluentBitCPULimit      string
-	FluentBitCPURequest    string
-	FluentBitMemoryLimit   string
-	FluentBitMemoryRequest string
-	FluentBitImage         string
-	PriorityClassName      string
-	SelfMonitorName        string
-	TelemetryNamespace     string
-	RestConfig             *rest.Config
+	ExporterImage      string
+	FluentBitImage     string
+	PriorityClassName  string
+	RestConfig         *rest.Config
+	SelfMonitorName    string
+	TelemetryNamespace string
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
@@ -95,10 +98,10 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 			FluentBitImage:    config.FluentBitImage,
 			ExporterImage:     config.ExporterImage,
 			PriorityClassName: config.PriorityClassName,
-			CPULimit:          resource.MustParse(config.FluentBitCPULimit),
-			MemoryLimit:       resource.MustParse(config.FluentBitMemoryLimit),
-			CPURequest:        resource.MustParse(config.FluentBitCPURequest),
-			MemoryRequest:     resource.MustParse(config.FluentBitMemoryRequest),
+			CPULimit:          fluentBitCPULimit,
+			MemoryLimit:       fluentBitMemoryLimit,
+			CPURequest:        fluentBitCPURequest,
+			MemoryRequest:     fluentBitMemoryRequest,
 		},
 	}
 
