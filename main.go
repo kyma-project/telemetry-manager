@@ -299,10 +299,16 @@ func run() error {
 		return fmt.Errorf("failed to add ready check: %w", err)
 	}
 
-	if err := enableWebhookServer(mgr, webhookConfig); err != nil {
+	if err := ensureWebhookCert(mgr, webhookConfig); err != nil {
 		return fmt.Errorf("failed to enable webhook server: %w", err)
 	}
 
+	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{
+		Handler: createLogPipelineValidator(mgr.GetClient()),
+	})
+	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
+		Handler: createLogParserValidator(mgr.GetClient()),
+	})
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
 		selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
@@ -374,9 +380,6 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 
 func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	setupLog.Info("Starting with logging controllers")
-
-	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
-	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
 	if enableV1Beta1LogPipelines {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
@@ -480,7 +483,7 @@ func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-
 	return nil
 }
 
-func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) error {
+func ensureWebhookCert(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) error {
 	// Create own client since manager might not be started while using
 	clientOptions := client.Options{
 		Scheme: scheme,
