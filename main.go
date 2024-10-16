@@ -202,7 +202,7 @@ func run() error {
 
 	flag.Parse()
 
-	telemetryNamespace, _ := os.LookupEnv(telemetryNamespaceEnvVar)
+	telemetryNamespace, _ = os.LookupEnv(telemetryNamespaceEnvVar)
 
 	if err := initLogger(); err != nil {
 		return fmt.Errorf("failed to initialize logger: %w", err)
