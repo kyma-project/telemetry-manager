@@ -415,7 +415,7 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 			OTelCollectorImage:            otelCollectorImage,
 			SelfMonitorName:               selfMonitorName,
 			TelemetryNamespace:            telemetryNamespace,
-			TraceGatewayPriorityClassName: highPriorityClassName,
+			TraceGatewayPriorityClassName: normalPriorityClassName,
 			TraceGatewayServiceName:       traceOTLPServiceName,
 		},
 	)
