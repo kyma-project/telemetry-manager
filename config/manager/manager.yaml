@@ -64,7 +64,7 @@ spec:
             memory: 384Mi
           requests:
             cpu: 5m
-            memory: 100Mi
+            memory: 50Mi
         volumeMounts:
           - mountPath: /tmp
             name: crt-volume
