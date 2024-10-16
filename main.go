@@ -18,7 +18,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -67,7 +66,7 @@ import (
 
 var (
 	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog = ctrl.Log.WithName("setup").WithValues("version", version)
 	version  = "main"
 
 	// Operator flags
@@ -76,7 +75,6 @@ var (
 	fluentBitExporterImage     string
 	fluentBitImage             string
 	fluentBitPriorityClassName string
-	logLevel                   string
 	otelCollectorImage         string
 	metricGatewayPriorityClass string
 	selfMonitorImage           string
@@ -206,7 +204,6 @@ func run() error {
 	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
-	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
 	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOTelCollectorImage, "Image for OpenTelemetry Collector")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
@@ -215,10 +212,6 @@ func run() error {
 	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
 
 	flag.Parse()
-
-	if err := validateFlags(); err != nil {
-		return fmt.Errorf("invalid flag provided: %w", err)
-	}
 
 	if err := initLogger(); err != nil {
 		return fmt.Errorf("failed to initialize logger: %w", err)
@@ -326,26 +319,14 @@ func run() error {
 }
 
 func initLogger() error {
-	parsedLevel, err := zapcore.ParseLevel(logLevel)
-	if err != nil {
-		return fmt.Errorf("invalid log level: %w", err)
-	}
+	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
 
-	overrides.AtomicLevel().SetLevel(parsedLevel)
 	ctrLogger, err := logger.New(overrides.AtomicLevel())
-
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
-
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}
 
-	defer func() {
-		if syncErr := ctrLogger.Sync(); syncErr != nil {
-			setupLog.Error(syncErr, "Failed to flush logger")
-		}
-	}()
-
+	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
 	return nil
 }
 
@@ -511,14 +492,6 @@ func ensureWebhookCert(mgr manager.Manager, webhookConfig telemetry.WebhookConfi
 
 func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
-}
-
-func validateFlags() error {
-	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
-		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")
-	}
-
-	return nil
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
