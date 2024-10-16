@@ -199,6 +199,7 @@ func createPodReadyConditions(status corev1.ConditionStatus) []corev1.PodConditi
 		Reason:             "",
 		Message:            "",
 	}
+
 	var conditions []corev1.PodCondition
 	conditions = append(conditions, condition)
 
