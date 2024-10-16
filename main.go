@@ -204,9 +204,16 @@ func run() error {
 
 	telemetryNamespace, _ = os.LookupEnv(telemetryNamespaceEnvVar)
 
-	if err := initLogger(); err != nil {
-		return fmt.Errorf("failed to initialize logger: %w", err)
+	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
+
+	zapLogger, err := logger.New(overrides.AtomicLevel())
+	if err != nil {
+		return fmt.Errorf("failed to create logger: %w", err)
 	}
+
+	defer zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
+
+	ctrl.SetLogger(zapr.NewLogger(zapLogger))
 
 	syncPeriod := 1 * time.Minute
 
@@ -305,19 +312,6 @@ func run() error {
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
 	}
-
-	return nil
-}
-
-func initLogger() error {
-	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
-
-	ctrLogger, err := logger.New(overrides.AtomicLevel())
-	if err != nil {
-		return fmt.Errorf("failed to create logger: %w", err)
-	}
-
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
 
 	return nil
 }
