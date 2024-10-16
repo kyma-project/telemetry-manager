@@ -187,7 +187,7 @@ func newMetricAgentApplierDeleter(config MetricPipelineControllerConfig) *otelco
 }
 
 func newMetricGatewayApplierDeleter(config MetricPipelineControllerConfig) *otelcollector.GatewayApplierDeleter {
-	rbac := otelcollector.MakeTraceGatewayRBAC(
+	rbac := otelcollector.MakeMetricGatewayRBAC(
 		types.NamespacedName{
 			Name:      metricGatewayBaseName,
 			Namespace: config.TelemetryNamespace,
