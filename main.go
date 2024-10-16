@@ -70,17 +70,15 @@ var (
 	version  = "main"
 
 	// Operator flags
-	certDir                    string
-	enableV1Beta1LogPipelines  bool
-	fluentBitExporterImage     string
-	fluentBitImage             string
-	fluentBitPriorityClassName string
-	otelCollectorImage         string
-	metricGatewayPriorityClass string
-	selfMonitorImage           string
-	selfMonitorPriorityClass   string
-	telemetryNamespace         string
-	traceGatewayPriorityClass  string
+	certDir                   string
+	enableV1Beta1LogPipelines bool
+	fluentBitExporterImage    string
+	fluentBitImage            string
+	highPriorityClassName     string
+	normalPriorityClassName   string
+	otelCollectorImage        string
+	selfMonitorImage          string
+	telemetryNamespace        string
 )
 
 const (
@@ -203,13 +201,11 @@ func run() error {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
-	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
-	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
+	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
+	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
 	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOTelCollectorImage, "Image for OpenTelemetry Collector")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
-	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
-	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
 
 	flag.Parse()
 
@@ -387,7 +383,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 		telemetrycontrollers.LogPipelineControllerConfig{
 			ExporterImage:      fluentBitExporterImage,
 			FluentBitImage:     fluentBitImage,
-			PriorityClassName:  fluentBitPriorityClassName,
+			PriorityClassName:  highPriorityClassName,
 			RestConfig:         mgr.GetConfig(),
 			SelfMonitorName:    selfMonitorName,
 			TelemetryNamespace: telemetryNamespace,
@@ -428,7 +424,7 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 			OTelCollectorImage:            otelCollectorImage,
 			SelfMonitorName:               selfMonitorName,
 			TelemetryNamespace:            telemetryNamespace,
-			TraceGatewayPriorityClassName: traceGatewayPriorityClass,
+			TraceGatewayPriorityClassName: highPriorityClassName,
 			TraceGatewayServiceName:       traceOTLPServiceName,
 		},
 	)
@@ -450,7 +446,8 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.MetricPipelineControllerConfig{
-			MetricGatewayPriorityClassName: metricGatewayPriorityClass,
+			MetricAgentPriorityClassName:   highPriorityClassName,
+			MetricGatewayPriorityClassName: normalPriorityClassName,
 			MetricGatewayServiceName:       metricOTLPServiceName,
 			ModuleVersion:                  version,
 			OTelCollectorImage:             otelCollectorImage,
@@ -521,7 +518,7 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 			Namespace: telemetryNamespace,
 			Deployment: selfmonitor.DeploymentConfig{
 				Image:             selfMonitorImage,
-				PriorityClassName: selfMonitorPriorityClass,
+				PriorityClassName: normalPriorityClassName,
 			},
 		},
 		WebhookScheme: "https",
