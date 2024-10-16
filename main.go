@@ -65,21 +65,23 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup").WithValues("version", version)
+	scheme             = runtime.NewScheme()
+	setupLog           = ctrl.Log.WithName("setup").WithValues("version", version)
+	telemetryNamespace = "default"
 	//TODO: replace with build version based on git revision
 	version = "main"
 
 	// Operator flags
 	certDir                   string
 	enableV1Beta1LogPipelines bool
-	fluentBitExporterImage    string
-	fluentBitImage            string
-	highPriorityClassName     string
-	normalPriorityClassName   string
-	otelCollectorImage        string
-	selfMonitorImage          string
-	telemetryNamespace        = "default"
+
+	highPriorityClassName   string
+	normalPriorityClassName string
+
+	fluentBitExporterImage string
+	fluentBitImage         string
+	otelCollectorImage     string
+	selfMonitorImage       string
 )
 
 const (
@@ -87,9 +89,7 @@ const (
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.9"
 	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
-)
 
-const (
 	telemetryNamespaceEnvVar = "MANAGER_NAMESPACE"
 	metricOTLPServiceName    = "telemetry-otlp-metrics"
 	selfMonitorName          = "telemetry-self-monitor"
@@ -194,10 +194,12 @@ func main() {
 func run() error {
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
+
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
+
+	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
+	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOTelCollectorImage, "Image for OpenTelemetry Collector")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 
