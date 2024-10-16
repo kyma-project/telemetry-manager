@@ -90,6 +90,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	if err != nil {
 		return nil, err
 	}
+
 	reconciler := metricpipeline.New(
 		client,
 		config.Config,
@@ -172,12 +173,15 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
 	}
+
 	return requests
 }
 
 func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
 	var pipelines telemetryv1alpha1.MetricPipelineList
+
 	var requests []reconcile.Request
+
 	err := r.List(ctx, &pipelines)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list MetricPipelines: %w", err)

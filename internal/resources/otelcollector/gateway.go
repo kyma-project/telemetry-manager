@@ -130,17 +130,20 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", opts.IstioEnabled)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
+
 	if opts.IstioEnabled {
 		var excludeInboundPorts []string
 		for _, p := range opts.IstioExcludePorts {
 			excludeInboundPorts = append(excludeInboundPorts, fmt.Sprintf("%d", p))
 		}
+
 		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = strings.Join(excludeInboundPorts, ", ")
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
 		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
 	}
+
 	resources := gad.makeGatewayResourceRequirements(opts)
 	affinity := makePodAffinity(selectorLabels)
 
@@ -186,7 +189,7 @@ func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayAp
 	cpuRequest := deploymentConfig.BaseCPURequest.DeepCopy()
 	cpuLimit := deploymentConfig.BaseCPULimit.DeepCopy()
 
-	for i := 0; i < opts.ResourceRequirementsMultiplier; i++ {
+	for range opts.ResourceRequirementsMultiplier {
 		memoryRequest.Add(deploymentConfig.DynamicMemoryRequest)
 		memoryLimit.Add(deploymentConfig.DynamicMemoryLimit)
 		cpuRequest.Add(deploymentConfig.DynamicCPURequest)
@@ -212,7 +215,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 		PodAntiAffinity: &corev1.PodAntiAffinity{
 			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
 				{
-					Weight: 100,
+					Weight: 100, //nolint:mnd // 100% weight
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						TopologyKey: "kubernetes.io/hostname",
 						LabelSelector: &metav1.LabelSelector{
@@ -221,7 +224,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 					},
 				},
 				{
-					Weight: 100,
+					Weight: 100, //nolint:mnd // 100% weight
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						TopologyKey: "topology.kubernetes.io/zone",
 						LabelSelector: &metav1.LabelSelector{

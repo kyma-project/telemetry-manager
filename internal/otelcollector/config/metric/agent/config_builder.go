@@ -37,6 +37,7 @@ type BuildOptions struct {
 	IstioEnabled                bool
 	IstioCertPath               string
 	InstrumentationScopeVersion string
+	AgentNamespace              string
 }
 
 func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {
@@ -65,6 +66,7 @@ func enableRuntimeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) 
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -84,6 +86,7 @@ func enableRuntimePodMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -94,6 +97,7 @@ func enableRuntimeContainerMetricsScraping(pipelines []telemetryv1alpha1.MetricP
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -104,6 +108,7 @@ func enableRuntimeNodeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -114,6 +119,7 @@ func enableRuntimeVolumeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipe
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -124,6 +130,7 @@ func enablePrometheusMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -134,9 +141,11 @@ func enableIstioMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bo
 			return true
 		}
 	}
+
 	return false
 }
 
+//nolint:mnd // all static config from here
 func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
 	return Exporters{
 		OTLP: config.OTLPExporter{
@@ -163,7 +172,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 
 	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = config.Pipeline{
-			Receivers:  []string{"kubeletstats"},
+			Receivers:  []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"},
 			Processors: makeRuntimePipelineProcessorsIDs(inputs.runtimeResources),
 			Exporters:  []string{"otlp"},
 		}
@@ -195,7 +204,7 @@ func makeRuntimePipelineProcessorsIDs(runtimeResources runtimeResourcesEnabled) 
 		processors = append(processors, "filter/drop-non-pvc-volumes-metrics")
 	}
 
-	processors = append(processors, "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch")
+	processors = append(processors, "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch")
 
 	return processors
 }

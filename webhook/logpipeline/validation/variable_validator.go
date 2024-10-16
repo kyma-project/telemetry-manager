@@ -26,10 +26,10 @@ func (v *variablesValidator) Validate(logPipeline *telemetryv1alpha1.LogPipeline
 	if len(logPipeline.Spec.Variables) == 0 {
 		return nil
 	}
+
 	for _, l := range logPipelines.Items {
 		if l.Name != logPipeline.Name {
 			for _, variable := range l.Spec.Variables {
-
 				err := findConflictingVariables(logPipeline, variable, l.Name)
 				if err != nil {
 					return err
@@ -43,13 +43,13 @@ func (v *variablesValidator) Validate(logPipeline *telemetryv1alpha1.LogPipeline
 			return fmt.Errorf("mandatory field variable name or secretKeyRef name or secretKeyRef namespace or secretKeyRef key cannot be empty")
 		}
 	}
+
 	return nil
 }
 
 func validateMandatoryFieldsAreEmpty(vr telemetryv1alpha1.VariableRef) bool {
 	secretKey := vr.ValueFrom.SecretKeyRef
 	return len(vr.Name) == 0 || len(secretKey.Key) == 0 || len(secretKey.Namespace) == 0 || len(secretKey.Name) == 0
-
 }
 
 func findConflictingVariables(logPipeLine *telemetryv1alpha1.LogPipeline, vr telemetryv1alpha1.VariableRef, existingPipelineName string) error {
@@ -58,5 +58,6 @@ func findConflictingVariables(logPipeLine *telemetryv1alpha1.LogPipeline, vr tel
 			return fmt.Errorf("variable name must be globally unique: variable '%s' is used in pipeline '%s'", v.Name, existingPipelineName)
 		}
 	}
+
 	return nil
 }

@@ -327,6 +327,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			for i := range test.pipelines {
 				b.WithObjects(&test.pipelines[i])
 			}
+
 			fakeClient := b.Build()
 
 			m := &traceComponentsChecker{

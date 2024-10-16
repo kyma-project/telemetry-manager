@@ -60,6 +60,7 @@ func TestCheckChain(t *testing.T) {
 			sut := certChainCheckerImpl{}
 			valid, err := sut.checkRoot(context.Background(), tc.serverCertPEM, tc.caCertPEM)
 			require.Equal(t, tc.expectValid, valid)
+
 			if tc.expectError {
 				require.Error(t, err)
 			} else {

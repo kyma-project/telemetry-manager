@@ -25,6 +25,7 @@ func (c *keyLengthCheckerImpl) checkKeyLength(ctx context.Context, keyPEM []byte
 		logf.FromContext(ctx).Info("CA key length check failed",
 			"currentLength", key.N.BitLen(),
 			"desiredLength", rsaKeySize)
+
 		return false, nil
 	}
 

@@ -15,9 +15,9 @@ func HaveFlatTraces(matcher types.GomegaMatcher) types.GomegaMatcher {
 		}
 
 		ft := flattenAllTraces(tds)
+
 		return ft, nil
 	}, matcher)
-
 }
 
 // HaveName extracts name from FlatTrace and applies the matcher to it.

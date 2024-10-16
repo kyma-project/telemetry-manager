@@ -13,10 +13,13 @@ func WithMetricFamilies(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(responseBody []byte) ([]*prommodel.MetricFamily, error) {
 		var parser expfmt.TextParser
 		mfs, _ := parser.TextToMetricFamilies(bytes.NewReader(responseBody)) //nolint:errcheck // ignore duplicate metrics parsing error and try extract metric
+
 		var result []*prommodel.MetricFamily
+
 		for _, mf := range mfs {
 			result = append(result, mf)
 		}
+
 		return result, nil
 	}, matcher)
 }
@@ -46,12 +49,15 @@ func WithValue(matcher types.GomegaMatcher) types.GomegaMatcher {
 		if m.Gauge != nil {
 			return m.Gauge.GetValue(), nil
 		}
+
 		if m.Counter != nil {
 			return m.Counter.GetValue(), nil
 		}
+
 		if m.Untyped != nil {
 			return m.Untyped.GetValue(), nil
 		}
+
 		return 0, nil
 	}, matcher)
 }
@@ -62,6 +68,7 @@ func WithLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
 		for _, l := range m.Label {
 			labels[l.GetName()] = l.GetValue()
 		}
+
 		return labels, nil
 	}, matcher)
 }

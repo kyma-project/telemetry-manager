@@ -28,7 +28,6 @@ type Validator struct {
 }
 
 func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-
 	if err := v.SecretRefValidator.Validate(ctx, pipeline); err != nil {
 		return err
 	}
@@ -59,5 +58,6 @@ func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 	if http == nil {
 		return false
 	}
+
 	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
 }
