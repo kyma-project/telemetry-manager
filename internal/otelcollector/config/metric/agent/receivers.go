@@ -78,7 +78,7 @@ func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *Sing
 		K8sReplicaSetDesired:                MetricConfig{Enabled: false},
 		K8sReplicationControllerAvailable:   MetricConfig{Enabled: false},
 		K8sReplicationControllerDesired:     MetricConfig{Enabled: false},
-		K8sResourceQuotaHardLimits:          MetricConfig{Enabled: false},
+		K8sResourceQuotaHardLimit:           MetricConfig{Enabled: false},
 		K8sResourceQuotaUsed:                MetricConfig{Enabled: false},
 	}
 

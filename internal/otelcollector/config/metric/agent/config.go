@@ -81,8 +81,8 @@ type K8sClusterMetricsConfig struct {
 	K8sReplicationControllerAvailable MetricConfig `yaml:"k8s.replication_controller.available"`
 	K8sReplicationControllerDesired   MetricConfig `yaml:"k8s.replication_controller.desired"`
 	// Disable Resource Quota metrics by default
-	K8sResourceQuotaHardLimits MetricConfig `yaml:"k8s.resource_quota.hard_limits"`
-	K8sResourceQuotaUsed       MetricConfig `yaml:"k8s.resource_quota.used"`
+	K8sResourceQuotaHardLimit MetricConfig `yaml:"k8s.resource_quota.hard_limit"`
+	K8sResourceQuotaUsed      MetricConfig `yaml:"k8s.resource_quota.used"`
 	// Disable Cronjob metrics by default
 	K8sCronJobActiveJobs MetricConfig `yaml:"k8s.cronjob.active_jobs"`
 }
