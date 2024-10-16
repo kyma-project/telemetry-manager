@@ -84,11 +84,11 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 
 	k8sClusterRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
-		Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
+		Resources: []string{"events", "nodes", "nodes/spec", "pods", "pods/status", "services"},
 		Verbs:     []string{"get", "list", "watch"},
 	}, {
 		APIGroups: []string{"apps"},
-		Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+		Resources: []string{"daemonsets", "deployments", "statefulsets"},
 		Verbs:     []string{"get", "list", "watch"},
 	}, {
 		APIGroups: []string{"extensions"},
@@ -97,10 +97,6 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	}, {
 		APIGroups: []string{"batch"},
 		Resources: []string{"jobs", "cronjobs"},
-		Verbs:     []string{"get", "list", "watch"},
-	}, {
-		APIGroups: []string{"autoscaling"},
-		Resources: []string{"horizontalpodautoscalers"},
 		Verbs:     []string{"get", "list", "watch"},
 	}}
 
