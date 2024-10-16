@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 const scrapeInterval = 30 * time.Second
@@ -21,6 +22,7 @@ func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 
 	if inputs.runtime {
 		receiversConfig.KubeletStats = makeKubeletStatsConfig(inputs.runtimeResources)
+		receiversConfig.SingletonK8sClusterReceiverCreator = makeSingletonK8sClusterReceiverCreatorConfig(opts.AgentNamespace)
 	}
 
 	if inputs.istio {
@@ -56,6 +58,36 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 			K8sNodeNetworkErrors:         MetricConfig{Enabled: false},
 		},
 		ExtraMetadataLabels: []string{"k8s.volume.type"},
+	}
+}
+
+func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *SingletonK8sClusterReceiverCreator {
+	metricsToDrop := K8sClusterMetricsConfig{
+		K8sContainerStorageRequest:          MetricConfig{false},
+		K8sContainerStorageLimit:            MetricConfig{false},
+		K8sContainerEphemeralStorageRequest: MetricConfig{false},
+		K8sContainerEphemeralStorageLimit:   MetricConfig{false},
+		K8sContainerRestarts:                MetricConfig{false},
+		K8sContainerReady:                   MetricConfig{false},
+		K8sNamespacePhase:                   MetricConfig{false},
+		K8sReplicationControllerAvailable:   MetricConfig{false},
+		K8sReplicationControllerDesired:     MetricConfig{false},
+	}
+
+	return &SingletonK8sClusterReceiverCreator{
+		AuthType: "serviceAccount",
+		LeaderElection: metric.LeaderElection{
+			LeaseName:      "telemetry-metric-agent-k8scluster",
+			LeaseNamespace: gatewayNamespace,
+		},
+		SingletonK8sClusterReceiver: SingletonK8sClusterReceiver{
+			K8sClusterReceiver: K8sClusterReceiver{
+				AuthType:               "serviceAccount",
+				CollectionInterval:     "30s",
+				NodeConditionsToReport: []string{},
+				Metrics:                metricsToDrop,
+			},
+		},
 	}
 }
 
