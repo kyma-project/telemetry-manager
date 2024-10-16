@@ -67,6 +67,8 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup").WithValues("version", version)
+	//TODO: replace with build version based on git revision
+	version = "main"
 
 	// Operator flags
 	certDir                   string
@@ -82,7 +84,7 @@ var (
 
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241001-21f80ba0"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.8"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.9"
 	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
 )
@@ -92,7 +94,6 @@ const (
 	metricOTLPServiceName    = "telemetry-otlp-metrics"
 	selfMonitorName          = "telemetry-self-monitor"
 	traceOTLPServiceName     = "telemetry-otlp-traces"
-	version                  = "main"
 	webhookServerPort        = 9443
 	webhookServiceName       = "telemetry-manager-webhook"
 )
