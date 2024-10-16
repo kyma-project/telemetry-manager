@@ -67,7 +67,6 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup").WithValues("version", version)
-	version  = "main"
 
 	// Operator flags
 	certDir                   string
@@ -78,7 +77,7 @@ var (
 	normalPriorityClassName   string
 	otelCollectorImage        string
 	selfMonitorImage          string
-	telemetryNamespace        string
+	telemetryNamespace        = "default"
 )
 
 const (
@@ -86,13 +85,16 @@ const (
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.8"
 	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
+)
 
-	metricOTLPServiceName = "telemetry-otlp-metrics"
-	selfMonitorName       = "telemetry-self-monitor"
-	traceOTLPServiceName  = "telemetry-otlp-traces"
-	webhookServiceName    = "telemetry-manager-webhook"
-
-	webhookServerPort = 9443
+const (
+	telemetryNamespaceEnvVar = "MANAGER_NAMESPACE"
+	metricOTLPServiceName    = "telemetry-otlp-metrics"
+	selfMonitorName          = "telemetry-self-monitor"
+	traceOTLPServiceName     = "telemetry-otlp-traces"
+	version                  = "main"
+	webhookServerPort        = 9443
+	webhookServiceName       = "telemetry-manager-webhook"
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -104,14 +106,6 @@ func init() {
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
-}
-
-func getEnvOrDefault(envVar string, defaultValue string) string {
-	if value, ok := os.LookupEnv(envVar); ok {
-		return value
-	}
-
-	return defaultValue
 }
 
 // +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logpipelines,verbs=get;list;watch;create;update;patch;delete
@@ -205,9 +199,10 @@ func run() error {
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
 	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOTelCollectorImage, "Image for OpenTelemetry Collector")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
-	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
 
 	flag.Parse()
+
+	telemetryNamespace, _ := os.LookupEnv(telemetryNamespaceEnvVar)
 
 	if err := initLogger(); err != nil {
 		return fmt.Errorf("failed to initialize logger: %w", err)
@@ -323,6 +318,7 @@ func initLogger() error {
 	}
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
+
 	return nil
 }
 
