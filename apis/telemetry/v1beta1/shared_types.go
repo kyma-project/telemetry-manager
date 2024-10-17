@@ -15,6 +15,7 @@ func (v *ValueType) IsDefined() bool {
 	if v == nil {
 		return false
 	}
+
 	if v.Value != "" {
 		return true
 	}
@@ -47,10 +48,6 @@ func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
 }
 
-type LogPipelineValidationConfig struct {
-	DeniedOutPutPlugins []string
-	DeniedFilterPlugins []string
-}
 type Header struct {
 	// Defines the header name.
 	Name string `json:"name"`
@@ -58,20 +55,6 @@ type Header struct {
 	ValueType `json:",inline"`
 	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
 	Prefix string `json:"prefix,omitempty"`
-}
-
-// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
-type OTLPTLS struct {
-	// Defines whether to send requests using plaintext instead of TLS. Default is false.
-	Disabled bool `json:"disabled,omitempty"`
-	// Defines whether to skip server certificate verification when using TLS.
-	SkipCertificateValidation bool `json:"SkipCertificateValidation,omitempty"`
-	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
-	CA *ValueType `json:"ca,omitempty"`
-	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
-	Cert *ValueType `json:"cert,omitempty"`
-	// Defines the client key to use when using TLS. The key must be provided in PEM format.
-	Key *ValueType `json:"key,omitempty"`
 }
 
 type OTLPProtocol string

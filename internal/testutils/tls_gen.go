@@ -93,6 +93,7 @@ func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
 	}
 
 	serverKeyPem := bytes.Buffer{}
+
 	err = pem.Encode(&serverKeyPem, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverPrivateKey)})
 	if err != nil {
 		return nil, nil, err
@@ -109,6 +110,7 @@ func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
 	}
 
 	serverCertPem := bytes.Buffer{}
+
 	err = pem.Encode(&serverCertPem, &pem.Block{Type: "CERTIFICATE", Bytes: serverBytes})
 	if err != nil {
 		return nil, nil, err
@@ -121,6 +123,7 @@ func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
 	}
 
 	clientKeyPem := bytes.Buffer{}
+
 	err = pem.Encode(&clientKeyPem, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(clientPrivateKey)})
 	if err != nil {
 		return nil, nil, err

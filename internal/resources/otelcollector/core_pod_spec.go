@@ -126,5 +126,6 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 	for _, opt := range opts {
 		opt(&pod)
 	}
+
 	return pod
 }

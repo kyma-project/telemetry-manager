@@ -39,6 +39,7 @@ func DeleteObjects(ctx context.Context, client client.Client, resources ...clien
 		if labelMatches(r.GetLabels(), PersistentLabelName, "true") {
 			continue
 		}
+
 		if err := client.Delete(ctx, r); err != nil {
 			return err
 		}

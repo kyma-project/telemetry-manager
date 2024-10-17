@@ -58,6 +58,7 @@ func TestPodStatus(t *testing.T) {
 	for _, test := range tt {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
+
 			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
 
 			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
@@ -74,7 +75,6 @@ func TestNoPods(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 	require.Equal(t, err, ErrNoPodsDeployed)
-
 }
 
 func TestPodPendingStatus(t *testing.T) {
@@ -115,6 +115,7 @@ func TestPodPendingStatus(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
+
 			containerStatus := []corev1.ContainerStatus{{
 				Name:  "collector",
 				State: corev1.ContainerState{Waiting: test.waitingState},
@@ -122,6 +123,7 @@ func TestPodPendingStatus(t *testing.T) {
 			test.pod.Status.ContainerStatuses = containerStatus
 			test.pod.Status.Phase = corev1.PodPending
 			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
+
 			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 			if test.expectedErrorFunc != nil {
 				require.True(t, test.expectedErrorFunc(err))

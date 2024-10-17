@@ -19,86 +19,111 @@ import (
 
 func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.ClusterRoleBinding) error {
 	var existing rbacv1.ClusterRoleBinding
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
+
 		return c.Create(ctx, desired)
 	}
+
 	mutated := existing.DeepCopy()
 	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+
 	if apiequality.Semantic.DeepEqual(mutated, desired) {
 		return nil
 	}
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateClusterRole(ctx context.Context, c client.Client, desired *rbacv1.ClusterRole) error {
 	var existing rbacv1.ClusterRole
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
+
 		return c.Create(ctx, desired)
 	}
+
 	mutated := existing.DeepCopy()
 	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+
 	if apiequality.Semantic.DeepEqual(mutated, desired) {
 		return nil
 	}
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.RoleBinding) error {
 	var existing rbacv1.RoleBinding
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
+
 		return c.Create(ctx, desired)
 	}
+
 	mutated := existing.DeepCopy()
 	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+
 	if apiequality.Semantic.DeepEqual(mutated, desired) {
 		return nil
 	}
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateRole(ctx context.Context, c client.Client, desired *rbacv1.Role) error {
 	var existing rbacv1.Role
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
+
 		return c.Create(ctx, desired)
 	}
+
 	mutated := existing.DeepCopy()
 	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+
 	if apiequality.Semantic.DeepEqual(mutated, desired) {
 		return nil
 	}
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateServiceAccount(ctx context.Context, c client.Client, desired *corev1.ServiceAccount) error {
 	var existing corev1.ServiceAccount
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
+
 		return c.Create(ctx, desired)
 	}
+
 	mutated := existing.DeepCopy()
 	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+
 	if apiequality.Semantic.DeepEqual(mutated, desired) {
 		return nil
 	}
+
 	return c.Update(ctx, desired)
 }
 
@@ -111,11 +136,13 @@ func CreateIfNotExistsConfigMap(ctx context.Context, c client.Client, desired *c
 
 		return c.Create(ctx, desired)
 	}
+
 	return nil
 }
 
 func CreateOrUpdateConfigMap(ctx context.Context, c client.Client, desired *corev1.ConfigMap) error {
 	var existing corev1.ConfigMap
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -127,14 +154,17 @@ func CreateOrUpdateConfigMap(ctx context.Context, c client.Client, desired *core
 
 	mutated := existing.DeepCopy()
 	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+
 	if apiequality.Semantic.DeepEqual(mutated, desired) {
 		return nil
 	}
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateNetworkPolicy(ctx context.Context, c client.Client, desired *networkingv1.NetworkPolicy) error {
 	var existing networkingv1.NetworkPolicy
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -146,14 +176,17 @@ func CreateOrUpdateNetworkPolicy(ctx context.Context, c client.Client, desired *
 
 	mutated := existing.DeepCopy()
 	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+
 	if apiequality.Semantic.DeepEqual(mutated, desired) {
 		return nil
 	}
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateSecret(ctx context.Context, c client.Client, desired *corev1.Secret) error {
 	var existing corev1.Secret
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -165,14 +198,17 @@ func CreateOrUpdateSecret(ctx context.Context, c client.Client, desired *corev1.
 
 	mutated := existing.DeepCopy()
 	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+
 	if apiequality.Semantic.DeepEqual(mutated, desired) {
 		return nil
 	}
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateDeployment(ctx context.Context, c client.Client, desired *appsv1.Deployment) error {
 	var existing appsv1.Deployment
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -184,11 +220,13 @@ func CreateOrUpdateDeployment(ctx context.Context, c client.Client, desired *app
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 	mergePodAnnotations(&desired.Spec.Template.ObjectMeta, existing.Spec.Template.ObjectMeta)
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateDaemonSet(ctx context.Context, c client.Client, desired *appsv1.DaemonSet) error {
 	var existing appsv1.DaemonSet
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -200,11 +238,13 @@ func CreateOrUpdateDaemonSet(ctx context.Context, c client.Client, desired *apps
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 	mergePodAnnotations(&desired.Spec.Template.ObjectMeta, existing.Spec.Template.ObjectMeta)
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateService(ctx context.Context, c client.Client, desired *corev1.Service) error {
 	var existing corev1.Service
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -227,6 +267,7 @@ func CreateOrUpdateService(ctx context.Context, c client.Client, desired *corev1
 
 func CreateOrUpdatePeerAuthentication(ctx context.Context, c client.Client, desired *istiosecurityclientv1.PeerAuthentication) error {
 	var existing istiosecurityclientv1.PeerAuthentication
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -237,11 +278,13 @@ func CreateOrUpdatePeerAuthentication(ctx context.Context, c client.Client, desi
 	}
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
+
 	return c.Update(ctx, desired)
 }
 
 func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.Client, desired *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 	var existing admissionregistrationv1.ValidatingWebhookConfiguration
+
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -252,6 +295,7 @@ func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.
 	}
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
+
 	return c.Update(ctx, desired)
 }
 
@@ -269,6 +313,7 @@ func ownerSliceContains(owners []metav1.OwnerReference, owner metav1.OwnerRefere
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -280,6 +325,7 @@ func mergeOwnerReferences(newOwners []metav1.OwnerReference, oldOwners []metav1.
 		if ownerSliceContains(oldOwners, o) {
 			continue
 		}
+
 		merged = append(merged, o)
 	}
 
@@ -318,30 +364,36 @@ func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefi
 func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.ConfigMap, error) {
 	cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace}}
 	err := c.Get(ctx, client.ObjectKeyFromObject(&cm), &cm)
+
 	if err == nil {
 		return cm, nil
 	}
+
 	if apierrors.IsNotFound(err) {
 		err = c.Create(ctx, &cm)
 		if err == nil {
 			return cm, nil
 		}
 	}
+
 	return corev1.ConfigMap{}, err
 }
 
 func GetOrCreateSecret(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.Secret, error) {
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace}}
 	err := c.Get(ctx, client.ObjectKeyFromObject(&secret), &secret)
+
 	if err == nil {
 		return secret, nil
 	}
+
 	if apierrors.IsNotFound(err) {
 		err = c.Create(ctx, &secret)
 		if err == nil {
 			return secret, nil
 		}
 	}
+
 	return corev1.Secret{}, err
 }
 

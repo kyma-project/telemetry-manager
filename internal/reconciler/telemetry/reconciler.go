@@ -49,7 +49,6 @@ type MetricsConfig struct {
 }
 
 type WebhookConfig struct {
-	Enabled    bool
 	CertConfig webhookcert.Config
 }
 
@@ -132,7 +131,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			err = fmt.Errorf("failed to update status: %w", statusErr)
 		}
 	}
+
 	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
+
 	return ctrl.Result{Requeue: requeue}, err
 }
 
@@ -157,10 +158,12 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 	if err != nil {
 		return err
 	}
+
 	if !pipelinesPresent {
 		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
 			return fmt.Errorf("failed to delete self-monitor resources: %w", err)
 		}
+
 		return nil
 	}
 
@@ -171,12 +174,14 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		ConfigPath:        selfMonitorConfigPath,
 		AlertRuleFileName: selfMonitorAlertRuleFileName,
 	})
+
 	prometheusConfigYAML, err := yaml.Marshal(prometheusConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
 
 	alertRules := config.MakeRules()
+
 	alertRulesYAML, err := yaml.Marshal(alertRules)
 	if err != nil {
 		return fmt.Errorf("failed to marshal rules: %w", err)
@@ -204,6 +209,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 	if err := r.List(ctx, &allLogPipelines); err != nil {
 		return false, fmt.Errorf("failed to get all log pipelines: %w", err)
 	}
+
 	if len(allLogPipelines.Items) > 0 {
 		return true, nil
 	}
@@ -212,6 +218,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 	if err := r.List(ctx, &allTracePipelines); err != nil {
 		return false, fmt.Errorf("failed to get all trace pipelines: %w", err)
 	}
+
 	if len(allTracePipelines.Items) > 0 {
 		return true, nil
 	}
@@ -220,6 +227,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 	if err := r.List(ctx, &allMetricPipelines); err != nil {
 		return false, fmt.Errorf("failed to get all metric pipelines: %w", err)
 	}
+
 	if len(allMetricPipelines.Items) > 0 {
 		return true, nil
 	}
@@ -231,6 +239,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	if telemetry.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(telemetry, finalizer) {
 			controllerutil.AddFinalizer(telemetry, finalizer)
+
 			if err := r.Update(ctx, telemetry); err != nil {
 				return fmt.Errorf("failed to update telemetry: %w", err)
 			}
@@ -252,6 +261,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 		}
 
 		controllerutil.RemoveFinalizer(telemetry, finalizer)
+
 		if err := r.Update(ctx, telemetry); err != nil {
 			return fmt.Errorf("failed to update telemetry: %w", err)
 		}
@@ -271,10 +281,6 @@ func (r *Reconciler) deleteWebhook(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	if !r.config.Webhook.Enabled {
-		return nil
-	}
-
 	// We skip webhook reconciliation only if no pipelines are remaining. This avoids the risk of certificate expiration while waiting for deletion.
 	if !telemetry.DeletionTimestamp.IsZero() && !r.dependentCRsFound(ctx) {
 		return nil
@@ -288,9 +294,11 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	if err := r.Get(ctx, r.config.Webhook.CertConfig.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
+
 	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference for secret: %w", err)
 	}
+
 	if err := k8sutils.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
@@ -299,6 +307,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	if err := r.Get(ctx, r.config.Webhook.CertConfig.WebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
+
 	if err := k8sutils.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
 		return fmt.Errorf("failed to update webhook: %w", err)
 	}

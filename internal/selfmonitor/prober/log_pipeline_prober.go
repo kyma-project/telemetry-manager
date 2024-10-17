@@ -53,6 +53,7 @@ func (p *LogPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName s
 	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
 	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
 	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
+
 	return !exporterSentLogs && (exporterDroppedLogs || bufferFull)
 }
 
@@ -60,6 +61,7 @@ func (p *LogPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName 
 	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
 	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
 	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
+
 	return exporterSentLogs && (exporterDroppedLogs || bufferFull)
 }
 
@@ -77,6 +79,7 @@ func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) 
 	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
 	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
 	noLogsDelivered := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+
 	return !(bufferInUse || bufferFull || exporterDroppedLogs || noLogsDelivered)
 }
 
