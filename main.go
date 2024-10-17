@@ -316,8 +316,6 @@ func run() error {
 		selfmonitorwebhook.WithLogPipelineSubscriber(logPipelineReconcileTriggerChan),
 		selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 
-	setupLog.Info("Starting manager", "version", version)
-
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
 	}
