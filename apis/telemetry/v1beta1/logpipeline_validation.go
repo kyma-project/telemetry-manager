@@ -10,23 +10,24 @@ import (
 )
 
 var (
+	forbiddenFilters             = []string{"kubernetes", "rewrite_tag"}
 	validHostNamePattern         = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
 	ErrInvalidPipelineDefinition = errors.New("invalid log pipeline definition")
 )
 
-func (lp *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
-	if err := lp.validateOutput(vc.DeniedOutPutPlugins); err != nil {
+func (lp *LogPipeline) Validate() error {
+	if err := lp.validateOutput(); err != nil {
 		return err
 	}
 
-	if err := lp.validateFilters(vc.DeniedFilterPlugins); err != nil {
+	if err := lp.validateFilters(); err != nil {
 		return err
 	}
 
 	return lp.validateInput()
 }
 
-func (lp *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
+func (lp *LogPipeline) validateOutput() error {
 	output := lp.Spec.Output
 	if err := checkSingleOutputPlugin(output); err != nil {
 		return err
@@ -38,7 +39,7 @@ func (lp *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
 		}
 	}
 
-	return validateCustomOutput(deniedOutputPlugins, output.Custom)
+	return validateCustomOutput(output.Custom)
 }
 
 func checkSingleOutputPlugin(output LogPipelineOutput) error {
@@ -84,7 +85,7 @@ func validHostname(host string) bool {
 	return validHostNamePattern.MatchString(host)
 }
 
-func validateCustomOutput(deniedOutputPlugin []string, content string) error {
+func validateCustomOutput(content string) error {
 	if content == "" {
 		return nil
 	}
@@ -99,12 +100,6 @@ func validateCustomOutput(deniedOutputPlugin []string, content string) error {
 	}
 
 	pluginName := section.GetByKey("name").Value
-
-	for _, deniedPlugin := range deniedOutputPlugin {
-		if strings.EqualFold(pluginName, deniedPlugin) {
-			return fmt.Errorf("output plugin '%s' is forbidden. ", pluginName)
-		}
-	}
 
 	if section.ContainsKey("match") {
 		return fmt.Errorf("output plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
@@ -121,9 +116,9 @@ func secretRefAndValueIsPresent(v ValueType) bool {
 	return v.Value != "" && v.ValueFrom != nil
 }
 
-func (lp *LogPipeline) validateFilters(deniedFilterPlugins []string) error {
+func (lp *LogPipeline) validateFilters() error {
 	for _, filterPlugin := range lp.Spec.Filters {
-		if err := validateCustomFilter(filterPlugin.Custom, deniedFilterPlugins); err != nil {
+		if err := validateCustomFilter(filterPlugin.Custom); err != nil {
 			return err
 		}
 	}
@@ -131,7 +126,7 @@ func (lp *LogPipeline) validateFilters(deniedFilterPlugins []string) error {
 	return nil
 }
 
-func validateCustomFilter(content string, deniedFilterPlugins []string) error {
+func validateCustomFilter(content string) error {
 	if content == "" {
 		return nil
 	}
@@ -147,8 +142,8 @@ func validateCustomFilter(content string, deniedFilterPlugins []string) error {
 
 	pluginName := section.GetByKey("name").Value
 
-	for _, deniedPlugin := range deniedFilterPlugins {
-		if strings.EqualFold(pluginName, deniedPlugin) {
+	for _, forbiddenFilter := range forbiddenFilters {
+		if strings.EqualFold(pluginName, forbiddenFilter) {
 			return fmt.Errorf("filter plugin '%s' is forbidden. ", pluginName)
 		}
 	}

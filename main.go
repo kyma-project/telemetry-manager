@@ -18,11 +18,9 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-logr/zapr"
@@ -32,12 +30,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,13 +50,9 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -72,76 +66,39 @@ import (
 )
 
 var (
-	ErrInvalidLogLevel = errors.New("--log-level has to be one of debug, info, warn, error, fatal")
-
-	certDir            string
-	logLevel           string
 	scheme             = runtime.NewScheme()
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
-	enableWebhook      bool
+	//TODO: replace with build version based on git revision
+	version = "main"
 
-	maxLogPipelines    int
-	maxTracePipelines  int
-	maxMetricPipelines int
-
-	traceGatewayImage                string
-	traceGatewayPriorityClass        string
-	traceGatewayCPULimit             string
-	traceGatewayDynamicCPULimit      string
-	traceGatewayMemoryLimit          string
-	traceGatewayDynamicMemoryLimit   string
-	traceGatewayCPURequest           string
-	traceGatewayDynamicCPURequest    string
-	traceGatewayMemoryRequest        string
-	traceGatewayDynamicMemoryRequest string
-
-	fluentBitDeniedFilterPlugins string
-	fluentBitDeniedOutputPlugins string
-	fluentBitMemoryBufferLimit   string
-	fluentBitFsBufferLimit       string
-	fluentBitCPULimit            string
-	fluentBitMemoryLimit         string
-	fluentBitCPURequest          string
-	fluentBitMemoryRequest       string
-	fluentBitImage               string
-	fluentBitExporterImage       string
-	fluentBitPriorityClassName   string
-
-	metricGatewayImage                string
-	metricGatewayPriorityClass        string
-	metricGatewayCPULimit             string
-	metricGatewayDynamicCPULimit      string
-	metricGatewayMemoryLimit          string
-	metricGatewayDynamicMemoryLimit   string
-	metricGatewayCPURequest           string
-	metricGatewayDynamicCPURequest    string
-	metricGatewayMemoryRequest        string
-	metricGatewayDynamicMemoryRequest string
-
-	selfMonitorImage         string
-	selfMonitorPriorityClass string
-
+	// Operator flags
+	certDir                   string
 	enableV1Beta1LogPipelines bool
 
-	version = "main"
+	highPriorityClassName   string
+	normalPriorityClassName string
+
+	fluentBitExporterImage string
+	fluentBitImage         string
+	otelCollectorImage     string
+	selfMonitorImage       string
 )
 
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241001-21f80ba0"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.8"
-	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.9"
+	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
 
-	metricOTLPServiceName = "telemetry-otlp-metrics"
-	traceOTLPServiceName  = "telemetry-otlp-traces"
-	webhookServiceName    = "telemetry-manager-webhook"
-
-	selfMonitorName = "telemetry-self-monitor"
-
-	defaultMaxNumberOfPipelines    = 3
-	defaultMaxNumberOfLogPipelines = 5
-	webhookServerPort              = 9443
+	cacheSyncPeriod           = 1 * time.Minute
+	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
+	telemetryNamespaceDefault = "default"
+	metricOTLPServiceName     = "telemetry-otlp-metrics"
+	selfMonitorName           = "telemetry-self-monitor"
+	traceOTLPServiceName      = "telemetry-otlp-traces"
+	webhookServerPort         = 9443
+	webhookServiceName        = "telemetry-manager-webhook"
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -153,14 +110,6 @@ func init() {
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
-}
-
-func getEnvOrDefault(envVar string, defaultValue string) string {
-	if value, ok := os.LookupEnv(envVar); ok {
-		return value
-	}
-
-	return defaultValue
 }
 
 // +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logpipelines,verbs=get;list;watch;create;update;patch;delete
@@ -246,64 +195,36 @@ func main() {
 }
 
 func run() error {
-	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
-	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MANAGER_NAMESPACE", "default"), "Namespace of the manager")
-	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
-
-	flag.StringVar(&traceGatewayImage, "trace-gateway-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayPriorityClass, "trace-gateway-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayCPULimit, "trace-gateway-cpu-limit", "700m", "CPU limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-gateway-dynamic-cpu-limit", "500m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryLimit, "trace-gateway-memory-limit", "500Mi", "Memory limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-gateway-dynamic-memory-limit", "1500Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayCPURequest, "trace-gateway-cpu-request", "100m", "CPU request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-gateway-dynamic-cpu-request", "100m", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryRequest, "trace-gateway-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-gateway-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.IntVar(&maxTracePipelines, "trace-gateway-pipelines", defaultMaxNumberOfPipelines, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
-
-	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayCPULimit, "metric-gateway-cpu-limit", "900m", "CPU limit for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayDynamicCPULimit, "metric-gateway-dynamic-cpu-limit", "100m", "Additional CPU limit for metrics OpenTelemetry Collector per MetricPipeline")
-	flag.StringVar(&metricGatewayMemoryLimit, "metric-gateway-memory-limit", "512Mi", "Memory limit for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayDynamicMemoryLimit, "metric-gateway-dynamic-memory-limit", "512Mi", "Additional memory limit for metrics OpenTelemetry Collector per MetricPipeline")
-	flag.StringVar(&metricGatewayCPURequest, "metric-gateway-cpu-request", "25m", "CPU request for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayDynamicCPURequest, "metric-gateway-dynamic-cpu-request", "0", "Additional CPU request for metrics OpenTelemetry Collector per MetricPipeline")
-	flag.StringVar(&metricGatewayMemoryRequest, "metric-gateway-memory-request", "32Mi", "Memory request for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayDynamicMemoryRequest, "metric-gateway-dynamic-memory-request", "0", "Additional memory request for metrics OpenTelemetry Collector per MetricPipeline")
-	flag.IntVar(&maxMetricPipelines, "metric-gateway-pipelines", defaultMaxNumberOfPipelines, "Maximum number of MetricPipelines to be created. If 0, no limit is applied.")
-
-	flag.StringVar(&fluentBitDeniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
-	flag.StringVar(&fluentBitDeniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
-	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
-	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
-	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
-	flag.StringVar(&fluentBitMemoryLimit, "fluent-bit-memory-limit", "1Gi", "Memory limit for fluent-bit")
-	flag.StringVar(&fluentBitCPURequest, "fluent-bit-cpu-request", "100m", "CPU request for fluent-bit")
-	flag.StringVar(&fluentBitMemoryRequest, "fluent-bit-memory-request", "50Mi", "Memory request for fluent-bit")
-	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
-	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
-	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", defaultMaxNumberOfLogPipelines, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
-
-	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
-	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
-
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
+	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
+
+	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
+	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
+
+	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
+	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
+	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOTelCollectorImage, "Image for OpenTelemetry Collector")
+	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
 
-	if err := validateFlags(); err != nil {
-		return fmt.Errorf("invalid flag provided: %w", err)
+	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
+	if telemetryNamespace == "" {
+		telemetryNamespace = telemetryNamespaceDefault
 	}
 
-	if err := initLogger(); err != nil {
-		return fmt.Errorf("failed to initialize logger: %w", err)
+	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
+
+	zapLogger, err := logger.New(overrides.AtomicLevel())
+	if err != nil {
+		return fmt.Errorf("failed to create logger: %w", err)
 	}
 
-	syncPeriod := 1 * time.Minute
+	defer zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
+
+	ctrl.SetLogger(zapr.NewLogger(zapLogger))
+
+	setupLog.Info("Starting Telemetry Manager", "version", version)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
@@ -318,7 +239,7 @@ func run() error {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: &syncPeriod,
+			SyncPeriod: ptr.To(cacheSyncPeriod),
 
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
@@ -347,17 +268,17 @@ func run() error {
 	}
 
 	tracePipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	if err := enableTracePipelineController(mgr, tracePipelineReconcileTriggerChan); err != nil {
+	if err := setupTracePipelineController(mgr, tracePipelineReconcileTriggerChan); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
 	metricPipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	if err := enableMetricPipelineController(mgr, metricPipelineReconcileTriggerChan); err != nil {
+	if err := setupMetricPipelineController(mgr, metricPipelineReconcileTriggerChan); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
 	logPipelineReconcileTriggerChan := make(chan event.GenericEvent)
-	if err := enableLogPipelineController(mgr, logPipelineReconcileTriggerChan); err != nil {
+	if err := setupLogPipelineController(mgr, logPipelineReconcileTriggerChan); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
@@ -378,20 +299,22 @@ func run() error {
 		return fmt.Errorf("failed to add ready check: %w", err)
 	}
 
-	if enableWebhook {
-		if err := enableWebhookServer(mgr, webhookConfig); err != nil {
-			return fmt.Errorf("failed to enable webhook server: %w", err)
-		}
+	if err := ensureWebhookCert(mgr, webhookConfig); err != nil {
+		return fmt.Errorf("failed to enable webhook server: %w", err)
 	}
 
-	if enableWebhook {
-		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
-			mgr.GetClient(),
-			selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
-			selfmonitorwebhook.WithMetricPipelineSubscriber(metricPipelineReconcileTriggerChan),
-			selfmonitorwebhook.WithLogPipelineSubscriber(logPipelineReconcileTriggerChan),
-			selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
-	}
+	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{
+		Handler: createLogPipelineValidator(mgr.GetClient()),
+	})
+	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
+		Handler: createLogParserValidator(mgr.GetClient()),
+	})
+	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
+		mgr.GetClient(),
+		selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
+		selfmonitorwebhook.WithMetricPipelineSubscriber(metricPipelineReconcileTriggerChan),
+		selfmonitorwebhook.WithLogPipelineSubscriber(logPipelineReconcileTriggerChan),
+		selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
@@ -400,32 +323,8 @@ func run() error {
 	return nil
 }
 
-func initLogger() error {
-	parsedLevel, err := zapcore.ParseLevel(logLevel)
-	if err != nil {
-		return fmt.Errorf("invalid log level: %w", err)
-	}
-
-	overrides.AtomicLevel().SetLevel(parsedLevel)
-	ctrLogger, err := logger.New(overrides.AtomicLevel())
-
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger))
-
-	if err != nil {
-		return fmt.Errorf("failed to create logger: %w", err)
-	}
-
-	defer func() {
-		if syncErr := ctrLogger.Sync(); syncErr != nil {
-			setupLog.Error(syncErr, "Failed to flush logger")
-		}
-	}()
-
-	return nil
-}
-
 func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) error {
-	setupLog.WithValues("version", version).Info("Starting with telemetry manager controller")
+	setupLog.Info("Setting up telemetry controller")
 
 	telemetryController := operator.NewTelemetryController(
 		mgr.GetClient(),
@@ -455,12 +354,7 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 	return nil
 }
 
-func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	setupLog.Info("Starting with logging controllers")
-
-	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
-	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
-
+func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
 	if enableV1Beta1LogPipelines {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
@@ -478,21 +372,18 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 		}
 	}
 
+	setupLog.Info("Setting up logpipeline controller")
+
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.LogPipelineControllerConfig{
-			ExporterImage:          fluentBitExporterImage,
-			FluentBitCPULimit:      fluentBitCPULimit,
-			FluentBitCPURequest:    fluentBitCPURequest,
-			FluentBitMemoryLimit:   fluentBitMemoryLimit,
-			FluentBitMemoryRequest: fluentBitMemoryRequest,
-			FluentBitImage:         fluentBitImage,
-			PipelineDefaults:       createPipelineDefaults(),
-			PriorityClassName:      fluentBitPriorityClassName,
-			SelfMonitorName:        selfMonitorName,
-			TelemetryNamespace:     telemetryNamespace,
-			RestConfig:             mgr.GetConfig(),
+			ExporterImage:      fluentBitExporterImage,
+			FluentBitImage:     fluentBitImage,
+			PriorityClassName:  highPriorityClassName,
+			RestConfig:         mgr.GetConfig(),
+			SelfMonitorName:    selfMonitorName,
+			TelemetryNamespace: telemetryNamespace,
 		},
 	)
 	if err != nil {
@@ -503,11 +394,15 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 		return fmt.Errorf("failed to setup logpipeline controller: %w", err)
 	}
 
+	setupLog.Info("Setting up logparser controller")
+
 	logParserController := telemetrycontrollers.NewLogParserController(
 		mgr.GetClient(),
 		telemetrycontrollers.LogParserControllerConfig{
 			TelemetryNamespace: telemetryNamespace,
-		})
+		},
+	)
+
 	if err := logParserController.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup logparser controller: %w", err)
 	}
@@ -515,38 +410,19 @@ func enableLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-cha
 	return nil
 }
 
-func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	setupLog.Info("Starting with tracing controller")
+func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.TracePipelineControllerConfig{
-			Config: tracepipeline.Config{
-				Gateway: otelcollector.GatewayConfig{
-					Config: otelcollector.Config{
-						Namespace: telemetryNamespace,
-						BaseName:  "telemetry-trace-gateway",
-					},
-					Deployment: otelcollector.DeploymentConfig{
-						Image:                traceGatewayImage,
-						PriorityClassName:    traceGatewayPriorityClass,
-						BaseCPULimit:         resource.MustParse(traceGatewayCPULimit),
-						DynamicCPULimit:      resource.MustParse(traceGatewayDynamicCPULimit),
-						BaseMemoryLimit:      resource.MustParse(traceGatewayMemoryLimit),
-						DynamicMemoryLimit:   resource.MustParse(traceGatewayDynamicMemoryLimit),
-						BaseCPURequest:       resource.MustParse(traceGatewayCPURequest),
-						DynamicCPURequest:    resource.MustParse(traceGatewayDynamicCPURequest),
-						BaseMemoryRequest:    resource.MustParse(traceGatewayMemoryRequest),
-						DynamicMemoryRequest: resource.MustParse(traceGatewayDynamicMemoryRequest),
-					},
-					OTLPServiceName: traceOTLPServiceName,
-				},
-				MaxPipelines: maxTracePipelines,
-			},
-			RestConfig:         mgr.GetConfig(),
-			TelemetryNamespace: telemetryNamespace,
-			SelfMonitorName:    selfMonitorName,
+			RestConfig:                    mgr.GetConfig(),
+			OTelCollectorImage:            otelCollectorImage,
+			SelfMonitorName:               selfMonitorName,
+			TelemetryNamespace:            telemetryNamespace,
+			TraceGatewayPriorityClassName: normalPriorityClassName,
+			TraceGatewayServiceName:       traceOTLPServiceName,
 		},
 	)
 	if err != nil {
@@ -560,53 +436,21 @@ func enableTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 	return nil
 }
 
-func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	setupLog.Info("Starting with metrics controller")
+func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.MetricPipelineControllerConfig{
-			Config: metricpipeline.Config{
-				Agent: otelcollector.AgentConfig{
-					Config: otelcollector.Config{
-						Namespace: telemetryNamespace,
-						BaseName:  "telemetry-metric-agent",
-					},
-					DaemonSet: otelcollector.DaemonSetConfig{
-						Image:             metricGatewayImage,
-						PriorityClassName: metricGatewayPriorityClass,
-						CPULimit:          resource.MustParse("1"),
-						MemoryLimit:       resource.MustParse("1200Mi"),
-						CPURequest:        resource.MustParse("15m"),
-						MemoryRequest:     resource.MustParse("50Mi"),
-					},
-				},
-				Gateway: otelcollector.GatewayConfig{
-					Config: otelcollector.Config{
-						Namespace: telemetryNamespace,
-						BaseName:  "telemetry-metric-gateway",
-					},
-					Deployment: otelcollector.DeploymentConfig{
-						Image:                metricGatewayImage,
-						PriorityClassName:    metricGatewayPriorityClass,
-						BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
-						DynamicCPULimit:      resource.MustParse(metricGatewayDynamicCPULimit),
-						BaseMemoryLimit:      resource.MustParse(metricGatewayMemoryLimit),
-						DynamicMemoryLimit:   resource.MustParse(metricGatewayDynamicMemoryLimit),
-						BaseCPURequest:       resource.MustParse(metricGatewayCPURequest),
-						DynamicCPURequest:    resource.MustParse(metricGatewayDynamicCPURequest),
-						BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
-						DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
-					},
-					OTLPServiceName: metricOTLPServiceName,
-				},
-				MaxPipelines:  maxMetricPipelines,
-				ModuleVersion: version,
-			},
-			RestConfig:         mgr.GetConfig(),
-			TelemetryNamespace: telemetryNamespace,
-			SelfMonitorName:    selfMonitorName,
+			MetricAgentPriorityClassName:   highPriorityClassName,
+			MetricGatewayPriorityClassName: normalPriorityClassName,
+			MetricGatewayServiceName:       metricOTLPServiceName,
+			ModuleVersion:                  version,
+			OTelCollectorImage:             otelCollectorImage,
+			RestConfig:                     mgr.GetConfig(),
+			SelfMonitorName:                selfMonitorName,
+			TelemetryNamespace:             telemetryNamespace,
 		},
 	)
 	if err != nil {
@@ -620,7 +464,7 @@ func enableMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-
 	return nil
 }
 
-func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) error {
+func ensureWebhookCert(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) error {
 	// Create own client since manager might not be started while using
 	clientOptions := client.Options{
 		Scheme: scheme,
@@ -644,22 +488,18 @@ func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
 
-func validateFlags() error {
-	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
-		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")
-	}
-
-	return nil
-}
-
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
+	// TODO: Align max log pipeline enforcement with the method used in the TracePipeline/MetricPipeline controllers,
+	// replacing the current validating webhook approach.
+	const maxLogPipelines = 5
+
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
 		validation.NewVariablesValidator(client),
 		validation.NewMaxPipelinesValidator(maxLogPipelines),
 		validation.NewFilesValidator(),
 		admission.NewDecoder(scheme),
-		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(fluentBitDeniedOutputPlugins), DeniedFilterPlugins: parsePlugins(fluentBitDeniedFilterPlugins)})
+	)
 }
 
 func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
@@ -675,7 +515,7 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 			Namespace: telemetryNamespace,
 			Deployment: selfmonitor.DeploymentConfig{
 				Image:             selfMonitorImage,
-				PriorityClassName: selfMonitorPriorityClass,
+				PriorityClassName: normalPriorityClassName,
 			},
 		},
 		WebhookScheme: "https",
@@ -683,22 +523,8 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	}
 }
 
-func createPipelineDefaults() builder.PipelineDefaults {
-	return builder.PipelineDefaults{
-		InputTag:          "tele",
-		MemoryBufferLimit: fluentBitMemoryBufferLimit,
-		StorageType:       "filesystem",
-		FsBufferLimit:     fluentBitFsBufferLimit,
-	}
-}
-
-func parsePlugins(s string) []string {
-	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
-}
-
 func createWebhookConfig() telemetry.WebhookConfig {
 	return telemetry.WebhookConfig{
-		Enabled: enableWebhook,
 		CertConfig: webhookcert.Config{
 			CertDir: certDir,
 			ServiceName: types.NamespacedName{
