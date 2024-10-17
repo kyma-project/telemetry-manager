@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
