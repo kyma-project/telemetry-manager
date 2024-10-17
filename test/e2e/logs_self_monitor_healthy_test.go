@@ -3,12 +3,6 @@
 package e2e
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
@@ -20,6 +14,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsHealthy), Ordered, func() {
@@ -101,17 +100,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsHealthy), Ordere
 				// Pushing metrics to the metric gateway triggers an alert.
 				// It makes the self-monitor call the webhook, which in turn increases the counter.
 				assert.ManagerEmitsMetric(proxyClient,
-					Equal("controller_runtime_webhook_requests_total"),
+					HaveName(Equal("controller_runtime_webhook_requests_total")),
 					SatisfyAll(
-						WithLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
-						WithValue(BeNumerically(">", 0)),
+						HaveLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
+						HaveMetricValue(BeNumerically(">", 0)),
 					))
 			})
 
 			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
-				assert.ManagerEmitsMetric(proxyClient,
-					Equal("telemetry_self_monitor_prober_requests_total"),
-					WithValue(BeNumerically(">", 0)),
+				assert.ManagerEmitsMetric(
+					proxyClient,
+					HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
+					HaveMetricValue(BeNumerically(">", 0)),
 				)
 			})
 		})
