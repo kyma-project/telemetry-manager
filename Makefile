@@ -51,6 +51,7 @@ TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
 YQ               := $(TOOLS_BIN_DIR)/yq
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
 WSL				 := $(TOOLS_BIN_DIR)/wsl
+K3D              := $(TOOLS_BIN_DIR)/k3d
 
 # Sub-makefile
 include hack/make/provision.mk
