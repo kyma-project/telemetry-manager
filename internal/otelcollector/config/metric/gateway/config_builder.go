@@ -77,21 +77,14 @@ func declareComponentsForMetricPipeline(
 	opts BuildOptions,
 ) error {
 	declareSingletonKymaStatsReceiverCreator(cfg, opts)
-	declareSingletonK8sClusterReceiverCreator(pipeline, cfg, opts)
 	declareDiagnosticMetricsDropFilters(pipeline, cfg)
 	declareInputSourceFilters(pipeline, cfg)
 	declareRuntimeResourcesFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
-	declareInstrumentationScopeTransform(pipeline, cfg, opts)
+	declareInstrumentationScopeTransform(cfg, opts)
 	declareConnectors(pipeline.Name, cfg)
 
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
-}
-
-func declareSingletonK8sClusterReceiverCreator(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
-	if metric.IsRuntimeInputEnabled(pipeline.Spec.Input) {
-		cfg.Receivers.SingletonK8sClusterReceiverCreator = makeSingletonK8sClusterReceiverCreatorConfig(opts.GatewayNamespace)
-	}
 }
 
 func declareSingletonKymaStatsReceiverCreator(cfg *Config, opts BuildOptions) {
@@ -148,10 +141,6 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeVolumeInputEnabled(input) {
 		cfg.Processors.DropRuntimeVolumeMetrics = makeDropRuntimeVolumeMetricsConfig()
 	}
-
-	if metric.IsRuntimeInputEnabled(input) {
-		cfg.Processors.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
-	}
 }
 
 func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
@@ -181,12 +170,8 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 	}
 }
 
-func declareInstrumentationScopeTransform(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, opts BuildOptions) {
-	cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(metric.InputSourceKyma, opts.InstrumentationScopeVersion)
-
-	if metric.IsRuntimeInputEnabled(pipeline.Spec.Input) {
-		cfg.Processors.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(metric.InputSourceK8sCluster, opts.InstrumentationScopeVersion)
-	}
+func declareInstrumentationScopeTransform(cfg *Config, opts BuildOptions) {
+	cfg.Processors.SetInstrumentationScopeKyma = metric.MakeInstrumentationScopeProcessor(opts.InstrumentationScopeVersion, metric.InputSourceKyma)
 }
 
 func declareConnectors(pipelineName string, cfg *Config) {

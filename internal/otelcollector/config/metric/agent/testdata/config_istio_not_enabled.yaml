@@ -19,11 +19,13 @@ service:
         metrics/runtime:
             receivers:
                 - kubeletstats
+                - singleton_receiver_creator/k8s_cluster
             processors:
                 - memory_limiter
                 - resource/delete-service-name
                 - transform/set-instrumentation-scope-runtime
                 - transform/insert-skip-enrichment-attribute
+                - filter/drop-k8s-cluster-metrics
                 - batch
             exporters:
                 - otlp
@@ -75,6 +77,35 @@ receivers:
                 enabled: false
         extra_metadata_labels:
             - k8s.volume.type
+    singleton_receiver_creator/k8s_cluster:
+        auth_type: serviceAccount
+        leader_election:
+            lease_name: telemetry-metric-agent-k8scluster
+            lease_namespace: ""
+        receiver:
+            k8s_cluster:
+                auth_type: serviceAccount
+                collection_interval: 30s
+                node_conditions_to_report: []
+                metrics:
+                    k8s.container.storage_request:
+                        enabled: false
+                    k8s.container.storage_limit:
+                        enabled: false
+                    k8s.container.ephemeralstorage_request:
+                        enabled: false
+                    k8s.container.ephemeralstorage_limit:
+                        enabled: false
+                    k8s.container.restarts:
+                        enabled: false
+                    k8s.container.ready:
+                        enabled: false
+                    k8s.namespace.phase:
+                        enabled: false
+                    k8s.replication_controller.available:
+                        enabled: false
+                    k8s.replication_controller.desired:
+                        enabled: false
     prometheus/app-pods:
         config:
             scrape_configs:
@@ -188,6 +219,8 @@ processors:
               statements:
                 - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
                 - set(name, "io.kyma-project.telemetry/runtime") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+                - set(name, "io.kyma-project.telemetry/runtime") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
     transform/set-instrumentation-scope-prometheus:
         error_mode: ignore
         metric_statements:
@@ -203,6 +236,10 @@ processors:
                 - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
               conditions:
                 - IsMatch(name, "^k8s.node.*")
+    filter/drop-k8s-cluster-metrics:
+        metrics:
+            metric:
+                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.(deployment|cronjob|daemonset|hpa|job|replicaset|resource_quota|statefulset).*")
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
