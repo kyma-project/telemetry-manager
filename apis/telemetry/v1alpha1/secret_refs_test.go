@@ -79,6 +79,42 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 				{Name: "creds", Namespace: "default", Key: "password"},
 			},
 		},
+		{
+			name: "http output secret refs (with missing keys)",
+			given: LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cls",
+				},
+				Spec: LogPipelineSpec{
+					Output: Output{
+						HTTP: &HTTPOutput{
+							Host: ValueType{
+								ValueFrom: &ValueFromSource{
+									SecretKeyRef: &SecretKeyRef{
+										Name: "creds", Namespace: "default",
+									},
+								},
+							},
+							User: ValueType{
+								ValueFrom: &ValueFromSource{
+									SecretKeyRef: &SecretKeyRef{
+										Name: "creds", Namespace: "default",
+									},
+								},
+							},
+							Password: ValueType{
+								ValueFrom: &ValueFromSource{
+									SecretKeyRef: &SecretKeyRef{
+										Name: "creds", Namespace: "default",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []SecretKeyRef{},
+		},
 	}
 
 	for _, test := range tests {
