@@ -32,9 +32,9 @@ const (
 
 var (
 	storageVolumeSize = resource.MustParse("1000Mi")
-	cpuRequest        = resource.MustParse("0.1")
+	cpuRequest        = resource.MustParse("10m")
 	memoryRequest     = resource.MustParse("50Mi")
-	cpuLimit          = resource.MustParse("0.2")
+	cpuLimit          = resource.MustParse("200m")
 	memoryLimit       = resource.MustParse("180Mi")
 )
 
