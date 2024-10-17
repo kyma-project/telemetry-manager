@@ -208,8 +208,6 @@ func run() error {
 
 	flag.Parse()
 
-	setupLog.Info("Starting Telemetry Manager", "version", version)
-
 	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
 	if telemetryNamespace == "" {
 		telemetryNamespace = telemetryNamespaceDefault
@@ -225,6 +223,8 @@ func run() error {
 	defer zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
 
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
+
+	setupLog.Info("Starting Telemetry Manager", "version", version)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
