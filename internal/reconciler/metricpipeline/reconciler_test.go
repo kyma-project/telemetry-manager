@@ -29,7 +29,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -48,25 +47,9 @@ func TestReconcile(t *testing.T) {
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
 	testConfig := Config{
-		Gateway: otelcollector.GatewayConfig{
-			Config: otelcollector.Config{
-				BaseName:  "gateway",
-				Namespace: "default",
-			},
-			Deployment: otelcollector.DeploymentConfig{
-				Image: "otel/opentelemetry-collector-contrib",
-			},
-			OTLPServiceName: "otlp",
-		},
-		Agent: otelcollector.AgentConfig{
-			Config: otelcollector.Config{
-				BaseName:  "agent",
-				Namespace: "default",
-			},
-			DaemonSet: otelcollector.DaemonSetConfig{
-				Image: "otel/opentelemetry-collector-contrib",
-			},
-		},
+		AgentName:          "agent",
+		GatewayName:        "gateway",
+		TelemetryNamespace: "default",
 	}
 
 	t.Run("metric gateway deployment is not ready", func(t *testing.T) {
