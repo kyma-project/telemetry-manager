@@ -127,9 +127,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-manager")),
-						WithLevel(Equal("INFO")),
+					HaveFlatLogs(ContainElement(SatisfyAll(
+						HavePodName(ContainSubstring("telemetry-manager")),
+						HaveLevel(Equal("INFO")),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -141,10 +141,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-manager")),
-						WithLevel(Equal("DEBUG")),
-						WithTimestamp(BeTemporally(">=", now)),
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						HavePodName(ContainSubstring("telemetry-manager")),
+						HaveLevel(Equal("DEBUG")),
+						HaveTimestamp(BeTemporally(">=", now)),
 					)))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -177,10 +177,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-manager")),
-						WithLevel(Equal("DEBUG")),
-						WithTimestamp(BeTemporally(">=", now)),
+					HaveFlatLogs(ContainElement(SatisfyAll(
+						HavePodName(ContainSubstring("telemetry-manager")),
+						HaveLevel(Equal("DEBUG")),
+						HaveTimestamp(BeTemporally(">=", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

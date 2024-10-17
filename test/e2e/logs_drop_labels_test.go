@@ -87,8 +87,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(
-					WithKubernetesLabels(HaveKeyWithValue("env", "dev")))),
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(
+					ContainElement(HaveKubernetesLabels(HaveKeyWithValue("env", "dev")))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -98,8 +98,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
-					WithKubernetesAnnotations(Not(BeEmpty()))))),
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(Not(ContainElement(
+					HaveKubernetesAnnotations(Not(BeEmpty()))))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
