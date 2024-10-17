@@ -25,7 +25,6 @@ service:
                 - resource/delete-service-name
                 - transform/set-instrumentation-scope-runtime
                 - transform/insert-skip-enrichment-attribute
-                - filter/drop-k8s-cluster-metrics
                 - batch
             exporters:
                 - otlp
@@ -102,9 +101,27 @@ receivers:
                         enabled: false
                     k8s.namespace.phase:
                         enabled: false
+                    k8s.hpa.current_replicas:
+                        enabled: false
+                    k8s.hpa.desired_replicas:
+                        enabled: false
+                    k8s.hpa.min_replicas:
+                        enabled: false
+                    k8s.hpa.max_replicas:
+                        enabled: false
+                    k8s.replicaset.available:
+                        enabled: false
+                    k8s.replicaset.desired:
+                        enabled: false
                     k8s.replication_controller.available:
                         enabled: false
                     k8s.replication_controller.desired:
+                        enabled: false
+                    k8s.resource_quota.hard_limit:
+                        enabled: false
+                    k8s.resource_quota.used:
+                        enabled: false
+                    k8s.cronjob.active_jobs:
                         enabled: false
     prometheus/app-pods:
         config:
@@ -236,10 +253,10 @@ processors:
                 - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
               conditions:
                 - IsMatch(name, "^k8s.node.*")
-    filter/drop-k8s-cluster-metrics:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.(deployment|cronjob|daemonset|hpa|job|replicaset|resource_quota|statefulset).*")
+                - IsMatch(name, "^k8s.statefulset.*")
+                - IsMatch(name, "^k8s.daemonset.*")
+                - IsMatch(name, "^k8s.deployment.*")
+                - IsMatch(name, "^k8s.job.*")
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
