@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,8 +67,8 @@ import (
 
 var (
 	scheme             = runtime.NewScheme()
-	setupLog           = ctrl.Log.WithName("setup").WithValues("version", version)
-	telemetryNamespace = "default"
+	setupLog           = ctrl.Log.WithName("setup")
+	telemetryNamespace string
 	//TODO: replace with build version based on git revision
 	version = "main"
 
@@ -90,12 +91,14 @@ const (
 	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
 
-	telemetryNamespaceEnvVar = "MANAGER_NAMESPACE"
-	metricOTLPServiceName    = "telemetry-otlp-metrics"
-	selfMonitorName          = "telemetry-self-monitor"
-	traceOTLPServiceName     = "telemetry-otlp-traces"
-	webhookServerPort        = 9443
-	webhookServiceName       = "telemetry-manager-webhook"
+	cacheSyncPeriod           = 1 * time.Minute
+	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
+	telemetryNamespaceDefault = "default"
+	metricOTLPServiceName     = "telemetry-otlp-metrics"
+	selfMonitorName           = "telemetry-self-monitor"
+	traceOTLPServiceName      = "telemetry-otlp-traces"
+	webhookServerPort         = 9443
+	webhookServiceName        = "telemetry-manager-webhook"
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -205,7 +208,12 @@ func run() error {
 
 	flag.Parse()
 
-	telemetryNamespace, _ = os.LookupEnv(telemetryNamespaceEnvVar)
+	setupLog.Info("Starting Telemetry Manager", "version", version)
+
+	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
+	if telemetryNamespace == "" {
+		telemetryNamespace = telemetryNamespaceDefault
+	}
 
 	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
 
@@ -217,8 +225,6 @@ func run() error {
 	defer zapLogger.Sync() //nolint:errcheck // if flusing logs fails there is nothing else	we can do
 
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
-
-	syncPeriod := 1 * time.Minute
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
@@ -233,7 +239,7 @@ func run() error {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: &syncPeriod,
+			SyncPeriod: ptr.To(cacheSyncPeriod),
 
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
