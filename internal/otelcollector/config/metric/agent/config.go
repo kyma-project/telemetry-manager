@@ -69,8 +69,22 @@ type K8sClusterMetricsConfig struct {
 	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts"`
 	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready"`
 	K8sNamespacePhase                   MetricConfig `yaml:"k8s.namespace.phase"`
-	K8sReplicationControllerAvailable   MetricConfig `yaml:"k8s.replication_controller.available"`
-	K8sReplicationControllerDesired     MetricConfig `yaml:"k8s.replication_controller.desired"`
+	// Disable HPA Metrics by default
+	K8sHPACurrentReplicas MetricConfig `yaml:"k8s.hpa.current_replicas"`
+	K8sHPADesiredReplicas MetricConfig `yaml:"k8s.hpa.desired_replicas"`
+	K8sHPAMinReplicas     MetricConfig `yaml:"k8s.hpa.min_replicas"`
+	K8sHPAMaxReplicas     MetricConfig `yaml:"k8s.hpa.max_replicas"`
+	// Disable ReplicaSet metrics by default
+	K8sReplicaSetAvailable MetricConfig `yaml:"k8s.replicaset.available"`
+	K8sReplicaSetDesired   MetricConfig `yaml:"k8s.replicaset.desired"`
+	// Disable Replication Controller metrics by default
+	K8sReplicationControllerAvailable MetricConfig `yaml:"k8s.replication_controller.available"`
+	K8sReplicationControllerDesired   MetricConfig `yaml:"k8s.replication_controller.desired"`
+	// Disable Resource Quota metrics by default
+	K8sResourceQuotaHardLimit MetricConfig `yaml:"k8s.resource_quota.hard_limit"`
+	K8sResourceQuotaUsed      MetricConfig `yaml:"k8s.resource_quota.used"`
+	// Disable Cronjob metrics by default
+	K8sCronJobActiveJobs MetricConfig `yaml:"k8s.cronjob.active_jobs"`
 }
 
 type K8sClusterReceiver struct {
@@ -161,7 +175,6 @@ type Processors struct {
 	SetInstrumentationScopePrometheus *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-prometheus,omitempty"`
 	SetInstrumentationScopeIstio      *metric.TransformProcessor `yaml:"transform/set-instrumentation-scope-istio,omitempty"`
 	InsertSkipEnrichmentAttribute     *metric.TransformProcessor `yaml:"transform/insert-skip-enrichment-attribute,omitempty"`
-	DropK8sClusterMetrics             *FilterProcessor           `yaml:"filter/drop-k8s-cluster-metrics,omitempty"`
 	DropNonPVCVolumesMetrics          *FilterProcessor           `yaml:"filter/drop-non-pvc-volumes-metrics,omitempty"`
 }
 

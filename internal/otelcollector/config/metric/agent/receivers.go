@@ -63,15 +63,23 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 
 func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *SingletonK8sClusterReceiverCreator {
 	metricsToDrop := K8sClusterMetricsConfig{
-		K8sContainerStorageRequest:          MetricConfig{false},
-		K8sContainerStorageLimit:            MetricConfig{false},
-		K8sContainerEphemeralStorageRequest: MetricConfig{false},
-		K8sContainerEphemeralStorageLimit:   MetricConfig{false},
-		K8sContainerRestarts:                MetricConfig{false},
-		K8sContainerReady:                   MetricConfig{false},
-		K8sNamespacePhase:                   MetricConfig{false},
-		K8sReplicationControllerAvailable:   MetricConfig{false},
-		K8sReplicationControllerDesired:     MetricConfig{false},
+		K8sContainerStorageRequest:          MetricConfig{Enabled: false},
+		K8sContainerStorageLimit:            MetricConfig{Enabled: false},
+		K8sContainerEphemeralStorageRequest: MetricConfig{Enabled: false},
+		K8sContainerEphemeralStorageLimit:   MetricConfig{Enabled: false},
+		K8sContainerRestarts:                MetricConfig{Enabled: false},
+		K8sContainerReady:                   MetricConfig{Enabled: false},
+		K8sNamespacePhase:                   MetricConfig{Enabled: false},
+		K8sHPACurrentReplicas:               MetricConfig{Enabled: false},
+		K8sHPADesiredReplicas:               MetricConfig{Enabled: false},
+		K8sHPAMinReplicas:                   MetricConfig{Enabled: false},
+		K8sHPAMaxReplicas:                   MetricConfig{Enabled: false},
+		K8sReplicaSetAvailable:              MetricConfig{Enabled: false},
+		K8sReplicaSetDesired:                MetricConfig{Enabled: false},
+		K8sReplicationControllerAvailable:   MetricConfig{Enabled: false},
+		K8sReplicationControllerDesired:     MetricConfig{Enabled: false},
+		K8sResourceQuotaHardLimit:           MetricConfig{Enabled: false},
+		K8sResourceQuotaUsed:                MetricConfig{Enabled: false},
 	}
 
 	return &SingletonK8sClusterReceiverCreator{
