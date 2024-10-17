@@ -38,11 +38,10 @@ const (
 // +kubebuilder:webhook:path=/validate-logpipeline,mutating=false,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=logpipelines,verbs=create;update,versions=v1alpha1,name=vlogpipeline.kb.io,admissionReviewVersions=v1
 type ValidatingWebhookHandler struct {
 	client.Client
-	variablesValidator          validation.VariablesValidator
-	maxPipelinesValidator       validation.MaxPipelinesValidator
-	fileValidator               validation.FilesValidator
-	decoder                     admission.Decoder
-	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig
+	variablesValidator    validation.VariablesValidator
+	maxPipelinesValidator validation.MaxPipelinesValidator
+	fileValidator         validation.FilesValidator
+	decoder               admission.Decoder
 }
 
 func NewValidatingWebhookHandler(
@@ -51,15 +50,13 @@ func NewValidatingWebhookHandler(
 	maxPipelinesValidator validation.MaxPipelinesValidator,
 	fileValidator validation.FilesValidator,
 	decoder admission.Decoder,
-	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig,
 ) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
-		Client:                      client,
-		variablesValidator:          variablesValidator,
-		maxPipelinesValidator:       maxPipelinesValidator,
-		decoder:                     decoder,
-		fileValidator:               fileValidator,
-		logPipelineValidationConfig: logPipelineValidationConfig,
+		Client:                client,
+		variablesValidator:    variablesValidator,
+		maxPipelinesValidator: maxPipelinesValidator,
+		decoder:               decoder,
+		fileValidator:         fileValidator,
 	}
 }
 
@@ -120,7 +117,7 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 		return err
 	}
 
-	if err := logPipeline.Validate(v.logPipelineValidationConfig); err != nil {
+	if err := logPipeline.Validate(); err != nil {
 		log.Error(err, "Failed to validate Fluent Bit input")
 		return err
 	}

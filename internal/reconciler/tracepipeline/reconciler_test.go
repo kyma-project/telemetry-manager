@@ -28,7 +28,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -46,16 +45,10 @@ func TestReconcile(t *testing.T) {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
-	testConfig := Config{Gateway: otelcollector.GatewayConfig{
-		Config: otelcollector.Config{
-			BaseName:  "gateway",
-			Namespace: "default",
-		},
-		Deployment: otelcollector.DeploymentConfig{
-			Image: "otel/opentelemetry-collector-contrib",
-		},
-		OTLPServiceName: "otlp",
-	}}
+	testConfig := Config{
+		TraceGatewayName:   "gateway",
+		TelemetryNamespace: "default",
+	}
 
 	t.Run("trace gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
