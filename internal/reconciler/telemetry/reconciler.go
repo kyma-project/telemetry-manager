@@ -49,7 +49,6 @@ type MetricsConfig struct {
 }
 
 type WebhookConfig struct {
-	Enabled    bool
 	CertConfig webhookcert.Config
 }
 
@@ -282,10 +281,6 @@ func (r *Reconciler) deleteWebhook(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	if !r.config.Webhook.Enabled {
-		return nil
-	}
-
 	// We skip webhook reconciliation only if no pipelines are remaining. This avoids the risk of certificate expiration while waiting for deletion.
 	if !telemetry.DeletionTimestamp.IsZero() && !r.dependentCRsFound(ctx) {
 		return nil
