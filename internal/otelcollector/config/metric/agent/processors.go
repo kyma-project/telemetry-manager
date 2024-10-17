@@ -71,6 +71,13 @@ func makeDeleteServiceNameConfig() *config.ResourceProcessor {
 }
 
 func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
+	metricsToSkoipEnrichment := []string{
+		"node",
+		"statefulset",
+		"daemonset",
+		"deployment",
+		"job",
+	}
 	return &metric.TransformProcessor{
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
@@ -79,9 +86,7 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 				Statements: []string{
 					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
 				},
-				Conditions: []string{
-					ottlexpr.IsMatch("name", "^k8s.node.*"),
-				},
+				Conditions: makeConditionsWithIsMatch(metricsToSkoipEnrichment),
 			},
 		},
 	}
@@ -99,4 +104,13 @@ func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
 			},
 		},
 	}
+}
+
+func makeConditionsWithIsMatch(metrics []string) []string {
+	var conditions []string
+	for _, m := range metrics {
+		condition := ottlexpr.IsMatch("name", fmt.Sprintf("^k8s.%s.*", m))
+		conditions = append(conditions, condition)
+	}
+	return conditions
 }
