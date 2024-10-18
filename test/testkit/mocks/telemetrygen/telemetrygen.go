@@ -115,6 +115,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 	}
 
 	spec := corev1.PodSpec{
+
 		Containers: []corev1.Container{
 			{
 				Name:  "telemetrygen",
@@ -129,7 +130,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 					gatewayPushURL,
 					"--otlp-insecure",
 				},
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("64Mi"),

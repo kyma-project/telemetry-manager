@@ -47,6 +47,8 @@ const (
 	LabelExperimental         = "experimental"
 	LabelTelemetryLogAnalysis = "telemetry-log-analysis"
 	LabelMaxPipeline          = "max-pipeline"
+	LabelSetA                 = "set_a"
+	LabelSetB                 = "set_b"
 
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
 	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"
