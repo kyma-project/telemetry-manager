@@ -26,8 +26,8 @@ func LogsDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix str
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(
-			WithPodName(ContainSubstring(expectedPodNamePrefix))),
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(
+			HavePodName(ContainSubstring(expectedPodNamePrefix))),
 		)))
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
