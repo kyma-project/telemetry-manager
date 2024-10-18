@@ -37,7 +37,7 @@ func (s *Service) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
 			Name:       name,
 			Protocol:   corev1.ProtocolTCP,
 			Port:       port,
-			TargetPort: intstr.FromInt(int(port)),
+			TargetPort: intstr.FromInt32(port),
 		})
 	}
 

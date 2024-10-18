@@ -10,6 +10,11 @@ provision-k3d-istio: provision-k3d
 	hack/build-image.sh
 	hack/deploy-istio.sh
 
+.PHONY: cleanup-k3d
+cleanup-k3d:
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
+
 ##@ Gardener
 ## injected by the environment
 # GARDENER_SA_PATH=
