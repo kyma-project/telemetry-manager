@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -53,6 +54,22 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
+const (
+	maxTracePipelines    = 3
+	traceGatewayBaseName = "telemetry-trace-gateway"
+)
+
+var (
+	traceGatewayBaseCPULimit         = resource.MustParse("700m")
+	traceGatewayDynamicCPULimit      = resource.MustParse("500m")
+	traceGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
+	traceGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
+	traceGatewayBaseCPURequest       = resource.MustParse("100m")
+	traceGatewayDynamicCPURequest    = resource.MustParse("100m")
+	traceGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	traceGatewayDynamicMemoryRequest = resource.MustParse("0")
+)
+
 // TracePipelineController reconciles a TracePipeline object
 type TracePipelineController struct {
 	client.Client
@@ -61,10 +78,12 @@ type TracePipelineController struct {
 }
 
 type TracePipelineControllerConfig struct {
-	tracepipeline.Config
-	RestConfig         *rest.Config
-	SelfMonitorName    string
-	TelemetryNamespace string
+	RestConfig                    *rest.Config
+	SelfMonitorName               string
+	TelemetryNamespace            string
+	OTelCollectorImage            string
+	TraceGatewayPriorityClassName string
+	TraceGatewayServiceName       string
 }
 
 func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config TracePipelineControllerConfig) (*TracePipelineController, error) {
@@ -73,7 +92,14 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		return nil, err
 	}
 
-	pipelineLock := resourcelock.New(client, types.NamespacedName{Name: "telemetry-tracepipeline-lock", Namespace: config.Gateway.Namespace}, config.MaxPipelines)
+	pipelineLock := resourcelock.New(
+		client,
+		types.NamespacedName{
+			Name:      "telemetry-tracepipeline-lock",
+			Namespace: config.TelemetryNamespace,
+		},
+		maxTracePipelines,
+	)
 
 	pipelineValidator := &tracepipeline.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
@@ -82,18 +108,20 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		PipelineLock:       pipelineLock,
 	}
 
-	gatewayRBAC := otelcollector.MakeTraceGatewayRBAC(types.NamespacedName{Name: config.Gateway.BaseName, Namespace: config.Gateway.Namespace})
-
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
 		return nil, err
 	}
 
+	reconcilerConfig := tracepipeline.Config{
+		TraceGatewayName:   traceGatewayBaseName,
+		TelemetryNamespace: config.TelemetryNamespace,
+	}
 	reconciler := tracepipeline.New(
 		client,
-		config.Config,
+		reconcilerConfig,
 		flowHealthProber,
-		&otelcollector.GatewayApplierDeleter{Config: config.Gateway, RBAC: gatewayRBAC},
+		newTraceGatewayApplierDeleter(config),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
@@ -107,6 +135,39 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 	}, nil
+}
+
+func newTraceGatewayApplierDeleter(config TracePipelineControllerConfig) *otelcollector.GatewayApplierDeleter {
+	rbac := otelcollector.MakeTraceGatewayRBAC(
+		types.NamespacedName{
+			Name:      traceGatewayBaseName,
+			Namespace: config.TelemetryNamespace,
+		})
+
+	gatewayConfig := otelcollector.GatewayConfig{
+		Config: otelcollector.Config{
+			BaseName:  traceGatewayBaseName,
+			Namespace: config.TelemetryNamespace,
+		},
+		Deployment: otelcollector.DeploymentConfig{
+			Image:                config.OTelCollectorImage,
+			PriorityClassName:    config.TraceGatewayPriorityClassName,
+			BaseCPULimit:         traceGatewayBaseCPULimit,
+			DynamicCPULimit:      traceGatewayDynamicCPULimit,
+			BaseMemoryLimit:      traceGatewayBaseMemoryLimit,
+			DynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
+			BaseCPURequest:       traceGatewayBaseCPURequest,
+			DynamicCPURequest:    traceGatewayDynamicCPURequest,
+			BaseMemoryRequest:    traceGatewayBaseMemoryRequest,
+			DynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
+		},
+		OTLPServiceName: config.TraceGatewayServiceName,
+	}
+
+	return &otelcollector.GatewayApplierDeleter{
+		Config: gatewayConfig,
+		RBAC:   rbac,
+	}
 }
 
 func (r *TracePipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

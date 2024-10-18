@@ -29,10 +29,10 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	Agent         otelcollector.AgentConfig
-	Gateway       otelcollector.GatewayConfig
-	MaxPipelines  int
-	ModuleVersion string
+	AgentName          string
+	GatewayName        string
+	ModuleVersion      string
+	TelemetryNamespace string
 }
 
 type AgentConfigBuilder interface {
@@ -246,7 +246,7 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		GatewayNamespace:            r.config.Gateway.Namespace,
+		GatewayNamespace:            r.config.TelemetryNamespace,
 		InstrumentationScopeVersion: r.config.ModuleVersion,
 	})
 
@@ -293,7 +293,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
 		InstrumentationScopeVersion: r.config.ModuleVersion,
-		AgentNamespace:              r.config.Agent.Namespace,
+		AgentNamespace:              r.config.TelemetryNamespace,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
