@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -21,24 +21,28 @@ func ServiceReady(ctx context.Context, k8sClient client.Client, name types.Names
 }
 
 func isServiceReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
-	var endpoint v1.Endpoints
+	var endpoint corev1.Endpoints
 
 	err := k8sClient.Get(ctx, name, &endpoint)
 	if err != nil {
 		return false, fmt.Errorf("failed to get endpoint for service: %w", err)
 	}
+
 	if endpoint.Subsets == nil {
 		return false, nil
 	}
+
 	for _, subset := range endpoint.Subsets {
 		if len(subset.Addresses) == 0 {
 			return false, nil
 		}
+
 		for _, address := range subset.Addresses {
 			if address.IP == "" {
 				return false, nil
 			}
 		}
 	}
+
 	return true, nil
 }
