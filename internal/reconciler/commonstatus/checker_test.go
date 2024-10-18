@@ -149,7 +149,6 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			agentProberStub := commonStatusStubs.NewDaemonSetProber(tt.proberAgentErr)
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.preberGatewayErr)
 
@@ -223,5 +222,6 @@ func validateCondition(t *testing.T, exected, actual *metav1.Condition) bool {
 	require.Equal(t, exected.Status, actual.Status)
 	require.Equal(t, exected.Reason, actual.Reason)
 	require.Equal(t, exected.Message, actual.Message)
+
 	return true
 }

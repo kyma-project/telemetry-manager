@@ -89,7 +89,6 @@ rZ3xPLf7G+fObmeO7XuIoDfJHH6HDrdhhWi3F918KQ==
 )
 
 func TestMissingCert(t *testing.T) {
-
 	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -105,7 +104,6 @@ func TestMissingCert(t *testing.T) {
 }
 
 func TestMissingKey(t *testing.T) {
-
 	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -121,7 +119,6 @@ func TestMissingKey(t *testing.T) {
 }
 
 func TestMissingCA(t *testing.T) {
-
 	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -137,7 +134,6 @@ func TestMissingCA(t *testing.T) {
 }
 
 func TestMissingCertAndKey(t *testing.T) {
-
 	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -152,7 +148,6 @@ func TestMissingCertAndKey(t *testing.T) {
 }
 
 func TestMissingAll(t *testing.T) {
-
 	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -165,7 +160,6 @@ func TestMissingAll(t *testing.T) {
 }
 
 func TestExpiredCertificate(t *testing.T) {
-
 	oneDayAfterExpiry := certExpiry.Add(24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -182,13 +176,13 @@ func TestExpiredCertificate(t *testing.T) {
 	require.True(t, IsCertExpiredError(err))
 
 	var certExpiredErr *CertExpiredError
+
 	require.True(t, errors.As(err, &certExpiredErr))
 	require.Equal(t, certExpiry, certExpiredErr.Expiry)
 	require.EqualError(t, err, "TLS certificate expired on 2024-03-19")
 }
 
 func TestAboutToExpireCertificate(t *testing.T) {
-
 	tests := []struct {
 		name        string
 		now         time.Time
@@ -235,6 +229,7 @@ func TestAboutToExpireCertificate(t *testing.T) {
 			require.True(t, IsCertAboutToExpireError(err))
 
 			var certAboutToExpireErr *CertAboutToExpireError
+
 			require.True(t, errors.As(err, &certAboutToExpireErr))
 			require.Equal(t, certExpiry, certAboutToExpireErr.Expiry)
 			require.EqualError(t, err, "TLS certificate is about to expire, configured certificate is valid until 2024-03-19")
@@ -243,7 +238,6 @@ func TestAboutToExpireCertificate(t *testing.T) {
 }
 
 func TestValidCertificatesAndPrivateKey(t *testing.T) {
-
 	oneMonthBeforeExpiry := certExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -260,7 +254,6 @@ func TestValidCertificatesAndPrivateKey(t *testing.T) {
 }
 
 func TestInvalidCertificate(t *testing.T) {
-
 	certData := []byte(`-----BEGIN CERTIFICATE-----
 MIICNjCCAZ+gAwIBAgIBADANBgkqhkiG9w0BAQ0FADA4MQswCQYDVQQGEwJ1czEL
 MAkGA1UECAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwHhcNMjQw
@@ -291,7 +284,6 @@ WxZIBPi0z6MoiZxVKSY8EBeVYCHWS9A2l1J6gAHptihe7y1j8I2ffS
 }
 
 func TestInvalidPrivateKey(t *testing.T) {
-
 	keyData := []byte(`-----BEGIN PRIVATE KEY-----
 MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAMfSQ/2hwo2Qf5wA
 5OQ/aFuz/tFbmxwWrxtw1cAG43A9zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5G
@@ -321,7 +313,6 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 }
 
 func TestInvalidCA(t *testing.T) {
-
 	caData := []byte(`-----BEGIN CERTIFICATE-----
 XMIICWzCCAcSgAwIBAgIUNUvkfvf5ZxFDlPG0H28bqlCcSjAwDQYJKoZIhvcNAQEL
 BQAwXjELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk5ZMREwDwYDVQQHDAhOZXcgWW9y
@@ -354,7 +345,6 @@ WWL1dEpm9rYQvcflxENRpp9SpyG2bJliRexjmHYwFg==
 }
 
 func TestExpiredCA(t *testing.T) {
-
 	oneMonthBeforeExpiry := certExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -371,13 +361,13 @@ func TestExpiredCA(t *testing.T) {
 	require.True(t, IsCertExpiredError(err))
 
 	var caExpiredErr *CertExpiredError
+
 	require.True(t, errors.As(err, &caExpiredErr))
 	require.Equal(t, pastCaExpiry, caExpiredErr.Expiry)
 	require.EqualError(t, err, "TLS CA certificate expired on 2023-06-15")
 }
 
 func TestAboutToExpireCA(t *testing.T) {
-
 	tests := []struct {
 		name        string
 		now         time.Time
@@ -424,6 +414,7 @@ func TestAboutToExpireCA(t *testing.T) {
 			require.True(t, IsCertAboutToExpireError(err))
 
 			var caAboutToExpireErr *CertAboutToExpireError
+
 			require.True(t, errors.As(err, &caAboutToExpireErr))
 			require.Equal(t, pastCaExpiry, caAboutToExpireErr.Expiry)
 			require.EqualError(t, err, "TLS CA certificate is about to expire, configured certificate is valid until 2023-06-15")
@@ -432,7 +423,6 @@ func TestAboutToExpireCA(t *testing.T) {
 }
 
 func TestMultipleCAs(t *testing.T) {
-
 	caData := []byte(`-----BEGIN CERTIFICATE-----
 MIICWzCCAcSgAwIBAgIUNUvkfvf5ZxFDlPG0H28bqlCcSjAwDQYJKoZIhvcNAQEL
 BQAwXjELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk5ZMREwDwYDVQQHDAhOZXcgWW9y
@@ -481,7 +471,6 @@ rZ3xPLf7G+fObmeO7XuIoDfJHH6HDrdhhWi3F918KQ==
 }
 
 func TestEmptyCA(t *testing.T) {
-
 	oneMonthBeforeExpiry := pastCaExpiry.Add(-30 * 24 * time.Hour)
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := Validator{
@@ -738,7 +727,6 @@ func TestInvalidCertPair_WithExpiredCert(t *testing.T) {
 
 // Not a CA certificate (CA:FALSE)
 func TestInvalidCANotCA(t *testing.T) {
-
 	certData := []byte(`-----BEGIN CERTIFICATE-----
 MIICgTCCAeqgAwIBAgIUeNlrXejD+szy492fj5814VxJH2YwDQYJKoZIhvcNAQEL
 BQAwXjELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk5ZMREwDwYDVQQHDAhOZXcgWW9y

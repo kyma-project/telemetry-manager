@@ -31,6 +31,7 @@ func IsRuntimePodInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool 
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Pod == nil || input.Runtime.Resources.Pod.Enabled == nil {
 		return true
 	}
+
 	return *input.Runtime.Resources.Pod.Enabled
 }
 
@@ -39,6 +40,7 @@ func IsRuntimeContainerInputEnabled(input telemetryv1alpha1.MetricPipelineInput)
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Container == nil || input.Runtime.Resources.Container.Enabled == nil {
 		return true
 	}
+
 	return *input.Runtime.Resources.Container.Enabled
 }
 
@@ -47,6 +49,7 @@ func IsRuntimeNodeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Node == nil || input.Runtime.Resources.Node.Enabled == nil {
 		return false
 	}
+
 	return *input.Runtime.Resources.Node.Enabled
 }
 
@@ -55,5 +58,6 @@ func IsRuntimeVolumeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bo
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Volume == nil || input.Runtime.Resources.Volume.Enabled == nil {
 		return false
 	}
+
 	return *input.Runtime.Resources.Volume.Enabled
 }

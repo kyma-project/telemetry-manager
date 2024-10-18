@@ -342,9 +342,11 @@ func TestLogComponentsCheck(t *testing.T) {
 			for i := range test.pipelines {
 				b.WithObjects(&test.pipelines[i])
 			}
+
 			for i := range test.parsers {
 				b.WithObjects(&test.parsers[i])
 			}
+
 			fakeClient := b.Build()
 
 			m := &logComponentsChecker{

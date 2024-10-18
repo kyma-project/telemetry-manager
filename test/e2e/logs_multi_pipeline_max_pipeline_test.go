@@ -26,7 +26,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
-			for i := 0; i < maxNumberOfLogPipelines; i++ {
+			for i := range maxNumberOfLogPipelines {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
 				pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
 				pipelinesNames = append(pipelinesNames, pipelineName)

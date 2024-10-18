@@ -42,6 +42,7 @@ func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, na
 	err := prober.IsReady(ctx, namespacedName)
 	if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe gateway - set condition as not healthy")
+
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonGatewayNotReady
 		msg = errToMsgCon.Convert(err)
@@ -59,7 +60,6 @@ func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, na
 		Reason:  reason,
 		Message: msg,
 	}
-
 }
 
 //nolint:dupl // abstracting the common code will still have duplicates and would complicate the code.
@@ -67,6 +67,7 @@ func GetAgentHealthyCondition(ctx context.Context, prober DaemonSetProber, names
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonAgentReady
 	msg := conditions.MessageForLogPipeline(reason)
+
 	if signalType == SignalTypeMetrics {
 		msg = conditions.MessageForMetricPipeline(reason)
 	}
@@ -74,10 +75,12 @@ func GetAgentHealthyCondition(ctx context.Context, prober DaemonSetProber, names
 	err := prober.IsReady(ctx, namespacedName)
 	if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe agent - set condition as not healthy")
+
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonAgentNotReady
 		msg = errToMsgCon.Convert(err)
 	}
+
 	if workloadstatus.IsRolloutInProgressError(err) {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonRolloutInProgress

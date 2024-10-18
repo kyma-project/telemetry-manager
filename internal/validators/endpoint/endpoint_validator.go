@@ -58,6 +58,7 @@ func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.Va
 	}
 
 	var u *url.URL
+
 	if u, err = parseEndpoint(endpointValue); err != nil {
 		return err
 	}
@@ -106,11 +107,13 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 	// parse a URL without scheme
 	if u.Opaque != "" || u.Scheme == "" || u.Host == "" {
 		const placeholder = "plhd://"
+
 		u, err = url.Parse(placeholder + endpoint)
 		if err != nil {
 			errMsg := strings.Replace(err.Error(), placeholder, "", 1)
 			return nil, &EndpointInvalidError{Err: errors.New(errMsg)}
 		}
+
 		u.Scheme = ""
 	}
 

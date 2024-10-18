@@ -319,6 +319,7 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 
 	xOTLP := x.Spec.Output.Otlp
 	yOTLP := y.Spec.Output.OTLP
+
 	require.NotNil(t, xOTLP, "expected OTLP output")
 	require.NotNil(t, yOTLP, "expected OTLP output")
 	require.Equal(t, xOTLP.Protocol, string(yOTLP.Protocol), "OTLP protocol mismatch")

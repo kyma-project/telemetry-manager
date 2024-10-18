@@ -86,6 +86,7 @@ func DefaultService(pipelines Pipelines) Service {
 			Encoding: "json",
 		},
 	}
+
 	return Service{
 		Pipelines:  pipelines,
 		Telemetry:  telemetry,

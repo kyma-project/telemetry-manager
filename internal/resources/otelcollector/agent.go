@@ -134,6 +134,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 
 func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceRequirements {
 	dsConfig := aad.Config.DaemonSet
+
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    dsConfig.CPULimit,

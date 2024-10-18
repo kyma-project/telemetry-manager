@@ -60,7 +60,7 @@ var (
 var iterations = 50
 
 func TestEqualConfig(t *testing.T) {
-	for i := 0; i < iterations; i++ {
+	for range iterations {
 		hash1 := Calculate([]corev1.ConfigMap{configMap1}, []corev1.Secret{secret1})
 		hash2 := Calculate([]corev1.ConfigMap{configMap1}, []corev1.Secret{secret1})
 		require.Equal(t, hash1, hash2)
@@ -68,7 +68,7 @@ func TestEqualConfig(t *testing.T) {
 }
 
 func TestUnequalConfig(t *testing.T) {
-	for i := 0; i < iterations; i++ {
+	for range iterations {
 		hash1 := Calculate([]corev1.ConfigMap{configMap1}, []corev1.Secret{secret1})
 		hash2 := Calculate([]corev1.ConfigMap{configMap2}, []corev1.Secret{secret2})
 		require.NotEqual(t, hash1, hash2)
@@ -76,14 +76,14 @@ func TestUnequalConfig(t *testing.T) {
 }
 
 func TestEmptyConfig(t *testing.T) {
-	for i := 0; i < iterations; i++ {
+	for range iterations {
 		hash := Calculate([]corev1.ConfigMap{emptyConfigMap}, []corev1.Secret{emptySecret})
 		require.NotEmpty(t, hash)
 	}
 }
 
 func TestOrderDoesNotMatter(t *testing.T) {
-	for i := 0; i < iterations; i++ {
+	for range iterations {
 		hash1 := Calculate([]corev1.ConfigMap{configMap1, configMap2}, []corev1.Secret{secret1})
 		hash2 := Calculate([]corev1.ConfigMap{configMap2, configMap1}, []corev1.Secret{secret1})
 		require.Equal(t, hash1, hash2)

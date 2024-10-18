@@ -14,6 +14,7 @@ var errDstTypeUnsupported = errors.New("destination type is not LogPipeline v1be
 // ConvertTo converts this LogPipeline to the Hub version (v1beta1).
 func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	src := lp
+
 	dst, ok := dstRaw.(*telemetryv1beta1.LogPipeline)
 	if !ok {
 		return errDstTypeUnsupported
@@ -89,14 +90,17 @@ func v1Alpha1OtlpTLSToV1Beta1(tls *OtlpTLS) *telemetryv1beta1.OutputTLS {
 		ca := v1Alpha1ValueTypeToV1Beta1(*tls.CA)
 		betaTLS.CA = &ca
 	}
+
 	if tls.Key != nil {
 		key := v1Alpha1ValueTypeToV1Beta1(*tls.Key)
 		betaTLS.Key = &key
 	}
+
 	if tls.Cert != nil {
 		cert := v1Alpha1ValueTypeToV1Beta1(*tls.Cert)
 		betaTLS.Cert = &cert
 	}
+
 	return betaTLS
 }
 
@@ -105,8 +109,8 @@ func v1Alpha1HeadersToV1Beta1(headers []Header) []telemetryv1beta1.Header {
 	for _, h := range headers {
 		dst = append(dst, v1Alpha1HeaderToV1Beta1(h))
 	}
-	return dst
 
+	return dst
 }
 
 func v1Alpha1HeaderToV1Beta1(h Header) telemetryv1beta1.Header {
@@ -121,6 +125,7 @@ func v1Alpha1AuthenticationToV1Beta1(authentication *AuthenticationOptions) *tel
 	if authentication == nil {
 		return nil
 	}
+
 	return &telemetryv1beta1.AuthenticationOptions{
 		Basic: v1Alpha1BasicAuthOptionsToV1Beta1(authentication.Basic),
 	}
@@ -130,6 +135,7 @@ func v1Alpha1BasicAuthOptionsToV1Beta1(basic *BasicAuthOptions) *telemetryv1beta
 	if basic == nil {
 		return nil
 	}
+
 	return &telemetryv1beta1.BasicAuthOptions{
 		User:     v1Alpha1ValueTypeToV1Beta1(basic.User),
 		Password: v1Alpha1ValueTypeToV1Beta1(basic.Password),
@@ -177,6 +183,7 @@ func v1Alpha1TLSToV1Beta1(src TLSConfig) telemetryv1beta1.OutputTLS {
 // ConvertFrom converts from the Hub version (v1beta1) to this version.
 func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst := lp
+
 	src, ok := srcRaw.(*telemetryv1beta1.LogPipeline)
 	if !ok {
 		return errSrcTypeUnsupported
@@ -250,14 +257,17 @@ func v1Beta1OtlpTLSToV1Alpha1(tls *telemetryv1beta1.OutputTLS) *OtlpTLS {
 		ca := v1Beta1ValueTypeToV1Alpha1(*tls.CA)
 		alphaTLS.CA = &ca
 	}
+
 	if tls.Key != nil {
 		key := v1Beta1ValueTypeToV1Alpha1(*tls.Key)
 		alphaTLS.Key = &key
 	}
+
 	if tls.Cert != nil {
 		cert := v1Beta1ValueTypeToV1Alpha1(*tls.Cert)
 		alphaTLS.Cert = &cert
 	}
+
 	return alphaTLS
 }
 
@@ -266,6 +276,7 @@ func v1Beta1HeadersToV1Alpha1(headers []telemetryv1beta1.Header) []Header {
 	for _, h := range headers {
 		dst = append(dst, v1Beta1HeaderToV1Alpha1(h))
 	}
+
 	return dst
 }
 
@@ -281,6 +292,7 @@ func v1Beta1AuthenticationToV1Alpha1(authentication *telemetryv1beta1.Authentica
 	if authentication == nil {
 		return nil
 	}
+
 	return &AuthenticationOptions{
 		Basic: v1Beta1BasicAuthOptionsToV1Alpha1(authentication.Basic),
 	}
@@ -290,6 +302,7 @@ func v1Beta1BasicAuthOptionsToV1Alpha1(basic *telemetryv1beta1.BasicAuthOptions)
 	if basic == nil {
 		return nil
 	}
+
 	return &BasicAuthOptions{
 		User:     v1Beta1ValueTypeToV1Alpha1(basic.User),
 		Password: v1Beta1ValueTypeToV1Alpha1(basic.Password),
@@ -298,20 +311,25 @@ func v1Beta1BasicAuthOptionsToV1Alpha1(basic *telemetryv1beta1.BasicAuthOptions)
 
 func v1Beta1TLSToV1Alpha1(src telemetryv1beta1.OutputTLS) TLSConfig {
 	var dst TLSConfig
+
 	if src.CA != nil {
 		ca := v1Beta1ValueTypeToV1Alpha1(*src.CA)
 		dst.CA = &ca
 	}
+
 	if src.Cert != nil {
 		cert := v1Beta1ValueTypeToV1Alpha1(*src.Cert)
 		dst.Cert = &cert
 	}
+
 	if src.Key != nil {
 		key := v1Beta1ValueTypeToV1Alpha1(*src.Key)
 		dst.Key = &key
 	}
+
 	dst.Disabled = src.Disabled
 	dst.SkipCertificateValidation = src.SkipCertificateValidation
+
 	return dst
 }
 
@@ -323,6 +341,7 @@ func v1Beta1ValueTypeToV1Alpha1(src telemetryv1beta1.ValueType) ValueType {
 			},
 		}
 	}
+
 	return ValueType{
 		Value: src.Value,
 	}

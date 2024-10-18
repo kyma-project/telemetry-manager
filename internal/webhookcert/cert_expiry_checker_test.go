@@ -57,6 +57,7 @@ func TestCheckExpiry(t *testing.T) {
 			}
 			valid, err := sut.checkExpiry(context.Background(), tc.certPEM)
 			require.Equal(t, tc.expectValid, valid)
+
 			if tc.expectError {
 				require.Error(t, err)
 			} else {

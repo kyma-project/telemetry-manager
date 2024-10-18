@@ -62,6 +62,7 @@ func tlsValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
 	if otlp == nil {
 		return false
 	}
+
 	if otlp.TLS == nil {
 		return false
 	}

@@ -22,6 +22,7 @@ func EnsureCertificate(ctx context.Context, client client.Client, config Config)
 	}
 
 	host, alternativeDNSNames := dnsNames(config.ServiceName)
+
 	_, _, err = newServerCertProvider(config.CertDir).provideCert(ctx, serverCertConfig{
 		host:                host,
 		alternativeDNSNames: alternativeDNSNames,
@@ -42,5 +43,6 @@ func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSN
 		fmt.Sprintf("%s.%s", webhookService.Name, webhookService.Namespace),
 		fmt.Sprintf("%s.cluster.local", host),
 	}
+
 	return
 }

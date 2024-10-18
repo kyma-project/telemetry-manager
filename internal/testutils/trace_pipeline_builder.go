@@ -53,6 +53,7 @@ func (b *TracePipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *TracePi
 	for _, opt := range opts {
 		opt(b.outOTLP)
 	}
+
 	return b
 }
 

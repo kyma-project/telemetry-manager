@@ -196,5 +196,6 @@ func (b *Backend) K8sObjects() []client.Object {
 	objects = append(objects, b.otelCollectorDeployment.K8sObject(kitk8s.WithLabel("app", b.name)))
 	objects = append(objects, b.otlpService.K8sObject(kitk8s.WithLabel("app", b.name)))
 	objects = append(objects, b.hostSecret.K8sObject())
+
 	return objects
 }

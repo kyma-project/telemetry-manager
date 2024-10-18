@@ -14,13 +14,18 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 	InputSourceK8sCluster: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver",
 }
 
-func MakeInstrumentationScopeProcessor(inputSource InputSourceType, instrumentationScopeVersion string) *TransformProcessor {
+func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
+	statements := []string{}
+	for _, i := range inputSource {
+		statements = append(statements, makeInstrumentationStatement(i, instrumentationScopeVersion)...)
+	}
+
 	return &TransformProcessor{
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
 			{
 				Context:    "scope",
-				Statements: makeInstrumentationStatement(inputSource, instrumentationScopeVersion),
+				Statements: statements,
 			},
 		},
 	}

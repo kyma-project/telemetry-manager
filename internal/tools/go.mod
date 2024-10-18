@@ -3,6 +3,7 @@ module github.com/kyma-project/telemetry-manager/internal/tools
 go 1.23.1
 
 require (
+	github.com/bombsimon/wsl/v4 v4.4.1
 	github.com/golangci/golangci-lint v1.61.0
 	github.com/google/yamlfmt v0.13.0
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
@@ -10,7 +11,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/vektra/mockery/v2 v2.46.3
 	github.com/vladopajic/go-test-coverage/v2 v2.10.2
-	golang.org/x/tools v0.24.0
+	golang.org/x/tools v0.26.0
 	sigs.k8s.io/controller-tools v0.16.3
 	sigs.k8s.io/kustomize/kustomize/v5 v5.5.0
 )
@@ -45,7 +46,6 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blizzy78/varnamelen v0.8.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
-	github.com/bombsimon/wsl/v4 v4.4.1 // indirect
 	github.com/braydonk/yaml v0.7.0 // indirect
 	github.com/breml/bidichk v0.2.7 // indirect
 	github.com/breml/errchkjson v0.3.6 // indirect
@@ -230,11 +230,11 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/term v0.23.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/term v0.25.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect

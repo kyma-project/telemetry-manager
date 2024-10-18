@@ -16,6 +16,7 @@ func UnmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignal
 
 	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
 	reader := bufio.NewReader(bytes.NewReader(jsonlSignals))
+
 	for {
 		line, readerErr := reader.ReadBytes('\n')
 		if readerErr != nil && readerErr != io.EOF {
@@ -27,6 +28,7 @@ func UnmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignal
 			if err != nil {
 				return nil, fmt.Errorf("failed to unmarshal logs: %w", readerErr)
 			}
+
 			allSignals = append(allSignals, signals)
 		}
 

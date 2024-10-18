@@ -15,23 +15,29 @@ func BuildFluentBitParsersConfig(logParsers *telemetryv1alpha1.LogParserList) st
 	})
 
 	var sb strings.Builder
+
 	for _, logParser := range logParsers.Items {
 		if logParser.DeletionTimestamp.IsZero() {
 			sb.WriteString(createParserConfig(logParser.Name, logParser.Spec.Parser))
 		}
 	}
+
 	return sb.String()
 }
 
 func createParserConfig(name, content string) string {
 	var sb strings.Builder
+
 	sb.WriteString("[PARSER]\n")
 	sb.WriteString("    " + fmt.Sprintf("Name %s\n", name))
+
 	for _, line := range strings.Split(content, "\n") {
 		if len(strings.TrimSpace(line)) > 0 { // Skip empty lines to do not break rendering in yaml output
 			sb.WriteString("    " + strings.TrimSpace(line) + "\n") // 4 indentations
 		}
 	}
+
 	sb.WriteByte('\n')
+
 	return sb.String()
 }

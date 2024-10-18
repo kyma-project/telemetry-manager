@@ -53,6 +53,7 @@ func (d *Deployment) K8sObject() *appsv1.Deployment {
 			"test/label": uuid.New().String(),
 		}
 	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      d.name,

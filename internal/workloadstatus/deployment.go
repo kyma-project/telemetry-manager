@@ -21,6 +21,7 @@ type DeploymentProber struct {
 
 func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedName) error {
 	log := logf.FromContext(ctx)
+
 	var d appsv1.Deployment
 	if err := dp.Get(ctx, name, &d); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -28,10 +29,12 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 			log.V(1).Info(ErrDeploymentNotFound.Error())
 			return ErrDeploymentNotFound
 		}
+
 		return ErrDeploymentFetching
 	}
 
 	desiredReplicas := *d.Spec.Replicas
+
 	var allReplicaSets appsv1.ReplicaSetList
 
 	listOps := &client.ListOptions{
@@ -64,6 +67,7 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 
 func getLatestReplicaSet(deployment *appsv1.Deployment, allReplicaSets *appsv1.ReplicaSetList) *appsv1.ReplicaSet {
 	var ownedReplicaSets []*appsv1.ReplicaSet
+
 	for i := range allReplicaSets.Items {
 		if metav1.IsControlledBy(&allReplicaSets.Items[i], deployment) {
 			ownedReplicaSets = append(ownedReplicaSets, &allReplicaSets.Items[i])
@@ -80,6 +84,7 @@ func getLatestReplicaSet(deployment *appsv1.Deployment, allReplicaSets *appsv1.R
 // findNewReplicaSet returns the new RS this given deployment targets (the one with the same pod template).
 func findNewReplicaSet(deployment *appsv1.Deployment, rsList []*appsv1.ReplicaSet) *appsv1.ReplicaSet {
 	sort.Sort(replicaSetsByCreationTimestamp(rsList))
+
 	for i := range rsList {
 		if equalIgnoreHash(&rsList[i].Spec.Template, &deployment.Spec.Template) {
 			// In rare cases, such as after cluster upgrades, Deployment may end up with
@@ -96,8 +101,10 @@ func findNewReplicaSet(deployment *appsv1.Deployment, rsList []*appsv1.ReplicaSe
 func equalIgnoreHash(template1, template2 *corev1.PodTemplateSpec) bool {
 	t1Copy := template1.DeepCopy()
 	t2Copy := template2.DeepCopy()
+
 	delete(t1Copy.Labels, appsv1.DefaultDeploymentUniqueLabelKey)
 	delete(t2Copy.Labels, appsv1.DefaultDeploymentUniqueLabelKey)
+
 	return apiequality.Semantic.DeepEqual(t1Copy, t2Copy)
 }
 
@@ -109,5 +116,6 @@ func (o replicaSetsByCreationTimestamp) Less(i, j int) bool {
 	if o[i].CreationTimestamp.Equal(&o[j].CreationTimestamp) {
 		return o[i].Name < o[j].Name
 	}
+
 	return o[i].CreationTimestamp.Before(&o[j].CreationTimestamp)
 }

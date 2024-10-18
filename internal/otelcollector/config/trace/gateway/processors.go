@@ -19,6 +19,7 @@ func makeProcessorsConfig() Processors {
 	}
 }
 
+//nolint:mnd // hardcoded values
 func makeBatchProcessorConfig() *config.BatchProcessor {
 	return &config.BatchProcessor{
 		SendBatchSize:    512,
@@ -27,6 +28,7 @@ func makeBatchProcessorConfig() *config.BatchProcessor {
 	}
 }
 
+//nolint:mnd // hardcoded values
 func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "1s",

@@ -107,6 +107,7 @@ func (b *LogPipelineBuilder) WithHTTPOutput(opts ...HTTPOutputOption) *LogPipeli
 	for _, opt := range opts {
 		opt(b.httpOutput)
 	}
+
 	return b
 }
 
@@ -115,6 +116,7 @@ func (b *LogPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *LogPipeli
 	for _, opt := range opts {
 		opt(b.otlpOutput)
 	}
+
 	return b
 }
 
@@ -142,6 +144,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	if b.name == "" {
 		b.name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
+
 	if b.httpOutput == nil && b.customOutput == "" && b.otlpOutput == nil {
 		b.httpOutput = defaultHTTPOutput()
 	}

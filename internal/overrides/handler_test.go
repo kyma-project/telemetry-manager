@@ -82,6 +82,7 @@ tracing:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().Build()
+
 			if tt.configMapData != nil {
 				configMap := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{

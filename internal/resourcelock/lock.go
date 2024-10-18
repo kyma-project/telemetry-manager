@@ -37,6 +37,7 @@ func (l *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error
 		if apierrors.IsNotFound(err) {
 			return l.createLock(ctx, owner)
 		}
+
 		return fmt.Errorf("failed to get lock: %w", err)
 	}
 
@@ -50,6 +51,7 @@ func (l *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error
 		if err := controllerutil.SetOwnerReference(owner, &lock, l.client.Scheme()); err != nil {
 			return fmt.Errorf("failed to set owner reference: %w", err)
 		}
+
 		if err := l.client.Update(ctx, &lock); err != nil {
 			return fmt.Errorf("failed to update lock: %w", err)
 		}

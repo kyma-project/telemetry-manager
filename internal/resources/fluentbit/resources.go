@@ -262,12 +262,14 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 			},
 		},
 	}
+
 	return &clusterRole
 }
 
 func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 	serviceLabels := Labels()
 	serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-metrics", name.Name),

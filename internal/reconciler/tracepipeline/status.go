@@ -50,7 +50,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace},
+		r.gatewayProber, types.NamespacedName{Name: r.config.TraceGatewayName, Namespace: r.config.TelemetryNamespace},
 		r.errToMsgConverter,
 		commonstatus.SignalTypeTraces)
 	condition.ObservedGeneration = pipeline.Generation
@@ -133,21 +133,24 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	}
 
 	return metav1.ConditionFalse, reason
-
 }
 
 func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 	if probeResult.AllDataDropped {
 		return conditions.ReasonSelfMonAllDataDropped
 	}
+
 	if probeResult.SomeDataDropped {
 		return conditions.ReasonSelfMonSomeDataDropped
 	}
+
 	if probeResult.QueueAlmostFull {
 		return conditions.ReasonSelfMonBufferFillingUp
 	}
+
 	if probeResult.Throttling {
 		return conditions.ReasonSelfMonGatewayThrottling
 	}
+
 	return conditions.ReasonSelfMonFlowHealthy
 }

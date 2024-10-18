@@ -79,6 +79,7 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
+
 	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role binding: %w", err))
@@ -131,6 +132,7 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 			Labels:    defaultLabels(name.Name),
 		},
 	}
+
 	return &serviceAccount
 }
 

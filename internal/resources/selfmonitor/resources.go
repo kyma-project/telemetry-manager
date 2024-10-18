@@ -130,6 +130,7 @@ func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 			Labels:    ad.defaultLabels(),
 		},
 	}
+
 	return &serviceAccount
 }
 
@@ -148,6 +149,7 @@ func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 			},
 		},
 	}
+
 	return &role
 }
 
@@ -165,11 +167,13 @@ func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 			Name:     ad.Config.BaseName,
 		},
 	}
+
 	return &roleBinding
 }
 
 func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 	allowedPorts := []int32{ports.PrometheusPort}
+
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
@@ -245,6 +249,7 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
+
 	selectorLabels := ad.defaultLabels()
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "false"
@@ -287,7 +292,9 @@ func (ad *ApplierDeleter) defaultLabels() map[string]string {
 
 func makePodSpec(baseName, image, configPath, configFile string, opts ...commonresources.PodSpecOption) corev1.PodSpec {
 	var defaultMode int32 = 420
+
 	var prometheusUser int64 = 10001
+
 	var containerName = "self-monitor"
 	pod := corev1.PodSpec{
 		Containers: []corev1.Container{
@@ -325,18 +332,24 @@ func makePodSpec(baseName, image, configPath, configFile string, opts ...commonr
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/-/healthy", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
 					},
-					FailureThreshold: 5, PeriodSeconds: 5, TimeoutSeconds: 3, SuccessThreshold: 1,
+					FailureThreshold: 5, //nolint:mnd // 5 failures
+					PeriodSeconds:    5, //nolint:mnd // 5 seconds
+					TimeoutSeconds:   3, //nolint:mnd // 3 seconds
+					SuccessThreshold: 1, //nolint:mnd // 1 success
 				},
 				ReadinessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
 					},
-					FailureThreshold: 3, PeriodSeconds: 5, TimeoutSeconds: 3, SuccessThreshold: 1,
+					FailureThreshold: 3, //nolint:mnd // 3 failures
+					PeriodSeconds:    5, //nolint:mnd // 5 seconds
+					TimeoutSeconds:   3, //nolint:mnd // 3 seconds
+					SuccessThreshold: 1, //nolint:mnd // 1 success
 				},
 			},
 		},
 		ServiceAccountName:            baseName,
-		TerminationGracePeriodSeconds: ptr.To(int64(300)),
+		TerminationGracePeriodSeconds: ptr.To(int64(300)), //nolint:mnd // 300 seconds
 		SecurityContext: &corev1.PodSecurityContext{
 			RunAsUser:    ptr.To(prometheusUser),
 			RunAsNonRoot: ptr.To(true),

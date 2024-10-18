@@ -13,8 +13,7 @@ func TestContainsNoOutputPlugins(t *testing.T) {
 			Output: LogPipelineOutput{},
 		}}
 
-	vc := getLogPipelineValidationConfig()
-	result := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
+	result := logPipeline.validateOutput()
 
 	require.Error(t, result)
 	require.Contains(t, result.Error(), "no output plugin is defined, you must define one output plugin")
@@ -32,33 +31,13 @@ func TestContainsMultipleOutputPlugins(t *testing.T) {
 				},
 			},
 		}}
-	vc := getLogPipelineValidationConfig()
-	result := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
+	result := logPipeline.validateOutput()
 
 	require.Error(t, result)
 	require.Contains(t, result.Error(), "multiple output plugins are defined, you must define only one output")
 }
 
-func TestDeniedOutputPlugins(t *testing.T) {
-	logPipeline := &LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
-		Spec: LogPipelineSpec{
-			Output: LogPipelineOutput{
-				Custom: `
-   Name    lua`,
-			},
-		},
-	}
-
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "plugin 'lua' is forbidden. ")
-}
-
 func TestValidateCustomOutput(t *testing.T) {
-
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
 			Output: LogPipelineOutput{
@@ -68,13 +47,11 @@ func TestValidateCustomOutput(t *testing.T) {
 		},
 	}
 
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
+	err := logPipeline.validateOutput()
 	require.NoError(t, err)
 }
 
 func TestValidateCustomHasForbiddenParameter(t *testing.T) {
-
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
 			Output: LogPipelineOutput{
@@ -85,8 +62,7 @@ func TestValidateCustomHasForbiddenParameter(t *testing.T) {
 		},
 	}
 
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
+	err := logPipeline.validateOutput()
 	require.Error(t, err)
 }
 
@@ -100,8 +76,7 @@ func TestValidateCustomOutputsContainsNoName(t *testing.T) {
 		},
 	}
 
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
+	err := logPipeline.validateOutput()
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "configuration section must have name attribute")
@@ -125,8 +100,7 @@ func TestBothValueAndValueFromPresent(t *testing.T) {
 				},
 			},
 		}}
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
+	err := logPipeline.validateOutput()
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "http output host must have either a value or secret key reference")
 }
@@ -148,13 +122,8 @@ func TestValueFromSecretKeyRef(t *testing.T) {
 				},
 			},
 		}}
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
+	err := logPipeline.validateOutput()
 	require.NoError(t, err)
-}
-
-func getLogPipelineValidationConfig() LogPipelineValidationConfig {
-	return LogPipelineValidationConfig{DeniedOutPutPlugins: []string{"lua", "multiline"}, DeniedFilterPlugins: []string{"lua", "multiline"}}
 }
 
 func TestValidateCustomFilter(t *testing.T) {
@@ -168,8 +137,7 @@ func TestValidateCustomFilter(t *testing.T) {
 		},
 	}
 
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateFilters(vc.DeniedFilterPlugins)
+	err := logPipeline.validateFilters()
 	require.NoError(t, err)
 }
 
@@ -184,8 +152,7 @@ func TestValidateCustomFiltersContainsNoName(t *testing.T) {
 		},
 	}
 
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateFilters(vc.DeniedFilterPlugins)
+	err := logPipeline.validateFilters()
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "configuration section must have name attribute")
 }
@@ -202,8 +169,7 @@ func TestValidateCustomFiltersContainsMatch(t *testing.T) {
 		},
 	}
 
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateFilters(vc.DeniedFilterPlugins)
+	err := logPipeline.validateFilters()
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "plugin 'grep' contains match condition. Match conditions are forbidden")
@@ -215,17 +181,16 @@ func TestDeniedFilterPlugins(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Filters: []LogPipelineFilter{
 				{Custom: `
-    Name    lua`,
+    Name    kubernetes`,
 				},
 			},
 		},
 	}
 
-	vc := getLogPipelineValidationConfig()
-	err := logPipeline.validateFilters(vc.DeniedFilterPlugins)
+	err := logPipeline.validateFilters()
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "plugin 'lua' is forbidden. ")
+	require.Contains(t, err.Error(), "plugin 'kubernetes' is forbidden. ")
 }
 
 func TestValidateWithValidInputIncludes(t *testing.T) {

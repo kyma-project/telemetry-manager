@@ -51,6 +51,7 @@ func K8sObjects(namespace string, signalType telemetrygen.SignalType) []client.O
 		telemetrygen.WithServiceName(AttrWithInvalidEndForUnknownServicePattern))
 	podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(signalType,
 		telemetrygen.WithServiceName(AttrWithMissingProcessForUnknownServicePattern))
+
 	return []client.Object{
 		kitk8s.NewPod(PodWithBothLabelsName, namespace).
 			WithLabel("app.kubernetes.io/name", KubeAppLabelValue).

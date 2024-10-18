@@ -42,8 +42,7 @@ func TestHandle(t *testing.T) {
 			AdmissionRequest: admissionRequest,
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
-		validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{}, DeniedFilterPlugins: []string{}}
-		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme), validationConfig)
+		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme))
 
 		response := logPipelineValidatingWebhookHandler.Handle(context.Background(), request)
 		require.True(t, response.Allowed)
@@ -71,8 +70,7 @@ func TestHandle(t *testing.T) {
 			AdmissionRequest: admissionRequest,
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
-		validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{}, DeniedFilterPlugins: []string{"kubernetes"}}
-		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme), validationConfig)
+		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme))
 
 		response := logPipelineValidatingWebhookHandler.Handle(context.Background(), request)
 		require.False(t, response.Allowed)
@@ -99,8 +97,7 @@ func TestHandle(t *testing.T) {
 			AdmissionRequest: admissionRequest,
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
-		validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{}, DeniedFilterPlugins: []string{}}
-		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme), validationConfig)
+		logPipelineValidatingWebhookHandler := NewValidatingWebhookHandler(fakeClient, variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme))
 
 		response := logPipelineValidatingWebhookHandler.Handle(context.Background(), request)
 		require.True(t, response.Allowed)

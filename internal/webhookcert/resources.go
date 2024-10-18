@@ -37,7 +37,7 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
 	apiGroups := []string{"telemetry.kyma-project.io"}
 	apiVersions := []string{"v1alpha1"}
-	webhookTimeout := int32(15)
+	webhookTimeout := int32(15) //nolint:mnd // 15 seconds
 	labels := map[string]string{
 		"control-plane":              "telemetry-manager",
 		"app.kubernetes.io/instance": "telemetry",

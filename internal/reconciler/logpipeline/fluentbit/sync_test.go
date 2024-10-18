@@ -44,6 +44,7 @@ alias foo`,
 				},
 			},
 		}
+
 		var deployableLogPipeline []telemetryv1alpha1.LogPipeline
 		deployableLogPipeline = append(deployableLogPipeline, *pipeline)
 		err := sut.syncSectionsConfigMap(context.Background(), pipeline, deployableLogPipeline)
@@ -74,6 +75,7 @@ alias foo`,
 				},
 			},
 		}
+
 		var deployableLogPipeline []telemetryv1alpha1.LogPipeline
 		deployableLogPipeline = append(deployableLogPipeline, *pipeline)
 

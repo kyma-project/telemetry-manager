@@ -32,7 +32,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
-			for i := 0; i < maxNumberOfMetricPipelines; i++ {
+			for i := range maxNumberOfMetricPipelines {
 				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
 				pipeline := testutils.NewMetricPipelineBuilder().WithName(pipelineName).Build()
 				pipelinesNames = append(pipelinesNames, pipelineName)
@@ -51,7 +51,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMaxPipeline), Ordered, func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				k8sObjectsToDelete := slices.DeleteFunc(k8sObjects, func(obj client.Object) bool {
-					return obj.GetName() == pipelineCreatedFirst.GetName() //first pipeline is deleted separately in one of the specs
+					return obj.GetName() == pipelineCreatedFirst.GetName() // first pipeline is deleted separately in one of the specs
 				})
 				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjectsToDelete...)).Should(Succeed())

@@ -11,24 +11,29 @@ import (
 
 func PodReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
 	var pod corev1.Pod
+
 	err := k8sClient.Get(ctx, name, &pod)
 	if err != nil {
 		return false, fmt.Errorf("failed to get pod: %w", err)
 	}
+
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.State.Running == nil {
 			return false, generateContainerError(pod.Name, containerStatus)
 		}
 	}
+
 	return true, nil
 }
 
 func PodsReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
 	var pods corev1.PodList
+
 	err := k8sClient.List(ctx, &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list pods: %w", err)
 	}
+
 	for _, pod := range pods.Items {
 		for _, containerStatus := range pod.Status.ContainerStatuses {
 			if containerStatus.State.Running == nil {
@@ -36,6 +41,7 @@ func PodsReady(ctx context.Context, k8sClient client.Client, listOptions client.
 			}
 		}
 	}
+
 	return true, nil
 }
 
@@ -46,15 +52,18 @@ func generateContainerError(podName string, containerStatus corev1.ContainerStat
 	} else if containerStatus.State.Terminated != nil {
 		additionalInfo = fmt.Sprintf("Terminated reason: %s, message: %s", containerStatus.State.Terminated.Reason, containerStatus.State.Terminated.Message)
 	}
+
 	return fmt.Errorf("pod %s has a container %s that is not running. Additional info: %s", podName, containerStatus.Name, additionalInfo)
 }
 
 func HasContainer(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions, containerName string) (bool, error) {
 	var pods corev1.PodList
+
 	err := k8sClient.List(ctx, &pods, &listOptions)
 	if err != nil {
 		return false, fmt.Errorf("failed to list pods: %w", err)
 	}
+
 	for _, pod := range pods.Items {
 		for _, container := range pod.Spec.Containers {
 			if container.Name == containerName {
@@ -62,5 +71,6 @@ func HasContainer(ctx context.Context, k8sClient client.Client, listOptions clie
 			}
 		}
 	}
+
 	return false, nil
 }

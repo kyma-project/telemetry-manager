@@ -29,7 +29,6 @@ func TestMakeClusterRoleBinding(t *testing.T) {
 	require.Equal(t, clusterRoleBinding.RoleRef.Kind, "ClusterRole")
 	require.Equal(t, clusterRoleBinding.Subjects[0].Name, svcAcc.Name)
 	require.Equal(t, clusterRoleBinding.Subjects[0].Kind, "ServiceAccount")
-
 }
 
 func TestWithGoMemLimitEnvVar(t *testing.T) {

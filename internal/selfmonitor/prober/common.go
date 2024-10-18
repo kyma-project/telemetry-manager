@@ -38,6 +38,7 @@ func isFiringWithMatcher(alerts []promv1.Alert, ruleName, pipelineName string, m
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -46,5 +47,6 @@ func toRawLabels(ls model.LabelSet) map[string]string {
 	for k, v := range ls {
 		rawLabels[string(k)] = string(v)
 	}
+
 	return rawLabels
 }

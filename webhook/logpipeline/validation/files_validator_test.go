@@ -101,5 +101,4 @@ func TestValidateUpdatePipeline(t *testing.T) {
 	f := NewFilesValidator()
 	err := f.Validate(&l2, &pipeLineList)
 	require.NoError(t, err)
-
 }

@@ -8,6 +8,7 @@ var scrapeMetrics = []string{"up", "scrape_duration_seconds", "scrape_samples_sc
 
 func makeDropDiagnosticMetricsForInput(inputSourceCondition string) *FilterProcessor {
 	var filterExpressions []string
+
 	metricNameConditions := createNameConditions(scrapeMetrics)
 	excludeScrapeMetricsExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(metricNameConditions...))
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
@@ -24,5 +25,6 @@ func createNameConditions(names []string) []string {
 	for _, name := range names {
 		nameConditions = append(nameConditions, ottlexpr.NameAttributeEquals(name))
 	}
+
 	return nameConditions
 }

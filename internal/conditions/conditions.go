@@ -121,9 +121,11 @@ func message(reason string, specializedMessages map[string]string) string {
 	if condMessage, found := commonMessages[reason]; found {
 		return condMessage
 	}
+
 	if condMessage, found := specializedMessages[reason]; found {
 		return condMessage
 	}
+
 	return ""
 }
 

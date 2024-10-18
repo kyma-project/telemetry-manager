@@ -11,6 +11,7 @@ func TestStorage(t *testing.T) {
 	certDir := "testdata"
 	require.NoError(t, os.Mkdir(certDir, 0750))
 	sut := serverCertStorageImpl{certDir: certDir}
+
 	defer func() {
 		require.NoError(t, os.RemoveAll(certDir))
 	}()
