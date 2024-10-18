@@ -26,7 +26,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
 	Context("When metric pipelines with container, pod and node metrics enabled exist", Ordered, func() {
 		var (
 			mockNs = suite.IDWithSuffix("container-pod-node-metrics")
@@ -130,6 +130,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyContainerMetricsEnabledName, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyPodMetricsEnabledName, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyContainerMetricsEnabledName, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyPodMetricsEnabledName, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: mockNs})
 
 		})
 
@@ -398,6 +401,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have metrics backends running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyVolumeMetricsEnabledName, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyVolumeMetricsEnabledName, Namespace: mockNs})
 		})
 
 		Context("Runtime volume metrics", func() {
