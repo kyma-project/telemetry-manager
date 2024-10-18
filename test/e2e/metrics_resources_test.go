@@ -22,7 +22,7 @@ import (
 var _ = Describe(suite.ID(), Ordered, func() {
 	const ownerReferenceKind = "MetricPipeline"
 
-	Context("When a MetricPipeline exists", Label(suite.LabelMetrics), Ordered, func() {
+	Context("When a MetricPipeline exists", Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
 		var pipelineName = suite.ID()
 		endpointKey := "metrics-endpoint"
 		secret := kitk8s.NewOpaqueSecret("metrics-resources", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
@@ -137,7 +137,7 @@ var _ = Describe(suite.ID(), Ordered, func() {
 
 	})
 
-	//TODO: Move the tests in this Context to the Context above ("When a MetricPipeline exists") when the feature flag --kyma-input-allowed is removed
+	// TODO: Move the tests in this Context to the Context above ("When a MetricPipeline exists") when the feature flag --kyma-input-allowed is removed
 	Context("When a MetricPipeline exists in experimental channel", Label(suite.LabelMetrics, suite.LabelExperimental), Ordered, func() {
 		var pipelineName = suite.IDWithSuffix("experimental")
 		endpointKey := "metrics-endpoint"

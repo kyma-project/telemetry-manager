@@ -1,28 +1,19 @@
-## Tool Binaries
-K3D ?= $(TOOLS_BIN_DIR)/k3d
-
-## Tool Versions
-K3D_VERSION ?= $(ENV_K3D_VERSION)
-
-## k3d
-K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh"
-.PHONY: k3d
-k3d: $(K3D) ## Download k3d locally if necessary. If wrong version is installed, it will be removed before downloading.
-$(K3D): $(TOOLS_BIN_DIR)
-	@if test -x $(K3D) && ! $(K3D) version | grep -q $(K3D_VERSION); then \
-		echo "$(K3D) version is not as expected '$(K3D_VERSION)'. Removing it before installing."; \
-		rm -rf $(K3D); \
-	fi
-	test -s $(K3D) || curl -s $(K3D_INSTALL_SCRIPT) | PATH="$(PATH):$(TOOLS_BIN_DIR)" USE_SUDO=false K3D_INSTALL_DIR=$(TOOLS_BIN_DIR) TAG=$(K3D_VERSION) bash
 ##@ k3d
 .PHONY: provision-k3d
-provision-k3d: k3d
-	K8S_VERSION=$(K3S_K8S_VERSION) hack/provision-k3d.sh
+provision-k3d: $(K3D)
+	$(K3D) registry create kyma-registry --port 5001
+	$(K3D) cluster create kyma --registry-use kyma-registry:5001 --image rancher/k3s:v$(strip $(K3S_K8S_VERSION))-k3s1 --api-port 6550
+	kubectl create ns kyma-system
 
 .PHONY: provision-k3d-istio
 provision-k3d-istio: provision-k3d
 	hack/build-image.sh
 	hack/deploy-istio.sh
+
+.PHONY: cleanup-k3d
+cleanup-k3d:
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
 
 ##@ Gardener
 ## injected by the environment
