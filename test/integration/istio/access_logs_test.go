@@ -108,8 +108,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(
-					WithLogRecordAttrs(HaveKey(BeElementOf(istio.AccessLogAttributeKeys))),
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(
+					HaveLogRecordAttributes(HaveKey(BeElementOf(istio.AccessLogAttributeKeys))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
