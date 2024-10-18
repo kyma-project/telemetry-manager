@@ -24,8 +24,8 @@ type Validator struct {
 }
 
 var (
-	ErrSecretKeyNotFound = errors.New("one or more keys in a referenced Secret are missing")
-	ErrSecretRefNotFound = errors.New("one or more referenced Secrets are missing")
+	ErrSecretKeyNotFound      = errors.New("one or more keys in a referenced Secret are missing")
+	ErrSecretRefNotFound      = errors.New("one or more referenced Secrets are missing")
 	ErrSecretRefMissingFields = errors.New("secret reference is missing field/s")
 )
 
@@ -44,7 +44,7 @@ func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.S
 	if err := checkForMissingFields(ref); err != nil {
 		return nil, err
 	}
-	
+
 	var secret corev1.Secret
 	if err := client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, &secret); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -66,19 +66,21 @@ func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.S
 func checkForMissingFields(ref telemetryv1alpha1.SecretKeyRef) error {
 	var missingAttributes []string
 
-    if ref.Name == "" {
-        missingAttributes = append(missingAttributes, "Name")
-    }
-    if ref.Namespace == "" {
-        missingAttributes = append(missingAttributes, "Namespace")
-    }
-    if ref.Key == "" {
-        missingAttributes = append(missingAttributes, "Key")
-    }
+	if ref.Name == "" {
+		missingAttributes = append(missingAttributes, "Name")
+	}
 
-    if len(missingAttributes) > 0 {
-        return fmt.Errorf("%w: %s", ErrSecretRefMissingFields, strings.Join(missingAttributes, ", "))
-    }
+	if ref.Namespace == "" {
+		missingAttributes = append(missingAttributes, "Namespace")
+	}
+
+	if ref.Key == "" {
+		missingAttributes = append(missingAttributes, "Key")
+	}
+
+	if len(missingAttributes) > 0 {
+		return fmt.Errorf("%w: %s", ErrSecretRefMissingFields, strings.Join(missingAttributes, ", "))
+	}
 
 	return nil
 }
