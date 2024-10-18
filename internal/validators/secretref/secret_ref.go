@@ -26,7 +26,7 @@ type Validator struct {
 var (
 	ErrSecretKeyNotFound = errors.New("one or more keys in a referenced Secret are missing")
 	ErrSecretRefNotFound = errors.New("one or more referenced Secrets are missing")
-	ErrSecretRefMissingFields = errors.New("secret reference is missing fields")
+	ErrSecretRefMissingFields = errors.New("secret reference is missing field/s")
 )
 
 func (v *Validator) Validate(ctx context.Context, getter Getter) error {
