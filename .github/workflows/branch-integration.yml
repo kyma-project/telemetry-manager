@@ -30,10 +30,12 @@ jobs:
 
     # wait for the build to succeed so that the manager image is available
     - name: Wait for the image to be available in the registry
-      run: "./hack/await_image.sh ${{ github.ref_name }}"
+      run: "./hack/await_image.sh"
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
+        TRIGGER: "${{ github.ref_name }}"
+        QUERY_INTERVAL: 30
 
     # save gardener kubeconfig to a temp file in order to pass it to the command
     - name: Save serviceaccount to file
