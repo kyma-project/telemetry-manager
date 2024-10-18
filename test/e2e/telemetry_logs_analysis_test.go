@@ -211,10 +211,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-")),
-						WithLevel(MatchRegexp(logLevelsRegexp)),
-						WithLogBody(Not( // whitelist possible (flaky/expected) errors
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						HavePodName(ContainSubstring("telemetry-")),
+						HaveLevel(MatchRegexp(logLevelsRegexp)),
+						HaveLogBody(Not( // whitelist possible (flaky/expected) errors
 							Or(
 								ContainSubstring("grpc: addrConn.createTransport failed to connect"),
 								ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
@@ -232,9 +232,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-")),
-						WithLogBody(MatchRegexp(logLevelsRegexp)), // fluenbit does not log in JSON, so we need to check the body for errors
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						HavePodName(ContainSubstring("telemetry-")),
+						HaveLogBody(MatchRegexp(logLevelsRegexp)), // fluenbit does not log in JSON, so we need to check the body for errors
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -246,9 +246,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-")),
-						WithLevel(MatchRegexp(logLevelsRegexp)),
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						HavePodName(ContainSubstring("telemetry-")),
+						HaveLevel(MatchRegexp(logLevelsRegexp)),
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
