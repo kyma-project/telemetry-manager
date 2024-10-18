@@ -25,7 +25,8 @@ jobs:
       matrix:
         ginkgo-labels:
           - logs
-          - metrics
+          - "metrics && set_a"
+          - "metrics && set_b"
           - traces
           - telemetry
           - max-pipeline
