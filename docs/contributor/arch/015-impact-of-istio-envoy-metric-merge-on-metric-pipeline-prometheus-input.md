@@ -8,15 +8,19 @@ Proposed
 
 ## Context
 
-MetricPipeline amongst other input types supports `prometheus` and `istio` inputs . If `prometheus` input is enabled, Pods and Services marked with `prometheus.io/scrape=true` annotation are scraped. If `istio` input is enabled, istio-proxy container metrics are scraped from Pods that have had the istio-proxy sidecar injected.
+The MetricPipeline supports various input types, including prometheus and istio.
+* When the prometheus input is enabled, it scrapes metrics from Pods and Services annotated with prometheus.io/scrape=true.
+* When the istio input is enabled, it scrapes metrics from the Istio proxy (sidecar) containers injected into Pods.
 
-Technically both inputs are backed by OTel Collector Prometheus Receiver. There are 5 scrape jobs:
-| Scrape Job | Description |
+Both inputs are technically backed by the OpenTelemetry (OTel) Collector’s Prometheus Receiver. There are five distinct scrape jobs, each targeting different configurations:
+
+| Scrape Job | Targets |
 | --- | --- |
-| app-pods | Annotated Pods without Istio Proxy sidecar or `prometheus.io/scheme` explicitly set to `http`. Scraping is performed using plain http. |
-| app-services |  Annotated Services backed by Pods without sidecar or `prometheus.io/scheme` explicitly set to `http` (on Services). Scraping is performed using http. |
-| app-pods-secure |  Annotated Pods with sidecar or `prometheus.io/scheme` explicitly set to `https`. Scraping is performed over https using a client TLC certificate injected by istio. |
-| app-services-secure |  Annotated Services backed by Pods with sidecar or `prometheus.io/scheme` explicitly set to `https` (on Services). Scraping is performed over https using a client TLC certificate injected by istio. |
-| istio |
+| app-pods | Scrapes annotated Pods that either do not have an Istio sidecar or have the prometheus.io/scheme explicitly set to http. Scraping is done over plain HTTP. |
+| app-services | Scrapes annotated Services backed by Pods without an Istio sidecar or where the prometheus.io/scheme is explicitly set to http (on Services). Scraping is done over plain HTTP. |
+| app-pods-secure | Scrapes annotated Pods that either have an Istio sidecar or have the prometheus.io/scheme set to https. Scraping is performed over HTTPS, using a client TLS certificate injected by Istio. |
+| app-services-secure | Scrapes annotated Services backed by Pods with an Istio sidecar or where the prometheus.io/scheme is set to https (on Services). Scraping is done over HTTPS, using a client TLS certificate injected by Istio. |
+| istio-proxy | Scrapes metrics from Istio proxy sidecars, with scraping performed over plain HTTP. |
+
 ## Decision
 
