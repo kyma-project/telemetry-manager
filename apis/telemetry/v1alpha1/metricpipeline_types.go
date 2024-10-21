@@ -145,7 +145,7 @@ type MetricPipelineRuntimeInputResourceDisabledByDefault struct {
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// If enabled, istio-proxy metrics are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
+	// If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
 	// +optional
