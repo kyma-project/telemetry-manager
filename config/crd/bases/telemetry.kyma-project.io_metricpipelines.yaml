@@ -75,8 +75,8 @@ spec:
                         type: object
                       enabled:
                         description: If enabled, istio-proxy metrics are scraped from
-                          Pods that have had the istio-proxy sidecar injected. The
-                          default is `false`.
+                          Pods that have the istio-proxy sidecar injected. The default
+                          is `false`.
                         type: boolean
                       namespaces:
                         description: Describes whether istio-proxy metrics from specific

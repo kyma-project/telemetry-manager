@@ -72,7 +72,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;istio**  | object | Configures istio-proxy metrics scraping. |
 | **input.&#x200b;istio.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping |
 | **input.&#x200b;istio.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are scraped. The default is `false`. |
-| **input.&#x200b;istio.&#x200b;enabled**  | boolean | If enabled, istio-proxy metrics are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`. |
+| **input.&#x200b;istio.&#x200b;enabled**  | boolean | If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;namespaces**  | object | Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
