@@ -53,46 +53,73 @@ func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder
 }
 
 func (b *LogPipelineBuilder) WithApplicationInputDisabled() *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.Enabled = ptr.To(false)
 	return b
 }
 
 func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.Containers.Include = containers
 	return b
 }
 
 func (b *LogPipelineBuilder) WithExcludeContainers(containers ...string) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.Containers.Exclude = containers
 	return b
 }
 
 func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.Namespaces.Include = namespaces
 	return b
 }
 
 func (b *LogPipelineBuilder) WithExcludeNamespaces(namespaces ...string) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.Namespaces.Exclude = namespaces
 	return b
 }
 
 func (b *LogPipelineBuilder) WithSystemNamespaces(enable bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.Namespaces.System = enable
 	return b
 }
 
 func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.KeepAnnotations = keep
 	return b
 }
 
 func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.DropLabels = drop
 	return b
 }
 
 func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
 	b.input.Application.KeepOriginalBody = ptr.To(keep)
 	return b
 }

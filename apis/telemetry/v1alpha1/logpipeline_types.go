@@ -38,7 +38,7 @@ type LogPipelineSpec struct {
 // Input describes a log input for a LogPipeline.
 type Input struct {
 	// Configures in more detail from which containers application logs are enabled as input.
-	Application ApplicationInput `json:"application,omitempty"`
+	Application *ApplicationInput `json:"application,omitempty"`
 }
 
 // ApplicationInput specifies the default type of Input that handles application logs from runtime containers. It configures in more detail from which containers logs are selected as input.

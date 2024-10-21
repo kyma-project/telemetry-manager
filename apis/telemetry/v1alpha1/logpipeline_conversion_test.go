@@ -18,7 +18,7 @@ func TestConvertTo(t *testing.T) {
 		},
 		Spec: LogPipelineSpec{
 			Input: Input{
-				Application: ApplicationInput{
+				Application: &ApplicationInput{
 					Enabled: ptr.To(true),
 					Namespaces: InputNamespaces{
 						Include: []string{"default", "kube-system"},

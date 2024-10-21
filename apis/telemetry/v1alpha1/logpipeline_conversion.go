@@ -192,7 +192,7 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 
 	srcRuntimeInput := src.Spec.Input.Runtime
-	dst.Spec.Input.Application = ApplicationInput{
+	dst.Spec.Input.Application = &ApplicationInput{
 		Enabled:          srcRuntimeInput.Enabled,
 		Namespaces:       InputNamespaces(srcRuntimeInput.Namespaces),
 		Containers:       InputContainers(srcRuntimeInput.Containers),

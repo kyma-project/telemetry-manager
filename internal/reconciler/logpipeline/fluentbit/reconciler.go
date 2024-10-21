@@ -356,7 +356,12 @@ func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	// Treat the pipeline as non-reconcilable if the application input is explicitly disabled
-	appInputEnabled := pipeline.Spec.Input.Application.Enabled
+	var appInputEnabled *bool
+
+	if pipeline.Spec.Input.Application != nil {
+		appInputEnabled = pipeline.Spec.Input.Application.Enabled
+	}
+
 	if appInputEnabled != nil && !*appInputEnabled {
 		return false, nil
 	}

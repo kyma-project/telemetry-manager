@@ -140,7 +140,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.Input{
-				Application: telemetryv1alpha1.ApplicationInput{
+				Application: &telemetryv1alpha1.ApplicationInput{
 					Containers: telemetryv1alpha1.InputContainers{
 						Exclude: []string{"container1", "container2"},
 					},
@@ -230,7 +230,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.Input{
-				Application: telemetryv1alpha1.ApplicationInput{
+				Application: &telemetryv1alpha1.ApplicationInput{
 					KeepAnnotations:  true,
 					DropLabels:       false,
 					KeepOriginalBody: ptr.To(true),
