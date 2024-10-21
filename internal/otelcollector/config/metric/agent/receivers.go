@@ -22,7 +22,7 @@ func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 
 	if inputs.runtime {
 		receiversConfig.KubeletStats = makeKubeletStatsConfig(inputs.runtimeResources)
-		receiversConfig.SingletonK8sClusterReceiverCreator = makeSingletonK8sClusterReceiverCreatorConfig(opts.AgentNamespace)
+		receiversConfig.SingletonK8sClusterReceiverCreator = makeSingletonK8sClusterReceiverCreatorConfig(opts.AgentNamespace, inputs.runtimeResources)
 	}
 
 	if inputs.istio {
@@ -61,8 +61,30 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 	}
 }
 
-func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *SingletonK8sClusterReceiverCreator {
-	metricsToDrop := K8sClusterMetricsConfig{
+func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string, runtimeResources runtimeResourcesEnabled) *SingletonK8sClusterReceiverCreator {
+
+	return &SingletonK8sClusterReceiverCreator{
+		AuthType: "serviceAccount",
+		LeaderElection: metric.LeaderElection{
+			LeaseName:      "telemetry-metric-agent-k8scluster",
+			LeaseNamespace: gatewayNamespace,
+		},
+		SingletonK8sClusterReceiver: SingletonK8sClusterReceiver{
+			K8sClusterReceiver: K8sClusterReceiver{
+				AuthType:               "serviceAccount",
+				CollectionInterval:     "30s",
+				NodeConditionsToReport: []string{},
+				Metrics:                makeK8sClusterMetricsToDrop(runtimeResources),
+			},
+		},
+	}
+}
+
+func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sClusterMetricsToDrop {
+
+	metricsToDrop := K8sClusterMetricsToDrop{}
+
+	metricsToDrop.K8sClusterDefaultMetricsToDrop = &K8sClusterDefaultMetricsToDrop{
 		K8sContainerStorageRequest:          MetricConfig{Enabled: false},
 		K8sContainerStorageLimit:            MetricConfig{Enabled: false},
 		K8sContainerEphemeralStorageRequest: MetricConfig{Enabled: false},
@@ -82,21 +104,43 @@ func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string) *Sing
 		K8sResourceQuotaUsed:                MetricConfig{Enabled: false},
 	}
 
-	return &SingletonK8sClusterReceiverCreator{
-		AuthType: "serviceAccount",
-		LeaderElection: metric.LeaderElection{
-			LeaseName:      "telemetry-metric-agent-k8scluster",
-			LeaseNamespace: gatewayNamespace,
-		},
-		SingletonK8sClusterReceiver: SingletonK8sClusterReceiver{
-			K8sClusterReceiver: K8sClusterReceiver{
-				AuthType:               "serviceAccount",
-				CollectionInterval:     "30s",
-				NodeConditionsToReport: []string{},
-				Metrics:                metricsToDrop,
-			},
-		},
+	// The following metrics are enabled by default in the K8sClusterReceiver. If we disable these resources in
+	//pipeline config we need to disable the corresponding metrics in the K8sClusterReceiver.
+	if !runtimeResources.statefulSet {
+		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = &K8sClusterStatefulSetMetricsToDrop{
+			K8sStatefulSetCurrentPods: MetricConfig{false},
+			K8sStatefulSetDesiredPods: MetricConfig{false},
+			K8sStatefulSetReadyPods:   MetricConfig{false},
+			K8sStatefulSetUpdatedPods: MetricConfig{false},
+		}
 	}
+
+	if !runtimeResources.job {
+		metricsToDrop.K8sClusterJobMetricsToDrop = &K8sClusterJobMetricsToDrop{
+			K8sJobActiveJobs:            MetricConfig{false},
+			K8sJobDesiredSuccessfulPods: MetricConfig{false},
+			K8sJobFailedPods:            MetricConfig{false},
+			K8sJobMaxParallelPods:       MetricConfig{false},
+		}
+	}
+
+	if !runtimeResources.deployment {
+		metricsToDrop.K8sClusterDeploymentMetricsToDrop = &K8sClusterDeploymentMetricsToDrop{
+			K8sDeploymentAvailable: MetricConfig{false},
+			K8sDeploymentDesired:   MetricConfig{false},
+		}
+	}
+
+	if !runtimeResources.daemonSet {
+		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = &K8sClusterDaemonSetMetricsToDrop{
+			K8sDaemonSetCurrentScheduledNodes: MetricConfig{false},
+			K8sDaemonSetDesiredScheduledNodes: MetricConfig{false},
+			K8sDaemonSetMisscheduledNodes:     MetricConfig{false},
+			K8sDaemonSetReadyNodes:            MetricConfig{false},
+		}
+	}
+
+	return metricsToDrop
 }
 
 func makeKubeletStatsMetricGroups(runtimeResources runtimeResourcesEnabled) []MetricGroupType {

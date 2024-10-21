@@ -281,6 +281,59 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
+
+		t.Run("runtime enabled with different resources", func(t *testing.T) {
+			tt := []struct {
+				name     string
+				resource string
+			}{
+				{
+					name:     "runtime enabled with pod metrics",
+					resource: "pod",
+				}, {
+					name:     "runtime enabled with node metrics",
+					resource: "node",
+				}, {
+					name:     "runtime enabled with container metrics",
+					resource: "container",
+				}, {
+					name:     "runtime enabled with statefulset metrics",
+					resource: "statefulset",
+				}, {
+					name:     "runtime enabled with daemonset metrics",
+					resource: "daemonset",
+				}, {
+					name:     "runtime enabled with deployment metrics",
+					resource: "deployment",
+				}, {
+					name:     "runtime enabled with job metrics",
+					resource: "job",
+				},
+			}
+			for _, tc := range tt {
+				expectedReceiverIDs := []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}
+				expectedProcessorIDs := []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}
+				expectedExporterIDs := []string{"otlp"}
+				t.Run(tc.name, func(t *testing.T) {
+					collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+						testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputResourcesMetricsEnabled(tc.resource, true).Build(),
+					}, BuildOptions{})
+
+					require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
+					require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+					require.NotNil(t, collectorConfig.Processors.InsertSkipEnrichmentAttribute)
+					require.Nil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+					require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+					require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+
+					require.Len(t, collectorConfig.Service.Pipelines, 1)
+					require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
+					require.Equal(t, expectedReceiverIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+					require.Equal(t, expectedProcessorIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+					require.Equal(t, expectedExporterIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
+				})
+			}
+		})
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
@@ -330,5 +383,6 @@ func TestBuildAgentConfig(t *testing.T) {
 				require.Equal(t, string(goldenFile), string(configYAML))
 			})
 		}
+
 	})
 }

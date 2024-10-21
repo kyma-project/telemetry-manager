@@ -27,10 +27,14 @@ type inputSources struct {
 }
 
 type runtimeResourcesEnabled struct {
-	pod       bool
-	container bool
-	node      bool
-	volume    bool
+	pod         bool
+	container   bool
+	node        bool
+	volume      bool
+	statefulSet bool
+	deployment  bool
+	daemonSet   bool
+	job         bool
 }
 
 type BuildOptions struct {
@@ -72,10 +76,14 @@ func enableRuntimeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) 
 
 func enableRuntimeResourcesMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) runtimeResourcesEnabled {
 	return runtimeResourcesEnabled{
-		pod:       enableRuntimePodMetricsScraping(pipelines),
-		container: enableRuntimeContainerMetricsScraping(pipelines),
-		node:      enableRuntimeNodeMetricsScraping(pipelines),
-		volume:    enableRuntimeVolumeMetricsScraping(pipelines),
+		pod:         enableRuntimePodMetricsScraping(pipelines),
+		container:   enableRuntimeContainerMetricsScraping(pipelines),
+		node:        enableRuntimeNodeMetricsScraping(pipelines),
+		volume:      enableRuntimeVolumeMetricsScraping(pipelines),
+		statefulSet: enableRuntimeStatefulSetMetricsScraping(pipelines),
+		deployment:  enableRuntimeDeploymentMetricsScraping(pipelines),
+		daemonSet:   enableRuntimeDaemonSetMetricsScraping(pipelines),
+		job:         enableRuntimeJobMetricsScraping(pipelines),
 	}
 }
 
@@ -116,6 +124,50 @@ func enableRuntimeVolumeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipe
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeVolumeInputEnabled(input) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func enableRuntimeStatefulSetMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeStatefulSetInputEnabled(input) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func enableRuntimeDeploymentMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeDeploymentInputEnabled(input) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func enableRuntimeDaemonSetMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeDaemonSetInputEnabled(input) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func enableRuntimeJobMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeJobInputEnabled(input) {
 			return true
 		}
 	}

@@ -61,3 +61,39 @@ func IsRuntimeVolumeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bo
 
 	return *input.Runtime.Resources.Volume.Enabled
 }
+
+func IsRuntimeStatefulSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	// Runtime volume metrics should be disabled by default if any of the fields (Resources, Statefulset or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.StatefulSet == nil || input.Runtime.Resources.StatefulSet.Enabled == nil {
+		return false
+	}
+
+	return *input.Runtime.Resources.StatefulSet.Enabled
+}
+
+func IsRuntimeDeploymentInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	// Runtime volume metrics should be disabled by default if any of the fields (Resources, Deployment or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.Deployment == nil || input.Runtime.Resources.Deployment.Enabled == nil {
+		return false
+	}
+
+	return *input.Runtime.Resources.Deployment.Enabled
+}
+
+func IsRuntimeDaemonSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	// Runtime volume metrics should be disabled by default if any of the fields (Resources, DaemonSet or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.DaemonSet == nil || input.Runtime.Resources.DaemonSet.Enabled == nil {
+		return false
+	}
+
+	return *input.Runtime.Resources.DaemonSet.Enabled
+}
+
+func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	// Runtime volume metrics should be disabled by default if any of the fields (Resources, Job or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.Job == nil || input.Runtime.Resources.Job.Enabled == nil {
+		return false
+	}
+
+	return *input.Runtime.Resources.Job.Enabled
+}
