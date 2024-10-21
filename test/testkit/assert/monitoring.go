@@ -18,7 +18,7 @@ func EmitsOTelCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL st
 		resp, err := proxyClient.Get(metricsURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricFamilies(HaveName(ContainSubstring("otelcol")))))
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricFamilies(ContainElement(HaveName(ContainSubstring("otelcol"))))))
 
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
