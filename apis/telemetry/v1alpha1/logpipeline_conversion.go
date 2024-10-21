@@ -24,7 +24,7 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 
 	srcAppInput := src.Spec.Input.Application
 	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{
-		Runtime: telemetryv1beta1.LogPipelineRuntimeInput{
+		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 			Enabled:          srcAppInput.Enabled,
 			Namespaces:       telemetryv1beta1.LogPipelineInputNamespaces(srcAppInput.Namespaces),
 			Containers:       telemetryv1beta1.LogPipelineInputContainers(srcAppInput.Containers),

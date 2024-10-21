@@ -157,7 +157,7 @@ func TestConvertFrom(t *testing.T) {
 		},
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input: telemetryv1beta1.LogPipelineInput{
-				Runtime: telemetryv1beta1.LogPipelineRuntimeInput{
+				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 					Enabled: ptr.To(true),
 					Namespaces: telemetryv1beta1.LogPipelineInputNamespaces{
 						Include: []string{"default", "kube-system"},
