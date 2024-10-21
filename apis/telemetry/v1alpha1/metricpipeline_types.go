@@ -128,7 +128,7 @@ type MetricPipelineRuntimeInputResources struct {
 	// Configures DaemonSet runtime metrics scraping.
 	// +optional
 	// +kubebuilder:default={enabled: false}
-	DaemonSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"daemonSet,omitempty"`
+	DaemonSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"daemonset,omitempty"`
 	// Configures Deployment runtime metrics scraping.
 	// +optional
 	// +kubebuilder:default={enabled: false}
@@ -136,7 +136,7 @@ type MetricPipelineRuntimeInputResources struct {
 	// Configures StatefulSet runtime metrics scraping.
 	// +optional
 	// +kubebuilder:default={enabled: false}
-	StatefulSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"statefulSet,omitempty"`
+	StatefulSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"statefulset,omitempty"`
 	// Configures Job runtime metrics scraping.
 	// +optional
 	// +kubebuilder:default={enabled: false}

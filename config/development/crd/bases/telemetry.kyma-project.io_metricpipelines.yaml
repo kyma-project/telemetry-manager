@@ -247,7 +247,7 @@ spec:
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
-                          daemonSet:
+                          daemonset:
                             default:
                               enabled: false
                             description: Configures DaemonSet runtime metrics scraping.
@@ -302,7 +302,7 @@ spec:
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
-                          statefulSet:
+                          statefulset:
                             default:
                               enabled: false
                             description: Configures StatefulSet runtime metrics scraping.
