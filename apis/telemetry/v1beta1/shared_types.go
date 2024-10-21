@@ -29,7 +29,7 @@ type ValueFromSource struct {
 }
 
 func (v *ValueFromSource) IsSecretKeyRef() bool {
-	return v.SecretKeyRef != nil && v.SecretKeyRef.Name != "" && v.SecretKeyRef.Key != "" && v.SecretKeyRef.Namespace != ""
+	return v.SecretKeyRef != nil
 }
 
 type SecretKeyRef struct {
