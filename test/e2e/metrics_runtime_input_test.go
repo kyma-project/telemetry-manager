@@ -49,6 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		objs = append(objs, &metricPipeline)
 
 		return objs
+
 	}
 
 	Context("When a metricpipeline with Runtime input exists", Ordered, func() {
