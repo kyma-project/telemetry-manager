@@ -21,6 +21,7 @@ func flattenAllMetricFamily(mfs map[string]*prommodel.MetricFamily) []FlatMetric
 	for _, mf := range mfs {
 		fmf = append(fmf, flattenMetricFamily(mf)...)
 	}
+
 	return fmf
 }
 
@@ -28,6 +29,7 @@ func flattenAllMetricFamily(mfs map[string]*prommodel.MetricFamily) []FlatMetric
 // It loops through all the metrics in a MetricFamily and appends it to the FlatMetricFamily slice.
 func flattenMetricFamily(mf *prommodel.MetricFamily) []FlatMetricFamily {
 	var fmf []FlatMetricFamily
+
 	for _, m := range mf.Metric {
 		v := getValuePerMetric(m)
 		fmf = append(fmf, FlatMetricFamily{
@@ -36,6 +38,7 @@ func flattenMetricFamily(mf *prommodel.MetricFamily) []FlatMetricFamily {
 			Labels:       labelsToMap(m.GetLabel()),
 		})
 	}
+
 	return fmf
 }
 
@@ -44,6 +47,7 @@ func labelsToMap(l []*prommodel.LabelPair) map[string]string {
 	for _, l := range l {
 		labels[l.GetName()] = l.GetValue()
 	}
+
 	return labels
 }
 
@@ -59,5 +63,6 @@ func getValuePerMetric(m *prommodel.Metric) float64 {
 	if m.Untyped != nil {
 		return m.Untyped.GetValue()
 	}
+
 	return 0
 }
