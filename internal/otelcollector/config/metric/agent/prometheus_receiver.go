@@ -94,7 +94,7 @@ func makePrometheusPodsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
 		inferAddressFromAnnotation(AnnotatedPod))
 }
 
-// makePrometheusEndpointsRelabelConfigs generates a set of relabel configs for Endpoint role type.
+// makePrometheusEndpointsRelabelConfigs generates a set of relabel configs for the Endpoint role type.
 // They restrict Service Endpoints that are selected for scraping and set internal labels (__address__, __scheme__, etc.).
 // See more: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#endpoint.
 //
