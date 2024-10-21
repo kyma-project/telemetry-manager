@@ -26,7 +26,7 @@ runs:
       run: "./hack/await_image.sh"
       env:
         GITHUB_TOKEN: "${{ inputs.github-token }}"
-        COMMIT_SHA: "${{ github.event.pull_request.head.sha }}"
+        TRIGGER: "${{ github.event.pull_request.head.sha }}"
         QUERY_INTERVAL: 30
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
