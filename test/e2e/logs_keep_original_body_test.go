@@ -106,8 +106,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backend1ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ConsistOfLds(ConsistOfLogRecords(
-					WithLogBody(BeEmpty()),
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(HaveEach(
+					HaveLogBody(BeEmpty()),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -118,8 +118,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ConsistOfLds(ConsistOfLogRecords(
-					WithLogBody(Not(BeEmpty())),
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(HaveEach(
+					HaveLogBody(Not(BeEmpty())),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
