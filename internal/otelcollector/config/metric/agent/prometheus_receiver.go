@@ -71,7 +71,7 @@ func makePrometheusConfig(opts BuildOptions, jobNamePrefix string, role Role, re
 // See more: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod.
 //
 // If requireHTTPS is true, only Pods with Istio sidecars or those explicitly marked with prometheus.io/scheme=http annotations are selected.
-// If requireHTTPS is false, only Pods wuthout Istio sidecars or those marked with prometheus.io/scheme=https annotation are selcted.
+// If requireHTTPS is false, only Pods without Istio sidecars or those marked with prometheus.io/scheme=https annotation are selected.
 func makePrometheusPodsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
 	relabelConfigs := []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedPod),
