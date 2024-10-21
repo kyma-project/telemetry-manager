@@ -94,9 +94,9 @@ Types user:string pass:string`
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(SatisfyAll(
-					WithLogRecordAttrs(HaveKeyWithValue("user", "foo")),
-					WithLogRecordAttrs(HaveKeyWithValue("pass", "bar")),
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(SatisfyAll(
+					HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
+					HaveLogRecordAttributes(HaveKeyWithValue("pass", "bar")),
 				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
