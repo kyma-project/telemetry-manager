@@ -32,7 +32,6 @@ func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 	includeContainers := []string{"*"}
 
 	if pipeline.Spec.Input.Application != nil {
-
 		if len(pipeline.Spec.Input.Application.Namespaces.Include) > 0 {
 			includeNamespaces = pipeline.Spec.Input.Application.Namespaces.Include
 		}
