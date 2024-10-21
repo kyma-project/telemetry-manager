@@ -152,6 +152,58 @@ func makeDropRuntimeVolumeMetricsConfig() *FilterProcessor {
 	}
 }
 
+func makeDropRuntimeDeploymentMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "^k8s.deployment.*"),
+				),
+			},
+		},
+	}
+}
+
+func makeDropRuntimeStatefulSetMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "^k8s.statefulset.*"),
+				),
+			},
+		},
+	}
+}
+
+func makeDropRuntimeDaemonSetMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "^k8s.daemonset.*"),
+				),
+			},
+		},
+	}
+}
+
+func makeDropRuntimeJobMetricsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(
+					inputSourceEquals(metric.InputSourceRuntime),
+					ottlexpr.IsMatch("name", "^k8s.job.*"),
+				),
+			},
+		},
+	}
+}
+
 func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
 }

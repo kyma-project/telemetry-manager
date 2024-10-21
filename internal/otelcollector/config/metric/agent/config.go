@@ -61,58 +61,58 @@ const (
 )
 
 type K8sClusterMetricsToDrop struct {
-	*K8sClusterDefaultMetricsToDrop
-	*K8sClusterStatefulSetMetricsToDrop
-	*K8sClusterJobMetricsToDrop
-	*K8sClusterDeploymentMetricsToDrop
-	*K8sClusterDaemonSetMetricsToDrop
+	*K8sClusterDefaultMetricsToDrop     `yaml:",inline,omitempty"`
+	*K8sClusterStatefulSetMetricsToDrop `yaml:",inline,omitempty"`
+	*K8sClusterJobMetricsToDrop         `yaml:",inline,omitempty"`
+	*K8sClusterDeploymentMetricsToDrop  `yaml:",inline,omitempty"`
+	*K8sClusterDaemonSetMetricsToDrop   `yaml:",inline,omitempty"`
 }
 
 type K8sClusterDefaultMetricsToDrop struct {
 	// metrics allows enabling/disabling scraped metric.
-	K8sContainerStorageRequest          MetricConfig `yaml:"k8s.container.storage_request,omitempty"`
-	K8sContainerStorageLimit            MetricConfig `yaml:"k8s.container.storage_limit,omitempty"`
-	K8sContainerEphemeralStorageRequest MetricConfig `yaml:"k8s.container.ephemeralstorage_request,omitempty"`
-	K8sContainerEphemeralStorageLimit   MetricConfig `yaml:"k8s.container.ephemeralstorage_limit,omitempty"`
-	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts,omitempty"`
-	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready,omitempty"`
-	K8sNamespacePhase                   MetricConfig `yaml:"k8s.namespace.phase,omitempty"`
+	K8sContainerStorageRequest          MetricConfig `yaml:"k8s.container.storage_request"`
+	K8sContainerStorageLimit            MetricConfig `yaml:"k8s.container.storage_limit"`
+	K8sContainerEphemeralStorageRequest MetricConfig `yaml:"k8s.container.ephemeralstorage_request"`
+	K8sContainerEphemeralStorageLimit   MetricConfig `yaml:"k8s.container.ephemeralstorage_limit"`
+	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts"`
+	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready"`
+	K8sNamespacePhase                   MetricConfig `yaml:"k8s.namespace.phase"`
 	// Disable HPA Metrics by default
-	K8sHPACurrentReplicas MetricConfig `yaml:"k8s.hpa.current_replicas,omitempty"`
-	K8sHPADesiredReplicas MetricConfig `yaml:"k8s.hpa.desired_replicas,omitempty"`
-	K8sHPAMinReplicas     MetricConfig `yaml:"k8s.hpa.min_replicas,omitempty"`
-	K8sHPAMaxReplicas     MetricConfig `yaml:"k8s.hpa.max_replicas,omitempty"`
+	K8sHPACurrentReplicas MetricConfig `yaml:"k8s.hpa.current_replicas"`
+	K8sHPADesiredReplicas MetricConfig `yaml:"k8s.hpa.desired_replicas"`
+	K8sHPAMinReplicas     MetricConfig `yaml:"k8s.hpa.min_replicas"`
+	K8sHPAMaxReplicas     MetricConfig `yaml:"k8s.hpa.max_replicas"`
 	// Disable ReplicaSet metrics by default
-	K8sReplicaSetAvailable MetricConfig `yaml:"k8s.replicaset.available,omitempty"`
-	K8sReplicaSetDesired   MetricConfig `yaml:"k8s.replicaset.desired,omitempty"`
+	K8sReplicaSetAvailable MetricConfig `yaml:"k8s.replicaset.available"`
+	K8sReplicaSetDesired   MetricConfig `yaml:"k8s.replicaset.desired"`
 	// Disable Replication Controller metrics by default
-	K8sReplicationControllerAvailable MetricConfig `yaml:"k8s.replication_controller.available,omitempty"`
-	K8sReplicationControllerDesired   MetricConfig `yaml:"k8s.replication_controller.desired,omitempty"`
+	K8sReplicationControllerAvailable MetricConfig `yaml:"k8s.replication_controller.available"`
+	K8sReplicationControllerDesired   MetricConfig `yaml:"k8s.replication_controller.desired"`
 	// Disable Resource Quota metrics by default
-	K8sResourceQuotaHardLimit MetricConfig `yaml:"k8s.resource_quota.hard_limit,omitempty"`
-	K8sResourceQuotaUsed      MetricConfig `yaml:"k8s.resource_quota.used,omitempty"`
+	K8sResourceQuotaHardLimit MetricConfig `yaml:"k8s.resource_quota.hard_limit"`
+	K8sResourceQuotaUsed      MetricConfig `yaml:"k8s.resource_quota.used"`
 	// Disable Cronjob metrics by default
-	K8sCronJobActiveJobs MetricConfig `yaml:"k8s.cronjob.active_jobs,omitempty"`
+	K8sCronJobActiveJobs MetricConfig `yaml:"k8s.cronjob.active_jobs"`
 }
 
 type K8sClusterStatefulSetMetricsToDrop struct {
-	K8sStatefulSetCurrentPods MetricConfig `yaml:"k8s.statefulset.current_pods,omitempty"`
-	K8sStatefulSetDesiredPods MetricConfig `yaml:"k8s.statefulset.desired_pods,omitempty"`
-	K8sStatefulSetReadyPods   MetricConfig `yaml:"k8s.statefulset.ready_pods,omitempty"`
-	K8sStatefulSetUpdatedPods MetricConfig `yaml:"k8s.statefulset.updated_pods,omitempty"`
+	K8sStatefulSetCurrentPods MetricConfig `yaml:"k8s.statefulset.current_pods"`
+	K8sStatefulSetDesiredPods MetricConfig `yaml:"k8s.statefulset.desired_pods"`
+	K8sStatefulSetReadyPods   MetricConfig `yaml:"k8s.statefulset.ready_pods"`
+	K8sStatefulSetUpdatedPods MetricConfig `yaml:"k8s.statefulset.updated_pods"`
 }
 
 type K8sClusterJobMetricsToDrop struct {
-	K8sJobActiveJobs            MetricConfig `yaml:"k8s.job.active_jobs,omitempty"`
-	K8sJobDesiredSuccessfulPods MetricConfig `yaml:"k8s.job.desired_successful_pods,omitempty"`
-	K8sJobFailedPods            MetricConfig `yaml:"k8s.job.failed_pods,omitempty"`
-	K8sJobMaxParallelPods       MetricConfig `yaml:"k8s.job.max_parallel_pods,omitempty"`
-	K8sJobSuccessfulPods        MetricConfig `yaml:"k8s.job.successful_pods,omitempty"`
+	K8sJobActiveJobs            MetricConfig `yaml:"k8s.job.active_jobs"`
+	K8sJobDesiredSuccessfulPods MetricConfig `yaml:"k8s.job.desired_successful_pods"`
+	K8sJobFailedPods            MetricConfig `yaml:"k8s.job.failed_pods"`
+	K8sJobMaxParallelPods       MetricConfig `yaml:"k8s.job.max_parallel_pods"`
+	K8sJobSuccessfulPods        MetricConfig `yaml:"k8s.job.successful_pods"`
 }
 
 type K8sClusterDeploymentMetricsToDrop struct {
-	K8sDeploymentAvailable MetricConfig `yaml:"k8s.deployment.available,omitempty"`
-	K8sDeploymentDesired   MetricConfig `yaml:"k8s.deployment.desired,omitempty"`
+	K8sDeploymentAvailable MetricConfig `yaml:"k8s.deployment.available"`
+	K8sDeploymentDesired   MetricConfig `yaml:"k8s.deployment.desired"`
 }
 
 type K8sClusterDaemonSetMetricsToDrop struct {
