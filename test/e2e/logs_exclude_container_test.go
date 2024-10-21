@@ -85,7 +85,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainLd(WithLogRecords(Not(BeEmpty())))))
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(Not(BeEmpty()))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -98,9 +98,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(bodyContent).To(Not(BeEmpty()), "No logs found in the backend")
-				g.Expect(bodyContent).To(Not(ContainLd(ContainLogRecord(
-					WithContainerName(ContainSubstring(loggen.DefaultName)))),
-				))
+				g.Expect(bodyContent).To(HaveFlatLogs(Not(ContainElement(
+					HaveContainerName(ContainSubstring(loggen.DefaultName)),
+				))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
