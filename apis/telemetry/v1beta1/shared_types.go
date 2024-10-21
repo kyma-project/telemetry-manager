@@ -29,7 +29,7 @@ type ValueFromSource struct {
 }
 
 func (v *ValueFromSource) IsSecretKeyRef() bool {
-	return v.SecretKeyRef != nil && v.SecretKeyRef.Name != "" && v.SecretKeyRef.Key != ""
+	return v.SecretKeyRef != nil && v.SecretKeyRef.Name != "" && v.SecretKeyRef.Key != "" && v.SecretKeyRef.Namespace != ""
 }
 
 type SecretKeyRef struct {
@@ -37,6 +37,7 @@ type SecretKeyRef struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 	// The name of the Namespace containing the Secret with the referenced value.
+	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace,omitempty"`
 	// The name of the attribute of the Secret holding the referenced value.
 	// +kubebuilder:validation:Required

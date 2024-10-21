@@ -82,7 +82,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) || errors.Is(err, secretref.ErrSecretRefMissingFields) {
-		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.ConvertErrToMsg(err)
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretInvalid, conditions.ConvertErrToMsg(err)
 	}
 
 	if endpoint.IsEndpointInvalidError(err) {

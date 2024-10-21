@@ -3,7 +3,6 @@ package endpoint
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"net/url"
 	"strconv"
@@ -93,7 +92,7 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 
 	valueFromSecret, err := secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
 	if err != nil {
-		return "", &EndpointInvalidError{Err: fmt.Errorf("%w: %w", ErrValueResolveFailed, err)}
+		return "", &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
 
 	return string(valueFromSecret), nil

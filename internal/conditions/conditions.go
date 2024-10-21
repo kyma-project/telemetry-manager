@@ -21,7 +21,7 @@ const (
 	ReasonGatewayNotReady             = "GatewayNotReady"
 	ReasonGatewayReady                = "GatewayReady"
 	ReasonMaxPipelinesExceeded        = "MaxPipelinesExceeded"
-	ReasonReferencedSecretMissing     = "ReferencedSecretMissing"
+	ReasonReferencedSecretInvalid     = "ReferencedSecretInvalid"
 	ReasonSelfMonAllDataDropped       = "AllTelemetryDataDropped"
 	ReasonSelfMonBufferFillingUp      = "BufferFillingUp"
 	ReasonSelfMonFlowHealthy          = "FlowHealthy"

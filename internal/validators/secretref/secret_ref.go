@@ -70,6 +70,10 @@ func checkForMissingFields(ref telemetryv1alpha1.SecretKeyRef) error {
 		missingAttributes = append(missingAttributes, "Name")
 	}
 
+	if ref.Namespace == "" {
+		missingAttributes = append(missingAttributes, "Namespace")
+	}
+
 	if ref.Key == "" {
 		missingAttributes = append(missingAttributes, "Key")
 	}
