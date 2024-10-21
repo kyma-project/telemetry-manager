@@ -48,8 +48,8 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 			corev1.ResourceMemory: resource.MustParse("5Mi"),
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("50Mi"),
+			corev1.ResourceCPU:    resource.MustParse("10m"),
+			corev1.ResourceMemory: resource.MustParse("20Mi"),
 		},
 	}
 
