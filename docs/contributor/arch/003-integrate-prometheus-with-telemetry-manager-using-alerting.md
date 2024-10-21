@@ -25,7 +25,7 @@ Our current reconciliation strategy triggers either when a change occurs or ever
 
 #### Flakiness Mitigation
 
-To ensure reliability and avoid false alerts, it's crucial to introduce a delay before signaling a problem. As suggested in [OTel Collector monitoring best practices](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/monitoring.md):
+To ensure reliability and avoid false alerts, it's crucial to introduce a delay before signaling a problem. As suggested in [OTel Collector monitoring best practices](https://opentelemetry.io/docs/collector/internal-telemetry/#use-internal-telemetry-to-monitor-the-collector):
 
 > Use the rate of otelcol_processor_dropped_spans > 0 and otelcol_processor_dropped_metric_points > 0 to detect data loss. Depending on requirements, set up a minimal time window before alerting to avoid notifications for minor losses that fall within acceptable levels of reliability.
 
