@@ -66,7 +66,7 @@ func makePrometheusConfig(opts BuildOptions, jobNamePrefix string, role Role, re
 	return &config
 }
 
-// makePrometheusPodsRelabelConfigs generates a set of relabel configs for Pod role type.
+// makePrometheusPodsRelabelConfigs generates a set of relabel configs for the Pod role type.
 // They restrict Pods that are selected for scraping and set internal labels (__address__, __scheme__, etc.).
 // See more: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod.
 //
