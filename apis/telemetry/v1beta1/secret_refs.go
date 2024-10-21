@@ -91,7 +91,7 @@ func getRefsInOTLPOutput(out *OTLPOutput) []SecretKeyRef {
 }
 
 func appendIfSecretRef(secretKeyRefs []SecretKeyRef, valueType ValueType) []SecretKeyRef {
-	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
+	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
 		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
 	}
 

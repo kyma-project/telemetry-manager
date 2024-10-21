@@ -321,7 +321,6 @@ spec:
                                         required:
                                         - key
                                         - name
-                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -358,7 +357,6 @@ spec:
                                         required:
                                         - key
                                         - name
-                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -397,7 +395,6 @@ spec:
                                 required:
                                 - key
                                 - name
-                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -440,7 +437,6 @@ spec:
                                   required:
                                   - key
                                   - name
-                                  - namespace
                                   type: object
                               type: object
                           required:
@@ -496,7 +492,6 @@ spec:
                                     required:
                                     - key
                                     - name
-                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -531,7 +526,6 @@ spec:
                                     required:
                                     - key
                                     - name
-                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -574,7 +568,6 @@ spec:
                                     required:
                                     - key
                                     - name
-                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -964,7 +957,6 @@ spec:
                                         required:
                                         - key
                                         - name
-                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -1001,7 +993,6 @@ spec:
                                         required:
                                         - key
                                         - name
-                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -1040,7 +1031,6 @@ spec:
                                 required:
                                 - key
                                 - name
-                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -1083,7 +1073,6 @@ spec:
                                   required:
                                   - key
                                   - name
-                                  - namespace
                                   type: object
                               type: object
                           required:
@@ -1138,7 +1127,6 @@ spec:
                                     required:
                                     - key
                                     - name
-                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1173,7 +1161,6 @@ spec:
                                     required:
                                     - key
                                     - name
-                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1212,7 +1199,6 @@ spec:
                                     required:
                                     - key
                                     - name
-                                    - namespace
                                     type: object
                                 type: object
                             type: object
