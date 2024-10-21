@@ -150,7 +150,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 
 		// we also store the variables in the env secret
 		for _, ref := range logPipelines[i].Spec.Variables {
-			if ref.ValueFrom.IsSecretKeyRef() {
+			if ref.ValueFrom.SecretKeyRef != nil {
 				if copyErr := s.copySecretData(ctx, *ref.ValueFrom.SecretKeyRef, ref.Name, newSecret.Data); copyErr != nil {
 					return fmt.Errorf("unable to copy secret data: %w", copyErr)
 				}

@@ -20,16 +20,12 @@ func (v *ValueType) IsDefined() bool {
 		return true
 	}
 
-	return v.ValueFrom != nil && v.ValueFrom.IsSecretKeyRef()
+	return v.ValueFrom != nil && v.ValueFrom.SecretKeyRef != nil
 }
 
 type ValueFromSource struct {
 	// Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
-}
-
-func (v *ValueFromSource) IsSecretKeyRef() bool {
-	return v.SecretKeyRef != nil
 }
 
 type SecretKeyRef struct {

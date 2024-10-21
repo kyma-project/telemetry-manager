@@ -179,7 +179,7 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 		return []byte(value.Value), nil
 	}
 
-	if value.ValueFrom.IsSecretKeyRef() {
+	if value.ValueFrom.SecretKeyRef != nil {
 		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
 	}
 

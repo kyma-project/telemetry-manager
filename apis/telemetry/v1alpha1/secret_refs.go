@@ -4,7 +4,7 @@ func (lp *LogPipeline) GetSecretRefs() []SecretKeyRef {
 	var refs []SecretKeyRef
 
 	for _, v := range lp.Spec.Variables {
-		if v.ValueFrom.IsSecretKeyRef() {
+		if v.ValueFrom.SecretKeyRef != nil {
 			refs = append(refs, *v.ValueFrom.SecretKeyRef)
 		}
 	}
@@ -91,7 +91,7 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
 }
 
 func appendIfSecretRef(secretKeyRefs []SecretKeyRef, valueType ValueType) []SecretKeyRef {
-	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
+	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
 		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
 	}
 
