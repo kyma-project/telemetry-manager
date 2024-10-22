@@ -26,16 +26,16 @@ In general, annotating Services offers much more flexibility than annotating Pod
 * A Pod can only have a single "prometheus.io/port" annotation, meaning that if multiple containers are running in the Pod (or single container exposes multiple ports), only one can be scraped. With Services, multiple Services can be created to target different ports, allowing all relevant metrics to be scraped.
 * For istiofied Pods, even with annotations, a Service is still required to define the application protocol in order for scraping to occur. The Service itself doesn’t need annotations but must be present to enable scraping. See more: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=_4-activate-prometheus-based-metrics.
 
-As discussed in [this issue](https://github.com/kyma-project/telemetry-manager/issues/1468), the `prometheusMerge` feature is crucial for simplifying Dynatrace integration and enhancing security. For the sake of explanation, let’s assume that `prometheusMerge` is always enabled in the Istio mesh configuration. Under this scenario, the following points are true:
+As discussed in [issue #1468](https://github.com/kyma-project/telemetry-manager/issues/1468), the `prometheusMerge` feature is crucial for simplifying Dynatrace integration and enhancing security. For the sake of explanation, let’s assume that `prometheusMerge` is always enabled in the Istio mesh configuration. Under this scenario, the following points are true:
 
-* Istio sidecars will merge Istio’s metrics with the application’s metrics. The combined metrics will be exposed at :15020/stats/prometheus for scraping using plain HTTP.
+* Istio sidecars will merge Istio’s metrics with the application’s metrics. The combined metrics will be exposed at `:15020/stats/prometheus` for scraping using plain HTTP.
 No HTTPS scraping is possible anymore.
-* The necessary "prometheus.io" annotations will be added to all data plane Pods to configure scraping. If these annotations already exist, they will be overwritten. It will make not possible to ditinguish between Pods that expose application metrics and those that don't.
-* It is not an easy task to reliably separate the merged metrics into distinct Istio and application metrics, aside from maintaining a hard-coded list of Istio prox metrics. As a result, it is not possible to isolate `prometheus` and `istio` inputs.
+* The necessary "prometheus.io" annotations will be added to all data plane Pods to configure scraping. If these annotations already exist, they will be overwritten. It will make impossible to distinguish between Pods that expose application metrics and those that don't.
+* It is hard to reliably separate the merged metrics into distinct Istio and application metrics, aside from maintaining a hard-coded list of Istio proxy metrics. As a result, it is impossible to isolate `prometheus` and `istio` inputs.
 
 ## Decision
 
-Discontinue support for scraping annotated Pods that have Istio sidecars, limiting support to annotated Pods without Istio sidecars. This change ensures that the prometheusIstio feature remains independent from the MetricPipeline feature set, allowing it to be enabled without impacting other functionality. The implications are as follows:
+Discontinue support for scraping annotated Pods that have Istio sidecars, limiting support to annotated Pods without Istio sidecars. This change ensures that the prometheusIstio feature remains independent from the MetricPipeline feature set, so that it can be enabled without impacting other functionality. The implications are as follows:
 * The app-pods-secure scrape job will be removed.
 * The app-pods scrape job will be updated to exclude targets with Istio sidecars, using a marker label (as is currently implemented).
 
