@@ -20,6 +20,14 @@ func PodReady(ctx context.Context, k8sClient client.Client, name types.Namespace
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
+func PodsReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) {
+	Eventually(func(g Gomega) {
+		ready, err := arePodsReady(ctx, k8sClient, listOptions)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(ready).To(BeTrueBecause("Pods are not ready"))
+	}, 2*periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
 func isPodReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
 	var pod corev1.Pod
 
@@ -37,7 +45,7 @@ func isPodReady(ctx context.Context, k8sClient client.Client, name types.Namespa
 	return true, nil
 }
 
-func PodsReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
+func arePodsReady(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions) (bool, error) {
 	var pods corev1.PodList
 
 	err := k8sClient.List(ctx, &pods, &listOptions)

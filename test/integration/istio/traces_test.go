@@ -175,17 +175,12 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 }
 
 func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
-	Eventually(func(g Gomega) {
-		listOptions := client.ListOptions{
-			LabelSelector: labels.SelectorFromSet(labelSelector),
-			Namespace:     namespace,
-		}
+	listOptions := client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labelSelector),
+		Namespace:     namespace,
+	}
 
-		ready, err := assert.PodsReady(ctx, k8sClient, listOptions)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrueBecause("Pods not ready"))
-
-	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
+	assert.PodsReady(ctx, k8sClient, listOptions)
 }
 
 func verifyIstioSpans(backendURL, namespace string) {
