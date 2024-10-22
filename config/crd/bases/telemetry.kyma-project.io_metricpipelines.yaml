@@ -219,7 +219,7 @@ spec:
                         default:
                           container:
                             enabled: true
-                          daemonSet:
+                          daemonset:
                             enabled: false
                           deployment:
                             enabled: false
@@ -229,7 +229,7 @@ spec:
                             enabled: false
                           pod:
                             enabled: true
-                          statefulSet:
+                          statefulset:
                             enabled: false
                           volume:
                             enabled: false

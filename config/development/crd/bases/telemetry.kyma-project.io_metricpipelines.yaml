@@ -219,7 +219,7 @@ spec:
                         default:
                           container:
                             enabled: true
-                          daemonSet:
+                          daemonset:
                             enabled: false
                           deployment:
                             enabled: false
@@ -229,7 +229,7 @@ spec:
                             enabled: false
                           pod:
                             enabled: true
-                          statefulSet:
+                          statefulset:
                             enabled: false
                           volume:
                             enabled: false
@@ -886,7 +886,7 @@ spec:
                         default:
                           container:
                             enabled: true
-                          daemonSet:
+                          daemonset:
                             enabled: false
                           deployment:
                             enabled: false
@@ -896,7 +896,7 @@ spec:
                             enabled: false
                           pod:
                             enabled: true
-                          statefulSet:
+                          statefulset:
                             enabled: false
                           volume:
                             enabled: false
@@ -914,7 +914,7 @@ spec:
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
-                          daemonSet:
+                          daemonset:
                             default:
                               enabled: false
                             description: Configures DaemonSet runtime metrics scraping.
@@ -969,7 +969,7 @@ spec:
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
-                          statefulSet:
+                          statefulset:
                             default:
                               enabled: false
                             description: Configures StatefulSet runtime metrics scraping.
