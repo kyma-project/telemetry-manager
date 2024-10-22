@@ -19,11 +19,11 @@ func (lp *LogPipeline) PipelineMode() OutputType {
 	if lp.Spec.Output.Otlp != nil {
 		return OTel
 	}
+
 	return FluentBit
 }
 
 func (lp *LogPipeline) Validate() error {
-
 	if err := lp.validateOutput(); err != nil {
 		return err
 	}
@@ -177,8 +177,10 @@ func (lp *LogPipeline) validateInput() error {
 		if lp.Spec.Input.OTLP != nil {
 			return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", ErrInvalidPipelineDefinition)
 		}
+
 		return lp.validateApplication()
 	}
+
 	return nil
 }
 
@@ -201,5 +203,6 @@ func (lp *LogPipeline) validateApplication() error {
 		(len(namespaces.Exclude) > 0 && namespaces.System) {
 		return fmt.Errorf("%w: Can only define one 'input.application.namespaces' selector - either 'include', 'exclude', or 'system'", ErrInvalidPipelineDefinition)
 	}
+
 	return nil
 }

@@ -82,6 +82,7 @@ func v1Alpha1OTLPInputTov1Beta1(otlp *OTLPInput) *telemetryv1beta1.OTLPInput {
 			Exclude: otlp.Namespaces.Exclude,
 		}
 	}
+
 	return input
 }
 
@@ -105,6 +106,7 @@ func v1Alpha1ApplicationTov1Beta1(application *ApplicationInput) *telemetryv1bet
 		DropLabels:       application.DropLabels,
 		KeepOriginalBody: application.KeepOriginalBody,
 	}
+
 	return runtime
 }
 
@@ -288,6 +290,7 @@ func v1Beta1RuntimeTov1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput)
 		DropLabels:       runtime.DropLabels,
 		KeepOriginalBody: runtime.KeepOriginalBody,
 	}
+
 	return application
 }
 
@@ -305,6 +308,7 @@ func v1Beta1OTLPInputToV1Alpha1(otlp *telemetryv1beta1.OTLPInput) *OTLPInput {
 			Exclude: otlp.Namespaces.Exclude,
 		}
 	}
+
 	return input
 }
 
