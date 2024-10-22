@@ -7,7 +7,7 @@ import prommodel "github.com/prometheus/client_model/go"
 // the deeply nested structure of MetricFamily.
 //
 // FlatMetricFamily is a flat data structure that provides necessary information from different levels of
-// metricfamily makes accessing the information easier and improves readability of the output.
+// MetricFamily, making accessing the information easier and improves readability of the Gomega output.
 type FlatMetricFamily struct {
 	Name        string
 	MetricType  string
