@@ -57,7 +57,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 }
 
 func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) error {
-	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
+	if output.Authentication != nil && output.Authentication.Basic.User.IsDefined() && output.Authentication.Basic.Password.IsDefined() {
 		username, err := resolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
 			return err

@@ -20,7 +20,11 @@ func (v *ValueType) IsDefined() bool {
 		return true
 	}
 
-	return v.ValueFrom != nil && v.ValueFrom.SecretKeyRef != nil
+	return v.ValueFrom != nil &&
+		v.ValueFrom.SecretKeyRef != nil &&
+		v.ValueFrom.SecretKeyRef.Name != "" &&
+		v.ValueFrom.SecretKeyRef.Key != "" &&
+		v.ValueFrom.SecretKeyRef.Namespace != ""
 }
 
 type ValueFromSource struct {
@@ -105,8 +109,4 @@ type BasicAuthOptions struct {
 	// Contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
-}
-
-func (b *BasicAuthOptions) IsDefined() bool {
-	return b.User.IsDefined() && b.Password.IsDefined()
 }

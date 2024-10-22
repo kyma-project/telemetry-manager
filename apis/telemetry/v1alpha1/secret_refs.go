@@ -20,7 +20,7 @@ func (lp *LogPipeline) GetEnvSecretRefs() []SecretKeyRef {
 	var refs []SecretKeyRef
 
 	output := lp.Spec.Output
-	if output.IsHTTPDefined() {
+	if output.HTTP != nil {
 		refs = appendIfSecretRef(refs, output.HTTP.Host)
 		refs = appendIfSecretRef(refs, output.HTTP.User)
 		refs = appendIfSecretRef(refs, output.HTTP.Password)
@@ -64,7 +64,7 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
 
 	refs = appendIfSecretRef(refs, otlpOut.Endpoint)
 
-	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic.IsDefined() {
+	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic != nil {
 		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.User)
 		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.Password)
 	}

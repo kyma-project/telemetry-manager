@@ -124,7 +124,7 @@ func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipe
 func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
-	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
+	if output.Authentication != nil && output.Authentication.Basic.User.IsDefined() && output.Authentication.Basic.Password.IsDefined() {
 		basicAuthHeaderVariable := makeBasicAuthHeaderVariable(pipelineName)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}
