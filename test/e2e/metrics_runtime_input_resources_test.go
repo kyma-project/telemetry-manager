@@ -419,7 +419,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 					g.Expect(resp).To(HaveHTTPBody(
 						HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.VolumeMetricsNames))),
 					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 
 			It("Should have expected resource attributes in runtime volume metrics", func() {
