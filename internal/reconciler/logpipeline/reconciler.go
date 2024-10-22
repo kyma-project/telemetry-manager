@@ -118,7 +118,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func GetOutputType(t *telemetryv1alpha1.LogPipeline) OutputType {
-	if t.Spec.Output.Otlp != nil {
+	if t.Spec.Output.OTLP != nil {
 		return OTel
 	}
 

@@ -90,7 +90,7 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	}
 }
 
-func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
+func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -164,7 +164,7 @@ func makeFilterByNamespaceIstioInputConfig(namespaceSelector *telemetryv1alpha1.
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceIstio))
 }
 
-func makeFilterByNamespaceOtlpInputConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *FilterProcessor {
+func makeFilterByNamespaceOTLPInputConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, otlpInputSource())
 }
 

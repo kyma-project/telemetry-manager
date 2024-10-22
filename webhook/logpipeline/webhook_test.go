@@ -120,10 +120,10 @@ func TestHandle(t *testing.T) {
 				output: &telemetryv1alpha1.Output{
 					Custom: "",
 					HTTP:   nil,
-					Otlp: &telemetryv1alpha1.OtlpOutput{
+					OTLP: &telemetryv1alpha1.OTLPOutput{
 						Protocol: "grpc",
 						Endpoint: telemetryv1alpha1.ValueType{Value: ""},
-						TLS: &telemetryv1alpha1.OtlpTLS{
+						TLS: &telemetryv1alpha1.OTLPTLS{
 							Insecure: true,
 						},
 					},

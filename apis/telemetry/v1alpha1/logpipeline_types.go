@@ -145,7 +145,7 @@ type Output struct {
 	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 	HTTP *HTTPOutput `json:"http,omitempty"`
 	// Defines an output using the OpenTelemetry protocol.
-	Otlp *OtlpOutput `json:"otlp,omitempty"`
+	OTLP *OTLPOutput `json:"otlp,omitempty"`
 }
 
 func (i *Input) IsDefined() bool {
@@ -161,7 +161,7 @@ func (o *Output) IsHTTPDefined() bool {
 }
 
 func (o *Output) IsOTLPDefined() bool {
-	return o.Otlp != nil
+	return o.OTLP != nil
 }
 
 func (o *Output) IsAnyDefined() bool {

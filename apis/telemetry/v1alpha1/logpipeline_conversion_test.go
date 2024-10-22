@@ -83,8 +83,8 @@ func TestConvertTo(t *testing.T) {
 					},
 					Dedot: true,
 				},
-				Otlp: &OtlpOutput{
-					Protocol: OtlpProtocolGRPC,
+				OTLP: &OTLPOutput{
+					Protocol: OTLPProtocolGRPC,
 					Endpoint: ValueType{
 						Value: "localhost:4317",
 					},
@@ -115,7 +115,7 @@ func TestConvertTo(t *testing.T) {
 							Prefix: "prefix2",
 						},
 					},
-					TLS: &OtlpTLS{
+					TLS: &OTLPTLS{
 						Insecure:           true,
 						InsecureSkipVerify: true,
 						CA: &ValueType{
@@ -337,7 +337,7 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Equal(t, xHTTP.TLSConfig.Cert.Value, yHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
 	require.Equal(t, xHTTP.TLSConfig.Key.Value, yHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
 
-	xOTLP := x.Spec.Output.Otlp
+	xOTLP := x.Spec.Output.OTLP
 	yOTLP := y.Spec.Output.OTLP
 
 	require.NotNil(t, xOTLP, "expected OTLP output")
