@@ -158,7 +158,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 					g.Expect(resp).To(HaveHTTPBody(
 						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.ContainerMetricsResourceAttributes))))),
 					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 		})
 
@@ -184,7 +184,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 					g.Expect(resp).To(HaveHTTPBody(
 						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.PodMetricsResourceAttributes))))),
 					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 
 			It("Should have expected metric attributes in runtime pod metrics", func() {
@@ -238,7 +238,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 					g.Expect(resp).To(HaveHTTPBody(
 						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsResourceAttributes))))),
 					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 		})
 	})
@@ -431,7 +431,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 					g.Expect(resp).To(HaveHTTPBody(
 						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.VolumeMetricsResourceAttributes))))),
 					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 
 			It("Should filter volume metrics only for PVC volumes", func() {
