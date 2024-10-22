@@ -31,9 +31,9 @@ type runtimeResourcesEnabled struct {
 	container   bool
 	node        bool
 	volume      bool
-	statefulSet bool
+	statefulset bool
 	deployment  bool
-	daemonSet   bool
+	daemonset   bool
 	job         bool
 }
 
@@ -80,9 +80,9 @@ func enableRuntimeResourcesMetricsScraping(pipelines []telemetryv1alpha1.MetricP
 		container:   enableRuntimeContainerMetricsScraping(pipelines),
 		node:        enableRuntimeNodeMetricsScraping(pipelines),
 		volume:      enableRuntimeVolumeMetricsScraping(pipelines),
-		statefulSet: enableRuntimeStatefulSetMetricsScraping(pipelines),
+		statefulset: enableRuntimeStatefulSetMetricsScraping(pipelines),
 		deployment:  enableRuntimeDeploymentMetricsScraping(pipelines),
-		daemonSet:   enableRuntimeDaemonSetMetricsScraping(pipelines),
+		daemonset:   enableRuntimeDaemonSetMetricsScraping(pipelines),
 		job:         enableRuntimeJobMetricsScraping(pipelines),
 	}
 }

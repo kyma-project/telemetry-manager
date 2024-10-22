@@ -37,9 +37,43 @@ func TestReceivers(t *testing.T) {
 			expectedMetricsToDrop K8sClusterMetricsToDrop
 		}{
 			{
-				name:                  "default resources enabled",
-				pipeline:              testutils.NewMetricPipelineBuilder().WithRuntimeInputResourcesMetricsEnabled("statefulset", true).Build(),
+				name: "default resources enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(true).
+					WithRuntimeInputContainerMetrics(true).
+					Build(),
+
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("default"),
+			},
+			{
+				name: "only statefulset metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputStatefulSetMetrics(true).Build(),
 				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("statefulset"),
+			}, {
+				name: "only job metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputJobMetrics(true).Build(),
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("job"),
+			}, {
+				name: "only deployment metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputDeploymentMetrics(true).Build(),
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("deployment"),
+			}, {
+				name: "only daemonset metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputDaemonSetMetrics(true).Build(),
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("daemonset"),
 			},
 		}
 		for _, test := range tests {
@@ -64,48 +98,6 @@ func TestReceivers(t *testing.T) {
 			require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 0)
 			require.Equal(t, test.expectedMetricsToDrop, k8sClusterReceiver.Metrics)
 		}
-		//collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
-		//	testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-		//}, BuildOptions{
-		//	AgentNamespace: agentNamespace,
-		//})
-		//
-		//require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
-		//require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
-		//expectedMetricsToDrop := K8sClusterMetricsToDrop{}
-		//
-		//expectedMetricsToDrop.K8sClusterDefaultMetricsToDrop = K8sClusterDefaultMetricsToDrop{
-		//	K8sContainerStorageRequest:          MetricConfig{Enabled: false},
-		//	K8sContainerStorageLimit:            MetricConfig{Enabled: false},
-		//	K8sContainerEphemeralStorageRequest: MetricConfig{Enabled: false},
-		//	K8sContainerEphemeralStorageLimit:   MetricConfig{Enabled: false},
-		//	K8sContainerRestarts:                MetricConfig{Enabled: false},
-		//	K8sContainerReady:                   MetricConfig{Enabled: false},
-		//	K8sNamespacePhase:                   MetricConfig{Enabled: false},
-		//	K8sHPACurrentReplicas:               MetricConfig{Enabled: false},
-		//	K8sHPADesiredReplicas:               MetricConfig{Enabled: false},
-		//	K8sHPAMinReplicas:                   MetricConfig{Enabled: false},
-		//	K8sHPAMaxReplicas:                   MetricConfig{Enabled: false},
-		//	K8sReplicaSetAvailable:              MetricConfig{Enabled: false},
-		//	K8sReplicaSetDesired:                MetricConfig{Enabled: false},
-		//	K8sReplicationControllerAvailable:   MetricConfig{Enabled: false},
-		//	K8sReplicationControllerDesired:     MetricConfig{Enabled: false},
-		//	K8sResourceQuotaHardLimit:           MetricConfig{Enabled: false},
-		//	K8sResourceQuotaUsed:                MetricConfig{Enabled: false},
-		//}
-		//
-		//singletonK8sClusterReceiverCreator := collectorConfig.Receivers.SingletonK8sClusterReceiverCreator
-		//require.NotNil(t, singletonK8sClusterReceiverCreator)
-		//require.Equal(t, "serviceAccount", singletonK8sClusterReceiverCreator.AuthType)
-		//require.Equal(t, "telemetry-metric-agent-k8scluster", singletonK8sClusterReceiverCreator.LeaderElection.LeaseName)
-		//require.Equal(t, agentNamespace, singletonK8sClusterReceiverCreator.LeaderElection.LeaseNamespace)
-		//
-		//k8sClusterReceiver := singletonK8sClusterReceiverCreator.SingletonK8sClusterReceiver.K8sClusterReceiver
-		//require.Equal(t, "serviceAccount", k8sClusterReceiver.AuthType)
-		//require.Equal(t, "30s", k8sClusterReceiver.CollectionInterval)
-		//require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 0)
-		//require.Equal(t, expectedMetricsToDrop, k8sClusterReceiver.Metrics)
-		//require.Equal(t, expectedMetricsToDrop, k8sClusterReceiver.Metrics)
 	})
 
 	t.Run("runtime input enabled verify kubeletStatsReceiver", func(t *testing.T) {
@@ -296,24 +288,34 @@ func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetric
 		K8sResourceQuotaHardLimit:           MetricConfig{Enabled: false},
 		K8sResourceQuotaUsed:                MetricConfig{Enabled: false},
 	}
-	defaultStatefulSetMetricsToDrop := &K8sClusterStatefulSetMetricsToDrop{
+	podMetricsToDrop := &K8sClusterPodMetricsToDrop{
+		K8sPodPhase: MetricConfig{false},
+	}
+	containerMetricsToDrop := &K8sClusterContainerMetricsToDrop{
+		K8sContainerCPURequest:    MetricConfig{false},
+		K8sContainerCPULimit:      MetricConfig{false},
+		K8sContainerMemoryRequest: MetricConfig{false},
+		K8sContainerMemoryLimit:   MetricConfig{false},
+	}
+
+	statefulMetricsToDrop := &K8sClusterStatefulSetMetricsToDrop{
 		K8sStatefulSetCurrentPods: MetricConfig{false},
 		K8sStatefulSetDesiredPods: MetricConfig{false},
 		K8sStatefulSetReadyPods:   MetricConfig{false},
 		K8sStatefulSetUpdatedPods: MetricConfig{false},
 	}
-	defaultJobMetricsToDrop := &K8sClusterJobMetricsToDrop{
+	jobMetricsToDrop := &K8sClusterJobMetricsToDrop{
 		K8sJobActiveJobs:            MetricConfig{false},
 		K8sJobDesiredSuccessfulPods: MetricConfig{false},
 		K8sJobFailedPods:            MetricConfig{false},
 		K8sJobMaxParallelPods:       MetricConfig{false},
 		K8sJobSuccessfulPods:        MetricConfig{false},
 	}
-	defaultDeploymentMetricsToDrop := &K8sClusterDeploymentMetricsToDrop{
+	deploymentMetricsToDrop := &K8sClusterDeploymentMetricsToDrop{
 		K8sDeploymentAvailable: MetricConfig{false},
 		K8sDeploymentDesired:   MetricConfig{false},
 	}
-	defaultDaemonSetMetricsToDrop := &K8sClusterDaemonSetMetricsToDrop{
+	daemonSetMetricsToDrop := &K8sClusterDaemonSetMetricsToDrop{
 		K8sDaemonSetCurrentScheduledNodes: MetricConfig{false},
 		K8sDaemonSetDesiredScheduledNodes: MetricConfig{false},
 		K8sDaemonSetMisscheduledNodes:     MetricConfig{false},
@@ -322,35 +324,42 @@ func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetric
 
 	if resourceEnabled == "default" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
-		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = defaultStatefulSetMetricsToDrop
-		//metricsToDrop.K8sClusterJobMetricsToDrop = defaultJobMetricsToDrop
-		metricsToDrop.K8sClusterDeploymentMetricsToDrop = defaultDeploymentMetricsToDrop
-		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = defaultDaemonSetMetricsToDrop
+		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
+		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
+		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
+		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
 	if resourceEnabled == "statefulset" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
-		metricsToDrop.K8sClusterJobMetricsToDrop = defaultJobMetricsToDrop
-		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = &K8sClusterStatefulSetMetricsToDrop{}
-		metricsToDrop.K8sClusterDeploymentMetricsToDrop = defaultDeploymentMetricsToDrop
-		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = defaultDaemonSetMetricsToDrop
+		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
+		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
+		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
 	if resourceEnabled == "job" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
-		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = defaultStatefulSetMetricsToDrop
-		metricsToDrop.K8sClusterDeploymentMetricsToDrop = defaultDeploymentMetricsToDrop
-		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = defaultDaemonSetMetricsToDrop
+		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
+		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
+		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
 	if resourceEnabled == "deployment" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
-		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = defaultStatefulSetMetricsToDrop
-		metricsToDrop.K8sClusterJobMetricsToDrop = defaultJobMetricsToDrop
-		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = defaultDaemonSetMetricsToDrop
+		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
+		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
+		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
 	if resourceEnabled == "daemonset" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
-		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = defaultStatefulSetMetricsToDrop
-		metricsToDrop.K8sClusterJobMetricsToDrop = defaultJobMetricsToDrop
-		metricsToDrop.K8sClusterDeploymentMetricsToDrop = defaultDeploymentMetricsToDrop
+		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
+		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
+		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
 	}
 	return metricsToDrop
 }

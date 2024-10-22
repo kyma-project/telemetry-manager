@@ -101,7 +101,23 @@ func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sCl
 
 	// The following metrics are enabled by default in the K8sClusterReceiver. If we disable these resources in
 	//pipeline config we need to disable the corresponding metrics in the K8sClusterReceiver.
-	if !runtimeResources.statefulSet {
+
+	if !runtimeResources.pod {
+		metricsToDrop.K8sClusterPodMetricsToDrop = &K8sClusterPodMetricsToDrop{
+			K8sPodPhase: MetricConfig{false},
+		}
+	}
+
+	if !runtimeResources.container {
+		metricsToDrop.K8sClusterContainerMetricsToDrop = &K8sClusterContainerMetricsToDrop{
+			K8sContainerCPURequest:    MetricConfig{false},
+			K8sContainerCPULimit:      MetricConfig{false},
+			K8sContainerMemoryRequest: MetricConfig{false},
+			K8sContainerMemoryLimit:   MetricConfig{false},
+		}
+	}
+
+	if !runtimeResources.statefulset {
 		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = &K8sClusterStatefulSetMetricsToDrop{
 			K8sStatefulSetCurrentPods: MetricConfig{false},
 			K8sStatefulSetDesiredPods: MetricConfig{false},
@@ -126,7 +142,7 @@ func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sCl
 		}
 	}
 
-	if !runtimeResources.daemonSet {
+	if !runtimeResources.daemonset {
 		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = &K8sClusterDaemonSetMetricsToDrop{
 			K8sDaemonSetCurrentScheduledNodes: MetricConfig{false},
 			K8sDaemonSetDesiredScheduledNodes: MetricConfig{false},

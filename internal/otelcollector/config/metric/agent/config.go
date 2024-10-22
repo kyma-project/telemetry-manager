@@ -62,6 +62,8 @@ const (
 
 type K8sClusterMetricsToDrop struct {
 	*K8sClusterDefaultMetricsToDrop     `yaml:",inline,omitempty"`
+	*K8sClusterPodMetricsToDrop         `yaml:",inline,omitempty"`
+	*K8sClusterContainerMetricsToDrop   `yaml:",inline,omitempty"`
 	*K8sClusterStatefulSetMetricsToDrop `yaml:",inline,omitempty"`
 	*K8sClusterJobMetricsToDrop         `yaml:",inline,omitempty"`
 	*K8sClusterDeploymentMetricsToDrop  `yaml:",inline,omitempty"`
@@ -116,10 +118,21 @@ type K8sClusterDeploymentMetricsToDrop struct {
 }
 
 type K8sClusterDaemonSetMetricsToDrop struct {
-	K8sDaemonSetCurrentScheduledNodes MetricConfig `yaml:"k8s.daemonset.current_scheduled_nodes,omitempty"`
-	K8sDaemonSetDesiredScheduledNodes MetricConfig `yaml:"k8s.daemonset.desired_scheduled_nodes,omitempty"`
-	K8sDaemonSetMisscheduledNodes     MetricConfig `yaml:"k8s.daemonset.misscheduled_nodes,omitempty"`
-	K8sDaemonSetReadyNodes            MetricConfig `yaml:"k8s.daemonset.ready_nodes,omitempty"`
+	K8sDaemonSetCurrentScheduledNodes MetricConfig `yaml:"k8s.daemonset.current_scheduled_nodes"`
+	K8sDaemonSetDesiredScheduledNodes MetricConfig `yaml:"k8s.daemonset.desired_scheduled_nodes"`
+	K8sDaemonSetMisscheduledNodes     MetricConfig `yaml:"k8s.daemonset.misscheduled_nodes"`
+	K8sDaemonSetReadyNodes            MetricConfig `yaml:"k8s.daemonset.ready_nodes"`
+}
+
+type K8sClusterPodMetricsToDrop struct {
+	K8sPodPhase MetricConfig `yaml:"k8s.pod.phase"`
+}
+
+type K8sClusterContainerMetricsToDrop struct {
+	K8sContainerCPURequest    MetricConfig `yaml:"k8s.container.cpu_request"`
+	K8sContainerCPULimit      MetricConfig `yaml:"k8s.container.cpu_limit"`
+	K8sContainerMemoryRequest MetricConfig `yaml:"k8s.container.memory_request"`
+	K8sContainerMemoryLimit   MetricConfig `yaml:"k8s.container.memory_limit"`
 }
 
 type K8sClusterReceiver struct {
