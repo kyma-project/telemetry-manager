@@ -404,6 +404,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyVolumeMetricsEnabledName, Namespace: mockNs})
 		})
 
+		It("Should have pods mounting volumes running", func() {
+			assert.PodReady(ctx, k8sClient, types.NamespacedName{Name: podMountingPVCName, Namespace: mockNs})
+			assert.PodReady(ctx, k8sClient, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: mockNs})
+		})
+
 		Context("Runtime volume metrics", func() {
 			It("Should deliver ONLY runtime volume metrics to volume-metrics backend", func() {
 				Eventually(func(g Gomega) {
