@@ -33,6 +33,13 @@ func TestConvertTo(t *testing.T) {
 					DropLabels:       true,
 					KeepOriginalBody: ptr.To(true),
 				},
+				OTLP: &OTLPInput{
+					Disabled: true,
+					Namespaces: &NamespaceSelector{
+						Include: []string{"include", "include2"},
+						Exclude: []string{"exclude", "exclude2"},
+					},
+				},
 			},
 			Files: []FileMount{
 				{Name: "file1", Content: "file1-content"},
@@ -172,6 +179,13 @@ func TestConvertFrom(t *testing.T) {
 					DropLabels:       true,
 					KeepOriginalBody: ptr.To(true),
 				},
+				OTLP: &telemetryv1beta1.OTLPInput{
+					Disabled: true,
+					Namespaces: &telemetryv1beta1.NamespaceSelector{
+						Include: []string{"include", "include2"},
+						Exclude: []string{"exclude", "exclude2"},
+					},
+				},
 			},
 			Files: []telemetryv1beta1.LogPipelineFileMount{
 				{Name: "file1", Content: "file1-content"},
@@ -292,6 +306,12 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Equal(t, xAppInput.KeepAnnotations, yRuntimeInput.KeepAnnotations, "keep annotations mismatch")
 	require.Equal(t, xAppInput.DropLabels, yRuntimeInput.DropLabels, "drop labels mismatch")
 	require.Equal(t, xAppInput.KeepOriginalBody, yRuntimeInput.KeepOriginalBody, "keep original body mismatch")
+
+	xOTLPInput := x.Spec.Input.OTLP
+	yOTLPInput := y.Spec.Input.OTLP
+	require.Equal(t, xOTLPInput.Disabled, yOTLPInput.Disabled, "OTLP input disabled mismatch")
+	require.Equal(t, xOTLPInput.Namespaces.Include, yOTLPInput.Namespaces.Include, "OTLP included namespaces mismatch")
+	require.Equal(t, xOTLPInput.Namespaces.Exclude, yOTLPInput.Namespaces.Exclude, "OTLP excluded namespaces mismatch")
 
 	require.Len(t, y.Spec.Files, 1, "expected one file")
 	require.Equal(t, x.Spec.Files[0].Name, y.Spec.Files[0].Name, "file name mismatch")

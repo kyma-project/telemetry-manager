@@ -130,6 +130,7 @@ spec:
                           type: object
                       type: object
                   type: object
+                  x-kubernetes-validations: []
                 output:
                   description: '[Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.'
                   properties:
