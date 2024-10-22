@@ -18,6 +18,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 )
 
 type OutputType int
@@ -28,12 +30,12 @@ const (
 )
 
 // LogPipelineSpec defines the desired state of LogPipeline
+// +kubebuilder:validation:XValidation:rule="!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))", message="otlp input is only supported with otlp output"
 type LogPipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Defines where to collect logs, including selector mechanisms.
-	// +kubebuilder:validation:XValidation:rule="(has(self.output.http) || has(self.output.custom)) && !has(self.input.otlp)", message="otlp input is only supported with otlp output"
 	Input   Input    `json:"input,omitempty"`
 	Filters []Filter `json:"filters,omitempty"`
 	// [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.
@@ -180,7 +182,7 @@ func (o *Output) pluginCount() int {
 		plugins++
 	}
 
-	if o.IsOTLPDefined() {
+	if featureflags.IsV1beta1Enabled() && o.IsOTLPDefined() {
 		plugins++
 	}
 

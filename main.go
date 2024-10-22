@@ -50,6 +50,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
@@ -69,7 +70,7 @@ var (
 	scheme             = runtime.NewScheme()
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
-	//TODO: replace with build version based on git revision
+	// TODO: replace with build version based on git revision
 	version = "main"
 
 	// Operator flags
@@ -207,6 +208,8 @@ func run() error {
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
+
+	featureflags.SetV1beta1Enabled(enableV1Beta1LogPipelines)
 
 	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
 	if telemetryNamespace == "" {
@@ -355,7 +358,7 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 }
 
 func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	if enableV1Beta1LogPipelines {
+	if featureflags.IsV1beta1Enabled() {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 		// Register conversion webhooks for LogPipelines

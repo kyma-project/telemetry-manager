@@ -130,7 +130,6 @@ spec:
                           type: object
                       type: object
                   type: object
-                  x-kubernetes-validations: []
                 output:
                   description: '[Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.'
                   properties:
@@ -344,6 +343,7 @@ spec:
                     type: object
                   type: array
               type: object
+              x-kubernetes-validations: []
             status:
               description: Shows the observed state of the LogPipeline
               properties:
