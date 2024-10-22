@@ -182,7 +182,7 @@ func (o *Output) pluginCount() int {
 		plugins++
 	}
 
-	if featureflags.IsV1beta1Enabled() && o.IsOTLPDefined() {
+	if featureflags.IsLogpipelineOTLPEnabled() && o.IsOTLPDefined() {
 		plugins++
 	}
 
