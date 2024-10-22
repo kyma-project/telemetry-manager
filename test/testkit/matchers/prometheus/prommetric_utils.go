@@ -4,19 +4,20 @@ import prommodel "github.com/prometheus/client_model/go"
 
 // FlatMetricFamily holds all necessary information about a prometheus MetricFamily.
 // Gomega doesn't handle deeply nested data structure very well and generates large, unreadable diffs when paired with
-// the deeply nested structure of pmetrics.
+// the deeply nested structure of MetricFamily.
 //
-// Introducing a go struct with a flat data structure by extracting necessary information from different levels of
+// FlatMetricFamily is a flat data structure that provides necessary information from different levels of
 // metricfamily makes accessing the information easier and improves readability of the output.
 type FlatMetricFamily struct {
-	Name         string
-	MetricValues float64
-	Labels       map[string]string
+	Name        string
+	MetricType  string
+	MetricValue float64
+	Labels      map[string]string
 }
 
-// flattenAllMetricFamily flattens an array of prometheus MetricFamily to a slice of FlatMetricFamily.
+// flattenAllMetricFamilies flattens an array of prometheus MetricFamily to a slice of FlatMetricFamily.
 // It converts the deeply nested MetricFamily to a flat struct, making it more readable in the test output.
-func flattenAllMetricFamily(mfs map[string]*prommodel.MetricFamily) []FlatMetricFamily {
+func flattenAllMetricFamilies(mfs map[string]*prommodel.MetricFamily) []FlatMetricFamily {
 	var fmf []FlatMetricFamily
 	for _, mf := range mfs {
 		fmf = append(fmf, flattenMetricFamily(mf)...)
@@ -31,11 +32,12 @@ func flattenMetricFamily(mf *prommodel.MetricFamily) []FlatMetricFamily {
 	var fmf []FlatMetricFamily
 
 	for _, m := range mf.Metric {
-		v := getValuePerMetric(m)
+		t, v := getTypeAndValuePerMetric(m)
 		fmf = append(fmf, FlatMetricFamily{
-			Name:         mf.GetName(),
-			MetricValues: v,
-			Labels:       labelsToMap(m.GetLabel()),
+			Name:        mf.GetName(),
+			MetricType:  t,
+			MetricValue: v,
+			Labels:      labelsToMap(m.GetLabel()),
 		})
 	}
 
@@ -51,18 +53,24 @@ func labelsToMap(l []*prommodel.LabelPair) map[string]string {
 	return labels
 }
 
-func getValuePerMetric(m *prommodel.Metric) float64 {
+const (
+	gaugeType   = "Gauge"
+	counterType = "Counter"
+	untypedType = "Untyped"
+)
+
+func getTypeAndValuePerMetric(m *prommodel.Metric) (string, float64) {
 	if m.Gauge != nil {
-		return m.Gauge.GetValue()
+		return gaugeType, m.Gauge.GetValue()
 	}
 
 	if m.Counter != nil {
-		return m.Counter.GetValue()
+		return counterType, m.Counter.GetValue()
 	}
 
 	if m.Untyped != nil {
-		return m.Untyped.GetValue()
+		return untypedType, m.Untyped.GetValue()
 	}
 
-	return 0
+	return "", 0
 }

@@ -13,7 +13,7 @@ func HaveFlatMetricFamilies(matcher types.GomegaMatcher) types.GomegaMatcher {
 		var parser expfmt.TextParser
 		mfs, _ := parser.TextToMetricFamilies(bytes.NewReader(responseBody)) //nolint:errcheck // ignore duplicate metrics parsing error and try extract metric
 
-		fmfs := flattenAllMetricFamily(mfs)
+		fmfs := flattenAllMetricFamilies(mfs)
 
 		return fmfs, nil
 	}, matcher)
@@ -27,7 +27,7 @@ func HaveName(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 func HaveMetricValue(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fmf FlatMetricFamily) float64 {
-		return fmf.MetricValues
+		return fmf.MetricValue
 	}, matcher)
 }
 
