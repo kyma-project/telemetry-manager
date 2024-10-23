@@ -40,7 +40,7 @@ jobs:
         uses: "./.github/template/setup-golang"
 
       - name: Run lint
-        run: make lint
+        run: make --debug lint
 
   coverage:
     runs-on: ubuntu-latest

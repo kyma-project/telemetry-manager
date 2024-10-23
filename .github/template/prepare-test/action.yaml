@@ -33,12 +33,12 @@ runs:
     - name: Deploy module release
       if: ${{ inputs.release }}
       shell: bash
-      run: make deploy
+      run: make --debug deploy
 
     - name: Deploy module experimental
       if: ${{ !inputs.release }}
       shell: bash
-      run: make deploy-dev
+      run: make --debug deploy-dev
 
     - name: Wait for manager readiness
       shell: bash
