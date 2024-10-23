@@ -76,15 +76,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have sample app running", func() {
-			Eventually(func(g Gomega) {
-				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app": "sample-metrics"}),
-					Namespace:     sampleAppNs,
-				}
-				ready, err := assert.PodsReady(ctx, k8sClient, listOptions)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrueBecause("sample app is not ready"))
-			}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
+			listOptions := client.ListOptions{
+				LabelSelector: labels.SelectorFromSet(map[string]string{"app": "sample-metrics"}),
+				Namespace:     sampleAppNs,
+			}
+
+			assert.PodsReady(ctx, k8sClient, listOptions)
 		})
 
 		It("Should have the log pipeline running", func() {
