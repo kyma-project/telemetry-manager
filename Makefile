@@ -36,7 +36,7 @@ TOOLS_BIN_NAMES  := $(addprefix $(TOOLS_BIN_DIR)/, $(notdir $(TOOLS_PKG_NAMES_CL
 install-tools: $(TOOLS_BIN_NAMES)
 
 $(TOOLS_BIN_DIR):
-	mkdir -p $@
+	if [ ! -d $@ ]; then mkdir -p $@; fi
 
 $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 	cd $(TOOLS_MOD_DIR) && go build -o $@ -trimpath $(filter $(filter %/$(notdir $@),$(TOOLS_PKG_NAMES_CLEAN))%,$(TOOLS_PKG_NAMES))
