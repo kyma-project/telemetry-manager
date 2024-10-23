@@ -4,7 +4,7 @@ Date: 2024-10-21
 
 ## Status
 
-Proposed
+Approved
 
 ## Context
 
@@ -38,5 +38,6 @@ No HTTPS scraping is possible anymore.
 Discontinue support for scraping annotated Pods that have Istio sidecars, limiting support to annotated Pods without Istio sidecars. This change ensures that the prometheusIstio feature remains independent from the MetricPipeline feature set, so that it can be enabled without impacting other functionality. The implications are as follows:
 * The app-pods-secure scrape job will be removed.
 * The app-pods scrape job will be updated to exclude targets with Istio sidecars, using a marker label (as is currently implemented).
+* The `prometheusMerge` feature can be enabled by default since it has no impact on the MetricPipeline functionality.
 
 Annotating Services is the preferred method over annotating Pods. However, we will continue to support Pod annotations for non-Istio workloads to accommodate users installing off-the-shelf software (e.g., via Helm), which often includes annotated Pods because of legacy reasons. For custom workloads, Services should be promoted as the recommended approach for annotation.
