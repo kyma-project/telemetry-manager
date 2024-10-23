@@ -329,7 +329,7 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 	return objs
 }
 
-// Check for `Contains` for metrics present in the backend
+// Check for `ContainElemets` for metrics present in the backend
 func backendContainsMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
@@ -339,7 +339,7 @@ func backendContainsMetricsDeliveredForResource(proxyClient *apiserverproxy.Clie
 		g.Expect(resp).To(HaveHTTPBody(
 			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ContainElements(resourceMetrics))),
 		))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metrics %v", resourceMetrics)
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metrics using ContainElements %v", resourceMetrics)
 }
 
 func backendContainsDesiredResourceAttributes(proxyClient *apiserverproxy.Client, backendExportURL string, metricName string, metricAttributes []string) {
@@ -382,5 +382,5 @@ func backendConsistsMetricsDeliveredForResource(proxyClient *apiserverproxy.Clie
 		g.Expect(resp).To(HaveHTTPBody(
 			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(resourceMetrics))),
 		))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metrics using consistsOf %v", resourceMetrics)
 }
