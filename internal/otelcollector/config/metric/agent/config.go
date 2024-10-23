@@ -105,7 +105,7 @@ type K8sClusterStatefulSetMetricsToDrop struct {
 }
 
 type K8sClusterJobMetricsToDrop struct {
-	K8sJobActiveJobs            MetricConfig `yaml:"k8s.job.active_jobs"`
+	K8sJobActivePods            MetricConfig `yaml:"k8s.job.active_pods"`
 	K8sJobDesiredSuccessfulPods MetricConfig `yaml:"k8s.job.desired_successful_pods"`
 	K8sJobFailedPods            MetricConfig `yaml:"k8s.job.failed_pods"`
 	K8sJobMaxParallelPods       MetricConfig `yaml:"k8s.job.max_parallel_pods"`

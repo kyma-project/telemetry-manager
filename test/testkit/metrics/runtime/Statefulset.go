@@ -1,0 +1,11 @@
+package runtime
+
+var (
+	StatefulSetMetricsNames           = k8sClusterStatefulsetMetricsNames
+	k8sClusterStatefulsetMetricsNames = []string{
+		"k8s.statefulset.current_pods",
+		"k8s.statefulset.desired_pods",
+		"k8s.statefulset.ready_pods",
+		"k8s.statefulset.updated_pods",
+	}
+)

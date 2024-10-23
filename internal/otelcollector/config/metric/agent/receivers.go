@@ -128,7 +128,7 @@ func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sCl
 
 	if !runtimeResources.job {
 		metricsToDrop.K8sClusterJobMetricsToDrop = &K8sClusterJobMetricsToDrop{
-			K8sJobActiveJobs:            MetricConfig{false},
+			K8sJobActivePods:            MetricConfig{false},
 			K8sJobDesiredSuccessfulPods: MetricConfig{false},
 			K8sJobFailedPods:            MetricConfig{false},
 			K8sJobMaxParallelPods:       MetricConfig{false},

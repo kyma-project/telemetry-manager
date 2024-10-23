@@ -305,7 +305,7 @@ func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetric
 		K8sStatefulSetUpdatedPods: MetricConfig{false},
 	}
 	jobMetricsToDrop := &K8sClusterJobMetricsToDrop{
-		K8sJobActiveJobs:            MetricConfig{false},
+		K8sJobActivePods:            MetricConfig{false},
 		K8sJobDesiredSuccessfulPods: MetricConfig{false},
 		K8sJobFailedPods:            MetricConfig{false},
 		K8sJobMaxParallelPods:       MetricConfig{false},

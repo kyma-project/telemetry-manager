@@ -142,7 +142,7 @@ receivers:
                         enabled: false
                     k8s.statefulset.updated_pods:
                         enabled: false
-                    k8s.job.active_jobs:
+                    k8s.job.active_pods:
                         enabled: false
                     k8s.job.desired_successful_pods:
                         enabled: false

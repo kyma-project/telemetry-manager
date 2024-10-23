@@ -131,3 +131,27 @@ func MetricPipelineConditionReasonsTransition(ctx context.Context, k8sClient cli
 		fmt.Fprintf(GinkgoWriter, "Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
 }
+
+func BackendContainsMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(backendExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+		g.Expect(resp).To(HaveHTTPBody(
+			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ContainElements(resourceMetrics))),
+		))
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+func BackendConsistsMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(backendExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+		g.Expect(resp).To(HaveHTTPBody(
+			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(resourceMetrics))),
+		))
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
