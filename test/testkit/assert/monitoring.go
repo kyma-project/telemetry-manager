@@ -18,7 +18,7 @@ func EmitsOTelCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL st
 		resp, err := proxyClient.Get(metricsURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainMetricFamily(WithName(ContainSubstring("otelcol")))))
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricFamilies(ContainElement(HaveName(ContainSubstring("otelcol"))))))
 
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
@@ -27,8 +27,7 @@ func EmitsOTelCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL st
 
 func ManagerEmitsMetric(
 	proxyClient *apiserverproxy.Client,
-	nameMatcher types.GomegaMatcher,
-	metricMatcher types.GomegaMatcher) {
+	matchers ...types.GomegaMatcher) {
 	Eventually(func(g Gomega) {
 		telemetryManagerMetricsURL := proxyClient.ProxyURLForService(
 			kitkyma.TelemetryManagerMetricsServiceName.Namespace,
@@ -39,10 +38,7 @@ func ManagerEmitsMetric(
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-		g.Expect(resp).To(HaveHTTPBody(ContainMetricFamily(SatisfyAll(
-			WithName(nameMatcher),
-			ContainMetric(metricMatcher),
-		))))
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetricFamilies(ContainElement(SatisfyAll(matchers...)))))
 
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())

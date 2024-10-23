@@ -34,5 +34,5 @@ func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.N
 		Namespace:     name.Namespace,
 	}
 
-	return PodsReady(ctx, k8sClient, listOptions)
+	return arePodsReady(ctx, k8sClient, listOptions)
 }
