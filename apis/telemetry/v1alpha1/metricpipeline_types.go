@@ -82,7 +82,7 @@ type MetricPipelineInput struct {
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
 type MetricPipelinePrometheusInput struct {
-	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+	// If enabled, Services and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
@@ -161,7 +161,7 @@ type MetricPipelineRuntimeInputResourceDisabledByDefault struct {
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
+	// If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
 	// +optional
