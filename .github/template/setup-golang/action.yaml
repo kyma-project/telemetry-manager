@@ -28,3 +28,8 @@ runs:
       shell: bash
       if: steps.go-cache.outputs.cache-hit != 'true'
       run: make --debug install-tools
+
+    - name: Cheat make
+      shell: bash
+      if: steps.go-cache.outputs.cache-hit == 'true'
+      run: touch bin/*
