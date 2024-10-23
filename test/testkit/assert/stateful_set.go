@@ -32,5 +32,5 @@ func isStatefulSetReady(ctx context.Context, k8sClient client.Client, name types
 		Namespace:     name.Namespace,
 	}
 
-	return PodsReady(ctx, k8sClient, listOptions)
+	return arePodsReady(ctx, k8sClient, listOptions)
 }

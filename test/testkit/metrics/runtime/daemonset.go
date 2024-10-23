@@ -8,4 +8,9 @@ var (
 		"k8s.daemonset.misscheduled_nodes",
 		"k8s.daemonset.ready_nodes",
 	}
+
+	DaemonSetResourceAttributes = []string{
+		"k8s.daemonset.name",
+		"k8s.namespace.name",
+	}
 )
