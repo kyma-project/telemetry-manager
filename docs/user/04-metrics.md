@@ -729,6 +729,30 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Remedy 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
 
+**Cause 3**: A deny all `NetworkPolicy` was created in the cluster and the agent cannot scrape metric from annotated workloads.
+
+**Remedy 3**: Define a `NetworkPolicy` to let the agent scrape your workload using the `telemetry.kyma-project.io/metric-scrape` label. An example `NetworkPolicy` could be:
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traffic-from-agent
+spec:
+  podSelector: 
+    matchLabels:
+      # <your workload here>
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kyma-system
+      podSelector:
+        matchLabels:
+          telemetry.kyma-project.io/metric-scrape: "true"
+  policyTypes:
+  - Ingress
+```
+
 ### Gateway Buffer Filling Up
 
 **Symptom**: In the MetricPipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
