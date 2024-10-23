@@ -23,6 +23,10 @@ runs:
           ./bin
         key: go-cache-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
 
+    - name: Install Dependencies
+      shell: bash
+      if: steps.go-cache.outputs.cache-hit != 'true'
+      run: go mod download
 
     - name: Install Tools
       shell: bash
