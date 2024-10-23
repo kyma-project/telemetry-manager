@@ -33,14 +33,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should reject a metricpipeline with misconfigured secretrefs", func() {
-			// TODO: Make this shit work
-			// metricPipeline := testutils.NewMetricPipelineBuilder().
-			// 	WithName("misconfigured-secretref-pipeline").
-			// 	WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
-			// 	Build()
-			// Consistently(func(g Gomega) {
-			// 	g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &metricPipeline)).ShouldNot(Succeed())
-			// }, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+			metricPipeline := testutils.NewMetricPipelineBuilder().
+				WithName("misconfigured-secretref-pipeline").
+				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
+				Build()
+			Consistently(func(g Gomega) {
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &metricPipeline)).ShouldNot(Succeed())
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })

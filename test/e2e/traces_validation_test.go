@@ -33,14 +33,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should reject a tracepipeline with misconfigured secretrefs", func() {
-			// TODO: Make this shit work
-			// tracePipeline := testutils.NewTracePipelineBuilder().
-			// 	WithName("misconfigured-secretref-pipeline").
-			// 	WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
-			// 	Build()
-			// Consistently(func(g Gomega) {
-			// 	g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &tracePipeline)).ShouldNot(Succeed())
-			// }, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+			tracePipeline := testutils.NewTracePipelineBuilder().
+				WithName("misconfigured-secretref-pipeline").
+				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
+				Build()
+			Consistently(func(g Gomega) {
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &tracePipeline)).ShouldNot(Succeed())
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })
