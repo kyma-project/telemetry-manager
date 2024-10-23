@@ -35,7 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		It("Should reject a metricpipeline with misconfigured secretrefs", func() {
 			metricPipeline := testutils.NewMetricPipelineBuilder().
 				WithName("misconfigured-secretref-pipeline").
-				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
+				WithOTLPOutput(testutils.OTLPBasicAuthFromSecretWithMissingKeys("name", "namespace")).
 				Build()
 			Consistently(func(g Gomega) {
 				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &metricPipeline)).ShouldNot(Succeed())

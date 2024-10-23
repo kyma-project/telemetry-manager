@@ -46,7 +46,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		It("Should reject a logpipeline with misconfigured secretrefs", func() {
 			logPipeline := testutils.NewLogPipelineBuilder().
 				WithName("misconfigured-secretref-pipeline").
-				WithHTTPOutput(testutils.HTTPBasicAuthFromSecret("name", "namespace", "", "")).
+				WithHTTPOutput(testutils.HTTPBasicAuthFromSecretWithMissingKeys("name", "namespace")).
 				Build()
 			Consistently(func(g Gomega) {
 				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &logPipeline)).ShouldNot(Succeed())
