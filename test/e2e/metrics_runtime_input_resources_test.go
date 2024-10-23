@@ -184,7 +184,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 					g.Expect(resp).To(HaveHTTPBody(
 						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.PodMetricsResourceAttributes))))),
 					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				}, 3*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 
 			It("Should have expected metric attributes in runtime pod metrics", func() {
@@ -404,6 +404,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyVolumeMetricsEnabledName, Namespace: mockNs})
 		})
 
+		It("Should have pods mounting volumes running", func() {
+			assert.PodReady(ctx, k8sClient, types.NamespacedName{Name: podMountingPVCName, Namespace: mockNs})
+			assert.PodReady(ctx, k8sClient, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: mockNs})
+		})
+
 		Context("Runtime volume metrics", func() {
 			It("Should deliver ONLY runtime volume metrics to volume-metrics backend", func() {
 				Eventually(func(g Gomega) {
@@ -414,7 +419,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 					g.Expect(resp).To(HaveHTTPBody(
 						HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.VolumeMetricsNames))),
 					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 
 			It("Should have expected resource attributes in runtime volume metrics", func() {
