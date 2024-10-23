@@ -18,7 +18,17 @@ on:
   workflow_dispatch:
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
+
   e2e:
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +62,7 @@ jobs:
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-dev:
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -80,6 +91,7 @@ jobs:
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-istio:
+    needs: setup
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -106,6 +118,7 @@ jobs:
           job-name: ${{ github.job }}
 
   e2e-self-mon:
+    needs: setup
     strategy:
       fail-fast: false
       matrix:

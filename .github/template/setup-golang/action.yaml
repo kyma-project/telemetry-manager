@@ -11,8 +11,19 @@ runs:
       uses: actions/setup-go@v5
       with:
         go-version-file: "go.mod"
-        cache: true
+        cache: false
+
+    - name: Cache Go
+      id: go-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/go/bin
+          ~/go/pkg/mod
+          ./bin
+        key: go-cache-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
 
     - name: Install Tools
       shell: bash
+      if: steps.go-cache.outputs.cache-hit != 'true'
       run: make install-tools
