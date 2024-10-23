@@ -11,6 +11,11 @@ on:
         labeled,
         milestoned,
       ]
+  workflow_run:
+    workflows: ["PR Integration"]
+    types:
+      - completed
+
 jobs:
   all-checks:
     runs-on: ubuntu-latest
