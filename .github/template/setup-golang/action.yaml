@@ -23,7 +23,8 @@ runs:
           ./bin
         key: go-cache-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
 
+
     - name: Install Tools
       shell: bash
       if: steps.go-cache.outputs.cache-hit != 'true'
-      run: make install-tools
+      run: make --debug install-tools
