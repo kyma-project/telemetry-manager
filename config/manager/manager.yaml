@@ -32,11 +32,8 @@ spec:
         - /manager
         args:
         - --cert-dir=/tmp
-        - --fluent-bit-priority-class-name=telemetry-priority-class-high
-        - --metric-gateway-priority-class=telemetry-priority-class
-        - --trace-gateway-priority-class=telemetry-priority-class
-        - --self-monitor-priority-class=telemetry-priority-class
-        - --validating-webhook-enabled=true
+        - --high-priority-class-name=telemetry-priority-class-high
+        - --normal-priority-class-name=telemetry-priority-class
         image: controller:latest
         name: manager
         securityContext:
@@ -64,7 +61,7 @@ spec:
             memory: 384Mi
           requests:
             cpu: 5m
-            memory: 100Mi
+            memory: 50Mi
         volumeMounts:
           - mountPath: /tmp
             name: crt-volume

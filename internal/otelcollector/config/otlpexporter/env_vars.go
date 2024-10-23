@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -23,22 +24,30 @@ const (
 	tlsConfigCaVariablePrefix     = "OTLP_TLS_CA_PEM"
 )
 
+var (
+	ErrValueOrSecretRefUndefined = errors.New("either value or secret key reference must be defined")
+)
+
 func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
 	var err error
+
 	secretData := make(map[string][]byte)
 
 	err = makeAuthenticationEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
 	}
+
 	err = makeOTLPEndpointEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
 	}
+
 	err = makeHeaderEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
 	}
+
 	err = makeTLSEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
@@ -53,14 +62,17 @@ func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData m
 		if err != nil {
 			return err
 		}
+
 		password, err := resolveValue(ctx, c, output.Authentication.Basic.Password)
 		if err != nil {
 			return err
 		}
+
 		basicAuthHeader := formatBasicAuthHeader(string(username), string(password))
 		basicAuthHeaderVariable := fmt.Sprintf("%s_%s", basicAuthHeaderVariablePrefix, sanitizeEnvVarName(pipelineName))
 		secretData[basicAuthHeaderVariable] = []byte(basicAuthHeader)
 	}
+
 	return nil
 }
 
@@ -71,19 +83,24 @@ func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map
 	if err != nil {
 		return err
 	}
+
 	secretData[otlpEndpointVariable] = endpointURL
+
 	return err
 }
 
 func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) error {
 	for _, header := range output.Headers {
 		key := makeHeaderVariable(header, pipelineName)
+
 		value, err := resolveValue(ctx, c, header.ValueType)
 		if err != nil {
 			return err
 		}
+
 		secretData[key] = prefixHeaderValue(header, value)
 	}
+
 	return nil
 }
 
@@ -94,9 +111,11 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 			if err != nil {
 				return err
 			}
+
 			tlsConfigCaVariable := makeTLSCaVariable(pipelineName)
 			secretData[tlsConfigCaVariable] = ca
 		}
+
 		if output.TLS.Cert.IsDefined() && output.TLS.Key.IsDefined() {
 			cert, err := resolveValue(ctx, c, *output.TLS.Cert)
 			if err != nil {
@@ -117,9 +136,9 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 
 			tlsConfigKeyVariable := makeTLSKeyVariable(pipelineName)
 			secretData[tlsConfigKeyVariable] = sanitizedKey
-
 		}
 	}
+
 	return nil
 }
 
@@ -142,7 +161,9 @@ func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv
 		if err != nil {
 			return nil, err
 		}
+
 		u.Path = path.Join(u.Path, output.Path)
+
 		return []byte(u.String()), nil
 	}
 
@@ -157,11 +178,12 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 	if value.Value != "" {
 		return []byte(value.Value), nil
 	}
+
 	if value.ValueFrom.IsSecretKeyRef() {
 		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
 	}
 
-	return nil, fmt.Errorf("either value or secret key reference must be defined")
+	return nil, ErrValueOrSecretRefUndefined
 }
 
 func makeOtlpEndpointVariable(pipelineName string) string {
@@ -191,7 +213,8 @@ func makeTLSCaVariable(pipelineName string) string {
 func sanitizeEnvVarName(input string) string {
 	result := input
 	result = strings.ToUpper(result)
-	result = strings.Replace(result, ".", "_", -1)
-	result = strings.Replace(result, "-", "_", -1)
+	result = strings.ReplaceAll(result, ".", "_")
+	result = strings.ReplaceAll(result, "-", "_")
+
 	return result
 }

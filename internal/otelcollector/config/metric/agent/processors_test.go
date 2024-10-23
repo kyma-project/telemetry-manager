@@ -59,13 +59,24 @@ func TestProcessors(t *testing.T) {
 		}, BuildOptions{
 			InstrumentationScopeVersion: "main",
 		})
+
+		expectedSetInstrumentationScopeRuntime := metric.TransformProcessor{
+			ErrorMode: "ignore",
+			MetricStatements: []config.TransformProcessorStatements{
+				{
+					Context: "scope",
+					Statements: []string{
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+					},
+				},
+			},
+		}
+
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeRuntime.ErrorMode)
-		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements, 1)
-		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Context)
-		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[0])
-		require.Equal(t, "set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeRuntime.MetricStatements[0].Statements[1])
+		require.Equal(t, expectedSetInstrumentationScopeRuntime, *collectorConfig.Processors.SetInstrumentationScopeRuntime)
 	})
 
 	t.Run("set instrumentation scope prometheus", func(t *testing.T) {
@@ -114,5 +125,34 @@ func TestProcessors(t *testing.T) {
 			},
 		}
 		require.Equal(t, expectedInsertSkipEnrichmentAttributeProcessor, *collectorConfig.Processors.InsertSkipEnrichmentAttribute)
+	})
+
+	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
+		k8sClusterMetricsDrop := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
+			" and IsMatch(name, \"^k8s.(deployment|cronjob|daemonset|hpa|job|replicaset|resource_quota|statefulset).*\")"
+
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
+		}, BuildOptions{})
+
+		dropK8sClusterMetrics := collectorConfig.Processors.DropK8sClusterMetrics
+		require.NotNil(t, dropK8sClusterMetrics)
+		require.Len(t, dropK8sClusterMetrics.Metrics.Metric, 1)
+		require.Equal(t, k8sClusterMetricsDrop, dropK8sClusterMetrics.Metrics.Metric[0])
+	})
+
+	t.Run("drop non-PVC volumes metrics processor", func(t *testing.T) {
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputVolumeMetrics(true).Build(),
+		}, BuildOptions{})
+
+		expectedDropNonPVCVolumesMetricsProcessor := FilterProcessor{
+			Metrics: FilterProcessorMetrics{
+				Metric: []string{
+					`resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"`,
+				},
+			},
+		}
+		require.Equal(t, expectedDropNonPVCVolumesMetricsProcessor, *collectorConfig.Processors.DropNonPVCVolumesMetrics)
 	})
 }

@@ -58,6 +58,7 @@ Format regex`},
 	var cm corev1.ConfigMap
 	err = sut.Get(ctx, testConfig.ParsersConfigMap, &cm)
 	require.NoError(t, err)
+
 	expectedCMData := "[PARSER]\n    Name foo\n    Format regex\n\n"
 	require.Contains(t, cm.Data[parsersConfigMapKey], expectedCMData)
 	require.Len(t, cm.OwnerReferences, 1)

@@ -6,146 +6,78 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-func WithLds(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlLogs []byte) ([]plog.Logs, error) {
-		if jsonlLogs == nil {
-			return nil, nil
-		}
-
-		lds, err := unmarshalLogs(jsonlLogs)
+func HaveFlatLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLog, error) {
+		lds, err := unmarshalLogs(jsonLogs)
 		if err != nil {
-			return nil, fmt.Errorf("WithLds requires a valid OTLP JSON document: %w", err)
+			return nil, fmt.Errorf("HaveFlatLogs requires a valid OTLP JSON document: %w", err)
 		}
 
-		return lds, nil
+		fl := flattenAllLogs(lds)
+
+		return fl, nil
 	}, matcher)
 }
 
-// ContainLd is an alias for WithLds(gomega.ContainElement()).
-func ContainLd(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithLds(gomega.ContainElement(matcher))
-}
-
-// ConsistOfLds is an alias for WithLds(gomega.ConsistOf()).
-func ConsistOfLds(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithLds(gomega.ConsistOf(matcher))
-}
-
-func WithLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(ld plog.Logs) ([]plog.LogRecord, error) {
-		return getLogRecords(ld), nil
+func HaveContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) string {
+		return fl.KubernetesAttributes["container_name"]
 	}, matcher)
 }
 
-// ContainLogRecord is an alias for WithLogRecords(gomega.ContainElement()).
-func ContainLogRecord(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithLogRecords(gomega.ContainElement(matcher))
-}
-
-// ConsistOfLogRecordsis an alias for WithLogRecords(gomega.ConsistOf()).
-func ConsistOfLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithLogRecords(gomega.ConsistOf(matcher))
-}
-
-func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) string {
-		kubernetesAttrs := getKubernetesAttributes(lr)
-		containerName, hasContainerName := kubernetesAttrs.Get("container_name")
-		if !hasContainerName || containerName.Type() != pcommon.ValueTypeStr {
-			return ""
-		}
-
-		return containerName.Str()
+func HaveNamespace(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) string {
+		return fl.KubernetesAttributes["namespace_name"]
 	}, matcher)
 }
 
-func WithNamespace(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) string {
-		kubernetesAttrs := getKubernetesAttributes(lr)
-		namespaceName, hasNamespaceName := kubernetesAttrs.Get("namespace_name")
-		if !hasNamespaceName || namespaceName.Type() != pcommon.ValueTypeStr {
-			return ""
-		}
-
-		return namespaceName.Str()
+func HavePodName(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) string {
+		return fl.KubernetesAttributes["pod_name"]
 	}, matcher)
 }
 
-func WithPodName(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) string {
-		kubernetesAttrs := getKubernetesAttributes(lr)
-		podName, hasPodName := kubernetesAttrs.Get("pod_name")
-		if !hasPodName || podName.Type() != pcommon.ValueTypeStr {
-			return ""
-		}
-
-		return podName.Str()
+func HaveLogRecordAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) map[string]string {
+		return fl.LogRecordAttributes
 	}, matcher)
 }
 
-func WithLevel(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) string {
-		const levelAttrKey = "level"
-		levelAttr, hasLevelAttr := lr.Attributes().Get(levelAttrKey)
-		if !hasLevelAttr || levelAttr.Type() != pcommon.ValueTypeStr {
-			return ""
-		}
+func HaveTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) time.Time {
+		ts := fl.LogRecordAttributes["timestamp"]
+		timestamp, err := time.Parse(time.RFC3339, ts)
 
-		return levelAttr.Str()
-	}, matcher)
-}
-
-func WithTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) time.Time {
-		const timestampAttrKey = "timestamp"
-		timestampAttr, hasTimestampAttr := lr.Attributes().Get(timestampAttrKey)
-		if !hasTimestampAttr || timestampAttr.Type() != pcommon.ValueTypeStr {
-			return time.Time{}
-		}
-
-		timestamp, err := time.Parse(time.RFC3339, timestampAttr.Str())
 		if err != nil {
-			return time.Time{}
+			panic(err)
 		}
 
 		return timestamp
 	}, matcher)
 }
 
-func WithKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
-		kubernetesAttrs := getKubernetesAttributes(lr)
-		annotationAttrs, hasAnnotations := kubernetesAttrs.Get("annotations")
-		if !hasAnnotations || annotationAttrs.Type() != pcommon.ValueTypeMap {
-			return nil
-		}
-		return annotationAttrs.Map().AsRaw()
+func HaveLevel(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) string {
+		return fl.LogRecordAttributes["level"]
 	}, matcher)
 }
 
-func WithKubernetesLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
-		kubernetesAttrs := getKubernetesAttributes(lr)
-		labelAttrs, hasLabels := kubernetesAttrs.Get("labels")
-		if !hasLabels || labelAttrs.Type() != pcommon.ValueTypeMap {
-			return nil
-		}
-		return labelAttrs.Map().AsRaw()
+func HaveKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) map[string]any {
+		return fl.KubernetesAnnotationAttributes
 	}, matcher)
 }
 
-func WithLogRecordAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
-		return lr.Attributes().AsRaw()
+func HaveKubernetesLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) map[string]any {
+		return fl.KubernetesLabelAttributes
 	}, matcher)
 }
 
-func WithLogBody(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(lr plog.LogRecord) string {
-		return lr.Body().AsString()
+func HaveLogBody(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) string {
+		return fl.LogRecordBody
 	}, matcher)
 }

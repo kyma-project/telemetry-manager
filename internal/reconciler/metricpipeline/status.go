@@ -60,7 +60,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	if isMetricAgentRequired(pipeline) {
 		condition = commonstatus.GetAgentHealthyCondition(ctx,
 			r.agentProber,
-			types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace},
+			types.NamespacedName{Name: r.config.AgentName, Namespace: r.config.TelemetryNamespace},
 			r.errToMsgConverter,
 			commonstatus.SignalTypeMetrics)
 	}
@@ -71,7 +71,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace},
+		r.gatewayProber, types.NamespacedName{Name: r.config.GatewayName, Namespace: r.config.TelemetryNamespace},
 		r.errToMsgConverter,
 		commonstatus.SignalTypeMetrics)
 	condition.ObservedGeneration = pipeline.Generation
@@ -79,7 +79,6 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-
 	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
@@ -160,14 +159,18 @@ func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 	if probeResult.AllDataDropped {
 		return conditions.ReasonSelfMonAllDataDropped
 	}
+
 	if probeResult.SomeDataDropped {
 		return conditions.ReasonSelfMonSomeDataDropped
 	}
+
 	if probeResult.QueueAlmostFull {
 		return conditions.ReasonSelfMonBufferFillingUp
 	}
+
 	if probeResult.Throttling {
 		return conditions.ReasonSelfMonGatewayThrottling
 	}
+
 	return conditions.ReasonSelfMonFlowHealthy
 }

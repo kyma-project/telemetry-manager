@@ -35,6 +35,7 @@ func sanitizeSpecID(filePath string) string {
 	fileName := path.Base(filePath)
 	specID := strings.TrimSuffix(fileName, "_test.go")
 	specID = strings.ReplaceAll(specID, "_", "-")
+
 	return specID
 }
 
@@ -46,6 +47,8 @@ const (
 	LabelExperimental         = "experimental"
 	LabelTelemetryLogAnalysis = "telemetry-log-analysis"
 	LabelMaxPipeline          = "max-pipeline"
+	LabelSetA                 = "set_a"
+	LabelSetB                 = "set_b"
 
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
 	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"

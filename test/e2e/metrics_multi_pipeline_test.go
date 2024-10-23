@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
 	Context("When multiple metric pipelines with instrumentation scope exist", Ordered, func() {
 		var (
 			mockNs                     = suite.ID()
@@ -87,11 +87,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should have a running metric gateway deployment", func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.ServiceReady(ctx, k8sClient, kitkyma.MetricGatewayMetricsService)
 		})
 
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
 		})
 
 		It("Ensures runtime metrics are sent to runtime backend", func() {
@@ -177,7 +180,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 })
 
 func checkInstrumentationScopeAndVersion(g Gomega, body []byte, scope1, scope2 string) {
-
 	g.Expect(body).To(HaveFlatMetrics(HaveEach(
 		SatisfyAny(
 			SatisfyAll(

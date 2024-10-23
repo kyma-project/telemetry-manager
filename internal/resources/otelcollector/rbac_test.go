@@ -65,12 +65,33 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		expectedRules := []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/metrics", "nodes/stats", "services", "endpoints", "pods"},
+				Resources: []string{"nodes", "nodes/metrics", "nodes/stats", "nodes/proxy", "services", "endpoints", "pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
 				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
 				Verbs:           []string{"get"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"extensions"},
+				Resources: []string{"daemonsets", "deployments", "replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs", "cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 		}
 
@@ -88,14 +109,30 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		checkClusterRoleBinding(t, crb, name, namespace)
 	})
 
-	t.Run("should not have a role", func(t *testing.T) {
+	t.Run("should have a role", func(t *testing.T) {
 		r := rbac.role
-		require.Nil(t, r)
+		expectedRules := []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+		}
+
+		require.NotNil(t, r)
+		require.Equal(t, name, r.Name)
+		require.Equal(t, namespace, r.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, r.Labels)
+		require.Equal(t, expectedRules, r.Rules)
 	})
 
-	t.Run("should not have a role binding", func(t *testing.T) {
+	t.Run("should have a role binding", func(t *testing.T) {
 		rb := rbac.roleBinding
-		require.Nil(t, rb)
+		require.NotNil(t, rb)
+
+		checkRoleBinding(t, rb, name, namespace)
 	})
 }
 
@@ -136,27 +173,6 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 			{
 				APIGroups: []string{"telemetry.kyma-project.io"},
 				Resources: []string{"logpipelines"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"extensions"},
-				Resources: []string{"daemonsets", "deployments", "replicasets"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"batch"},
-				Resources: []string{"jobs", "cronjobs"},
-				Verbs:     []string{"get", "list", "watch"},
-			}, {
-				APIGroups: []string{"autoscaling"},
-				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get", "list", "watch"},
 			}}
 

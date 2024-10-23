@@ -29,7 +29,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -48,25 +47,9 @@ func TestReconcile(t *testing.T) {
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
 	testConfig := Config{
-		Gateway: otelcollector.GatewayConfig{
-			Config: otelcollector.Config{
-				BaseName:  "gateway",
-				Namespace: "default",
-			},
-			Deployment: otelcollector.DeploymentConfig{
-				Image: "otel/opentelemetry-collector-contrib",
-			},
-			OTLPServiceName: "otlp",
-		},
-		Agent: otelcollector.AgentConfig{
-			Config: otelcollector.Config{
-				BaseName:  "agent",
-				Namespace: "default",
-			},
-			DaemonSet: otelcollector.DaemonSetConfig{
-				Image: "otel/opentelemetry-collector-contrib",
-			},
-		},
+		AgentName:          "agent",
+		GatewayName:        "gateway",
+		TelemetryNamespace: "default",
 	}
 
 	t.Run("metric gateway deployment is not ready", func(t *testing.T) {
@@ -967,7 +950,6 @@ func TestReconcile(t *testing.T) {
 				}
 			})
 		}
-
 	})
 
 	t.Run("a request to the Kubernetes API server has failed when validating the secret references", func(t *testing.T) {
@@ -1059,6 +1041,7 @@ func TestReconcile(t *testing.T) {
 
 		pipelineLockStub := &mocks.PipelineLock{}
 		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+
 		serverErr := errors.New("failed to get lock: server error")
 		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(&errortypes.APIRequestFailedError{Err: serverErr})
 
@@ -1304,6 +1287,7 @@ func TestReconcile(t *testing.T) {
 					require.Equal(t, tt.expectedReason, cond.Reason)
 					require.Equal(t, tt.expectedMessage, cond.Message)
 				}
+
 				if tt.probeAgentErr != nil {
 					cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 					require.Equal(t, tt.expectedStatus, cond.Status)

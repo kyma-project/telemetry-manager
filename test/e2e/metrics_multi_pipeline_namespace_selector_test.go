@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
 	var (
 		mockNs            = suite.ID()
 		app1Ns            = "app-1"
@@ -97,6 +97,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		// verify metrics from apps1Ns delivered to backend1

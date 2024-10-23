@@ -17,6 +17,7 @@ rules:
   - namespaces/status
   - nodes
   - nodes/metrics
+  - nodes/proxy
   - nodes/spec
   - nodes/stats
   - pods
@@ -60,6 +61,7 @@ rules:
   - get
   - list
   - patch
+  - watch
 - apiGroups:
   - apps
   resources:

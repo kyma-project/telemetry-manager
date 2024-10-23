@@ -82,7 +82,7 @@ type MetricPipelineInput struct {
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
 type MetricPipelinePrometheusInput struct {
-	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+	// If enabled, Services and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
@@ -103,7 +103,7 @@ type MetricPipelineRuntimeInput struct {
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Describes the Kubernetes resources for which runtime metrics are scraped.
 	// +optional
-	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}}
+	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}}
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
 }
 
@@ -121,6 +121,10 @@ type MetricPipelineRuntimeInputResources struct {
 	// +optional
 	// +kubebuilder:default={enabled: false}
 	Node *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"node,omitempty"`
+	// Configures Volume runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Volume *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"volume,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResourceEnabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
@@ -141,7 +145,7 @@ type MetricPipelineRuntimeInputResourceDisabledByDefault struct {
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
+	// If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
 	// +optional

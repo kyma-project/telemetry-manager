@@ -97,7 +97,7 @@ spec:
         app: metric-gen
     spec:
       containers:
-        - image: ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736
+        - image: europe-docker.pkg.dev/kyma-project/prod/examples/monitoring-custom-metrics:v20230905-b823fd14
           imagePullPolicy: IfNotPresent
           name: metric-gen
           ports:

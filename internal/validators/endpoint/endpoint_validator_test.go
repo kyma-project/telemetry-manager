@@ -363,15 +363,15 @@ func TestOtlpGrpcEndpoints(t *testing.T) {
 				&telemetryv1alpha1.ValueType{Value: test.endpoint},
 				OtlpProtocolGRPC)
 
-			if test.errOtlpGRPC != nil && test.errMsgOtlpGRPC != "" {
+			switch {
+			case test.errOtlpGRPC != nil && test.errMsgOtlpGRPC != "":
 				require.True(t, errors.Is(err, test.errOtlpGRPC))
 				require.EqualError(t, err, test.errMsgOtlpGRPC)
-			} else if test.errOtlpGRPC == nil && test.errMsgOtlpGRPC != "" {
+			case test.errOtlpGRPC == nil && test.errMsgOtlpGRPC != "":
 				require.True(t, IsEndpointInvalidError(err))
 				require.EqualError(t, err, test.errMsgOtlpGRPC)
-			} else if test.errOtlpGRPC == nil {
+			case test.errOtlpGRPC == nil:
 				require.NoError(t, err)
-				return
 			}
 		})
 	}
@@ -390,13 +390,14 @@ func TestOtlpHttpEndpoints(t *testing.T) {
 				&telemetryv1alpha1.ValueType{Value: test.endpoint},
 				OtlpProtocolHTTP)
 
-			if test.errOtlpHTTP != nil && test.errMsgOtlpHTTP != "" {
+			switch {
+			case test.errOtlpHTTP != nil && test.errMsgOtlpHTTP != "":
 				require.True(t, errors.Is(err, test.errOtlpHTTP))
 				require.EqualError(t, err, test.errMsgOtlpHTTP)
-			} else if test.errOtlpHTTP == nil && test.errMsgOtlpHTTP != "" {
+			case test.errOtlpHTTP == nil && test.errMsgOtlpHTTP != "":
 				require.True(t, IsEndpointInvalidError(err))
 				require.EqualError(t, err, test.errMsgOtlpHTTP)
-			} else if test.errOtlpHTTP == nil {
+			case test.errOtlpHTTP == nil:
 				require.NoError(t, err)
 				return
 			}
@@ -417,13 +418,14 @@ func TestFluentdHttpEndpoints(t *testing.T) {
 				&telemetryv1alpha1.ValueType{Value: test.endpoint},
 				FluentdProtocolHTTP)
 
-			if test.errFluentdHTTP != nil && test.errMsgFluentdHTTP != "" {
+			switch {
+			case test.errFluentdHTTP != nil && test.errMsgFluentdHTTP != "":
 				require.True(t, errors.Is(err, test.errFluentdHTTP))
 				require.EqualError(t, err, test.errMsgFluentdHTTP)
-			} else if test.errFluentdHTTP == nil && test.errMsgFluentdHTTP != "" {
+			case test.errFluentdHTTP == nil && test.errMsgFluentdHTTP != "":
 				require.True(t, IsEndpointInvalidError(err))
 				require.EqualError(t, err, test.errMsgFluentdHTTP)
-			} else if test.errFluentdHTTP == nil {
+			case test.errFluentdHTTP == nil:
 				require.NoError(t, err)
 				return
 			}

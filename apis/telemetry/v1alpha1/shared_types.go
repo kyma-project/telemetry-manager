@@ -15,6 +15,7 @@ func (v *ValueType) IsDefined() bool {
 	if v == nil {
 		return false
 	}
+
 	if v.Value != "" {
 		return true
 	}
@@ -44,10 +45,6 @@ func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
 }
 
-type LogPipelineValidationConfig struct {
-	DeniedOutPutPlugins []string
-	DeniedFilterPlugins []string
-}
 type Header struct {
 	// Defines the header name.
 	Name string `json:"name"`

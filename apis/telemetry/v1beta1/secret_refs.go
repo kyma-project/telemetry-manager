@@ -38,9 +38,11 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 		if tlsConfig.CA != nil {
 			refs = appendIfSecretRef(refs, *tlsConfig.CA)
 		}
+
 		if tlsConfig.Cert != nil {
 			refs = appendIfSecretRef(refs, *tlsConfig.Cert)
 		}
+
 		if tlsConfig.Key != nil {
 			refs = appendIfSecretRef(refs, *tlsConfig.Key)
 		}
@@ -57,29 +59,31 @@ func (mp *MetricPipeline) GetSecretRefs() []SecretKeyRef {
 	return getRefsInOTLPOutput(mp.Spec.Output.OTLP)
 }
 
-func getRefsInOTLPOutput(OTLPOut *OTLPOutput) []SecretKeyRef {
+func getRefsInOTLPOutput(out *OTLPOutput) []SecretKeyRef {
 	var refs []SecretKeyRef
 
-	refs = appendIfSecretRef(refs, OTLPOut.Endpoint)
+	refs = appendIfSecretRef(refs, out.Endpoint)
 
-	if OTLPOut.Authentication != nil && OTLPOut.Authentication.Basic.IsDefined() {
-		refs = appendIfSecretRef(refs, OTLPOut.Authentication.Basic.User)
-		refs = appendIfSecretRef(refs, OTLPOut.Authentication.Basic.Password)
+	if out.Authentication != nil && out.Authentication.Basic.IsDefined() {
+		refs = appendIfSecretRef(refs, out.Authentication.Basic.User)
+		refs = appendIfSecretRef(refs, out.Authentication.Basic.Password)
 	}
 
-	for _, header := range OTLPOut.Headers {
+	for _, header := range out.Headers {
 		refs = appendIfSecretRef(refs, header.ValueType)
 	}
 
-	if OTLPOut.TLS != nil && !OTLPOut.TLS.Insecure {
-		if OTLPOut.TLS.CA != nil {
-			refs = appendIfSecretRef(refs, *OTLPOut.TLS.CA)
+	if out.TLS != nil && !out.TLS.Disabled {
+		if out.TLS.CA != nil {
+			refs = appendIfSecretRef(refs, *out.TLS.CA)
 		}
-		if OTLPOut.TLS.Cert != nil {
-			refs = appendIfSecretRef(refs, *OTLPOut.TLS.Cert)
+
+		if out.TLS.Cert != nil {
+			refs = appendIfSecretRef(refs, *out.TLS.Cert)
 		}
-		if OTLPOut.TLS.Key != nil {
-			refs = appendIfSecretRef(refs, *OTLPOut.TLS.Key)
+
+		if out.TLS.Key != nil {
+			refs = appendIfSecretRef(refs, *out.TLS.Key)
 		}
 	}
 
@@ -90,5 +94,6 @@ func appendIfSecretRef(secretKeyRefs []SecretKeyRef, valueType ValueType) []Secr
 	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
 		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
 	}
+
 	return secretKeyRefs
 }

@@ -94,6 +94,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsHealthy), Ord
 
 		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
@@ -123,17 +124,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsHealthy), Ord
 				// Pushing metrics to the metric gateway triggers an alert.
 				// It makes the self-monitor call the webhook, which in turn increases the counter.
 				assert.ManagerEmitsMetric(proxyClient,
-					Equal("controller_runtime_webhook_requests_total"),
+					HaveName(Equal("controller_runtime_webhook_requests_total")),
 					SatisfyAll(
-						WithLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
-						WithValue(BeNumerically(">", 0)),
+						HaveLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
+						HaveMetricValue(BeNumerically(">", 0)),
 					))
 			})
 
 			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
 				assert.ManagerEmitsMetric(proxyClient,
-					Equal("telemetry_self_monitor_prober_requests_total"),
-					WithValue(BeNumerically(">", 0)),
+					HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
+					HaveMetricValue(BeNumerically(">", 0)),
 				)
 			})
 		})

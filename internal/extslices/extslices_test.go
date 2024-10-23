@@ -17,20 +17,16 @@ func TestTransformFunc(t *testing.T) {
 		expected      []string
 	}{
 		{
-			name:  "should transform",
-			input: []int{1, 2, 3},
-			transformFunc: func(e int) string {
-				return strconv.Itoa(e)
-			},
-			expected: []string{"1", "2", "3"},
+			name:          "should transform",
+			input:         []int{1, 2, 3},
+			transformFunc: strconv.Itoa,
+			expected:      []string{"1", "2", "3"},
 		},
 		{
-			name:  "should transform with type alias",
-			input: intSlice{1, 2, 3},
-			transformFunc: func(e int) string {
-				return strconv.Itoa(e)
-			},
-			expected: []string{"1", "2", "3"},
+			name:          "should transform with type alias",
+			input:         intSlice{1, 2, 3},
+			transformFunc: strconv.Itoa,
+			expected:      []string{"1", "2", "3"},
 		},
 	}
 

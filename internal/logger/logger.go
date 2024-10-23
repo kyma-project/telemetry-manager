@@ -30,7 +30,7 @@ func newWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.
 	return newLogger(atomicLevel, additionalCores...)
 }
 
-func newLogger(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) *zap.Logger {
+func newLogger(levelEnabler zapcore.LevelEnabler, cores ...zapcore.Core) *zap.Logger {
 	encoder := getZapEncoder()
 
 	defaultCore := zapcore.NewCore(
@@ -38,7 +38,7 @@ func newLogger(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Cor
 		zapcore.Lock(os.Stderr),
 		levelEnabler,
 	)
-	cores := append(additionalCores, defaultCore)
+	cores = append(cores, defaultCore)
 
 	return zap.New(zapcore.NewTee(cores...), zap.AddCaller())
 }

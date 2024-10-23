@@ -41,6 +41,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 			log.V(1).Info(fmt.Sprintf("referenced secret not found: %v", err))
 			return nil
 		}
+
 		return err
 	}
 
@@ -49,6 +50,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 			log.V(1).Info(fmt.Sprintf("referenced tls config secret not found: %v", err))
 			return nil
 		}
+
 		return err
 	}
 
@@ -70,10 +72,12 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 			PipelineDefaults: s.config.PipelineDefaults,
 			CollectAgentLogs: s.config.Overrides.Logging.CollectAgentLogs,
 		}
+
 		newConfig, err := builder.BuildFluentBitConfig(pipeline, builderConfig)
 		if err != nil {
 			return fmt.Errorf("unable to build section: %w", err)
 		}
+
 		if cm.Data == nil {
 			cm.Data = map[string]string{cmKey: newConfig}
 		} else if oldConfig, hasKey := cm.Data[cmKey]; !hasKey || oldConfig != newConfig {
@@ -88,6 +92,7 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 	if err = s.Update(ctx, &cm); err != nil {
 		return fmt.Errorf("unable to update section configmap: %w", err)
 	}
+
 	return nil
 }
 
@@ -118,6 +123,7 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 	if err = s.Update(ctx, &cm); err != nil {
 		return fmt.Errorf("unable to update files configmap: %w", err)
 	}
+
 	return nil
 }
 
@@ -131,7 +137,6 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 	newSecret.Data = make(map[string][]byte)
 
 	for i := range logPipelines {
-
 		if !logPipelines[i].DeletionTimestamp.IsZero() {
 			continue
 		}
@@ -160,6 +165,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 	if err = s.Update(ctx, &newSecret); err != nil {
 		return fmt.Errorf("unable to update env secret: %w", err)
 	}
+
 	return nil
 }
 
@@ -217,6 +223,7 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 	if err = s.Update(ctx, &newSecret); err != nil {
 		return fmt.Errorf("unable to update tls config secret: %w", err)
 	}
+
 	return nil
 }
 
@@ -257,5 +264,6 @@ func isLogPipelineDeployable(allPipelines []telemetryv1alpha1.LogPipeline, logPi
 			return true
 		}
 	}
+
 	return false
 }
