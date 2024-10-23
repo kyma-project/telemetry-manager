@@ -269,6 +269,8 @@ func TestReceivers(t *testing.T) {
 
 func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetricsToDrop {
 	metricsToDrop := K8sClusterMetricsToDrop{}
+
+	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
 	defaultMetricsToDrop := &K8sClusterDefaultMetricsToDrop{
 		K8sContainerStorageRequest:          MetricConfig{Enabled: false},
 		K8sContainerStorageLimit:            MetricConfig{Enabled: false},
@@ -329,6 +331,7 @@ func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetric
 		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
 		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
+
 	if resourceEnabled == "statefulset" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
 		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
@@ -337,6 +340,7 @@ func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetric
 		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
 		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
+
 	if resourceEnabled == "job" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
 		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
@@ -345,6 +349,7 @@ func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetric
 		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
 		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
+
 	if resourceEnabled == "deployment" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
 		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
@@ -353,6 +358,7 @@ func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetric
 		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
 		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
+
 	if resourceEnabled == "daemonset" {
 		metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
 		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
@@ -361,5 +367,6 @@ func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetric
 		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
 		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
 	}
+
 	return metricsToDrop
 }

@@ -144,6 +144,7 @@ func TestBuildAgentConfig(t *testing.T) {
 				expectedReceiverIDs := []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}
 				expectedProcessorIDs := []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}
 				expectedExporterIDs := []string{"otlp"}
+
 				t.Run(tc.name, func(t *testing.T) {
 					collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{tc.pipeline}, BuildOptions{})
 
@@ -329,7 +330,6 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
-
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
@@ -379,6 +379,5 @@ func TestBuildAgentConfig(t *testing.T) {
 				require.Equal(t, string(goldenFile), string(configYAML))
 			})
 		}
-
 	})
 }

@@ -57,7 +57,6 @@ func makeKubeletStatsConfig(runtimeResources runtimeResourcesEnabled) *KubeletSt
 }
 
 func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string, runtimeResources runtimeResourcesEnabled) *SingletonK8sClusterReceiverCreator {
-
 	return &SingletonK8sClusterReceiverCreator{
 		AuthType: "serviceAccount",
 		LeaderElection: metric.LeaderElection{
@@ -76,9 +75,9 @@ func makeSingletonK8sClusterReceiverCreatorConfig(gatewayNamespace string, runti
 }
 
 func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sClusterMetricsToDrop {
-
 	metricsToDrop := K8sClusterMetricsToDrop{}
 
+	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
 	metricsToDrop.K8sClusterDefaultMetricsToDrop = &K8sClusterDefaultMetricsToDrop{
 		K8sContainerStorageRequest:          MetricConfig{Enabled: false},
 		K8sContainerStorageLimit:            MetricConfig{Enabled: false},
@@ -100,7 +99,7 @@ func makeK8sClusterMetricsToDrop(runtimeResources runtimeResourcesEnabled) K8sCl
 	}
 
 	// The following metrics are enabled by default in the K8sClusterReceiver. If we disable these resources in
-	//pipeline config we need to disable the corresponding metrics in the K8sClusterReceiver.
+	// pipeline config we need to disable the corresponding metrics in the K8sClusterReceiver.
 
 	if !runtimeResources.pod {
 		metricsToDrop.K8sClusterPodMetricsToDrop = &K8sClusterPodMetricsToDrop{

@@ -157,7 +157,6 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeJobInputEnabled(input) {
 		cfg.Processors.DropRuntimeJobMetrics = makeDropRuntimeJobMetricsConfig()
 	}
-
 }
 
 func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {

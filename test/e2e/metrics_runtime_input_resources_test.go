@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"net/http"
 	"slices"
 
@@ -17,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -24,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -227,8 +227,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 
 func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyDirName, namespace string) []client.Object {
 	var objs []client.Object
-	storageClassName := "test-storage"
 
+	storageClassName := "test-storage"
 	pv := &corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{Name: pvName, Namespace: namespace},
 		Spec: corev1.PersistentVolumeSpec{
@@ -329,7 +329,7 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 	return objs
 }
 
-// Check for `ContainElemets` for metrics present in the backend
+// Check for `ContainElements` for metrics present in the backend
 func backendContainsMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
@@ -347,6 +347,7 @@ func backendContainsDesiredResourceAttributes(proxyClient *apiserverproxy.Client
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		defer resp.Body.Close()
 
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
 			ContainElement(SatisfyAll(
@@ -362,6 +363,7 @@ func backendContainsDesiredMetricAttributes(proxyClient *apiserverproxy.Client, 
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		defer resp.Body.Close()
 
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
 			ContainElement(SatisfyAll(
@@ -378,6 +380,7 @@ func backendConsistsMetricsDeliveredForResource(proxyClient *apiserverproxy.Clie
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		defer resp.Body.Close()
 
 		g.Expect(resp).To(HaveHTTPBody(
 			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(resourceMetrics))),

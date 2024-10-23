@@ -3,11 +3,13 @@ package assert
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+
 	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 func JobReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
@@ -16,7 +18,6 @@ func JobReady(ctx context.Context, k8sClient client.Client, name types.Namespace
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("Job not ready"))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-
 }
 
 func isJobSuccessful(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {

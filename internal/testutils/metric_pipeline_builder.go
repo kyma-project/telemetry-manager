@@ -331,5 +331,4 @@ func (b *MetricPipelineBuilder) runtimeInput() {
 	if b.inRuntime.Resources == nil {
 		b.inRuntime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
 	}
-
 }
