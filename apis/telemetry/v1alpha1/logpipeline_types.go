@@ -135,7 +135,7 @@ type Output struct {
 	Otlp *OtlpOutput `json:"otlp,omitempty"`
 }
 
-func (i *Input) IsDefined() bool {
+func (i *Input) IsValid() bool {
 	return i != nil
 }
 
@@ -144,7 +144,7 @@ func (o *Output) IsCustomDefined() bool {
 }
 
 func (o *Output) IsHTTPDefined() bool {
-	return o.HTTP != nil && o.HTTP.Host.IsDefined()
+	return o.HTTP != nil && o.HTTP.Host.IsValid()
 }
 
 func (o *Output) IsAnyDefined() bool {

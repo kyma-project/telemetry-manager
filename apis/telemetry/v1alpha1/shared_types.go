@@ -11,7 +11,7 @@ type ValueType struct {
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
 
-func (v *ValueType) IsDefined() bool {
+func (v *ValueType) IsValid() bool {
 	if v == nil {
 		return false
 	}

@@ -189,14 +189,14 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 		}
 
 		tlsConfig := output.HTTP.TLSConfig
-		if tlsConfig.CA.IsDefined() {
+		if tlsConfig.CA.IsValid() {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.CA, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}
 
-		if tlsConfig.Cert.IsDefined() && tlsConfig.Key.IsDefined() {
+		if tlsConfig.Cert.IsValid() && tlsConfig.Key.IsValid() {
 			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Cert, targetCertVariable, newSecret.Data); err != nil {
 				return err

@@ -106,15 +106,15 @@ func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipe
 	}
 
 	cfg.InsecureSkipVerify = output.TLS.InsecureSkipVerify
-	if output.TLS.CA.IsDefined() {
+	if output.TLS.CA.IsValid() {
 		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSCaVariable(pipelineName))
 	}
 
-	if output.TLS.Cert.IsDefined() {
+	if output.TLS.Cert.IsValid() {
 		cfg.CertPem = fmt.Sprintf("${%s}", makeTLSCertVariable(pipelineName))
 	}
 
-	if output.TLS.Key.IsDefined() {
+	if output.TLS.Key.IsValid() {
 		cfg.KeyPem = fmt.Sprintf("${%s}", makeTLSKeyVariable(pipelineName))
 	}
 
@@ -124,7 +124,7 @@ func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipe
 func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
-	if output.Authentication != nil && output.Authentication.Basic.User.IsDefined() && output.Authentication.Basic.Password.IsDefined() {
+	if output.Authentication != nil && output.Authentication.Basic.User.IsValid() && output.Authentication.Basic.Password.IsValid() {
 		basicAuthHeaderVariable := makeBasicAuthHeaderVariable(pipelineName)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}
