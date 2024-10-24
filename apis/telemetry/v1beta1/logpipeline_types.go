@@ -76,8 +76,7 @@ type LogPipelineSpec struct {
 type LogPipelineInput struct {
 	// Configures in more detail from which containers application logs are enabled as input.
 	Runtime *LogPipelineRuntimeInput `json:"runtime,omitempty"`
-	// Configures an endpoint to receive logs from a OTLP source.
-	OTLP *OTLPInput `json:"otlp,omitempty"`
+	OTLP    *OTLPInput               `json:"otlp,omitempty"`
 }
 
 // LogPipelineRuntimeInput specifies the default type of Input that handles application logs from runtime containers. It configures in more detail from which containers logs are selected as input.
