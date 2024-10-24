@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"fmt"
 	"net/http"
 	"slices"
 
@@ -205,7 +204,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		Context("Pipeline B should deliver deployment, daemonset, statefulset and job metrics", Ordered, func() {
-			fmt.Println(backendWorkloadMetricsEnabledURLA)
 			It("should have metrics for deployment delivered", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.DeploymentMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.deployment.available", runtime.DeploymentResourceAttributes)
