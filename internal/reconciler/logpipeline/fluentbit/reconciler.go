@@ -59,8 +59,8 @@ type Reconciler struct {
 	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
 
-func (r *Reconciler) SupportedOutput() logpipeline.OutputType {
-	return logpipeline.FluentBit
+func (r *Reconciler) SupportedOutput() telemetryv1alpha1.Mode {
+	return telemetryv1alpha1.FluentBit
 }
 
 func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, healthProber logpipeline.FlowHealthProber, checker logpipeline.IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {

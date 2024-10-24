@@ -23,8 +23,8 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 
 	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{}
-	dst.Spec.Input.Runtime = v1Alpha1ApplicationTov1Beta1(src.Spec.Input.Application)
-	dst.Spec.Input.OTLP = v1Alpha1OTLPInputTov1Beta1(src.Spec.Input.OTLP)
+	dst.Spec.Input.Runtime = v1Alpha1ApplicationToV1Beta1(src.Spec.Input.Application)
+	dst.Spec.Input.OTLP = v1Alpha1OTLPInputToV1Beta1(src.Spec.Input.OTLP)
 
 	for _, f := range src.Spec.Files {
 		dst.Spec.Files = append(dst.Spec.Files, telemetryv1beta1.LogPipelineFileMount(f))
@@ -68,7 +68,7 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func v1Alpha1OTLPInputTov1Beta1(otlp *OTLPInput) *telemetryv1beta1.OTLPInput {
+func v1Alpha1OTLPInputToV1Beta1(otlp *OTLPInput) *telemetryv1beta1.OTLPInput {
 	if otlp == nil {
 		return nil
 	}
@@ -86,7 +86,7 @@ func v1Alpha1OTLPInputTov1Beta1(otlp *OTLPInput) *telemetryv1beta1.OTLPInput {
 	return input
 }
 
-func v1Alpha1ApplicationTov1Beta1(application *ApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
+func v1Alpha1ApplicationToV1Beta1(application *ApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
 	if application == nil {
 		return nil
 	}
@@ -225,7 +225,7 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	dst.ObjectMeta = src.ObjectMeta
 
-	dst.Spec.Input.Application = v1Beta1RuntimeTov1Alpha1(src.Spec.Input.Runtime)
+	dst.Spec.Input.Application = v1Beta1RuntimeToV1Alpha1(src.Spec.Input.Runtime)
 	dst.Spec.Input.OTLP = v1Beta1OTLPInputToV1Alpha1(src.Spec.Input.OTLP)
 
 	for _, f := range src.Spec.Files {
@@ -270,7 +270,7 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func v1Beta1RuntimeTov1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *ApplicationInput {
+func v1Beta1RuntimeToV1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *ApplicationInput {
 	if runtime == nil {
 		return nil
 	}

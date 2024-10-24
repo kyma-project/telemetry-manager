@@ -34,16 +34,9 @@ var (
 	ErrUnsupportedOutputType = fmt.Errorf("unsupported output type")
 )
 
-type OutputType int
-
-const (
-	OTel OutputType = iota
-	FluentBit
-)
-
 type LogPipelineReconciler interface {
 	Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-	SupportedOutput() OutputType
+	SupportedOutput() telemetryv1alpha1.Mode
 }
 
 type DaemonSetAnnotator interface {
@@ -66,7 +59,7 @@ type Reconciler struct {
 	client.Client
 
 	overridesHandler OverridesHandler
-	reconcilers      map[OutputType]LogPipelineReconciler
+	reconcilers      map[telemetryv1alpha1.Mode]LogPipelineReconciler
 }
 
 func New(
@@ -75,7 +68,7 @@ func New(
 	overridesHandler OverridesHandler,
 	reconcilers ...LogPipelineReconciler,
 ) *Reconciler {
-	reconcilersMap := make(map[OutputType]LogPipelineReconciler)
+	reconcilersMap := make(map[telemetryv1alpha1.Mode]LogPipelineReconciler)
 	for _, r := range reconcilers {
 		reconcilersMap[r.SupportedOutput()] = r
 	}
@@ -117,15 +110,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, err
 }
 
-func GetOutputType(t *telemetryv1alpha1.LogPipeline) OutputType {
+func GetOutputType(t *telemetryv1alpha1.LogPipeline) telemetryv1alpha1.Mode {
 	if t.Spec.Output.OTLP != nil {
-		return OTel
+		return telemetryv1alpha1.OTel
 	}
 
-	return FluentBit
+	return telemetryv1alpha1.FluentBit
 }
 
-func GetPipelinesForType(ctx context.Context, client client.Client, outputType OutputType) ([]telemetryv1alpha1.LogPipeline, error) {
+func GetPipelinesForType(ctx context.Context, client client.Client, mode telemetryv1alpha1.Mode) ([]telemetryv1alpha1.LogPipeline, error) {
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := client.List(ctx, &allPipelines); err != nil {
 		return nil, fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
@@ -134,7 +127,7 @@ func GetPipelinesForType(ctx context.Context, client client.Client, outputType O
 	var filteredList []telemetryv1alpha1.LogPipeline
 
 	for _, lp := range allPipelines.Items {
-		if GetOutputType(&lp) == outputType {
+		if GetOutputType(&lp) == mode {
 			filteredList = append(filteredList, lp)
 		}
 	}

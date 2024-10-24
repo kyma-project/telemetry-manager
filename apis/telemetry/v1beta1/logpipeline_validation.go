@@ -27,6 +27,14 @@ func (lp *LogPipeline) Validate() error {
 	return lp.validateInput()
 }
 
+func (lp *LogPipeline) PipelineMode() Mode {
+	if lp.Spec.Output.OTLP != nil {
+		return OTel
+	}
+
+	return FluentBit
+}
+
 func (lp *LogPipeline) validateOutput() error {
 	output := lp.Spec.Output
 	if err := checkSingleOutputPlugin(output); err != nil {
@@ -161,12 +169,32 @@ func (lp *LogPipeline) validateInput() error {
 		return nil
 	}
 
-	var containers = input.Runtime.Containers
+	switch lp.PipelineMode() {
+	case OTel:
+		return lp.validateRuntime()
+	case FluentBit:
+		if lp.Spec.Input.OTLP != nil {
+			return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", ErrInvalidPipelineDefinition)
+		}
+
+		return lp.validateRuntime()
+	}
+
+	return nil
+}
+
+func (lp *LogPipeline) validateRuntime() error {
+	runtime := lp.Spec.Input.Runtime
+	if runtime == nil {
+		return nil
+	}
+
+	var containers = runtime.Containers
 	if len(containers.Include) > 0 && len(containers.Exclude) > 0 {
 		return fmt.Errorf("%w: Cannot define both 'input.application.containers.include' and 'input.application.containers.exclude'", ErrInvalidPipelineDefinition)
 	}
 
-	var namespaces = input.Runtime.Namespaces
+	var namespaces = runtime.Namespaces
 	if (len(namespaces.Include) > 0 && len(namespaces.Exclude) > 0) ||
 		(len(namespaces.Include) > 0 && namespaces.System) ||
 		(len(namespaces.Exclude) > 0 && namespaces.System) {

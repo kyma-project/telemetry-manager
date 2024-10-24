@@ -3,11 +3,13 @@ package builder
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestCreateRecordModifierFilter(t *testing.T) {
@@ -275,4 +277,69 @@ func TestMergeSectionsConfigWithMissingOutput(t *testing.T) {
 	actual, err := BuildFluentBitConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
 	require.Error(t, err)
 	require.Empty(t, actual)
+}
+
+func TestBuildFluentBitConfig_Validation(t *testing.T) {
+	type args struct {
+		pipeline *telemetryv1alpha1.LogPipeline
+		config   BuilderConfig
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr error
+	}{
+		{
+			name: "Should return error when pipeline mode is not FluentBit",
+			args: args{
+				pipeline: func() *telemetryv1alpha1.LogPipeline {
+					lp := testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()
+					return &lp
+				}(),
+			},
+			want:    "",
+			wantErr: ErrInvalidPipelineDefinition,
+		},
+		{
+			name: "Should return error when input OTLP is defined",
+			args: args{
+				pipeline: func() *telemetryv1alpha1.LogPipeline {
+					lp := testutils.NewLogPipelineBuilder().WithHTTPOutput().WithOTLPInput().Build()
+					return &lp
+				}(),
+			},
+			want:    "",
+			wantErr: ErrInvalidPipelineDefinition,
+		},
+		{
+			name: "Should return error when output plugin is not defined",
+			args: args{
+				pipeline: func() *telemetryv1alpha1.LogPipeline {
+					lp := testutils.NewLogPipelineBuilder().Build()
+					lp.Spec.Output = telemetryv1alpha1.Output{}
+					return &lp
+				}(),
+			},
+			want:    "",
+			wantErr: ErrInvalidPipelineDefinition,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := BuildFluentBitConfig(tt.args.pipeline, tt.args.config)
+			if tt.wantErr == nil {
+				assert.NoError(t, err)
+			}
+
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			}
+
+			if got != tt.want {
+				t.Errorf("BuildFluentBitConfig() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

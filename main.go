@@ -88,7 +88,7 @@ var (
 )
 
 const (
-	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241001-21f80ba0"
+	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241024-8bc3f6a8"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.9"
 	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
@@ -211,8 +211,8 @@ func run() error {
 
 	flag.Parse()
 
-	featureflags.SetV1beta1Enabled(enableV1Beta1LogPipelines)
-	featureflags.SetLogpipelineOTLPEnabled(enableV1Beta1LogPipelines)
+	featureflags.Set(featureflags.V1Beta1, enableV1Beta1LogPipelines)
+	featureflags.Set(featureflags.LogPipelineOTLP, enableLogPipelinesOTLP)
 
 	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
 	if telemetryNamespace == "" {
@@ -231,6 +231,10 @@ func run() error {
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
 
 	setupLog.Info("Starting Telemetry Manager", "version", version)
+
+	for _, flag := range featureflags.EnabledFlags() {
+		setupLog.Info("Enabled feature flag", "flag", flag)
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
@@ -361,7 +365,7 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 }
 
 func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	if featureflags.IsV1beta1Enabled() {
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 		// Register conversion webhooks for LogPipelines

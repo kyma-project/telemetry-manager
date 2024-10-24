@@ -15,7 +15,7 @@ var (
 	ErrInvalidPipelineDefinition = errors.New("invalid log pipeline definition")
 )
 
-func (lp *LogPipeline) PipelineMode() OutputType {
+func (lp *LogPipeline) PipelineMode() Mode {
 	if lp.Spec.Output.OTLP != nil {
 		return OTel
 	}
