@@ -24,7 +24,7 @@ After analyzing repositories that have similar configurations as Telemetry Manag
    - `dependencies.mk`: contains all targets that install build dependencies (such as Kyma or Ginkgo).
 2. Implement `.env` file that stores environment variables accessible from both makefiles and shell scripts:
    - This decision was both necessary as well as desired, because it mitigates the use of hardcoded variables (such as dependencies versions), and makes these variables accessible from both makefiles and shell scripts.
-   - For local development `.env.overrides` can be used to override all values configured in `.env`. This file is ignored by git.
+   - For local development, `.env.overrides` can be used to override all values configured in `.env`. This file is ignored by git.
 3. Remove redundant make targets (for example, e2e, upgrade, integration running targets):
 
    - Running tests targets (e2e, integration, upgrade): replaced with direct calls of the ginkgo CLI. [The Development Documentation](../development.md) has also been updated accordingly. Junit xml reports have also been dropped in the process.
