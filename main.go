@@ -395,7 +395,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 	}
 
 	setupLog.Info("Setting up logparser controller")
-	ZZ
+
 	logParserController := telemetrycontrollers.NewLogParserController(
 		mgr.GetClient(),
 		telemetrycontrollers.LogParserControllerConfig{
