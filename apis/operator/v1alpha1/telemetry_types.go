@@ -122,9 +122,8 @@ type OTLPEndpoints struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="generation",type="integer",JSONPath=".metadata.generation"
-// +kubebuilder:printcolumn:name="age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="state",type="string",JSONPath=".status.state"
+// +kubebuilder:printcolumn:name="age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Telemetry is the Schema for the telemetries API
 type Telemetry struct {
