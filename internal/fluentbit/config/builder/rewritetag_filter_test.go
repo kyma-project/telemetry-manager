@@ -21,8 +21,8 @@ func TestCreateRewriteTagFilterIncludeContainers(t *testing.T) {
 			Name: "logpipeline1",
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{Application: &telemetryv1alpha1.ApplicationInput{
-				Containers: telemetryv1alpha1.InputContainers{
+			Input: telemetryv1alpha1.LogPipelineInput{Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+				Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 					Include: []string{"container1", "container2"}}}}}}
 
 	expected := `[FILTER]
@@ -50,8 +50,8 @@ func TestCreateRewriteTagFilterExcludeContainers(t *testing.T) {
 			Name: "logpipeline1",
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{Application: &telemetryv1alpha1.ApplicationInput{
-				Containers: telemetryv1alpha1.InputContainers{
+			Input: telemetryv1alpha1.LogPipelineInput{Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+				Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 					Exclude: []string{"container1", "container2"}}}}}}
 
 	expected := `[FILTER]
@@ -79,7 +79,7 @@ func TestCreateRewriteTagFilterWithCustomOutput(t *testing.T) {
 			Name: "logpipeline1",
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
+			Output: telemetryv1alpha1.LogPipelineOutput{
 				Custom: `
     name stdout`,
 			},

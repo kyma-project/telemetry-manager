@@ -26,7 +26,6 @@ func init() {
 }
 
 // +kubebuilder:object:root=true
-
 // MetricPipelineList contains a list of MetricPipeline.
 type MetricPipelineList struct {
 	metav1.TypeMeta `json:",inline"`

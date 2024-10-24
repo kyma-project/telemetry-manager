@@ -86,19 +86,19 @@ func v1Alpha1OTLPInputToV1Beta1(otlp *OTLPInput) *telemetryv1beta1.OTLPInput {
 	return input
 }
 
-func v1Alpha1ApplicationToV1Beta1(application *ApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
+func v1Alpha1ApplicationToV1Beta1(application *LogPipelineApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
 	if application == nil {
 		return nil
 	}
 
 	runtime := &telemetryv1beta1.LogPipelineRuntimeInput{
 		Enabled: application.Enabled,
-		Namespaces: telemetryv1beta1.LogPipelineInputNamespaces{
+		Namespaces: telemetryv1beta1.LogPipelineNamespaceSelector{
 			Include: application.Namespaces.Include,
 			Exclude: application.Namespaces.Exclude,
 			System:  application.Namespaces.System,
 		},
-		Containers: telemetryv1beta1.LogPipelineInputContainers{
+		Containers: telemetryv1beta1.LogPipelineContainerSelector{
 			Include: application.Containers.Include,
 			Exclude: application.Containers.Exclude,
 		},
@@ -190,7 +190,7 @@ func v1Alpha1ValueTypeToV1Beta1(src ValueType) telemetryv1beta1.ValueType {
 	}
 }
 
-func v1Alpha1TLSToV1Beta1(src TLSConfig) telemetryv1beta1.OutputTLS {
+func v1Alpha1TLSToV1Beta1(src LogPipelineOutputTLS) telemetryv1beta1.OutputTLS {
 	var dst telemetryv1beta1.OutputTLS
 
 	if src.CA != nil {
@@ -229,15 +229,15 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.Input.OTLP = v1Beta1OTLPInputToV1Alpha1(src.Spec.Input.OTLP)
 
 	for _, f := range src.Spec.Files {
-		dst.Spec.Files = append(dst.Spec.Files, FileMount(f))
+		dst.Spec.Files = append(dst.Spec.Files, LogPipelineFileMount(f))
 	}
 
 	for _, f := range src.Spec.Filters {
-		dst.Spec.Filters = append(dst.Spec.Filters, Filter(f))
+		dst.Spec.Filters = append(dst.Spec.Filters, LogPipelineFilter(f))
 	}
 
 	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
-		dst.Spec.Output.HTTP = &HTTPOutput{
+		dst.Spec.Output.HTTP = &LogPipelineHTTPOutput{
 			Host:      v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Host),
 			User:      v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.User),
 			Password:  v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Password),
@@ -270,19 +270,19 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func v1Beta1RuntimeToV1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *ApplicationInput {
+func v1Beta1RuntimeToV1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *LogPipelineApplicationInput {
 	if runtime == nil {
 		return nil
 	}
 
-	application := &ApplicationInput{
+	application := &LogPipelineApplicationInput{
 		Enabled: runtime.Enabled,
-		Namespaces: InputNamespaces{
+		Namespaces: LogPipelineNamespaceSelector{
 			Include: runtime.Namespaces.Include,
 			Exclude: runtime.Namespaces.Exclude,
 			System:  runtime.Namespaces.System,
 		},
-		Containers: InputContainers{
+		Containers: LogPipelineContainerSelector{
 			Include: runtime.Containers.Include,
 			Exclude: runtime.Containers.Exclude,
 		},
@@ -378,8 +378,8 @@ func v1Beta1BasicAuthOptionsToV1Alpha1(basic *telemetryv1beta1.BasicAuthOptions)
 	}
 }
 
-func v1Beta1TLSToV1Alpha1(src telemetryv1beta1.OutputTLS) TLSConfig {
-	var dst TLSConfig
+func v1Beta1TLSToV1Alpha1(src telemetryv1beta1.OutputTLS) LogPipelineOutputTLS {
+	var dst LogPipelineOutputTLS
 
 	if src.CA != nil {
 		ca := v1Beta1ValueTypeToV1Alpha1(*src.CA)

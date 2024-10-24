@@ -7,7 +7,7 @@ import (
 )
 
 func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
-	appInput := &telemetryv1alpha1.ApplicationInput{}
+	appInput := &telemetryv1alpha1.LogPipelineApplicationInput{}
 	if pipeline.Spec.Input.Application != nil {
 		appInput = pipeline.Spec.Input.Application
 	}

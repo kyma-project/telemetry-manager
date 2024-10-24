@@ -37,7 +37,7 @@ func TestSyncSectionsConfigMap(t *testing.T) {
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -68,7 +68,7 @@ alias foo`,
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -105,7 +105,7 @@ alias bar`
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -161,11 +161,11 @@ func TestSyncFilesConfigMap(t *testing.T) {
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Files: []telemetryv1alpha1.FileMount{
+				Files: []telemetryv1alpha1.LogPipelineFileMount{
 					{Name: "lua-script", Content: "here comes some lua code"},
 					{Name: "js-script", Content: "here comes some js code"},
 				},
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -194,10 +194,10 @@ alias foo`,
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Files: []telemetryv1alpha1.FileMount{
+				Files: []telemetryv1alpha1.LogPipelineFileMount{
 					{Name: "lua-script", Content: "here comes some lua code"},
 				},
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -227,10 +227,10 @@ alias foo`,
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Files: []telemetryv1alpha1.FileMount{
+				Files: []telemetryv1alpha1.LogPipelineFileMount{
 					{Name: "lua-script", Content: "here comes some lua code"},
 				},
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -272,8 +272,8 @@ func TestSyncEnvSecret(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "http"},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.Output{
-						HTTP: &telemetryv1alpha1.HTTPOutput{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "localhost"},
 							User: telemetryv1alpha1.ValueType{Value: "admin"},
 							Password: telemetryv1alpha1.ValueType{
@@ -382,10 +382,10 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pipeline-1"},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.Output{
-						HTTP: &telemetryv1alpha1.HTTPOutput{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "localhost"},
-							TLSConfig: telemetryv1alpha1.TLSConfig{
+							TLSConfig: telemetryv1alpha1.LogPipelineOutputTLS{
 								Disabled:                  false,
 								SkipCertificateValidation: false,
 								CA: &telemetryv1alpha1.ValueType{

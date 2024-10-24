@@ -9,7 +9,7 @@ import (
 func TestLogPipelineOutput(t *testing.T) {
 	tests := []struct {
 		name           string
-		given          Output
+		given          LogPipelineOutput
 		expectedCustom bool
 		expectedHTTP   bool
 		expectedLoki   bool
@@ -18,21 +18,21 @@ func TestLogPipelineOutput(t *testing.T) {
 	}{
 		{
 			name:           "custom",
-			given:          Output{Custom: "name: null"},
+			given:          LogPipelineOutput{Custom: "name: null"},
 			expectedCustom: true,
 			expectedAny:    true,
 			expectedSingle: true,
 		},
 		{
 			name:           "http",
-			given:          Output{HTTP: &HTTPOutput{Host: ValueType{Value: "localhost"}}},
+			given:          LogPipelineOutput{HTTP: &LogPipelineHTTPOutput{Host: ValueType{Value: "localhost"}}},
 			expectedHTTP:   true,
 			expectedAny:    true,
 			expectedSingle: true,
 		},
 		{
 			name:           "invalid: none defined",
-			given:          Output{},
+			given:          LogPipelineOutput{},
 			expectedAny:    false,
 			expectedSingle: false,
 		},
@@ -50,7 +50,7 @@ func TestLogPipelineOutput(t *testing.T) {
 func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Filters: []Filter{
+			Filters: []LogPipelineFilter{
 				{Custom: `
     Name    some-filter`,
 				},
@@ -65,7 +65,7 @@ func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
 func TestLogPipelineContainsCustomPluginWithCustomOutput(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: `
     Name    some-output`,
 			},

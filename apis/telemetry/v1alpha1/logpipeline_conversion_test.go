@@ -17,15 +17,15 @@ func TestConvertTo(t *testing.T) {
 			Name: "log-pipeline-test",
 		},
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: &ApplicationInput{
+			Input: LogPipelineInput{
+				Application: &LogPipelineApplicationInput{
 					Enabled: ptr.To(true),
-					Namespaces: InputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						Include: []string{"default", "kube-system"},
 						Exclude: []string{"kube-public"},
 						System:  true,
 					},
-					Containers: InputContainers{
+					Containers: LogPipelineContainerSelector{
 						Include: []string{"nginx", "app"},
 						Exclude: []string{"sidecar"},
 					},
@@ -41,15 +41,15 @@ func TestConvertTo(t *testing.T) {
 					},
 				},
 			},
-			Files: []FileMount{
+			Files: []LogPipelineFileMount{
 				{Name: "file1", Content: "file1-content"},
 			},
-			Filters: []Filter{
+			Filters: []LogPipelineFilter{
 				{Custom: "name stdout"},
 			},
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: "custom-output",
-				HTTP: &HTTPOutput{
+				HTTP: &LogPipelineHTTPOutput{
 					Host: ValueType{
 						Value: "http://localhost",
 					},
@@ -69,7 +69,7 @@ func TestConvertTo(t *testing.T) {
 					Port:     "8080",
 					Compress: "on",
 					Format:   "json",
-					TLSConfig: TLSConfig{
+					TLSConfig: LogPipelineOutputTLS{
 						SkipCertificateValidation: true,
 						CA: &ValueType{
 							Value: "ca",
@@ -166,12 +166,12 @@ func TestConvertFrom(t *testing.T) {
 			Input: telemetryv1beta1.LogPipelineInput{
 				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 					Enabled: ptr.To(true),
-					Namespaces: telemetryv1beta1.LogPipelineInputNamespaces{
+					Namespaces: telemetryv1beta1.LogPipelineNamespaceSelector{
 						Include: []string{"default", "kube-system"},
 						Exclude: []string{"kube-public"},
 						System:  true,
 					},
-					Containers: telemetryv1beta1.LogPipelineInputContainers{
+					Containers: telemetryv1beta1.LogPipelineContainerSelector{
 						Include: []string{"nginx", "app"},
 						Exclude: []string{"sidecar"},
 					},

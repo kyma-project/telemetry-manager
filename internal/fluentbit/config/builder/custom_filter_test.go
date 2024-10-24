@@ -13,7 +13,7 @@ func TestCreateCustomFilters(t *testing.T) {
 	testPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Filters: []telemetryv1alpha1.Filter{
+			Filters: []telemetryv1alpha1.LogPipelineFilter{
 				{
 					Custom: `
 								name multiline

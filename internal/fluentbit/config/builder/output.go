@@ -25,7 +25,7 @@ func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults Pipel
 	return ""
 }
 
-func generateCustomOutput(output *telemetryv1alpha1.Output, fsBufferLimit string, name string) string {
+func generateCustomOutput(output *telemetryv1alpha1.LogPipelineOutput, fsBufferLimit string, name string) string {
 	sb := NewOutputSectionBuilder()
 	customOutputParams := parseMultiline(output.Custom)
 	aliasPresent := customOutputParams.ContainsKey("alias")
@@ -45,7 +45,7 @@ func generateCustomOutput(output *telemetryv1alpha1.Output, fsBufferLimit string
 	return sb.Build()
 }
 
-func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit string, name string) string {
+func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsBufferLimit string, name string) string {
 	sb := NewOutputSectionBuilder()
 	sb.AddConfigParam("name", "http")
 	sb.AddConfigParam("allow_duplicated_headers", "true")

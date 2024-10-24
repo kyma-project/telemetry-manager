@@ -36,8 +36,8 @@ func TestCreateLuaDedotFilterWithDefinedHostAndDedotSet(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
-				HTTP: &telemetryv1alpha1.HTTPOutput{
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 					Dedot: true,
 					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
 				},
@@ -52,8 +52,8 @@ func TestCreateLuaDedotFilterWithDefinedHostAndDedotSet(t *testing.T) {
 func TestCreateLuaDedotFilterWithUndefinedHost(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
-				HTTP: &telemetryv1alpha1.HTTPOutput{Dedot: true},
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{Dedot: true},
 			},
 		},
 	}
@@ -65,8 +65,8 @@ func TestCreateLuaDedotFilterWithUndefinedHost(t *testing.T) {
 func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
-				HTTP: &telemetryv1alpha1.HTTPOutput{
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 					Dedot: false,
 					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
 				},
@@ -141,12 +141,12 @@ func TestMergeSectionsConfig(t *testing.T) {
 `
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{
-				Application: &telemetryv1alpha1.ApplicationInput{
-					Containers: telemetryv1alpha1.InputContainers{
+			Input: telemetryv1alpha1.LogPipelineInput{
+				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+					Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 						Exclude: []string{"container1", "container2"},
 					},
-					Namespaces: telemetryv1alpha1.InputNamespaces{
+					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 						System: true,
 					},
 					KeepAnnotations:  true,
@@ -154,7 +154,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 					KeepOriginalBody: ptr.To(true),
 				},
 			},
-			Filters: []telemetryv1alpha1.Filter{
+			Filters: []telemetryv1alpha1.LogPipelineFilter{
 				{
 					Custom: `
 						name grep
@@ -168,8 +168,8 @@ func TestMergeSectionsConfig(t *testing.T) {
 					`,
 				},
 			},
-			Output: telemetryv1alpha1.Output{
-				HTTP: &telemetryv1alpha1.HTTPOutput{
+			Output: telemetryv1alpha1.LogPipelineOutput{
+				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 					Dedot: true,
 					Host: telemetryv1alpha1.ValueType{
 						Value: "localhost",
@@ -231,17 +231,17 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 `
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{
-				Application: &telemetryv1alpha1.ApplicationInput{
+			Input: telemetryv1alpha1.LogPipelineInput{
+				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 					KeepAnnotations:  true,
 					DropLabels:       false,
 					KeepOriginalBody: ptr.To(true),
-					Namespaces: telemetryv1alpha1.InputNamespaces{
+					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 						System: true,
 					},
 				},
 			},
-			Output: telemetryv1alpha1.Output{
+			Output: telemetryv1alpha1.LogPipelineOutput{
 				Custom: `
     name stdout`,
 			},
@@ -318,7 +318,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 			args: args{
 				pipeline: func() *telemetryv1alpha1.LogPipeline {
 					lp := testutils.NewLogPipelineBuilder().Build()
-					lp.Spec.Output = telemetryv1alpha1.Output{}
+					lp.Spec.Output = telemetryv1alpha1.LogPipelineOutput{}
 					return &lp
 				}(),
 			},

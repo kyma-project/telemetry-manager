@@ -50,7 +50,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
 					Key:  &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
 				}),
@@ -62,7 +62,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					CA:  &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 					Key: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
 				}),
@@ -74,7 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
 				}),
@@ -86,7 +86,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					Disabled:                  true,
 					SkipCertificateValidation: true,
 				}),
@@ -98,7 +98,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					CA: &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 				}),
 			).

@@ -50,7 +50,7 @@ func (lp *LogPipeline) validateOutput() error {
 	return validateCustomOutput(output.Custom)
 }
 
-func checkSingleOutputPlugin(output Output) error {
+func checkSingleOutputPlugin(output LogPipelineOutput) error {
 	if !output.IsAnyDefined() {
 		return fmt.Errorf("no output plugin is defined, you must define one output plugin")
 	}
@@ -62,7 +62,7 @@ func checkSingleOutputPlugin(output Output) error {
 	return nil
 }
 
-func validateHTTPOutput(httpOutput *HTTPOutput) error {
+func validateHTTPOutput(httpOutput *LogPipelineHTTPOutput) error {
 	isValidHostname := validHostname(httpOutput.Host.Value)
 
 	if httpOutput.Host.Value != "" && !isValidHostname {
