@@ -48,14 +48,14 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		}
 	}
 
-	if srcOTLPOutput := src.Spec.Output.Otlp; srcOTLPOutput != nil {
+	if srcOTLPOutput := src.Spec.Output.OTLP; srcOTLPOutput != nil {
 		dst.Spec.Output.OTLP = &telemetryv1beta1.OTLPOutput{
 			Protocol:       telemetryv1beta1.OTLPProtocol(srcOTLPOutput.Protocol),
 			Endpoint:       v1Alpha1ValueTypeToV1Beta1(srcOTLPOutput.Endpoint),
 			Path:           srcOTLPOutput.Path,
 			Authentication: v1Alpha1AuthenticationToV1Beta1(srcOTLPOutput.Authentication),
 			Headers:        v1Alpha1HeadersToV1Beta1(srcOTLPOutput.Headers),
-			TLS:            v1Alpha1OtlpTLSToV1Beta1(srcOTLPOutput.TLS),
+			TLS:            v1Alpha1OTLPTLSToV1Beta1(srcOTLPOutput.TLS),
 		}
 	}
 
@@ -110,7 +110,7 @@ func v1Alpha1ApplicationToV1Beta1(application *ApplicationInput) *telemetryv1bet
 	return runtime
 }
 
-func v1Alpha1OtlpTLSToV1Beta1(tls *OtlpTLS) *telemetryv1beta1.OutputTLS {
+func v1Alpha1OTLPTLSToV1Beta1(tls *OTLPTLS) *telemetryv1beta1.OutputTLS {
 	if tls == nil {
 		return nil
 	}
@@ -251,13 +251,13 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	}
 
 	if srcOTLPOutput := src.Spec.Output.OTLP; srcOTLPOutput != nil {
-		dst.Spec.Output.Otlp = &OtlpOutput{
+		dst.Spec.Output.OTLP = &OTLPOutput{
 			Protocol:       (string)(srcOTLPOutput.Protocol),
 			Endpoint:       v1Beta1ValueTypeToV1Alpha1(srcOTLPOutput.Endpoint),
 			Path:           srcOTLPOutput.Path,
 			Authentication: v1Beta1AuthenticationToV1Alpha1(srcOTLPOutput.Authentication),
 			Headers:        v1Beta1HeadersToV1Alpha1(srcOTLPOutput.Headers),
-			TLS:            v1Beta1OtlpTLSToV1Alpha1(srcOTLPOutput.TLS),
+			TLS:            v1Beta1OTLPTLSToV1Alpha1(srcOTLPOutput.TLS),
 		}
 	}
 
@@ -312,12 +312,12 @@ func v1Beta1OTLPInputToV1Alpha1(otlp *telemetryv1beta1.OTLPInput) *OTLPInput {
 	return input
 }
 
-func v1Beta1OtlpTLSToV1Alpha1(tls *telemetryv1beta1.OutputTLS) *OtlpTLS {
+func v1Beta1OTLPTLSToV1Alpha1(tls *telemetryv1beta1.OutputTLS) *OTLPTLS {
 	if tls == nil {
 		return nil
 	}
 
-	alphaTLS := &OtlpTLS{
+	alphaTLS := &OTLPTLS{
 		Insecure:           tls.Disabled,
 		InsecureSkipVerify: tls.SkipCertificateValidation,
 	}
