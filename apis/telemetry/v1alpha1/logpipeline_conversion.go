@@ -22,17 +22,9 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 
 	dst.ObjectMeta = src.ObjectMeta
 
-	srcAppInput := src.Spec.Input.Application
-	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{
-		Runtime: telemetryv1beta1.LogPipelineRuntimeInput{
-			Enabled:          srcAppInput.Enabled,
-			Namespaces:       telemetryv1beta1.LogPipelineInputNamespaces(srcAppInput.Namespaces),
-			Containers:       telemetryv1beta1.LogPipelineInputContainers(srcAppInput.Containers),
-			KeepAnnotations:  srcAppInput.KeepAnnotations,
-			DropLabels:       srcAppInput.DropLabels,
-			KeepOriginalBody: srcAppInput.KeepOriginalBody,
-		},
-	}
+	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{}
+	dst.Spec.Input.Runtime = v1Alpha1ApplicationToV1Beta1(src.Spec.Input.Application)
+	dst.Spec.Input.OTLP = v1Alpha1OTLPInputToV1Beta1(src.Spec.Input.OTLP)
 
 	for _, f := range src.Spec.Files {
 		dst.Spec.Files = append(dst.Spec.Files, telemetryv1beta1.LogPipelineFileMount(f))
@@ -74,6 +66,48 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status = telemetryv1beta1.LogPipelineStatus(src.Status)
 
 	return nil
+}
+
+func v1Alpha1OTLPInputToV1Beta1(otlp *OTLPInput) *telemetryv1beta1.OTLPInput {
+	if otlp == nil {
+		return nil
+	}
+
+	input := &telemetryv1beta1.OTLPInput{
+		Disabled: otlp.Disabled,
+	}
+	if otlp.Namespaces != nil {
+		input.Namespaces = &telemetryv1beta1.NamespaceSelector{
+			Include: otlp.Namespaces.Include,
+			Exclude: otlp.Namespaces.Exclude,
+		}
+	}
+
+	return input
+}
+
+func v1Alpha1ApplicationToV1Beta1(application *ApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
+	if application == nil {
+		return nil
+	}
+
+	runtime := &telemetryv1beta1.LogPipelineRuntimeInput{
+		Enabled: application.Enabled,
+		Namespaces: telemetryv1beta1.LogPipelineInputNamespaces{
+			Include: application.Namespaces.Include,
+			Exclude: application.Namespaces.Exclude,
+			System:  application.Namespaces.System,
+		},
+		Containers: telemetryv1beta1.LogPipelineInputContainers{
+			Include: application.Containers.Include,
+			Exclude: application.Containers.Exclude,
+		},
+		KeepAnnotations:  application.KeepAnnotations,
+		DropLabels:       application.DropLabels,
+		KeepOriginalBody: application.KeepOriginalBody,
+	}
+
+	return runtime
 }
 
 func v1Alpha1OtlpTLSToV1Beta1(tls *OtlpTLS) *telemetryv1beta1.OutputTLS {
@@ -191,15 +225,8 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	dst.ObjectMeta = src.ObjectMeta
 
-	srcRuntimeInput := src.Spec.Input.Runtime
-	dst.Spec.Input.Application = ApplicationInput{
-		Enabled:          srcRuntimeInput.Enabled,
-		Namespaces:       InputNamespaces(srcRuntimeInput.Namespaces),
-		Containers:       InputContainers(srcRuntimeInput.Containers),
-		KeepAnnotations:  srcRuntimeInput.KeepAnnotations,
-		DropLabels:       srcRuntimeInput.DropLabels,
-		KeepOriginalBody: srcRuntimeInput.KeepOriginalBody,
-	}
+	dst.Spec.Input.Application = v1Beta1RuntimeToV1Alpha1(src.Spec.Input.Runtime)
+	dst.Spec.Input.OTLP = v1Beta1OTLPInputToV1Alpha1(src.Spec.Input.OTLP)
 
 	for _, f := range src.Spec.Files {
 		dst.Spec.Files = append(dst.Spec.Files, FileMount(f))
@@ -241,6 +268,48 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status = LogPipelineStatus(src.Status)
 
 	return nil
+}
+
+func v1Beta1RuntimeToV1Alpha1(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *ApplicationInput {
+	if runtime == nil {
+		return nil
+	}
+
+	application := &ApplicationInput{
+		Enabled: runtime.Enabled,
+		Namespaces: InputNamespaces{
+			Include: runtime.Namespaces.Include,
+			Exclude: runtime.Namespaces.Exclude,
+			System:  runtime.Namespaces.System,
+		},
+		Containers: InputContainers{
+			Include: runtime.Containers.Include,
+			Exclude: runtime.Containers.Exclude,
+		},
+		KeepAnnotations:  runtime.KeepAnnotations,
+		DropLabels:       runtime.DropLabels,
+		KeepOriginalBody: runtime.KeepOriginalBody,
+	}
+
+	return application
+}
+
+func v1Beta1OTLPInputToV1Alpha1(otlp *telemetryv1beta1.OTLPInput) *OTLPInput {
+	if otlp == nil {
+		return nil
+	}
+
+	input := &OTLPInput{
+		Disabled: otlp.Disabled,
+	}
+	if otlp.Namespaces != nil {
+		input.Namespaces = &NamespaceSelector{
+			Include: otlp.Namespaces.Include,
+			Exclude: otlp.Namespaces.Exclude,
+		}
+	}
+
+	return input
 }
 
 func v1Beta1OtlpTLSToV1Alpha1(tls *telemetryv1beta1.OutputTLS) *OtlpTLS {

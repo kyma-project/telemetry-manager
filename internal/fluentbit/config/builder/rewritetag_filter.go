@@ -42,7 +42,11 @@ func createRewriteTagFilter(logPipeline *telemetryv1alpha1.LogPipeline, defaults
 		AddConfigParam("Emitter_Storage.type", defaults.StorageType).
 		AddConfigParam("Emitter_Mem_Buf_Limit", defaults.MemoryBufferLimit)
 
-	containers := logPipeline.Spec.Input.Application.Containers
+	var containers telemetryv1alpha1.InputContainers
+	if logPipeline.Spec.Input.Application != nil {
+		containers = logPipeline.Spec.Input.Application.Containers
+	}
+
 	if len(containers.Include) > 0 {
 		return sectionBuilder.
 			AddConfigParam("Rule", fmt.Sprintf("$kubernetes['container_name'] \"^(%s)$\" %s.$TAG true",

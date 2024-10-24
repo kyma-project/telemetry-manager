@@ -77,7 +77,7 @@ type MetricPipelineInput struct {
 	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
 	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
 	// +optional
-	Otlp *MetricPipelineOtlpInput `json:"otlp,omitempty"`
+	Otlp *OTLPInput `json:"otlp,omitempty"`
 }
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
@@ -87,7 +87,7 @@ type MetricPipelinePrometheusInput struct {
 	// Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
 	// +kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
-	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
 	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
@@ -100,7 +100,7 @@ type MetricPipelineRuntimeInput struct {
 	// Describes whether runtime metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
 	// +kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
-	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Describes the Kubernetes resources for which runtime metrics are scraped.
 	// +optional
 	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}}
@@ -149,28 +149,10 @@ type MetricPipelineIstioInput struct {
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
 	// +optional
-	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
 	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
-}
-
-// MetricPipelineOtlpInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
-type MetricPipelineOtlpInput struct {
-	// If disabled, push-based OTLP metrics are not collected. The default is `false`.
-	Disabled bool `json:"disabled,omitempty"`
-	// Describes whether push-based OTLP metrics from specific namespaces are selected. System namespaces are enabled by default.
-	// +optional
-	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
-}
-
-// MetricPipelineInputNamespaceSelector describes whether metrics from specific namespaces are selected.
-// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include' or 'exclude'"
-type MetricPipelineInputNamespaceSelector struct {
-	// Include metrics from the specified Namespace names only.
-	Include []string `json:"include,omitempty"`
-	// Exclude metrics from the specified Namespace names only.
-	Exclude []string `json:"exclude,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.

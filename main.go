@@ -50,6 +50,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
@@ -69,12 +70,13 @@ var (
 	scheme             = runtime.NewScheme()
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
-	//TODO: replace with build version based on git revision
+	// TODO: replace with build version based on git revision
 	version = "main"
 
 	// Operator flags
 	certDir                   string
 	enableV1Beta1LogPipelines bool
+	enableLogPipelinesOTLP    bool
 
 	highPriorityClassName   string
 	normalPriorityClassName string
@@ -196,6 +198,7 @@ func main() {
 
 func run() error {
 	flag.BoolVar(&enableV1Beta1LogPipelines, "enable-v1beta1-log-pipelines", false, "Enable v1beta1 log pipelines CRD")
+	flag.BoolVar(&enableLogPipelinesOTLP, "enable-log-pipelines-otlp", false, "Enable otlp input and output for log pipelines")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
@@ -207,6 +210,9 @@ func run() error {
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
+
+	featureflags.Set(featureflags.V1Beta1, enableV1Beta1LogPipelines)
+	featureflags.Set(featureflags.LogPipelineOTLP, enableLogPipelinesOTLP)
 
 	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
 	if telemetryNamespace == "" {
@@ -225,6 +231,10 @@ func run() error {
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
 
 	setupLog.Info("Starting Telemetry Manager", "version", version)
+
+	for _, flag := range featureflags.EnabledFlags() {
+		setupLog.Info("Enabled feature flag", "flag", flag)
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
@@ -355,7 +365,7 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 }
 
 func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	if enableV1Beta1LogPipelines {
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 		// Register conversion webhooks for LogPipelines

@@ -343,6 +343,7 @@ spec:
                     type: object
                   type: array
               type: object
+              x-kubernetes-validations: []
             status:
               description: Shows the observed state of the LogPipeline
               properties:

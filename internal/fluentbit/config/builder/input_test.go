@@ -84,7 +84,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Namespaces: telemetryv1alpha1.InputNamespaces{
 								System: true,
 							},
@@ -105,7 +105,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Namespaces: telemetryv1alpha1.InputNamespaces{
 								Include: []string{
 									"foo",
@@ -128,7 +128,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Containers: telemetryv1alpha1.InputContainers{
 								Include: []string{
 									"foo",
@@ -155,7 +155,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Namespaces: telemetryv1alpha1.InputNamespaces{
 								Include: []string{
 									"foo",
@@ -183,7 +183,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Namespaces: telemetryv1alpha1.InputNamespaces{
 								Include: []string{
 									"foo",
@@ -214,7 +214,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Namespaces: telemetryv1alpha1.InputNamespaces{
 								Exclude: []string{
 									"foo",
@@ -238,7 +238,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Namespaces: telemetryv1alpha1.InputNamespaces{
 								System: true,
 							},
@@ -265,7 +265,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Containers: telemetryv1alpha1.InputContainers{
 								Exclude: []string{
 									"foo",
@@ -293,7 +293,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Namespaces: telemetryv1alpha1.InputNamespaces{
 								Exclude: []string{
 									"foo",
@@ -323,7 +323,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.Input{
-						Application: telemetryv1alpha1.ApplicationInput{
+						Application: &telemetryv1alpha1.ApplicationInput{
 							Namespaces: telemetryv1alpha1.InputNamespaces{
 								Include: []string{
 									"kyma-system",
