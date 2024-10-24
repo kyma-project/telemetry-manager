@@ -1,6 +1,5 @@
 package assert
 
-//nolint:dupl // repeating the code for better readability
 import (
 	"context"
 	"fmt"

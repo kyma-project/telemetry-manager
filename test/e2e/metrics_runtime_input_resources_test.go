@@ -206,14 +206,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		Context("Pipeline B should deliver deployment, daemonset, statefulset and job metrics", Ordered, func() {
 			It("should have metrics for daemonset delivered", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.DaemonSetMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.daemonset.current_scheduled_nodes", runtime.DeploymentResourceAttributes)
 			})
 
 			It("should have metrics for statefulset delivered", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.StatefulSetMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.statefulset.current_pods", runtime.StatefulSetMetricsNames)
 			})
 
 			It("should have metrics for job delivered", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.JobsMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.job.active_pods", runtime.JobsMetricsNames)
 			})
 
 			It("should have exactly metrics only for deployment, daemonset, statefuleset, job delivered", func() {
