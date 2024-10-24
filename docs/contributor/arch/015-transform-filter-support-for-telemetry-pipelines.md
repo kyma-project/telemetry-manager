@@ -8,13 +8,13 @@ Proposed
 
 ## Context
 
-In the default setup of Metric and Trace Pipelines, users currently lack the ability to filter or transform/enrich data before it is sent to the backend. To provide more flexibility, users should be able to filter data based on specific conditions and apply transformations or enrichment to the data. This solution must ensure a consistent approach across all OpenTelemetry (OTel) pipelines.
+In the default setup of metric and trace pipelines, users currently cannot filter, transform, or enrich data before it is sent to the backend. To provide more flexibility, users should be able to filter data based on specific conditions and apply transformations or enrichment to the data. This solution must ensure a consistent approach across all OpenTelemetry (OTel) pipelines.
 
 ## Decision
 
-We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using a single Filter and Transform Processor. This processor will leverage the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. The processor will be configurable to meet user requirements, and only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
+We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using a single Filter and Transform Processor. This processor will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as they need; and only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
 
-Example configuration Metric Pipeline:
+Example configuration MetricPipeline:
     
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -44,7 +44,7 @@ spec:
         value: ingest-otlp.services.sap.hana.ondemand.com:443
 ```    
 
-Example configuration Trace Pipeline:
+Example configuration TracePipeline:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -76,13 +76,13 @@ The OTTL library is still in its alpha phase, meaning that updates to the packag
 
 ### Mitigation
 
-To mitigate this risk:
-- Thorough Testing: We will maintain strict version control of the OTTL library, ensuring that each update is thoroughly tested, automated tests will validate that existing pipelines continue to work as expected.
+To mitigate this risk, we suggest the following measures:
+- Thorough Testing: We will maintain strict version control of the OTTL library, ensuring that each update is thoroughly tested. Automated tests will validate that existing pipelines continue to work as expected.
 - Documentation: We will provide detailed documentation and practical examples of how to configure filter and transformation processors using OTTL expressions.
 - New Versions with Breaking Changes: New versions with breaking changes of the OTTL library will be rolled out with backward compatibility. This will help users adapt changes and reducing the chance of widespread disruption.
 
 ### Open Questions
-- How will complex transformation chains be handled efficiently?
+- How do we handle complex transformation chains efficiently?
 - What are the specific failure modes if users misconfigure OTTL processors?
 - What are the best practices for ensuring backward compatibility when updating OTTL versions?
 
