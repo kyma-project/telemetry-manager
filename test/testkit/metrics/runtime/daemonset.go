@@ -10,7 +10,9 @@ var (
 	}
 
 	DaemonSetResourceAttributes = []string{
-		"k8s.daemonset.name",
 		"k8s.namespace.name",
+		"k8s.daemonset.name",
+		"k8s.daemonset.uid",
+		"k8s.cluster.name",
 	}
 )

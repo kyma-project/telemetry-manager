@@ -12,5 +12,8 @@ var (
 
 	JobResourceAttributes = []string{
 		"k8s.job.name",
+		"k8s.namespace.name",
+		"k8s.job.uid",
+		"k8s.cluster.name",
 	}
 )

@@ -12,5 +12,7 @@ var (
 	StatefulSetResourceAttributes = []string{
 		"k8s.statefulset.name",
 		"k8s.namespace.name",
+		"k8s.statefulset.uid",
+		"k8s.cluster.name",
 	}
 )

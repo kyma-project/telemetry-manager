@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 
@@ -204,19 +205,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		Context("Pipeline B should deliver deployment, daemonset, statefulset and job metrics", Ordered, func() {
+			fmt.Println(backendWorkloadMetricsEnabledURLA)
+			It("should have metrics for deployment delivered", func() {
+				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.DeploymentMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.deployment.available", runtime.DeploymentResourceAttributes)
+			})
+
 			It("should have metrics for daemonset delivered", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.DaemonSetMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.daemonset.current_scheduled_nodes", runtime.DeploymentResourceAttributes)
+				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.daemonset.current_scheduled_nodes", runtime.DaemonSetResourceAttributes)
 			})
 
 			It("should have metrics for statefulset delivered", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.StatefulSetMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.statefulset.current_pods", runtime.StatefulSetMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.statefulset.current_pods", runtime.StatefulSetResourceAttributes)
 			})
 
 			It("should have metrics for job delivered", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.JobsMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.job.active_pods", runtime.JobsMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.job.active_pods", runtime.JobResourceAttributes)
 			})
 
 			It("should have exactly metrics only for deployment, daemonset, statefuleset, job delivered", func() {
@@ -346,7 +353,7 @@ func backendContainsMetricsDeliveredForResource(proxyClient *apiserverproxy.Clie
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metrics using ContainElements %v", resourceMetrics)
 }
 
-func backendContainsDesiredResourceAttributes(proxyClient *apiserverproxy.Client, backendExportURL string, metricName string, metricAttributes []string) {
+func backendContainsDesiredResourceAttributes(proxyClient *apiserverproxy.Client, backendExportURL string, metricName string, resourceAttributes []string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -356,10 +363,10 @@ func backendContainsDesiredResourceAttributes(proxyClient *apiserverproxy.Client
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
 			ContainElement(SatisfyAll(
 				HaveName(Equal(metricName)),
-				HaveResourceAttributes(HaveKeys(ConsistOf(metricAttributes))),
+				HaveResourceAttributes(HaveKeys(ConsistOf(resourceAttributes))),
 			)),
 		)))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metric %s with attributes %v", metricName, metricAttributes)
+	}, 3*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metric %s with resource attributes %v", metricName, resourceAttributes)
 }
 
 func backendContainsDesiredMetricAttributes(proxyClient *apiserverproxy.Client, backendExportURL string, metricName string, metricAttributes []string) {
@@ -375,7 +382,7 @@ func backendContainsDesiredMetricAttributes(proxyClient *apiserverproxy.Client, 
 				HaveMetricAttributes(HaveKeys(ConsistOf(metricAttributes))),
 			)),
 		)))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metric %s with attributes %v", metricName, metricAttributes)
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metric %s with metric attributes %v", metricName, metricAttributes)
 }
 
 // Check with `ConsistsOf` for metrics present in the backend

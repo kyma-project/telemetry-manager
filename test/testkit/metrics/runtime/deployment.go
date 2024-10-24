@@ -10,5 +10,7 @@ var (
 	DeploymentResourceAttributes = []string{
 		"k8s.deployment.name",
 		"k8s.namespace.name",
+		"k8s.deployment.uid",
+		"k8s.cluster.name",
 	}
 )
