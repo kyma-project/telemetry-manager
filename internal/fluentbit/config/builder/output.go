@@ -107,7 +107,7 @@ func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string 
 		return value.Value
 	}
 
-	if value.ValueFrom != nil && value.ValueFrom.SecretKeyRef != nil {
+	if value.ValueFrom != nil && value.IsDefined() {
 		secretKeyRef := value.ValueFrom.SecretKeyRef
 		return fmt.Sprintf("${%s}", FormatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
 	}

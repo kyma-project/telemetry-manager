@@ -66,31 +66,6 @@ func OTLPBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey s
 	}
 }
 
-func OTLPBasicAuthFromSecretWithMissingKeys(secretName, secretNamespace string) OTLPOutputOption {
-	return func(output *telemetryv1alpha1.OtlpOutput) {
-		output.Authentication = &telemetryv1alpha1.AuthenticationOptions{
-			Basic: &telemetryv1alpha1.BasicAuthOptions{
-				User: telemetryv1alpha1.ValueType{
-					ValueFrom: &telemetryv1alpha1.ValueFromSource{
-						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-							Name:      secretName,
-							Namespace: secretNamespace,
-						},
-					},
-				},
-				Password: telemetryv1alpha1.ValueType{
-					ValueFrom: &telemetryv1alpha1.ValueFromSource{
-						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-							Name:      secretName,
-							Namespace: secretNamespace,
-						},
-					},
-				},
-			},
-		}
-	}
-}
-
 func OTLPCustomHeader(name, value, prefix string) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OtlpOutput) {
 		output.Headers = append(output.Headers, telemetryv1alpha1.Header{
@@ -177,16 +152,18 @@ func HTTPDedot(dedot bool) HTTPOutputOption {
 	}
 }
 
-func HTTPBasicAuthFromSecretWithMissingKeys(secretName, secretNamespace string) HTTPOutputOption {
+func HTTPBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey string) HTTPOutputOption {
 	return func(output *telemetryv1alpha1.HTTPOutput) {
 		output.User = telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      secretName,
 			Namespace: secretNamespace,
+			Key:       userKey,
 		}}}
 
 		output.Password = telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      secretName,
 			Namespace: secretNamespace,
+			Key:       passwordKey,
 		}}}
 	}
 }
