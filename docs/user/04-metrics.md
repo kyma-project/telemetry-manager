@@ -416,6 +416,14 @@ The following example collects only the Pod metrics:
             enabled: false
           volume:
             enabled: false
+          daemonset:
+            enabled: false
+          deployment:
+            enabled: false
+          statefulset:
+            enabled: false
+          job:
+            enabled: false
     output:
       otlp:
         endpoint:
