@@ -99,6 +99,20 @@ func (b *BasicAuthOptions) IsDefined() bool {
 	return b.User.IsDefined() && b.Password.IsDefined()
 }
 
+// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
+type OutputTLS struct {
+	// Indicates if TLS is disabled or enabled. Default is `false`.
+	Disabled bool `json:"disabled,omitempty"`
+	// If `true`, the validation of certificates is skipped. Default is `false`.
+	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
+	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
+	CA *ValueType `json:"ca,omitempty"`
+	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
+	Cert *ValueType `json:"cert,omitempty"`
+	// Defines the client key to use when using TLS. The key must be provided in PEM format.
+	Key *ValueType `json:"key,omitempty"`
+}
+
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
 	// If disabled, push-based OTLP metrics are not collected. The default is `false`.

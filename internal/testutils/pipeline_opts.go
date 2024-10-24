@@ -106,11 +106,11 @@ func OTLPEndpointPath(path string) OTLPOutputOption {
 	}
 }
 
-type HTTPOutputOption func(output *telemetryv1alpha1.HTTPOutput)
+type HTTPOutputOption func(output *telemetryv1alpha1.LogPipelineHTTPOutput)
 
 func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
-		output.TLSConfig = telemetryv1alpha1.TLSConfig{
+	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
+		output.TLSConfig = telemetryv1alpha1.LogPipelineOutputTLS{
 			CA:   &telemetryv1alpha1.ValueType{Value: ca},
 			Cert: &telemetryv1alpha1.ValueType{Value: cert},
 			Key:  &telemetryv1alpha1.ValueType{Value: key},
@@ -118,20 +118,20 @@ func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
 	}
 }
 
-func HTTPClientTLS(tls telemetryv1alpha1.TLSConfig) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
+func HTTPClientTLS(tls telemetryv1alpha1.LogPipelineOutputTLS) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
 		output.TLSConfig = tls
 	}
 }
 
 func HTTPHost(host string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
+	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
 		output.Host = telemetryv1alpha1.ValueType{Value: host}
 	}
 }
 
 func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
+	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
 		output.Host = telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      secretName,
 			Namespace: secretNamespace,
@@ -141,13 +141,13 @@ func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOptio
 }
 
 func HTTPPort(port int32) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
+	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
 		output.Port = strconv.Itoa(int(port))
 	}
 }
 
 func HTTPDedot(dedot bool) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
+	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
 		output.Dedot = dedot
 	}
 }
