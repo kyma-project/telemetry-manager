@@ -37,7 +37,7 @@ TOOLS_BIN_NAMES  := $(addprefix $(TOOLS_BIN_DIR)/, $(notdir $(TOOLS_PKG_NAMES_CL
 install-tools: $(TOOLS_BIN_NAMES)
 
 $(TOOLS_BIN_DIR):
-	mkdir -p $@
+	if [ ! -d $@ ]; then mkdir -p $@; fi
 
 $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 	cd $(TOOLS_MOD_DIR) && go build -o $@ -trimpath $(filter $(filter %/$(notdir $@),$(TOOLS_PKG_NAMES_CLEAN))%,$(TOOLS_PKG_NAMES))
@@ -78,7 +78,7 @@ help: ## Display this help.
 
 
 ##@ Development
-lint-autofix: $(GOLANGCI_LINT) $(WSL)
+lint-fix: $(GOLANGCI_LINT) $(WSL)
 	-$(WSL) --fix ./...
 	$(GOLANGCI_LINT) run --fix
 
@@ -182,6 +182,11 @@ endif
 .PHONY: install
 install: manifests $(KUSTOMIZE) ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+
+.PHONY: install-with-telemetry
+install-with-telemetry: install
+	kubectl get ns kyma-system || kubectl create ns kyma-system
+	kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
 .PHONY: uninstall
 uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
