@@ -35,3 +35,9 @@ func TestEnabledFlags(t *testing.T) {
 	assert.Len(t, flags, 1)
 	assert.Contains(t, flags, LogPipelineOTLP)
 }
+
+func TestFeatureFlag_String(t *testing.T) {
+	assert.Equal(t, "V1Beta1", V1Beta1.String())
+	assert.Equal(t, "LogPipelineOTLP", LogPipelineOTLP.String())
+	assert.Equal(t, "FeatureFlag(2)", FeatureFlag(2).String())
+}
