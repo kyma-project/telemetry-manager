@@ -33,6 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 		otelCollectorLogBackendName = "otel-collector-log-backend"
 		fluentBitLogBackendName     = "fluent-bit-log-backend"
 		selfMonitorLogBackendName   = "self-monitor-log-backend"
+		managerLogBackendName       = "manager-log-backend"
 	)
 
 	var (
@@ -144,6 +145,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 			k8sObjects = append(k8sObjects, objs...)
 			objs, selfMonitorLogBackendURL = makeResourcesToCollectLogs(selfMonitorLogBackendName, "self-monitor")
 			k8sObjects = append(k8sObjects, objs...)
+			objs, managerLogBackendURL = makeResourcesToCollectLogs(managerLogBackendName, "manager")
+			k8sObjects = append(k8sObjects, objs...)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -164,6 +167,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: managerLogBackendName})
 		})
 
 		It("Should have running agents", func() {
@@ -179,6 +183,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 			assert.LogPipelineHealthy(ctx, k8sClient, otelCollectorLogBackendName)
 			assert.LogPipelineHealthy(ctx, k8sClient, fluentBitLogBackendName)
 			assert.LogPipelineHealthy(ctx, k8sClient, selfMonitorLogBackendName)
+			assert.LogPipelineHealthy(ctx, k8sClient, managerLogBackendName)
 		})
 
 		It("Should push metrics successfully", func() {
@@ -203,6 +208,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 
 		It("Should collect self-monitor component logs successfully", func() {
 			assert.LogsDelivered(proxyClient, "telemetry-", selfMonitorLogBackendURL)
+		})
+
+		It("Should collect manager component logs successfully", func() {
+			assert.LogsDelivered(proxyClient, "telemetry-", managerLogBackendURL)
 		})
 
 		It("Should not have any error/warn logs in the otel collector component containers", func() {
@@ -241,6 +250,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 		})
 
 		It("Should not have any error/warn logs in the self-monitor containers", func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(selfMonitorLogBackendURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						HavePodName(ContainSubstring("telemetry-")),
+						HaveLevel(MatchRegexp(logLevelsRegexp)),
+					)))),
+				))
+			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should not have any error/warn logs in the manager containers", func() {
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(selfMonitorLogBackendURL)
 				g.Expect(err).NotTo(HaveOccurred())
