@@ -20,6 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type Mode int
+
+const (
+	OTel Mode = iota
+	FluentBit
+)
+
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:subresource:status

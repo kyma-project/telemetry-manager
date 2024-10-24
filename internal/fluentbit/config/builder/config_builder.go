@@ -10,9 +10,7 @@ import (
 )
 
 var (
-	ErrUndefinedOutputPlugin     = errors.New("output plugin not defined")
 	ErrInvalidPipelineDefinition = errors.New("invalid pipeline definition")
-	ErrUnsupportedPipelineMode   = errors.New("unsupported pipeline mode")
 )
 
 type PipelineDefaults struct {
@@ -33,7 +31,7 @@ func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config Builde
 	pm := pipeline.PipelineMode()
 
 	if pm != telemetryv1alpha1.FluentBit {
-		return "", fmt.Errorf("%w: %s", ErrUnsupportedPipelineMode, pm.String())
+		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", ErrInvalidPipelineDefinition, pm.String())
 	}
 
 	err := validateOutput(pipeline)
@@ -112,7 +110,7 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 
 func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
 	if !pipeline.Spec.Output.IsAnyDefined() {
-		return ErrUndefinedOutputPlugin
+		return fmt.Errorf("%w: No output plugin defined", ErrInvalidPipelineDefinition)
 	}
 
 	return nil

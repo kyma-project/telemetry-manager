@@ -300,7 +300,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 				}(),
 			},
 			want:    "",
-			wantErr: ErrUnsupportedPipelineMode,
+			wantErr: ErrInvalidPipelineDefinition,
 		},
 		{
 			name: "Should return error when input OTLP is defined",
@@ -323,7 +323,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 				}(),
 			},
 			want:    "",
-			wantErr: ErrUndefinedOutputPlugin,
+			wantErr: ErrInvalidPipelineDefinition,
 		},
 	}
 	for _, tt := range tests {
