@@ -229,19 +229,6 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-3")
 	})
 
-	t.Run("runtime metrics", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(
-			ctx,
-			[]telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInput(true, testutils.IncludeNamespaces("test-ns")).Build(),
-			},
-			BuildOptions{},
-		)
-		require.NoError(t, err)
-
-		require.Contains(t, collectorConfig.Processors.NamespaceFilters, "filter/test-filter-by-namespace-runtime-input")
-	})
-
 	t.Run("marshaling", func(t *testing.T) {
 		tests := []struct {
 			name           string
