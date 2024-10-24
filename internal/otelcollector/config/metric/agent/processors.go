@@ -22,7 +22,6 @@ func makeProcessorsConfig(inputs inputSources, instrumentationScopeVersion strin
 		if inputs.runtime {
 			processorsConfig.SetInstrumentationScopeRuntime = metric.MakeInstrumentationScopeProcessor(instrumentationScopeVersion, metric.InputSourceRuntime, metric.InputSourceK8sCluster)
 			processorsConfig.InsertSkipEnrichmentAttribute = makeInsertSkipEnrichmentAttributeProcessor()
-			processorsConfig.DropK8sClusterMetrics = makeK8sClusterDropMetrics()
 
 			if inputs.runtimeResources.volume {
 				processorsConfig.DropNonPVCVolumesMetrics = makeDropNonPVCVolumesMetricsProcessor()
@@ -72,6 +71,14 @@ func makeDeleteServiceNameConfig() *config.ResourceProcessor {
 }
 
 func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
+	metricsToSkipEnrichment := []string{
+		"node",
+		"statefulset",
+		"daemonset",
+		"deployment",
+		"job",
+	}
+
 	return &metric.TransformProcessor{
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
@@ -80,36 +87,7 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 				Statements: []string{
 					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
 				},
-				Conditions: []string{
-					ottlexpr.IsMatch("name", "^k8s.node.*"),
-				},
-			},
-		},
-	}
-}
-
-// Drop the metrics scraped by k8s cluster which are not workload related, So all besides the pod and container metrics
-// Complete list of the metrics is here: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
-func makeK8sClusterDropMetrics() *FilterProcessor {
-	metricNames := []string{
-		"deployment",
-		"cronjob",
-		"daemonset",
-		"hpa",
-		"job",
-		"replicaset",
-		"resource_quota",
-		"statefulset",
-	}
-
-	return &FilterProcessor{
-		Metrics: FilterProcessorMetrics{
-			Metric: []string{
-				ottlexpr.JoinWithAnd(
-
-					ottlexpr.ScopeNameEquals(metric.InstrumentationScope[metric.InputSourceRuntime]),
-					ottlexpr.IsMatch("name", fmt.Sprintf("^k8s.%s.*", ottlexpr.JoinWithRegExpOr(metricNames...))),
-				),
+				Conditions: makeConditionsWithIsMatch(metricsToSkipEnrichment),
 			},
 		},
 	}
@@ -127,4 +105,15 @@ func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
 			},
 		},
 	}
+}
+
+func makeConditionsWithIsMatch(metrics []string) []string {
+	var conditions []string
+
+	for _, m := range metrics {
+		condition := ottlexpr.IsMatch("name", fmt.Sprintf("^k8s.%s.*", m))
+		conditions = append(conditions, condition)
+	}
+
+	return conditions
 }

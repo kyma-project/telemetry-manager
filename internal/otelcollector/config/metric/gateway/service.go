@@ -117,6 +117,22 @@ func makeRuntimeResourcesFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 		processors = append(processors, "filter/drop-runtime-volume-metrics")
 	}
 
+	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeDeploymentInputEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-deployment-metrics")
+	}
+
+	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeDaemonSetInputEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-daemonset-metrics")
+	}
+
+	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeStatefulSetInputEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-statefulset-metrics")
+	}
+
+	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeJobInputEnabled(input) {
+		processors = append(processors, "filter/drop-runtime-job-metrics")
+	}
+
 	return processors
 }
 
