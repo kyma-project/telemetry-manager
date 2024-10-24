@@ -335,6 +335,7 @@ func backendContainsMetricsDeliveredForResource(proxyClient *apiserverproxy.Clie
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		defer resp.Body.Close()
 
 		g.Expect(resp).To(HaveHTTPBody(
 			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ContainElements(resourceMetrics))),

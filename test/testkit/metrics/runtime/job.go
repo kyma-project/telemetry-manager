@@ -9,4 +9,8 @@ var (
 		"k8s.job.max_parallel_pods",
 		"k8s.job.successful_pods",
 	}
+
+	JobResourceAttributes = []string{
+		"k8s.job.name",
+	}
 )

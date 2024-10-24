@@ -8,4 +8,9 @@ var (
 		"k8s.statefulset.ready_pods",
 		"k8s.statefulset.updated_pods",
 	}
+
+	StatefulSetResourceAttributes = []string{
+		"k8s.statefulset.name",
+		"k8s.namespace.name",
+	}
 )

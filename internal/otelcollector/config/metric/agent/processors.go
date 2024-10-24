@@ -71,7 +71,7 @@ func makeDeleteServiceNameConfig() *config.ResourceProcessor {
 }
 
 func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
-	metricsToSkoipEnrichment := []string{
+	metricsToSkipEnrichment := []string{
 		"node",
 		"statefulset",
 		"daemonset",
@@ -87,7 +87,7 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 				Statements: []string{
 					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
 				},
-				Conditions: makeConditionsWithIsMatch(metricsToSkoipEnrichment),
+				Conditions: makeConditionsWithIsMatch(metricsToSkipEnrichment),
 			},
 		},
 	}
