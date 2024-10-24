@@ -133,13 +133,13 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.DropIfInputSourceIstio.Metrics.Metric, 1)
 		require.Equal(t, "instrumentation_scope.name == \"io.kyma-project.telemetry/istio\"", collectorConfig.Processors.DropIfInputSourceIstio.Metrics.Metric[0])
 
-		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceOtlp)
-		require.Len(t, collectorConfig.Processors.DropIfInputSourceOtlp.Metrics.Metric, 1)
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceOTLP)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric, 1)
 		require.Equal(t,
 			"not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or "+
 				"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or "+
 				"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\")",
-			collectorConfig.Processors.DropIfInputSourceOtlp.Metrics.Metric[0],
+			collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric[0],
 		)
 	})
 

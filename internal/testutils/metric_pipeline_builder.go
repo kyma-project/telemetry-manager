@@ -22,7 +22,7 @@ type MetricPipelineBuilder struct {
 	inIstio      *telemetryv1alpha1.MetricPipelineIstioInput
 	inOTLP       *telemetryv1alpha1.OTLPInput
 
-	outOTLP *telemetryv1alpha1.OtlpOutput
+	outOTLP *telemetryv1alpha1.OTLPOutput
 
 	statusConditions []metav1.Condition
 }
@@ -30,7 +30,7 @@ type MetricPipelineBuilder struct {
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		outOTLP: &telemetryv1alpha1.OtlpOutput{
+		outOTLP: &telemetryv1alpha1.OTLPOutput{
 			Endpoint: telemetryv1alpha1.ValueType{Value: "http://localhost:4317"},
 		},
 	}
@@ -288,10 +288,10 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 				Runtime:    b.inRuntime,
 				Prometheus: b.inPrometheus,
 				Istio:      b.inIstio,
-				Otlp:       b.inOTLP,
+				OTLP:       b.inOTLP,
 			},
 			Output: telemetryv1alpha1.MetricPipelineOutput{
-				Otlp: b.outOTLP,
+				OTLP: b.outOTLP,
 			},
 		},
 	}

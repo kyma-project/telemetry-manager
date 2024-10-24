@@ -77,7 +77,7 @@ type MetricPipelineInput struct {
 	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
 	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
 	// +optional
-	Otlp *OTLPInput `json:"otlp,omitempty"`
+	OTLP *OTLPInput `json:"otlp,omitempty"`
 }
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
@@ -158,7 +158,7 @@ type MetricPipelineIstioInput struct {
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelemetry protocol.
-	Otlp *OtlpOutput `json:"otlp"`
+	OTLP *OTLPOutput `json:"otlp"`
 }
 
 // DiagnosticMetrics defines the diagnostic metrics configuration section
