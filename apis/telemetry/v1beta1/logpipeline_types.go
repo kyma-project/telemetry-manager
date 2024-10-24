@@ -20,6 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type Mode int
+
+const (
+	OTel Mode = iota
+	FluentBit
+)
+
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:subresource:status
@@ -59,7 +66,8 @@ type LogPipelineSpec struct {
 // LogPipelineInput describes a log input for a LogPipeline.
 type LogPipelineInput struct {
 	// Configures in more detail from which containers application logs are enabled as input.
-	Runtime LogPipelineRuntimeInput `json:"runtime,omitempty"`
+	Runtime *LogPipelineRuntimeInput `json:"runtime,omitempty"`
+	OTLP    *OTLPInput               `json:"otlp,omitempty"`
 }
 
 // LogPipelineRuntimeInput specifies the default type of Input that handles application logs from runtime containers. It configures in more detail from which containers logs are selected as input.
