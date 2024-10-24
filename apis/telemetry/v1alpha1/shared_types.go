@@ -111,3 +111,21 @@ type BasicAuthOptions struct {
 func (b *BasicAuthOptions) IsDefined() bool {
 	return b.User.IsDefined() && b.Password.IsDefined()
 }
+
+// OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
+type OTLPInput struct {
+	// If disabled, push-based OTLP signals are not collected. The default is `false`.
+	Disabled bool `json:"disabled,omitempty"`
+	// Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
+	// +optional
+	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
+}
+
+// NamespaceSelector describes whether signals from specific namespaces are selected.
+// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include' or 'exclude'"
+type NamespaceSelector struct {
+	// Include signals from the specified Namespace names only.
+	Include []string `json:"include,omitempty"`
+	// Exclude signals from the specified Namespace names only.
+	Exclude []string `json:"exclude,omitempty"`
+}
