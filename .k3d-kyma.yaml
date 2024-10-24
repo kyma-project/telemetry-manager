@@ -1,0 +1,14 @@
+---
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: kyma
+servers: 1
+agents: 0
+kubeAPI:
+  hostPort: '6550'
+registries:
+  create:
+    name: kyma
+    hostPort: '5001'
+
