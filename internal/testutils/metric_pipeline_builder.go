@@ -20,7 +20,7 @@ type MetricPipelineBuilder struct {
 	inRuntime    *telemetryv1alpha1.MetricPipelineRuntimeInput
 	inPrometheus *telemetryv1alpha1.MetricPipelinePrometheusInput
 	inIstio      *telemetryv1alpha1.MetricPipelineIstioInput
-	inOTLP       *telemetryv1alpha1.MetricPipelineOtlpInput
+	inOTLP       *telemetryv1alpha1.OTLPInput
 
 	outOTLP *telemetryv1alpha1.OtlpOutput
 
@@ -51,17 +51,17 @@ func (b *MetricPipelineBuilder) WithAnnotations(annotations map[string]string) *
 	return b
 }
 
-type InputOptions func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector)
+type InputOptions func(selector *telemetryv1alpha1.NamespaceSelector)
 
 func IncludeNamespaces(namespaces ...string) InputOptions {
-	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+	return func(selector *telemetryv1alpha1.NamespaceSelector) {
 		selector.Include = namespaces
 		selector.Exclude = nil
 	}
 }
 
 func ExcludeNamespaces(namespaces ...string) InputOptions {
-	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+	return func(selector *telemetryv1alpha1.NamespaceSelector) {
 		selector.Include = nil
 		selector.Exclude = namespaces
 	}
@@ -79,7 +79,7 @@ func (b *MetricPipelineBuilder) WithRuntimeInput(enable bool, opts ...InputOptio
 	}
 
 	if b.inRuntime.Namespaces == nil {
-		b.inRuntime.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+		b.inRuntime.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
 	}
 
 	for _, opt := range opts {
@@ -101,7 +101,7 @@ func (b *MetricPipelineBuilder) WithPrometheusInput(enable bool, opts ...InputOp
 	}
 
 	if b.inPrometheus.Namespaces == nil {
-		b.inPrometheus.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+		b.inPrometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
 	}
 
 	for _, opt := range opts {
@@ -123,7 +123,7 @@ func (b *MetricPipelineBuilder) WithIstioInput(enable bool, opts ...InputOptions
 	}
 
 	if b.inIstio.Namespaces == nil {
-		b.inIstio.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+		b.inIstio.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
 	}
 
 	for _, opt := range opts {
@@ -135,7 +135,7 @@ func (b *MetricPipelineBuilder) WithIstioInput(enable bool, opts ...InputOptions
 
 func (b *MetricPipelineBuilder) WithOTLPInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	if b.inOTLP == nil {
-		b.inOTLP = &telemetryv1alpha1.MetricPipelineOtlpInput{}
+		b.inOTLP = &telemetryv1alpha1.OTLPInput{}
 	}
 
 	b.inOTLP.Disabled = !enable
@@ -145,7 +145,7 @@ func (b *MetricPipelineBuilder) WithOTLPInput(enable bool, opts ...InputOptions)
 	}
 
 	if b.inOTLP.Namespaces == nil {
-		b.inOTLP.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+		b.inOTLP.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
 	}
 
 	for _, opt := range opts {

@@ -18,9 +18,19 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+)
+
+type Mode int
+
+const (
+	OTel Mode = iota
+	FluentBit
 )
 
 // LogPipelineSpec defines the desired state of LogPipeline
+// +kubebuilder:validation:XValidation:rule="!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))", message="otlp input is only supported with otlp output"
 type LogPipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -38,7 +48,10 @@ type LogPipelineSpec struct {
 // Input describes a log input for a LogPipeline.
 type Input struct {
 	// Configures in more detail from which containers application logs are enabled as input.
-	Application ApplicationInput `json:"application,omitempty"`
+	Application *ApplicationInput `json:"application,omitempty"`
+
+	// Configures an endpoint to receive logs from a OTLP source.
+	OTLP *OTLPInput `json:"otlp,omitempty"`
 }
 
 // ApplicationInput specifies the default type of Input that handles application logs from runtime containers. It configures in more detail from which containers logs are selected as input.
@@ -147,6 +160,10 @@ func (o *Output) IsHTTPDefined() bool {
 	return o.HTTP != nil && o.HTTP.Host.IsDefined()
 }
 
+func (o *Output) IsOTLPDefined() bool {
+	return o.Otlp != nil
+}
+
 func (o *Output) IsAnyDefined() bool {
 	return o.pluginCount() > 0
 }
@@ -162,6 +179,10 @@ func (o *Output) pluginCount() int {
 	}
 
 	if o.IsHTTPDefined() {
+		plugins++
+	}
+
+	if featureflags.IsEnabled(featureflags.LogPipelineOTLP) && o.IsOTLPDefined() {
 		plugins++
 	}
 

@@ -1,3 +1,5 @@
+.env.overrides
+
 # Finder .DS_Store file
 .DS_Store
 
