@@ -150,7 +150,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 
 		// we also store the variables in the env secret
 		for _, ref := range logPipelines[i].Spec.Variables {
-			if ref.ValueFrom.IsSecretKeyRef() {
+			if ref.ValueFrom.SecretKeyRef != nil {
 				if copyErr := s.copySecretData(ctx, *ref.ValueFrom.SecretKeyRef, ref.Name, newSecret.Data); copyErr != nil {
 					return fmt.Errorf("unable to copy secret data: %w", copyErr)
 				}
@@ -189,14 +189,14 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 		}
 
 		tlsConfig := output.HTTP.TLSConfig
-		if tlsConfig.CA.IsDefined() {
+		if tlsConfig.CA.IsValid() {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.CA, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}
 
-		if tlsConfig.Cert.IsDefined() && tlsConfig.Key.IsDefined() {
+		if tlsConfig.Cert.IsValid() && tlsConfig.Key.IsValid() {
 			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Cert, targetCertVariable, newSecret.Data); err != nil {
 				return err

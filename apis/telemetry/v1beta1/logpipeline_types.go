@@ -190,7 +190,7 @@ func init() {
 	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
 }
 
-func (i *LogPipelineInput) IsDefined() bool {
+func (i *LogPipelineInput) IsValid() bool {
 	return i != nil
 }
 
@@ -199,7 +199,7 @@ func (o *LogPipelineOutput) IsCustomDefined() bool {
 }
 
 func (o *LogPipelineOutput) IsHTTPDefined() bool {
-	return o.HTTP != nil && o.HTTP.Host.IsDefined()
+	return o.HTTP != nil && o.HTTP.Host.IsValid()
 }
 
 func (o *LogPipelineOutput) IsAnyDefined() bool {

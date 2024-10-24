@@ -43,5 +43,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
+		It("Should reject a logpipeline with misconfigured secretrefs", func() {
+			logPipeline := testutils.NewLogPipelineBuilder().
+				WithName("misconfigured-secretref-pipeline").
+				WithHTTPOutput(testutils.HTTPBasicAuthFromSecret("name", "namespace", "", "")).
+				Build()
+			Consistently(func(g Gomega) {
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, &logPipeline)).ShouldNot(Succeed())
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
 	})
 })
