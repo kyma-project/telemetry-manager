@@ -5,8 +5,12 @@ import (
 	"strings"
 )
 
+const (
+	K8sNamespaceName = "k8s.namespace.name"
+)
+
 func NamespaceEquals(name string) string {
-	return ResourceAttributeEquals("k8s.namespace.name", name)
+	return ResourceAttributeEquals(K8sNamespaceName, name)
 }
 
 func ResourceAttributeEquals(key, value string) string {
@@ -17,6 +21,7 @@ func ResourceAttributeNotEquals(key, value string) string {
 	return fmt.Sprintf("resource.attributes[\"%s\"] != \"%s\"", key, value)
 }
 
+// ResourceAttributeNotNil returns an OTel expression that checks if the resource attribute exists
 func ResourceAttributeNotNil(key string) string {
 	return fmt.Sprintf("resource.attributes[\"%s\"] != nil", key)
 }

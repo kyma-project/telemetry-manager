@@ -179,7 +179,7 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.MetricPipe
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := createNamespacesConditions(namespaceSelector.Include)
-		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, not(ottlexpr.JoinWithOr(namespacesConditions...)))
+		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, not(ottlexpr.JoinWithOr(namespacesConditions...)), ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName))
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
