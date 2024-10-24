@@ -1,27 +1,38 @@
 package featureflags
 
-var f = &flags{
-	v1beta1Enabled:         false,
-	logPipelineOTLPEnabled: false,
+type FeatureFlag int
+
+const (
+	V1Beta1 FeatureFlag = iota
+	LogPipelineOTLP
+)
+
+var f = &map[FeatureFlag]bool{}
+
+func Enable(flag FeatureFlag) {
+	Set(flag, true)
 }
 
-type flags struct {
-	v1beta1Enabled         bool
-	logPipelineOTLPEnabled bool
+func Disable(flag FeatureFlag) {
+	Set(flag, false)
 }
 
-func Setv1Beta1Enabled(enabled bool) {
-	f.v1beta1Enabled = enabled
+func Set(flag FeatureFlag, enabled bool) {
+	(*f)[flag] = enabled
 }
 
-func Isv1Beta1Enabled() bool {
-	return f.v1beta1Enabled
+func IsEnabled(flag FeatureFlag) bool {
+	return (*f)[flag]
 }
 
-func SetLogPipelineOTLPEnabled(enabled bool) {
-	f.logPipelineOTLPEnabled = enabled
-}
+func EnabledFlags() []FeatureFlag {
+	flags := []FeatureFlag{}
 
-func IsLogPipelineOTLPEnabled() bool {
-	return f.logPipelineOTLPEnabled
+	for flag, enabled := range *f {
+		if enabled {
+			flags = append(flags, flag)
+		}
+	}
+
+	return flags
 }

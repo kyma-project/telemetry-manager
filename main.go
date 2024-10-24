@@ -211,8 +211,8 @@ func run() error {
 
 	flag.Parse()
 
-	featureflags.Setv1Beta1Enabled(enableV1Beta1LogPipelines)
-	featureflags.SetLogPipelineOTLPEnabled(enableV1Beta1LogPipelines)
+	featureflags.Set(featureflags.V1Beta1, enableV1Beta1LogPipelines)
+	featureflags.Set(featureflags.LogPipelineOTLP, enableLogPipelinesOTLP)
 
 	telemetryNamespace = os.Getenv(telemetryNamespaceEnvVar)
 	if telemetryNamespace == "" {
@@ -231,7 +231,10 @@ func run() error {
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
 
 	setupLog.Info("Starting Telemetry Manager", "version", version)
-	setupLog.Info("Feature flags", "v1beta1LogPipelines", enableV1Beta1LogPipelines, "logPipelinesOTLP", enableLogPipelinesOTLP)
+
+	for _, flag := range featureflags.EnabledFlags() {
+		setupLog.Info("Enabled feature flag", "flag", flag)
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
@@ -362,7 +365,7 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 }
 
 func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
-	if featureflags.Isv1Beta1Enabled() {
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
 		setupLog.Info("Registering conversion webhooks for LogPipelines")
 		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 		// Register conversion webhooks for LogPipelines
