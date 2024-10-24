@@ -17,8 +17,19 @@ on:
       - 'external-images.yaml'
   workflow_dispatch:
 
+
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
+
   e2e:
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +53,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run --junit-report=junit-report.xml --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" test/e2e
+        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -52,6 +63,7 @@ jobs:
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-dev:
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -70,7 +82,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run --junit-report=junit-report.xml --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" test/e2e
+        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -80,6 +92,7 @@ jobs:
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
   e2e-istio:
+    needs: setup
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -96,7 +109,7 @@ jobs:
 
       - name: Run tests
         run: |
-          bin/ginkgo run --junit-report=junit-report.xml --tags istio --label-filter="integration" test/integration/istio
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="integration" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -106,6 +119,7 @@ jobs:
           job-name: ${{ github.job }}
 
   e2e-self-mon:
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -131,7 +145,7 @@ jobs:
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
         run: |
-          bin/ginkgo run --junit-report=junit-report-healthy.xml --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/e2e
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/e2e
 
         # we need Istio for fault injection to simulate backpressure and outages
       - name: Deploy Istio Module
@@ -141,7 +155,7 @@ jobs:
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
         run: |
-          bin/ginkgo run --junit-report=junit-report-unhealthy.xml --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/integration/istio
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"

@@ -74,9 +74,9 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: If enabled, metrics for istio-proxy containers
-                          are scraped from Pods that have had the istio-proxy sidecar
-                          injected. The default is `false`.
+                        description: If enabled, istio-proxy metrics are scraped from
+                          Pods that have the istio-proxy sidecar injected. The default
+                          is `false`.
                         type: boolean
                       namespaces:
                         description: Describes whether istio-proxy metrics from specific
@@ -146,7 +146,7 @@ spec:
                             type: boolean
                         type: object
                       enabled:
-                        description: If enabled, Pods marked with `prometheus.io/scrape=true`
+                        description: If enabled, Services and Pods marked with `prometheus.io/scrape=true`
                           annotation are scraped. The default is `false`.
                         type: boolean
                       namespaces:
