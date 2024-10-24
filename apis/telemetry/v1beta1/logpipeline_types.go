@@ -20,12 +20,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
+func init() {
+	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
+}
+
 type Mode int
 
 const (
 	OTel Mode = iota
 	FluentBit
 )
+
+// +kubebuilder:object:root=true
+// LogPipelineList contains a list of LogPipeline
+type LogPipelineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []LogPipeline `json:"items"`
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
@@ -36,7 +49,6 @@ const (
 // +kubebuilder:printcolumn:name="Unsupported Mode",type=boolean,JSONPath=`.status.unsupportedMode`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
-
 // LogPipeline is the Schema for the logpipelines API
 type LogPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -167,19 +179,6 @@ type LogPipelineStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
 	UnsupportedMode *bool `json:"unsupportedMode,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-// LogPipelineList contains a list of LogPipeline
-type LogPipelineList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LogPipeline `json:"items"`
-}
-
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
-func init() {
-	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
 }
 
 func (i *LogPipelineInput) IsDefined() bool {

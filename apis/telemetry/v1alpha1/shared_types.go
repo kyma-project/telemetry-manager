@@ -45,15 +45,6 @@ func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
 }
 
-type Header struct {
-	// Defines the header name.
-	Name string `json:"name"`
-	// Defines the header value.
-	ValueType `json:",inline"`
-	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
-	Prefix string `json:"prefix,omitempty"`
-}
-
 const (
 	OTLPProtocolHTTP string = "http"
 	OTLPProtocolGRPC string = "grpc"
@@ -92,6 +83,15 @@ type BasicAuthOptions struct {
 	// Contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
+}
+
+type Header struct {
+	// Defines the header name.
+	Name string `json:"name"`
+	// Defines the header value.
+	ValueType `json:",inline"`
+	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
+	Prefix string `json:"prefix,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"

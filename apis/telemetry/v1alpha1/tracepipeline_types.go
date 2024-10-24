@@ -20,6 +20,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
+func init() {
+	SchemeBuilder.Register(&TracePipeline{}, &TracePipelineList{})
+}
+
+// +kubebuilder:object:root=true
+// TracePipelineList contains a list of TracePipeline
+type TracePipelineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []TracePipeline `json:"items"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
+// +kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
+// +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// TracePipeline is the Schema for the tracepipelines API
+type TracePipeline struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Defines the desired state of TracePipeline
+	Spec TracePipelineSpec `json:"spec,omitempty"`
+	// Shows the observed state of the TracePipeline
+	Status TracePipelineStatus `json:"status,omitempty"`
+}
+
 // TracePipelineSpec defines the desired state of TracePipeline
 type TracePipelineSpec struct {
 	// Defines a destination for shipping trace data. Only one can be defined per pipeline.
@@ -36,37 +67,4 @@ type TracePipelineOutput struct {
 type TracePipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
-// +kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
-// +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
-// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-
-// TracePipeline is the Schema for the tracepipelines API
-type TracePipeline struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// Defines the desired state of TracePipeline
-	Spec TracePipelineSpec `json:"spec,omitempty"`
-	// Shows the observed state of the TracePipeline
-	Status TracePipelineStatus `json:"status,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// TracePipelineList contains a list of TracePipeline
-type TracePipelineList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []TracePipeline `json:"items"`
-}
-
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
-func init() {
-	SchemeBuilder.Register(&TracePipeline{}, &TracePipelineList{})
 }

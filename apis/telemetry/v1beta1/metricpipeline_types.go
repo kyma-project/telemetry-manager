@@ -20,6 +20,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
+func init() {
+	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
+}
+
+// +kubebuilder:object:root=true
+// MetricPipelineList contains a list of MetricPipeline.
+type MetricPipelineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []MetricPipeline `json:"items"`
+}
+
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:subresource:status
@@ -29,7 +42,6 @@ import (
 // +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
-
 // MetricPipeline is the Schema for the metricpipelines API.
 type MetricPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -158,18 +170,4 @@ type MetricPipelineOutput struct {
 type MetricPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// MetricPipelineList contains a list of MetricPipeline.
-type MetricPipelineList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MetricPipeline `json:"items"`
-}
-
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
-func init() {
-	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }
