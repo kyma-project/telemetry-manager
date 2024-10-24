@@ -43,6 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 		otelCollectorLogBackendURL string
 		fluentBitLogBackendURL     string
 		selfMonitorLogBackendURL   string
+		managerLogBackendURL       string
 		namespace                  = suite.ID()
 		gomegaMaxLength            = format.MaxLength
 		logLevelsRegexp            = "ERROR|error|WARNING|warning|WARN|warn"
