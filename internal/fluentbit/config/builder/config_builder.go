@@ -10,7 +10,9 @@ import (
 )
 
 var (
-	ErrUndefinedOutputPlugin = errors.New("output plugin not defined")
+	ErrUndefinedOutputPlugin     = errors.New("output plugin not defined")
+	ErrInvalidPipelineDefinition = errors.New("invalid pipeline definition")
+	ErrUnsupportedPipelineMode   = errors.New("unsupported pipeline mode")
 )
 
 type PipelineDefaults struct {
@@ -28,7 +30,18 @@ type BuilderConfig struct {
 
 // BuildFluentBitConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
 func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
+	pm := pipeline.PipelineMode()
+
+	if pm != telemetryv1alpha1.FluentBit {
+		return "", fmt.Errorf("%w: %s", ErrUnsupportedPipelineMode, pm.String())
+	}
+
 	err := validateOutput(pipeline)
+	if err != nil {
+		return "", err
+	}
+
+	err = validateInput(pipeline)
 	if err != nil {
 		return "", err
 	}
@@ -100,6 +113,18 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
 	if !pipeline.Spec.Output.IsAnyDefined() {
 		return ErrUndefinedOutputPlugin
+	}
+
+	return nil
+}
+
+func validateInput(pipeline *telemetryv1alpha1.LogPipeline) error {
+	if pipeline.Spec.Input.OTLP != nil {
+		return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", ErrInvalidPipelineDefinition)
+	}
+
+	if pipeline.Spec.Input.Application == nil {
+		return nil
 	}
 
 	return nil

@@ -7,11 +7,11 @@ import (
 )
 
 func TestFeatureFlags(t *testing.T) {
-	assert.False(t, IsV1beta1Enabled())
-	SetV1beta1Enabled(true)
-	assert.True(t, IsV1beta1Enabled())
+	assert.False(t, Isv1Beta1Enabled())
+	Setv1Beta1Enabled(true)
+	assert.True(t, Isv1Beta1Enabled())
 
-	assert.False(t, IsLogpipelineOTLPEnabled())
-	SetLogpipelineOTLPEnabled(true)
-	assert.True(t, IsLogpipelineOTLPEnabled())
+	assert.False(t, IsLogPipelineOTLPEnabled())
+	SetLogPipelineOTLPEnabled(true)
+	assert.True(t, IsLogPipelineOTLPEnabled())
 }

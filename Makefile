@@ -111,7 +111,7 @@ manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole a
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(MOCKERY)
-	$(STRINGER) --type OutputType internal/reconciler/logpipeline/reconciler.go
+	$(STRINGER) --type Mode apis/telemetry/v1alpha1/logpipeline_types.go
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt

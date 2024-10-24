@@ -2,26 +2,26 @@ package featureflags
 
 var f = &flags{
 	v1beta1Enabled:         false,
-	logpipelineOTLPEnabled: false,
+	logPipelineOTLPEnabled: false,
 }
 
 type flags struct {
 	v1beta1Enabled         bool
-	logpipelineOTLPEnabled bool
+	logPipelineOTLPEnabled bool
 }
 
-func SetV1beta1Enabled(enabled bool) {
+func Setv1Beta1Enabled(enabled bool) {
 	f.v1beta1Enabled = enabled
 }
 
-func IsV1beta1Enabled() bool {
+func Isv1Beta1Enabled() bool {
 	return f.v1beta1Enabled
 }
 
-func SetLogpipelineOTLPEnabled(enabled bool) {
-	f.logpipelineOTLPEnabled = enabled
+func SetLogPipelineOTLPEnabled(enabled bool) {
+	f.logPipelineOTLPEnabled = enabled
 }
 
-func IsLogpipelineOTLPEnabled() bool {
-	return f.logpipelineOTLPEnabled
+func IsLogPipelineOTLPEnabled() bool {
+	return f.logPipelineOTLPEnabled
 }

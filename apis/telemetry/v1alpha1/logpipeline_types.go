@@ -22,10 +22,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 )
 
-type OutputType int
+type Mode int
 
 const (
-	OTel OutputType = iota
+	OTel Mode = iota
 	FluentBit
 )
 
@@ -182,7 +182,7 @@ func (o *Output) pluginCount() int {
 		plugins++
 	}
 
-	if featureflags.IsLogpipelineOTLPEnabled() && o.IsOTLPDefined() {
+	if featureflags.IsLogPipelineOTLPEnabled() && o.IsOTLPDefined() {
 		plugins++
 	}
 
