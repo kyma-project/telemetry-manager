@@ -205,7 +205,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 		{
 			name:         "basic auth and header (with missing fields)",
 			pipelineName: "test-pipeline",
-			given: &OtlpOutput{
+			given: &OTLPOutput{
 				Authentication: &AuthenticationOptions{
 					Basic: &BasicAuthOptions{
 						User: ValueType{
@@ -334,7 +334,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 		{
 			name:         "basic auth and header (with missing fields)",
 			pipelineName: "test-pipeline",
-			given: &OtlpOutput{
+			given: &OTLPOutput{
 				Authentication: &AuthenticationOptions{
 					Basic: &BasicAuthOptions{
 						User: ValueType{
