@@ -188,7 +188,7 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 			continue
 		}
 
-		tlsConfig := output.HTTP.TLSConfig
+		tlsConfig := output.HTTP.TLS
 		if tlsConfig.CA.IsValid() {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.CA, targetKey, newSecret.Data); err != nil {

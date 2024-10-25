@@ -17,7 +17,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 			name: "only variables",
 			given: LogPipeline{
 				Spec: LogPipelineSpec{
-					Variables: []VariableRef{
+					Variables: []LogPipelineVariableRef{
 						{
 							Name: "password-1",
 							ValueFrom: ValueFromSource{
@@ -46,8 +46,8 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 					Name: "cls",
 				},
 				Spec: LogPipelineSpec{
-					Output: Output{
-						HTTP: &HTTPOutput{
+					Output: LogPipelineOutput{
+						HTTP: &LogPipelineHTTPOutput{
 							Host: ValueType{
 								ValueFrom: &ValueFromSource{
 									SecretKeyRef: &SecretKeyRef{
@@ -86,8 +86,8 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 					Name: "cls",
 				},
 				Spec: LogPipelineSpec{
-					Output: Output{
-						HTTP: &HTTPOutput{
+					Output: LogPipelineOutput{
+						HTTP: &LogPipelineHTTPOutput{
 							Host: ValueType{
 								ValueFrom: &ValueFromSource{
 									SecretKeyRef: &SecretKeyRef{

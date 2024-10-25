@@ -48,29 +48,6 @@ func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
 }
 
-type Header struct {
-	// Defines the header name.
-	Name string `json:"name"`
-	// Defines the header value.
-	ValueType `json:",inline"`
-	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
-	Prefix string `json:"prefix,omitempty"`
-}
-
-// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
-type OTLPTLS struct {
-	// Defines whether to send requests using plaintext instead of TLS.
-	Insecure bool `json:"insecure,omitempty"`
-	// Defines whether to skip server certificate verification when using TLS.
-	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
-	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
-	CA *ValueType `json:"ca,omitempty"`
-	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
-	Cert *ValueType `json:"cert,omitempty"`
-	// Defines the client key to use when using TLS. The key must be provided in PEM format.
-	Key *ValueType `json:"key,omitempty"`
-}
-
 const (
 	OTLPProtocolHTTP string = "http"
 	OTLPProtocolGRPC string = "grpc"
@@ -109,6 +86,29 @@ type BasicAuthOptions struct {
 	// Contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
+}
+
+type Header struct {
+	// Defines the header name.
+	Name string `json:"name"`
+	// Defines the header value.
+	ValueType `json:",inline"`
+	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
+	Prefix string `json:"prefix,omitempty"`
+}
+
+// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
+type OTLPTLS struct {
+	// Defines whether to send requests using plaintext instead of TLS.
+	Insecure bool `json:"insecure,omitempty"`
+	// Defines whether to skip server certificate verification when using TLS.
+	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
+	CA *ValueType `json:"ca,omitempty"`
+	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
+	Cert *ValueType `json:"cert,omitempty"`
+	// Defines the client key to use when using TLS. The key must be provided in PEM format.
+	Key *ValueType `json:"key,omitempty"`
 }
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
