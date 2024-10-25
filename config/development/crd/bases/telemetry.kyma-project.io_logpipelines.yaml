@@ -941,8 +941,8 @@ spec:
                 description: Defines where to collect logs, including selector mechanisms.
                 properties:
                   otlp:
-                    description: OTLPInput defines the collection of push-based metrics
-                      that use the OpenTelemetry protocol.
+                    description: Configures an endpoint to receive logs from a OTLP
+                      source.
                     properties:
                       disabled:
                         description: If disabled, push-based OTLP metrics are not

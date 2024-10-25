@@ -20,11 +20,11 @@ type LogPipelineBuilder struct {
 	finalizers        []string
 	deletionTimeStamp metav1.Time
 
-	input telemetryv1alpha1.Input
+	input telemetryv1alpha1.LogPipelineInput
 
-	filters []telemetryv1alpha1.Filter
+	filters []telemetryv1alpha1.LogPipelineFilter
 
-	httpOutput   *telemetryv1alpha1.HTTPOutput
+	httpOutput   *telemetryv1alpha1.LogPipelineHTTPOutput
 	otlpOutput   *telemetryv1alpha1.OTLPOutput
 	customOutput string
 
@@ -54,7 +54,7 @@ func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder
 
 func (b *LogPipelineBuilder) WithApplicationInputDisabled() *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.Enabled = ptr.To(false)
@@ -72,7 +72,7 @@ func (b *LogPipelineBuilder) WithOTLPInput() *LogPipelineBuilder {
 
 func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.Containers.Include = containers
@@ -82,7 +82,7 @@ func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPip
 
 func (b *LogPipelineBuilder) WithExcludeContainers(containers ...string) *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.Containers.Exclude = containers
@@ -92,7 +92,7 @@ func (b *LogPipelineBuilder) WithExcludeContainers(containers ...string) *LogPip
 
 func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.Namespaces.Include = namespaces
@@ -102,7 +102,7 @@ func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPip
 
 func (b *LogPipelineBuilder) WithExcludeNamespaces(namespaces ...string) *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.Namespaces.Exclude = namespaces
@@ -112,7 +112,7 @@ func (b *LogPipelineBuilder) WithExcludeNamespaces(namespaces ...string) *LogPip
 
 func (b *LogPipelineBuilder) WithSystemNamespaces(enable bool) *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.Namespaces.System = enable
@@ -122,7 +122,7 @@ func (b *LogPipelineBuilder) WithSystemNamespaces(enable bool) *LogPipelineBuild
 
 func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.KeepAnnotations = keep
@@ -132,7 +132,7 @@ func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder 
 
 func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.DropLabels = drop
@@ -142,7 +142,7 @@ func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
 
 func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder {
 	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.KeepOriginalBody = ptr.To(keep)
@@ -151,7 +151,7 @@ func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder
 }
 
 func (b *LogPipelineBuilder) WithCustomFilter(filter string) *LogPipelineBuilder {
-	b.filters = append(b.filters, telemetryv1alpha1.Filter{Custom: filter})
+	b.filters = append(b.filters, telemetryv1alpha1.LogPipelineFilter{Custom: filter})
 	return b
 }
 
@@ -211,7 +211,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input:   b.input,
 			Filters: b.filters,
-			Output: telemetryv1alpha1.Output{
+			Output: telemetryv1alpha1.LogPipelineOutput{
 				HTTP:   b.httpOutput,
 				Custom: b.customOutput,
 				OTLP:   b.otlpOutput,
@@ -228,13 +228,13 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	return logPipeline
 }
 
-func defaultHTTPOutput() *telemetryv1alpha1.HTTPOutput {
-	return &telemetryv1alpha1.HTTPOutput{
+func defaultHTTPOutput() *telemetryv1alpha1.LogPipelineHTTPOutput {
+	return &telemetryv1alpha1.LogPipelineHTTPOutput{
 		Host:   telemetryv1alpha1.ValueType{Value: "127.0.0.1"},
 		Port:   "8080",
 		URI:    "/",
 		Format: "json",
-		TLSConfig: telemetryv1alpha1.TLSConfig{
+		TLS: telemetryv1alpha1.LogPipelineOutputTLS{
 			Disabled:                  true,
 			SkipCertificateValidation: true,
 		},

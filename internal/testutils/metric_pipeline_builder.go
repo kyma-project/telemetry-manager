@@ -161,7 +161,7 @@ func (b *MetricPipelineBuilder) WithPrometheusInputDiagnosticMetrics(enable bool
 	}
 
 	if b.inPrometheus.DiagnosticMetrics == nil {
-		b.inPrometheus.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{}
+		b.inPrometheus.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{}
 	}
 
 	b.inPrometheus.DiagnosticMetrics.Enabled = enable
@@ -175,7 +175,7 @@ func (b *MetricPipelineBuilder) WithIstioInputDiagnosticMetrics(enable bool) *Me
 	}
 
 	if b.inIstio.DiagnosticMetrics == nil {
-		b.inIstio.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{}
+		b.inIstio.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{}
 	}
 
 	b.inIstio.DiagnosticMetrics.Enabled = enable

@@ -48,15 +48,6 @@ func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
 }
 
-type Header struct {
-	// Defines the header name.
-	Name string `json:"name"`
-	// Defines the header value.
-	ValueType `json:",inline"`
-	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
-	Prefix string `json:"prefix,omitempty"`
-}
-
 type OTLPProtocol string
 
 const (
@@ -96,6 +87,29 @@ type BasicAuthOptions struct {
 	// Contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
+}
+
+type Header struct {
+	// Defines the header name.
+	Name string `json:"name"`
+	// Defines the header value.
+	ValueType `json:",inline"`
+	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
+	Prefix string `json:"prefix,omitempty"`
+}
+
+// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
+type OutputTLS struct {
+	// Indicates if TLS is disabled or enabled. Default is `false`.
+	Disabled bool `json:"disabled,omitempty"`
+	// If `true`, the validation of certificates is skipped. Default is `false`.
+	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
+	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
+	CA *ValueType `json:"ca,omitempty"`
+	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
+	Cert *ValueType `json:"cert,omitempty"`
+	// Defines the client key to use when using TLS. The key must be provided in PEM format.
+	Key *ValueType `json:"key,omitempty"`
 }
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.

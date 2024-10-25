@@ -26,7 +26,6 @@ func init() {
 }
 
 // +kubebuilder:object:root=true
-
 // MetricPipelineList contains a list of MetricPipeline.
 type MetricPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -90,7 +89,7 @@ type MetricPipelinePrometheusInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInput defines the runtime scraping section.
@@ -168,19 +167,19 @@ type MetricPipelineIstioInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+}
+
+// MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
+type MetricPipelineIstioInputDiagnosticMetrics struct {
+	// If enabled, diagnostic metrics are scraped. The default is `false`.
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelemetry protocol.
 	OTLP *OTLPOutput `json:"otlp"`
-}
-
-// DiagnosticMetrics defines the diagnostic metrics configuration section
-type DiagnosticMetrics struct {
-	// If enabled, diagnostic metrics are scraped. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.

@@ -25,7 +25,7 @@ func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults Pipel
 	return ""
 }
 
-func generateCustomOutput(output *telemetryv1alpha1.Output, fsBufferLimit string, name string) string {
+func generateCustomOutput(output *telemetryv1alpha1.LogPipelineOutput, fsBufferLimit string, name string) string {
 	sb := NewOutputSectionBuilder()
 	customOutputParams := parseMultiline(output.Custom)
 	aliasPresent := customOutputParams.ContainsKey("alias")
@@ -45,7 +45,7 @@ func generateCustomOutput(output *telemetryv1alpha1.Output, fsBufferLimit string
 	return sb.Build()
 }
 
-func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit string, name string) string {
+func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsBufferLimit string, name string) string {
 	sb := NewOutputSectionBuilder()
 	sb.AddConfigParam("name", "http")
 	sb.AddConfigParam("allow_duplicated_headers", "true")
@@ -74,28 +74,28 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 	}
 
 	tlsEnabled := "on"
-	if httpOutput.TLSConfig.Disabled {
+	if httpOutput.TLS.Disabled {
 		tlsEnabled = "off"
 	}
 
 	sb.AddConfigParam("tls", tlsEnabled)
 
 	tlsVerify := "on"
-	if httpOutput.TLSConfig.SkipCertificateValidation {
+	if httpOutput.TLS.SkipCertificateValidation {
 		tlsVerify = "off"
 	}
 
 	sb.AddConfigParam("tls.verify", tlsVerify)
 
-	if httpOutput.TLSConfig.CA.IsValid() {
+	if httpOutput.TLS.CA.IsValid() {
 		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
 	}
 
-	if httpOutput.TLSConfig.Cert.IsValid() {
+	if httpOutput.TLS.Cert.IsValid() {
 		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
 	}
 
-	if httpOutput.TLSConfig.Key.IsValid() {
+	if httpOutput.TLS.Key.IsValid() {
 		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
 	}
 
