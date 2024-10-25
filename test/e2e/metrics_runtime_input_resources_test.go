@@ -199,7 +199,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 
 			It("Should have exactly metrics only for pods, containers, volumes and nodes delivered", func() {
 				exportedMetrics := slices.Concat(runtime.PodMetricsNames, runtime.ContainerMetricsNames, runtime.VolumeMetricsNames, runtime.NodeMetricsNames)
-				backendConsistsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, exportedMetrics)
+				backendConsistsOfMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, exportedMetrics)
 			})
 		})
 
@@ -226,7 +226,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 
 			It("should have exactly metrics only for deployment, daemonset, statefuleset, job delivered", func() {
 				expectedMetrics := slices.Concat(runtime.DeploymentMetricsNames, runtime.DaemonSetMetricsNames, runtime.StatefulSetMetricsNames, runtime.JobsMetricsNames)
-				backendConsistsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, expectedMetrics)
+				backendConsistsOfMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, expectedMetrics)
 			})
 		})
 	})
