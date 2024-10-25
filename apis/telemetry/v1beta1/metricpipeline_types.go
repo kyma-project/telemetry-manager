@@ -89,7 +89,7 @@ type MetricPipelinePrometheusInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInput defines the runtime scraping section.
@@ -151,11 +151,11 @@ type MetricPipelineIstioInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
-// DiagnosticMetrics defines the diagnostic metrics configuration section
-type DiagnosticMetrics struct {
+// MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
+type MetricPipelineIstioInputDiagnosticMetrics struct {
 	// If enabled, diagnostic metrics are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 }
