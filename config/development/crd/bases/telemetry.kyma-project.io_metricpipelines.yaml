@@ -84,13 +84,13 @@ spec:
                           default.
                         properties:
                           exclude:
-                            description: Exclude metrics from the specified Namespace
+                            description: Exclude signals from the specified Namespace
                               names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include metrics from the specified Namespace
+                            description: Include signals from the specified Namespace
                               names only.
                             items:
                               type: string
@@ -107,22 +107,22 @@ spec:
                       use the OpenTelemetry protocol.
                     properties:
                       disabled:
-                        description: If disabled, push-based OTLP metrics are not
+                        description: If disabled, push-based OTLP signals are not
                           collected. The default is `false`.
                         type: boolean
                       namespaces:
-                        description: Describes whether push-based OTLP metrics from
+                        description: Describes whether push-based OTLP signals from
                           specific namespaces are selected. System namespaces are
                           enabled by default.
                         properties:
                           exclude:
-                            description: Exclude metrics from the specified Namespace
+                            description: Exclude signals from the specified Namespace
                               names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include metrics from the specified Namespace
+                            description: Include signals from the specified Namespace
                               names only.
                             items:
                               type: string
@@ -161,13 +161,13 @@ spec:
                           by default.
                         properties:
                           exclude:
-                            description: Exclude metrics from the specified Namespace
+                            description: Exclude signals from the specified Namespace
                               names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include metrics from the specified Namespace
+                            description: Include signals from the specified Namespace
                               names only.
                             items:
                               type: string
@@ -198,13 +198,13 @@ spec:
                           by default.
                         properties:
                           exclude:
-                            description: Exclude metrics from the specified Namespace
+                            description: Exclude signals from the specified Namespace
                               names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include metrics from the specified Namespace
+                            description: Include signals from the specified Namespace
                               names only.
                             items:
                               type: string

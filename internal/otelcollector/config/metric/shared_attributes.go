@@ -6,7 +6,7 @@ const (
 	InputSourceRuntime    InputSourceType = "runtime"
 	InputSourcePrometheus InputSourceType = "prometheus"
 	InputSourceIstio      InputSourceType = "istio"
-	InputSourceOtlp       InputSourceType = "otlp"
+	InputSourceOTLP       InputSourceType = "otlp"
 	InputSourceKyma       InputSourceType = "kyma"
 	InputSourceK8sCluster InputSourceType = "k8s_cluster"
 )

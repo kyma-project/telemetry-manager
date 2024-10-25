@@ -132,14 +132,14 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 func TestTracePipeline_GetSecretRefs(t *testing.T) {
 	tests := []struct {
 		name         string
-		given        *OtlpOutput
+		given        *OTLPOutput
 		pipelineName string
 		expected     []SecretKeyRef
 	}{
 		{
 			name:         "only endpoint",
 			pipelineName: "test-pipeline",
-			given: &OtlpOutput{
+			given: &OTLPOutput{
 				Endpoint: ValueType{
 					Value: "",
 					ValueFrom: &ValueFromSource{
@@ -157,7 +157,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 		{
 			name:         "basic auth and header",
 			pipelineName: "test-pipeline",
-			given: &OtlpOutput{
+			given: &OTLPOutput{
 				Authentication: &AuthenticationOptions{
 					Basic: &BasicAuthOptions{
 						User: ValueType{
@@ -251,7 +251,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sut := TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: TracePipelineSpec{Output: TracePipelineOutput{Otlp: test.given}}}
+			sut := TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: TracePipelineSpec{Output: TracePipelineOutput{OTLP: test.given}}}
 			actual := sut.GetSecretRefs()
 			require.ElementsMatch(t, test.expected, actual)
 		})
@@ -261,14 +261,14 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 	tests := []struct {
 		name         string
-		given        *OtlpOutput
+		given        *OTLPOutput
 		pipelineName string
 		expected     []SecretKeyRef
 	}{
 		{
 			name:         "only endpoint",
 			pipelineName: "test-pipeline",
-			given: &OtlpOutput{
+			given: &OTLPOutput{
 				Endpoint: ValueType{
 					Value: "",
 					ValueFrom: &ValueFromSource{
@@ -286,7 +286,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 		{
 			name:         "basic auth and header",
 			pipelineName: "test-pipeline",
-			given: &OtlpOutput{
+			given: &OTLPOutput{
 				Authentication: &AuthenticationOptions{
 					Basic: &BasicAuthOptions{
 						User: ValueType{
@@ -380,7 +380,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sut := MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: MetricPipelineSpec{Output: MetricPipelineOutput{Otlp: test.given}}}
+			sut := MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: MetricPipelineSpec{Output: MetricPipelineOutput{OTLP: test.given}}}
 			actual := sut.GetSecretRefs()
 			require.ElementsMatch(t, test.expected, actual)
 		})

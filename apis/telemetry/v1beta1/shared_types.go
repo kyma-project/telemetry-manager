@@ -97,3 +97,21 @@ type BasicAuthOptions struct {
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
 }
+
+// OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
+type OTLPInput struct {
+	// If disabled, push-based OTLP metrics are not collected. The default is `false`.
+	Disabled bool `json:"disabled,omitempty"`
+	// Describes whether push-based OTLP metrics from specific namespaces are selected. System namespaces are enabled by default.
+	// +optional
+	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
+}
+
+// NamespaceSelector describes whether metrics from specific namespaces are selected.
+// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include' or 'exclude'"
+type NamespaceSelector struct {
+	// Include metrics from the specified Namespace names only.
+	Include []string `json:"include,omitempty"`
+	// Exclude metrics from the specified Namespace names only.
+	Exclude []string `json:"exclude,omitempty"`
+}

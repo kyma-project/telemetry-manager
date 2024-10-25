@@ -20,13 +20,13 @@ const (
 
 type ConfigBuilder struct {
 	reader       client.Reader
-	otlpOutput   *telemetryv1alpha1.OtlpOutput
+	otlpOutput   *telemetryv1alpha1.OTLPOutput
 	pipelineName string
 	queueSize    int
 	signalType   string
 }
 
-func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int, signalType string) *ConfigBuilder {
+func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, queueSize int, signalType string) *ConfigBuilder {
 	return &ConfigBuilder{
 		reader:       reader,
 		otlpOutput:   otlpOutput,
@@ -47,9 +47,9 @@ func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporter, 
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *config.OTLPExporter {
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *config.OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
-	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
+	otlpEndpointVariable := makeOTLPEndpointVariable(pipelineName)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
 	tlsConfig := makeTLSConfig(otlpOutput, otlpEndpointValue, pipelineName)
 
@@ -84,7 +84,7 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName 
 
 func ExporterID(protocol string, pipelineName string) string {
 	var outputType string
-	if protocol == telemetryv1alpha1.OtlpProtocolHTTP {
+	if protocol == telemetryv1alpha1.OTLPProtocolHTTP {
 		outputType = "otlphttp"
 	} else {
 		outputType = "otlp"
@@ -93,7 +93,7 @@ func ExporterID(protocol string, pipelineName string) string {
 	return fmt.Sprintf("%s/%s", outputType, pipelineName)
 }
 
-func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipelineName string) config.TLS {
+func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipelineName string) config.TLS {
 	var cfg config.TLS
 	cfg.Insecure = isInsecureOutput(otlpEndpointValue)
 
@@ -121,7 +121,7 @@ func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipe
 	return cfg
 }
 
-func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[string]string {
+func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
 	if output.Authentication != nil && output.Authentication.Basic.User.IsValid() && output.Authentication.Basic.Password.IsValid() {

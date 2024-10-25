@@ -29,13 +29,16 @@ func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 	var includePath []string
 
 	includeNamespaces := []string{"*"}
-	if len(pipeline.Spec.Input.Application.Namespaces.Include) > 0 {
-		includeNamespaces = pipeline.Spec.Input.Application.Namespaces.Include
-	}
-
 	includeContainers := []string{"*"}
-	if len(pipeline.Spec.Input.Application.Containers.Include) > 0 {
-		includeContainers = pipeline.Spec.Input.Application.Containers.Include
+
+	if pipeline.Spec.Input.Application != nil {
+		if len(pipeline.Spec.Input.Application.Namespaces.Include) > 0 {
+			includeNamespaces = pipeline.Spec.Input.Application.Namespaces.Include
+		}
+
+		if len(pipeline.Spec.Input.Application.Containers.Include) > 0 {
+			includeContainers = pipeline.Spec.Input.Application.Containers.Include
+		}
 	}
 
 	for _, ns := range includeNamespaces {
@@ -53,8 +56,13 @@ func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline, collectAgentLogs
 		excludePath = append(excludePath, makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"))
 	}
 
-	excludeNamespaces := pipeline.Spec.Input.Application.Namespaces.Exclude
-	if !pipeline.Spec.Input.Application.Namespaces.System && len(pipeline.Spec.Input.Application.Namespaces.Include) == 0 && len(pipeline.Spec.Input.Application.Namespaces.Exclude) == 0 {
+	var excludeNamespaces []string
+
+	if pipeline.Spec.Input.Application != nil {
+		excludeNamespaces = pipeline.Spec.Input.Application.Namespaces.Exclude
+	}
+
+	if pipeline.Spec.Input.Application == nil || (!pipeline.Spec.Input.Application.Namespaces.System && len(pipeline.Spec.Input.Application.Namespaces.Include) == 0 && len(pipeline.Spec.Input.Application.Namespaces.Exclude) == 0) {
 		excludeNamespaces = namespaces.System()
 	}
 
@@ -62,8 +70,10 @@ func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline, collectAgentLogs
 		excludePath = append(excludePath, makeLogPath(ns, "*", "*"))
 	}
 
-	for _, container := range pipeline.Spec.Input.Application.Containers.Exclude {
-		excludePath = append(excludePath, makeLogPath("*", "*", container))
+	if pipeline.Spec.Input.Application != nil {
+		for _, container := range pipeline.Spec.Input.Application.Containers.Exclude {
+			excludePath = append(excludePath, makeLogPath("*", "*", container))
+		}
 	}
 
 	return strings.Join(excludePath, ",")

@@ -25,7 +25,7 @@ type LogPipelineBuilder struct {
 	filters []telemetryv1alpha1.Filter
 
 	httpOutput   *telemetryv1alpha1.HTTPOutput
-	otlpOutput   *telemetryv1alpha1.OtlpOutput
+	otlpOutput   *telemetryv1alpha1.OTLPOutput
 	customOutput string
 
 	statusConditions []metav1.Condition
@@ -53,47 +53,100 @@ func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder
 }
 
 func (b *LogPipelineBuilder) WithApplicationInputDisabled() *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.Enabled = ptr.To(false)
+
+	return b
+}
+
+func (b *LogPipelineBuilder) WithOTLPInput() *LogPipelineBuilder {
+	if b.input.OTLP == nil {
+		b.input.OTLP = &telemetryv1alpha1.OTLPInput{}
+	}
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.Containers.Include = containers
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithExcludeContainers(containers ...string) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.Containers.Exclude = containers
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.Namespaces.Include = namespaces
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithExcludeNamespaces(namespaces ...string) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.Namespaces.Exclude = namespaces
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithSystemNamespaces(enable bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.Namespaces.System = enable
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.KeepAnnotations = keep
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.DropLabels = drop
+
 	return b
 }
 
 func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.ApplicationInput{}
+	}
+
 	b.input.Application.KeepOriginalBody = ptr.To(keep)
+
 	return b
 }
 
@@ -161,7 +214,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Output: telemetryv1alpha1.Output{
 				HTTP:   b.httpOutput,
 				Custom: b.customOutput,
-				Otlp:   b.otlpOutput,
+				OTLP:   b.otlpOutput,
 			},
 		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
@@ -187,11 +240,11 @@ func defaultHTTPOutput() *telemetryv1alpha1.HTTPOutput {
 		},
 	}
 }
-func defaultOTLPOutput() *telemetryv1alpha1.OtlpOutput {
-	return &telemetryv1alpha1.OtlpOutput{
+func defaultOTLPOutput() *telemetryv1alpha1.OTLPOutput {
+	return &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "127.0.0.1:4317"},
-		Protocol: endpoint.OtlpProtocolGRPC,
-		TLS: &telemetryv1alpha1.OtlpTLS{
+		Protocol: endpoint.OTLPProtocolGRPC,
+		TLS: &telemetryv1alpha1.OTLPTLS{
 			Insecure:           true,
 			InsecureSkipVerify: true,
 			CA:                 nil,

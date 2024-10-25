@@ -58,7 +58,7 @@ type Header struct {
 }
 
 // +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
-type OtlpTLS struct {
+type OTLPTLS struct {
 	// Defines whether to send requests using plaintext instead of TLS.
 	Insecure bool `json:"insecure,omitempty"`
 	// Defines whether to skip server certificate verification when using TLS.
@@ -72,13 +72,13 @@ type OtlpTLS struct {
 }
 
 const (
-	OtlpProtocolHTTP string = "http"
-	OtlpProtocolGRPC string = "grpc"
+	OTLPProtocolHTTP string = "http"
+	OTLPProtocolGRPC string = "grpc"
 )
 
-// OtlpOutput OTLP output configuration
+// OTLPOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
-type OtlpOutput struct {
+type OTLPOutput struct {
 	// Defines the OTLP protocol (http or grpc). Default is grpc.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:default:=grpc
@@ -94,7 +94,7 @@ type OtlpOutput struct {
 	// Defines custom headers to be added to outgoing HTTP or GRPC requests.
 	Headers []Header `json:"headers,omitempty"`
 	// Defines TLS options for the OTLP output.
-	TLS *OtlpTLS `json:"tls,omitempty"`
+	TLS *OTLPTLS `json:"tls,omitempty"`
 }
 
 type AuthenticationOptions struct {
@@ -109,4 +109,22 @@ type BasicAuthOptions struct {
 	// Contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
+}
+
+// OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
+type OTLPInput struct {
+	// If disabled, push-based OTLP signals are not collected. The default is `false`.
+	Disabled bool `json:"disabled,omitempty"`
+	// Describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
+	// +optional
+	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
+}
+
+// NamespaceSelector describes whether signals from specific namespaces are selected.
+// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include' or 'exclude'"
+type NamespaceSelector struct {
+	// Include signals from the specified Namespace names only.
+	Include []string `json:"include,omitempty"`
+	// Exclude signals from the specified Namespace names only.
+	Exclude []string `json:"exclude,omitempty"`
 }

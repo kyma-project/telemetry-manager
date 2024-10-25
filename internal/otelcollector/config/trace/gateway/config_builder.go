@@ -42,7 +42,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 
 		otlpExporterBuilder := otlpexporter.NewConfigBuilder(
 			b.Reader,
-			pipeline.Spec.Output.Otlp,
+			pipeline.Spec.Output.OTLP,
 			pipeline.Name,
 			queueSize,
 			otlpexporter.SignalTypeTrace,
@@ -79,7 +79,7 @@ func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otl
 
 	maps.Copy(envVars, otlpExporterEnvVars)
 
-	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
+	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)

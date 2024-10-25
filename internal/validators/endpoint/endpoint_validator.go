@@ -16,8 +16,8 @@ import (
 
 const (
 	FluentdProtocolHTTP = "fluentd-http"
-	OtlpProtocolGRPC    = telemetryv1alpha1.OtlpProtocolGRPC
-	OtlpProtocolHTTP    = telemetryv1alpha1.OtlpProtocolHTTP
+	OTLPProtocolGRPC    = telemetryv1alpha1.OTLPProtocolGRPC
+	OTLPProtocolHTTP    = telemetryv1alpha1.OTLPProtocolHTTP
 )
 
 type Validator struct {
@@ -68,11 +68,11 @@ func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.Va
 	}
 
 	var hostport = u.Host + u.Path
-	if err := validatePort(hostport, protocol == OtlpProtocolHTTP); err != nil {
+	if err := validatePort(hostport, protocol == OTLPProtocolHTTP); err != nil {
 		return err
 	}
 
-	if protocol == OtlpProtocolHTTP {
+	if protocol == OTLPProtocolHTTP {
 		if err := validateSchemeHTTP(u.Scheme); err != nil {
 			return err
 		}

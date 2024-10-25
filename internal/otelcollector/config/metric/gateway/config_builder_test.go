@@ -233,17 +233,17 @@ func TestMakeConfig(t *testing.T) {
 		tests := []struct {
 			name           string
 			goldenFileName string
-			withOtlpInput  bool
+			withOTLPInput  bool
 		}{
 			{
 				name:           "OTLP Endpoint enabled",
 				goldenFileName: "config.yaml",
-				withOtlpInput:  true,
+				withOTLPInput:  true,
 			},
 			{
 				name:           "OTLP Endpoint disabled",
 				goldenFileName: "config_otlp_disabled.yaml",
-				withOtlpInput:  false,
+				withOTLPInput:  false,
 			},
 		}
 		for _, tt := range tests {
@@ -253,7 +253,7 @@ func TestMakeConfig(t *testing.T) {
 					[]telemetryv1alpha1.MetricPipeline{
 						testutils.NewMetricPipelineBuilder().
 							WithName("test").
-							WithOTLPInput(tt.withOtlpInput).
+							WithOTLPInput(tt.withOTLPInput).
 							WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 					},
 					BuildOptions{},

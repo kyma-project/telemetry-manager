@@ -149,6 +149,38 @@ spec:
                             type: boolean
                         type: object
                     type: object
+                  otlp:
+                    description: Configures an endpoint to receive logs from a OTLP
+                      source.
+                    properties:
+                      disabled:
+                        description: If disabled, push-based OTLP signals are not
+                          collected. The default is `false`.
+                        type: boolean
+                      namespaces:
+                        description: Describes whether push-based OTLP signals from
+                          specific namespaces are selected. System namespaces are
+                          enabled by default.
+                        properties:
+                          exclude:
+                            description: Exclude signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include signals from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one namespace selector - either
+                            'include' or 'exclude'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                    type: object
                 type: object
               output:
                 description: '[Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs)
@@ -769,6 +801,9 @@ spec:
                   type: object
                 type: array
             type: object
+            x-kubernetes-validations:
+            - message: otlp input is only supported with otlp output
+              rule: '!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))'
           status:
             description: Shows the observed state of the LogPipeline
             properties:
@@ -905,6 +940,38 @@ spec:
               input:
                 description: Defines where to collect logs, including selector mechanisms.
                 properties:
+                  otlp:
+                    description: OTLPInput defines the collection of push-based metrics
+                      that use the OpenTelemetry protocol.
+                    properties:
+                      disabled:
+                        description: If disabled, push-based OTLP metrics are not
+                          collected. The default is `false`.
+                        type: boolean
+                      namespaces:
+                        description: Describes whether push-based OTLP metrics from
+                          specific namespaces are selected. System namespaces are
+                          enabled by default.
+                        properties:
+                          exclude:
+                            description: Exclude metrics from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include metrics from the specified Namespace
+                              names only.
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one namespace selector - either
+                            'include' or 'exclude'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                    type: object
                   runtime:
                     description: Configures in more detail from which containers application
                       logs are enabled as input.

@@ -52,14 +52,14 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 }
 
 func (tp *TracePipeline) GetSecretRefs() []SecretKeyRef {
-	return getRefsInOtlpOutput(tp.Spec.Output.Otlp)
+	return getRefsInOTLPOutput(tp.Spec.Output.OTLP)
 }
 
 func (mp *MetricPipeline) GetSecretRefs() []SecretKeyRef {
-	return getRefsInOtlpOutput(mp.Spec.Output.Otlp)
+	return getRefsInOTLPOutput(mp.Spec.Output.OTLP)
 }
 
-func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
+func getRefsInOTLPOutput(otlpOut *OTLPOutput) []SecretKeyRef {
 	var refs []SecretKeyRef
 
 	refs = appendIfSecretRef(refs, otlpOut.Endpoint)
