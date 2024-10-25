@@ -16,7 +16,7 @@ var (
 )
 
 func (lp *LogPipeline) PipelineMode() Mode {
-	if lp.Spec.Output.Otlp != nil {
+	if lp.Spec.Output.OTLP != nil {
 		return OTel
 	}
 
