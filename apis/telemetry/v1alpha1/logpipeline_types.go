@@ -157,7 +157,7 @@ type LogPipelineHTTPOutput struct {
 	// Data format to be used in the HTTP request body. Default is `json`.
 	Format string `json:"format,omitempty"`
 	// Configures TLS for the HTTP target server.
-	TLSConfig LogPipelineOutputTLS `json:"tls,omitempty"`
+	TLS LogPipelineOutputTLS `json:"tls,omitempty"`
 	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`
 }
@@ -197,7 +197,7 @@ type LogPipelineStatus struct {
 	UnsupportedMode *bool `json:"unsupportedMode,omitempty"`
 }
 
-func (i *LogPipelineInput) IsDefined() bool {
+func (i *LogPipelineInput) IsValid() bool {
 	return i != nil
 }
 
@@ -206,7 +206,7 @@ func (o *LogPipelineOutput) IsCustomDefined() bool {
 }
 
 func (o *LogPipelineOutput) IsHTTPDefined() bool {
-	return o.HTTP != nil && o.HTTP.Host.IsDefined()
+	return o.HTTP != nil && o.HTTP.Host.IsValid()
 }
 
 func (o *LogPipelineOutput) IsOTLPDefined() bool {

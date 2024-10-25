@@ -69,7 +69,7 @@ func TestConvertTo(t *testing.T) {
 					Port:     "8080",
 					Compress: "on",
 					Format:   "json",
-					TLSConfig: LogPipelineOutputTLS{
+					TLS: LogPipelineOutputTLS{
 						SkipCertificateValidation: true,
 						CA: &ValueType{
 							Value: "ca",
@@ -332,10 +332,10 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Equal(t, xHTTP.Port, yHTTP.Port, "HTTP port mismatch")
 	require.Equal(t, xHTTP.Compress, yHTTP.Compress, "HTTP compress mismatch")
 	require.Equal(t, xHTTP.Format, yHTTP.Format, "HTTP format mismatch")
-	require.Equal(t, xHTTP.TLSConfig.SkipCertificateValidation, yHTTP.TLSConfig.SkipCertificateValidation, "HTTP TLS skip certificate validation mismatch")
-	require.Equal(t, xHTTP.TLSConfig.CA.Value, yHTTP.TLSConfig.CA.Value, "HTTP TLS CA mismatch")
-	require.Equal(t, xHTTP.TLSConfig.Cert.Value, yHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
-	require.Equal(t, xHTTP.TLSConfig.Key.Value, yHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
+	require.Equal(t, xHTTP.TLS.SkipCertificateValidation, yHTTP.TLSConfig.SkipCertificateValidation, "HTTP TLS skip certificate validation mismatch")
+	require.Equal(t, xHTTP.TLS.CA.Value, yHTTP.TLSConfig.CA.Value, "HTTP TLS CA mismatch")
+	require.Equal(t, xHTTP.TLS.Cert.Value, yHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
+	require.Equal(t, xHTTP.TLS.Key.Value, yHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
 
 	xOTLP := x.Spec.Output.OTLP
 	yOTLP := y.Spec.Output.OTLP

@@ -111,10 +111,6 @@ type OTLPTLS struct {
 	Key *ValueType `json:"key,omitempty"`
 }
 
-func (b *BasicAuthOptions) IsDefined() bool {
-	return b.User.IsDefined() && b.Password.IsDefined()
-}
-
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type OTLPInput struct {
 	// If disabled, push-based OTLP signals are not collected. The default is `false`.

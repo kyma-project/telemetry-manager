@@ -89,10 +89,6 @@ type BasicAuthOptions struct {
 	Password ValueType `json:"password"`
 }
 
-func (b *BasicAuthOptions) IsDefined() bool {
-	return b.User.IsDefined() && b.Password.IsDefined()
-}
-
 type Header struct {
 	// Defines the header name.
 	Name string `json:"name"`

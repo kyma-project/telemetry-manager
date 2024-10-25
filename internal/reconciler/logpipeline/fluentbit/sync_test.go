@@ -385,7 +385,7 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 					Output: telemetryv1alpha1.LogPipelineOutput{
 						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "localhost"},
-							TLSConfig: telemetryv1alpha1.LogPipelineOutputTLS{
+							TLS: telemetryv1alpha1.LogPipelineOutputTLS{
 								Disabled:                  false,
 								SkipCertificateValidation: false,
 								CA: &telemetryv1alpha1.ValueType{

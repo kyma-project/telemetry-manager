@@ -181,7 +181,7 @@ type LogPipelineStatus struct {
 	UnsupportedMode *bool `json:"unsupportedMode,omitempty"`
 }
 
-func (i *LogPipelineInput) IsDefined() bool {
+func (i *LogPipelineInput) IsValid() bool {
 	return i != nil
 }
 

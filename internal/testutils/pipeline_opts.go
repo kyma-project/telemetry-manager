@@ -110,7 +110,7 @@ type HTTPOutputOption func(output *telemetryv1alpha1.LogPipelineHTTPOutput)
 
 func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
 	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
-		output.TLSConfig = telemetryv1alpha1.LogPipelineOutputTLS{
+		output.TLS = telemetryv1alpha1.LogPipelineOutputTLS{
 			CA:   &telemetryv1alpha1.ValueType{Value: ca},
 			Cert: &telemetryv1alpha1.ValueType{Value: cert},
 			Key:  &telemetryv1alpha1.ValueType{Value: key},
@@ -120,7 +120,7 @@ func HTTPClientTLSFromString(ca, cert, key string) HTTPOutputOption {
 
 func HTTPClientTLS(tls telemetryv1alpha1.LogPipelineOutputTLS) HTTPOutputOption {
 	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
-		output.TLSConfig = tls
+		output.TLS = tls
 	}
 }
 
@@ -153,7 +153,7 @@ func HTTPDedot(dedot bool) HTTPOutputOption {
 }
 
 func HTTPBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey string) HTTPOutputOption {
-	return func(output *telemetryv1alpha1.HTTPOutput) {
+	return func(output *telemetryv1alpha1.LogPipelineHTTPOutput) {
 		output.User = telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      secretName,
 			Namespace: secretNamespace,

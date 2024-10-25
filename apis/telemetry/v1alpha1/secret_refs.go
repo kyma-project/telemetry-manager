@@ -34,7 +34,7 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 
 	output := lp.Spec.Output
 	if output.HTTP != nil {
-		tlsConfig := output.HTTP.TLSConfig
+		tlsConfig := output.HTTP.TLS
 		if tlsConfig.CA != nil {
 			refs = appendIfSecretRef(refs, *tlsConfig.CA)
 		}

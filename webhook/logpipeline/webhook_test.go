@@ -142,7 +142,7 @@ func TestHandle(t *testing.T) {
 						Port:   "8080",
 						URI:    "/",
 						Format: "json",
-						TLSConfig: telemetryv1alpha1.LogPipelineOutputTLS{
+						TLS: telemetryv1alpha1.LogPipelineOutputTLS{
 							Disabled:                  true,
 							SkipCertificateValidation: true,
 						},

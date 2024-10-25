@@ -35,7 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 						},
 						Port: "443",
 						URI:  "/",
-						TLSConfig: telemetryv1alpha1.LogPipelineOutputTLS{
+						TLS: telemetryv1alpha1.LogPipelineOutputTLS{
 							Disabled: true,
 						},
 					},

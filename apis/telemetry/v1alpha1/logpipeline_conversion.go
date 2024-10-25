@@ -43,7 +43,7 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 			Port:      srcHTTPOutput.Port,
 			Compress:  srcHTTPOutput.Compress,
 			Format:    srcHTTPOutput.Format,
-			TLSConfig: v1Alpha1TLSToV1Beta1(srcHTTPOutput.TLSConfig),
+			TLSConfig: v1Alpha1TLSToV1Beta1(srcHTTPOutput.TLS),
 			Dedot:     srcHTTPOutput.Dedot,
 		}
 	}
@@ -238,15 +238,15 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 
 	if srcHTTPOutput := src.Spec.Output.HTTP; srcHTTPOutput != nil {
 		dst.Spec.Output.HTTP = &LogPipelineHTTPOutput{
-			Host:      v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Host),
-			User:      v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.User),
-			Password:  v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Password),
-			URI:       srcHTTPOutput.URI,
-			Port:      srcHTTPOutput.Port,
-			Compress:  srcHTTPOutput.Compress,
-			Format:    srcHTTPOutput.Format,
-			TLSConfig: v1Beta1TLSToV1Alpha1(srcHTTPOutput.TLSConfig),
-			Dedot:     srcHTTPOutput.Dedot,
+			Host:     v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Host),
+			User:     v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.User),
+			Password: v1Beta1ValueTypeToV1Alpha1(srcHTTPOutput.Password),
+			URI:      srcHTTPOutput.URI,
+			Port:     srcHTTPOutput.Port,
+			Compress: srcHTTPOutput.Compress,
+			Format:   srcHTTPOutput.Format,
+			TLS:      v1Beta1TLSToV1Alpha1(srcHTTPOutput.TLSConfig),
+			Dedot:    srcHTTPOutput.Dedot,
 		}
 	}
 

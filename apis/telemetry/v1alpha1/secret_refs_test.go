@@ -86,8 +86,8 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 					Name: "cls",
 				},
 				Spec: LogPipelineSpec{
-					Output: Output{
-						HTTP: &HTTPOutput{
+					Output: LogPipelineOutput{
+						HTTP: &LogPipelineHTTPOutput{
 							Host: ValueType{
 								ValueFrom: &ValueFromSource{
 									SecretKeyRef: &SecretKeyRef{
