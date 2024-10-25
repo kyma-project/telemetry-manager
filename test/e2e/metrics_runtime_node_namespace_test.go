@@ -23,191 +23,125 @@ import (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
-	Context("When metric pipelines with node metrics enabled and an include namespace selector exist", Ordered, func() {
-		var (
-			includeNS = suite.IDWithSuffix("include-ns")
+	var (
+		backendOnlyNodeMetricsEnabledName  = suite.IDWithSuffix("node-metrics")
+		pipelineOnlyNodeMetricsEnabledName = suite.IDWithSuffix("node-metrics")
+	)
 
-			backendOnlyNodeMetricsEnabledName  = suite.IDWithSuffix("node-metrics")
-			pipelineOnlyNodeMetricsEnabledName = suite.IDWithSuffix("node-metrics")
-			backendOnlyNodeMetricsEnabledURL   string
-		)
-
-		makeResources := func() []client.Object {
-			var objs []client.Object
-			objs = append(objs, kitk8s.NewNamespace(includeNS).K8sObject())
-
-			backendOnlyNodeMetricsEnabled := backend.New(includeNS, backend.SignalTypeMetrics, backend.WithName(backendOnlyNodeMetricsEnabledName))
-			objs = append(objs, backendOnlyNodeMetricsEnabled.K8sObjects()...)
-			backendOnlyNodeMetricsEnabledURL = backendOnlyNodeMetricsEnabled.ExportURL(proxyClient)
-
-			pipelineOnlyNodeMetricsEnabledWithIncludeNS := testutils.NewMetricPipelineBuilder().
+	type testcase struct {
+		pipeline  *testutils.MetricPipelineBuilder
+		name      string
+		namespace string
+	}
+	testcases := []testcase{
+		{
+			namespace: suite.IDWithSuffix("exlude-ns"),
+			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName(pipelineOnlyNodeMetricsEnabledName).
 				WithRuntimeInput(true,
-					testutils.IncludeNamespaces(includeNS),
+					testutils.ExcludeNamespaces(suite.IDWithSuffix("exlude-ns")),
 				).
 				WithRuntimeInputNodeMetrics(true).
 				WithRuntimeInputPodMetrics(false).
 				WithRuntimeInputContainerMetrics(false).
-				WithRuntimeInputVolumeMetrics(false).
-				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyNodeMetricsEnabled.Endpoint())).
-				Build()
-			objs = append(objs, &pipelineOnlyNodeMetricsEnabledWithIncludeNS)
-
-			metricProducer := prommetricgen.New(includeNS)
-
-			objs = append(objs, []client.Object{
-				metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-				metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-			}...)
-
-			return objs
-		}
-
-		BeforeAll(func() {
-			k8sObjects := makeResources()
-
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-		})
-
-		It("Should have healthy pipelines", func() {
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineOnlyNodeMetricsEnabledName)
-		})
-
-		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
-		})
-
-		It("Ensures the metric agent daemonset is ready", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
-		})
-
-		It("Should have metrics backends running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: includeNS})
-			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: includeNS})
-
-		})
-
-		Context("Runtime node metrics", func() {
-			It("Should deliver runtime node metrics to node-metrics backend even though node metrics do not exist on namespace level", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.NodeMetricsNames))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
-
-			It("Should have expected resource attributes in runtime node metrics", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsResourceAttributes))))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
-		})
-	})
-
-	Context("When metric pipelines with node metrics enabled and an exclude namespace selector exist", Ordered, func() {
-		var (
-			excludeNS = suite.IDWithSuffix("exclude-ns")
-
-			backendOnlyNodeMetricsEnabledName  = suite.IDWithSuffix("node-metrics")
-			pipelineOnlyNodeMetricsEnabledName = suite.IDWithSuffix("node-metrics")
-			backendOnlyNodeMetricsEnabledURL   string
-		)
-
-		makeResources := func() []client.Object {
-			var objs []client.Object
-			objs = append(objs, kitk8s.NewNamespace(excludeNS).K8sObject())
-
-			backendOnlyNodeMetricsEnabled := backend.New(excludeNS, backend.SignalTypeMetrics, backend.WithName(backendOnlyNodeMetricsEnabledName))
-			objs = append(objs, backendOnlyNodeMetricsEnabled.K8sObjects()...)
-			backendOnlyNodeMetricsEnabledURL = backendOnlyNodeMetricsEnabled.ExportURL(proxyClient)
-
-			pipelineOnlyNodeMetricsEnabledWithIncludeNS := testutils.NewMetricPipelineBuilder().
+				WithRuntimeInputVolumeMetrics(false),
+			name: "exclude",
+		},
+		{
+			namespace: suite.IDWithSuffix("include-ns"),
+			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName(pipelineOnlyNodeMetricsEnabledName).
 				WithRuntimeInput(true,
-					testutils.ExcludeNamespaces(excludeNS),
+					testutils.IncludeNamespaces(suite.IDWithSuffix("include-ns")),
 				).
 				WithRuntimeInputNodeMetrics(true).
 				WithRuntimeInputPodMetrics(false).
 				WithRuntimeInputContainerMetrics(false).
-				WithRuntimeInputVolumeMetrics(false).
-				WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyNodeMetricsEnabled.Endpoint())).
-				Build()
-			objs = append(objs, &pipelineOnlyNodeMetricsEnabledWithIncludeNS)
+				WithRuntimeInputVolumeMetrics(false),
+			name: "include",
+		},
+	}
 
-			metricProducer := prommetricgen.New(excludeNS)
+	for _, tt := range testcases {
+		Context("When metric pipelines with node metrics enabled and an "+tt.name+" namespace selector exist", Ordered, func() {
+			var (
+				backendOnlyNodeMetricsEnabledURL string
+			)
 
-			objs = append(objs, []client.Object{
-				metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-				metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-			}...)
+			makeResources := func() []client.Object {
+				var objs []client.Object
+				objs = append(objs, kitk8s.NewNamespace(tt.namespace).K8sObject())
 
-			return objs
-		}
+				backendOnlyNodeMetricsEnabled := backend.New(tt.namespace, backend.SignalTypeMetrics, backend.WithName(backendOnlyNodeMetricsEnabledName))
+				objs = append(objs, backendOnlyNodeMetricsEnabled.K8sObjects()...)
+				backendOnlyNodeMetricsEnabledURL = backendOnlyNodeMetricsEnabled.ExportURL(proxyClient)
 
-		BeforeAll(func() {
-			k8sObjects := makeResources()
+				pipeline := tt.pipeline.WithOTLPOutput(testutils.OTLPEndpoint(backendOnlyNodeMetricsEnabled.Endpoint())).Build()
 
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-		})
+				objs = append(objs, &pipeline)
 
-		It("Should have healthy pipelines", func() {
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineOnlyNodeMetricsEnabledName)
-		})
+				metricProducer := prommetricgen.New(tt.namespace)
 
-		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
-		})
+				objs = append(objs, []client.Object{
+					metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+					metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+				}...)
 
-		It("Ensures the metric agent daemonset is ready", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
-		})
+				return objs
+			}
 
-		It("Should have metrics backends running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: excludeNS})
-			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: excludeNS})
+			BeforeAll(func() {
+				k8sObjects := makeResources()
 
-		})
-
-		Context("Runtime node metrics", func() {
-			It("Should deliver runtime node metrics to node-metrics backend even though node metrics do not exist on namespace level", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.NodeMetricsNames))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				DeferCleanup(func() {
+					Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				})
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 
-			It("Should have expected resource attributes in runtime node metrics", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+			It("Should have healthy pipelines", func() {
+				assert.MetricPipelineHealthy(ctx, k8sClient, pipelineOnlyNodeMetricsEnabledName)
+			})
 
-					g.Expect(resp).To(HaveHTTPBody(
-						HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsResourceAttributes))))),
-					))
-				}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			It("Ensures the metric gateway deployment is ready", func() {
+				assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			})
+
+			It("Ensures the metric agent daemonset is ready", func() {
+				assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			})
+
+			It("Should have metrics backends running", func() {
+				assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: tt.namespace})
+				assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendOnlyNodeMetricsEnabledName, Namespace: tt.namespace})
+
+			})
+
+			Context("Runtime node metrics", func() {
+				It("Should deliver runtime node metrics to node-metrics backend even though node metrics do not exist on namespace level", func() {
+					Eventually(func(g Gomega) {
+						resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
+						g.Expect(err).NotTo(HaveOccurred())
+						g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+						g.Expect(resp).To(HaveHTTPBody(
+							HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.NodeMetricsNames))),
+						))
+					}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				})
+
+				It("Should have expected resource attributes in runtime node metrics", func() {
+					Eventually(func(g Gomega) {
+						resp, err := proxyClient.Get(backendOnlyNodeMetricsEnabledURL)
+						g.Expect(err).NotTo(HaveOccurred())
+						g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+						g.Expect(resp).To(HaveHTTPBody(
+							HaveFlatMetrics(ContainElement(HaveResourceAttributes(HaveKeys(ConsistOf(runtime.NodeMetricsResourceAttributes))))),
+						))
+					}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+				})
 			})
 		})
-	})
+	}
 })
