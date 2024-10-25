@@ -383,14 +383,14 @@ func TestProcessors(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		expectedDropRuntimeDeplotmentMetricsProcessor := FilterProcessor{
+		expectedDropRuntimeDeploymentMetricsProcessor := FilterProcessor{
 			Metrics: FilterProcessorMetrics{
 				Metric: []string{
 					`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.deployment.*")`,
 				},
 			},
 		}
-		require.Equal(t, expectedDropRuntimeDeplotmentMetricsProcessor, *collectorConfig.Processors.DropRuntimeDeploymentMetrics)
+		require.Equal(t, expectedDropRuntimeDeploymentMetricsProcessor, *collectorConfig.Processors.DropRuntimeDeploymentMetrics)
 	})
 
 	t.Run("runtime statefulset metrics filter processor", func(t *testing.T) {
