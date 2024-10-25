@@ -158,7 +158,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		Context("Pipeline A should deliver pods, container, volume and nodes metrics", func() {
-			It("Should deliver pod metrics and resource attributes", func() {
+			It("Should deliver pod metrics with expected resource attributes and metric attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.PodMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "k8s.pod.cpu.time", runtime.PodMetricsResourceAttributes)
 
@@ -170,12 +170,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 
 			})
 
-			It("Should deliver container metrics and resource attributes", func() {
+			It("Should deliver container metrics with expected resource attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.ContainerMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "container.cpu.time", runtime.ContainerMetricsResourceAttributes)
 			})
 
-			It("Should deliver volume metrics and resource attributes", func() {
+			It("Should deliver volume metrics with expected resource attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.VolumeMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "k8s.volume.capacity", runtime.VolumeMetricsResourceAttributes)
 			})
@@ -192,7 +192,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 			})
 
-			It("Should deliver node metrics and resource attributes", func() {
+			It("Should deliver node metrics with expected resource attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.NodeMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "k8s.node.cpu.usage", runtime.NodeMetricsResourceAttributes)
 			})
@@ -204,22 +204,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		Context("Pipeline B should deliver deployment, daemonset, statefulset and job metrics", Ordered, func() {
-			It("should have metrics for deployment delivered", func() {
+			It("should deliver deployment metrics with expected resource attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, runtime.DeploymentMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLB, "k8s.deployment.available", runtime.DeploymentResourceAttributes)
 			})
 
-			It("should have metrics for daemonset delivered", func() {
+			It("should deliver daemonset metrics with expected resource attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, runtime.DaemonSetMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLB, "k8s.daemonset.current_scheduled_nodes", runtime.DaemonSetResourceAttributes)
 			})
 
-			It("should have metrics for statefulset delivered", func() {
+			It("should deliver statefulset metrics with expected resource attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, runtime.StatefulSetMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLB, "k8s.statefulset.current_pods", runtime.StatefulSetResourceAttributes)
 			})
 
-			It("should have metrics for job delivered", func() {
+			It("should deliver job metrics with expected resource attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, runtime.JobsMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLB, "k8s.job.active_pods", runtime.JobResourceAttributes)
 			})
@@ -384,7 +384,7 @@ func backendContainsDesiredMetricAttributes(proxyClient *apiserverproxy.Client, 
 }
 
 // Check with `ConsistsOf` for metrics present in the backend
-func backendConsistsMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
+func backendConsistsOfMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
