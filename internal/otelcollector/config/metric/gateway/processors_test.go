@@ -399,7 +399,7 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").
 					WithRuntimeInput(true).
-					WithRuntimeInputVolumeMetrics(false).
+					WithRuntimeInputStatefulSetMetrics(false).
 					Build(),
 			},
 			BuildOptions{},
@@ -422,7 +422,7 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").
 					WithRuntimeInput(true).
-					WithRuntimeInputVolumeMetrics(false).
+					WithRuntimeInputDaemonSetMetrics(false).
 					Build(),
 			},
 			BuildOptions{},
@@ -445,7 +445,7 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").
 					WithRuntimeInput(true).
-					WithRuntimeInputVolumeMetrics(false).
+					WithRuntimeInputJobMetrics(false).
 					Build(),
 			},
 			BuildOptions{},
