@@ -20,17 +20,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
-func init() {
-	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
-}
-
 type Mode int
 
 const (
 	OTel Mode = iota
 	FluentBit
 )
+
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
+func init() {
+	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
+}
 
 // +kubebuilder:object:root=true
 // LogPipelineList contains a list of LogPipeline
