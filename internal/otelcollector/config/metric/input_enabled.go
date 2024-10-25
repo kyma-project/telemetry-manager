@@ -15,7 +15,7 @@ func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 }
 
 func IsOTLPInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Otlp == nil || !input.Otlp.Disabled
+	return input.OTLP == nil || !input.OTLP.Disabled
 }
 
 func IsPrometheusDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {

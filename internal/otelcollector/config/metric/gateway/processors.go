@@ -90,7 +90,7 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	}
 }
 
-func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
+func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{

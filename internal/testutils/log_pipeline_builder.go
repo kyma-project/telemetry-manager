@@ -25,7 +25,7 @@ type LogPipelineBuilder struct {
 	filters []telemetryv1alpha1.Filter
 
 	httpOutput   *telemetryv1alpha1.HTTPOutput
-	otlpOutput   *telemetryv1alpha1.OtlpOutput
+	otlpOutput   *telemetryv1alpha1.OTLPOutput
 	customOutput string
 
 	statusConditions []metav1.Condition
@@ -214,7 +214,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Output: telemetryv1alpha1.Output{
 				HTTP:   b.httpOutput,
 				Custom: b.customOutput,
-				Otlp:   b.otlpOutput,
+				OTLP:   b.otlpOutput,
 			},
 		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
@@ -240,11 +240,11 @@ func defaultHTTPOutput() *telemetryv1alpha1.HTTPOutput {
 		},
 	}
 }
-func defaultOTLPOutput() *telemetryv1alpha1.OtlpOutput {
-	return &telemetryv1alpha1.OtlpOutput{
+func defaultOTLPOutput() *telemetryv1alpha1.OTLPOutput {
+	return &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "127.0.0.1:4317"},
-		Protocol: endpoint.OtlpProtocolGRPC,
-		TLS: &telemetryv1alpha1.OtlpTLS{
+		Protocol: endpoint.OTLPProtocolGRPC,
+		TLS: &telemetryv1alpha1.OTLPTLS{
 			Insecure:           true,
 			InsecureSkipVerify: true,
 			CA:                 nil,

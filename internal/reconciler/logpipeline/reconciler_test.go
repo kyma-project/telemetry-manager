@@ -33,7 +33,7 @@ func TestGetOutputType(t *testing.T) {
 				&telemetryv1alpha1.LogPipeline{
 					Spec: telemetryv1alpha1.LogPipelineSpec{
 						Output: telemetryv1alpha1.Output{
-							Otlp: &telemetryv1alpha1.OtlpOutput{},
+							OTLP: &telemetryv1alpha1.OTLPOutput{},
 						},
 					},
 				},

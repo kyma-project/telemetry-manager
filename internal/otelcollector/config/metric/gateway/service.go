@@ -91,8 +91,8 @@ func makeNamespaceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput, pipeli
 		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio))
 	}
 
-	if metric.IsOTLPInputEnabled(input) && input.Otlp != nil && shouldFilterByNamespace(input.Otlp.Namespaces) {
-		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceOtlp))
+	if metric.IsOTLPInputEnabled(input) && input.OTLP != nil && shouldFilterByNamespace(input.OTLP.Namespaces) {
+		processors = append(processors, formatNamespaceFilterID(pipeline.Name, metric.InputSourceOTLP))
 	}
 
 	return processors
@@ -151,5 +151,5 @@ func makeDiagnosticMetricFiltersIDs(input telemetryv1alpha1.MetricPipelineInput)
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
-	return otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
+	return otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 }
