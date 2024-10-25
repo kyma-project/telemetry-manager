@@ -151,3 +151,19 @@ func HTTPDedot(dedot bool) HTTPOutputOption {
 		output.Dedot = dedot
 	}
 }
+
+func HTTPBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey string) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.HTTPOutput) {
+		output.User = telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			Name:      secretName,
+			Namespace: secretNamespace,
+			Key:       userKey,
+		}}}
+
+		output.Password = telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			Name:      secretName,
+			Namespace: secretNamespace,
+			Key:       passwordKey,
+		}}}
+	}
+}
