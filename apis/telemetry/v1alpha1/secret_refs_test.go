@@ -79,6 +79,46 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 				{Name: "creds", Namespace: "default", Key: "password"},
 			},
 		},
+		{
+			name: "http output secret refs (with missing fields)",
+			given: LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cls",
+				},
+				Spec: LogPipelineSpec{
+					Output: Output{
+						HTTP: &HTTPOutput{
+							Host: ValueType{
+								ValueFrom: &ValueFromSource{
+									SecretKeyRef: &SecretKeyRef{
+										Name: "creds", Namespace: "default",
+									},
+								},
+							},
+							User: ValueType{
+								ValueFrom: &ValueFromSource{
+									SecretKeyRef: &SecretKeyRef{
+										Name: "creds", Key: "user",
+									},
+								},
+							},
+							Password: ValueType{
+								ValueFrom: &ValueFromSource{
+									SecretKeyRef: &SecretKeyRef{
+										Namespace: "default", Key: "password",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []SecretKeyRef{
+				{Name: "creds", Namespace: "default"},
+				{Name: "creds", Key: "user"},
+				{Namespace: "default", Key: "password"},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -162,6 +202,51 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 				{Name: "secret-3", Namespace: "default", Key: "myheader"},
 			},
 		},
+		{
+			name:         "basic auth and header (with missing fields)",
+			pipelineName: "test-pipeline",
+			given: &OTLPOutput{
+				Authentication: &AuthenticationOptions{
+					Basic: &BasicAuthOptions{
+						User: ValueType{
+							Value: "",
+							ValueFrom: &ValueFromSource{
+								SecretKeyRef: &SecretKeyRef{
+									Name: "secret-1",
+									Key:  "user",
+								}},
+						},
+						Password: ValueType{
+							Value: "",
+							ValueFrom: &ValueFromSource{
+								SecretKeyRef: &SecretKeyRef{
+									Namespace: "default",
+									Key:       "password",
+								}},
+						},
+					},
+				},
+				Headers: []Header{
+					{
+						Name: "header-1",
+						ValueType: ValueType{
+							Value: "",
+							ValueFrom: &ValueFromSource{
+								SecretKeyRef: &SecretKeyRef{
+									Name:      "secret-3",
+									Namespace: "default",
+								}},
+						},
+					},
+				},
+			},
+
+			expected: []SecretKeyRef{
+				{Name: "secret-1", Key: "user"},
+				{Namespace: "default", Key: "password"},
+				{Name: "secret-3", Namespace: "default"},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -199,7 +284,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 			},
 		},
 		{
-			name:         "basic auth and",
+			name:         "basic auth and header",
 			pipelineName: "test-pipeline",
 			given: &OTLPOutput{
 				Authentication: &AuthenticationOptions{
@@ -244,6 +329,51 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 				{Name: "secret-1", Namespace: "default", Key: "user"},
 				{Name: "secret-2", Namespace: "default", Key: "password"},
 				{Name: "secret-3", Namespace: "default", Key: "myheader"},
+			},
+		},
+		{
+			name:         "basic auth and header (with missing fields)",
+			pipelineName: "test-pipeline",
+			given: &OTLPOutput{
+				Authentication: &AuthenticationOptions{
+					Basic: &BasicAuthOptions{
+						User: ValueType{
+							Value: "",
+							ValueFrom: &ValueFromSource{
+								SecretKeyRef: &SecretKeyRef{
+									Namespace: "default",
+									Key:       "user",
+								}},
+						},
+						Password: ValueType{
+							Value: "",
+							ValueFrom: &ValueFromSource{
+								SecretKeyRef: &SecretKeyRef{
+									Name: "secret-2",
+									Key:  "password",
+								}},
+						},
+					},
+				},
+				Headers: []Header{
+					{
+						Name: "header-1",
+						ValueType: ValueType{
+							Value: "",
+							ValueFrom: &ValueFromSource{
+								SecretKeyRef: &SecretKeyRef{
+									Name:      "secret-3",
+									Namespace: "default",
+								}},
+						},
+					},
+				},
+			},
+
+			expected: []SecretKeyRef{
+				{Namespace: "default", Key: "user"},
+				{Name: "secret-2", Key: "password"},
+				{Name: "secret-3", Namespace: "default"},
 			},
 		},
 	}

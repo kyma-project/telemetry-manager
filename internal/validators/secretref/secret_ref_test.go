@@ -135,6 +135,30 @@ func TestGetValue(t *testing.T) {
 			expectError:   ErrSecretKeyNotFound,
 			expectedValue: "",
 		},
+		{
+			name: "SecretRefMissingKey",
+			getter: telemetryv1alpha1.SecretKeyRef{
+				Name: "my-secret1", Namespace: "default",
+			},
+			expectError:   ErrSecretRefMissingFields,
+			expectedValue: "",
+		},
+		{
+			name: "SecretRefMissingName",
+			getter: telemetryv1alpha1.SecretKeyRef{
+				Namespace: "default", Key: "notExistent",
+			},
+			expectError:   ErrSecretRefMissingFields,
+			expectedValue: "",
+		},
+		{
+			name: "SecretRefMissingNamespace",
+			getter: telemetryv1alpha1.SecretKeyRef{
+				Name: "my-secret1", Key: "notExistent",
+			},
+			expectError:   ErrSecretRefMissingFields,
+			expectedValue: "",
+		},
 	}
 
 	for _, test := range tests {

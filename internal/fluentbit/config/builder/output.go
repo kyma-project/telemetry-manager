@@ -58,17 +58,17 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsB
 	sb.AddIfNotEmptyOrDefault("port", httpOutput.Port, "443")
 	sb.AddIfNotEmptyOrDefault("format", httpOutput.Format, "json")
 
-	if httpOutput.Host.IsDefined() {
+	if httpOutput.Host.IsValid() {
 		value := resolveValue(httpOutput.Host, name)
 		sb.AddConfigParam("host", value)
 	}
 
-	if httpOutput.Password.IsDefined() {
+	if httpOutput.Password.IsValid() {
 		value := resolveValue(httpOutput.Password, name)
 		sb.AddConfigParam("http_passwd", value)
 	}
 
-	if httpOutput.User.IsDefined() {
+	if httpOutput.User.IsValid() {
 		value := resolveValue(httpOutput.User, name)
 		sb.AddConfigParam("http_user", value)
 	}
@@ -87,15 +87,15 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsB
 
 	sb.AddConfigParam("tls.verify", tlsVerify)
 
-	if httpOutput.TLSConfig.CA.IsDefined() {
+	if httpOutput.TLSConfig.CA.IsValid() {
 		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
 	}
 
-	if httpOutput.TLSConfig.Cert.IsDefined() {
+	if httpOutput.TLSConfig.Cert.IsValid() {
 		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
 	}
 
-	if httpOutput.TLSConfig.Key.IsDefined() {
+	if httpOutput.TLSConfig.Key.IsValid() {
 		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
 	}
 
@@ -107,7 +107,7 @@ func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string 
 		return value.Value
 	}
 
-	if value.ValueFrom != nil && value.ValueFrom.IsSecretKeyRef() {
+	if value.ValueFrom != nil && value.IsValid() {
 		secretKeyRef := value.ValueFrom.SecretKeyRef
 		return fmt.Sprintf("${%s}", FormatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
 	}

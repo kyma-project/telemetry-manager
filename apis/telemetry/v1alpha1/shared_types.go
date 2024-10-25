@@ -11,7 +11,7 @@ type ValueType struct {
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
 
-func (v *ValueType) IsDefined() bool {
+func (v *ValueType) IsValid() bool {
 	if v == nil {
 		return false
 	}
@@ -20,7 +20,11 @@ func (v *ValueType) IsDefined() bool {
 		return true
 	}
 
-	return v.ValueFrom != nil && v.ValueFrom.IsSecretKeyRef()
+	return v.ValueFrom != nil &&
+		v.ValueFrom.SecretKeyRef != nil &&
+		v.ValueFrom.SecretKeyRef.Name != "" &&
+		v.ValueFrom.SecretKeyRef.Key != "" &&
+		v.ValueFrom.SecretKeyRef.Namespace != ""
 }
 
 type ValueFromSource struct {
@@ -28,16 +32,15 @@ type ValueFromSource struct {
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 }
 
-func (v *ValueFromSource) IsSecretKeyRef() bool {
-	return v.SecretKeyRef != nil && v.SecretKeyRef.Name != "" && v.SecretKeyRef.Key != ""
-}
-
 type SecretKeyRef struct {
 	// The name of the Secret containing the referenced value
+	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 	// The name of the Namespace containing the Secret with the referenced value.
+	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace,omitempty"`
 	// The name of the attribute of the Secret holding the referenced value.
+	// +kubebuilder:validation:Required
 	Key string `json:"key,omitempty"`
 }
 

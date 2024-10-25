@@ -86,7 +86,7 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 		return value.Value, nil
 	}
 
-	if value.ValueFrom == nil || !value.ValueFrom.IsSecretKeyRef() {
+	if value.ValueFrom == nil || value.ValueFrom.SecretKeyRef == nil {
 		return "", &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
 
