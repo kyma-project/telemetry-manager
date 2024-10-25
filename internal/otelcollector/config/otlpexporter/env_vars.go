@@ -57,7 +57,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 }
 
 func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
-	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
+	if output.Authentication != nil && output.Authentication.Basic.User.IsValid() && output.Authentication.Basic.Password.IsValid() {
 		username, err := resolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
 			return err
@@ -106,7 +106,7 @@ func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[strin
 
 func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
 	if output.TLS != nil {
-		if output.TLS.CA.IsDefined() {
+		if output.TLS.CA.IsValid() {
 			ca, err := resolveValue(ctx, c, *output.TLS.CA)
 			if err != nil {
 				return err
@@ -116,7 +116,7 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 			secretData[tlsConfigCaVariable] = ca
 		}
 
-		if output.TLS.Cert.IsDefined() && output.TLS.Key.IsDefined() {
+		if output.TLS.Cert.IsValid() && output.TLS.Key.IsValid() {
 			cert, err := resolveValue(ctx, c, *output.TLS.Cert)
 			if err != nil {
 				return err
@@ -179,7 +179,7 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 		return []byte(value.Value), nil
 	}
 
-	if value.ValueFrom.IsSecretKeyRef() {
+	if value.ValueFrom.SecretKeyRef != nil {
 		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
 	}
 
