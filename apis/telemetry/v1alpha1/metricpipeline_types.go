@@ -154,16 +154,16 @@ type MetricPipelineIstioInput struct {
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
-// MetricPipelineOutput defines the output configuration section.
-type MetricPipelineOutput struct {
-	// Defines an output using the OpenTelemetry protocol.
-	OTLP *OTLPOutput `json:"otlp"`
-}
-
 // MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
 type MetricPipelineIstioInputDiagnosticMetrics struct {
 	// If enabled, diagnostic metrics are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
+}
+
+// MetricPipelineOutput defines the output configuration section.
+type MetricPipelineOutput struct {
+	// Defines an output using the OpenTelemetry protocol.
+	OTLP *OTLPOutput `json:"otlp"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.
