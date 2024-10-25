@@ -71,7 +71,7 @@ type K8sClusterMetricsToDrop struct {
 }
 
 type K8sClusterDefaultMetricsToDrop struct {
-	// metrics allows enabling/disabling scraped metric.
+	// Disable some Container metrics by default
 	K8sContainerStorageRequest          MetricConfig `yaml:"k8s.container.storage_request"`
 	K8sContainerStorageLimit            MetricConfig `yaml:"k8s.container.storage_limit"`
 	K8sContainerEphemeralStorageRequest MetricConfig `yaml:"k8s.container.ephemeralstorage_request"`
@@ -79,7 +79,7 @@ type K8sClusterDefaultMetricsToDrop struct {
 	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts"`
 	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready"`
 	K8sNamespacePhase                   MetricConfig `yaml:"k8s.namespace.phase"`
-	// Disable HPA Metrics by default
+	// Disable HPA metrics by default
 	K8sHPACurrentReplicas MetricConfig `yaml:"k8s.hpa.current_replicas"`
 	K8sHPADesiredReplicas MetricConfig `yaml:"k8s.hpa.desired_replicas"`
 	K8sHPAMinReplicas     MetricConfig `yaml:"k8s.hpa.min_replicas"`
