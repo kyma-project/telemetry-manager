@@ -78,7 +78,8 @@ type K8sClusterDefaultMetricsToDrop struct {
 	K8sContainerEphemeralStorageLimit   MetricConfig `yaml:"k8s.container.ephemeralstorage_limit"`
 	K8sContainerRestarts                MetricConfig `yaml:"k8s.container.restarts"`
 	K8sContainerReady                   MetricConfig `yaml:"k8s.container.ready"`
-	K8sNamespacePhase                   MetricConfig `yaml:"k8s.namespace.phase"`
+	// Disable Namespace metrics by default
+	K8sNamespacePhase MetricConfig `yaml:"k8s.namespace.phase"`
 	// Disable HPA metrics by default
 	K8sHPACurrentReplicas MetricConfig `yaml:"k8s.hpa.current_replicas"`
 	K8sHPADesiredReplicas MetricConfig `yaml:"k8s.hpa.desired_replicas"`
