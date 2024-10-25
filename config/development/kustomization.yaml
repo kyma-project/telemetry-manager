@@ -24,6 +24,9 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/args/-
         value: --enable-v1beta1-log-pipelines=true
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --enable-log-pipelines-otlp=true
     target:
       kind: Deployment
       name: manager

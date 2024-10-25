@@ -17,13 +17,13 @@ type TracePipelineBuilder struct {
 	labels map[string]string
 
 	statusConditions []metav1.Condition
-	outOTLP          *telemetryv1alpha1.OtlpOutput
+	outOTLP          *telemetryv1alpha1.OTLPOutput
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
 	return &TracePipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		outOTLP: &telemetryv1alpha1.OtlpOutput{
+		outOTLP: &telemetryv1alpha1.OTLPOutput{
 			Endpoint: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
 		},
 	}
@@ -71,7 +71,7 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 		},
 		Spec: telemetryv1alpha1.TracePipelineSpec{
 			Output: telemetryv1alpha1.TracePipelineOutput{
-				Otlp: b.outOTLP,
+				OTLP: b.outOTLP,
 			},
 		},
 		Status: telemetryv1alpha1.TracePipelineStatus{

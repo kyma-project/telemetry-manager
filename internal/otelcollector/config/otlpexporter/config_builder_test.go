@@ -23,7 +23,7 @@ func TestExorterIDDefault(t *testing.T) {
 }
 
 func TestMakeConfig(t *testing.T) {
-	output := &telemetryv1alpha1.OtlpOutput{
+	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
@@ -46,7 +46,7 @@ func TestMakeConfig(t *testing.T) {
 }
 
 func TestMakeConfigTraceWithPath(t *testing.T) {
-	output := &telemetryv1alpha1.OtlpOutput{
+	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Path:     "/v1/test",
 		Protocol: "http",
@@ -65,7 +65,7 @@ func TestMakeConfigTraceWithPath(t *testing.T) {
 }
 
 func TestMakeConfigMetricWithPath(t *testing.T) {
-	output := &telemetryv1alpha1.OtlpOutput{
+	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Path:     "/v1/test",
 		Protocol: "http",
@@ -92,7 +92,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 			},
 		},
 	}
-	output := &telemetryv1alpha1.OtlpOutput{
+	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Headers:  headers,
 	}
@@ -107,10 +107,10 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
-	tls := &telemetryv1alpha1.OtlpTLS{
+	tls := &telemetryv1alpha1.OTLPTLS{
 		Insecure: true,
 	}
-	output := &telemetryv1alpha1.OtlpOutput{
+	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}
@@ -124,11 +124,11 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
-	tls := &telemetryv1alpha1.OtlpTLS{
+	tls := &telemetryv1alpha1.OTLPTLS{
 		Insecure:           false,
 		InsecureSkipVerify: true,
 	}
-	output := &telemetryv1alpha1.OtlpOutput{
+	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}
@@ -144,7 +144,7 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithmTLS(t *testing.T) {
-	tls := &telemetryv1alpha1.OtlpTLS{
+	tls := &telemetryv1alpha1.OTLPTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
 		CA: &telemetryv1alpha1.ValueType{
@@ -157,7 +157,7 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 			Value: "test client key pem",
 		},
 	}
-	output := &telemetryv1alpha1.OtlpOutput{
+	output := &telemetryv1alpha1.OTLPOutput{
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}

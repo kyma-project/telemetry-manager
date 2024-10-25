@@ -90,7 +90,7 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	}
 }
 
-func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
+func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
@@ -152,23 +152,7 @@ func makeDropRuntimeVolumeMetricsConfig() *FilterProcessor {
 	}
 }
 
-func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
-	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
-}
-
-func makeFilterByNamespacePrometheusInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
-	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourcePrometheus))
-}
-
-func makeFilterByNamespaceIstioInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
-	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceIstio))
-}
-
-func makeFilterByNamespaceOtlpInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
-	return makeFilterByNamespaceConfig(namespaceSelector, otlpInputSource())
-}
-
-func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
+func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceSelector, inputSourceCondition string) *FilterProcessor {
 	var filterExpressions []string
 
 	if len(namespaceSelector.Exclude) > 0 {

@@ -59,8 +59,8 @@ type Reconciler struct {
 	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
 
-func (r *Reconciler) SupportedOutput() logpipeline.OutputType {
-	return logpipeline.FluentBit
+func (r *Reconciler) SupportedOutput() telemetryv1alpha1.Mode {
+	return telemetryv1alpha1.FluentBit
 }
 
 func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, healthProber logpipeline.FlowHealthProber, checker logpipeline.IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
@@ -355,8 +355,13 @@ func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1al
 		return false, nil
 	}
 
+	var appInputEnabled *bool
+
 	// Treat the pipeline as non-reconcilable if the application input is explicitly disabled
-	appInputEnabled := pipeline.Spec.Input.Application.Enabled
+	if pipeline.Spec.Input.Application != nil {
+		appInputEnabled = pipeline.Spec.Input.Application.Enabled
+	}
+
 	if appInputEnabled != nil && !*appInputEnabled {
 		return false, nil
 	}
