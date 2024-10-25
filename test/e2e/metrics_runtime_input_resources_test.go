@@ -29,17 +29,17 @@ import (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
-	Context("When metric pipelines with input resources exist", Ordered, func() {
+	Context("When metric pipelines with runtime resources metrics enabled exist", Ordered, func() {
 		var (
-			mockNs = suite.IDWithSuffix("resource-metrics")
+			mockNs = suite.ID()
 
-			backendWorkloadMetricsEnabledNameA  = suite.IDWithSuffix("workload-metrics-a")
-			pipelineWorkloadMetricsEnabledNameA = suite.IDWithSuffix("workload-metrics-a")
-			backendWorkloadMetricsEnabledURLA   string
+			backendResourceMetricsEnabledNameA  = suite.IDWithSuffix("resource-metrics-a")
+			pipelineResourceMetricsEnabledNameA = suite.IDWithSuffix("resource-metrics-a")
+			backendResourceMetricsEnabledURLA   string
 
-			backendWorkloadMetricsEnabledNameB  = suite.IDWithSuffix("workload-metrics-b")
-			pipelineWorkloadMetricsEnabledNameB = suite.IDWithSuffix("workload-metrics-b")
-			backendWorkloadMetricsEnabledURLB   string
+			backendResourceMetricsEnabledNameB  = suite.IDWithSuffix("resource-metrics-b")
+			pipelineResourceMetricsEnabledNameB = suite.IDWithSuffix("resource-metrics-b")
+			backendResourceMetricsEnabledURLB   string
 
 			DeploymentName  = suite.IDWithSuffix("deployment")
 			StatefulSetName = suite.IDWithSuffix("stateful-set")
@@ -56,12 +56,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			var objs []client.Object
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-			backendWorkloadMetricsEnabledA := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendWorkloadMetricsEnabledNameA))
-			objs = append(objs, backendWorkloadMetricsEnabledA.K8sObjects()...)
-			backendWorkloadMetricsEnabledURLA = backendWorkloadMetricsEnabledA.ExportURL(proxyClient)
+			backendResourceMetricsEnabledA := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendResourceMetricsEnabledNameA))
+			objs = append(objs, backendResourceMetricsEnabledA.K8sObjects()...)
+			backendResourceMetricsEnabledURLA = backendResourceMetricsEnabledA.ExportURL(proxyClient)
 
-			pipelineWorkloadMetricsEnabledA := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineWorkloadMetricsEnabledNameA).
+			pipelineResourceMetricsEnabledA := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineResourceMetricsEnabledNameA).
 				WithRuntimeInput(true).
 				WithRuntimeInputContainerMetrics(true).
 				WithRuntimeInputPodMetrics(true).
@@ -71,16 +71,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				WithRuntimeInputStatefulSetMetrics(false).
 				WithRuntimeInputDaemonSetMetrics(false).
 				WithRuntimeInputJobMetrics(false).
-				WithOTLPOutput(testutils.OTLPEndpoint(backendWorkloadMetricsEnabledA.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backendResourceMetricsEnabledA.Endpoint())).
 				Build()
-			objs = append(objs, &pipelineWorkloadMetricsEnabledA)
+			objs = append(objs, &pipelineResourceMetricsEnabledA)
 
-			backendWorkloadMetricsEnabledB := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendWorkloadMetricsEnabledNameB))
-			objs = append(objs, backendWorkloadMetricsEnabledB.K8sObjects()...)
-			backendWorkloadMetricsEnabledURLB = backendWorkloadMetricsEnabledB.ExportURL(proxyClient)
+			backendResourceMetricsEnabledB := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendResourceMetricsEnabledNameB))
+			objs = append(objs, backendResourceMetricsEnabledB.K8sObjects()...)
+			backendResourceMetricsEnabledURLB = backendResourceMetricsEnabledB.ExportURL(proxyClient)
 
-			pipelineWorkloadMetricsEnabledB := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineWorkloadMetricsEnabledNameB).
+			pipelineResourceMetricsEnabledB := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineResourceMetricsEnabledNameB).
 				WithRuntimeInput(true).
 				WithRuntimeInputPodMetrics(false).
 				WithRuntimeInputContainerMetrics(false).
@@ -90,9 +90,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				WithRuntimeInputStatefulSetMetrics(true).
 				WithRuntimeInputDaemonSetMetrics(true).
 				WithRuntimeInputJobMetrics(true).
-				WithOTLPOutput(testutils.OTLPEndpoint(backendWorkloadMetricsEnabledB.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backendResourceMetricsEnabledB.Endpoint())).
 				Build()
-			objs = append(objs, &pipelineWorkloadMetricsEnabledB)
+			objs = append(objs, &pipelineResourceMetricsEnabledB)
 
 			metricProducer := prommetricgen.New(mockNs)
 
@@ -125,8 +125,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		It("Should have healthy pipelines", func() {
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineWorkloadMetricsEnabledNameA)
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineWorkloadMetricsEnabledNameB)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineResourceMetricsEnabledNameA)
+			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineResourceMetricsEnabledNameB)
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
@@ -138,10 +138,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		})
 
 		It("Should have metrics backends running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendWorkloadMetricsEnabledNameA, Namespace: mockNs})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendWorkloadMetricsEnabledNameB, Namespace: mockNs})
-			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendWorkloadMetricsEnabledNameA, Namespace: mockNs})
-			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendWorkloadMetricsEnabledNameB, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameA, Namespace: mockNs})
+			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendResourceMetricsEnabledNameB, Namespace: mockNs})
 
 		})
 
@@ -159,30 +159,30 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 
 		Context("Pipeline A should deliver pods, container, volume and nodes metrics", func() {
 			It("Should deliver pod metrics and resource attributes", func() {
-				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLA, runtime.PodMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLA, "k8s.pod.cpu.time", runtime.PodMetricsResourceAttributes)
+				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.PodMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "k8s.pod.cpu.time", runtime.PodMetricsResourceAttributes)
 
 				podNetworkErrorsMetric := "k8s.pod.network.errors"
-				backendContainsDesiredMetricAttributes(proxyClient, backendWorkloadMetricsEnabledURLA, podNetworkErrorsMetric, runtime.PodMetricsAttributes[podNetworkErrorsMetric])
+				backendContainsDesiredMetricAttributes(proxyClient, backendResourceMetricsEnabledURLA, podNetworkErrorsMetric, runtime.PodMetricsAttributes[podNetworkErrorsMetric])
 
 				podNetworkIOMetric := "k8s.pod.network.io"
-				backendContainsDesiredMetricAttributes(proxyClient, backendWorkloadMetricsEnabledURLA, podNetworkIOMetric, runtime.PodMetricsAttributes[podNetworkIOMetric])
+				backendContainsDesiredMetricAttributes(proxyClient, backendResourceMetricsEnabledURLA, podNetworkIOMetric, runtime.PodMetricsAttributes[podNetworkIOMetric])
 
 			})
 
 			It("Should deliver container metrics and resource attributes", func() {
-				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLA, runtime.ContainerMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLA, "container.cpu.time", runtime.ContainerMetricsResourceAttributes)
+				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.ContainerMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "container.cpu.time", runtime.ContainerMetricsResourceAttributes)
 			})
 
 			It("Should deliver volume metrics and resource attributes", func() {
-				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLA, runtime.VolumeMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLA, "k8s.volume.capacity", runtime.VolumeMetricsResourceAttributes)
+				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.VolumeMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "k8s.volume.capacity", runtime.VolumeMetricsResourceAttributes)
 			})
 
 			It("Should filter volume metrics only for PVC volumes", func() {
 				Consistently(func(g Gomega) {
-					resp, err := proxyClient.Get(backendWorkloadMetricsEnabledURLA)
+					resp, err := proxyClient.Get(backendResourceMetricsEnabledURLA)
 					g.Expect(err).NotTo(HaveOccurred())
 					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -193,40 +193,40 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			})
 
 			It("Should deliver node metrics and resource attributes", func() {
-				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLA, runtime.NodeMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLA, "k8s.node.cpu.usage", runtime.NodeMetricsResourceAttributes)
+				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.NodeMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "k8s.node.cpu.usage", runtime.NodeMetricsResourceAttributes)
 			})
 
 			It("Should have exactly metrics only for pods, containers, volumes and nodes delivered", func() {
 				exportedMetrics := slices.Concat(runtime.PodMetricsNames, runtime.ContainerMetricsNames, runtime.VolumeMetricsNames, runtime.NodeMetricsNames)
-				backendConsistsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLA, exportedMetrics)
+				backendConsistsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, exportedMetrics)
 			})
 		})
 
 		Context("Pipeline B should deliver deployment, daemonset, statefulset and job metrics", Ordered, func() {
 			It("should have metrics for deployment delivered", func() {
-				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.DeploymentMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.deployment.available", runtime.DeploymentResourceAttributes)
+				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, runtime.DeploymentMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLB, "k8s.deployment.available", runtime.DeploymentResourceAttributes)
 			})
 
 			It("should have metrics for daemonset delivered", func() {
-				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.DaemonSetMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.daemonset.current_scheduled_nodes", runtime.DaemonSetResourceAttributes)
+				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, runtime.DaemonSetMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLB, "k8s.daemonset.current_scheduled_nodes", runtime.DaemonSetResourceAttributes)
 			})
 
 			It("should have metrics for statefulset delivered", func() {
-				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.StatefulSetMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.statefulset.current_pods", runtime.StatefulSetResourceAttributes)
+				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, runtime.StatefulSetMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLB, "k8s.statefulset.current_pods", runtime.StatefulSetResourceAttributes)
 			})
 
 			It("should have metrics for job delivered", func() {
-				backendContainsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, runtime.JobsMetricsNames)
-				backendContainsDesiredResourceAttributes(proxyClient, backendWorkloadMetricsEnabledURLB, "k8s.job.active_pods", runtime.JobResourceAttributes)
+				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, runtime.JobsMetricsNames)
+				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLB, "k8s.job.active_pods", runtime.JobResourceAttributes)
 			})
 
 			It("should have exactly metrics only for deployment, daemonset, statefuleset, job delivered", func() {
 				expectedMetrics := slices.Concat(runtime.DeploymentMetricsNames, runtime.DaemonSetMetricsNames, runtime.StatefulSetMetricsNames, runtime.JobsMetricsNames)
-				backendConsistsMetricsDeliveredForResource(proxyClient, backendWorkloadMetricsEnabledURLB, expectedMetrics)
+				backendConsistsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLB, expectedMetrics)
 			})
 		})
 	})
