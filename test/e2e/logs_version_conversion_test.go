@@ -28,14 +28,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 				Name: v1Alpha1PipelineName,
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					HTTP: &telemetryv1alpha1.HTTPOutput{
+				Output: telemetryv1alpha1.LogPipelineOutput{
+					HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 						Host: telemetryv1alpha1.ValueType{
 							Value: "localhost",
 						},
 						Port: "443",
 						URI:  "/",
-						TLSConfig: telemetryv1alpha1.TLSConfig{
+						TLS: telemetryv1alpha1.LogPipelineOutputTLS{
 							Disabled: true,
 						},
 					},

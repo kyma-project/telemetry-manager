@@ -27,6 +27,19 @@ const (
 	FluentBit
 )
 
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
+func init() {
+	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
+}
+
+// +kubebuilder:object:root=true
+// LogPipelineList contains a list of LogPipeline
+type LogPipelineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []LogPipeline `json:"items"`
+}
+
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:subresource:status
@@ -36,7 +49,6 @@ const (
 // +kubebuilder:printcolumn:name="Unsupported Mode",type=boolean,JSONPath=`.status.unsupportedMode`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
-
 // LogPipeline is the Schema for the logpipelines API
 type LogPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -50,9 +62,6 @@ type LogPipeline struct {
 
 // LogPipelineSpec defines the desired state of LogPipeline
 type LogPipelineSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// Defines where to collect logs, including selector mechanisms.
 	Input   LogPipelineInput    `json:"input,omitempty"`
 	Filters []LogPipelineFilter `json:"filters,omitempty"`
@@ -67,7 +76,8 @@ type LogPipelineSpec struct {
 type LogPipelineInput struct {
 	// Configures in more detail from which containers application logs are enabled as input.
 	Runtime *LogPipelineRuntimeInput `json:"runtime,omitempty"`
-	OTLP    *OTLPInput               `json:"otlp,omitempty"`
+	// Configures an endpoint to receive logs from a OTLP source.
+	OTLP *OTLPInput `json:"otlp,omitempty"`
 }
 
 // LogPipelineRuntimeInput specifies the default type of Input that handles application logs from runtime containers. It configures in more detail from which containers logs are selected as input.
@@ -77,9 +87,9 @@ type LogPipelineRuntimeInput struct {
 	// +kubebuilder:default=true
 	Enabled *bool `json:"enabled,omitempty"`
 	// Describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
-	Namespaces LogPipelineInputNamespaces `json:"namespaces,omitempty"`
+	Namespaces LogPipelineNamespaceSelector `json:"namespaces,omitempty"`
 	// Describes whether application logs from specific containers are selected. The options are mutually exclusive.
-	Containers LogPipelineInputContainers `json:"containers,omitempty"`
+	Containers LogPipelineContainerSelector `json:"containers,omitempty"`
 	// Defines whether to keep all Kubernetes annotations. The default is `false`.
 	KeepAnnotations bool `json:"keepAnnotations,omitempty"`
 	// Defines whether to drop all Kubernetes labels. The default is `false`.
@@ -90,8 +100,8 @@ type LogPipelineRuntimeInput struct {
 	KeepOriginalBody *bool `json:"keepOriginalBody,omitempty"`
 }
 
-// LogPipelineInputNamespaces describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
-type LogPipelineInputNamespaces struct {
+// LogPipelineNamespaceSelector describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
+type LogPipelineNamespaceSelector struct {
 	// Include only the container logs of the specified Namespace names.
 	Include []string `json:"include,omitempty"`
 	// Exclude the container logs of the specified Namespace names.
@@ -100,8 +110,8 @@ type LogPipelineInputNamespaces struct {
 	System bool `json:"system,omitempty"`
 }
 
-// LogPipelineInputContainers describes whether application logs from specific containers are selected. The options are mutually exclusive.
-type LogPipelineInputContainers struct {
+// LogPipelineContainerSelector describes whether application logs from specific containers are selected. The options are mutually exclusive.
+type LogPipelineContainerSelector struct {
 	// Specifies to include only the container logs with the specified container names.
 	Include []string `json:"include,omitempty"`
 	// Specifies to exclude only the container logs with the specified container names.
@@ -150,20 +160,6 @@ type LogPipelineHTTPOutput struct {
 	Dedot bool `json:"dedot,omitempty"`
 }
 
-// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
-type OutputTLS struct {
-	// Indicates if TLS is disabled or enabled. Default is `false`.
-	Disabled bool `json:"disabled,omitempty"`
-	// If `true`, the validation of certificates is skipped. Default is `false`.
-	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
-	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
-	CA *ValueType `json:"ca,omitempty"`
-	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
-	Cert *ValueType `json:"cert,omitempty"`
-	// Defines the client key to use when using TLS. The key must be provided in PEM format.
-	Key *ValueType `json:"key,omitempty"`
-}
-
 // Provides file content to be consumed by a LogPipeline configuration
 type LogPipelineFileMount struct {
 	Name    string `json:"name,omitempty"`
@@ -185,20 +181,7 @@ type LogPipelineStatus struct {
 	UnsupportedMode *bool `json:"unsupportedMode,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-// LogPipelineList contains a list of LogPipeline
-type LogPipelineList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LogPipeline `json:"items"`
-}
-
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
-func init() {
-	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
-}
-
-func (i *LogPipelineInput) IsDefined() bool {
+func (i *LogPipelineInput) IsValid() bool {
 	return i != nil
 }
 
@@ -207,7 +190,7 @@ func (o *LogPipelineOutput) IsCustomDefined() bool {
 }
 
 func (o *LogPipelineOutput) IsHTTPDefined() bool {
-	return o.HTTP != nil && o.HTTP.Host.IsDefined()
+	return o.HTTP != nil && o.HTTP.Host.IsValid()
 }
 
 func (o *LogPipelineOutput) IsAnyDefined() bool {

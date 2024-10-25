@@ -11,7 +11,7 @@ type ValueType struct {
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
 
-func (v *ValueType) IsDefined() bool {
+func (v *ValueType) IsValid() bool {
 	if v == nil {
 		return false
 	}
@@ -20,7 +20,11 @@ func (v *ValueType) IsDefined() bool {
 		return true
 	}
 
-	return v.ValueFrom != nil && v.ValueFrom.IsSecretKeyRef()
+	return v.ValueFrom != nil &&
+		v.ValueFrom.SecretKeyRef != nil &&
+		v.ValueFrom.SecretKeyRef.Name != "" &&
+		v.ValueFrom.SecretKeyRef.Key != "" &&
+		v.ValueFrom.SecretKeyRef.Namespace != ""
 }
 
 type ValueFromSource struct {
@@ -28,30 +32,20 @@ type ValueFromSource struct {
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 }
 
-func (v *ValueFromSource) IsSecretKeyRef() bool {
-	return v.SecretKeyRef != nil && v.SecretKeyRef.Name != "" && v.SecretKeyRef.Key != ""
-}
-
 type SecretKeyRef struct {
 	// The name of the Secret containing the referenced value
+	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 	// The name of the Namespace containing the Secret with the referenced value.
+	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace,omitempty"`
 	// The name of the attribute of the Secret holding the referenced value.
+	// +kubebuilder:validation:Required
 	Key string `json:"key,omitempty"`
 }
 
 func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
-}
-
-type Header struct {
-	// Defines the header name.
-	Name string `json:"name"`
-	// Defines the header value.
-	ValueType `json:",inline"`
-	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
-	Prefix string `json:"prefix,omitempty"`
 }
 
 type OTLPProtocol string
@@ -95,8 +89,27 @@ type BasicAuthOptions struct {
 	Password ValueType `json:"password"`
 }
 
-func (b *BasicAuthOptions) IsDefined() bool {
-	return b.User.IsDefined() && b.Password.IsDefined()
+type Header struct {
+	// Defines the header name.
+	Name string `json:"name"`
+	// Defines the header value.
+	ValueType `json:",inline"`
+	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
+	Prefix string `json:"prefix,omitempty"`
+}
+
+// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
+type OutputTLS struct {
+	// Indicates if TLS is disabled or enabled. Default is `false`.
+	Disabled bool `json:"disabled,omitempty"`
+	// If `true`, the validation of certificates is skipped. Default is `false`.
+	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
+	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
+	CA *ValueType `json:"ca,omitempty"`
+	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
+	Cert *ValueType `json:"cert,omitempty"`
+	// Defines the client key to use when using TLS. The key must be provided in PEM format.
+	Key *ValueType `json:"key,omitempty"`
 }
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
