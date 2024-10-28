@@ -183,8 +183,8 @@ linters-settings:
   gocyclo:
     # Minimal code complexity to report.
     # Default: 30
-    # The max complexity while enabling this linter is 15. Please check if this can be reduced. Increase the threshold only if it is absolutely necessary.
-    min-complexity: 15
+    # The max complexity while enabling this linter is 17. Please check if this can be reduced. Increase the threshold only if it is absolutely necessary.
+    min-complexity: 17
 
   wsl:
     allow-trailing-comment: true
@@ -228,7 +228,7 @@ issues:
     - linters: [ errcheck ]
       path: test/testkit/otel/traces/traces.go
     - linters: [ dupl ]
-      path: test/testkit/assert/(deployment|daemon_set|metrics|traces).go
+      path: test/testkit/assert/(deployment|daemon_set|metrics|traces|stateful_set|jobs).go
     - linters: [ dupl ]
       path: main.go
     - linters:

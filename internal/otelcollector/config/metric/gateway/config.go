@@ -60,6 +60,10 @@ type Processors struct {
 	DropRuntimeContainerMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-container-metrics,omitempty"`
 	DropRuntimeNodeMetrics                       *FilterProcessor               `yaml:"filter/drop-runtime-node-metrics,omitempty"`
 	DropRuntimeVolumeMetrics                     *FilterProcessor               `yaml:"filter/drop-runtime-volume-metrics,omitempty"`
+	DropRuntimeDeploymentMetrics                 *FilterProcessor               `yaml:"filter/drop-runtime-deployment-metrics,omitempty"`
+	DropRuntimeStatefulSetMetrics                *FilterProcessor               `yaml:"filter/drop-runtime-statefulset-metrics,omitempty"`
+	DropRuntimeDaemonSetMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-daemonset-metrics,omitempty"`
+	DropRuntimeJobMetrics                        *FilterProcessor               `yaml:"filter/drop-runtime-job-metrics,omitempty"`
 	ResolveServiceName                           *metric.TransformProcessor     `yaml:"transform/resolve-service-name,omitempty"`
 	DropKymaAttributes                           *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 	SetInstrumentationScopeKyma                  *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
