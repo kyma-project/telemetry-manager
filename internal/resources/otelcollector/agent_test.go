@@ -205,8 +205,9 @@ func TestApplyAgentResources(t *testing.T) {
 			"app.kubernetes.io/name": agentName,
 		}, ds.Spec.Selector.MatchLabels, "must have expected daemonset selector labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":  agentName,
-			"sidecar.istio.io/inject": "true",
+			"app.kubernetes.io/name":                  agentName,
+			"sidecar.istio.io/inject":                 "true",
+			"telemetry.kyma-project.io/metric-scrape": "true",
 		}, ds.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
 		// annotations
