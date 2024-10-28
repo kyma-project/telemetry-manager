@@ -26,7 +26,6 @@ func init() {
 }
 
 // +kubebuilder:object:root=true
-
 // MetricPipelineList contains a list of MetricPipeline.
 type MetricPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -90,7 +89,7 @@ type MetricPipelinePrometheusInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInput defines the runtime scraping section.
@@ -103,7 +102,7 @@ type MetricPipelineRuntimeInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Describes the Kubernetes resources for which runtime metrics are scraped.
 	// +optional
-	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}}
+	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}, daemonset: {enabled: false}, deployment: {enabled: false}, statefulset: {enabled: false}, job: {enabled: false}}
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
 }
 
@@ -125,6 +124,22 @@ type MetricPipelineRuntimeInputResources struct {
 	// +optional
 	// +kubebuilder:default={enabled: false}
 	Volume *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"volume,omitempty"`
+	// Configures DaemonSet runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	DaemonSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"daemonset,omitempty"`
+	// Configures Deployment runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Deployment *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"deployment,omitempty"`
+	// Configures StatefulSet runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	StatefulSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"statefulset,omitempty"`
+	// Configures Job runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Job *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"job,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResourceEnabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
@@ -152,19 +167,19 @@ type MetricPipelineIstioInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+}
+
+// MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
+type MetricPipelineIstioInputDiagnosticMetrics struct {
+	// If enabled, diagnostic metrics are scraped. The default is `false`.
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelemetry protocol.
 	OTLP *OTLPOutput `json:"otlp"`
-}
-
-// DiagnosticMetrics defines the diagnostic metrics configuration section
-type DiagnosticMetrics struct {
-	// If enabled, diagnostic metrics are scraped. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.

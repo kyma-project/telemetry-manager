@@ -77,25 +77,6 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Len(t, collectorConfig.Service.Pipelines, 0)
 		})
 
-		t.Run("runtime input enabled with default resources metrics enabled ", func(t *testing.T) {
-			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-			}, BuildOptions{})
-
-			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
-			require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertSkipEnrichmentAttribute)
-			require.Nil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
-			require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
-
-			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
-			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
-		})
-
 		t.Run("runtime input enabled with volume metrics enabled ", func(t *testing.T) {
 			collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputVolumeMetrics(true).Build(),
@@ -111,8 +92,57 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
+		})
+
+		t.Run("runtime enabled with different resources", func(t *testing.T) {
+			tt := []struct {
+				name     string
+				pipeline telemetryv1alpha1.MetricPipeline
+			}{
+				{
+					name:     "runtime enabled with default metrics",
+					pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
+				}, {
+					name:     "runtime enabled with node metrics",
+					pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputNodeMetrics(true).Build(),
+				}, {
+					name:     "runtime enabled with statefulset metrics",
+					pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputStatefulSetMetrics(true).Build(),
+				}, {
+					name:     "runtime enabled with daemonset metrics",
+					pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputDaemonSetMetrics(true).Build(),
+				}, {
+					name:     "runtime enabled with deployment metrics",
+					pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputDeploymentMetrics(true).Build(),
+				}, {
+					name:     "runtime enabled with job metrics",
+					pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithRuntimeInputJobMetrics(true).Build(),
+				},
+			}
+			for _, tc := range tt {
+				expectedReceiverIDs := []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}
+				expectedProcessorIDs := []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}
+				expectedExporterIDs := []string{"otlp"}
+
+				t.Run(tc.name, func(t *testing.T) {
+					collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{tc.pipeline}, BuildOptions{})
+
+					require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
+					require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeRuntime)
+					require.NotNil(t, collectorConfig.Processors.InsertSkipEnrichmentAttribute)
+					require.Nil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
+					require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
+					require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+
+					require.Len(t, collectorConfig.Service.Pipelines, 1)
+					require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
+					require.Equal(t, expectedReceiverIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
+					require.Equal(t, expectedProcessorIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+					require.Equal(t, expectedExporterIDs, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
+				})
+			}
 		})
 
 		t.Run("prometheus input enabled", func(t *testing.T) {
@@ -162,7 +192,7 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Len(t, collectorConfig.Service.Pipelines, 3)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
 			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
@@ -204,7 +234,7 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
 
@@ -222,7 +252,7 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
 
@@ -274,7 +304,7 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Len(t, collectorConfig.Service.Pipelines, 2)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
 			require.Equal(t, []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "filter/drop-k8s-cluster-metrics", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
+			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
 			require.Equal(t, []string{"prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)

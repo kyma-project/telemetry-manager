@@ -165,7 +165,7 @@ func validateCustomFilter(content string) error {
 
 func (lp *LogPipeline) validateInput() error {
 	input := lp.Spec.Input
-	if !input.IsDefined() {
+	if !input.IsValid() {
 		return nil
 	}
 
