@@ -120,25 +120,16 @@ func TestProcessors(t *testing.T) {
 				{
 					Context:    "metric",
 					Statements: []string{"set(resource.attributes[\"io.kyma-project.telemetry.skip_enrichment\"], \"true\")"},
-					Conditions: []string{"IsMatch(name, \"^k8s.node.*\")"},
+					Conditions: []string{
+						"IsMatch(name, \"^k8s.node.*\")",
+						"IsMatch(name, \"^k8s.statefulset.*\")",
+						"IsMatch(name, \"^k8s.daemonset.*\")",
+						"IsMatch(name, \"^k8s.deployment.*\")",
+						"IsMatch(name, \"^k8s.job.*\")"},
 				},
 			},
 		}
 		require.Equal(t, expectedInsertSkipEnrichmentAttributeProcessor, *collectorConfig.Processors.InsertSkipEnrichmentAttribute)
-	})
-
-	t.Run("k8s cluster receiver filter metrics", func(t *testing.T) {
-		k8sClusterMetricsDrop := "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"" +
-			" and IsMatch(name, \"^k8s.(deployment|cronjob|daemonset|hpa|job|replicaset|resource_quota|statefulset).*\")"
-
-		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-		}, BuildOptions{})
-
-		dropK8sClusterMetrics := collectorConfig.Processors.DropK8sClusterMetrics
-		require.NotNil(t, dropK8sClusterMetrics)
-		require.Len(t, dropK8sClusterMetrics.Metrics.Metric, 1)
-		require.Equal(t, k8sClusterMetricsDrop, dropK8sClusterMetrics.Metrics.Metric[0])
 	})
 
 	t.Run("drop non-PVC volumes metrics processor", func(t *testing.T) {

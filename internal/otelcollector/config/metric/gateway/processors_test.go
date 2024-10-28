@@ -371,6 +371,98 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, expectedDropRuntimeVolumeMetricsProcessor, *collectorConfig.Processors.DropRuntimeVolumeMetrics)
 	})
 
+	t.Run("runtime deployment metrics filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputDeploymentMetrics(false).
+					Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		expectedDropRuntimeDeploymentMetricsProcessor := FilterProcessor{
+			Metrics: FilterProcessorMetrics{
+				Metric: []string{
+					`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.deployment.*")`,
+				},
+			},
+		}
+		require.Equal(t, expectedDropRuntimeDeploymentMetricsProcessor, *collectorConfig.Processors.DropRuntimeDeploymentMetrics)
+	})
+
+	t.Run("runtime statefulset metrics filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputStatefulSetMetrics(false).
+					Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		expectedDropRuntimeStateFulSetMetricsProcessor := FilterProcessor{
+			Metrics: FilterProcessorMetrics{
+				Metric: []string{
+					`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.statefulset.*")`,
+				},
+			},
+		}
+		require.Equal(t, expectedDropRuntimeStateFulSetMetricsProcessor, *collectorConfig.Processors.DropRuntimeStatefulSetMetrics)
+	})
+
+	t.Run("runtime daemonset metrics filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputDaemonSetMetrics(false).
+					Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		expectedDropRuntimeDaemonSetMetricsProcessor := FilterProcessor{
+			Metrics: FilterProcessorMetrics{
+				Metric: []string{
+					`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.daemonset.*")`,
+				},
+			},
+		}
+		require.Equal(t, expectedDropRuntimeDaemonSetMetricsProcessor, *collectorConfig.Processors.DropRuntimeDaemonSetMetrics)
+	})
+
+	t.Run("runtime job metrics filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputJobMetrics(false).
+					Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		expectedDropRuntimeJobMetricsProcessor := FilterProcessor{
+			Metrics: FilterProcessorMetrics{
+				Metric: []string{
+					`instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.job.*")`,
+				},
+			},
+		}
+		require.Equal(t, expectedDropRuntimeJobMetricsProcessor, *collectorConfig.Processors.DropRuntimeJobMetrics)
+	})
+
 	t.Run("instrumentation scope transform processor for kymastats receiver", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
