@@ -134,6 +134,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 
 	Context("When all components are deployed", func() {
 		BeforeAll(func() {
+			format.MaxLength = 0 // Gomega should not truncate to have all logs in the output
+
 			var k8sObjects []client.Object
 			k8sObjects = append(k8sObjects, kitk8s.NewNamespace(namespace).K8sObject())
 			k8sObjects = append(k8sObjects, makeResourcesTracePipeline(traceBackendName)...)
