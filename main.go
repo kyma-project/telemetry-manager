@@ -99,8 +99,12 @@ const (
 	metricOTLPServiceName     = "telemetry-otlp-metrics"
 	selfMonitorName           = "telemetry-self-monitor"
 	traceOTLPServiceName      = "telemetry-otlp-traces"
-	webhookServerPort         = 9443
 	webhookServiceName        = "telemetry-manager-webhook"
+
+	healthProbePort = 8081
+	metricsPort     = 8080
+	pprofPort       = 6060
+	webhookPort     = 9443
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -238,14 +242,14 @@ func run() error {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
-		Metrics:                 metricsserver.Options{BindAddress: ":8080"},
-		HealthProbeBindAddress:  ":8081",
-		PprofBindAddress:        ":6060",
+		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
+		HealthProbeBindAddress:  fmt.Sprintf(":%d", healthProbePort),
+		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
 		LeaderElection:          true,
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
 		WebhookServer: webhook.NewServer(webhook.Options{
-			Port:    webhookServerPort,
+			Port:    webhookPort,
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
