@@ -273,6 +273,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 					HaveFlatLogs(Not(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-")),
 						HaveLevel(MatchRegexp(logLevelsRegexp)),
+						HaveLogBody(Not( // whitelist possible (flaky/expected) errors
+							Or(
+								ContainSubstring("{s: \"EOF\"}"),
+							),
+						)),
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
