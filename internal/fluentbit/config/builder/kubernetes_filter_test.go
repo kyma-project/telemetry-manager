@@ -27,8 +27,8 @@ func TestCreateKubernetesFilterKeepAnnotations(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{
-				Application: &telemetryv1alpha1.ApplicationInput{
+			Input: telemetryv1alpha1.LogPipelineInput{
+				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 					KeepAnnotations: true,
 				}}}}
 
@@ -53,8 +53,8 @@ func TestCreateKubernetesFilterDropLabels(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{
-				Application: &telemetryv1alpha1.ApplicationInput{
+			Input: telemetryv1alpha1.LogPipelineInput{
+				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 					DropLabels: true,
 				}}}}
 
@@ -79,8 +79,8 @@ func TestCreateKubernetesFilterKeepOriginalBodyTrue(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{
-				Application: &telemetryv1alpha1.ApplicationInput{
+			Input: telemetryv1alpha1.LogPipelineInput{
+				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 					KeepOriginalBody: ptr.To(true),
 				}}}}
 
@@ -105,8 +105,8 @@ func TestCreateKubernetesFilterKeepOriginalBodyFalse(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{
-				Application: &telemetryv1alpha1.ApplicationInput{
+			Input: telemetryv1alpha1.LogPipelineInput{
+				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 					KeepOriginalBody: ptr.To(false),
 				}}}}
 

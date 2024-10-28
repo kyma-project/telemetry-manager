@@ -17,15 +17,15 @@ func TestConvertTo(t *testing.T) {
 			Name: "log-pipeline-test",
 		},
 		Spec: LogPipelineSpec{
-			Input: Input{
-				Application: &ApplicationInput{
+			Input: LogPipelineInput{
+				Application: &LogPipelineApplicationInput{
 					Enabled: ptr.To(true),
-					Namespaces: InputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						Include: []string{"default", "kube-system"},
 						Exclude: []string{"kube-public"},
 						System:  true,
 					},
-					Containers: InputContainers{
+					Containers: LogPipelineContainerSelector{
 						Include: []string{"nginx", "app"},
 						Exclude: []string{"sidecar"},
 					},
@@ -41,15 +41,15 @@ func TestConvertTo(t *testing.T) {
 					},
 				},
 			},
-			Files: []FileMount{
+			Files: []LogPipelineFileMount{
 				{Name: "file1", Content: "file1-content"},
 			},
-			Filters: []Filter{
+			Filters: []LogPipelineFilter{
 				{Custom: "name stdout"},
 			},
-			Output: Output{
+			Output: LogPipelineOutput{
 				Custom: "custom-output",
-				HTTP: &HTTPOutput{
+				HTTP: &LogPipelineHTTPOutput{
 					Host: ValueType{
 						Value: "http://localhost",
 					},
@@ -69,7 +69,7 @@ func TestConvertTo(t *testing.T) {
 					Port:     "8080",
 					Compress: "on",
 					Format:   "json",
-					TLSConfig: TLSConfig{
+					TLS: LogPipelineOutputTLS{
 						SkipCertificateValidation: true,
 						CA: &ValueType{
 							Value: "ca",
@@ -83,8 +83,8 @@ func TestConvertTo(t *testing.T) {
 					},
 					Dedot: true,
 				},
-				Otlp: &OtlpOutput{
-					Protocol: OtlpProtocolGRPC,
+				OTLP: &OTLPOutput{
+					Protocol: OTLPProtocolGRPC,
 					Endpoint: ValueType{
 						Value: "localhost:4317",
 					},
@@ -115,7 +115,7 @@ func TestConvertTo(t *testing.T) {
 							Prefix: "prefix2",
 						},
 					},
-					TLS: &OtlpTLS{
+					TLS: &OTLPTLS{
 						Insecure:           true,
 						InsecureSkipVerify: true,
 						CA: &ValueType{
@@ -166,12 +166,12 @@ func TestConvertFrom(t *testing.T) {
 			Input: telemetryv1beta1.LogPipelineInput{
 				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 					Enabled: ptr.To(true),
-					Namespaces: telemetryv1beta1.LogPipelineInputNamespaces{
+					Namespaces: telemetryv1beta1.LogPipelineNamespaceSelector{
 						Include: []string{"default", "kube-system"},
 						Exclude: []string{"kube-public"},
 						System:  true,
 					},
-					Containers: telemetryv1beta1.LogPipelineInputContainers{
+					Containers: telemetryv1beta1.LogPipelineContainerSelector{
 						Include: []string{"nginx", "app"},
 						Exclude: []string{"sidecar"},
 					},
@@ -332,12 +332,12 @@ func requireLogPipelinesEquivalent(t *testing.T, x *LogPipeline, y *telemetryv1b
 	require.Equal(t, xHTTP.Port, yHTTP.Port, "HTTP port mismatch")
 	require.Equal(t, xHTTP.Compress, yHTTP.Compress, "HTTP compress mismatch")
 	require.Equal(t, xHTTP.Format, yHTTP.Format, "HTTP format mismatch")
-	require.Equal(t, xHTTP.TLSConfig.SkipCertificateValidation, yHTTP.TLSConfig.SkipCertificateValidation, "HTTP TLS skip certificate validation mismatch")
-	require.Equal(t, xHTTP.TLSConfig.CA.Value, yHTTP.TLSConfig.CA.Value, "HTTP TLS CA mismatch")
-	require.Equal(t, xHTTP.TLSConfig.Cert.Value, yHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
-	require.Equal(t, xHTTP.TLSConfig.Key.Value, yHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
+	require.Equal(t, xHTTP.TLS.SkipCertificateValidation, yHTTP.TLSConfig.SkipCertificateValidation, "HTTP TLS skip certificate validation mismatch")
+	require.Equal(t, xHTTP.TLS.CA.Value, yHTTP.TLSConfig.CA.Value, "HTTP TLS CA mismatch")
+	require.Equal(t, xHTTP.TLS.Cert.Value, yHTTP.TLSConfig.Cert.Value, "HTTP TLS cert mismatch")
+	require.Equal(t, xHTTP.TLS.Key.Value, yHTTP.TLSConfig.Key.Value, "HTTP TLS key mismatch")
 
-	xOTLP := x.Spec.Output.Otlp
+	xOTLP := x.Spec.Output.OTLP
 	yOTLP := y.Spec.Output.OTLP
 
 	require.NotNil(t, xOTLP, "expected OTLP output")

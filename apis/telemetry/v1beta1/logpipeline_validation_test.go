@@ -198,10 +198,10 @@ func TestValidateWithValidInputIncludes(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Input: LogPipelineInput{
 				Runtime: &LogPipelineRuntimeInput{
-					Namespaces: LogPipelineInputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						Include: []string{"namespace-1", "namespace-2"},
 					},
-					Containers: LogPipelineInputContainers{
+					Containers: LogPipelineContainerSelector{
 						Include: []string{"container-1"},
 					},
 				},
@@ -217,10 +217,10 @@ func TestValidateWithValidInputExcludes(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Input: LogPipelineInput{
 				Runtime: &LogPipelineRuntimeInput{
-					Namespaces: LogPipelineInputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						Exclude: []string{"namespace-1", "namespace-2"},
 					},
-					Containers: LogPipelineInputContainers{
+					Containers: LogPipelineContainerSelector{
 						Exclude: []string{"container-1"},
 					},
 				},
@@ -237,10 +237,10 @@ func TestValidateWithValidInputIncludeContainersSystemFlag(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Input: LogPipelineInput{
 				Runtime: &LogPipelineRuntimeInput{
-					Namespaces: LogPipelineInputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						System: true,
 					},
-					Containers: LogPipelineInputContainers{
+					Containers: LogPipelineContainerSelector{
 						Include: []string{"container-1"},
 					},
 				},
@@ -257,10 +257,10 @@ func TestValidateWithValidInputExcludeContainersSystemFlag(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Input: LogPipelineInput{
 				Runtime: &LogPipelineRuntimeInput{
-					Namespaces: LogPipelineInputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						System: true,
 					},
-					Containers: LogPipelineInputContainers{
+					Containers: LogPipelineContainerSelector{
 						Exclude: []string{"container-1"},
 					},
 				},
@@ -277,7 +277,7 @@ func TestValidateWithInvalidNamespaceSelectors(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Input: LogPipelineInput{
 				Runtime: &LogPipelineRuntimeInput{
-					Namespaces: LogPipelineInputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						Include: []string{"namespace-1", "namespace-2"},
 						Exclude: []string{"namespace-3"},
 					},
@@ -295,7 +295,7 @@ func TestValidateWithInvalidIncludeSystemFlag(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Input: LogPipelineInput{
 				Runtime: &LogPipelineRuntimeInput{
-					Namespaces: LogPipelineInputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						Include: []string{"namespace-1", "namespace-2"},
 						System:  true,
 					},
@@ -313,7 +313,7 @@ func TestValidateWithInvalidExcludeSystemFlag(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Input: LogPipelineInput{
 				Runtime: &LogPipelineRuntimeInput{
-					Namespaces: LogPipelineInputNamespaces{
+					Namespaces: LogPipelineNamespaceSelector{
 						Exclude: []string{"namespace-3"},
 						System:  true,
 					},
@@ -331,7 +331,7 @@ func TestValidateWithInvalidContainerSelectors(t *testing.T) {
 		Spec: LogPipelineSpec{
 			Input: LogPipelineInput{
 				Runtime: &LogPipelineRuntimeInput{
-					Containers: LogPipelineInputContainers{
+					Containers: LogPipelineContainerSelector{
 						Include: []string{"container-1", "container-2"},
 						Exclude: []string{"container-3"},
 					},

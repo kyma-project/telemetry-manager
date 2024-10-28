@@ -32,8 +32,8 @@ func TestGetOutputType(t *testing.T) {
 			args: args{
 				&telemetryv1alpha1.LogPipeline{
 					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.Output{
-							Otlp: &telemetryv1alpha1.OtlpOutput{},
+						Output: telemetryv1alpha1.LogPipelineOutput{
+							OTLP: &telemetryv1alpha1.OTLPOutput{},
 						},
 					},
 				},
@@ -46,8 +46,8 @@ func TestGetOutputType(t *testing.T) {
 			args: args{
 				&telemetryv1alpha1.LogPipeline{
 					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.Output{
-							HTTP: &telemetryv1alpha1.HTTPOutput{},
+						Output: telemetryv1alpha1.LogPipelineOutput{
+							HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{},
 						},
 					},
 				},
@@ -60,7 +60,7 @@ func TestGetOutputType(t *testing.T) {
 			args: args{
 				&telemetryv1alpha1.LogPipeline{
 					Spec: telemetryv1alpha1.LogPipelineSpec{
-						Output: telemetryv1alpha1.Output{
+						Output: telemetryv1alpha1.LogPipelineOutput{
 							Custom: "custom",
 						},
 					},

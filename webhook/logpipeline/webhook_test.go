@@ -108,8 +108,8 @@ func TestHandle(t *testing.T) {
 	t.Run("should validate OTLP input based on output", func(t *testing.T) {
 		type args struct {
 			name    string
-			output  *telemetryv1alpha1.Output
-			input   *telemetryv1alpha1.Input
+			output  *telemetryv1alpha1.LogPipelineOutput
+			input   *telemetryv1alpha1.LogPipelineInput
 			allowed bool
 			message string
 		}
@@ -117,38 +117,38 @@ func TestHandle(t *testing.T) {
 		tests := []args{
 			{
 				name: "otlp-input-and-output",
-				output: &telemetryv1alpha1.Output{
+				output: &telemetryv1alpha1.LogPipelineOutput{
 					Custom: "",
 					HTTP:   nil,
-					Otlp: &telemetryv1alpha1.OtlpOutput{
+					OTLP: &telemetryv1alpha1.OTLPOutput{
 						Protocol: "grpc",
 						Endpoint: telemetryv1alpha1.ValueType{Value: ""},
-						TLS: &telemetryv1alpha1.OtlpTLS{
+						TLS: &telemetryv1alpha1.OTLPTLS{
 							Insecure: true,
 						},
 					},
 				},
-				input: &telemetryv1alpha1.Input{
+				input: &telemetryv1alpha1.LogPipelineInput{
 					OTLP: &telemetryv1alpha1.OTLPInput{},
 				},
 				allowed: true,
 			},
 			{
 				name: "otlp-input-and-fluentbit-output",
-				output: &telemetryv1alpha1.Output{
+				output: &telemetryv1alpha1.LogPipelineOutput{
 					Custom: "",
-					HTTP: &telemetryv1alpha1.HTTPOutput{
+					HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 						Host:   telemetryv1alpha1.ValueType{Value: "127.0.0.1"},
 						Port:   "8080",
 						URI:    "/",
 						Format: "json",
-						TLSConfig: telemetryv1alpha1.TLSConfig{
+						TLS: telemetryv1alpha1.LogPipelineOutputTLS{
 							Disabled:                  true,
 							SkipCertificateValidation: true,
 						},
 					},
 				},
-				input: &telemetryv1alpha1.Input{
+				input: &telemetryv1alpha1.LogPipelineInput{
 					OTLP: &telemetryv1alpha1.OTLPInput{},
 				},
 				allowed: false,

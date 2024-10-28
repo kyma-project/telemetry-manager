@@ -32,17 +32,17 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 		return err
 	}
 
-	if pipeline.Spec.Output.Otlp != nil {
-		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.Otlp.Endpoint, pipeline.Spec.Output.Otlp.Protocol); err != nil {
+	if pipeline.Spec.Output.OTLP != nil {
+		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.OTLP.Endpoint, pipeline.Spec.Output.OTLP.Protocol); err != nil {
 			return err
 		}
 	}
 
 	if tlsValidationRequired(pipeline) {
 		tlsConfig := tlscert.TLSBundle{
-			Cert: pipeline.Spec.Output.Otlp.TLS.Cert,
-			Key:  pipeline.Spec.Output.Otlp.TLS.Key,
-			CA:   pipeline.Spec.Output.Otlp.TLS.CA,
+			Cert: pipeline.Spec.Output.OTLP.TLS.Cert,
+			Key:  pipeline.Spec.Output.OTLP.TLS.Key,
+			CA:   pipeline.Spec.Output.OTLP.TLS.CA,
 		}
 
 		if err := v.TLSCertValidator.Validate(ctx, tlsConfig); err != nil {
@@ -58,7 +58,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 }
 
 func tlsValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	otlp := pipeline.Spec.Output.Otlp
+	otlp := pipeline.Spec.Output.OTLP
 	if otlp == nil {
 		return false
 	}

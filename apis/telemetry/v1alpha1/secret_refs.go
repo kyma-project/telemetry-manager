@@ -4,7 +4,7 @@ func (lp *LogPipeline) GetSecretRefs() []SecretKeyRef {
 	var refs []SecretKeyRef
 
 	for _, v := range lp.Spec.Variables {
-		if v.ValueFrom.IsSecretKeyRef() {
+		if v.ValueFrom.SecretKeyRef != nil {
 			refs = append(refs, *v.ValueFrom.SecretKeyRef)
 		}
 	}
@@ -20,7 +20,7 @@ func (lp *LogPipeline) GetEnvSecretRefs() []SecretKeyRef {
 	var refs []SecretKeyRef
 
 	output := lp.Spec.Output
-	if output.IsHTTPDefined() {
+	if output.HTTP != nil {
 		refs = appendIfSecretRef(refs, output.HTTP.Host)
 		refs = appendIfSecretRef(refs, output.HTTP.User)
 		refs = appendIfSecretRef(refs, output.HTTP.Password)
@@ -33,8 +33,8 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 	var refs []SecretKeyRef
 
 	output := lp.Spec.Output
-	if output.IsHTTPDefined() {
-		tlsConfig := output.HTTP.TLSConfig
+	if output.HTTP != nil {
+		tlsConfig := output.HTTP.TLS
 		if tlsConfig.CA != nil {
 			refs = appendIfSecretRef(refs, *tlsConfig.CA)
 		}
@@ -52,19 +52,19 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 }
 
 func (tp *TracePipeline) GetSecretRefs() []SecretKeyRef {
-	return getRefsInOtlpOutput(tp.Spec.Output.Otlp)
+	return getRefsInOTLPOutput(tp.Spec.Output.OTLP)
 }
 
 func (mp *MetricPipeline) GetSecretRefs() []SecretKeyRef {
-	return getRefsInOtlpOutput(mp.Spec.Output.Otlp)
+	return getRefsInOTLPOutput(mp.Spec.Output.OTLP)
 }
 
-func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
+func getRefsInOTLPOutput(otlpOut *OTLPOutput) []SecretKeyRef {
 	var refs []SecretKeyRef
 
 	refs = appendIfSecretRef(refs, otlpOut.Endpoint)
 
-	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic.IsDefined() {
+	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic != nil {
 		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.User)
 		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.Password)
 	}
@@ -91,7 +91,7 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
 }
 
 func appendIfSecretRef(secretKeyRefs []SecretKeyRef, valueType ValueType) []SecretKeyRef {
-	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
+	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
 		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
 	}
 

@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			WithName(missingCaPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(&telemetryv1alpha1.OtlpTLS{
+				testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
 					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
 					Key:  &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
 				}),
@@ -60,7 +60,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			WithName(missingCertPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(&telemetryv1alpha1.OtlpTLS{
+				testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
 					CA:  &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 					Key: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
 				}),
@@ -71,7 +71,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			WithName(missingKeyPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(&telemetryv1alpha1.OtlpTLS{
+				testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
 					CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
 				}),
@@ -82,7 +82,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			WithName(missingAllPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(&telemetryv1alpha1.OtlpTLS{
+				testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
 					Insecure:           true,
 					InsecureSkipVerify: true,
 				}),
@@ -93,7 +93,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			WithName(missingAllButCaPipelineName).
 			WithOTLPOutput(
 				testutils.OTLPEndpoint(backend.Endpoint()),
-				testutils.OTLPClientTLS(&telemetryv1alpha1.OtlpTLS{
+				testutils.OTLPClientTLS(&telemetryv1alpha1.OTLPTLS{
 					CA: &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 				}),
 			).

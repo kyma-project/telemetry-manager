@@ -27,11 +27,11 @@ var testScenarios = []struct {
 	name     string
 	endpoint string
 
-	errOtlpGRPC    error
-	errMsgOtlpGRPC string
+	errOTLPGRPC    error
+	errMsgOTLPGRPC string
 
-	errOtlpHTTP    error
-	errMsgOtlpHTTP string
+	errOTLPHTTP    error
+	errMsgOTLPHTTP string
 
 	errFluentdHTTP    error
 	errMsgFluentdHTTP string
@@ -40,11 +40,11 @@ var testScenarios = []struct {
 		name:     "with scheme: valid endpoint with path and port",
 		endpoint: "https://foo.bar/foo/bar:4317",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: "",
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: "",
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -53,11 +53,11 @@ var testScenarios = []struct {
 		name:     "empty endpoint value",
 		endpoint: "",
 
-		errOtlpGRPC:    ErrValueResolveFailed,
-		errMsgOtlpGRPC: errMsgEndpointResolveFailed,
+		errOTLPGRPC:    ErrValueResolveFailed,
+		errMsgOTLPGRPC: errMsgEndpointResolveFailed,
 
-		errOtlpHTTP:    ErrValueResolveFailed,
-		errMsgOtlpHTTP: errMsgEndpointResolveFailed,
+		errOTLPHTTP:    ErrValueResolveFailed,
+		errMsgOTLPHTTP: errMsgEndpointResolveFailed,
 
 		errFluentdHTTP:    ErrValueResolveFailed,
 		errMsgFluentdHTTP: errMsgEndpointResolveFailed,
@@ -66,11 +66,11 @@ var testScenarios = []struct {
 		name:     "no scheme: invalid endpoint with port",
 		endpoint: "'example.com:8080'",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: fmt.Sprintf(errMsgEndpointInvalid, "'example.com:8080'"),
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgEndpointInvalid, "'example.com:8080'"),
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'example.com:8080'"),
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'example.com:8080'"),
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'example.com:8080'"),
@@ -79,11 +79,11 @@ var testScenarios = []struct {
 		name:     "with scheme: invalid endpoint with port",
 		endpoint: "'https://example.com:8080'",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com:8080'"),
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com:8080'"),
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com:8080'"),
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com:8080'"),
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com:8080'"),
@@ -92,11 +92,11 @@ var testScenarios = []struct {
 		name:     "no scheme: invalid endpoint",
 		endpoint: "'example.com'",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    ErrUnsupportedScheme,
-		errMsgOtlpHTTP: errMsgUnsupportedScheme,
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -105,11 +105,11 @@ var testScenarios = []struct {
 		name:     "with scheme: invalid endpoint",
 		endpoint: "'https://example.com'",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com'"),
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com'"),
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com'"),
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com'"),
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: fmt.Sprintf(errMsgEndpointInvalid, "'https://example.com'"),
@@ -118,11 +118,11 @@ var testScenarios = []struct {
 		name:     "no scheme: missing port",
 		endpoint: "example.com",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    ErrUnsupportedScheme,
-		errMsgOtlpHTTP: errMsgUnsupportedScheme,
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -131,11 +131,11 @@ var testScenarios = []struct {
 		name:     "no scheme: slash port",
 		endpoint: "example.com:/",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    ErrUnsupportedScheme,
-		errMsgOtlpHTTP: errMsgUnsupportedScheme,
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -144,11 +144,11 @@ var testScenarios = []struct {
 		name:     "no scheme: colon port",
 		endpoint: "example.com:",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    ErrUnsupportedScheme,
-		errMsgOtlpHTTP: errMsgUnsupportedScheme,
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -157,11 +157,11 @@ var testScenarios = []struct {
 		name:     "with scheme: missing port",
 		endpoint: "http://example.com",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: "",
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -170,11 +170,11 @@ var testScenarios = []struct {
 		name:     "with scheme: slash port",
 		endpoint: "http://example.com:/",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: "",
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -183,11 +183,11 @@ var testScenarios = []struct {
 		name:     "with scheme: colon port",
 		endpoint: "http://example.com:",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: "",
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -196,11 +196,11 @@ var testScenarios = []struct {
 		name:     "no scheme: valid port",
 		endpoint: "example.com:8080",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: "",
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
 
-		errOtlpHTTP:    ErrUnsupportedScheme,
-		errMsgOtlpHTTP: errMsgUnsupportedScheme,
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -209,11 +209,11 @@ var testScenarios = []struct {
 		name:     "with scheme: valid port",
 		endpoint: "http://example.com:8080",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: "",
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: "",
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -222,11 +222,11 @@ var testScenarios = []struct {
 		name:     "no scheme: invalid alphanumeric port",
 		endpoint: "example.com:8o8o",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "example.com:8o8o", "8o8o"),
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "example.com:8o8o", "8o8o"),
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "example.com:8o8o", "8o8o"),
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "example.com:8o8o", "8o8o"),
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "example.com:8o8o", "8o8o"),
@@ -235,11 +235,11 @@ var testScenarios = []struct {
 		name:     "with scheme: invalid alphanumeric port",
 		endpoint: "http://example.com:8o8o",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "http://example.com:8o8o", "8o8o"),
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "http://example.com:8o8o", "8o8o"),
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "http://example.com:8o8o", "8o8o"),
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "http://example.com:8o8o", "8o8o"),
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "http://example.com:8o8o", "8o8o"),
@@ -248,11 +248,11 @@ var testScenarios = []struct {
 		name:     "no scheme: invalid segmented port",
 		endpoint: "example.com:80:80",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -261,24 +261,11 @@ var testScenarios = []struct {
 		name:     "with scheme: invalid segmented port",
 		endpoint: "http://example.com:80:80",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
-
-		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
-	},
-	{
-		name:     "https scheme: with port",
-		endpoint: "https://example.com:8080",
-
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: "",
-
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: "",
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -287,11 +274,24 @@ var testScenarios = []struct {
 		name:     "https scheme: with port",
 		endpoint: "https://example.com:8080",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: "",
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: "",
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
+
+		errFluentdHTTP:    nil,
+		errMsgFluentdHTTP: "",
+	},
+	{
+		name:     "https scheme: with port",
+		endpoint: "https://example.com:8080",
+
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
+
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -300,11 +300,11 @@ var testScenarios = []struct {
 		name:     "https scheme: no port",
 		endpoint: "https://example.com",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    nil,
-		errMsgOtlpHTTP: "",
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -313,11 +313,11 @@ var testScenarios = []struct {
 		name:     "grpc scheme: no port",
 		endpoint: "grpc://example.com",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    ErrUnsupportedScheme,
-		errMsgOtlpHTTP: errMsgUnsupportedScheme,
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -326,11 +326,11 @@ var testScenarios = []struct {
 		name:     "random scheme: with port",
 		endpoint: "rand://example.com:8080",
 
-		errOtlpGRPC:    nil,
-		errMsgOtlpGRPC: "",
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
 
-		errOtlpHTTP:    ErrUnsupportedScheme,
-		errMsgOtlpHTTP: errMsgUnsupportedScheme,
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
@@ -339,18 +339,18 @@ var testScenarios = []struct {
 		name:     "random scheme: no port",
 		endpoint: "rand://example.com",
 
-		errOtlpGRPC:    ErrPortMissing,
-		errMsgOtlpGRPC: errMsgPortMissing,
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
 
-		errOtlpHTTP:    ErrUnsupportedScheme,
-		errMsgOtlpHTTP: errMsgUnsupportedScheme,
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
 		errFluentdHTTP:    nil,
 		errMsgFluentdHTTP: "",
 	},
 }
 
-func TestOtlpGrpcEndpoints(t *testing.T) {
+func TestOTLPGRPCEndpoints(t *testing.T) {
 	for _, test := range testScenarios {
 		t.Run(test.name, func(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().Build()
@@ -361,23 +361,23 @@ func TestOtlpGrpcEndpoints(t *testing.T) {
 			err := validator.Validate(
 				context.Background(),
 				&telemetryv1alpha1.ValueType{Value: test.endpoint},
-				OtlpProtocolGRPC)
+				OTLPProtocolGRPC)
 
 			switch {
-			case test.errOtlpGRPC != nil && test.errMsgOtlpGRPC != "":
-				require.True(t, errors.Is(err, test.errOtlpGRPC))
-				require.EqualError(t, err, test.errMsgOtlpGRPC)
-			case test.errOtlpGRPC == nil && test.errMsgOtlpGRPC != "":
+			case test.errOTLPGRPC != nil && test.errMsgOTLPGRPC != "":
+				require.True(t, errors.Is(err, test.errOTLPGRPC))
+				require.EqualError(t, err, test.errMsgOTLPGRPC)
+			case test.errOTLPGRPC == nil && test.errMsgOTLPGRPC != "":
 				require.True(t, IsEndpointInvalidError(err))
-				require.EqualError(t, err, test.errMsgOtlpGRPC)
-			case test.errOtlpGRPC == nil:
+				require.EqualError(t, err, test.errMsgOTLPGRPC)
+			case test.errOTLPGRPC == nil:
 				require.NoError(t, err)
 			}
 		})
 	}
 }
 
-func TestOtlpHttpEndpoints(t *testing.T) {
+func TestOTLPHttpEndpoints(t *testing.T) {
 	for _, test := range testScenarios {
 		t.Run(test.name, func(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().Build()
@@ -388,16 +388,16 @@ func TestOtlpHttpEndpoints(t *testing.T) {
 			err := validator.Validate(
 				context.Background(),
 				&telemetryv1alpha1.ValueType{Value: test.endpoint},
-				OtlpProtocolHTTP)
+				OTLPProtocolHTTP)
 
 			switch {
-			case test.errOtlpHTTP != nil && test.errMsgOtlpHTTP != "":
-				require.True(t, errors.Is(err, test.errOtlpHTTP))
-				require.EqualError(t, err, test.errMsgOtlpHTTP)
-			case test.errOtlpHTTP == nil && test.errMsgOtlpHTTP != "":
+			case test.errOTLPHTTP != nil && test.errMsgOTLPHTTP != "":
+				require.True(t, errors.Is(err, test.errOTLPHTTP))
+				require.EqualError(t, err, test.errMsgOTLPHTTP)
+			case test.errOTLPHTTP == nil && test.errMsgOTLPHTTP != "":
 				require.True(t, IsEndpointInvalidError(err))
-				require.EqualError(t, err, test.errMsgOtlpHTTP)
-			case test.errOtlpHTTP == nil:
+				require.EqualError(t, err, test.errMsgOTLPHTTP)
+			case test.errOTLPHTTP == nil:
 				require.NoError(t, err)
 				return
 			}
@@ -439,8 +439,8 @@ func TestMissingEndpoint(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	errNil := validator.Validate(context.Background(), nil, OtlpProtocolGRPC)
-	errNoValue := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{}, OtlpProtocolGRPC)
+	errNil := validator.Validate(context.Background(), nil, OTLPProtocolGRPC)
+	errNoValue := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{}, OTLPProtocolGRPC)
 
 	require.True(t, errors.Is(errNil, ErrValueResolveFailed))
 	require.EqualError(t, errNil, errMsgEndpointResolveFailed)
@@ -470,13 +470,13 @@ func TestEndpointValueFromValid(t *testing.T) {
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}}, OtlpProtocolGRPC)
+		}}}, OTLPProtocolGRPC)
 	errHTTP := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}}, OtlpProtocolHTTP)
+		}}}, OTLPProtocolHTTP)
 	errFluentd := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
@@ -511,13 +511,13 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}}, OtlpProtocolGRPC)
+		}}}, OTLPProtocolGRPC)
 	errHTTP := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}}, OtlpProtocolGRPC)
+		}}}, OTLPProtocolGRPC)
 	errFluentd := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
@@ -555,13 +555,13 @@ func TestEndpointValueFromMissing(t *testing.T) {
 			Name:      "unknown",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}}, OtlpProtocolGRPC)
+		}}}, OTLPProtocolGRPC)
 	errHTTP := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "unknown",
 			Namespace: "default",
 			Key:       "endpoint",
-		}}}, OtlpProtocolHTTP)
+		}}}, OTLPProtocolHTTP)
 	errFluentd := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "unknown",

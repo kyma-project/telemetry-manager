@@ -26,7 +26,6 @@ func init() {
 }
 
 // +kubebuilder:object:root=true
-
 // MetricPipelineList contains a list of MetricPipeline.
 type MetricPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -77,7 +76,7 @@ type MetricPipelineInput struct {
 	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
 	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
 	// +optional
-	Otlp *OTLPInput `json:"otlp,omitempty"`
+	OTLP *OTLPInput `json:"otlp,omitempty"`
 }
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
@@ -90,7 +89,7 @@ type MetricPipelinePrometheusInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInput defines the runtime scraping section.
@@ -152,19 +151,19 @@ type MetricPipelineIstioInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+}
+
+// MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
+type MetricPipelineIstioInputDiagnosticMetrics struct {
+	// If enabled, diagnostic metrics are scraped. The default is `false`.
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelemetry protocol.
-	Otlp *OtlpOutput `json:"otlp"`
-}
-
-// DiagnosticMetrics defines the diagnostic metrics configuration section
-type DiagnosticMetrics struct {
-	// If enabled, diagnostic metrics are scraped. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
+	OTLP *OTLPOutput `json:"otlp"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.
