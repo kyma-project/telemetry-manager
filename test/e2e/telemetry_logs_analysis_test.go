@@ -266,18 +266,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 
 		It("Should not have any error/warn logs in the manager containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(selfMonitorLogBackendURL)
+				resp, err := proxyClient.Get(managerLogBackendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					HaveFlatLogs(Not(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-")),
 						HaveLevel(MatchRegexp(logLevelsRegexp)),
-						HaveLogBody(Not( // whitelist possible (flaky/expected) errors
-							Or(
-								ContainSubstring("{s: \"EOF\"}"),
-							),
-						)),
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
