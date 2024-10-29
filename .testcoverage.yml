@@ -33,7 +33,7 @@ override:
     path: ^internal/reconciler/metricpipeline$
   - threshold: 60
     path: ^internal/reconciler/telemetry$
-  - threshold: 73
+  - threshold: 74
     path: ^internal/reconciler/tracepipeline$
   - threshold: 82
     path: ^internal/resources/otelcollector$
