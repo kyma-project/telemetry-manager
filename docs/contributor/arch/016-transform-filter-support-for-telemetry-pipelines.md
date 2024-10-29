@@ -75,6 +75,8 @@ The OTTL support 3 type of error modes to handle errors in the OTTL expression e
 
 The recommended error mode is `ignore` and this will be used as default configuration.
 
+The OTTL context will be embedded in the OTTL statements, [this is still in progress ](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017) and will be available in the upcoming beta version. The solution will not implement the context as configuration parameter.
+
 To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be end of the pipeline chain before exporters.
 
 The OTel configuration :
