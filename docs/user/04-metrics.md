@@ -396,7 +396,7 @@ spec:
 By default, container and Pod metrics are collected.
 To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
 
-The following example collects only the Pod metrics:
+The following example collects only Deployment, DaemonSet, StatefulSet and Job metrics:
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -409,7 +409,7 @@ The following example collects only the Pod metrics:
         enabled: true
         resources:
           pod:
-            enabled: true
+            enabled: false
           container:
             enabled: false
           node:
@@ -417,13 +417,13 @@ The following example collects only the Pod metrics:
           volume:
             enabled: false
           daemonset:
-            enabled: false
+            enabled: true
           deployment:
-            enabled: false
+            enabled: true
           statefulset:
-            enabled: false
+            enabled: true
           job:
-            enabled: false
+            enabled: true
     output:
       otlp:
         endpoint:
