@@ -416,6 +416,14 @@ The following example collects only the Pod metrics:
             enabled: false
           volume:
             enabled: false
+          daemonset:
+            enabled: false
+          deployment:
+            enabled: false
+          statefulset:
+            enabled: false
+          job:
+            enabled: false
     output:
       otlp:
         endpoint:
@@ -479,6 +487,33 @@ If Volume metrics are enabled, the following metrics are collected:
   - `k8s.volume.inodes`
   - `k8s.volume.inodes.free`
   - `k8s.volume.inodes.used`
+
+If Deployment metrics are enabled, the following metrics are collected:
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.deployment.available`
+  - `k8s.deployment.desired`
+
+If DaemonSet metrics are enabled, the following metrics are collected:
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.daemonset.current_scheduled_nodes`
+  - `k8s.daemonset.desired_scheduled_nodes`
+  - `k8s.daemonset.misscheduled_nodes`
+  - `k8s.daemonset.ready_nodes`
+
+If StatefulSet metrics are enabled, the following metrics are collected:
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.statefulset.current_pods`
+  - `k8s.statefulset.desired_pods`
+  - `k8s.statefulset.ready_pods`
+  - `k8s.statefulset.updated_pods`
+
+If Job metrics are enabled, the following metrics are collected:
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.job.active_pods`
+  - `k8s.job.desired_successful_pods`
+  - `k8s.job.failed_pods`
+  - `k8s.job.max_parallel_pods`
+  - `k8s.job.successful_pods`
 
 ### 7. Activate Istio Metrics
 
