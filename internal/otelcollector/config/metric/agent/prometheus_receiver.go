@@ -38,7 +38,7 @@ func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
 }
 
 // makePrometheusConfig generates a Prometheus receiver configuration for scraping either annotated Pods or Services (based on the provided role and relabelConfigFn).
-// If Istio is enabled, an additional scrape config is generated (suffixed with -secure) to scrape targets over HTTPS using Istio certificate.
+// If Istio is enabled, an additional scrape config is generated (suffixed with -secure) to scrape annotated Services over HTTPS using Istio certificate.
 // Istio certificate is expected to be mounted at the provided path using the proxy.istio.io/config annotation.
 // See more: https://istio.io/latest/docs/ops/integrations/prometheus/#tls-settings
 func makePrometheusConfig(opts BuildOptions, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
@@ -55,7 +55,8 @@ func makePrometheusConfig(opts BuildOptions, jobNamePrefix string, role Role, re
 	httpScrapeConfig.RelabelConfigs = relabelConfigFn(false)
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
-	if opts.IstioEnabled {
+	// If Istio is enabled, generate an additional scrape config for scraping annotated Services (role == RoleEndpoints) over HTTPS
+	if opts.IstioEnabled && role == RoleEndpoints {
 		httpsScrapeConfig := baseScrapeConfig
 		httpsScrapeConfig.JobName = jobNamePrefix + "-secure"
 		httpsScrapeConfig.RelabelConfigs = relabelConfigFn(true)
