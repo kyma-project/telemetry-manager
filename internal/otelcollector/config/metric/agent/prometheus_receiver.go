@@ -32,7 +32,7 @@ func makePrometheusConfigForPods(opts BuildOptions) *PrometheusReceiver {
 	return makePrometheusConfig(opts, "app-pods", RolePod, makePrometheusPodsRelabelConfigs)
 }
 
-// makePrometheusConfigForPods creates a Prometheus configuration for scraping Services that are annotated with prometheus.io annotations.
+// makePrometheusConfigForServices creates a Prometheus configuration for scraping Services that are annotated with prometheus.io annotations.
 func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
 	return makePrometheusConfig(opts, "app-services", RoleEndpoints, makePrometheusEndpointsRelabelConfigs)
 }
