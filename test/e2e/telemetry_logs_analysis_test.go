@@ -33,6 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 		otelCollectorLogBackendName = "otel-collector-log-backend"
 		fluentBitLogBackendName     = "fluent-bit-log-backend"
 		selfMonitorLogBackendName   = "self-monitor-log-backend"
+		managerLogBackendName       = "manager-log-backend"
 	)
 
 	var (
@@ -42,6 +43,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 		otelCollectorLogBackendURL string
 		fluentBitLogBackendURL     string
 		selfMonitorLogBackendURL   string
+		managerLogBackendURL       string
 		namespace                  = suite.ID()
 		gomegaMaxLength            = format.MaxLength
 		logLevelsRegexp            = "ERROR|error|WARNING|warning|WARN|warn"
@@ -132,6 +134,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 
 	Context("When all components are deployed", func() {
 		BeforeAll(func() {
+			format.MaxLength = 0 // Gomega should not truncate to have all logs in the output
+
 			var k8sObjects []client.Object
 			k8sObjects = append(k8sObjects, kitk8s.NewNamespace(namespace).K8sObject())
 			k8sObjects = append(k8sObjects, makeResourcesTracePipeline(traceBackendName)...)
@@ -143,6 +147,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 			objs, fluentBitLogBackendURL = makeResourcesToCollectLogs(fluentBitLogBackendName, "fluent-bit", "exporter")
 			k8sObjects = append(k8sObjects, objs...)
 			objs, selfMonitorLogBackendURL = makeResourcesToCollectLogs(selfMonitorLogBackendName, "self-monitor")
+			k8sObjects = append(k8sObjects, objs...)
+			objs, managerLogBackendURL = makeResourcesToCollectLogs(managerLogBackendName, "manager")
 			k8sObjects = append(k8sObjects, objs...)
 
 			DeferCleanup(func() {
@@ -164,6 +170,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
+			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: namespace, Name: managerLogBackendName})
 		})
 
 		It("Should have running agents", func() {
@@ -179,6 +186,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 			assert.LogPipelineHealthy(ctx, k8sClient, otelCollectorLogBackendName)
 			assert.LogPipelineHealthy(ctx, k8sClient, fluentBitLogBackendName)
 			assert.LogPipelineHealthy(ctx, k8sClient, selfMonitorLogBackendName)
+			assert.LogPipelineHealthy(ctx, k8sClient, managerLogBackendName)
 		})
 
 		It("Should push metrics successfully", func() {
@@ -203,6 +211,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 
 		It("Should collect self-monitor component logs successfully", func() {
 			assert.LogsDelivered(proxyClient, "telemetry-", selfMonitorLogBackendURL)
+		})
+
+		It("Should collect manager component logs successfully", func() {
+			assert.LogsDelivered(proxyClient, "telemetry-", managerLogBackendURL)
 		})
 
 		It("Should not have any error/warn logs in the otel collector component containers", func() {
@@ -249,6 +261,31 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 					HaveFlatLogs(Not(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-")),
 						HaveLevel(MatchRegexp(logLevelsRegexp)),
+					)))),
+				))
+			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should not have any error/warn logs in the manager containers", func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(managerLogBackendURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
+						HavePodName(ContainSubstring("telemetry-")),
+						HaveLevel(MatchRegexp(logLevelsRegexp)),
+						HaveLogBody(Not( // whitelist possible (flaky/expected) errors
+							Or(
+								ContainSubstring("failed to get lock"),
+								ContainSubstring("DaemonSet is not yet created"),
+								ContainSubstring("Deployment is not yet created"),
+								ContainSubstring("failed to query Prometheus alerts"),
+								ContainSubstring("failed to update status: "),
+								ContainSubstring("Failed to probe "),
+								ContainSubstring("Reconciler error"),
+							),
+						)),
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())

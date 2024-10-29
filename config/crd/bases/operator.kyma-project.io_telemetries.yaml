@@ -18,15 +18,12 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .metadata.generation
-      name: generation
-      type: integer
-    - jsonPath: .metadata.creationTimestamp
-      name: age
-      type: date
     - jsonPath: .status.state
       name: state
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: age
+      type: date
     name: v1alpha1
     schema:
       openAPIV3Schema:
