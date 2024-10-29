@@ -275,6 +275,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 					HaveFlatLogs(Not(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-")),
 						HaveLevel(MatchRegexp(logLevelsRegexp)),
+						HaveLogBody(Not( // whitelist possible (flaky/expected) errors
+							Or(
+								ContainSubstring("failed to get lock"),
+								ContainSubstring("DaemonSet is not yet created"),
+								ContainSubstring("Deployment is not yet created"),
+								ContainSubstring("failed to query Prometheus alerts"),
+								ContainSubstring("failed to update status: "),
+							),
+						)),
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
