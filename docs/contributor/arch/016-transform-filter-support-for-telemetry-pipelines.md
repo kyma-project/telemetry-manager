@@ -65,12 +65,8 @@ spec:
 ```
 ### Solution
 
-The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. 
-To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. 
-This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process, the OTTL library provide two category of functions, the editor functions and the converters.
-The editor functions used to modify the data, while the converters are used in the OTTL condition expressions to convert the data type to be able to compare it with the expected value.
-The current existing pipelines using a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions.
-The solution will use this subset of editor function to provide the necessary functionality to the users, the additional functions when necessary can be added.
+The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process, the OTTL library provide two category of functions, the editor functions and the converters.
+The editor functions used to modify the data, while the converters are used in the OTTL condition expressions to convert the data type to be able to compare it with the expected value. The current existing pipelines using a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions. The solution will use this subset of editor function to provide the necessary functionality to the users, the additional functions when necessary can be added.
 
 To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be end of the pipeline chain before exporters.
 
@@ -110,5 +106,3 @@ To mitigate this risk, we suggest the following measures:
 - Documentation: We will provide detailed documentation and practical examples of how to configure filter and transformation processors using OTTL expressions.
 - Community Support: We will actively engage with the OpenTelemetry community to address any issues or concerns that arise from using the OTTL library.
 - The public Go API: The breaking changes most likely will not follow deprecation policy, this may require changes in our implementation.
-
-
