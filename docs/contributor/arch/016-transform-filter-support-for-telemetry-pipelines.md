@@ -72,7 +72,7 @@ The editor functions used to modify the data, while the converters are used in t
 The current existing pipelines using a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions.
 The solution will use this subset of editor function to provide the necessary functionality to the users, the additional functions when necessary can be added.
 
-To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be end of the pipeline chain before export.
+To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be end of the pipeline chain before exporters.
 
 The OTel configuration :
 
@@ -108,5 +108,7 @@ To mitigate this risk, we suggest the following measures:
 - New Versions with Breaking Changes: New versions with [breaking changes](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/coding-guidelines.md#breaking-changes) of the OTTL library will be rolled out with backward compatibility. This will help users adapt changes and reducing the chance of widespread disruption.
 - Thorough Testing: We will maintain strict version control of the OTTL library, ensuring that each update is thoroughly tested. Automated tests will validate that existing pipelines continue to work as expected.
 - Documentation: We will provide detailed documentation and practical examples of how to configure filter and transformation processors using OTTL expressions.
+- Community Support: We will actively engage with the OpenTelemetry community to address any issues or concerns that arise from using the OTTL library.
+- The public Go API: The breaking changes most likely will not follow deprecation policy, this may require changes in our implementation.
 
 
