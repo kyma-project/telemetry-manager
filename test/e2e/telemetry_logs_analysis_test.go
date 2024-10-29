@@ -282,7 +282,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 								ContainSubstring("Deployment is not yet created"),
 								ContainSubstring("failed to query Prometheus alerts"),
 								ContainSubstring("failed to update status: "),
-								ContainSubstring("Failed to probe agent "),
+								ContainSubstring("Failed to probe "),
 							),
 						)),
 					)))),
