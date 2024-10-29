@@ -233,6 +233,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -262,6 +266,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -301,6 +309,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -332,6 +344,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -367,6 +383,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -408,6 +428,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -452,6 +476,10 @@ spec:
                                               containing the Secret with the referenced
                                               value.
                                             type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -485,6 +513,10 @@ spec:
                                               containing the Secret with the referenced
                                               value.
                                             type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -520,6 +552,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -559,6 +595,10 @@ spec:
                                       description: The name of the Namespace containing
                                         the Secret with the referenced value.
                                       type: string
+                                  required:
+                                  - key
+                                  - name
+                                  - namespace
                                   type: object
                               type: object
                           required:
@@ -611,6 +651,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -642,6 +686,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -681,6 +729,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -740,6 +792,10 @@ spec:
                               description: The name of the Namespace containing the
                                 Secret with the referenced value.
                               type: string
+                          required:
+                          - key
+                          - name
+                          - namespace
                           type: object
                       type: object
                   type: object
@@ -885,8 +941,8 @@ spec:
                 description: Defines where to collect logs, including selector mechanisms.
                 properties:
                   otlp:
-                    description: OTLPInput defines the collection of push-based metrics
-                      that use the OpenTelemetry protocol.
+                    description: Configures an endpoint to receive logs from a OTLP
+                      source.
                     properties:
                       disabled:
                         description: If disabled, push-based OTLP metrics are not
@@ -1034,6 +1090,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -1063,6 +1123,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -1102,6 +1166,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1133,6 +1201,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1168,6 +1240,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1209,6 +1285,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -1253,6 +1333,10 @@ spec:
                                               containing the Secret with the referenced
                                               value.
                                             type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -1286,6 +1370,10 @@ spec:
                                               containing the Secret with the referenced
                                               value.
                                             type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -1321,6 +1409,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -1360,6 +1452,10 @@ spec:
                                       description: The name of the Namespace containing
                                         the Secret with the referenced value.
                                       type: string
+                                  required:
+                                  - key
+                                  - name
+                                  - namespace
                                   type: object
                               type: object
                           required:
@@ -1411,6 +1507,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1442,6 +1542,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1477,6 +1581,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1540,6 +1648,10 @@ spec:
                               description: The name of the Namespace containing the
                                 Secret with the referenced value.
                               type: string
+                          required:
+                          - key
+                          - name
+                          - namespace
                           type: object
                       type: object
                   type: object

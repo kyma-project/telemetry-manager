@@ -219,10 +219,18 @@ spec:
                         default:
                           container:
                             enabled: true
+                          daemonset:
+                            enabled: false
+                          deployment:
+                            enabled: false
+                          job:
+                            enabled: false
                           node:
                             enabled: false
                           pod:
                             enabled: true
+                          statefulset:
+                            enabled: false
                           volume:
                             enabled: false
                         description: Describes the Kubernetes resources for which
@@ -237,6 +245,39 @@ spec:
                                 default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
+                                type: boolean
+                            type: object
+                          daemonset:
+                            default:
+                              enabled: false
+                            description: Configures DaemonSet runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
+                                type: boolean
+                            type: object
+                          deployment:
+                            default:
+                              enabled: false
+                            description: Configures Deployment runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
+                                type: boolean
+                            type: object
+                          job:
+                            default:
+                              enabled: false
+                            description: Configures Job runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
                                 type: boolean
                             type: object
                           node:
@@ -259,6 +300,17 @@ spec:
                                 default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
+                                type: boolean
+                            type: object
+                          statefulset:
+                            default:
+                              enabled: false
+                            description: Configures StatefulSet runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
                                 type: boolean
                             type: object
                           volume:
@@ -318,6 +370,10 @@ spec:
                                               containing the Secret with the referenced
                                               value.
                                             type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -351,6 +407,10 @@ spec:
                                               containing the Secret with the referenced
                                               value.
                                             type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -386,6 +446,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -425,6 +489,10 @@ spec:
                                       description: The name of the Namespace containing
                                         the Secret with the referenced value.
                                       type: string
+                                  required:
+                                  - key
+                                  - name
+                                  - namespace
                                   type: object
                               type: object
                           required:
@@ -477,6 +545,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -508,6 +580,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -547,6 +623,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -834,10 +914,18 @@ spec:
                         default:
                           container:
                             enabled: true
+                          daemonset:
+                            enabled: false
+                          deployment:
+                            enabled: false
+                          job:
+                            enabled: false
                           node:
                             enabled: false
                           pod:
                             enabled: true
+                          statefulset:
+                            enabled: false
                           volume:
                             enabled: false
                         description: Describes the Kubernetes resources for which
@@ -852,6 +940,39 @@ spec:
                                 default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
+                                type: boolean
+                            type: object
+                          daemonset:
+                            default:
+                              enabled: false
+                            description: Configures DaemonSet runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
+                                type: boolean
+                            type: object
+                          deployment:
+                            default:
+                              enabled: false
+                            description: Configures Deployment runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
+                                type: boolean
+                            type: object
+                          job:
+                            default:
+                              enabled: false
+                            description: Configures Job runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
                                 type: boolean
                             type: object
                           node:
@@ -874,6 +995,17 @@ spec:
                                 default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
+                                type: boolean
+                            type: object
+                          statefulset:
+                            default:
+                              enabled: false
+                            description: Configures StatefulSet runtime metrics scraping.
+                            properties:
+                              enabled:
+                                default: false
+                                description: If enabled, the runtime metrics for the
+                                  resource are scraped. The default is `false`.
                                 type: boolean
                             type: object
                           volume:
@@ -933,6 +1065,10 @@ spec:
                                               containing the Secret with the referenced
                                               value.
                                             type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -966,6 +1102,10 @@ spec:
                                               containing the Secret with the referenced
                                               value.
                                             type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
                                         type: object
                                     type: object
                                 type: object
@@ -1001,6 +1141,10 @@ spec:
                                     description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
                                 type: object
                             type: object
                         type: object
@@ -1040,6 +1184,10 @@ spec:
                                       description: The name of the Namespace containing
                                         the Secret with the referenced value.
                                       type: string
+                                  required:
+                                  - key
+                                  - name
+                                  - namespace
                                   type: object
                               type: object
                           required:
@@ -1091,6 +1239,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1122,6 +1274,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object
@@ -1157,6 +1313,10 @@ spec:
                                         description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
+                                    required:
+                                    - key
+                                    - name
+                                    - namespace
                                     type: object
                                 type: object
                             type: object

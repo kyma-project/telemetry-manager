@@ -15,7 +15,7 @@ func TestDuplicateFileName(t *testing.T) {
 			Name: "foo",
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Files: []telemetryv1alpha1.FileMount{{
+			Files: []telemetryv1alpha1.LogPipelineFileMount{{
 				Name:    "f1.json",
 				Content: "",
 			},
@@ -31,7 +31,7 @@ func TestDuplicateFileName(t *testing.T) {
 			Name: "bar",
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Files: []telemetryv1alpha1.FileMount{{
+			Files: []telemetryv1alpha1.LogPipelineFileMount{{
 				Name:    "f1.json",
 				Content: "",
 			},
@@ -50,7 +50,7 @@ func TestDuplicateFileNameInSamePipeline(t *testing.T) {
 			Name: "foo",
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Files: []telemetryv1alpha1.FileMount{{
+			Files: []telemetryv1alpha1.LogPipelineFileMount{{
 				Name:    "f1.json",
 				Content: "",
 			}, {
@@ -75,7 +75,7 @@ func TestValidateUpdatePipeline(t *testing.T) {
 			Name: "foo",
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Files: []telemetryv1alpha1.FileMount{{
+			Files: []telemetryv1alpha1.LogPipelineFileMount{{
 				Name:    "f1.json",
 				Content: "",
 			},
@@ -91,7 +91,7 @@ func TestValidateUpdatePipeline(t *testing.T) {
 			Name: "foo",
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Files: []telemetryv1alpha1.FileMount{{
+			Files: []telemetryv1alpha1.LogPipelineFileMount{{
 				Name:    "f1.json",
 				Content: "",
 			},

@@ -20,6 +20,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
+func init() {
+	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
+}
+
+// +kubebuilder:object:root=true
+// MetricPipelineList contains a list of MetricPipeline.
+type MetricPipelineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []MetricPipeline `json:"items"`
+}
+
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:subresource:status
@@ -29,7 +42,6 @@ import (
 // +kubebuilder:printcolumn:name="Flow Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="TelemetryFlowHealthy")].status`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
-
 // MetricPipeline is the Schema for the metricpipelines API.
 type MetricPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -77,7 +89,7 @@ type MetricPipelinePrometheusInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInput defines the runtime scraping section.
@@ -90,7 +102,7 @@ type MetricPipelineRuntimeInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Describes the Kubernetes resources for which runtime metrics are scraped.
 	// +optional
-	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}}
+	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: false}, volume: {enabled: false}, daemonset: {enabled: false}, deployment: {enabled: false}, statefulset: {enabled: false}, job: {enabled: false}}
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
 }
 
@@ -112,6 +124,22 @@ type MetricPipelineRuntimeInputResources struct {
 	// +optional
 	// +kubebuilder:default={enabled: false}
 	Volume *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"volume,omitempty"`
+	// Configures DaemonSet runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	DaemonSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"daemonset,omitempty"`
+	// Configures Deployment runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Deployment *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"deployment,omitempty"`
+	// Configures StatefulSet runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	StatefulSet *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"statefulset,omitempty"`
+	// Configures Job runtime metrics scraping.
+	// +optional
+	// +kubebuilder:default={enabled: false}
+	Job *MetricPipelineRuntimeInputResourceDisabledByDefault `json:"job,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResourceEnabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
@@ -139,11 +167,11 @@ type MetricPipelineIstioInput struct {
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
-	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
-// DiagnosticMetrics defines the diagnostic metrics configuration section
-type DiagnosticMetrics struct {
+// MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
+type MetricPipelineIstioInputDiagnosticMetrics struct {
 	// If enabled, diagnostic metrics are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 }
@@ -158,18 +186,4 @@ type MetricPipelineOutput struct {
 type MetricPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// MetricPipelineList contains a list of MetricPipeline.
-type MetricPipelineList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MetricPipeline `json:"items"`
-}
-
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
-func init() {
-	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }
