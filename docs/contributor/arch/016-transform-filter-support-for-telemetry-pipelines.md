@@ -65,10 +65,10 @@ spec:
 ```
 ### Solution
 
-The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process, the OTTL library provide two category of functions, the editor functions and the converters.
-The editor functions used to modify the data, while the converters are used in the OTTL condition expressions to convert the data type to be able to compare it with the expected value. The current existing pipelines using a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions. The solution will use this subset of editor function to provide the necessary functionality to the users, the additional functions when necessary can be added.
+The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process, the OTTL library provides two categories of functions, the editor functions and the converters.
+The editor functions used to modify the data, while the converters are used in the OTTL condition expressions to convert the data type to be able to compare it with the expected value. The current existing pipelines using a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions. The solution will use this subset of editor functions to provide the necessary functionality to the users, the additional functions when necessary can be added.
 
-The OTTL support 3 type of error modes to handle errors in the OTTL expression execution:
+The OTTL supports three types of error modes to handle errors in the OTTL expression execution:
 - `ignore` : The processor ignores errors returned by conditions, logs them, and continues on to the next condition.
 - `slient` : The processor ignores errors returned by conditions, does not log them, and continues on to the next condition.
 - `propagate` : The processor returns the error up the pipeline. This will result in the payload being dropped from the collector.
@@ -110,7 +110,7 @@ The OTTL library is still in its alpha phase, meaning that updates to the packag
 
 To mitigate this risk, we suggest the following measures:
 - The [beta version](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/28892) of the OTTL library will be used in the OTel Collector to ensure that the library is stable and reliable.
-- New Versions with Breaking Changes: New versions with [breaking changes](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/coding-guidelines.md#breaking-changes) of the OTTL library will be rolled out with backward compatibility. This will help users adapt changes and reducing the chance of widespread disruption.
+- New Versions with Breaking Changes: New versions with [breaking changes](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/coding-guidelines.md#breaking-changes) of the OTTL library will be rolled out with backward compatibility. This will help users adapt changes and reduce the chance of widespread disruption.
 - Thorough Testing: We will maintain strict version control of the OTTL library, ensuring that each update is thoroughly tested. Automated tests will validate that existing pipelines continue to work as expected.
 - Documentation: We will provide detailed documentation and practical examples of how to configure filter and transformation processors using OTTL expressions.
 - Community Support: We will actively engage with the OpenTelemetry community to address any issues or concerns that arise from using the OTTL library.
