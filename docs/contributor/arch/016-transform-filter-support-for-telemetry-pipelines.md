@@ -23,10 +23,10 @@ metadata:
   name: metricpipeline-sample
 spec:
   transform:
-    - conditions:
-        - type == METRIC_DATA_TYPE_SUM
-      statements:
-        - set(description, "Sum")
+    conditions:
+      - type == METRIC_DATA_TYPE_SUM
+    statements:
+      - set(description, "Sum")
   filter:
     metric:
         - type == METRIC_DATA_TYPE_NONE
@@ -52,7 +52,7 @@ metadata:
   name: tracepipeline-sample
 spec:
   transform:
-    - statements:
+    statements:
         - set(status.code, 1) where attributes["http.path"] == "/health"
   filter:
     span:
@@ -67,6 +67,13 @@ spec:
 
 The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process, the OTTL library provide two category of functions, the editor functions and the converters.
 The editor functions used to modify the data, while the converters are used in the OTTL condition expressions to convert the data type to be able to compare it with the expected value. The current existing pipelines using a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions. The solution will use this subset of editor function to provide the necessary functionality to the users, the additional functions when necessary can be added.
+
+The OTTL support three type of error modes to handle errors in the OTTL expression evolution:
+- `ignore` : The processor ignores errors returned by conditions, logs them, and continues on to the next condition.
+- `slient` : The processor ignores errors returned by conditions, does not log them, and continues on to the next condition.
+- `propagate` : The processor returns the error up the pipeline. This will result in the payload being dropped from the collector.
+
+The recommended error mode is `ignore` and this will be used as default configuration.
 
 To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be end of the pipeline chain before exporters.
 
