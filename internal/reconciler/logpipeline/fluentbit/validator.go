@@ -6,7 +6,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
-	utils "github.com/kyma-project/telemetry-manager/utils/logpipeline"
 )
 
 type EndpointValidator interface {
@@ -18,7 +17,7 @@ type TLSCertValidator interface {
 }
 
 type SecretRefValidator interface {
-	Validate(ctx context.Context, refs []telemetryv1alpha1.SecretKeyRef) error
+	ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
 }
 
 type Validator struct {
@@ -28,7 +27,7 @@ type Validator struct {
 }
 
 func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	if err := v.SecretRefValidator.Validate(ctx, utils.GetSecretRefs(pipeline)); err != nil {
+	if err := v.SecretRefValidator.ValidateLogPipeline(ctx, pipeline); err != nil {
 		return err
 	}
 

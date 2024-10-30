@@ -25,7 +25,19 @@ var (
 	ErrSecretRefMissingFields = errors.New("secret reference is missing field/s")
 )
 
-func (v *Validator) Validate(ctx context.Context, refs []telemetryv1alpha1.SecretKeyRef) error {
+func (v *Validator) ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+	return v.validate(ctx, getSecretRefsTracePipeline(pipeline))
+}
+
+func (v *Validator) ValidateMetricPipeline(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+	return v.validate(ctx, getSecretRefsMetricPipeline(pipeline))
+}
+
+func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+	return v.validate(ctx, getSecretRefsLogPipeline(pipeline))
+}
+
+func (v *Validator) validate(ctx context.Context, refs []telemetryv1alpha1.SecretKeyRef) error {
 	for _, ref := range refs {
 		if _, err := GetValue(ctx, v.Client, ref); err != nil {
 			return err
@@ -78,4 +90,102 @@ func checkForMissingFields(ref telemetryv1alpha1.SecretKeyRef) error {
 	}
 
 	return nil
+}
+
+func getSecretRefsTracePipeline(tp *telemetryv1alpha1.TracePipeline) []telemetryv1alpha1.SecretKeyRef {
+	return getRefsInOTLPOutput(tp.Spec.Output.OTLP)
+}
+
+func getSecretRefsMetricPipeline(mp *telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.SecretKeyRef {
+	return getRefsInOTLPOutput(mp.Spec.Output.OTLP)
+}
+
+func getSecretRefsLogPipeline(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
+	var refs []telemetryv1alpha1.SecretKeyRef
+
+	for _, v := range lp.Spec.Variables {
+		if v.ValueFrom.SecretKeyRef != nil {
+			refs = append(refs, *v.ValueFrom.SecretKeyRef)
+		}
+	}
+
+	refs = append(refs, GetEnvSecretRefs(lp)...)
+	refs = append(refs, getTLSSecretRefs(lp)...)
+
+	return refs
+}
+
+// GetEnvSecretRefs returns the secret references of a LogPipeline that should be stored in the env secret
+func GetEnvSecretRefs(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
+	var refs []telemetryv1alpha1.SecretKeyRef
+
+	output := lp.Spec.Output
+	if output.HTTP != nil {
+		refs = appendIfSecretRef(refs, output.HTTP.Host)
+		refs = appendIfSecretRef(refs, output.HTTP.User)
+		refs = appendIfSecretRef(refs, output.HTTP.Password)
+	}
+
+	return refs
+}
+
+func getTLSSecretRefs(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
+	var refs []telemetryv1alpha1.SecretKeyRef
+
+	output := lp.Spec.Output
+	if output.HTTP != nil {
+		tlsConfig := output.HTTP.TLS
+		if tlsConfig.CA != nil {
+			refs = appendIfSecretRef(refs, *tlsConfig.CA)
+		}
+
+		if tlsConfig.Cert != nil {
+			refs = appendIfSecretRef(refs, *tlsConfig.Cert)
+		}
+
+		if tlsConfig.Key != nil {
+			refs = appendIfSecretRef(refs, *tlsConfig.Key)
+		}
+	}
+
+	return refs
+}
+
+func getRefsInOTLPOutput(otlpOut *telemetryv1alpha1.OTLPOutput) []telemetryv1alpha1.SecretKeyRef {
+	var refs []telemetryv1alpha1.SecretKeyRef
+
+	refs = appendIfSecretRef(refs, otlpOut.Endpoint)
+
+	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic != nil {
+		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.User)
+		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.Password)
+	}
+
+	for _, header := range otlpOut.Headers {
+		refs = appendIfSecretRef(refs, header.ValueType)
+	}
+
+	if otlpOut.TLS != nil && !otlpOut.TLS.Insecure {
+		if otlpOut.TLS.CA != nil {
+			refs = appendIfSecretRef(refs, *otlpOut.TLS.CA)
+		}
+
+		if otlpOut.TLS.Cert != nil {
+			refs = appendIfSecretRef(refs, *otlpOut.TLS.Cert)
+		}
+
+		if otlpOut.TLS.Key != nil {
+			refs = appendIfSecretRef(refs, *otlpOut.TLS.Key)
+		}
+	}
+
+	return refs
+}
+
+func appendIfSecretRef(secretKeyRefs []telemetryv1alpha1.SecretKeyRef, valueType telemetryv1alpha1.ValueType) []telemetryv1alpha1.SecretKeyRef {
+	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
+		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
+	}
+
+	return secretKeyRefs
 }

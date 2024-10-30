@@ -16,6 +16,6 @@ func NewSecretRefValidator(err error) *SecretRefValidator {
 	}
 }
 
-func (s *SecretRefValidator) Validate(ctx context.Context, refs []telemetryv1alpha1.SecretKeyRef) error {
+func (s *SecretRefValidator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	return s.err
 }
