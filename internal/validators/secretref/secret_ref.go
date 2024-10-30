@@ -15,10 +15,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 )
 
-type Getter interface {
-	GetSecretRefs() []telemetryv1alpha1.SecretKeyRef
-}
-
 type Validator struct {
 	Client client.Reader
 }
@@ -29,8 +25,7 @@ var (
 	ErrSecretRefMissingFields = errors.New("secret reference is missing field/s")
 )
 
-func (v *Validator) Validate(ctx context.Context, getter Getter) error {
-	refs := getter.GetSecretRefs()
+func (v *Validator) Validate(ctx context.Context, refs []telemetryv1alpha1.SecretKeyRef) error {
 	for _, ref := range refs {
 		if _, err := GetValue(ctx, v.Client, ref); err != nil {
 			return err
