@@ -105,7 +105,7 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
 
 1. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/tutorials/01-40-enable-sidecar-injection).
 
-2. Enable Istio access logs for your workload. See [Configuring Istio Access Logs](https://kyma-project.io/#/istio/user/tutorials/01-45-enable-istio-access-logs).
+2. Enable Istio access logs for your workload. See [Enable Istio access logs](https://kyma-project.io/#/istio/user/tutorials/01-45-enable-istio-access-logs).
 
 3. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma with the following script:
 
