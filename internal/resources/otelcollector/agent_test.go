@@ -2,6 +2,7 @@ package otelcollector
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -32,20 +33,14 @@ func TestApplyAgentResources(t *testing.T) {
 				BaseName:  agentName,
 				Namespace: agentNamespace,
 			},
-			DaemonSet: DaemonSetConfig{
-				PodLabels: map[string]string{
-					"app.kubernetes.io/name":                  agentName,
-					"telemetry.kyma-project.io/metric-scrape": "true",
-					"sidecar.istio.io/inject":                 "true",
-				},
-			},
 		},
 		RBAC: createAgentRBAC(),
 	}
 
 	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
-		AllowedPorts:        []int32{5555, 6666},
-		CollectorConfigYAML: agentCfg,
+		AllowedPorts:            []int32{5555, 6666},
+		CollectorConfigYAML:     agentCfg,
+		ComponentSelectorLabels: labels.MakeMetricAgentSelectorLabel(agentName),
 	})
 	require.NoError(t, err)
 
@@ -331,7 +326,7 @@ func createAgentRBAC() Rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      agentName,
 			Namespace: agentNamespace,
-			Labels:    defaultLabels(agentName),
+			Labels:    labels.MakeDefaultLabel(agentName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -346,7 +341,7 @@ func createAgentRBAC() Rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      agentName,
 			Namespace: agentNamespace,
-			Labels:    defaultLabels(agentName),
+			Labels:    labels.MakeDefaultLabel(agentName),
 		},
 		Subjects: []rbacv1.Subject{{Name: agentName, Namespace: agentNamespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{

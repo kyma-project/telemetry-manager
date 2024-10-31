@@ -2,6 +2,7 @@ package otelcollector
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -54,6 +55,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		AllowedPorts:                   []int32{5555, 6666},
 		CollectorConfigYAML:            gatewayCfg,
 		CollectorEnvVars:               envVars,
+		ComponentSelectorLabels:        labels.MakeTraceGatewaySelectorLabel(gatewayName),
 		Replicas:                       replicas,
 		ResourceRequirementsMultiplier: 1,
 	})
@@ -278,8 +280,10 @@ func TestApplyGatewayResources(t *testing.T) {
 			"app.kubernetes.io/name": gatewayName,
 		}, dep.Spec.Selector.MatchLabels, "must have expected deployment selector labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":  gatewayName,
-			"sidecar.istio.io/inject": "false",
+			"app.kubernetes.io/name":                 gatewayName,
+			"sidecar.istio.io/inject":                "false",
+			"telemetry.kyma-project.io/trace-ingest": "true",
+			"telemetry.kyma-project.io/trace-export": "true",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
 		// annotations
@@ -377,11 +381,12 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	}
 
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
-		CollectorConfigYAML: gatewayCfg,
-		CollectorEnvVars:    envVars,
-		IstioEnabled:        true,
-		IstioExcludePorts:   []int32{1111, 2222},
-		Replicas:            replicas,
+		CollectorConfigYAML:     gatewayCfg,
+		CollectorEnvVars:        envVars,
+		ComponentSelectorLabels: labels.MakeTraceGatewaySelectorLabel(gatewayName),
+		IstioEnabled:            true,
+		IstioExcludePorts:       []int32{1111, 2222},
+		Replicas:                replicas,
 	})
 	require.NoError(t, err)
 
@@ -405,8 +410,10 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 		require.Equal(t, replicas, *dep.Spec.Replicas)
 
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":  gatewayName,
-			"sidecar.istio.io/inject": "true",
+			"app.kubernetes.io/name":                 gatewayName,
+			"telemetry.kyma-project.io/trace-ingest": "true",
+			"telemetry.kyma-project.io/trace-export": "true",
+			"sidecar.istio.io/inject":                "true",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
 		// annotations
@@ -431,11 +438,12 @@ func TestDeleteGatewayResources(t *testing.T) {
 
 	// Create gateway resources before testing deletion
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
-		CollectorConfigYAML: gatewayCfg,
-		CollectorEnvVars:    envVars,
-		IstioEnabled:        true,
-		IstioExcludePorts:   []int32{1111, 2222},
-		Replicas:            replicas,
+		CollectorConfigYAML:     gatewayCfg,
+		CollectorEnvVars:        envVars,
+		ComponentSelectorLabels: labels.MakeTraceGatewaySelectorLabel(gatewayName),
+		IstioEnabled:            true,
+		IstioExcludePorts:       []int32{1111, 2222},
+		Replicas:                replicas,
 	})
 	require.NoError(t, err)
 
@@ -517,8 +525,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 }
 
 func createGatewayConfig() GatewayConfig {
-	podLabels := MakePodLabels(gatewayName, map[string]string{})
-	
+
 	return GatewayConfig{
 		Config: Config{
 			BaseName:  gatewayName,
@@ -527,7 +534,6 @@ func createGatewayConfig() GatewayConfig {
 		OTLPServiceName: otlpServiceName,
 
 		Deployment: DeploymentConfig{
-			PodLabels:            podLabels,
 			BaseCPURequest:       baseCPURequest,
 			DynamicCPURequest:    dynamicCPURequest,
 			BaseCPULimit:         baseCPULimit,
@@ -545,7 +551,7 @@ func createGatewayRBAC() Rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: gatewayNamespace,
-			Labels:    defaultLabels(gatewayName),
+			Labels:    labels.MakeDefaultLabel(gatewayName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -560,7 +566,7 @@ func createGatewayRBAC() Rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: gatewayNamespace,
-			Labels:    defaultLabels(gatewayName),
+			Labels:    labels.MakeDefaultLabel(gatewayName),
 		},
 		Subjects: []rbacv1.Subject{{Name: gatewayName, Namespace: gatewayNamespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
@@ -574,7 +580,7 @@ func createGatewayRBAC() Rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: gatewayNamespace,
-			Labels:    defaultLabels(gatewayName),
+			Labels:    labels.MakeDefaultLabel(gatewayName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -589,7 +595,7 @@ func createGatewayRBAC() Rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: gatewayNamespace,
-			Labels:    defaultLabels(gatewayName),
+			Labels:    labels.MakeDefaultLabel(gatewayName),
 		},
 		Subjects: []rbacv1.Subject{{Name: gatewayName, Namespace: gatewayNamespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
