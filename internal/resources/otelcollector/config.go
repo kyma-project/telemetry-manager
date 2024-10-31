@@ -18,7 +18,6 @@ type GatewayConfig struct {
 
 type DeploymentConfig struct {
 	Image                string
-	PodLabels            map[string]string
 	PriorityClassName    string
 	BaseCPULimit         resource.Quantity
 	DynamicCPULimit      resource.Quantity
@@ -38,7 +37,6 @@ type AgentConfig struct {
 
 type DaemonSetConfig struct {
 	Image             string
-	PodLabels         map[string]string
 	PriorityClassName string
 	CPULimit          resource.Quantity
 	CPURequest        resource.Quantity

@@ -56,12 +56,9 @@ import (
 )
 
 const (
-	maxMetricPipelines          = 3
-	metricGatewayBaseName       = "telemetry-metric-gateway"
-	metricAgentBaseName         = "telemetry-metric-agent"
-	metricAgentScrapeSelector   = "telemetry.kyma-project.io/metric-scrape"
-	metricGatewayIngestSelector = "telemetry.kyma-project.io/metric-ingest"
-	metricGatewayExportSelector = "telemetry.kyma-project.io/metric-export"
+	maxMetricPipelines    = 3
+	metricGatewayBaseName = "telemetry-metric-gateway"
+	metricAgentBaseName   = "telemetry-metric-agent"
 )
 
 var (
@@ -161,10 +158,6 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 }
 
 func newMetricAgentApplierDeleter(config MetricPipelineControllerConfig) *otelcollector.AgentApplierDeleter {
-	podLabels := otelcollector.MakePodLabels(metricAgentBaseName, map[string]string{
-		metricAgentScrapeSelector: "true",
-		"sidecar.istio.io/inject": "true",
-	})
 
 	rbac := otelcollector.MakeMetricAgentRBAC(
 		types.NamespacedName{
@@ -180,7 +173,6 @@ func newMetricAgentApplierDeleter(config MetricPipelineControllerConfig) *otelco
 		},
 		DaemonSet: otelcollector.DaemonSetConfig{
 			Image:             config.OTelCollectorImage,
-			PodLabels:         podLabels,
 			PriorityClassName: config.MetricAgentPriorityClassName,
 			CPULimit:          metricAgentCPULimit,
 			MemoryLimit:       metricAgentMemoryLimit,
@@ -196,11 +188,6 @@ func newMetricAgentApplierDeleter(config MetricPipelineControllerConfig) *otelco
 }
 
 func newMetricGatewayApplierDeleter(config MetricPipelineControllerConfig) *otelcollector.GatewayApplierDeleter {
-	podLabels := otelcollector.MakePodLabels(metricGatewayBaseName, map[string]string{
-		metricGatewayIngestSelector: "true",
-		metricGatewayExportSelector: "true",
-	})
-
 	rbac := otelcollector.MakeMetricGatewayRBAC(
 		types.NamespacedName{
 			Name:      metricGatewayBaseName,
@@ -215,7 +202,6 @@ func newMetricGatewayApplierDeleter(config MetricPipelineControllerConfig) *otel
 		},
 		Deployment: otelcollector.DeploymentConfig{
 			Image:                config.OTelCollectorImage,
-			PodLabels:            podLabels,
 			PriorityClassName:    config.MetricGatewayPriorityClassName,
 			BaseCPULimit:         metricGatewayBaseCPULimit,
 			DynamicCPULimit:      metricGatewayDynamicCPULimit,
