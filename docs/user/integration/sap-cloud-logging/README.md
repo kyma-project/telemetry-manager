@@ -10,17 +10,18 @@ Learn how to configure the Telemetry module to ingest application and access log
 
 ## Table of Content
 
-- [Table of Content](#table-of-content)
-- [Prerequisites](#prerequisites)
-- [Context](#context)
-- [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
-  - [Set Up Application Logs](#set-up-application-logs)
-  - [Set Up Access Logs](#set-up-access-logs)
-- [Ship Distributed Traces to SAP Cloud Logging](#ship-distributed-traces-to-sap-cloud-logging)
-- [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
-- [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
-- [Use SAP Cloud Logging Alerts](#use-sap-cloud-logging-alerts)
-- [Use SAP Cloud Logging Dashboards](#use-sap-cloud-logging-dashboards)
+- [Integrate with SAP Cloud Logging](#integrate-with-sap-cloud-logging)
+  - [Table of Content](#table-of-content)
+  - [Prerequisites](#prerequisites)
+  - [Context](#context)
+  - [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
+    - [Set Up Application Logs](#set-up-application-logs)
+    - [Set Up Access Logs](#set-up-access-logs)
+  - [Ship Distributed Traces to SAP Cloud Logging](#ship-distributed-traces-to-sap-cloud-logging)
+  - [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
+  - [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
+  - [Use SAP Cloud Logging Alerts](#use-sap-cloud-logging-alerts)
+  - [Use SAP Cloud Logging Dashboards](#use-sap-cloud-logging-dashboards)
 
 ## Prerequisites
 
