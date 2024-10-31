@@ -55,8 +55,10 @@ import (
 )
 
 const (
-	maxTracePipelines    = 3
-	traceGatewayBaseName = "telemetry-trace-gateway"
+	maxTracePipelines          = 3
+	traceGatewayBaseName       = "telemetry-trace-gateway"
+	traceGatewayIngestSelector = "telemetry.kyma-project.io/trace-ingest"
+	traceGatewayExportSelector = "telemetry.kyma-project.io/trace-export"
 )
 
 var (
@@ -138,6 +140,10 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 }
 
 func newTraceGatewayApplierDeleter(config TracePipelineControllerConfig) *otelcollector.GatewayApplierDeleter {
+	podLabels := otelcollector.MakePodLabels(traceGatewayBaseName, map[string]string{
+		traceGatewayIngestSelector: "true",
+		traceGatewayExportSelector: "true",
+	})
 	rbac := otelcollector.MakeTraceGatewayRBAC(
 		types.NamespacedName{
 			Name:      traceGatewayBaseName,
@@ -151,6 +157,7 @@ func newTraceGatewayApplierDeleter(config TracePipelineControllerConfig) *otelco
 		},
 		Deployment: otelcollector.DeploymentConfig{
 			Image:                config.OTelCollectorImage,
+			PodLabels:            podLabels,
 			PriorityClassName:    config.TraceGatewayPriorityClassName,
 			BaseCPULimit:         traceGatewayBaseCPULimit,
 			DynamicCPULimit:      traceGatewayDynamicCPULimit,

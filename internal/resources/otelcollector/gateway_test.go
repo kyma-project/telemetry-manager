@@ -517,6 +517,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 }
 
 func createGatewayConfig() GatewayConfig {
+	podLabels := MakePodLabels(gatewayName, map[string]string{})
 	return GatewayConfig{
 		Config: Config{
 			BaseName:  gatewayName,
@@ -525,6 +526,7 @@ func createGatewayConfig() GatewayConfig {
 		OTLPServiceName: otlpServiceName,
 
 		Deployment: DeploymentConfig{
+			PodLabels:            podLabels,
 			BaseCPURequest:       baseCPURequest,
 			DynamicCPURequest:    dynamicCPURequest,
 			BaseCPULimit:         baseCPULimit,

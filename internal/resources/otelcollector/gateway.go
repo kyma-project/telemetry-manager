@@ -126,28 +126,20 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
 	selectorLabels := defaultLabels(gad.Config.BaseName)
-	podLabels := maps.Clone(selectorLabels)
-	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", opts.IstioEnabled)
 
-	annotations := map[string]string{"checksum/config": configChecksum}
-
-	if opts.IstioEnabled {
-		var excludeInboundPorts []string
-		for _, p := range opts.IstioExcludePorts {
-			excludeInboundPorts = append(excludeInboundPorts, fmt.Sprintf("%d", p))
-		}
-
-		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = strings.Join(excludeInboundPorts, ", ")
-		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
-		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
-		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
-		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
-	}
+	annotations := gad.makeAnnotations(configChecksum, opts)
 
 	resources := gad.makeGatewayResourceRequirements(opts)
 	affinity := makePodAffinity(selectorLabels)
 
 	deploymentConfig := gad.Config.Deployment
+
+	if deploymentConfig.PodLabels != nil {
+		maps.Copy(deploymentConfig.PodLabels, map[string]string{
+			"sidecar.istio.io/inject": fmt.Sprintf("%t", opts.IstioEnabled),
+		})
+	}
+
 	podSpec := makePodSpec(
 		gad.Config.BaseName,
 		deploymentConfig.Image,
@@ -172,7 +164,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
+					Labels:      deploymentConfig.PodLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,
@@ -281,4 +273,22 @@ func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
+}
+
+func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts GatewayApplyOptions) map[string]string {
+	annotations := map[string]string{"checksum/config": configChecksum}
+
+	if opts.IstioEnabled {
+		var excludeInboundPorts []string
+		for _, p := range opts.IstioExcludePorts {
+			excludeInboundPorts = append(excludeInboundPorts, fmt.Sprintf("%d", p))
+		}
+
+		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = strings.Join(excludeInboundPorts, ", ")
+		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
+		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
+		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
+		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
+	}
+	return annotations
 }

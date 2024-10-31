@@ -124,6 +124,12 @@ func defaultLabels(baseName string) map[string]string {
 	}
 }
 
+func MakePodLabels(baseName string, labels map[string]string) map[string]string {
+	podLabels := defaultLabels(baseName)
+	maps.Copy(podLabels, labels)
+	return podLabels
+}
+
 func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
