@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"maps"
 	"strconv"
 
@@ -32,8 +33,9 @@ type AgentApplierDeleter struct {
 }
 
 type AgentApplyOptions struct {
-	AllowedPorts        []int32
-	CollectorConfigYAML string
+	AllowedPorts            []int32
+	CollectorConfigYAML     string
+	ComponentSelectorLabels map[string]string
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
@@ -49,7 +51,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
@@ -83,8 +85,8 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
-	selectorLabels := defaultLabels(aad.Config.BaseName)
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts GatewayApplyOptions) *appsv1.DaemonSet {
+	selectorLabels := labels.MakeDefaultLabel(aad.Config.BaseName)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))
@@ -121,7 +123,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      dsConfig.PodLabels,
+					Labels:      opts.ComponentSelectorLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -266,10 +267,13 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
+	metricGatewaySelectorLabels := labels.MakeMetricGatewaySelectorLabel(r.config.GatewayName)
+
 	opts := otelcollector.GatewayApplyOptions{
 		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
+		ComponentSelectorLabels:        metricGatewaySelectorLabels,
 		IstioEnabled:                   isIstioActive,
 		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
@@ -306,12 +310,15 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
+	metricAgentSelectorLabels := labels.MakeMetricAgentSelectorLabel(r.config.AgentName)
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
-			AllowedPorts:        allowedPorts,
-			CollectorConfigYAML: string(agentConfigYAML),
+			AllowedPorts:            allowedPorts,
+			CollectorConfigYAML:     string(agentConfigYAML),
+			ComponentSelectorLabels: metricAgentSelectorLabels,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)

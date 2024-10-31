@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"maps"
 	"strings"
 
@@ -32,11 +33,12 @@ type GatewayApplierDeleter struct {
 }
 
 type GatewayApplyOptions struct {
-	AllowedPorts        []int32
-	CollectorConfigYAML string
-	CollectorEnvVars    map[string][]byte
-	IstioEnabled        bool
-	IstioExcludePorts   []int32
+	AllowedPorts            []int32
+	CollectorConfigYAML     string
+	CollectorEnvVars        map[string][]byte
+	ComponentSelectorLabels map[string]string
+	IstioEnabled            bool
+	IstioExcludePorts       []int32
 	// Replicas specifies the number of gateway replicas.
 	Replicas int32
 	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
@@ -125,7 +127,7 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	selectorLabels := defaultLabels(gad.Config.BaseName)
+	selectorLabels := labels.MakeDefaultLabel(gad.Config.BaseName)
 
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
@@ -134,11 +136,9 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 
 	deploymentConfig := gad.Config.Deployment
 
-	if deploymentConfig.PodLabels != nil {
-		maps.Copy(deploymentConfig.PodLabels, map[string]string{
-			"sidecar.istio.io/inject": fmt.Sprintf("%t", opts.IstioEnabled),
-		})
-	}
+	maps.Copy(opts.ComponentSelectorLabels, map[string]string{
+		"sidecar.istio.io/inject": fmt.Sprintf("%t", opts.IstioEnabled),
+	})
 
 	podSpec := makePodSpec(
 		gad.Config.BaseName,
@@ -164,7 +164,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      deploymentConfig.PodLabels,
+					Labels:      opts.ComponentSelectorLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,
@@ -230,7 +230,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	labels := defaultLabels(gad.Config.BaseName)
+	labels := labels.MakeDefaultLabel(gad.Config.BaseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -260,7 +260,7 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	labels := defaultLabels(gad.Config.BaseName)
+	labels := labels.MakeDefaultLabel(gad.Config.BaseName)
 
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{

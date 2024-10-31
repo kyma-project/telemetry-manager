@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -245,10 +246,13 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
+	traceGatewaySelectorLabels := labels.MakeTraceGatewaySelectorLabel(r.config.TraceGatewayName)
+
 	opts := otelcollector.GatewayApplyOptions{
 		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
+		ComponentSelectorLabels:        traceGatewaySelectorLabels,
 		IstioEnabled:                   isIstioActive,
 		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
