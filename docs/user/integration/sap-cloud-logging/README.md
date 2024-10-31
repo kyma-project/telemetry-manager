@@ -10,18 +10,17 @@ Learn how to configure the Telemetry module to ingest application and access log
 
 ## Table of Content
 
-- [Integrate with SAP Cloud Logging](#integrate-with-sap-cloud-logging)
-  - [Table of Content](#table-of-content)
-  - [Prerequisites](#prerequisites)
-  - [Context](#context)
-  - [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
-    - [Set Up Application Logs](#set-up-application-logs)
-    - [Set Up Access Logs](#set-up-access-logs)
-  - [Ship Distributed Traces to SAP Cloud Logging](#ship-distributed-traces-to-sap-cloud-logging)
-  - [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
-  - [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
-  - [Use SAP Cloud Logging Alerts](#use-sap-cloud-logging-alerts)
-  - [Use SAP Cloud Logging Dashboards](#use-sap-cloud-logging-dashboards)
+- [Table of Content](#table-of-content)
+- [Prerequisites](#prerequisites)
+- [Context](#context)
+- [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
+  - [Set Up Application Logs](#set-up-application-logs)
+  - [Set Up Access Logs](#set-up-access-logs)
+- [Ship Distributed Traces to SAP Cloud Logging](#ship-distributed-traces-to-sap-cloud-logging)
+- [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
+- [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
+- [Use SAP Cloud Logging Alerts](#use-sap-cloud-logging-alerts)
+- [Use SAP Cloud Logging Dashboards](#use-sap-cloud-logging-dashboards)
 
 ## Prerequisites
 
@@ -103,11 +102,9 @@ You can set up shipment of applications and access logs to SAP Cloud Logging. Th
 
 By default, Istio sidecar injection and Istio access logs are disabled in Kyma. To analyze access logs of your workload in the default SAP Cloud Logging dashboards shipped for SAP BTP, Kyma runtime, you must enable them:
 
-3. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection).
+1. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/tutorials/01-40-enable-sidecar-injection).
 
-1. Enable Istio sidecar injection for your workload. See [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection).
-
-2. Enable Istio access logs for your workload. See [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
+2. Enable Istio access logs for your workload. See [Configuring Istio Access Logs](https://kyma-project.io/#/istio/user/tutorials/01-45-enable-istio-access-logs).
 
 3. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma with the following script:
 
