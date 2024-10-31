@@ -2,7 +2,6 @@ package otelcollector
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -20,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 )
 
 var (
@@ -525,7 +526,6 @@ func TestDeleteGatewayResources(t *testing.T) {
 }
 
 func createGatewayConfig() GatewayConfig {
-
 	return GatewayConfig{
 		Config: Config{
 			BaseName:  gatewayName,

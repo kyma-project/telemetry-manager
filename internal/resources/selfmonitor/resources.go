@@ -3,7 +3,6 @@ package selfmonitor
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"maps"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )

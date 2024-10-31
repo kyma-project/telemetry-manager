@@ -158,7 +158,6 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 }
 
 func newMetricAgentApplierDeleter(config MetricPipelineControllerConfig) *otelcollector.AgentApplierDeleter {
-
 	rbac := otelcollector.MakeMetricAgentRBAC(
 		types.NamespacedName{
 			Name:      metricAgentBaseName,
