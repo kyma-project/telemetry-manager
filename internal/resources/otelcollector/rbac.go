@@ -1,6 +1,7 @@
 package otelcollector
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -45,7 +46,7 @@ func makeTraceGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Labels:    labels.MakeDefaultLabel(name.Name),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -67,7 +68,7 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Labels:    labels.MakeDefaultLabel(name.Name),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -114,7 +115,7 @@ func makeMetricGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Labels:    labels.MakeDefaultLabel(name.Name),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -158,7 +159,7 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Labels:    labels.MakeDefaultLabel(name.Name),
 		},
 		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
@@ -174,7 +175,7 @@ func makeMetricRole(name types.NamespacedName) *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Labels:    labels.MakeDefaultLabel(name.Name),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -190,7 +191,7 @@ func makeMetricRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Labels:    labels.MakeDefaultLabel(name.Name),
 		},
 		Subjects: []rbacv1.Subject{
 			{
