@@ -85,7 +85,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts GatewayApplyOptions) *appsv1.DaemonSet {
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
 	selectorLabels := labels.MakeDefaultLabel(aad.Config.BaseName)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
