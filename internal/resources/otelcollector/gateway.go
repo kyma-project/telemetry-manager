@@ -290,5 +290,6 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
 		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
 	}
+
 	return annotations
 }

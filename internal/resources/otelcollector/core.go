@@ -127,6 +127,7 @@ func defaultLabels(baseName string) map[string]string {
 func MakePodLabels(baseName string, labels map[string]string) map[string]string {
 	podLabels := defaultLabels(baseName)
 	maps.Copy(podLabels, labels)
+
 	return podLabels
 }
 

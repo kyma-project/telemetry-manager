@@ -518,6 +518,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 
 func createGatewayConfig() GatewayConfig {
 	podLabels := MakePodLabels(gatewayName, map[string]string{})
+	
 	return GatewayConfig{
 		Config: Config{
 			BaseName:  gatewayName,
