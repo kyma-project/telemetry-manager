@@ -85,9 +85,6 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
 	selectorLabels := defaultLabels(aad.Config.BaseName)
-	podLabels := maps.Clone(selectorLabels)
-	podLabels["sidecar.istio.io/inject"] = "true"
-	podLabels["telemetry.kyma-project.io/metric-scrape"] = "true"
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))
@@ -124,7 +121,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
+					Labels:      dsConfig.PodLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,

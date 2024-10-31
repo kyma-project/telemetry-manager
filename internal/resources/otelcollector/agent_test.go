@@ -32,6 +32,13 @@ func TestApplyAgentResources(t *testing.T) {
 				BaseName:  agentName,
 				Namespace: agentNamespace,
 			},
+			DaemonSet: DaemonSetConfig{
+				PodLabels: map[string]string{
+					"app.kubernetes.io/name":                  agentName,
+					"telemetry.kyma-project.io/metric-scrape": "true",
+					"sidecar.istio.io/inject":                 "true",
+				},
+			},
 		},
 		RBAC: createAgentRBAC(),
 	}

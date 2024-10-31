@@ -163,6 +163,7 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 func newMetricAgentApplierDeleter(config MetricPipelineControllerConfig) *otelcollector.AgentApplierDeleter {
 	podLabels := otelcollector.MakePodLabels(metricAgentBaseName, map[string]string{
 		metricAgentScrapeSelector: "true",
+		"sidecar.istio.io/inject": "true",
 	})
 
 	rbac := otelcollector.MakeMetricAgentRBAC(
