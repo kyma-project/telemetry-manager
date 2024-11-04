@@ -764,7 +764,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Remedy 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
 
-**Cause 3**: A deny all `NetworkPolicy` was created in the workload namespace and the agent cannot scrape metric from annotated workloads.
+**Cause 3**: A deny-all `NetworkPolicy` was created in the workload namespace, which prevents that the agent can scrape metrics from annotated workloads.
 
 **Remedy 3**: Define a `NetworkPolicy` to let the agent scrape your workload using the `telemetry.kyma-project.io/metric-scrape` label.
 
