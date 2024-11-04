@@ -40,12 +40,3 @@ func MakeTraceGatewaySelectorLabel(baseName string) map[string]string {
 		traceGatewayExportSelector: "true",
 	}
 }
-
-func MakeFluentBitSelectorLabel() map[string]string {
-	return map[string]string{
-		selectorLabelKey:             "fluent-bit",
-		"app.kubernetes.io/instance": "telemetry",
-		istioSidecarInjectLabel:      "true",
-		fluentbitExportSelector:      "true",
-	}
-}
