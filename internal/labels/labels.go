@@ -7,7 +7,6 @@ const (
 	metricAgentScrapeSelector   = "telemetry.kyma-project.io/metric-scrape"
 	metricGatewayIngestSelector = "telemetry.kyma-project.io/metric-ingest"
 	metricGatewayExportSelector = "telemetry.kyma-project.io/metric-export"
-	fluentbitExportSelector     = "telemetry.kyma-project.io/log-export"
 	istioSidecarInjectLabel     = "sidecar.istio.io/inject"
 )
 
