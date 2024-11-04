@@ -5,11 +5,11 @@ go 1.23.1
 require (
 	github.com/bombsimon/wsl/v4 v4.4.1
 	github.com/golangci/golangci-lint v1.61.0
-	github.com/google/yamlfmt v0.13.0
+	github.com/google/yamlfmt v0.14.0
 	github.com/k3d-io/k3d/v5 v5.7.4
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
 	github.com/mikefarah/yq/v4 v4.44.3
-	github.com/onsi/ginkgo/v2 v2.20.2
+	github.com/onsi/ginkgo/v2 v2.21.0
 	github.com/vektra/mockery/v2 v2.46.3
 	github.com/vladopajic/go-test-coverage/v2 v2.10.2
 	golang.org/x/tools v0.26.0
@@ -131,7 +131,7 @@ require (
 	github.com/google/go-github/v56 v56.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20240827171923-fa2c70bbbfe5 // indirect
+	github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gordonklaus/ineffassign v0.1.0 // indirect
