@@ -56,4 +56,6 @@ jobs:
           if ${{ steps.changed-docs.outputs.any_changed }}; then
            gh pr edit ${{ github.event.number }} --add-label "sync-with-dita"
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
