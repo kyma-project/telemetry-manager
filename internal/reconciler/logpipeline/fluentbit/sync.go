@@ -147,9 +147,11 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Host, &newSecret); copyErr != nil {
 				return copyErr
 			}
+
 			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.User, &newSecret); copyErr != nil {
 				return copyErr
 			}
+
 			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Password, &newSecret); copyErr != nil {
 				return copyErr
 			}
@@ -182,6 +184,7 @@ func (s *syncer) copyEnvSecretData(ctx context.Context, prefix string, value *te
 	}
 
 	var ref = value.ValueFrom.SecretKeyRef
+
 	targetKey := builder.FormatEnvVarName(prefix, ref.Namespace, ref.Name, ref.Key)
 	if copyErr := s.copySecretData(ctx, *ref, targetKey, newSecret.Data); copyErr != nil {
 		return fmt.Errorf("unable to copy secret data: %w", copyErr)
