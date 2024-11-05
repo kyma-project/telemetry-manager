@@ -142,10 +142,16 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 			continue
 		}
 
-		for _, ref := range getEnvSecretRefs(&logPipelines[i]) {
-			targetKey := builder.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
-			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
-				return fmt.Errorf("unable to copy secret data: %w", copyErr)
+		var httpOutput = logPipelines[i].Spec.Output.HTTP
+		if httpOutput != nil {
+			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Host, &newSecret); copyErr != nil {
+				return copyErr
+			}
+			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.User, &newSecret); copyErr != nil {
+				return copyErr
+			}
+			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Password, &newSecret); copyErr != nil {
+				return copyErr
 			}
 		}
 
@@ -170,27 +176,21 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 	return nil
 }
 
-func getEnvSecretRefs(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
-	var refs []telemetryv1alpha1.SecretKeyRef
-
-	output := lp.Spec.Output
-	if output.HTTP != nil {
-		refs = appendIfSecretRef(refs, output.HTTP.Host)
-		refs = appendIfSecretRef(refs, output.HTTP.User)
-		refs = appendIfSecretRef(refs, output.HTTP.Password)
+func (s *syncer) copyEnvSecretData(ctx context.Context, prefix string, value *telemetryv1alpha1.ValueType, newSecret *corev1.Secret) error {
+	if value.Value != "" || value.ValueFrom == nil || value.ValueFrom.SecretKeyRef == nil {
+		return nil
 	}
 
-	return refs
-}
-
-func appendIfSecretRef(secretKeyRefs []telemetryv1alpha1.SecretKeyRef, valueType telemetryv1alpha1.ValueType) []telemetryv1alpha1.SecretKeyRef {
-	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
-		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
+	var ref = value.ValueFrom.SecretKeyRef
+	targetKey := builder.FormatEnvVarName(prefix, ref.Namespace, ref.Name, ref.Key)
+	if copyErr := s.copySecretData(ctx, *ref, targetKey, newSecret.Data); copyErr != nil {
+		return fmt.Errorf("unable to copy secret data: %w", copyErr)
 	}
 
-	return secretKeyRefs
+	return nil
 }
 
+// TODO: Rename this method and OutputTLSConfigSecret + add documentation comments
 func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
 	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
 	if err != nil {
