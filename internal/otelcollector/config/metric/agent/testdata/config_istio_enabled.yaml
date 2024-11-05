@@ -191,10 +191,6 @@ receivers:
                       target_label: __scheme__
                       replacement: https
                       action: replace
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
-                      regex: (https?)
-                      target_label: __scheme__
-                      action: replace
                     - source_labels: [__scheme__]
                       regex: (https)
                       action: drop

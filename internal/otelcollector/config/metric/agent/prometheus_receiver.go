@@ -71,28 +71,19 @@ func makePrometheusConfig(opts BuildOptions, jobNamePrefix string, role Role, re
 // They restrict Pods that are selected for scraping and set internal labels (__address__, __scheme__, etc.).
 // See more: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod.
 //
-// If requireHTTPS is true, only Pods with Istio sidecars or those explicitly marked with prometheus.io/scheme=http annotations are selected.
-// If requireHTTPS is false, only Pods without Istio sidecars or those marked with prometheus.io/scheme=https annotation are selected.
-func makePrometheusPodsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
-	relabelConfigs := []RelabelConfig{
+// Only Pods without Istio sidecars are selected.
+func makePrometheusPodsRelabelConfigs(_ bool) []RelabelConfig {
+	return []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedPod),
 		keepIfScrapingEnabled(AnnotatedPod),
 		dropIfPodNotRunning(),
 		dropIfInitContainer(),
 		dropIfIstioProxy(),
 		inferSchemeFromIstioInjectedLabel(),
-		inferSchemeFromAnnotation(AnnotatedPod),
-	}
-
-	if requireHTTPS {
-		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTP())
-	} else {
-		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTPS())
-	}
-
-	return append(relabelConfigs,
+		dropIfSchemeHTTPS(),
 		inferMetricsPathFromAnnotation(AnnotatedPod),
-		inferAddressFromAnnotation(AnnotatedPod))
+		inferAddressFromAnnotation(AnnotatedPod),
+	}
 }
 
 // makePrometheusEndpointsRelabelConfigs generates a set of relabel configs for the Endpoint role type.
