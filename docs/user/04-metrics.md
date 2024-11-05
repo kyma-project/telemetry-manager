@@ -766,7 +766,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause 3**: A deny-all `NetworkPolicy` was created in the workload namespace, which prevents that the agent can scrape metrics from annotated workloads.
 
-**Remedy 3**: Define a `NetworkPolicy` to let the agent scrape your workload using the `telemetry.kyma-project.io/metric-scrape` label.
+**Remedy 3**: Create a separate `NetworkPolicy` to explicitly let the agent scrape your workload using the `telemetry.kyma-project.io/metric-scrape` label.
 
 For example, see the following `NetworkPolicy` configuration:
 ```yaml
