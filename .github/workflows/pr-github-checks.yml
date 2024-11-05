@@ -102,3 +102,26 @@ jobs:
             echo "kustomization.yaml file changed!"
             exit 1
           fi
+
+  sync-dita-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check-out code
+        uses: actions/checkout@v4
+
+      - name: Check changes in user docs folder
+        uses: tj-actions/changed-files@6b2903bdce6310cfbddd87c418f253cf29b2dec9
+        id: changed-docs
+        with:
+          files: "docs/user/**"
+
+      - name: Add "Sync with DITA" label
+        run: |
+          if ${{ steps.changed-docs.outputs.any_changed }}; then
+           gh pr edit $NUMBER --add-label "sync-with-dita"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.number }}
+
