@@ -14,7 +14,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
 type syncer struct {
@@ -128,6 +127,7 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 	return nil
 }
 
+// TODO: Rename this method and EnvSecret + add documentation comments
 func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
 	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.EnvSecret)
 	if err != nil {
@@ -142,7 +142,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 			continue
 		}
 
-		for _, ref := range secretref.GetEnvSecretRefs(&logPipelines[i]) {
+		for _, ref := range getEnvSecretRefs(&logPipelines[i]) {
 			targetKey := builder.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
 			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
@@ -168,6 +168,27 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 	}
 
 	return nil
+}
+
+func getEnvSecretRefs(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
+	var refs []telemetryv1alpha1.SecretKeyRef
+
+	output := lp.Spec.Output
+	if output.HTTP != nil {
+		refs = appendIfSecretRef(refs, output.HTTP.Host)
+		refs = appendIfSecretRef(refs, output.HTTP.User)
+		refs = appendIfSecretRef(refs, output.HTTP.Password)
+	}
+
+	return refs
+}
+
+func appendIfSecretRef(secretKeyRefs []telemetryv1alpha1.SecretKeyRef, valueType telemetryv1alpha1.ValueType) []telemetryv1alpha1.SecretKeyRef {
+	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
+		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
+	}
+
+	return secretKeyRefs
 }
 
 func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {

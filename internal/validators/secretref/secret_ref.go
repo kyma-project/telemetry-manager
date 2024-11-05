@@ -25,14 +25,20 @@ var (
 	ErrSecretRefMissingFields = errors.New("secret reference is missing field/s")
 )
 
+// ValidateTracePipeline validates the secret references in a TracePipeline, ensuring that the references are valid,
+// and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
 	return v.validate(ctx, getSecretRefsTracePipeline(pipeline))
 }
 
+// ValidateMetricPipeline validates the secret references in a MetricPipeline, ensuring that the references are valid,
+// and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateMetricPipeline(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
 	return v.validate(ctx, getSecretRefsMetricPipeline(pipeline))
 }
 
+// ValidateLogPipeline validates the secret references in a LogPipeline, ensuring that the references are valid,
+// and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	return v.validate(ctx, getSecretRefsLogPipeline(pipeline))
 }
@@ -109,14 +115,14 @@ func getSecretRefsLogPipeline(lp *telemetryv1alpha1.LogPipeline) []telemetryv1al
 		}
 	}
 
-	refs = append(refs, GetEnvSecretRefs(lp)...)
+	refs = append(refs, getEnvSecretRefs(lp)...)
 	refs = append(refs, getTLSSecretRefs(lp)...)
 
 	return refs
 }
 
-// GetEnvSecretRefs returns the secret references of a LogPipeline that should be stored in the env secret
-func GetEnvSecretRefs(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
+// getEnvSecretRefs returns the secret references of a LogPipeline that should be stored in the env secret
+func getEnvSecretRefs(lp *telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.SecretKeyRef {
 	var refs []telemetryv1alpha1.SecretKeyRef
 
 	output := lp.Spec.Output
