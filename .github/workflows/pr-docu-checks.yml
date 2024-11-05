@@ -39,3 +39,21 @@ jobs:
       - name: Verify links
         run: |
           md-check-link -q -n 8 -c https://raw.githubusercontent.com/kyma-project/md-check-link/main/.mlc.config.json ./
+
+  sync-dita-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check-out code
+        uses: actions/checkout@v4
+
+      - name: Check changes in user docs folder
+        uses: tj-actions/changed-files@6b2903bdce6310cfbddd87c418f253cf29b2dec9
+        id: changed-docs
+        with:
+          files: "docs/user/**"
+      - name: Add "Sync with DITA" label
+        run: |
+          if ${{ steps.changed-docs.outputs.any_changed }}; then
+           gh pr edit ${{ github.event.number }} --add-label "sync-with-dita"
+          fi
+
