@@ -44,13 +44,15 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 		},
 	}
 
+	// Set resource requests/limits for directory-size exporter
 	resourcesExporter := corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    resource.MustParse("1m"),
 			corev1.ResourceMemory: resource.MustParse("5Mi"),
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    resource.MustParse("10m"),
-			corev1.ResourceMemory: resource.MustParse("20Mi"),
+			corev1.ResourceMemory: resource.MustParse("50Mi"),
 		},
 	}
 
