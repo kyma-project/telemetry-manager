@@ -51,11 +51,14 @@ jobs:
         id: changed-docs
         with:
           files: "docs/user/**"
+
       - name: Add "Sync with DITA" label
         run: |
           if ${{ steps.changed-docs.outputs.any_changed }}; then
-           gh pr edit ${{ github.event.number }} --add-label "sync-with-dita"
+           gh pr edit $NUMBER --add-label "sync-with-dita"
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.number }}
 
