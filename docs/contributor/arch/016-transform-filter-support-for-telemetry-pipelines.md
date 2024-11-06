@@ -112,8 +112,10 @@ The OTTL library is still in its alpha phase, meaning that updates to the packag
 
 To mitigate this risk, we suggest the following measures:
 - The [beta version](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/28892) of the OTTL library will be used in the OTel Collector to ensure that the library is stable and reliable.
-- New Versions with Breaking Changes: New versions with [breaking changes](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/coding-guidelines.md#breaking-changes) of the OTTL library will be rolled out with backward compatibility. This will help users adapt changes and reduce the chance of widespread disruption.
+- New Versions with Breaking Changes: The [breaking changes](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/coding-guidelines.md#breaking-changes) of the OTTL library will be released with backward compatibility, the backward compatibility provided via `feature gates` and will be available over several releases. This will help users adapt changes and reduce the chance of widespread disruption.
 - Thorough Testing: We will maintain strict version control of the OTTL library, ensuring that each update is thoroughly tested. Automated tests will validate that existing pipelines continue to work as expected.
 - Documentation: We will provide detailed documentation and practical examples of how to configure filter and transformation processors using OTTL expressions.
 - Community Support: We will actively engage with the OpenTelemetry community to address any issues or concerns that arise from using the OTTL library.
-- The public Go API: The breaking changes most likely will not follow deprecation policy, this may require changes in our implementation.
+
+
+> **NOTE:** The public Go API (not the user faced features), the breaking changes most likely will not follow deprecation policy, this may require changes in our implementation uses the public API.
