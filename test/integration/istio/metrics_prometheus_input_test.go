@@ -126,27 +126,27 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	})
 })
 
-func podMetricsShouldNotBeDelivered(proxyURL, targetName string) {
+func podMetricsShouldNotBeDelivered(proxyURL, podName string) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
 		bodyContent, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
+		resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(
 			Not(ContainElement(SatisfyAll(
 				HaveName(BeElementOf(prommetricgen.MetricNames)),
-				Not(HaveMetricAttributes(HaveKeyWithValue("service", targetName))),
-				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", targetName)),
+				Not(HaveMetricAttributes(HaveKey("service"))),
+				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
 			))),
 		))
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func podScrapedMetricsShouldBeDelivered(proxyURL, targetName string) {
+func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -159,8 +159,8 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, targetName string) {
 		g.Expect(bodyContent).To(HaveFlatMetrics(
 			ContainElement(SatisfyAll(
 				HaveName(BeElementOf(prommetricgen.MetricNames)),
-				Not(HaveMetricAttributes(HaveKeyWithValue("service", targetName))),
-				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", targetName)),
+				Not(HaveMetricAttributes(HaveKey("service"))),
+				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
 				HaveScopeName(Equal(InstrumentationScopePrometheus)),
 				HaveScopeVersion(SatisfyAny(
 					Equal("main"),
