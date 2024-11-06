@@ -65,9 +65,10 @@ spec:
 ```
 ### Solution
 
-The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process, the OTTL library provides two categories of functions, the [editor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#editors) functions and the [converters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#converters).
-The editor functions are used to modify the data, while the converters are used in the OTTL condition expressions to convert the data type to be able to compare it with the expected value. The current existing pipelines use a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions. The solution will use this subset of editor functions to provide the necessary functionality to the users, the additional functions when required can be added.
-The converter functions support a broad variety of data types, including xml, json, and string; not all of these functions are required for the current use cases, basic operation like string comparison, formatting and data type checks could be sufficient. 
+The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process. The OTTL library provides two categories of functions, the [editor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#editors) functions and the [converters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#converters).
+- The editor functions are used to modify the data. The current pipelines use a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions. We will use this subset of editor functions to provide the necessary functionality to the users. If needed, other functions can be added.
+- The converter functions are used in the OTTL condition expressions to convert the data type to compare it with the expected value. They support a broad variety of data types, including xml, json, and string. We probably only need basic operation like string comparison, formatting and data type checks. 
+
 
 The OTTL supports three types of error modes to handle errors in the OTTL expression execution:
 - `ignore` : The processor ignores errors returned by conditions, logs them, and continues on to the next condition.
@@ -76,11 +77,11 @@ The OTTL supports three types of error modes to handle errors in the OTTL expres
 
 The recommended error mode is `ignore` and this will be used as default configuration.
 
-The OTTL context will be embedded in the OTTL statements, [this is still in progress ](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017) and will be available in the upcoming beta version. The solution will not implement the context as configuration parameter.
+The OTTL context will be embedded in the OTTL statements (in progress with [issue #29017](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017)) and will be available in the upcoming beta version. The solution will not implement the context as configuration parameter.
 
-To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be end of the pipeline chain before exporters.
+To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be near the end of the pipeline chain, before the exporters.
 
-The OTel configuration :
+See the OTel configuration:
 
 ```yaml
 service:
