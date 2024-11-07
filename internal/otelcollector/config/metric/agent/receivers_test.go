@@ -211,7 +211,6 @@ func TestReceivers(t *testing.T) {
 				istioEnabled: true,
 				expectedPodScrapeJobs: []string{
 					"app-pods",
-					"app-pods-secure",
 				},
 				expectedServiceScrapeJobs: []string{
 					"app-services",
