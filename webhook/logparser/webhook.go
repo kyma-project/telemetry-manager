@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 )
 
@@ -71,7 +72,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 }
 
 func (v *ValidatingWebhookHandler) validateLogParser(logParser *telemetryv1alpha1.LogParser) error {
-	err := logParser.Validate()
+	err := validation.Validate(logParser)
 	if err != nil {
 		return err
 	}
