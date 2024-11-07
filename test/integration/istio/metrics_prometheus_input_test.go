@@ -143,7 +143,7 @@ func podMetricsShouldNotBeDelivered(proxyURL, podName string) {
 				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
 			))),
 		))
-	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, 3*periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
 func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
