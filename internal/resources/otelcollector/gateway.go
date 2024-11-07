@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"strings"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -135,10 +134,6 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	affinity := makePodAffinity(selectorLabels)
 
 	deploymentConfig := gad.Config.Deployment
-
-	maps.Copy(opts.ComponentSelectorLabels, map[string]string{
-		"sidecar.istio.io/inject": fmt.Sprintf("%t", opts.IstioEnabled),
-	})
 
 	podSpec := makePodSpec(
 		gad.Config.BaseName,

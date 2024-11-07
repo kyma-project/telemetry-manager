@@ -29,6 +29,7 @@ func MakeMetricGatewaySelectorLabel(baseName string) map[string]string {
 		selectorLabelKey:            baseName,
 		metricGatewayIngestSelector: "true",
 		metricGatewayExportSelector: "true",
+		istioSidecarInjectLabel:     "true",
 	}
 }
 
@@ -37,5 +38,6 @@ func MakeTraceGatewaySelectorLabel(baseName string) map[string]string {
 		selectorLabelKey:           baseName,
 		traceGatewayIngestSelector: "true",
 		traceGatewayExportSelector: "true",
+		istioSidecarInjectLabel:    "true",
 	}
 }

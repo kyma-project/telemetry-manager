@@ -282,7 +282,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		}, dep.Spec.Selector.MatchLabels, "must have expected deployment selector labels")
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name":                 gatewayName,
-			"sidecar.istio.io/inject":                "false",
+			"sidecar.istio.io/inject":                "true",
 			"telemetry.kyma-project.io/trace-ingest": "true",
 			"telemetry.kyma-project.io/trace-export": "true",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
