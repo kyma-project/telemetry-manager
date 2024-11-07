@@ -313,9 +313,9 @@ spec:
 
 The Metric agent is configured with a generic scrape configuration, which uses annotations to specify the endpoints to scrape in the cluster.
 
-For metrics ingestion to start automatically: 
-* If istio is not active, apply the annotations in the table below either to a Service that resolves your metrics port, or directly to the Pod.
-* If istio is active, apply the annotations in the table below to a Service that resolves your metrics port. Applying the annotations directly to the Pod will not trigger metrics scraping if istio is active.
+For metrics ingestion to start automatically, use the annotations of the following table.
+If an Istio sidecar is present, apply them to a Service that resolves your metrics port.
+Only if Istio sidecar is not present, you can alternatively apply the annotations directly to the Pod.
 
 | Annotation Key                                                   | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
 |------------------------------------------------------------------|-------------------|-------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
