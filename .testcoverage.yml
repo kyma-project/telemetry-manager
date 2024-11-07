@@ -39,6 +39,8 @@ override:
     path: ^internal/resources/otelcollector$
   - threshold: 78
     path: ^internal/resources/selfmonitor$
+  - threshold: 80
+    path: ^internal/validators/secretref$
   - threshold: 75
     path: ^internal/resourcelock$
   - threshold: 85
