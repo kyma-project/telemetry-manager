@@ -37,6 +37,7 @@ type ValidatingWebhookHandler struct {
 	decoder admission.Decoder
 }
 
+// TODO: Merge validation package with the webhook package, avoid useless dependency injection
 func NewValidatingWebhookHandler(client client.Client, decoder admission.Decoder) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
 		Client:  client,
@@ -72,7 +73,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 }
 
 func (v *ValidatingWebhookHandler) validateLogParser(logParser *telemetryv1alpha1.LogParser) error {
-	err := validation.Validate(logParser)
+	err := validation.ValidateSpec(logParser)
 	if err != nil {
 		return err
 	}

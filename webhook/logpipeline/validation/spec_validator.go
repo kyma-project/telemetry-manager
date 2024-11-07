@@ -16,7 +16,7 @@ var (
 	ErrInvalidPipelineDefinition = errors.New("invalid log pipeline definition")
 )
 
-func Validate(lp *telemetryv1alpha1.LogPipeline) error {
+func ValidateSpec(lp *telemetryv1alpha1.LogPipeline) error {
 	if err := validateOutput(lp); err != nil {
 		return err
 	}

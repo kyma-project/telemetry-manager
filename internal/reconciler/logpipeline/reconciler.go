@@ -36,7 +36,7 @@ var (
 
 type LogPipelineReconciler interface {
 	Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-	SupportedOutput() telemetryv1alpha1.Mode
+	SupportedOutput() Mode
 }
 
 type DaemonSetAnnotator interface {
@@ -59,8 +59,15 @@ type Reconciler struct {
 	client.Client
 
 	overridesHandler OverridesHandler
-	reconcilers      map[telemetryv1alpha1.Mode]LogPipelineReconciler
+	reconcilers      map[Mode]LogPipelineReconciler
 }
+
+type Mode int
+
+const (
+	OTel Mode = iota
+	FluentBit
+)
 
 func New(
 	client client.Client,
@@ -68,7 +75,7 @@ func New(
 	overridesHandler OverridesHandler,
 	reconcilers ...LogPipelineReconciler,
 ) *Reconciler {
-	reconcilersMap := make(map[telemetryv1alpha1.Mode]LogPipelineReconciler)
+	reconcilersMap := make(map[Mode]LogPipelineReconciler)
 	for _, r := range reconcilers {
 		reconcilersMap[r.SupportedOutput()] = r
 	}
@@ -110,15 +117,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, err
 }
 
-func GetOutputType(t *telemetryv1alpha1.LogPipeline) telemetryv1alpha1.Mode {
+func GetOutputType(t *telemetryv1alpha1.LogPipeline) Mode {
 	if t.Spec.Output.OTLP != nil {
-		return telemetryv1alpha1.OTel
+		return OTel
 	}
 
-	return telemetryv1alpha1.FluentBit
+	return FluentBit
 }
 
-func GetPipelinesForType(ctx context.Context, client client.Client, mode telemetryv1alpha1.Mode) ([]telemetryv1alpha1.LogPipeline, error) {
+func GetPipelinesForType(ctx context.Context, client client.Client, mode Mode) ([]telemetryv1alpha1.LogPipeline, error) {
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := client.List(ctx, &allPipelines); err != nil {
 		return nil, fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
