@@ -28,6 +28,7 @@ func TestMakeMetricGatewaySelectorLabel(t *testing.T) {
 		"app.kubernetes.io/name":                  "metric-gateway",
 		"telemetry.kyma-project.io/metric-ingest": "true",
 		"telemetry.kyma-project.io/metric-export": "true",
+		"sidecar.istio.io/inject":                 "true",
 	}, metricGatewaySelectorLabel)
 }
 func TestMakeTraceGatewaySelectorLabel(t *testing.T) {
@@ -36,5 +37,6 @@ func TestMakeTraceGatewaySelectorLabel(t *testing.T) {
 		"app.kubernetes.io/name":                 "trace-gateway",
 		"telemetry.kyma-project.io/trace-ingest": "true",
 		"telemetry.kyma-project.io/trace-export": "true",
+		"sidecar.istio.io/inject":                "true",
 	}, traceGatewaySelectorLabel)
 }
