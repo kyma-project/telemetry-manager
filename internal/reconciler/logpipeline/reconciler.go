@@ -28,6 +28,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	logutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 var (
@@ -36,7 +37,7 @@ var (
 
 type LogPipelineReconciler interface {
 	Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-	SupportedOutput() Mode
+	SupportedOutput() logutils.Mode
 }
 
 type DaemonSetAnnotator interface {
@@ -59,15 +60,8 @@ type Reconciler struct {
 	client.Client
 
 	overridesHandler OverridesHandler
-	reconcilers      map[Mode]LogPipelineReconciler
+	reconcilers      map[logutils.Mode]LogPipelineReconciler
 }
-
-type Mode int
-
-const (
-	OTel Mode = iota
-	FluentBit
-)
 
 func New(
 	client client.Client,
@@ -75,7 +69,7 @@ func New(
 	overridesHandler OverridesHandler,
 	reconcilers ...LogPipelineReconciler,
 ) *Reconciler {
-	reconcilersMap := make(map[Mode]LogPipelineReconciler)
+	reconcilersMap := make(map[logutils.Mode]LogPipelineReconciler)
 	for _, r := range reconcilers {
 		reconcilersMap[r.SupportedOutput()] = r
 	}
@@ -117,15 +111,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, err
 }
 
-func GetOutputType(t *telemetryv1alpha1.LogPipeline) Mode {
+func GetOutputType(t *telemetryv1alpha1.LogPipeline) logutils.Mode {
 	if t.Spec.Output.OTLP != nil {
-		return OTel
+		return logutils.OTel
 	}
 
-	return FluentBit
+	return logutils.FluentBit
 }
 
-func GetPipelinesForType(ctx context.Context, client client.Client, mode Mode) ([]telemetryv1alpha1.LogPipeline, error) {
+func GetPipelinesForType(ctx context.Context, client client.Client, mode logutils.Mode) ([]telemetryv1alpha1.LogPipeline, error) {
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := client.List(ctx, &allPipelines); err != nil {
 		return nil, fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
