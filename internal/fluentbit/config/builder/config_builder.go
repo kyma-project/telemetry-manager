@@ -7,6 +7,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 var (
@@ -28,9 +29,8 @@ type BuilderConfig struct {
 
 // BuildFluentBitConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
 func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
-	pm := pipeline.PipelineMode()
-
-	if pm != telemetryv1alpha1.FluentBit {
+	pm := logpipelineutils.PipelineMode(pipeline)
+	if pm != logpipelineutils.FluentBit {
 		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", ErrInvalidPipelineDefinition, pm.String())
 	}
 
@@ -77,7 +77,7 @@ func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline) string 
 
 func createLuaDedotFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 	output := logPipeline.Spec.Output
-	if !output.IsHTTPDefined() || !output.HTTP.Dedot {
+	if !logpipelineutils.IsHTTPDefined(&output) || !output.HTTP.Dedot {
 		return ""
 	}
 
@@ -109,7 +109,7 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 }
 
 func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
-	if !pipeline.Spec.Output.IsAnyDefined() {
+	if !logpipelineutils.IsAnyDefined(&pipeline.Spec.Output) {
 		return fmt.Errorf("%w: No output plugin defined", ErrInvalidPipelineDefinition)
 	}
 

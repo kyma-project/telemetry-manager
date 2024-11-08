@@ -120,6 +120,10 @@ linters-settings:
         alias: commonStatusStubs
       - pkg: k8s.io/client-go/testing
         alias: clienttesting
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logpipeline
+        alias: logpipelineutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes
+        alias: sharedtypesutils
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
     check-blank: true # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.

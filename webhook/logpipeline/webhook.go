@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 )
 
@@ -44,6 +45,7 @@ type ValidatingWebhookHandler struct {
 	decoder               admission.Decoder
 }
 
+// TODO: Merge validation package with the webhook package, avoid useless dependency injection
 func NewValidatingWebhookHandler(
 	client client.Client,
 	variablesValidator validation.VariablesValidator,
@@ -86,7 +88,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 
 	var warnMsg []string
 
-	if logPipeline.ContainsCustomPlugin() {
+	if logpipelineutils.ContainsCustomPlugin(logPipeline) {
 		helpText := "https://kyma-project.io/#/telemetry-manager/user/02-logs"
 		msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", logPipeline.Name, helpText)
 		warnMsg = append(warnMsg, msg)
@@ -117,7 +119,7 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 		return err
 	}
 
-	if err := logPipeline.Validate(); err != nil {
+	if err := validation.ValidateSpec(logPipeline); err != nil {
 		log.Error(err, "Failed to validate Fluent Bit input")
 		return err
 	}
