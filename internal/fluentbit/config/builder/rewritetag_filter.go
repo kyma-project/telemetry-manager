@@ -5,14 +5,15 @@ import (
 	"strings"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
 )
 
 func getEmitterPostfixByOutput(output *telemetryv1alpha1.LogPipelineOutput) string {
-	if output.IsHTTPDefined() {
+	if pipelineutils.IsHTTPDefined(output) {
 		return "http"
 	}
 
-	if !output.IsCustomDefined() {
+	if !pipelineutils.IsCustomDefined(output) {
 		return ""
 	}
 

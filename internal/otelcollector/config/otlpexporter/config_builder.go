@@ -9,6 +9,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
 )
 
 type EnvVars map[string][]byte
@@ -106,15 +107,15 @@ func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipe
 	}
 
 	cfg.InsecureSkipVerify = output.TLS.InsecureSkipVerify
-	if output.TLS.CA.IsValid() {
+	if pipelineutils.IsValid(output.TLS.CA) {
 		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSCaVariable(pipelineName))
 	}
 
-	if output.TLS.Cert.IsValid() {
+	if pipelineutils.IsValid(output.TLS.Cert) {
 		cfg.CertPem = fmt.Sprintf("${%s}", makeTLSCertVariable(pipelineName))
 	}
 
-	if output.TLS.Key.IsValid() {
+	if pipelineutils.IsValid(output.TLS.Key) {
 		cfg.KeyPem = fmt.Sprintf("${%s}", makeTLSKeyVariable(pipelineName))
 	}
 
@@ -124,7 +125,7 @@ func makeTLSConfig(output *telemetryv1alpha1.OTLPOutput, otlpEndpointValue, pipe
 func makeHeaders(output *telemetryv1alpha1.OTLPOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
-	if output.Authentication != nil && output.Authentication.Basic.User.IsValid() && output.Authentication.Basic.Password.IsValid() {
+	if output.Authentication != nil && pipelineutils.IsValid(&output.Authentication.Basic.User) && pipelineutils.IsValid(&output.Authentication.Basic.Password) {
 		basicAuthHeaderVariable := makeBasicAuthHeaderVariable(pipelineName)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}

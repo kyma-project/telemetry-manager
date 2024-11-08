@@ -14,6 +14,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
 )
 
 type syncer struct {
@@ -209,19 +210,19 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 		}
 
 		output := logPipelines[i].Spec.Output
-		if !output.IsHTTPDefined() {
+		if !pipelineutils.IsHTTPDefined(&output) {
 			continue
 		}
 
 		tlsConfig := output.HTTP.TLS
-		if tlsConfig.CA.IsValid() {
+		if pipelineutils.IsValid(tlsConfig.CA) {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.CA, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}
 
-		if tlsConfig.Cert.IsValid() && tlsConfig.Key.IsValid() {
+		if pipelineutils.IsValid(tlsConfig.Cert) && pipelineutils.IsValid(tlsConfig.Key) {
 			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Cert, targetCertVariable, newSecret.Data); err != nil {
 				return err
@@ -267,7 +268,7 @@ func (s *syncer) copyFromValueOrSecret(ctx context.Context, value telemetryv1alp
 
 func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
 	var source corev1.Secret
-	if err := s.Get(ctx, sourceRef.NamespacedName(), &source); err != nil {
+	if err := s.Get(ctx, pipelineutils.NamespacedName(&sourceRef), &source); err != nil {
 		return fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", sourceRef.Name, sourceRef.Namespace, err)
 	}
 

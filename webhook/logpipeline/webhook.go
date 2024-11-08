@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 )
 
@@ -87,7 +88,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 
 	var warnMsg []string
 
-	if logPipeline.ContainsCustomPlugin() {
+	if pipelineutils.ContainsCustomPlugin(logPipeline) {
 		helpText := "https://kyma-project.io/#/telemetry-manager/user/02-logs"
 		msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", logPipeline.Name, helpText)
 		warnMsg = append(warnMsg, msg)
