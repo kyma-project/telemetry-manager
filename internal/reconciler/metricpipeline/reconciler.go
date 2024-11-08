@@ -15,6 +15,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
@@ -266,10 +267,13 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
+	metricGatewaySelectorLabels := labels.MakeMetricGatewaySelectorLabel(r.config.GatewayName)
+
 	opts := otelcollector.GatewayApplyOptions{
 		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
+		ComponentSelectorLabels:        metricGatewaySelectorLabels,
 		IstioEnabled:                   isIstioActive,
 		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
@@ -306,12 +310,15 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
+	metricAgentSelectorLabels := labels.MakeMetricAgentSelectorLabel(r.config.AgentName)
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
-			AllowedPorts:        allowedPorts,
-			CollectorConfigYAML: string(agentConfigYAML),
+			AllowedPorts:            allowedPorts,
+			CollectorConfigYAML:     string(agentConfigYAML),
+			ComponentSelectorLabels: metricAgentSelectorLabels,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
