@@ -29,7 +29,7 @@ type BuilderConfig struct {
 
 // BuildFluentBitConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
 func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
-	pm := pipelineutils.PipelineMode(pipeline)
+	pm := pipelineutils.PipelineLogMode(pipeline)
 
 	if pm != pipelineutils.FluentBit {
 		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", ErrInvalidPipelineDefinition, pm.String())
