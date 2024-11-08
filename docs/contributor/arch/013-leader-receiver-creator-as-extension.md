@@ -23,6 +23,10 @@ Implementing it as an extension brings following advantages:
 - Simpler and clear configuration
 - Future-proof
 
+It has following disadvantages:
+- The receiver needs to be modified to support leader election extension
+
+
 ### Leader Election API
 
 ```yaml
