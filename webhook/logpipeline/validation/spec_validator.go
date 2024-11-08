@@ -1,4 +1,4 @@
-package v1alpha1
+package validation
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 )
 
@@ -15,27 +16,19 @@ var (
 	ErrInvalidPipelineDefinition = errors.New("invalid log pipeline definition")
 )
 
-func (lp *LogPipeline) PipelineMode() Mode {
-	if lp.Spec.Output.OTLP != nil {
-		return OTel
-	}
-
-	return FluentBit
-}
-
-func (lp *LogPipeline) Validate() error {
-	if err := lp.validateOutput(); err != nil {
+func ValidateSpec(lp *telemetryv1alpha1.LogPipeline) error {
+	if err := validateOutput(lp); err != nil {
 		return err
 	}
 
-	if err := lp.validateFilters(); err != nil {
+	if err := validateFilters(lp); err != nil {
 		return err
 	}
 
-	return lp.validateInput()
+	return validateInput(lp)
 }
 
-func (lp *LogPipeline) validateOutput() error {
+func validateOutput(lp *telemetryv1alpha1.LogPipeline) error {
 	output := lp.Spec.Output
 	if err := checkSingleOutputPlugin(output); err != nil {
 		return err
@@ -50,7 +43,7 @@ func (lp *LogPipeline) validateOutput() error {
 	return validateCustomOutput(output.Custom)
 }
 
-func checkSingleOutputPlugin(output LogPipelineOutput) error {
+func checkSingleOutputPlugin(output telemetryv1alpha1.LogPipelineOutput) error {
 	if !output.IsAnyDefined() {
 		return fmt.Errorf("no output plugin is defined, you must define one output plugin")
 	}
@@ -62,7 +55,7 @@ func checkSingleOutputPlugin(output LogPipelineOutput) error {
 	return nil
 }
 
-func validateHTTPOutput(httpOutput *LogPipelineHTTPOutput) error {
+func validateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput) error {
 	isValidHostname := validHostname(httpOutput.Host.Value)
 
 	if httpOutput.Host.Value != "" && !isValidHostname {
@@ -120,11 +113,11 @@ func validateCustomOutput(content string) error {
 	return nil
 }
 
-func secretRefAndValueIsPresent(v ValueType) bool {
+func secretRefAndValueIsPresent(v telemetryv1alpha1.ValueType) bool {
 	return v.Value != "" && v.ValueFrom != nil
 }
 
-func (lp *LogPipeline) validateFilters() error {
+func validateFilters(lp *telemetryv1alpha1.LogPipeline) error {
 	// TODO[k15r]: validate Filters in OTLP mode
 	for _, filterPlugin := range lp.Spec.Filters {
 		if err := validateCustomFilter(filterPlugin.Custom); err != nil {
@@ -164,27 +157,26 @@ func validateCustomFilter(content string) error {
 	return nil
 }
 
-func (lp *LogPipeline) validateInput() error {
+func validateInput(lp *telemetryv1alpha1.LogPipeline) error {
 	input := lp.Spec.Input
 	if !input.IsValid() {
 		return nil
 	}
 
-	switch lp.PipelineMode() {
-	case OTel:
-		return lp.validateApplication()
-	case FluentBit:
-		if lp.Spec.Input.OTLP != nil {
-			return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", ErrInvalidPipelineDefinition)
-		}
-
-		return lp.validateApplication()
+	// Pipeline Mode is OTel
+	if lp.Spec.Output.OTLP != nil {
+		return validateApplication(lp)
 	}
 
-	return nil
+	// Pipeline Mode is FluentBit
+	if lp.Spec.Input.OTLP != nil {
+		return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", ErrInvalidPipelineDefinition)
+	}
+
+	return validateApplication(lp)
 }
 
-func (lp *LogPipeline) validateApplication() error {
+func validateApplication(lp *telemetryv1alpha1.LogPipeline) error {
 	application := lp.Spec.Input.Application
 	if application == nil {
 		return nil

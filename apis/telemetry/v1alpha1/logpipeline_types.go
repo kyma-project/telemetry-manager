@@ -22,13 +22,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 )
 
-type Mode int
-
-const (
-	OTel Mode = iota
-	FluentBit
-)
-
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
 	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})

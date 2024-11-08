@@ -7,6 +7,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
+	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
 )
 
 var (
@@ -28,9 +29,9 @@ type BuilderConfig struct {
 
 // BuildFluentBitConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
 func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
-	pm := pipeline.PipelineMode()
+	pm := pipelineutils.DetermineLogPipelineMode(pipeline)
 
-	if pm != telemetryv1alpha1.FluentBit {
+	if pm != pipelineutils.FluentBit {
 		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", ErrInvalidPipelineDefinition, pm.String())
 	}
 
