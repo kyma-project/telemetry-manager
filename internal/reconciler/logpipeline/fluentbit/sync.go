@@ -37,7 +37,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return fmt.Errorf("failed to sync mounted files: %w", err)
 	}
 
-	if err := s.syncConfigSecret(ctx, deployableLogPipelines); err != nil {
+	if err := s.syncEnvConfigSecret(ctx, deployableLogPipelines); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("referenced secret not found: %v", err))
 			return nil
@@ -46,7 +46,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return err
 	}
 
-	if err := s.syncTLSConfigSecret(ctx, deployableLogPipelines); err != nil {
+	if err := s.syncTLSFileConfigSecret(ctx, deployableLogPipelines); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("referenced tls config secret not found: %v", err))
 			return nil
@@ -129,8 +129,8 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 }
 
 // Copies HTTP-specific attributes and user-provided variables to a secret that is later used for providing environment variables to the Fluent Bit configuration.
-func (s *syncer) syncConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.ConfigSecret)
+func (s *syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.EnvConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
 	}
@@ -194,10 +194,10 @@ func (s *syncer) copyConfigSecretData(ctx context.Context, prefix string, value 
 	return nil
 }
 
-// Copies HTTP TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
+// Copies TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
 // (since PEM-encoded strings exceed the maximum allowed length of environment variables on some Linux machines).
-func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.TLSConfigSecret)
+func (s *syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.TLSFileConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
 	}

@@ -31,17 +31,17 @@ import (
 )
 
 type Config struct {
-	DaemonSet         types.NamespacedName
-	SectionsConfigMap types.NamespacedName
-	FilesConfigMap    types.NamespacedName
-	LuaConfigMap      types.NamespacedName
-	ParsersConfigMap  types.NamespacedName
-	ConfigSecret      types.NamespacedName
-	TLSConfigSecret   types.NamespacedName
-	PipelineDefaults  builder.PipelineDefaults
-	Overrides         overrides.Config
-	DaemonSetConfig   fluentbit.DaemonSetConfig
-	RestConfig        rest.Config
+	DaemonSet           types.NamespacedName
+	SectionsConfigMap   types.NamespacedName
+	FilesConfigMap      types.NamespacedName
+	LuaConfigMap        types.NamespacedName
+	ParsersConfigMap    types.NamespacedName
+	EnvConfigSecret     types.NamespacedName
+	TLSFileConfigSecret types.NamespacedName
+	PipelineDefaults    builder.PipelineDefaults
+	Overrides           overrides.Config
+	DaemonSetConfig     fluentbit.DaemonSetConfig
+	RestConfig          rest.Config
 }
 
 var _ logpipeline.LogPipelineReconciler = &Reconciler{}
@@ -320,13 +320,13 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	}
 
 	var envSecret corev1.Secret
-	if err := r.Get(ctx, r.config.ConfigSecret, &envSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.ConfigSecret.Namespace, r.config.ConfigSecret.Name, err)
+	if err := r.Get(ctx, r.config.EnvConfigSecret, &envSecret); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.EnvConfigSecret.Namespace, r.config.EnvConfigSecret.Name, err)
 	}
 
 	var tlsSecret corev1.Secret
-	if err := r.Get(ctx, r.config.TLSConfigSecret, &tlsSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.TLSConfigSecret.Namespace, r.config.TLSConfigSecret.Name, err)
+	if err := r.Get(ctx, r.config.TLSFileConfigSecret, &tlsSecret); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.TLSFileConfigSecret.Namespace, r.config.TLSFileConfigSecret.Name, err)
 	}
 
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil
