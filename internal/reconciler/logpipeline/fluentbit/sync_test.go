@@ -303,8 +303,8 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&credsSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
-		err := sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var envSecret corev1.Secret
@@ -327,15 +327,15 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&passwordSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
-		err := sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		passwordSecret.Data["password"] = []byte("qwertz")
 		err = fakeClient.Update(context.Background(), &passwordSecret)
 		require.NoError(t, err)
 
-		err = sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		err = sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var envSecret corev1.Secret
@@ -356,13 +356,13 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&passwordSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
-		err := sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		now := metav1.Now()
 		allPipelines.Items[0].SetDeletionTimestamp(&now)
-		err = sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		err = sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var envSecret corev1.Secret
@@ -422,14 +422,14 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
 		config := Config{
-			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
 		sut := syncer{fakeClient, config}
-		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.TLSFileConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
@@ -452,21 +452,21 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
 		config := Config{
-			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
 		sut := syncer{fakeClient, config}
-		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		keySecret.Data["my-key.key"] = []byte("new-fake-key-value")
 		err = fakeClient.Update(context.Background(), &keySecret)
 		require.NoError(t, err)
 
-		err = sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err = sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.TLSFileConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
@@ -487,19 +487,19 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
 		config := Config{
-			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
 		sut := syncer{fakeClient, config}
-		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		now := metav1.Now()
 		allPipelines.Items[0].SetDeletionTimestamp(&now)
-		err = sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err = sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.TLSFileConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")

@@ -172,17 +172,10 @@ receivers:
                     - source_labels: [__meta_kubernetes_pod_container_init]
                       regex: (true)
                       action: drop
-                    - source_labels: [__meta_kubernetes_pod_container_name]
-                      regex: (istio-proxy)
-                      action: drop
                     - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
                       regex: (istio)
                       target_label: __scheme__
                       replacement: https
-                      action: replace
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
-                      regex: (https?)
-                      target_label: __scheme__
                       action: replace
                     - source_labels: [__scheme__]
                       regex: (https)
