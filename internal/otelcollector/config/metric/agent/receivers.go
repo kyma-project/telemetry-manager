@@ -11,7 +11,7 @@ func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 	var receiversConfig Receivers
 
 	if inputs.prometheus {
-		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods(opts)
+		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods()
 		receiversConfig.PrometheusAppServices = makePrometheusConfigForServices(opts)
 	}
 
