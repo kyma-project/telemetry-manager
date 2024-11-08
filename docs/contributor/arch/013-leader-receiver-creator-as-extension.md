@@ -33,12 +33,10 @@ It has following disadvantages:
 receivers:
   dummy/foo:
     interval: 1m
-    lease:
-      name: leaderelector/foo
+    leaderelector: leaderelector/foo
   dummy/bar:
     interval: 1m
-    lease:
-      name: leaderelector/bar
+    leaderelector: leaderelector/bar
 extensions:
   leaderelector/foo:
     auth_type: kubeConfig
