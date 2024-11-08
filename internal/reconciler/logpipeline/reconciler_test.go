@@ -26,7 +26,7 @@ func TestGetOutputType(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want pipelineutils.LogMode
+		want pipelineutils.LogPipelineMode
 	}{
 		{
 			name: "OTel",
@@ -140,7 +140,7 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 var _ LogPipelineReconciler = &ReconcilerStub{}
 
 type ReconcilerStub struct {
-	OutputType pipelineutils.LogMode
+	OutputType pipelineutils.LogPipelineMode
 	Result     error
 }
 
@@ -148,6 +148,6 @@ func (r *ReconcilerStub) Reconcile(_ context.Context, _ *telemetryv1alpha1.LogPi
 	return r.Result
 }
 
-func (r *ReconcilerStub) SupportedOutput() pipelineutils.LogMode {
+func (r *ReconcilerStub) SupportedOutput() pipelineutils.LogPipelineMode {
 	return r.OutputType
 }

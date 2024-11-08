@@ -43,7 +43,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.
 	return err
 }
 
-func (r *Reconciler) SupportedOutput() pipelineutils.LogMode {
+func (r *Reconciler) SupportedOutput() pipelineutils.LogPipelineMode {
 	return pipelineutils.OTel
 }
 

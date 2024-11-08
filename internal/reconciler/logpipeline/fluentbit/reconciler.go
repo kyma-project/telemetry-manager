@@ -60,7 +60,7 @@ type Reconciler struct {
 	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
 
-func (r *Reconciler) SupportedOutput() pipelineutils.LogMode {
+func (r *Reconciler) SupportedOutput() pipelineutils.LogPipelineMode {
 	return pipelineutils.FluentBit
 }
 
