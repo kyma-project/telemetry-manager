@@ -37,7 +37,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return fmt.Errorf("failed to sync mounted files: %w", err)
 	}
 
-	if err := s.syncEnvSecret(ctx, deployableLogPipelines); err != nil {
+	if err := s.syncConfigSecret(ctx, deployableLogPipelines); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("referenced secret not found: %v", err))
 			return nil
@@ -128,9 +128,9 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 	return nil
 }
 
-// TODO: Rename this method and EnvSecret + add documentation comments
-func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.EnvSecret)
+// Copies HTTP-specific attributes and user-provided variables to a secret that is later used for providing environment variables to the Fluent Bit configuration.
+func (s *syncer) syncConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.ConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
 	}
@@ -145,15 +145,15 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 
 		var httpOutput = logPipelines[i].Spec.Output.HTTP
 		if httpOutput != nil {
-			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Host, &newSecret); copyErr != nil {
+			if copyErr := s.copyConfigSecretData(ctx, logPipelines[i].Name, &httpOutput.Host, &newSecret); copyErr != nil {
 				return copyErr
 			}
 
-			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.User, &newSecret); copyErr != nil {
+			if copyErr := s.copyConfigSecretData(ctx, logPipelines[i].Name, &httpOutput.User, &newSecret); copyErr != nil {
 				return copyErr
 			}
 
-			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Password, &newSecret); copyErr != nil {
+			if copyErr := s.copyConfigSecretData(ctx, logPipelines[i].Name, &httpOutput.Password, &newSecret); copyErr != nil {
 				return copyErr
 			}
 		}
@@ -179,7 +179,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 	return nil
 }
 
-func (s *syncer) copyEnvSecretData(ctx context.Context, prefix string, value *telemetryv1alpha1.ValueType, newSecret *corev1.Secret) error {
+func (s *syncer) copyConfigSecretData(ctx context.Context, prefix string, value *telemetryv1alpha1.ValueType, newSecret *corev1.Secret) error {
 	if value.Value != "" || value.ValueFrom == nil || value.ValueFrom.SecretKeyRef == nil {
 		return nil
 	}
@@ -194,9 +194,10 @@ func (s *syncer) copyEnvSecretData(ctx context.Context, prefix string, value *te
 	return nil
 }
 
-// TODO: Rename this method and OutputTLSConfigSecret + add documentation comments
+// Copies HTTP TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
+// (since PEM-encoded strings exceed the maximum allowed length of environment variables on some Linux machines).
 func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.TLSConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
 	}

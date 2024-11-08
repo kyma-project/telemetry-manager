@@ -48,13 +48,13 @@ func TestReconcile(t *testing.T) {
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
 	testConfig := Config{
-		DaemonSet:             types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
-		SectionsConfigMap:     types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
-		FilesConfigMap:        types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
-		LuaConfigMap:          types.NamespacedName{Name: "test-telemetry-fluent-bit-lua", Namespace: "default"},
-		ParsersConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
-		EnvSecret:             types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
-		OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		SectionsConfigMap: types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
+		FilesConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
+		LuaConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-lua", Namespace: "default"},
+		ParsersConfigMap:  types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
+		ConfigSecret:      types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
+		TLSConfigSecret:   types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage: "fluent/bit:latest",
 			ExporterImage:  "exporter:latest",
@@ -915,11 +915,11 @@ func TestCalculateChecksum(t *testing.T) {
 			Namespace: "default",
 			Name:      "parsers",
 		},
-		EnvSecret: types.NamespacedName{
+		ConfigSecret: types.NamespacedName{
 			Namespace: "default",
 			Name:      "env",
 		},
-		OutputTLSConfigSecret: types.NamespacedName{
+		TLSConfigSecret: types.NamespacedName{
 			Namespace: "default",
 			Name:      "tls",
 		},
@@ -971,8 +971,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	envSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.EnvSecret.Name,
-			Namespace: config.EnvSecret.Namespace,
+			Name:      config.ConfigSecret.Name,
+			Namespace: config.ConfigSecret.Namespace,
 		},
 		Data: map[string][]byte{
 			"a": []byte("b"),
@@ -980,8 +980,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	certSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.OutputTLSConfigSecret.Name,
-			Namespace: config.OutputTLSConfigSecret.Namespace,
+			Name:      config.TLSConfigSecret.Name,
+			Namespace: config.TLSConfigSecret.Namespace,
 		},
 		Data: map[string][]byte{
 			"a": []byte("b"),
