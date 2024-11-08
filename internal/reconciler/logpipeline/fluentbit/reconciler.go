@@ -26,6 +26,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -59,8 +60,8 @@ type Reconciler struct {
 	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
 
-func (r *Reconciler) SupportedOutput() telemetryv1alpha1.Mode {
-	return telemetryv1alpha1.FluentBit
+func (r *Reconciler) SupportedOutput() pipelineutils.LogPipelineMode {
+	return pipelineutils.FluentBit
 }
 
 func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, healthProber logpipeline.FlowHealthProber, checker logpipeline.IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
