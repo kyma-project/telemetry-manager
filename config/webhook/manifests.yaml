@@ -3,6 +3,11 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
+  labels:
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/name: manager
+    control-plane: telemetry-manager
+    kyma-project.io/component: controller
   name: validation.webhook.telemetry.kyma-project.io
 webhooks:
   - admissionReviewVersions:
@@ -10,7 +15,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: telemetry-manager-webhook
+        name: manager-webhook
         namespace: system
         path: /validate-logpipeline
         port: 443
@@ -37,13 +42,13 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: telemetry-manager-webhook
+        name: manager-webhook
         namespace: system
         path: /validate-logparser
         port: 443
     failurePolicy: Fail
     matchPolicy: Exact
-    name: validating.logparsers.telemetry.kyma-project.io
+    name: validation.logparsers.telemetry.kyma-project.io
     namespaceSelector: {}
     objectSelector: {}
     rules:
@@ -59,3 +64,4 @@ webhooks:
         scope: '*'
     sideEffects: None
     timeoutSeconds: 15
+

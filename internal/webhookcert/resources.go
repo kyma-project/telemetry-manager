@@ -35,15 +35,6 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 }
 
 func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
-	apiGroups := []string{"telemetry.kyma-project.io"}
-	apiVersions := []string{"v1alpha1"}
-	webhookTimeout := int32(15) //nolint:mnd // 15 seconds
-	labels := map[string]string{
-		"control-plane":              "telemetry-manager",
-		"app.kubernetes.io/instance": "telemetry",
-		"app.kubernetes.io/name":     "manager",
-		"kyma-project.io/component":  "controller",
-	}
 
 	createWebhook := func(name, path string, resources []string) admissionregistrationv1.ValidatingWebhook {
 		return admissionregistrationv1.ValidatingWebhook{
@@ -57,25 +48,8 @@ func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregist
 				},
 				CABundle: caBundle,
 			},
-			FailurePolicy:  ptr.To(admissionregistrationv1.Fail),
-			MatchPolicy:    ptr.To(admissionregistrationv1.Exact),
-			Name:           name,
-			SideEffects:    ptr.To(admissionregistrationv1.SideEffectClassNone),
-			TimeoutSeconds: &webhookTimeout,
-			Rules: []admissionregistrationv1.RuleWithOperations{
-				{
-					Operations: []admissionregistrationv1.OperationType{
-						admissionregistrationv1.Create,
-						admissionregistrationv1.Update,
-					},
-					Rule: admissionregistrationv1.Rule{
-						APIGroups:   apiGroups,
-						APIVersions: apiVersions,
-						Scope:       ptr.To(admissionregistrationv1.AllScopes),
-						Resources:   resources,
-					},
-				},
-			},
+			Name:        name,
+			SideEffects: ptr.To(admissionregistrationv1.SideEffectClassNone),
 		}
 	}
 
@@ -87,8 +61,7 @@ func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregist
 	return admissionregistrationv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   config.WebhookName.Name,
-			Labels: labels,
+			Name: config.WebhookName.Name,
 		},
 		Webhooks: webhooks,
 	}
