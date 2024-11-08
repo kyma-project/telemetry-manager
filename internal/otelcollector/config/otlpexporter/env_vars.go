@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/utils"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
@@ -58,7 +58,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 }
 
 func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
-	if output.Authentication != nil && utils.IsValid(&output.Authentication.Basic.User) && utils.IsValid(&output.Authentication.Basic.Password) {
+	if output.Authentication != nil && sharedtypesutils.IsValid(&output.Authentication.Basic.User) && sharedtypesutils.IsValid(&output.Authentication.Basic.Password) {
 		username, err := resolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
 			return err
@@ -107,7 +107,7 @@ func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[strin
 
 func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OTLPOutput, pipelineName string) error {
 	if output.TLS != nil {
-		if utils.IsValid(output.TLS.CA) {
+		if sharedtypesutils.IsValid(output.TLS.CA) {
 			ca, err := resolveValue(ctx, c, *output.TLS.CA)
 			if err != nil {
 				return err
@@ -117,7 +117,7 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 			secretData[tlsConfigCaVariable] = ca
 		}
 
-		if utils.IsValid(output.TLS.Cert) && utils.IsValid(output.TLS.Key) {
+		if sharedtypesutils.IsValid(output.TLS.Cert) && sharedtypesutils.IsValid(output.TLS.Key) {
 			cert, err := resolveValue(ctx, c, *output.TLS.Cert)
 			if err != nil {
 				return err

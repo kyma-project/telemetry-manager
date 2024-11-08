@@ -3,7 +3,7 @@ package logpipeline
 import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
-	"github.com/kyma-project/telemetry-manager/internal/utils"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
 type Mode int
@@ -30,7 +30,7 @@ func IsCustomDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
 }
 
 func IsHTTPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return o.HTTP != nil && utils.IsValid(&o.HTTP.Host)
+	return o.HTTP != nil && sharedtypesutils.IsValid(&o.HTTP.Host)
 }
 
 func IsOTLPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
