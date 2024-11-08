@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
@@ -53,7 +53,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 }
 
 func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	desiredUnsupportedMode := pipelineutils.ContainsCustomPlugin(pipeline)
+	desiredUnsupportedMode := logpipelineutils.ContainsCustomPlugin(pipeline)
 	if pipeline.Status.UnsupportedMode == nil || *pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
 		pipeline.Status.UnsupportedMode = &desiredUnsupportedMode
 		if err := r.Status().Update(ctx, pipeline); err != nil {

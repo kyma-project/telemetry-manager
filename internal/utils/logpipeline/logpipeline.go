@@ -1,18 +1,19 @@
-package pipelines
+package logpipeline
 
 import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+	"github.com/kyma-project/telemetry-manager/internal/utils"
 )
 
-type LogPipelineMode int
+type Mode int
 
 const (
-	OTel LogPipelineMode = iota
+	OTel Mode = iota
 	FluentBit
 )
 
-func DetermineLogPipelineMode(lp *telemetryv1alpha1.LogPipeline) LogPipelineMode {
+func PipelineMode(lp *telemetryv1alpha1.LogPipeline) Mode {
 	if lp.Spec.Output.OTLP != nil {
 		return OTel
 	}
@@ -29,7 +30,7 @@ func IsCustomDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
 }
 
 func IsHTTPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
-	return o.HTTP != nil && IsValid(&o.HTTP.Host)
+	return o.HTTP != nil && utils.IsValid(&o.HTTP.Host)
 }
 
 func IsOTLPDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {

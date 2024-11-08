@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
+	"github.com/kyma-project/telemetry-manager/internal/utils"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 // Considering Fluent Bit's exponential back-off and jitter algorithm with the default scheduler.base and scheduler.cap,
@@ -15,11 +16,11 @@ var retryLimit = "300"
 
 func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults PipelineDefaults) string {
 	output := &pipeline.Spec.Output
-	if pipelineutils.IsCustomDefined(output) {
+	if logpipelineutils.IsCustomDefined(output) {
 		return generateCustomOutput(output, defaults.FsBufferLimit, pipeline.Name)
 	}
 
-	if pipelineutils.IsHTTPDefined(output) {
+	if logpipelineutils.IsHTTPDefined(output) {
 		return generateHTTPOutput(output.HTTP, defaults.FsBufferLimit, pipeline.Name)
 	}
 
@@ -59,17 +60,17 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsB
 	sb.AddIfNotEmptyOrDefault("port", httpOutput.Port, "443")
 	sb.AddIfNotEmptyOrDefault("format", httpOutput.Format, "json")
 
-	if pipelineutils.IsValid(&httpOutput.Host) {
+	if utils.IsValid(&httpOutput.Host) {
 		value := resolveValue(httpOutput.Host, name)
 		sb.AddConfigParam("host", value)
 	}
 
-	if pipelineutils.IsValid(&httpOutput.Password) {
+	if utils.IsValid(&httpOutput.Password) {
 		value := resolveValue(httpOutput.Password, name)
 		sb.AddConfigParam("http_passwd", value)
 	}
 
-	if pipelineutils.IsValid(&httpOutput.User) {
+	if utils.IsValid(&httpOutput.User) {
 		value := resolveValue(httpOutput.User, name)
 		sb.AddConfigParam("http_user", value)
 	}
@@ -88,15 +89,15 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsB
 
 	sb.AddConfigParam("tls.verify", tlsVerify)
 
-	if pipelineutils.IsValid(httpOutput.TLS.CA) {
+	if utils.IsValid(httpOutput.TLS.CA) {
 		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
 	}
 
-	if pipelineutils.IsValid(httpOutput.TLS.Cert) {
+	if utils.IsValid(httpOutput.TLS.Cert) {
 		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
 	}
 
-	if pipelineutils.IsValid(httpOutput.TLS.Key) {
+	if utils.IsValid(httpOutput.TLS.Key) {
 		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
 	}
 
@@ -108,7 +109,7 @@ func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string 
 		return value.Value
 	}
 
-	if value.ValueFrom != nil && pipelineutils.IsValid(&value) {
+	if value.ValueFrom != nil && utils.IsValid(&value) {
 		secretKeyRef := value.ValueFrom.SecretKeyRef
 		return fmt.Sprintf("${%s}", FormatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
 	}

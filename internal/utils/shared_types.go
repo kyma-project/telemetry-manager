@@ -1,8 +1,6 @@
-package pipelines
+package utils
 
 import (
-	"k8s.io/apimachinery/pkg/types"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
@@ -20,8 +18,4 @@ func IsValid(v *telemetryv1alpha1.ValueType) bool {
 		v.ValueFrom.SecretKeyRef.Name != "" &&
 		v.ValueFrom.SecretKeyRef.Key != "" &&
 		v.ValueFrom.SecretKeyRef.Namespace != ""
-}
-
-func NamespacedName(skr *telemetryv1alpha1.SecretKeyRef) types.NamespacedName {
-	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
 }

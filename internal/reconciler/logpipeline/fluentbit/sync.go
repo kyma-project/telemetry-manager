@@ -7,6 +7,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -14,7 +15,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
+	"github.com/kyma-project/telemetry-manager/internal/utils"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 type syncer struct {
@@ -211,19 +213,19 @@ func (s *syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []tel
 		}
 
 		output := logPipelines[i].Spec.Output
-		if !pipelineutils.IsHTTPDefined(&output) {
+		if !logpipelineutils.IsHTTPDefined(&output) {
 			continue
 		}
 
 		tlsConfig := output.HTTP.TLS
-		if pipelineutils.IsValid(tlsConfig.CA) {
+		if utils.IsValid(tlsConfig.CA) {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.CA, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}
 
-		if pipelineutils.IsValid(tlsConfig.Cert) && pipelineutils.IsValid(tlsConfig.Key) {
+		if utils.IsValid(tlsConfig.Cert) && utils.IsValid(tlsConfig.Key) {
 			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Cert, targetCertVariable, newSecret.Data); err != nil {
 				return err
@@ -269,7 +271,7 @@ func (s *syncer) copyFromValueOrSecret(ctx context.Context, value telemetryv1alp
 
 func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
 	var source corev1.Secret
-	if err := s.Get(ctx, pipelineutils.NamespacedName(&sourceRef), &source); err != nil {
+	if err := s.Get(ctx, types.NamespacedName{Name: sourceRef.Name, Namespace: sourceRef.Namespace}, &source); err != nil {
 		return fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", sourceRef.Name, sourceRef.Namespace, err)
 	}
 
