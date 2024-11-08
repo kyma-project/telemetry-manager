@@ -28,7 +28,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	logutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
 )
 
 var (
@@ -37,7 +37,7 @@ var (
 
 type LogPipelineReconciler interface {
 	Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-	SupportedOutput() logutils.Mode
+	SupportedOutput() pipelineutils.LogMode
 }
 
 type DaemonSetAnnotator interface {
@@ -60,7 +60,7 @@ type Reconciler struct {
 	client.Client
 
 	overridesHandler OverridesHandler
-	reconcilers      map[logutils.Mode]LogPipelineReconciler
+	reconcilers      map[pipelineutils.LogMode]LogPipelineReconciler
 }
 
 func New(
@@ -69,7 +69,7 @@ func New(
 	overridesHandler OverridesHandler,
 	reconcilers ...LogPipelineReconciler,
 ) *Reconciler {
-	reconcilersMap := make(map[logutils.Mode]LogPipelineReconciler)
+	reconcilersMap := make(map[pipelineutils.LogMode]LogPipelineReconciler)
 	for _, r := range reconcilers {
 		reconcilersMap[r.SupportedOutput()] = r
 	}
@@ -111,15 +111,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, err
 }
 
-func GetOutputType(t *telemetryv1alpha1.LogPipeline) logutils.Mode {
+func GetOutputType(t *telemetryv1alpha1.LogPipeline) pipelineutils.LogMode {
 	if t.Spec.Output.OTLP != nil {
-		return logutils.OTel
+		return pipelineutils.OTel
 	}
 
-	return logutils.FluentBit
+	return pipelineutils.FluentBit
 }
 
-func GetPipelinesForType(ctx context.Context, client client.Client, mode logutils.Mode) ([]telemetryv1alpha1.LogPipeline, error) {
+func GetPipelinesForType(ctx context.Context, client client.Client, mode pipelineutils.LogMode) ([]telemetryv1alpha1.LogPipeline, error) {
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := client.List(ctx, &allPipelines); err != nil {
 		return nil, fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
