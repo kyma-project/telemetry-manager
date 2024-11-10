@@ -321,7 +321,7 @@ func run() error {
 		Handler: createLogPipelineValidator(mgr.GetClient()),
 	})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
-		Handler: createLogParserValidator(mgr.GetClient()),
+		Handler: logparserwebhook.NewValidatingWebhookHandler(scheme),
 	})
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
@@ -514,12 +514,6 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 		validation.NewFilesValidator(),
 		admission.NewDecoder(scheme),
 	)
-}
-
-func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
-	return logparserwebhook.NewValidatingWebhookHandler(
-		client,
-		admission.NewDecoder(scheme))
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
