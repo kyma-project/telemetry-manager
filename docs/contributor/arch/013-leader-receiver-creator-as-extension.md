@@ -46,7 +46,7 @@ extensions:
     lease_namespace: default
 ```
 
-The leader elector extension would contain the configuration providing lease name and namespace. This extension would be then referenced in the receiver.
+The leader elector extension would contain the configuration providing lease name and namespace. This extension would be then referenced in the receivers.
 
 ### Consequences
 The Singleton Receiver Creator (https://github.com/kyma-project/opentelemetry-collector-components/tree/main/receiver/singletonreceivercreator) would be deprecated and removed. The `kymastatsreceiver` and `k8sclusterreceiver` would use the leader elector extension for leader election.
