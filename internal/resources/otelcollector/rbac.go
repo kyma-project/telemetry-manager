@@ -65,22 +65,22 @@ func makeTraceGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole 
 }
 
 func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
-	clusterRole := &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    labels.MakeDefaultLabel(name.Name),
+
+	kubeletStatsRules := []rbacv1.PolicyRule{{
+		APIGroups: []string{""},
+		Resources: []string{"nodes", "nodes/stats", "nodes/proxy"},
+		Verbs:     []string{"get", "list", "watch"},
+	}}
+
+	prometheusRules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods"},
+			Verbs:     []string{"get", "list", "watch"},
 		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/metrics", "nodes/stats", "nodes/proxy", "services", "endpoints", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
-				Verbs:           []string{"get"},
-			},
+		{
+			NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
+			Verbs:           []string{"get"},
 		},
 	}
 
@@ -106,7 +106,18 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 		Verbs:     []string{"get", "list", "watch"},
 	}}
 
-	clusterRole.Rules = append(clusterRole.Rules, k8sClusterRules...)
+	clusterRoleRules := append([]rbacv1.PolicyRule{}, kubeletStatsRules...)
+	clusterRoleRules = append(clusterRoleRules, prometheusRules...)
+	clusterRoleRules = append(clusterRoleRules, k8sClusterRules...)
+
+	clusterRole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    labels.MakeDefaultLabel(name.Name),
+		},
+		Rules: clusterRoleRules,
+	}
 
 	return clusterRole
 }
