@@ -10,7 +10,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/extslices"
+	slicesutils "github.com/kyma-project/telemetry-manager/internal/utils/slices"
 )
 
 type metricComponentsChecker struct {
@@ -112,7 +112,7 @@ func (m *metricComponentsChecker) checkForResourceBlocksDeletionCondition(pipeli
 			Reason: conditions.ReasonResourceBlocksDeletion,
 			Message: generateDeletionBlockedMessage(blockingResources{
 				resourceType: "MetricPipelines",
-				resourceNames: extslices.TransformFunc(pipelines, func(p telemetryv1alpha1.MetricPipeline) string {
+				resourceNames: slicesutils.TransformFunc(pipelines, func(p telemetryv1alpha1.MetricPipeline) string {
 					return p.Name
 				}),
 			}),

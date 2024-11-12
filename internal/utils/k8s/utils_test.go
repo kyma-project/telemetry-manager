@@ -1,4 +1,4 @@
-package k8sutils
+package k8s
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/utils/k8s/mocks"
 )
 
 func TestGetOrCreateConfigMapError(t *testing.T) {
