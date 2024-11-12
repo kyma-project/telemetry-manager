@@ -155,8 +155,8 @@ func makeMetricGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole
 		Verbs:     []string{"get", "list", "watch"},
 	}}
 
-	clusterRoleRules := append([]rbacv1.PolicyRule{}, kymaStatsRules...)
-	clusterRoleRules = append(clusterRoleRules, k8sAttributeRules...)
+	clusterRoleRules := append([]rbacv1.PolicyRule{}, k8sAttributeRules...)
+	clusterRoleRules = append(clusterRoleRules, kymaStatsRules...)
 
 	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
