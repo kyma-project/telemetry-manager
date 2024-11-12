@@ -22,7 +22,7 @@ Implementing `singleonreceivercreator` as an extension brings the following adva
 - It's future-proof.
 
 It has following disadvantages:
-- The receiver must be modified to support the leader election extension.
+- The receivers must be modified to support the leader election extension.
 
 
 ### Leader Election API
