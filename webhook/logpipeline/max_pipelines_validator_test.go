@@ -38,6 +38,7 @@ func TestValidateLimitNotExceeded(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	var existingPipelines []client.Object
+
 	for i := range 4 {
 		p := testutils.NewLogPipelineBuilder().WithName(strconv.Itoa(i)).Build()
 		existingPipelines = append(existingPipelines, &p)
@@ -60,6 +61,7 @@ func TestValidateLimitExceeded(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	var existingPipelines []client.Object
+
 	for i := range 5 {
 		p := testutils.NewLogPipelineBuilder().WithName(strconv.Itoa(i)).Build()
 		existingPipelines = append(existingPipelines, &p)

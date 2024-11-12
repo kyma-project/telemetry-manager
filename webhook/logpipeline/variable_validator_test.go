@@ -1,103 +1,65 @@
 package logpipeline
 
-// import (
-// 	"testing"
-//
-// 	"github.com/stretchr/testify/require"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-//
-// 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-// 	"github.com/kyma-project/telemetry-manager/internal/k8sutils/mocks"
-// )
-//
-// func TestValidateSecretKeyRefs(t *testing.T) {
-// 	logPipeline := &telemetryv1alpha1.LogPipeline{
-// 		Spec: telemetryv1alpha1.LogPipelineSpec{
-// 			Variables: []telemetryv1alpha1.LogPipelineVariableRef{
-// 				{
-// 					Name: "foo1",
-// 					ValueFrom: telemetryv1alpha1.ValueFromSource{
-// 						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-// 							Name:      "fooN",
-// 							Namespace: "fooNs",
-// 							Key:       "foo",
-// 						},
-// 					},
-// 				},
-// 				{
-// 					Name: "foo2",
-// 					ValueFrom: telemetryv1alpha1.ValueFromSource{
-// 						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-// 							Name:      "fooN",
-// 							Namespace: "fooNs",
-// 							Key:       "foo",
-// 						}},
-// 				},
-// 			},
-// 		},
-// 	}
-// 	logPipeline.Name = "pipe1"
-// 	logPipelines := &telemetryv1alpha1.LogPipelineList{
-// 		Items: []telemetryv1alpha1.LogPipeline{*logPipeline},
-// 	}
-//
-// 	newLogPipeline := &telemetryv1alpha1.LogPipeline{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name: "pipe2",
-// 		},
-// 		Spec: telemetryv1alpha1.LogPipelineSpec{
-// 			Variables: []telemetryv1alpha1.LogPipelineVariableRef{{
-// 				Name: "foo2",
-// 				ValueFrom: telemetryv1alpha1.ValueFromSource{
-// 					SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-// 						Name:      "fooN",
-// 						Namespace: "fooNs",
-// 						Key:       "foo",
-// 					}},
-// 			}},
-// 		},
-// 	}
-// 	mockClient := &mocks.Client{}
-// 	varValidator := NewVariablesValidator(mockClient)
-//
-// 	err := varValidator.Validate(newLogPipeline, logPipelines)
-// 	require.Error(t, err)
-// }
-//
-// func TestVariableValidator(t *testing.T) {
-// 	logPipeline := &telemetryv1alpha1.LogPipeline{
-// 		Spec: telemetryv1alpha1.LogPipelineSpec{
-// 			Variables: []telemetryv1alpha1.LogPipelineVariableRef{
-// 				{
-// 					Name: "foo1",
-// 					ValueFrom: telemetryv1alpha1.ValueFromSource{
-// 						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-// 							Name:      "fooN",
-// 							Namespace: "fooNs",
-// 							Key:       "foo",
-// 						},
-// 					},
-// 				},
-// 				{
-// 					Name: "foo2",
-// 					ValueFrom: telemetryv1alpha1.ValueFromSource{
-// 						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-// 							Name:      "",
-// 							Namespace: "",
-// 							Key:       "",
-// 						}},
-// 				},
-// 			},
-// 		},
-// 	}
-// 	logPipeline.Name = "pipe1"
-// 	mockClient := &mocks.Client{}
-// 	varValidator := NewVariablesValidator(mockClient)
-// 	logPipelines := &telemetryv1alpha1.LogPipelineList{
-// 		Items: []telemetryv1alpha1.LogPipeline{*logPipeline},
-// 	}
-//
-// 	err := varValidator.Validate(logPipeline, logPipelines)
-// 	require.Error(t, err)
-// 	require.Equal(t, "mandatory field variable name or secretKeyRef name or secretKeyRef namespace or secretKeyRef key cannot be empty", err.Error())
-// }
+import (
+	"context"
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+)
+
+func TestVariableNotGloballyUnique(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	existingPipeline := testutils.NewLogPipelineBuilder().
+		WithName("log-pipeline-1").
+		WithVariable("foo1", "fooN", "fooNs", "foo").
+		WithVariable("foo2", "fooN", "fooNs", "foo").
+		Build()
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&existingPipeline).Build()
+
+	sut := NewValidatingWebhookHandler(fakeClient, scheme)
+
+	newPipeline := testutils.NewLogPipelineBuilder().
+		WithName("log-pipeline-2").
+		WithVariable("foo2", "fooN", "fooNs", "foo").
+		Build()
+
+	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+
+	require.False(t, response.Allowed)
+	require.EqualValues(t, response.Result.Code, http.StatusForbidden)
+	require.EqualValues(t, response.Result.Reason, StatusReasonConfigurationError)
+	require.Equal(t, response.Result.Message, "variable name must be globally unique: variable 'foo2' is used in pipeline 'log-pipeline-1'")
+}
+
+func TestVariableValidator(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
+
+	sut := NewValidatingWebhookHandler(fakeClient, scheme)
+
+	newPipeline := testutils.NewLogPipelineBuilder().
+		WithName("log-pipeline-2").
+		WithVariable("foo2", "", "", "").
+		Build()
+
+	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+
+	require.False(t, response.Allowed)
+	require.EqualValues(t, response.Result.Code, http.StatusForbidden)
+	require.EqualValues(t, response.Result.Reason, StatusReasonConfigurationError)
+	require.Equal(t, response.Result.Message, "mandatory field variable name or secretKeyRef name or secretKeyRef namespace or secretKeyRef key cannot be empty")
+}
