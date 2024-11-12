@@ -56,6 +56,7 @@ func makeTraceGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole 
 		},
 	}
 	clusterRoleRules := append([]rbacv1.PolicyRule{}, k8sAttributeRules...)
+
 	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -67,7 +68,6 @@ func makeTraceGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole 
 }
 
 func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
-
 	kubeletStatsRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
 		Resources: []string{"nodes", "nodes/stats", "nodes/proxy"},
@@ -123,7 +123,6 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 }
 
 func makeMetricGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
-
 	k8sAttributeRules := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
