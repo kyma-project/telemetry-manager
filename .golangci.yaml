@@ -129,6 +129,8 @@ linters-settings:
         alias: testutils
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/slices
         alias: slicesutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logger
+        alias: loggerutils
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
     check-blank: true # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.

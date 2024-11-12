@@ -60,7 +60,7 @@ exclude:
     - mocks
     - stubs
     - ^internal/k8sutils # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
-    - internal/logger
+    - internal/utils/logger
     - ^internal/reconciler/logparser # logparser reconciler will be removed soon
     - ^test # e2e and integration tests
     - webhook/logparser # logparser will be removed soon
