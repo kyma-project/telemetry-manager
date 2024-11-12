@@ -64,7 +64,7 @@ exclude:
     - ^internal/reconciler/logparser # logparser reconciler will be removed soon
     - ^test # e2e and integration tests
     - webhook/logparser # logparser will be removed soon
-    - ^internal/testutils # some functions in testutils are being used in e2e tests only
+    - ^internal/utils/test # some functions in testutils are being used in e2e tests only
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by
