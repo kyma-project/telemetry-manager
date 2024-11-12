@@ -43,24 +43,26 @@ func MakeMetricGatewayRBAC(name types.NamespacedName) Rbac {
 }
 
 func makeTraceGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+	k8sAttributeRules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"namespaces", "pods"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"replicasets"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+	clusterRoleRules := append([]rbacv1.PolicyRule{}, k8sAttributeRules...)
 	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
 			Labels:    labels.MakeDefaultLabel(name.Name),
 		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"namespaces", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
+		Rules: clusterRoleRules,
 	}
 }
 
@@ -110,7 +112,7 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	clusterRoleRules = append(clusterRoleRules, prometheusRules...)
 	clusterRoleRules = append(clusterRoleRules, k8sClusterRules...)
 
-	clusterRole := &rbacv1.ClusterRole{
+	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
@@ -118,28 +120,20 @@ func makeMetricAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 		},
 		Rules: clusterRoleRules,
 	}
-
-	return clusterRole
 }
 
 func makeMetricGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
-	clusterRole := rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    labels.MakeDefaultLabel(name.Name),
+
+	k8sAttributeRules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"namespaces", "pods"},
+			Verbs:     []string{"get", "list", "watch"},
 		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"namespaces", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"replicasets"},
+			Verbs:     []string{"get", "list", "watch"},
 		},
 	}
 
@@ -161,9 +155,17 @@ func makeMetricGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole
 		Verbs:     []string{"get", "list", "watch"},
 	}}
 
-	clusterRole.Rules = append(clusterRole.Rules, kymaStatsRules...)
+	clusterRoleRules := append([]rbacv1.PolicyRule{}, kymaStatsRules...)
+	clusterRoleRules = append(clusterRoleRules, k8sAttributeRules...)
 
-	return &clusterRole
+	return &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    labels.MakeDefaultLabel(name.Name),
+		},
+		Rules: clusterRoleRules,
+	}
 }
 
 func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
