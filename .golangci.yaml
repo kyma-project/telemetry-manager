@@ -121,18 +121,20 @@ linters-settings:
       - pkg: k8s.io/client-go/testing
         alias: clienttesting
       # Utils aliases
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logpipeline
-        alias: logpipelineutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes
-        alias: sharedtypesutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/test
-        alias: testutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/slices
-        alias: slicesutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/k8s
+        alias: k8sutils
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logger
         alias: loggerutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logpipeline
+        alias: logpipelineutils
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/predicate
         alias: predicateutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes
+        alias: sharedtypesutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/slices
+        alias: slicesutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/test
+        alias: testutils
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
     check-blank: true # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
@@ -232,7 +234,7 @@ issues:
     - linters: [dupl]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
     - linters: [dupl]
-      path: internal/k8sutils/utils.go
+      path: internal/utils/k8s/utils.go
     # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
     - linters: [dupl]
       path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go

@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/utils/k8s/mocks"
 )
 
 func TestValidateSecretKeyRefs(t *testing.T) {
