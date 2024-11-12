@@ -1,4 +1,4 @@
-package extslices
+package slices
 
 import (
 	"strconv"

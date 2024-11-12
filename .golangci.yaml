@@ -120,12 +120,15 @@ linters-settings:
         alias: commonStatusStubs
       - pkg: k8s.io/client-go/testing
         alias: clienttesting
+      # Utils aliases
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logpipeline
         alias: logpipelineutils
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes
         alias: sharedtypesutils
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/test
         alias: testutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/slices
+        alias: slicesutils
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
     check-blank: true # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
@@ -222,20 +225,20 @@ issues:
       text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
       linters:
         - govet
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: internal/k8sutils/utils.go
     # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: test/testkit/matchers/(log|metric|trace)_matchers.go
-    - linters: [ errcheck ]
+    - linters: [errcheck]
       path: test/testkit/otel/traces/traces.go
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: test/testkit/assert/(deployment|daemon_set|metrics|traces|stateful_set|jobs).go
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: main.go
     - linters:
         - importas
