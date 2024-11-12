@@ -14,8 +14,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestGetOutputType(t *testing.T) {
