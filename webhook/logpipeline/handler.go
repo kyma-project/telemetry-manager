@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -14,10 +13,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
-)
-
-const (
-	StatusReasonConfigurationError = "InvalidConfiguration"
 )
 
 type ValidatingWebhookHandler struct {
@@ -46,17 +41,7 @@ func (h *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 
 	if err := h.validateLogPipeline(ctx, logPipeline); err != nil {
 		log.Error(err, "LogPipeline rejected")
-
-		return admission.Response{
-			AdmissionResponse: admissionv1.AdmissionResponse{
-				Allowed: false,
-				Result: &metav1.Status{
-					Code:    int32(http.StatusForbidden),
-					Reason:  StatusReasonConfigurationError,
-					Message: err.Error(),
-				},
-			},
-		}
+		return admission.Errored(http.StatusBadRequest, err)
 	}
 
 	var warnMsg []string

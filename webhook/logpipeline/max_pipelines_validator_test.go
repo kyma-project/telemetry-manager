@@ -76,8 +76,7 @@ func TestValidateLimitExceeded(t *testing.T) {
 	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
-	require.EqualValues(t, response.Result.Code, http.StatusForbidden)
-	require.EqualValues(t, response.Result.Reason, StatusReasonConfigurationError)
+	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
 	require.Equal(t, response.Result.Message, "the maximum number of log pipelines is 5")
 }
 

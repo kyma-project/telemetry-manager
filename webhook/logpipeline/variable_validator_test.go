@@ -37,8 +37,7 @@ func TestVariableNotGloballyUnique(t *testing.T) {
 	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
-	require.EqualValues(t, response.Result.Code, http.StatusForbidden)
-	require.EqualValues(t, response.Result.Reason, StatusReasonConfigurationError)
+	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
 	require.Equal(t, response.Result.Message, "variable name must be globally unique: variable 'foo2' is used in pipeline 'log-pipeline-1'")
 }
 
@@ -59,7 +58,6 @@ func TestVariableValidator(t *testing.T) {
 	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
-	require.EqualValues(t, response.Result.Code, http.StatusForbidden)
-	require.EqualValues(t, response.Result.Reason, StatusReasonConfigurationError)
+	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
 	require.Equal(t, response.Result.Message, "mandatory field variable name or secretKeyRef name or secretKeyRef namespace or secretKeyRef key cannot be empty")
 }

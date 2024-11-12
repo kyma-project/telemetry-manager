@@ -187,8 +187,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 
 			if tt.expectError {
 				require.False(t, response.Allowed)
-				require.EqualValues(t, response.Result.Code, http.StatusForbidden)
-				require.EqualValues(t, response.Result.Reason, StatusReasonConfigurationError)
+				require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
 				require.Equal(t, response.Result.Message, tt.errorMessage)
 			} else {
 				require.True(t, response.Allowed)

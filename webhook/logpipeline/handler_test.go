@@ -3,6 +3,7 @@ package logpipeline
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -102,6 +103,7 @@ func TestHandle(t *testing.T) {
 				require.Equal(t, tt.allowed, response.Allowed)
 
 				if !tt.allowed {
+					require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
 					require.Contains(t, response.Result.Message, tt.message)
 				}
 			})

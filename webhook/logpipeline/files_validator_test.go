@@ -30,8 +30,7 @@ func TestDuplicateFileName(t *testing.T) {
 	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
-	require.EqualValues(t, response.Result.Code, http.StatusForbidden)
-	require.EqualValues(t, response.Result.Reason, StatusReasonConfigurationError)
+	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
 	require.Equal(t, response.Result.Message, "filename 'f1.json' is already being used in the logPipeline 'foo'")
 }
 
@@ -49,8 +48,7 @@ func TestDuplicateFileNameInSamePipeline(t *testing.T) {
 	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
-	require.EqualValues(t, response.Result.Code, http.StatusForbidden)
-	require.EqualValues(t, response.Result.Reason, StatusReasonConfigurationError)
+	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
 	require.Equal(t, response.Result.Message, "duplicate file names detected please review your pipeline")
 }
 
