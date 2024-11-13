@@ -373,12 +373,6 @@ func TestService(t *testing.T) {
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
 			"filter/test-1-filter-by-namespace-runtime-input",
-			"filter/drop-runtime-node-metrics",
-			"filter/drop-runtime-volume-metrics",
-			"filter/drop-runtime-deployment-metrics",
-			"filter/drop-runtime-daemonset-metrics",
-			"filter/drop-runtime-statefulset-metrics",
-			"filter/drop-runtime-job-metrics",
 			"transform/set-instrumentation-scope-kyma",
 			"resource/insert-cluster-name",
 			"resource/delete-skip-enrichment-attribute",
@@ -456,17 +450,12 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 		{
 			name: "with runtime input enabled and default metrics enabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
+				WithName("test").
+				WithRuntimeInput(true).
 				Build(),
 			expectedProcessors: []string{
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"filter/drop-runtime-node-metrics",
-				"filter/drop-runtime-volume-metrics",
-				"filter/drop-runtime-deployment-metrics",
-				"filter/drop-runtime-daemonset-metrics",
-				"filter/drop-runtime-statefulset-metrics",
-				"filter/drop-runtime-job-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
@@ -474,135 +463,127 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 			},
 		},
 		{
-			name: "with runtime input enabled and only pod metrics enabled",
+			name: "with runtime input enabled and only pod metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
-				WithRuntimeInputPodMetrics(true).
+				WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputPodMetrics(false).
+				Build(),
+			expectedProcessors: []string{
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"filter/drop-runtime-pod-metrics",
+				"transform/set-instrumentation-scope-kyma",
+				"resource/insert-cluster-name",
+				"resource/delete-skip-enrichment-attribute",
+				"batch",
+			},
+		}, {
+			name: "with runtime input enabled and only container metrics disabled",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("test").
+				WithRuntimeInput(true).
 				WithRuntimeInputContainerMetrics(false).
 				Build(),
 			expectedProcessors: []string{
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-container-metrics",
-				"filter/drop-runtime-node-metrics",
-				"filter/drop-runtime-volume-metrics",
-				"filter/drop-runtime-deployment-metrics",
-				"filter/drop-runtime-daemonset-metrics",
-				"filter/drop-runtime-statefulset-metrics",
-				"filter/drop-runtime-job-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
 			},
 		}, {
-			name: "with runtime input enabled and only container metrics enabled",
+			name: "with runtime input enabled and only node metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
-				WithRuntimeInputPodMetrics(false).
-				WithRuntimeInputContainerMetrics(true).
+				WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputNodeMetrics(false).
 				Build(),
 			expectedProcessors: []string{
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"filter/drop-runtime-pod-metrics",
 				"filter/drop-runtime-node-metrics",
-				"filter/drop-runtime-volume-metrics",
-				"filter/drop-runtime-deployment-metrics",
-				"filter/drop-runtime-daemonset-metrics",
-				"filter/drop-runtime-statefulset-metrics",
-				"filter/drop-runtime-job-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
 			},
 		}, {
-			name: "with runtime input enabled and only node metrics enabled",
+			name: "with runtime input enabled and only volume metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
-				WithRuntimeInputContainerMetrics(false).
-				WithRuntimeInputPodMetrics(false).
-				WithRuntimeInputNodeMetrics(true).
+				WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputVolumeMetrics(false).
 				Build(),
 			expectedProcessors: []string{
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"filter/drop-runtime-pod-metrics",
-				"filter/drop-runtime-container-metrics",
 				"filter/drop-runtime-volume-metrics",
-				"filter/drop-runtime-deployment-metrics",
-				"filter/drop-runtime-daemonset-metrics",
-				"filter/drop-runtime-statefulset-metrics",
-				"filter/drop-runtime-job-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
 			},
 		}, {
-			name: "with runtime input enabled and only volume metrics enabled",
+			name: "with runtime input enabled and only deployment metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
-				WithRuntimeInputContainerMetrics(false).
-				WithRuntimeInputPodMetrics(false).
-				WithRuntimeInputVolumeMetrics(true).
+				WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputDeploymentMetrics(false).
 				Build(),
 			expectedProcessors: []string{
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"filter/drop-runtime-pod-metrics",
-				"filter/drop-runtime-container-metrics",
-				"filter/drop-runtime-node-metrics",
 				"filter/drop-runtime-deployment-metrics",
-				"filter/drop-runtime-daemonset-metrics",
-				"filter/drop-runtime-statefulset-metrics",
-				"filter/drop-runtime-job-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
 			},
 		}, {
-			name: "with runtime input enabled and only deployment metrics enabled",
+			name: "with runtime input enabled and only daemonset metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
-				WithRuntimeInputContainerMetrics(false).
-				WithRuntimeInputPodMetrics(false).
-				WithRuntimeInputDeploymentMetrics(true).
+				WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputDaemonSetMetrics(false).
 				Build(),
 			expectedProcessors: []string{
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"filter/drop-runtime-pod-metrics",
-				"filter/drop-runtime-container-metrics",
-				"filter/drop-runtime-node-metrics",
-				"filter/drop-runtime-volume-metrics",
 				"filter/drop-runtime-daemonset-metrics",
-				"filter/drop-runtime-statefulset-metrics",
-				"filter/drop-runtime-job-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
 			},
 		}, {
-			name: "with runtime input enabled and only daemonset metrics enabled",
+			name: "with runtime input enabled and only statefulset metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
-				WithRuntimeInputContainerMetrics(false).
-				WithRuntimeInputPodMetrics(false).
-				WithRuntimeInputDaemonSetMetrics(true).
+				WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputStatefulSetMetrics(false).
 				Build(),
 			expectedProcessors: []string{
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"filter/drop-runtime-pod-metrics",
-				"filter/drop-runtime-container-metrics",
-				"filter/drop-runtime-node-metrics",
-				"filter/drop-runtime-volume-metrics",
-				"filter/drop-runtime-deployment-metrics",
 				"filter/drop-runtime-statefulset-metrics",
+				"transform/set-instrumentation-scope-kyma",
+				"resource/insert-cluster-name",
+				"resource/delete-skip-enrichment-attribute",
+				"batch",
+			},
+		}, {
+			name: "with runtime input enabled and only job metrics disabled",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("test").
+				WithRuntimeInput(true).
+				WithRuntimeInputJobMetrics(false).
+				Build(),
+			expectedProcessors: []string{
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-job-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
@@ -610,12 +591,18 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				"batch",
 			},
 		}, {
-			name: "with runtime input enabled and only statefulset metrics enabled",
+			name: "with runtime input enabled and all runtime metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
+				WithName("test").
+				WithRuntimeInput(true).
 				WithRuntimeInputContainerMetrics(false).
 				WithRuntimeInputPodMetrics(false).
-				WithRuntimeInputStatefulSetMetrics(true).
+				WithRuntimeInputNodeMetrics(false).
+				WithRuntimeInputVolumeMetrics(false).
+				WithRuntimeInputDeploymentMetrics(false).
+				WithRuntimeInputDaemonSetMetrics(false).
+				WithRuntimeInputStatefulSetMetrics(false).
+				WithRuntimeInputJobMetrics(false).
 				Build(),
 			expectedProcessors: []string{
 				"filter/drop-if-input-source-prometheus",
@@ -626,52 +613,8 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				"filter/drop-runtime-volume-metrics",
 				"filter/drop-runtime-deployment-metrics",
 				"filter/drop-runtime-daemonset-metrics",
-				"filter/drop-runtime-job-metrics",
-				"transform/set-instrumentation-scope-kyma",
-				"resource/insert-cluster-name",
-				"resource/delete-skip-enrichment-attribute",
-				"batch",
-			},
-		}, {
-			name: "with runtime input enabled and only job metrics enabled",
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
-				WithRuntimeInputContainerMetrics(false).
-				WithRuntimeInputPodMetrics(false).
-				WithRuntimeInputJobMetrics(true).
-				Build(),
-			expectedProcessors: []string{
-				"filter/drop-if-input-source-prometheus",
-				"filter/drop-if-input-source-istio",
-				"filter/drop-runtime-pod-metrics",
-				"filter/drop-runtime-container-metrics",
-				"filter/drop-runtime-node-metrics",
-
-				"filter/drop-runtime-volume-metrics",
-				"filter/drop-runtime-deployment-metrics",
-				"filter/drop-runtime-daemonset-metrics",
 				"filter/drop-runtime-statefulset-metrics",
-				"transform/set-instrumentation-scope-kyma",
-				"resource/insert-cluster-name",
-				"resource/delete-skip-enrichment-attribute",
-				"batch",
-			},
-		}, {
-			name: "with runtime input enabled and all runtime metrics enabled",
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("test").WithRuntimeInput(true).
-				WithRuntimeInputContainerMetrics(true).
-				WithRuntimeInputPodMetrics(true).
-				WithRuntimeInputNodeMetrics(true).
-				WithRuntimeInputVolumeMetrics(true).
-				WithRuntimeInputDeploymentMetrics(true).
-				WithRuntimeInputDaemonSetMetrics(true).
-				WithRuntimeInputStatefulSetMetrics(true).
-				WithRuntimeInputJobMetrics(true).
-				Build(),
-			expectedProcessors: []string{
-				"filter/drop-if-input-source-prometheus",
-				"filter/drop-if-input-source-istio",
+				"filter/drop-runtime-job-metrics",
 				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
