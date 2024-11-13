@@ -125,6 +125,7 @@ func TestBuildAgentConfig(t *testing.T) {
 			for _, tc := range tt {
 				expectedReceiverIDs := []string{"kubeletstats", "singleton_receiver_creator/k8s_cluster"}
 				expectedExporterIDs := []string{"otlp"}
+
 				var expectedProcessorIDs []string
 				if tc.volumeMetricsEnabled {
 					expectedProcessorIDs = []string{"memory_limiter", "filter/drop-non-pvc-volumes-metrics", "resource/delete-service-name", "transform/set-instrumentation-scope-runtime", "transform/insert-skip-enrichment-attribute", "batch"}
@@ -140,6 +141,7 @@ func TestBuildAgentConfig(t *testing.T) {
 					require.NotNil(t, collectorConfig.Processors.InsertSkipEnrichmentAttribute)
 					require.Nil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
 					require.Nil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
+
 					if tc.volumeMetricsEnabled {
 						require.NotNil(t, collectorConfig.Processors.DropNonPVCVolumesMetrics)
 					} else {
