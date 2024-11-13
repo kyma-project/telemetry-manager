@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -51,15 +50,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
+	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
-	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -225,7 +223,7 @@ func run() error {
 
 	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
 
-	zapLogger, err := logger.New(overrides.AtomicLevel())
+	zapLogger, err := loggerutils.New(overrides.AtomicLevel())
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}
@@ -318,10 +316,10 @@ func run() error {
 	}
 
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{
-		Handler: createLogPipelineValidator(mgr.GetClient()),
+		Handler: logpipelinewebhook.NewValidatingWebhookHandler(mgr.GetClient(), scheme),
 	})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
-		Handler: createLogParserValidator(mgr.GetClient()),
+		Handler: logparserwebhook.NewValidatingWebhookHandler(scheme),
 	})
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
@@ -500,26 +498,6 @@ func ensureWebhookCert(mgr manager.Manager, webhookConfig telemetry.WebhookConfi
 
 func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
-}
-
-func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
-	// TODO: Align max log pipeline enforcement with the method used in the TracePipeline/MetricPipeline controllers,
-	// replacing the current validating webhook approach.
-	const maxLogPipelines = 5
-
-	return logpipelinewebhook.NewValidatingWebhookHandler(
-		client,
-		validation.NewVariablesValidator(client),
-		validation.NewMaxPipelinesValidator(maxLogPipelines),
-		validation.NewFilesValidator(),
-		admission.NewDecoder(scheme),
-	)
-}
-
-func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
-	return logparserwebhook.NewValidatingWebhookHandler(
-		client,
-		admission.NewDecoder(scheme))
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
