@@ -37,11 +37,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
+	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -50,11 +53,26 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
+const (
+	// FluentBit
+	fbSectionsConfigMapName   = "telemetry-fluent-bit-sections"
+	fbFilesConfigMapName      = "telemetry-fluent-bit-files"
+	fbLuaConfigMapName        = "telemetry-fluent-bit-luascripts"
+	fbParsersConfigMapName    = "telemetry-fluent-bit-parsers"
+	fbEnvConfigSecretName     = "telemetry-fluent-bit-env"
+	fbTLSFileConfigSecretName = "telemetry-fluent-bit-output-tls-config"
+	fbDaemonSetName           = "telemetry-fluent-bit"
+
+	// Otel
+	otelLogGatewayName = "telemetry-log-gateway"
+)
+
 var (
-	fluentBitCPULimit      = resource.MustParse("1")
-	fluentBitMemoryLimit   = resource.MustParse("1Gi")
-	fluentBitCPURequest    = resource.MustParse("100m")
-	fluentBitMemoryRequest = resource.MustParse("50Mi")
+	// FluentBit
+	fbCPULimit      = resource.MustParse("1")
+	fbMemoryLimit   = resource.MustParse("1Gi")
+	fbCPURequest    = resource.MustParse("100m")
+	fbMemoryRequest = resource.MustParse("50Mi")
 )
 
 // LogPipelineController reconciles a LogPipeline object
@@ -80,44 +98,15 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		return nil, err
 	}
 
-	fluentbitConfig := logpipelinefluentbit.Config{
-		SectionsConfigMap:   types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
-		FilesConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
-		LuaConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: config.TelemetryNamespace},
-		ParsersConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: config.TelemetryNamespace},
-		EnvConfigSecret:     types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: config.TelemetryNamespace},
-		TLSFileConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: config.TelemetryNamespace},
-		DaemonSet:           types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
-		PipelineDefaults: builder.PipelineDefaults{
-			InputTag:          "tele",
-			MemoryBufferLimit: "10M",
-			StorageType:       "filesystem",
-			FsBufferLimit:     "1G",
-		},
-		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			FluentBitImage:    config.FluentBitImage,
-			ExporterImage:     config.ExporterImage,
-			PriorityClassName: config.PriorityClassName,
-			CPULimit:          fluentBitCPULimit,
-			MemoryLimit:       fluentBitMemoryLimit,
-			CPURequest:        fluentBitCPURequest,
-			MemoryRequest:     fluentBitMemoryRequest,
-		},
-	}
-
-	pipelineValidator := &logpipelinefluentbit.Validator{
-		EndpointValidator:  &endpoint.Validator{Client: client},
-		TLSCertValidator:   tlscert.New(client),
-		SecretRefValidator: &secretref.Validator{Client: client},
-	}
-
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
+	fbReconciler, err := configureFluentBitReconciler(client, config, flowHealthProber)
 	if err != nil {
 		return nil, err
 	}
 
-	fbReconciler := logpipelinefluentbit.New(client, fluentbitConfig, &workloadstatus.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(discoveryClient), pipelineValidator, &conditions.ErrorToMessageConverter{})
-	otelReconciler := otel.New(client, &conditions.ErrorToMessageConverter{})
+	otelReconciler, err := configureOtelReconciler(client, config, flowHealthProber)
+	if err != nil {
+		return nil, err
+	}
 
 	reconciler := logpipeline.New(
 		client,
@@ -167,4 +156,64 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return b.Complete(r)
+}
+
+func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.LogPipelineProber) (*logpipelinefluentbit.Reconciler, error) {
+	fbConfig := logpipelinefluentbit.Config{
+		SectionsConfigMap:   types.NamespacedName{Name: fbSectionsConfigMapName, Namespace: config.TelemetryNamespace},
+		FilesConfigMap:      types.NamespacedName{Name: fbFilesConfigMapName, Namespace: config.TelemetryNamespace},
+		LuaConfigMap:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: config.TelemetryNamespace},
+		ParsersConfigMap:    types.NamespacedName{Name: fbParsersConfigMapName, Namespace: config.TelemetryNamespace},
+		EnvConfigSecret:     types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: config.TelemetryNamespace},
+		TLSFileConfigSecret: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: config.TelemetryNamespace},
+		DaemonSet:           types.NamespacedName{Name: fbDaemonSetName, Namespace: config.TelemetryNamespace},
+		PipelineDefaults: builder.PipelineDefaults{
+			InputTag:          "tele",
+			MemoryBufferLimit: "10M",
+			StorageType:       "filesystem",
+			FsBufferLimit:     "1G",
+		},
+		DaemonSetConfig: fluentbit.DaemonSetConfig{
+			FluentBitImage:    config.FluentBitImage,
+			ExporterImage:     config.ExporterImage,
+			PriorityClassName: config.PriorityClassName,
+			CPULimit:          fbCPULimit,
+			MemoryLimit:       fbMemoryLimit,
+			CPURequest:        fbCPURequest,
+			MemoryRequest:     fbMemoryRequest,
+		},
+	}
+
+	pipelineValidator := &logpipelinefluentbit.Validator{
+		EndpointValidator:  &endpoint.Validator{Client: client},
+		TLSCertValidator:   tlscert.New(client),
+		SecretRefValidator: &secretref.Validator{Client: client},
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	fbReconciler := logpipelinefluentbit.New(client, fbConfig, &workloadstatus.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(discoveryClient), pipelineValidator, &conditions.ErrorToMessageConverter{})
+
+	return fbReconciler, nil
+}
+
+func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.LogPipelineProber) (*logpipelineotel.Reconciler, error) {
+	otelConfig := logpipelineotel.Config{
+		LogGatewayName:     otelLogGatewayName,
+		TelemetryNamespace: config.TelemetryNamespace,
+	}
+
+	otelReconciler := otel.New(
+		client,
+		otelConfig,
+		&otelcollector.GatewayApplierDeleter{
+			// TODO: Populate the GatewayApplierDeleter
+		},
+		&gateway.Builder{Reader: client},
+		&conditions.ErrorToMessageConverter{})
+
+	return otelReconciler, nil
 }

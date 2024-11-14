@@ -41,3 +41,10 @@ func MakeTraceGatewaySelectorLabel(baseName string) map[string]string {
 		istioSidecarInjectLabel:    "true",
 	}
 }
+
+func MakeLogGatewaySelectorLabel(baseName string) map[string]string {
+	return map[string]string{
+		selectorLabelKey: baseName,
+		// TODO: Decide if other labels are needed, and what for
+	}
+}

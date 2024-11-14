@@ -17,6 +17,7 @@ type EnvVars map[string][]byte
 const (
 	SignalTypeMetric = "metric"
 	SignalTypeTrace  = "trace"
+	SignalTypeLog    = "log"
 )
 
 type ConfigBuilder struct {
