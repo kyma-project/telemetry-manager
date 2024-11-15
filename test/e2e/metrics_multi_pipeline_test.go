@@ -44,9 +44,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			objs = append(objs, backendRuntime.K8sObjects()...)
 			backendRuntimeExportURL = backendRuntime.ExportURL(proxyClient)
 
+			// Enable only container metrics to simplify the test setup and avoid deploying too many workloads
+			// Other metric resources are tested in metrics_runtime_input_test.go, here the focus is on testing multiple pipelines withe different inputs (runtime and prometheus)
 			metricPipelineRuntime := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineRuntimeName).
 				WithRuntimeInput(true).
+				WithRuntimeInputContainerMetrics(true).
+				WithRuntimeInputPodMetrics(false).
+				WithRuntimeInputNodeMetrics(false).
+				WithRuntimeInputVolumeMetrics(false).
+				WithRuntimeInputDeploymentMetrics(false).
+				WithRuntimeInputStatefulSetMetrics(false).
+				WithRuntimeInputDaemonSetMetrics(false).
+				WithRuntimeInputJobMetrics(false).
 				WithOTLPOutput(testutils.OTLPEndpoint(backendRuntime.Endpoint())).
 				Build()
 			objs = append(objs, &metricPipelineRuntime)
@@ -105,7 +115,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				bodyContent, err := io.ReadAll(resp.Body)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.DefaultMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
+				g.Expect(bodyContent).To(HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ConsistOf(runtime.ContainerMetricsNames))), "Not all required runtime metrics are sent to runtime backend")
 				checkInstrumentationScopeAndVersion(g, bodyContent, InstrumentationScopeRuntime, InstrumentationScopeKyma)
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
