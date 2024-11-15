@@ -24,8 +24,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			Service:    config.DefaultService(make(config.Pipelines)),
 			Extensions: config.DefaultExtensions(),
 		},
-		Receivers:  makeReceiversConfig(),
-		Exporters:  make(Exporters),
+		Receivers: makeReceiversConfig(),
+		Exporters: make(Exporters),
 	}
 
 	envVars := make(otlpexporter.EnvVars)

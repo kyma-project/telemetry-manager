@@ -63,7 +63,7 @@ const (
 	fbTLSFileConfigSecretName = "telemetry-fluent-bit-output-tls-config"
 	fbDaemonSetName           = "telemetry-fluent-bit"
 
-	// Otel
+	// OTel
 	otelLogGatewayName = "telemetry-log-gateway"
 )
 
@@ -73,6 +73,17 @@ var (
 	fbMemoryLimit   = resource.MustParse("1Gi")
 	fbCPURequest    = resource.MustParse("100m")
 	fbMemoryRequest = resource.MustParse("50Mi")
+
+	// OTel
+	// TODO: Check if these values need to be adjusted
+	logGatewayBaseCPULimit         = resource.MustParse("700m")
+	logGatewayDynamicCPULimit      = resource.MustParse("500m")
+	logGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
+	logGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
+	logGatewayBaseCPURequest       = resource.MustParse("100m")
+	logGatewayDynamicCPURequest    = resource.MustParse("100m")
+	logGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	logGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
 // LogPipelineController reconciles a LogPipeline object
@@ -84,12 +95,15 @@ type LogPipelineController struct {
 }
 
 type LogPipelineControllerConfig struct {
-	ExporterImage      string
-	FluentBitImage     string
-	PriorityClassName  string
-	RestConfig         *rest.Config
-	SelfMonitorName    string
-	TelemetryNamespace string
+	ExporterImage               string
+	FluentBitImage              string
+	OTelCollectorImage          string
+	FluentBitPriorityClassName  string
+	LogGatewayPriorityClassName string
+	LogGatewayServiceName       string
+	RestConfig                  *rest.Config
+	SelfMonitorName             string
+	TelemetryNamespace          string
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
@@ -176,7 +190,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:    config.FluentBitImage,
 			ExporterImage:     config.ExporterImage,
-			PriorityClassName: config.PriorityClassName,
+			PriorityClassName: config.FluentBitPriorityClassName,
 			CPULimit:          fbCPULimit,
 			MemoryLimit:       fbMemoryLimit,
 			CPURequest:        fbCPURequest,
@@ -206,11 +220,38 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		TelemetryNamespace: config.TelemetryNamespace,
 	}
 
+	gatewayConfig := otelcollector.GatewayConfig{
+		Config: otelcollector.Config{
+			BaseName:  otelLogGatewayName,
+			Namespace: config.TelemetryNamespace,
+		},
+		Deployment: otelcollector.DeploymentConfig{
+			Image:                config.OTelCollectorImage,
+			PriorityClassName:    config.LogGatewayPriorityClassName,
+			BaseCPULimit:         logGatewayBaseCPULimit,
+			DynamicCPULimit:      logGatewayDynamicCPULimit,
+			BaseMemoryLimit:      logGatewayBaseMemoryLimit,
+			DynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
+			BaseCPURequest:       logGatewayBaseCPURequest,
+			DynamicCPURequest:    logGatewayDynamicCPURequest,
+			BaseMemoryRequest:    logGatewayBaseMemoryRequest,
+			DynamicMemoryRequest: logGatewayDynamicMemoryRequest,
+		},
+		OTLPServiceName: config.LogGatewayServiceName,
+	}
+
+	rbac := otelcollector.MakeLogGatewayRBAC(
+		types.NamespacedName{
+			Name:      otelLogGatewayName,
+			Namespace: config.TelemetryNamespace,
+		})
+
 	otelReconciler := otel.New(
 		client,
 		otelConfig,
 		&otelcollector.GatewayApplierDeleter{
-			// TODO: Populate the GatewayApplierDeleter
+			Config: gatewayConfig,
+			RBAC:   rbac,
 		},
 		&gateway.Builder{Reader: client},
 		&conditions.ErrorToMessageConverter{})

@@ -7,8 +7,8 @@ import (
 type Config struct {
 	config.Base `yaml:",inline"`
 
-	Receivers  Receivers  `yaml:"receivers"`
-	Exporters  Exporters  `yaml:"exporters"`
+	Receivers Receivers `yaml:"receivers"`
+	Exporters Exporters `yaml:"exporters"`
 }
 
 type Receivers struct {

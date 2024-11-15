@@ -42,6 +42,15 @@ func MakeMetricGatewayRBAC(name types.NamespacedName) Rbac {
 	}
 }
 
+func MakeLogGatewayRBAC(name types.NamespacedName) Rbac {
+	return Rbac{
+		clusterRole:        makeLogGatewayClusterRole(name),
+		clusterRoleBinding: makeClusterRoleBinding(name),
+		role:               nil,
+		roleBinding:        nil,
+	}
+}
+
 func makeTraceGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
@@ -153,6 +162,28 @@ func makeMetricGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole
 	clusterRole.Rules = append(clusterRole.Rules, kymaStatsRules...)
 
 	return &clusterRole
+}
+
+func makeLogGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    labels.MakeDefaultLabel(name.Name),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		},
+	}
 }
 
 func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
