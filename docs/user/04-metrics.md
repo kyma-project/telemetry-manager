@@ -395,7 +395,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-By default, container and Pod metrics are collected.
+By default, metrics for all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet and Job) are collected.
 To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
 
 The following example collects only DaemonSet, Deployment, StatefulSet and Job metrics:
