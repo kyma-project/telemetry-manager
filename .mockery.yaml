@@ -38,8 +38,3 @@ packages:
   github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober:
     interfaces:
       alertGetter:
-  github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation:
-    interfaces:
-      FilesValidator:
-      MaxPipelinesValidator:
-      VariablesValidator:
