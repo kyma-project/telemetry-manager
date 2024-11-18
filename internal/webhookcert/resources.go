@@ -21,9 +21,14 @@ const (
 // applyWebhookConfigResources creates or updates a ValidatingWebhookConfiguration for the LogPipeline/LogParser resources.
 // additionally it patches a LogPipeline conversion webhook configuration.
 func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
-	validatingWebhookConfig := makeValidatingWebhookConfig(caBundle, config)
+	validatingWebhookConfig := updateValidatingWebhookConfig(caBundle, config)
 	if err := k8sutils.CreateOrUpdateValidatingWebhookConfiguration(ctx, c, &validatingWebhookConfig); err != nil {
 		return fmt.Errorf("failed to create or update validating webhook configuration: %w", err)
+	}
+
+	mutatingWebhookConfig := updateMutatingWebhookConfig(caBundle, config)
+	if err := k8sutils.CreateOrUpdateValidatingWebhookConfiguration(ctx, c, &mutatingWebhookConfig); err != nil {
+		return fmt.Errorf("failed to create or update mutating webhook configuration: %w", err)
 	}
 
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
@@ -34,8 +39,7 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 	return nil
 }
 
-func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
-
+func updateValidatingWebhookConfig(caBundle []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
 	createWebhook := func(name, path string, resources []string) admissionregistrationv1.ValidatingWebhook {
 		return admissionregistrationv1.ValidatingWebhook{
 			AdmissionReviewVersions: []string{"v1beta1", "v1"},
@@ -59,6 +63,37 @@ func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregist
 	}
 
 	return admissionregistrationv1.ValidatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: config.WebhookName.Name,
+		},
+		Webhooks: webhooks,
+	}
+}
+
+func updateMutatingWebhookConfig(caBundle []byte, config Config) admissionregistrationv1.MutatingWebhookConfiguration {
+	createWebhook := func(name, path string, resources []string) admissionregistrationv1.MutatingWebhook {
+		return admissionregistrationv1.MutatingWebhook{
+			AdmissionReviewVersions: []string{"v1beta1", "v1"},
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
+					Name:      config.ServiceName.Name,
+					Namespace: config.ServiceName.Namespace,
+					Port:      ptr.To(webhookServicePort),
+					Path:      &path,
+				},
+				CABundle: caBundle,
+			},
+			Name:        name,
+			SideEffects: ptr.To(admissionregistrationv1.SideEffectClassNone),
+		}
+	}
+
+	webhooks := []admissionregistrationv1.MutatingWebhook{
+		createWebhook("mutating.metricpipelines.telemetry.kyma-project.io", "/mutate-metricpipeline", []string{"metricpipelines"}),
+	}
+
+	return admissionregistrationv1.MutatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: config.WebhookName.Name,

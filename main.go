@@ -60,6 +60,7 @@ import (
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
+	metricpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/metricpipeline"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -303,6 +304,9 @@ func run() error {
 		return fmt.Errorf("failed to enable telemetry module controller: %w", err)
 	}
 
+	if err := metricpipelinewebhook.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
+		fmt.Errorf("unable to create webhook for MEtricPipeline: %w", err)
+	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", mgr.GetWebhookServer().StartedChecker()); err != nil {
@@ -551,6 +555,9 @@ func createWebhookConfig() telemetry.WebhookConfig {
 			},
 			WebhookName: types.NamespacedName{
 				Name: "validation.webhook.telemetry.kyma-project.io",
+			},
+			MutatingWebhookName: types.NamespacedName{
+				Name: "mutating.webhook.telemetry.kyma-project.io",
 			},
 		},
 	}
