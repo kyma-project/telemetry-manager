@@ -43,10 +43,10 @@ func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregist
 	apiVersions := []string{"v1alpha1"}
 	webhookTimeout := int32(15) //nolint:mnd // 15 seconds
 	labels := map[string]string{
-		"control-plane":              "telemetry-manager",
-		"app.kubernetes.io/instance": "telemetry",
-		"app.kubernetes.io/name":     "manager",
-		"kyma-project.io/component":  "controller",
+		"control-plane":                    "telemetry-manager",
+		"app.kubernetes.io/instance":       "telemetry",
+		"app.kubernetes.io/validatingName": "manager",
+		"kyma-project.io/component":        "controller",
 	}
 
 	createWebhook := func(name, path string, resources []string) admissionregistrationv1.ValidatingWebhook {

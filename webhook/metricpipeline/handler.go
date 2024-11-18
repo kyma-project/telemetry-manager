@@ -3,9 +3,9 @@ package metricpipeline
 import (
 	"context"
 	"encoding/json"
-	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"

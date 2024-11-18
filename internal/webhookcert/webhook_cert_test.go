@@ -27,15 +27,19 @@ var (
 		Name:      "telemetry-webhook-cert",
 		Namespace: telemetryNamespace,
 	}
-	name        = "validation.webhook.telemetry.kyma-project.io"
-	webhookName = types.NamespacedName{
-		Name: name,
+	validatingName        = "validation.webhook.telemetry.kyma-project.io"
+	validatingWebhookName = types.NamespacedName{
+		Name: validatingName,
+	}
+	mutatingName        = "telemetry-mutating.webhook.telemetry.kyma-project.io"
+	mutatingWebhookName = types.NamespacedName{
+		Name: mutatingName,
 	}
 	labels = map[string]string{
-		"control-plane":              "telemetry-manager",
-		"app.kubernetes.io/instance": "telemetry",
-		"app.kubernetes.io/name":     "manager",
-		"kyma-project.io/component":  "controller",
+		"control-plane":                    "telemetry-manager",
+		"app.kubernetes.io/instance":       "telemetry",
+		"app.kubernetes.io/validatingName": "manager",
+		"kyma-project.io/component":        "controller",
 	}
 	logPipelinesCRD = apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -50,13 +54,19 @@ var (
 			},
 		},
 	}
+
+	mutatingWebhookConfiguration = admissionregistrationv1.MutatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: mutatingName,
+		},
+	}
 )
 
 func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -69,7 +79,8 @@ func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: webhookName,
+		ValidatingWebhookName: validatingWebhookName,
+		MutatingWebhookName:   mutatingWebhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -83,7 +94,7 @@ func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
 	err = client.Get(context.Background(), config.ValidatingWebhookName, &validatingWebhookConfiguration)
 	require.NoError(t, err)
 
-	require.Equal(t, name, validatingWebhookConfiguration.Name)
+	require.Equal(t, validatingName, validatingWebhookConfiguration.Name)
 	require.Equal(t, labels, validatingWebhookConfiguration.Labels)
 
 	require.Equal(t, 2, len(validatingWebhookConfiguration.Webhooks))
@@ -126,7 +137,7 @@ func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -139,7 +150,8 @@ func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: webhookName,
+		ValidatingWebhookName: validatingWebhookName,
+		MutatingWebhookName:   mutatingWebhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -191,7 +203,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	initialValidatingWebhookConfiguration := admissionregistrationv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
+			Name:   validatingName,
 			Labels: labels,
 		},
 
@@ -254,7 +266,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 			},
 		},
 	}
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &initialValidatingWebhookConfiguration).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &initialValidatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -268,7 +280,8 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: webhookName,
+		ValidatingWebhookName: validatingWebhookName,
+		MutatingWebhookName:   mutatingWebhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -280,7 +293,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 
 	key := types.NamespacedName{
-		Name: name,
+		Name: validatingName,
 	}
 
 	err = client.Get(context.Background(), key, &updatedValidatingWebhookConfiguration)
@@ -300,7 +313,7 @@ func TestCreateSecret(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -314,7 +327,8 @@ func TestCreateSecret(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: webhookName,
+		ValidatingWebhookName: validatingWebhookName,
+		MutatingWebhookName:   mutatingWebhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -332,7 +346,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -346,21 +360,22 @@ func TestReuseExistingCertificate(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: webhookName,
+		ValidatingWebhookName: validatingWebhookName,
+		MutatingWebhookName:   mutatingWebhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var newValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	err = client.Get(context.Background(), types.NamespacedName{Name: name}, &newValidatingWebhookConfiguration)
+	err = client.Get(context.Background(), types.NamespacedName{Name: validatingName}, &newValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	err = client.Get(context.Background(), types.NamespacedName{Name: name}, &updatedValidatingWebhookConfiguration)
+	err = client.Get(context.Background(), types.NamespacedName{Name: validatingName}, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
