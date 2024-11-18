@@ -27,33 +27,33 @@ func IsIstioDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) 
 }
 
 func IsRuntimePodInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources.Pod.Enabled
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Pod != nil && input.Runtime.Resources.Pod.Enabled
 }
 
 func IsRuntimeContainerInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources.Container.Enabled
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Container != nil && input.Runtime.Resources.Container.Enabled
 }
 
 func IsRuntimeNodeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources.Node.Enabled
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Node != nil && input.Runtime.Resources.Node.Enabled
 }
 
 func IsRuntimeVolumeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources.Volume.Enabled
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Volume != nil && input.Runtime.Resources.Volume.Enabled
 }
 
 func IsRuntimeStatefulSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources.StatefulSet.Enabled
+	return input.Runtime.Resources != nil && input.Runtime.Resources.StatefulSet != nil && input.Runtime.Resources.StatefulSet.Enabled
 }
 
 func IsRuntimeDeploymentInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources.Deployment.Enabled
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Deployment != nil && input.Runtime.Resources.Deployment.Enabled
 }
 
 func IsRuntimeDaemonSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources.DaemonSet.Enabled
+	return input.Runtime.Resources != nil && input.Runtime.Resources.DaemonSet != nil && input.Runtime.Resources.DaemonSet.Enabled
 }
 
 func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources.Job.Enabled
+	return input.Runtime.Resources != nil && input.Runtime.Resources.Job != nil && input.Runtime.Resources.Job.Enabled
 }
