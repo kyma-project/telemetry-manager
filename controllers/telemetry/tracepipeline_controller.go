@@ -43,11 +43,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -199,14 +199,14 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 				mgr.GetRESTMapper(),
 				&telemetryv1alpha1.TracePipeline{},
 			),
-			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged()),
+			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 	}
 
 	return b.Watches(
 		&operatorv1alpha1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete()),
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 

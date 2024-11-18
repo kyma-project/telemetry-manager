@@ -14,8 +14,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
-	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestGetOutputType(t *testing.T) {
@@ -26,7 +26,7 @@ func TestGetOutputType(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want pipelineutils.LogPipelineMode
+		want logpipelineutils.Mode
 	}{
 		{
 			name: "OTel",
@@ -40,7 +40,7 @@ func TestGetOutputType(t *testing.T) {
 				},
 			},
 
-			want: pipelineutils.OTel,
+			want: logpipelineutils.OTel,
 		},
 		{
 			name: "FluentBit",
@@ -54,7 +54,7 @@ func TestGetOutputType(t *testing.T) {
 				},
 			},
 
-			want: pipelineutils.FluentBit,
+			want: logpipelineutils.FluentBit,
 		},
 		{
 			name: "OTel",
@@ -68,7 +68,7 @@ func TestGetOutputType(t *testing.T) {
 				},
 			},
 
-			want: pipelineutils.FluentBit,
+			want: logpipelineutils.FluentBit,
 		},
 	}
 
@@ -92,11 +92,11 @@ func TestGetPipelinesForType(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2).WithStatusSubresource(&otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2).Build()
 
-	got, err := GetPipelinesForType(context.Background(), fakeClient, pipelineutils.OTel)
+	got, err := GetPipelinesForType(context.Background(), fakeClient, logpipelineutils.OTel)
 	require.NoError(t, err)
 	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{otelPipeline})
 
-	got, err = GetPipelinesForType(context.Background(), fakeClient, pipelineutils.FluentBit)
+	got, err = GetPipelinesForType(context.Background(), fakeClient, logpipelineutils.FluentBit)
 	require.NoError(t, err)
 	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{fluentbitPipeline1, fluentbitPipeline2})
 }
@@ -117,7 +117,7 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 	overridesHandler.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
 
 	otelReconciler := ReconcilerStub{
-		OutputType: pipelineutils.OTel,
+		OutputType: logpipelineutils.OTel,
 		Result:     nil,
 	}
 
@@ -140,7 +140,7 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 var _ LogPipelineReconciler = &ReconcilerStub{}
 
 type ReconcilerStub struct {
-	OutputType pipelineutils.LogPipelineMode
+	OutputType logpipelineutils.Mode
 	Result     error
 }
 
@@ -148,6 +148,6 @@ func (r *ReconcilerStub) Reconcile(_ context.Context, _ *telemetryv1alpha1.LogPi
 	return r.Result
 }
 
-func (r *ReconcilerStub) SupportedOutput() pipelineutils.LogPipelineMode {
+func (r *ReconcilerStub) SupportedOutput() logpipelineutils.Mode {
 	return r.OutputType
 }

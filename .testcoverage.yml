@@ -48,7 +48,7 @@ override:
   - threshold: 73
     path: ^webhook/logpipeline$
   - threshold: 83
-    path: ^internal/utils/pipelines$
+    path: ^internal/utils/logpipeline$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
@@ -59,12 +59,12 @@ exclude:
     - main
     - mocks
     - stubs
-    - ^internal/k8sutils # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
-    - internal/logger
+    - ^internal/utils/k8s # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
+    - internal/utils/logger
     - ^internal/reconciler/logparser # logparser reconciler will be removed soon
     - ^test # e2e and integration tests
     - webhook/logparser # logparser will be removed soon
-    - ^internal/testutils # some functions in testutils are being used in e2e tests only
+    - ^internal/utils/test # some functions in testutils are being used in e2e tests only
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by

@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const (
