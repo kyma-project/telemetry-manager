@@ -159,8 +159,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			verifyCustomAppSpans(istiofiedBackendExportURL, appName, appNs)
 		})
 		It("Should have no noisy spans of communication to telemetry-otlp-traces endpoint", func() {
-			verifyNoIstioNoiseSpans(backendExportURL, istiofiedAppName, istiofiedAppNs)
-			verifyNoIstioNoiseSpans(istiofiedBackendExportURL, istiofiedAppName, istiofiedAppNs)
+			verifyNoIstioNoiseSpans(backendExportURL, istiofiedAppNs)
+			verifyNoIstioNoiseSpans(istiofiedBackendExportURL, istiofiedAppNs)
 		})
 	})
 })
