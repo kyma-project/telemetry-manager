@@ -66,10 +66,10 @@ func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
 	}(certDir)
 
 	config := Config{
-		CertDir:      certDir,
-		ServiceName:  webhookService,
-		CASecretName: caBundleSecret,
-		WebhookName:  webhookName,
+		CertDir:               certDir,
+		ServiceName:           webhookService,
+		CASecretName:          caBundleSecret,
+		ValidatingWebhookName: webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -80,7 +80,7 @@ func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
 
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 
-	err = client.Get(context.Background(), config.WebhookName, &validatingWebhookConfiguration)
+	err = client.Get(context.Background(), config.ValidatingWebhookName, &validatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	require.Equal(t, name, validatingWebhookConfiguration.Name)
@@ -136,10 +136,10 @@ func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
 	}(certDir)
 
 	config := Config{
-		CertDir:      certDir,
-		ServiceName:  webhookService,
-		CASecretName: caBundleSecret,
-		WebhookName:  webhookName,
+		CertDir:               certDir,
+		ServiceName:           webhookService,
+		CASecretName:          caBundleSecret,
+		ValidatingWebhookName: webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -265,10 +265,10 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	}(certDir)
 
 	config := Config{
-		CertDir:      certDir,
-		ServiceName:  webhookService,
-		CASecretName: caBundleSecret,
-		WebhookName:  webhookName,
+		CertDir:               certDir,
+		ServiceName:           webhookService,
+		CASecretName:          caBundleSecret,
+		ValidatingWebhookName: webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -311,10 +311,10 @@ func TestCreateSecret(t *testing.T) {
 	}(certDir)
 
 	config := Config{
-		CertDir:      certDir,
-		ServiceName:  webhookService,
-		CASecretName: caBundleSecret,
-		WebhookName:  webhookName,
+		CertDir:               certDir,
+		ServiceName:           webhookService,
+		CASecretName:          caBundleSecret,
+		ValidatingWebhookName: webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -343,10 +343,10 @@ func TestReuseExistingCertificate(t *testing.T) {
 	}(certDir)
 
 	config := Config{
-		CertDir:      certDir,
-		ServiceName:  webhookService,
-		CASecretName: caBundleSecret,
-		WebhookName:  webhookName,
+		CertDir:               certDir,
+		ServiceName:           webhookService,
+		CASecretName:          caBundleSecret,
+		ValidatingWebhookName: webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)

@@ -150,12 +150,6 @@ spec:
                           annotation are scraped. The default is `false`.
                         type: boolean
                       namespaces:
-                        default:
-                          exclude:
-                          - kyma-system
-                          - kube-system
-                          - istio-system
-                          - compass-system
                         description: Describes whether Prometheus metrics from specific
                           namespaces are selected. System namespaces are disabled
                           by default.
@@ -187,12 +181,6 @@ spec:
                           default is `false`.
                         type: boolean
                       namespaces:
-                        default:
-                          exclude:
-                          - kyma-system
-                          - kube-system
-                          - istio-system
-                          - compass-system
                         description: Describes whether runtime metrics from specific
                           namespaces are selected. System namespaces are disabled
                           by default.
@@ -216,110 +204,69 @@ spec:
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
                       resources:
-                        default:
-                          container:
-                            enabled: true
-                          daemonset:
-                            enabled: true
-                          deployment:
-                            enabled: true
-                          job:
-                            enabled: true
-                          node:
-                            enabled: true
-                          pod:
-                            enabled: true
-                          statefulset:
-                            enabled: true
-                          volume:
-                            enabled: true
                         description: Describes the Kubernetes resources for which
                           runtime metrics are scraped.
                         properties:
                           container:
-                            default:
-                              enabled: true
                             description: Configures container runtime metrics scraping.
                             properties:
                               enabled:
-                                default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           daemonset:
-                            default:
-                              enabled: true
                             description: Configures DaemonSet runtime metrics scraping.
                             properties:
                               enabled:
-                                default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           deployment:
-                            default:
-                              enabled: true
                             description: Configures Deployment runtime metrics scraping.
                             properties:
                               enabled:
-                                default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           job:
-                            default:
-                              enabled: true
                             description: Configures Job runtime metrics scraping.
                             properties:
                               enabled:
-                                default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           node:
-                            default:
-                              enabled: true
                             description: Configures Node runtime metrics scraping.
                             properties:
                               enabled:
-                                default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           pod:
-                            default:
-                              enabled: true
                             description: Configures Pod runtime metrics scraping.
                             properties:
                               enabled:
-                                default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           statefulset:
-                            default:
-                              enabled: true
                             description: Configures StatefulSet runtime metrics scraping.
                             properties:
                               enabled:
-                                default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
                                 type: boolean
                             type: object
                           volume:
-                            default:
-                              enabled: true
                             description: Configures Volume runtime metrics scraping.
                             properties:
                               enabled:
-                                default: true
                                 description: If enabled, the runtime metrics for the
                                   resource are scraped. The default is `true`.
                                 type: boolean

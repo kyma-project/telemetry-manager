@@ -85,7 +85,6 @@ type MetricPipelinePrometheusInput struct {
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
-	// +kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	// +optional
@@ -98,11 +97,9 @@ type MetricPipelineRuntimeInput struct {
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether runtime metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
-	// +kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 	// Describes the Kubernetes resources for which runtime metrics are scraped.
 	// +optional
-	// +kubebuilder:default={pod: {enabled: true}, container: {enabled: true}, node: {enabled: true}, volume: {enabled: true}, daemonset: {enabled: true}, deployment: {enabled: true}, statefulset: {enabled: true}, job: {enabled: true}}
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
 }
 
@@ -110,44 +107,35 @@ type MetricPipelineRuntimeInput struct {
 type MetricPipelineRuntimeInputResources struct {
 	// Configures Pod runtime metrics scraping.
 	// +optional
-	// +kubebuilder:default={enabled: true}
-	Pod *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"pod,omitempty"`
+	Pod *MetricPipelineRuntimeInputResource `json:"pod,omitempty"`
 	// Configures container runtime metrics scraping.
 	// +optional
-	// +kubebuilder:default={enabled: true}
-	Container *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"container,omitempty"`
+	Container *MetricPipelineRuntimeInputResource `json:"container,omitempty"`
 	// Configures Node runtime metrics scraping.
 	// +optional
-	// +kubebuilder:default={enabled: true}
-	Node *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"node,omitempty"`
+	Node *MetricPipelineRuntimeInputResource `json:"node,omitempty"`
 	// Configures Volume runtime metrics scraping.
 	// +optional
-	// +kubebuilder:default={enabled: true}
-	Volume *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"volume,omitempty"`
+	Volume *MetricPipelineRuntimeInputResource `json:"volume,omitempty"`
 	// Configures DaemonSet runtime metrics scraping.
 	// +optional
-	// +kubebuilder:default={enabled: true}
-	DaemonSet *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"daemonset,omitempty"`
+	DaemonSet *MetricPipelineRuntimeInputResource `json:"daemonset,omitempty"`
 	// Configures Deployment runtime metrics scraping.
 	// +optional
-	// +kubebuilder:default={enabled: true}
-	Deployment *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"deployment,omitempty"`
+	Deployment *MetricPipelineRuntimeInputResource `json:"deployment,omitempty"`
 	// Configures StatefulSet runtime metrics scraping.
 	// +optional
-	// +kubebuilder:default={enabled: true}
-	StatefulSet *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"statefulset,omitempty"`
+	StatefulSet *MetricPipelineRuntimeInputResource `json:"statefulset,omitempty"`
 	// Configures Job runtime metrics scraping.
 	// +optional
-	// +kubebuilder:default={enabled: true}
-	Job *MetricPipelineRuntimeInputResourceEnabledByDefault `json:"job,omitempty"`
+	Job *MetricPipelineRuntimeInputResource `json:"job,omitempty"`
 }
 
-// MetricPipelineRuntimeInputResourceEnabledByDefault defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
-type MetricPipelineRuntimeInputResourceEnabledByDefault struct {
+// MetricPipelineRuntimeInputResource defines if the scraping of runtime metrics is enabled for a specific resource. The scraping is enabled by default.
+type MetricPipelineRuntimeInputResource struct {
 	// If enabled, the runtime metrics for the resource are scraped. The default is `true`.
 	// +optional
-	// +kubebuilder:default=true
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.

@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	CertDir      string
-	ServiceName  types.NamespacedName
-	CASecretName types.NamespacedName
-	WebhookName  types.NamespacedName
+	CertDir               string
+	ServiceName           types.NamespacedName
+	CASecretName          types.NamespacedName
+	ValidatingWebhookName types.NamespacedName
+	MutatingWebhookName   types.NamespacedName
 }
 
 func EnsureCertificate(ctx context.Context, client client.Client, config Config) error {

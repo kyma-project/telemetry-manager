@@ -273,7 +273,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 func (r *Reconciler) deleteWebhook(ctx context.Context) error {
 	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: r.config.Webhook.CertConfig.WebhookName.Name,
+			Name: r.config.Webhook.CertConfig.ValidatingWebhookName.Name,
 		},
 	}
 
@@ -304,7 +304,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var webhook admissionregistrationv1.ValidatingWebhookConfiguration
-	if err := r.Get(ctx, r.config.Webhook.CertConfig.WebhookName, &webhook); err != nil {
+	if err := r.Get(ctx, r.config.Webhook.CertConfig.ValidatingWebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
 

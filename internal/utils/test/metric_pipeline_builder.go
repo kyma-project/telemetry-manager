@@ -187,10 +187,10 @@ func (b *MetricPipelineBuilder) WithRuntimeInputPodMetrics(enable bool) *MetricP
 	b.initializeRuntimeInputResources()
 
 	if b.inRuntime.Resources.Pod == nil {
-		b.inRuntime.Resources.Pod = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+		b.inRuntime.Resources.Pod = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{}
 	}
 
-	b.inRuntime.Resources.Pod.Enabled = &enable
+	b.inRuntime.Resources.Pod.Enabled = enable
 
 	return b
 }
@@ -199,10 +199,10 @@ func (b *MetricPipelineBuilder) WithRuntimeInputContainerMetrics(enable bool) *M
 	b.initializeRuntimeInputResources()
 
 	if b.inRuntime.Resources.Container == nil {
-		b.inRuntime.Resources.Container = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+		b.inRuntime.Resources.Container = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{}
 	}
 
-	b.inRuntime.Resources.Container.Enabled = &enable
+	b.inRuntime.Resources.Container.Enabled = enable
 
 	return b
 }
@@ -211,10 +211,10 @@ func (b *MetricPipelineBuilder) WithRuntimeInputNodeMetrics(enable bool) *Metric
 	b.initializeRuntimeInputResources()
 
 	if b.inRuntime.Resources.Node == nil {
-		b.inRuntime.Resources.Node = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+		b.inRuntime.Resources.Node = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{}
 	}
 
-	b.inRuntime.Resources.Node.Enabled = &enable
+	b.inRuntime.Resources.Node.Enabled = enable
 
 	return b
 }
@@ -223,10 +223,10 @@ func (b *MetricPipelineBuilder) WithRuntimeInputVolumeMetrics(enable bool) *Metr
 	b.initializeRuntimeInputResources()
 
 	if b.inRuntime.Resources.Volume == nil {
-		b.inRuntime.Resources.Volume = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+		b.inRuntime.Resources.Volume = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{}
 	}
 
-	b.inRuntime.Resources.Volume.Enabled = &enable
+	b.inRuntime.Resources.Volume.Enabled = enable
 
 	return b
 }
@@ -235,10 +235,10 @@ func (b *MetricPipelineBuilder) WithRuntimeInputDeploymentMetrics(enable bool) *
 	b.initializeRuntimeInputResources()
 
 	if b.inRuntime.Resources.Deployment == nil {
-		b.inRuntime.Resources.Deployment = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+		b.inRuntime.Resources.Deployment = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{}
 	}
 
-	b.inRuntime.Resources.Deployment.Enabled = &enable
+	b.inRuntime.Resources.Deployment.Enabled = enable
 
 	return b
 }
@@ -247,10 +247,10 @@ func (b *MetricPipelineBuilder) WithRuntimeInputJobMetrics(enable bool) *MetricP
 	b.initializeRuntimeInputResources()
 
 	if b.inRuntime.Resources.Job == nil {
-		b.inRuntime.Resources.Job = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+		b.inRuntime.Resources.Job = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{}
 	}
 
-	b.inRuntime.Resources.Job.Enabled = &enable
+	b.inRuntime.Resources.Job.Enabled = enable
 
 	return b
 }
@@ -259,10 +259,10 @@ func (b *MetricPipelineBuilder) WithRuntimeInputDaemonSetMetrics(enable bool) *M
 	b.initializeRuntimeInputResources()
 
 	if b.inRuntime.Resources.DaemonSet == nil {
-		b.inRuntime.Resources.DaemonSet = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+		b.inRuntime.Resources.DaemonSet = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{}
 	}
 
-	b.inRuntime.Resources.DaemonSet.Enabled = &enable
+	b.inRuntime.Resources.DaemonSet.Enabled = enable
 
 	return b
 }
@@ -271,10 +271,10 @@ func (b *MetricPipelineBuilder) WithRuntimeInputStatefulSetMetrics(enable bool) 
 	b.initializeRuntimeInputResources()
 
 	if b.inRuntime.Resources.StatefulSet == nil {
-		b.inRuntime.Resources.StatefulSet = &telemetryv1alpha1.MetricPipelineRuntimeInputResourceEnabledByDefault{}
+		b.inRuntime.Resources.StatefulSet = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{}
 	}
 
-	b.inRuntime.Resources.StatefulSet.Enabled = &enable
+	b.inRuntime.Resources.StatefulSet.Enabled = enable
 
 	return b
 }

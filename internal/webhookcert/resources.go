@@ -26,6 +26,10 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 		return fmt.Errorf("failed to create or update validating webhook configuration: %w", err)
 	}
 
+	if err := patchMutatingWebhook(ctx, c, caBundle, config); err != nil {
+		return fmt.Errorf("failed to patch mutating webhook configuration: %w", err)
+	}
+
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
 	if err := patchConversionWebhookConfig(ctx, c, conversionWebhookConfig); err != nil {
 		return fmt.Errorf("failed to patch conversion webhook configuration: %w", err)
@@ -87,7 +91,7 @@ func makeValidatingWebhookConfig(caBundle []byte, config Config) admissionregist
 	return admissionregistrationv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   config.WebhookName.Name,
+			Name:   config.ValidatingWebhookName.Name,
 			Labels: labels,
 		},
 		Webhooks: webhooks,
@@ -123,4 +127,19 @@ func patchConversionWebhookConfig(ctx context.Context, c client.Client, conversi
 	logPipelineCRD.Spec.Conversion = &conversion
 
 	return c.Patch(ctx, &logPipelineCRD, patch)
+}
+
+func patchMutatingWebhook(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
+	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
+	if err := c.Get(ctx, config.MutatingWebhookName, &mutatingWebhook); err != nil {
+		return fmt.Errorf("failed to get mutating webhook: %w", err)
+	}
+
+	patch := client.MergeFrom(mutatingWebhook.DeepCopy())
+
+	for _, mWebhook := range mutatingWebhook.Webhooks {
+		mWebhook.ClientConfig.CABundle = caBundle
+	}
+
+	return c.Patch(ctx, &mutatingWebhook, patch)
 }
