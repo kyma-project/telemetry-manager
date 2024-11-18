@@ -19,6 +19,7 @@ import (
 
 const checksumAnnotationKey = "checksum/logpipeline-config"
 const istioExcludeInboundPorts = "traffic.sidecar.istio.io/excludeInboundPorts"
+const fluentbitExportSelector = "telemetry.kyma-project.io/log-export"
 
 type DaemonSetConfig struct {
 	FluentBitImage              string
@@ -50,7 +51,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 			corev1.ResourceMemory: resource.MustParse("5Mi"),
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    resource.MustParse("10m"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
 			corev1.ResourceMemory: resource.MustParse("50Mi"),
 		},
 	}
@@ -61,6 +62,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 
 	podLabels := Labels()
 	podLabels["sidecar.istio.io/inject"] = "true"
+	podLabels[fluentbitExportSelector] = "true"
 
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
