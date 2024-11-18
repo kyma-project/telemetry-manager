@@ -8,8 +8,8 @@ webhooks:
   - name: mutating.metricpipelines.telemetry.kyma-project.io
     clientConfig:
       service:
-        name: manager-webhook
-        namespace: system
+        name: telemetry-manager-webhook
+        namespace: kyma-system
         path: /mutate-metricpipeline
         port: 443
     admissionReviewVersions:
