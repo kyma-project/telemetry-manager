@@ -72,7 +72,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		vmaScrapeSpansGen := telemetrygen.NewPod(vmaScrapeSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
-			telemetrygen.WithTelemetryAttribute("OperationName", "Ingress"),
+			telemetrygen.WithTelemetryAttribute("upstream_cluster.name", "inbound|80|http://some-url"),
 			telemetrygen.WithTelemetryAttribute("user_agent", "vm_promscrape"),
 		).K8sObject()
 		healthzSpansGen := telemetrygen.NewPod(healthzSpansNs, telemetrygen.SignalTypeTraces,
@@ -92,7 +92,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		metricAgentScrapeSpansGen := telemetrygen.NewPod(metricAgentScrapeSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
-			telemetrygen.WithTelemetryAttribute("OperationName", "Ingress"),
+			telemetrygen.WithTelemetryAttribute("upstream_cluster.name", "inbound||"),
 			telemetrygen.WithTelemetryAttribute("user_agent", "kyma-otelcol/0.1.0"),
 		).K8sObject()
 		metricAgentSpansGen := telemetrygen.NewPod(metricAgentSpansNs, telemetrygen.SignalTypeTraces,
