@@ -22,6 +22,7 @@ service:
                 - singleton_receiver_creator/k8s_cluster
             processors:
                 - memory_limiter
+                - filter/drop-non-pvc-volumes-metrics
                 - resource/delete-service-name
                 - transform/set-instrumentation-scope-runtime
                 - transform/insert-skip-enrichment-attribute
@@ -51,6 +52,8 @@ receivers:
         metric_groups:
             - container
             - pod
+            - node
+            - volume
         metrics:
             container.cpu.usage:
                 enabled: true
@@ -122,36 +125,6 @@ receivers:
                     k8s.resource_quota.used:
                         enabled: false
                     k8s.cronjob.active_jobs:
-                        enabled: false
-                    k8s.statefulset.current_pods:
-                        enabled: false
-                    k8s.statefulset.desired_pods:
-                        enabled: false
-                    k8s.statefulset.ready_pods:
-                        enabled: false
-                    k8s.statefulset.updated_pods:
-                        enabled: false
-                    k8s.job.active_pods:
-                        enabled: false
-                    k8s.job.desired_successful_pods:
-                        enabled: false
-                    k8s.job.failed_pods:
-                        enabled: false
-                    k8s.job.max_parallel_pods:
-                        enabled: false
-                    k8s.job.successful_pods:
-                        enabled: false
-                    k8s.deployment.available:
-                        enabled: false
-                    k8s.deployment.desired:
-                        enabled: false
-                    k8s.daemonset.current_scheduled_nodes:
-                        enabled: false
-                    k8s.daemonset.desired_scheduled_nodes:
-                        enabled: false
-                    k8s.daemonset.misscheduled_nodes:
-                        enabled: false
-                    k8s.daemonset.ready_nodes:
                         enabled: false
     prometheus/app-pods:
         config:
@@ -280,6 +253,10 @@ processors:
                 - IsMatch(name, "^k8s.daemonset.*")
                 - IsMatch(name, "^k8s.deployment.*")
                 - IsMatch(name, "^k8s.job.*")
+    filter/drop-non-pvc-volumes-metrics:
+        metrics:
+            metric:
+                - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
