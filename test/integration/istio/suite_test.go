@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	webhookName       = "validation.webhook.telemetry.kyma-project.io"
+	webhookName       = "telemetry-validation.webhook.kyma-project.io"
 	webhookCertSecret = types.NamespacedName{
 		Name:      "telemetry-webhook-cert",
 		Namespace: kitkyma.SystemNamespaceName,
