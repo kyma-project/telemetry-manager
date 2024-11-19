@@ -60,7 +60,7 @@ func admissionRequestFrom(t *testing.T, tracePipeline telemetryv1alpha1.TracePip
 
 	pipelineJSON, err := json.Marshal(tracePipeline)
 	if err != nil {
-		t.Fatalf("failed to marshal log pipeline: %v", err)
+		t.Fatalf("failed to marshal trace pipeline: %v", err)
 	}
 
 	return admission.Request{
