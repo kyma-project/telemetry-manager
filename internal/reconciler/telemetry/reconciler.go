@@ -7,8 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -255,11 +253,6 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 			return nil
 		}
 
-		err := r.deleteWebhook(ctx)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete webhook: %w", err)
-		}
-
 		controllerutil.RemoveFinalizer(telemetry, finalizer)
 
 		if err := r.Update(ctx, telemetry); err != nil {
@@ -268,16 +261,6 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	}
 
 	return nil
-}
-
-func (r *Reconciler) deleteWebhook(ctx context.Context) error {
-	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: r.config.Webhook.CertConfig.WebhookName.Name,
-		},
-	}
-
-	return r.Delete(ctx, webhook)
 }
 
 func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
