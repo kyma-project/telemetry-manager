@@ -137,8 +137,19 @@ func patchMutatingWebhook(ctx context.Context, c client.Client, caBundle []byte,
 
 	patch := client.MergeFrom(mutatingWebhook.DeepCopy())
 
-	for _, mWebhook := range mutatingWebhook.Webhooks {
-		mWebhook.ClientConfig.CABundle = caBundle
+	mutatingWebhook.Webhooks = []admissionregistrationv1.MutatingWebhook{
+		{
+			AdmissionReviewVersions: []string{"v1beta1", "v1"},
+			Name:                    "mutating.metricpipelines.telemetry.kyma-project.io",
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
+					Name:      config.ServiceName.Name,
+					Namespace: config.ServiceName.Namespace,
+				},
+				CABundle: caBundle,
+			},
+			SideEffects: ptr.To(admissionregistrationv1.SideEffectClassNone),
+		},
 	}
 
 	return c.Patch(ctx, &mutatingWebhook, patch)
