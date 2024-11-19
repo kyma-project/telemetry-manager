@@ -3,16 +3,18 @@ package metricpipeline
 import (
 	"context"
 	"encoding/json"
-	admissionv1 "k8s.io/api/admission/v1"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"testing"
+
+
+	"github.com/stretchr/testify/require"
+	"gomodules.xyz/jsonpatch/v2"
+	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/stretchr/testify/require"
-	"gomodules.xyz/jsonpatch/v2"
-	"k8s.io/apimachinery/pkg/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestHandle(t *testing.T) {
@@ -55,7 +57,7 @@ func TestHandle(t *testing.T) {
 			}}, "should have added default runtime input resources")
 	})
 
-	t.Run("should add runtime input resources defaults when runtime input enabled, except runtime con configuration", func(t *testing.T) {
+	t.Run("should add runtime input resources defaults when runtime input enabled, except runtime Job configuration", func(t *testing.T) {
 		metricPipeline := testutils.NewMetricPipelineBuilder().WithName("default").WithRuntimeInput(true).WithRuntimeInputJobMetrics(false).Build()
 
 		sut := NewDefaultingWebhookHandler(scheme)
