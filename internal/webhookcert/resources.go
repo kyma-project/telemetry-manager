@@ -26,7 +26,7 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 		return fmt.Errorf("failed to create or update validating webhook configuration: %w", err)
 	}
 
-	if err := patchMutatingWebhook(ctx, c, caBundle, config); err != nil {
+	if err := updateMutatingWebhookConfig(ctx, c, caBundle, config); err != nil {
 		return fmt.Errorf("failed to patch mutating webhook configuration: %w", err)
 	}
 
@@ -129,42 +129,15 @@ func patchConversionWebhookConfig(ctx context.Context, c client.Client, conversi
 	return c.Patch(ctx, &logPipelineCRD, patch)
 }
 
-func patchMutatingWebhook(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
+func updateMutatingWebhookConfig(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
 	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
 	if err := c.Get(ctx, config.MutatingWebhookName, &mutatingWebhook); err != nil {
 		return fmt.Errorf("failed to get mutating webhook: %w", err)
 	}
 
-	patch := client.MergeFrom(mutatingWebhook.DeepCopy())
-
-	mutatingWebhook.Webhooks = []admissionregistrationv1.MutatingWebhook{
-		{
-			AdmissionReviewVersions: []string{"v1beta1", "v1"},
-			Name:                    "mutating.metricpipelines.telemetry.kyma-project.io",
-			ClientConfig: admissionregistrationv1.WebhookClientConfig{
-				Service: &admissionregistrationv1.ServiceReference{
-					Name:      config.ServiceName.Name,
-					Namespace: config.ServiceName.Namespace,
-					Path:      ptr.To("/mutate-metricpipeline"),
-				},
-				CABundle: caBundle,
-			},
-			SideEffects: ptr.To(admissionregistrationv1.SideEffectClassNone),
-		},
-		{
-			AdmissionReviewVersions: []string{"v1beta1", "v1"},
-			Name:                    "mutating.tracepipelines.telemetry.kyma-project.io",
-			ClientConfig: admissionregistrationv1.WebhookClientConfig{
-				Service: &admissionregistrationv1.ServiceReference{
-					Name:      config.ServiceName.Name,
-					Namespace: config.ServiceName.Namespace,
-					Path:      ptr.To("/mutate-tracepipeline"),
-				},
-				CABundle: caBundle,
-			},
-			SideEffects: ptr.To(admissionregistrationv1.SideEffectClassNone),
-		},
+	for i := range len(mutatingWebhook.Webhooks) {
+		mutatingWebhook.Webhooks[i].ClientConfig.CABundle = caBundle
 	}
 
-	return c.Patch(ctx, &mutatingWebhook, patch)
+	return c.Update(ctx, &mutatingWebhook)
 }
