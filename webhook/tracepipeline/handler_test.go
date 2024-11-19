@@ -3,6 +3,7 @@ package tracepipeline
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -37,6 +38,21 @@ func TestHandle(t *testing.T) {
 			Value:     "grpc",
 		}, "should have added default OTLP protocol")
 	})
+
+	t.Run("should handle decoding error", func(t *testing.T) {
+		sut := NewDefaultingWebhookHandler(scheme)
+
+		invalidRequest := admission.Request{
+			AdmissionRequest: admissionv1.AdmissionRequest{
+				Object: runtime.RawExtension{Raw: []byte("invalid json")},
+			},
+		}
+
+		response := sut.Handle(context.Background(), invalidRequest)
+
+		require.False(t, response.Allowed)
+		require.Equal(t, int32(http.StatusBadRequest), response.Result.Code)
+	})
 }
 
 func admissionRequestFrom(t *testing.T, tracePipeline telemetryv1alpha1.TracePipeline) admission.Request {
@@ -44,7 +60,7 @@ func admissionRequestFrom(t *testing.T, tracePipeline telemetryv1alpha1.TracePip
 
 	pipelineJSON, err := json.Marshal(tracePipeline)
 	if err != nil {
-		t.Fatalf("failed to marshal metric pipeline: %v", err)
+		t.Fatalf("failed to marshal log pipeline: %v", err)
 	}
 
 	return admission.Request{

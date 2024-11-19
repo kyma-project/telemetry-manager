@@ -331,6 +331,9 @@ func run() error {
 	mgr.GetWebhookServer().Register("/mutate-tracepipeline", &webhook.Admission{
 		Handler: tracepipelinewebhook.NewDefaultingWebhookHandler(scheme),
 	})
+	mgr.GetWebhookServer().Register("/mutate-logpipeline", &webhook.Admission{
+		Handler: logpipelinewebhook.NewDefaultingWebhookHandler(scheme),
+	})
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
 		selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
