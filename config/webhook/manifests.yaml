@@ -30,3 +30,28 @@ webhooks:
         resources:
           - metricpipelines
         scope: '*'
+  - name: mutating.tracepipelines.telemetry.kyma-project.io
+    clientConfig:
+      service:
+        name: telemetry-manager-webhook
+        namespace: kyma-system
+        path: /mutate-tracepipeline
+        port: 443
+    admissionReviewVersions:
+      - v1beta1
+      - v1
+    sideEffects: None
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+      - apiGroups:
+          - telemetry.kyma-project.io
+        apiVersions:
+          - v1beta1
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - tracepipelines
+        scope: '*'

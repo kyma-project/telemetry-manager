@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"testing"
 
-
 	"github.com/stretchr/testify/require"
 	"gomodules.xyz/jsonpatch/v2"
 	admissionv1 "k8s.io/api/admission/v1"

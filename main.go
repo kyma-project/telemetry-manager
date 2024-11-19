@@ -59,6 +59,7 @@ import (
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	metricpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/metricpipeline"
+	tracepipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/tracepipeline"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -326,6 +327,9 @@ func run() error {
 	})
 	mgr.GetWebhookServer().Register("/mutate-metricpipeline", &webhook.Admission{
 		Handler: metricpipelinewebhook.NewDefaultingWebhookHandler(scheme),
+	})
+	mgr.GetWebhookServer().Register("/mutate-tracepipeline", &webhook.Admission{
+		Handler: tracepipelinewebhook.NewDefaultingWebhookHandler(scheme),
 	})
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),

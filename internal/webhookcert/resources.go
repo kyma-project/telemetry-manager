@@ -150,6 +150,18 @@ func patchMutatingWebhook(ctx context.Context, c client.Client, caBundle []byte,
 			},
 			SideEffects: ptr.To(admissionregistrationv1.SideEffectClassNone),
 		},
+		{
+			AdmissionReviewVersions: []string{"v1beta1", "v1"},
+			Name:                    "mutating.tracepipelines.telemetry.kyma-project.io",
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
+					Name:      config.ServiceName.Name,
+					Namespace: config.ServiceName.Namespace,
+				},
+				CABundle: caBundle,
+			},
+			SideEffects: ptr.To(admissionregistrationv1.SideEffectClassNone),
+		},
 	}
 
 	return c.Patch(ctx, &mutatingWebhook, patch)
