@@ -135,7 +135,7 @@ type MetricPipelineRuntimeInputResources struct {
 type MetricPipelineRuntimeInputResource struct {
 	// If enabled, the runtime metrics for the resource are scraped. The default is `true`.
 	// +optional
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.

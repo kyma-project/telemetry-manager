@@ -27,33 +27,73 @@ func IsIstioDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) 
 }
 
 func IsRuntimePodInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.Pod != nil && input.Runtime.Resources.Pod.Enabled
+	// Runtime pod metrics should be enabled by default if any of the fields (Resources, Pod or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.Pod == nil || input.Runtime.Resources.Pod.Enabled == nil {
+		return true
+	}
+
+	return *input.Runtime.Resources.Pod.Enabled
 }
 
 func IsRuntimeContainerInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.Container != nil && input.Runtime.Resources.Container.Enabled
+	// Runtime container metrics should be enabled by default if any of the fields (Resources, Container or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.Container == nil || input.Runtime.Resources.Container.Enabled == nil {
+		return true
+	}
+
+	return *input.Runtime.Resources.Container.Enabled
 }
 
 func IsRuntimeNodeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.Node != nil && input.Runtime.Resources.Node.Enabled
+	// Runtime node metrics should be enabled by default if any of the fields (Resources, Node or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.Node == nil || input.Runtime.Resources.Node.Enabled == nil {
+		return true
+	}
+
+	return *input.Runtime.Resources.Node.Enabled
 }
 
 func IsRuntimeVolumeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.Volume != nil && input.Runtime.Resources.Volume.Enabled
+	// Runtime volume metrics should be enabled by default if any of the fields (Resources, Volume or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.Volume == nil || input.Runtime.Resources.Volume.Enabled == nil {
+		return true
+	}
+
+	return *input.Runtime.Resources.Volume.Enabled
 }
 
 func IsRuntimeStatefulSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.StatefulSet != nil && input.Runtime.Resources.StatefulSet.Enabled
+	// Runtime Statefulset metrics should be enabled by default if any of the fields (Resources, Statefulset or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.StatefulSet == nil || input.Runtime.Resources.StatefulSet.Enabled == nil {
+		return true
+	}
+
+	return *input.Runtime.Resources.StatefulSet.Enabled
 }
 
 func IsRuntimeDeploymentInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.Deployment != nil && input.Runtime.Resources.Deployment.Enabled
+	// Runtime Deployment metrics should be enabled by default if any of the fields (Resources, Deployment or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.Deployment == nil || input.Runtime.Resources.Deployment.Enabled == nil {
+		return true
+	}
+
+	return *input.Runtime.Resources.Deployment.Enabled
 }
 
 func IsRuntimeDaemonSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.DaemonSet != nil && input.Runtime.Resources.DaemonSet.Enabled
+	// Runtime DaemonSet metrics should be enabled by default if any of the fields (Resources, DaemonSet or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.DaemonSet == nil || input.Runtime.Resources.DaemonSet.Enabled == nil {
+		return true
+	}
+
+	return *input.Runtime.Resources.DaemonSet.Enabled
 }
 
 func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime.Resources != nil && input.Runtime.Resources.Job != nil && input.Runtime.Resources.Job.Enabled
+	// Runtime Job metrics should be enabled by default if any of the fields (Resources, Job or Enabled) is nil
+	if input.Runtime.Resources == nil || input.Runtime.Resources.Job == nil || input.Runtime.Resources.Job.Enabled == nil {
+		return true
+	}
+
+	return *input.Runtime.Resources.Job.Enabled
 }

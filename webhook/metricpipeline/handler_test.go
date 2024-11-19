@@ -3,17 +3,16 @@ package metricpipeline
 import (
 	"context"
 	"encoding/json"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-	"gomodules.xyz/jsonpatch/v2"
 	admissionv1 "k8s.io/api/admission/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"testing"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/stretchr/testify/require"
+	"gomodules.xyz/jsonpatch/v2"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestHandle(t *testing.T) {
@@ -54,6 +53,56 @@ func TestHandle(t *testing.T) {
 				"statefulset": map[string]interface{}{"enabled": true},
 				"volume":      map[string]interface{}{"enabled": true},
 			}}, "should have added default runtime input resources")
+	})
+
+	t.Run("should add runtime input resources defaults when runtime input enabled, except runtime con configuration", func(t *testing.T) {
+		metricPipeline := testutils.NewMetricPipelineBuilder().WithName("default").WithRuntimeInput(true).WithRuntimeInputJobMetrics(false).Build()
+
+		sut := NewDefaultingWebhookHandler(scheme)
+
+		response := sut.Handle(context.Background(), admissionRequestFrom(t, metricPipeline))
+
+		require.True(t, response.Allowed)
+		require.Len(t, response.Patches, 9, "should have 9 patches")
+
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/output/otlp/protocol",
+			Value:     "grpc",
+		}, "should have added default OTLP protocol")
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/input/runtime/namespaces",
+			Value:     map[string]interface{}{"exclude": []interface{}{"kyma-system", "kube-system", "istio-system", "compass-system"}},
+		}, "should have added default excluded namespaces")
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/input/runtime/resources/container",
+			Value:     map[string]interface{}{"enabled": true}}, "should have added default runtime input resources")
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/input/runtime/resources/daemonset",
+			Value:     map[string]interface{}{"enabled": true}}, "should have added default runtime input resources")
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/input/runtime/resources/deployment",
+			Value:     map[string]interface{}{"enabled": true}}, "should have added default runtime input resources")
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/input/runtime/resources/volume",
+			Value:     map[string]interface{}{"enabled": true}}, "should have added default runtime input resources")
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/input/runtime/resources/node",
+			Value:     map[string]interface{}{"enabled": true}}, "should have added default runtime input resources")
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/input/runtime/resources/pod",
+			Value:     map[string]interface{}{"enabled": true}}, "should have added default runtime input resources")
+		require.Contains(t, response.Patches, jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/input/runtime/resources/statefulset",
+			Value:     map[string]interface{}{"enabled": true}}, "should have added default runtime input resources")
 	})
 
 	t.Run("should not have default OTLP output protocol when protocol configured", func(t *testing.T) {
