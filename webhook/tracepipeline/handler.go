@@ -48,7 +48,7 @@ func (dh DefaultingWebhookHandler) Handle(ctx context.Context, request admission
 }
 
 func (dh DefaultingWebhookHandler) applyDefaults(pipeline *telemetryv1alpha1.TracePipeline) {
-	if pipeline.Spec.Output.OTLP.Protocol == "" {
+	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = dh.defaults.DefaultOTLPOutputProtocol
 	}
 }

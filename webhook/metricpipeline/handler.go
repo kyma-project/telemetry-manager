@@ -84,7 +84,7 @@ func (dh DefaultingWebhookHandler) applyDefaults(pipeline *telemetryv1alpha1.Met
 		}
 	}
 
-	if pipeline.Spec.Output.OTLP.Protocol == "" {
+	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = dh.defaults.DefaultOTLPOutputProtocol
 	}
 
