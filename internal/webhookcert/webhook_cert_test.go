@@ -129,7 +129,7 @@ var (
 	}
 )
 
-func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
+func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))

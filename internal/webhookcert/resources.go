@@ -15,16 +15,17 @@ const (
 	webhookServicePort int32 = 443
 )
 
-// applyWebhookConfigResources updates validating webhook with the provided CA bundle.
-// additionally it patches a LogPipeline conversion webhook configuration.
+// applyWebhookConfigResources applies the following webhook configurations:
+// 1- Updates validating webhook configuration with the provided CA bundle.
+// 2- Updates LogPipeline CRD with conversion webhook configuration.
 func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
 	if err := updateValidatingWebhookConfig(ctx, c, caBundle, config); err != nil {
 		return fmt.Errorf("failed to update validating webhook with CA bundle: %w", err)
 	}
 
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
-	if err := patchConversionWebhookConfig(ctx, c, conversionWebhookConfig); err != nil {
-		return fmt.Errorf("failed to patch conversion webhook configuration: %w", err)
+	if err := updateLogPipelineWithWebhookConfig(ctx, c, conversionWebhookConfig); err != nil {
+		return fmt.Errorf("failed to update LogPipeline CRD with conversion webhook configuration: %w", err)
 	}
 
 	return nil
@@ -60,15 +61,13 @@ func makeConversionWebhookConfig(caBundle []byte, config Config) apiextensionsv1
 	}
 }
 
-func patchConversionWebhookConfig(ctx context.Context, c client.Client, conversion apiextensionsv1.CustomResourceConversion) error {
+func updateLogPipelineWithWebhookConfig(ctx context.Context, c client.Client, conversion apiextensionsv1.CustomResourceConversion) error {
 	var logPipelineCRD apiextensionsv1.CustomResourceDefinition
 	if err := c.Get(ctx, types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &logPipelineCRD); err != nil {
 		return fmt.Errorf("failed to get logpipelines CRD: %w", err)
 	}
 
-	patch := client.MergeFrom(logPipelineCRD.DeepCopy())
-
 	logPipelineCRD.Spec.Conversion = &conversion
 
-	return c.Patch(ctx, &logPipelineCRD, patch)
+	return c.Update(ctx, &logPipelineCRD)
 }
