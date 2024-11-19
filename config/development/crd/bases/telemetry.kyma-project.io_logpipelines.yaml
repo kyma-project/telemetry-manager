@@ -1467,6 +1467,7 @@ spec:
                           and /v1/traces
                         type: string
                       protocol:
+                        default: grpc
                         description: Defines the OTLP protocol (http or grpc). Default
                           is grpc.
                         enum:

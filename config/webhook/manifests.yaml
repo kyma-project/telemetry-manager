@@ -22,7 +22,6 @@ webhooks:
       - apiGroups:
           - telemetry.kyma-project.io
         apiVersions:
-          - v1beta1
           - v1alpha1
         operations:
           - CREATE
@@ -47,7 +46,6 @@ webhooks:
       - apiGroups:
           - telemetry.kyma-project.io
         apiVersions:
-          - v1beta1
           - v1alpha1
         operations:
           - CREATE
