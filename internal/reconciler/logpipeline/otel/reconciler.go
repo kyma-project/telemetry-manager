@@ -20,6 +20,8 @@ import (
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
+const defaultReplicaCount int32 = 2
+
 type Config struct {
 	LogGatewayName     string
 	TelemetryNamespace string
@@ -119,6 +121,7 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		ComponentSelectorLabels:        logGatewaySelectorLabels,
+		Replicas:                       defaultReplicaCount, // TODO: Implement getReplicaCountFromTelemetry()
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
