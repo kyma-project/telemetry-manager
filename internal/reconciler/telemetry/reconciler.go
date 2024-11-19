@@ -7,6 +7,8 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,8 +22,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -315,6 +315,7 @@ func (r *Reconciler) deleteOldValidatingWebhook(ctx context.Context) error {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
+
 		return fmt.Errorf("failed to delete old validating webhook: %w", err)
 	}
 
