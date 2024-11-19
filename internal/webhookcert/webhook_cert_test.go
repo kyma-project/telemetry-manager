@@ -129,76 +129,6 @@ var (
 	}
 )
 
-func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
-	scheme := runtime.NewScheme()
-	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &initialValidatingWebhookConfiguration).Build()
-
-	certDir, err := os.MkdirTemp("", "certificate")
-	require.NoError(t, err)
-	defer func(path string) {
-		deleteErr := os.RemoveAll(path)
-		require.NoError(t, deleteErr)
-	}(certDir)
-
-	config := Config{
-		CertDir:      certDir,
-		ServiceName:  webhookService,
-		CASecretName: caBundleSecret,
-		WebhookName:  webhookName,
-	}
-
-	err = EnsureCertificate(context.TODO(), client, config)
-	require.NoError(t, err)
-
-	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
-	require.NoError(t, err)
-
-	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-
-	err = client.Get(context.Background(), config.WebhookName, &validatingWebhookConfiguration)
-	require.NoError(t, err)
-
-	require.Equal(t, name, validatingWebhookConfiguration.Name)
-	require.Equal(t, labels, validatingWebhookConfiguration.Labels)
-
-	require.Equal(t, 2, len(validatingWebhookConfiguration.Webhooks))
-
-	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[0].TimeoutSeconds)
-	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
-
-	var chainChecker certChainCheckerImpl
-	certValid, err := chainChecker.checkRoot(context.Background(), serverCert, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.NoError(t, err)
-	require.True(t, certValid)
-
-	certValid, err = chainChecker.checkRoot(context.Background(), serverCert, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
-	require.NoError(t, err)
-	require.True(t, certValid)
-
-	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Name)
-	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Name)
-
-	require.Equal(t, webhookService.Namespace, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Namespace)
-	require.Equal(t, webhookService.Namespace, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Namespace)
-
-	require.Equal(t, int32(443), *validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Port)
-	require.Equal(t, int32(443), *validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Port)
-
-	require.Equal(t, "/validate-logpipeline", *validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Path)
-	require.Equal(t, "/validate-logparser", *validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Path)
-
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].APIGroups, "telemetry.kyma-project.io")
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].APIGroups, "telemetry.kyma-project.io")
-
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].APIVersions, "v1alpha1")
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].APIVersions, "v1alpha1")
-
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].Resources, "logpipelines")
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].Resources, "logparsers")
-}
-
 func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
@@ -244,7 +174,7 @@ func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
 	require.True(t, certValid)
 }
 
-func TestUpdateWebhookCertificate(t *testing.T) {
+func TestUpdateValidatingWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
