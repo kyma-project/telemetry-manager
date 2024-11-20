@@ -58,8 +58,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
-	metricpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/metricpipeline"
-	tracepipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/tracepipeline"
+	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
+	logpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1"
+	metricpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1alpha1"
+	metricpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1beta1"
+	tracepipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1alpha1"
+	tracepipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1beta1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -326,16 +330,8 @@ func run() error {
 		Handler: logparserwebhook.NewValidatingWebhookHandler(scheme),
 	})
 
-	if err := metricpipelinewebhook.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to setup metric pipeline webhook: %w", err)
-	}
-
-	if err := tracepipelinewebhook.SetupTracePipelineWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to setup trace pipeline webhook: %w", err)
-	}
-
-	if err := logpipelinewebhook.SetupLogPipelineWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to setup log pipeline webhook: %w", err)
+	if err := setupMutatingWebhooks(mgr); err != nil {
+		return fmt.Errorf("failed to setup mutating webhooks: %w", err)
 	}
 
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
@@ -347,6 +343,34 @@ func run() error {
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
+	}
+
+	return nil
+}
+
+func setupMutatingWebhooks(mgr manager.Manager) error {
+	if err := metricpipelinewebhookv1alpha1.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup metric pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if err := metricpipelinewebhookv1beta1.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup metric pipeline v1beta1 webhook: %w", err)
+	}
+
+	if err := tracepipelinewebhookv1alpha1.SetupTracePipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup trace pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if err := tracepipelinewebhookv1beta1.SetupTracePipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup trace pipeline v1beta1 webhook: %w", err)
+	}
+
+	if err := logpipelinewebhookv1alpha1.SetupLogPipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup log pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if err := logpipelinewebhookv1beta1.SetupLogPipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup log pipeline v1beta1 webhook: %w", err)
 	}
 
 	return nil

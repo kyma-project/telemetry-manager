@@ -70,10 +70,18 @@ linters-settings:
         alias: logparserwebhook
       - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline
         alias: logpipelinewebhook
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/metricpipeline
-        alias: metricpipelinewebhook
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/tracepipeline
-        alias: tracepipelinewebhook
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1
+        alias: logpipelinewebhookv1alpha1
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1
+        alias: logpipelinewebhookv1beta1
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1alpha1
+        alias: metricpipelinewebhookv1alpha1
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1beta1
+        alias: metricpipelinewebhookv1beta1
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1alpha1
+        alias: tracepipelinewebhookv1alpha1
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1beta1
+        alias: tracepipelinewebhookv1beta1
       - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit
         alias: logpipelinefluentbit
       - pkg: github.com/prometheus/client_golang/api/prometheus/v1

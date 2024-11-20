@@ -1,4 +1,4 @@
-package metricpipeline
+package v1beta1
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // +kubebuilder:object:generate=false
@@ -17,7 +17,7 @@ var _ webhook.CustomDefaulter = &MetricPipelineDefaulter{}
 type MetricPipelineDefaulter struct {
 	ExcludeNamespaces         []string
 	RuntimeInputResources     RuntimeInputResourceDefaults
-	DefaultOTLPOutputProtocol string
+	DefaultOTLPOutputProtocol telemetryv1beta1.OTLPProtocol
 }
 
 type RuntimeInputResourceDefaults struct {
@@ -32,7 +32,7 @@ type RuntimeInputResourceDefaults struct {
 }
 
 func SetupMetricPipelineWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{}).
+	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{}).
 		WithDefaulter(&MetricPipelineDefaulter{
 			ExcludeNamespaces: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 			RuntimeInputResources: RuntimeInputResourceDefaults{
@@ -45,13 +45,13 @@ func SetupMetricPipelineWebhookWithManager(mgr ctrl.Manager) error {
 				StatefulSet: true,
 				Job:         true,
 			},
-			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
+			DefaultOTLPOutputProtocol: telemetryv1beta1.OTLPProtocolGRPC,
 		}).
 		Complete()
 }
 
 func (md MetricPipelineDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-	pipeline, ok := obj.(*telemetryv1alpha1.MetricPipeline)
+	pipeline, ok := obj.(*telemetryv1beta1.MetricPipeline)
 	if !ok {
 		return fmt.Errorf("expected an MetricPipeline object but got %T", obj)
 	}
@@ -61,15 +61,15 @@ func (md MetricPipelineDefaulter) Default(ctx context.Context, obj runtime.Objec
 	return nil
 }
 
-func (md MetricPipelineDefaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
+func (md MetricPipelineDefaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 	if pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Namespaces == nil {
-		pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{
+		pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1beta1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
 	if pipeline.Spec.Input.Istio != nil && pipeline.Spec.Input.Istio.Namespaces == nil {
-		pipeline.Spec.Input.Istio.Namespaces = &telemetryv1alpha1.NamespaceSelector{
+		pipeline.Spec.Input.Istio.Namespaces = &telemetryv1beta1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
 	}
@@ -79,7 +79,7 @@ func (md MetricPipelineDefaulter) applyDefaults(pipeline *telemetryv1alpha1.Metr
 	}
 
 	if pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Namespaces == nil {
-		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1alpha1.NamespaceSelector{
+		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
 	}
@@ -89,55 +89,55 @@ func (md MetricPipelineDefaulter) applyDefaults(pipeline *telemetryv1alpha1.Metr
 	}
 }
 
-func (md MetricPipelineDefaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
+func (md MetricPipelineDefaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 	if pipeline.Spec.Input.Runtime.Resources == nil {
-		pipeline.Spec.Input.Runtime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
+		pipeline.Spec.Input.Runtime.Resources = &telemetryv1beta1.MetricPipelineRuntimeInputResources{}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Pod == nil {
-		pipeline.Spec.Input.Runtime.Resources.Pod = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
+		pipeline.Spec.Input.Runtime.Resources.Pod = &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 			Enabled: &md.RuntimeInputResources.Pod,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Container == nil {
-		pipeline.Spec.Input.Runtime.Resources.Container = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
+		pipeline.Spec.Input.Runtime.Resources.Container = &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 			Enabled: &md.RuntimeInputResources.Container,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Node == nil {
-		pipeline.Spec.Input.Runtime.Resources.Node = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
+		pipeline.Spec.Input.Runtime.Resources.Node = &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 			Enabled: &md.RuntimeInputResources.Node,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Volume == nil {
-		pipeline.Spec.Input.Runtime.Resources.Volume = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
+		pipeline.Spec.Input.Runtime.Resources.Volume = &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 			Enabled: &md.RuntimeInputResources.Volume,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.DaemonSet == nil {
-		pipeline.Spec.Input.Runtime.Resources.DaemonSet = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
+		pipeline.Spec.Input.Runtime.Resources.DaemonSet = &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 			Enabled: &md.RuntimeInputResources.DaemonSet,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Deployment == nil {
-		pipeline.Spec.Input.Runtime.Resources.Deployment = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
+		pipeline.Spec.Input.Runtime.Resources.Deployment = &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 			Enabled: &md.RuntimeInputResources.Deployment,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.StatefulSet == nil {
-		pipeline.Spec.Input.Runtime.Resources.StatefulSet = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
+		pipeline.Spec.Input.Runtime.Resources.StatefulSet = &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 			Enabled: &md.RuntimeInputResources.StatefulSet,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Job == nil {
-		pipeline.Spec.Input.Runtime.Resources.Job = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
+		pipeline.Spec.Input.Runtime.Resources.Job = &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 			Enabled: &md.RuntimeInputResources.Job,
 		}
 	}
