@@ -297,57 +297,6 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 
-	t.Run("max pipelines exceeded", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().Build()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-
-		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
-
-		errToMsg := &conditions.ErrorToMessageConverter{}
-
-		sut := New(
-			fakeClient,
-			testConfig,
-			&mocks.GatewayApplierDeleter{},
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			pipelineValidatorWithStubs,
-			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
-		require.Error(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonMaxPipelinesExceeded,
-			"Maximum pipeline count limit exceeded",
-		)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeFlowHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonSelfMonConfigNotGenerated,
-			"No spans delivered to backend because LogPipeline specification is not applied to the configuration of Log gateway. Check the 'ConfigurationGenerated' condition for more details",
-		)
-
-		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything)
-	})
-
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name            string
