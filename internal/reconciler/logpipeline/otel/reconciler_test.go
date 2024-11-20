@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -47,21 +48,20 @@ func TestReconcile(t *testing.T) {
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		
+
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
 
-
-		// // gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 
 		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		// pipelineValidatorWithStubs := &Validator{
-		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		// }
+		pipelineValidatorWithStubs := &Validator{
+			// EndpointValidator:  stubs.NewEndpointValidator(nil),
+			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			// SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -70,6 +70,8 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
 		require.NoError(t, err)
@@ -78,12 +80,12 @@ func TestReconcile(t *testing.T) {
 		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 		require.NoError(t, err)
 
-		// requireHasStatusCondition(t, updatedPipeline,
-		// 	conditions.TypeGatewayHealthy,
-		// 	metav1.ConditionFalse,
-		// 	conditions.ReasonGatewayNotReady,
-		// 	"Failed to get Deployment",
-		// )
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeGatewayHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonGatewayNotReady,
+			"Failed to get Deployment",
+		)
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
@@ -98,16 +100,16 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-		// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 
 		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		// pipelineValidatorWithStubs := &Validator{
+		pipelineValidatorWithStubs := &Validator{
 		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
 		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 		// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		// }
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -116,6 +118,8 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
 		require.NoError(t, err)
@@ -144,16 +148,16 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-		// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		// pipelineValidatorWithStubs := &Validator{
-		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		// }
+		pipelineValidatorWithStubs := &Validator{
+			// EndpointValidator:  stubs.NewEndpointValidator(nil),
+			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			// SecretRefValidator: stubs.NewSecretRefValidator(nil),
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -162,6 +166,8 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
 		require.NoError(t, err)
@@ -189,16 +195,16 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-		// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		// pipelineValidatorWithStubs := &Validator{
-		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		// 	SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
-		// }
+		pipelineValidatorWithStubs := &Validator{
+			// EndpointValidator:  stubs.NewEndpointValidator(nil),
+			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			// SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -207,6 +213,8 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
 		require.NoError(t, err)
@@ -252,16 +260,16 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-		// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		// pipelineValidatorWithStubs := &Validator{
+		pipelineValidatorWithStubs := &Validator{
 		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
 		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 		// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		// }
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -270,6 +278,8 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
 		require.NoError(t, err)
@@ -294,16 +304,16 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything).Return(&gateway.Config{}, nil, nil)
 
-		// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		// pipelineValidatorWithStubs := &Validator{
+		pipelineValidatorWithStubs := &Validator{
 		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
 		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 		// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		// }
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -312,6 +322,8 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			&mocks.GatewayApplierDeleter{},
 			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
 		require.Error(t, err)
@@ -440,16 +452,16 @@ func TestReconcile(t *testing.T) {
 				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-				// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-				// pipelineValidatorWithStubs := &Validator{
+				pipelineValidatorWithStubs := &Validator{
 				// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
 				// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 				// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-				// }
+				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -458,6 +470,8 @@ func TestReconcile(t *testing.T) {
 					testConfig,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					pipelineValidatorWithStubs,
 					errToMsg)
 				err := sut.Reconcile(context.Background(), &pipeline)
 				require.NoError(t, err)
@@ -564,16 +578,16 @@ func TestReconcile(t *testing.T) {
 				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-				// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-				// pipelineValidatorWithStubs := &Validator{
+				pipelineValidatorWithStubs := &Validator{
 				// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
 				// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 				// 	SecretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr),
-				// }
+				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -582,6 +596,8 @@ func TestReconcile(t *testing.T) {
 					testConfig,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					pipelineValidatorWithStubs,
 					errToMsg)
 				err := sut.Reconcile(context.Background(), &pipeline)
 				require.NoError(t, err)
@@ -624,16 +640,16 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
 
-		// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 
 		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
-		// pipelineValidatorWithStubs := &Validator{
+		pipelineValidatorWithStubs := &Validator{
 		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
 		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 		// 	SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
-		// }
+		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -642,6 +658,8 @@ func TestReconcile(t *testing.T) {
 			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
 		require.NoError(t, err)
@@ -704,13 +722,13 @@ func TestReconcile(t *testing.T) {
 				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 				gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-				// pipelineValidatorWithStubs := &Validator{
+				pipelineValidatorWithStubs := &Validator{
 				// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
 				// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 				// 	SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
-				// }
+				}
 
-				// gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
+				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
@@ -722,6 +740,8 @@ func TestReconcile(t *testing.T) {
 					testConfig,
 					gatewayApplierDeleterMock,
 					gatewayConfigBuilderMock,
+					gatewayProberStub,
+					pipelineValidatorWithStubs,
 					errToMsg)
 
 				err := sut.Reconcile(context.Background(), &pipeline)

@@ -52,6 +52,8 @@ type Reconciler struct {
 	flowHealthProber      FlowHealthProber
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
+	gatewayProber         commonstatus.DeploymentProber
+	pipelineValidator     *Validator
 	errToMessageConverter commonstatus.ErrorToMessageConverter
 }
 
@@ -60,6 +62,8 @@ func New(
 	config Config,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
+	gatewayProber commonstatus.DeploymentProber,
+	pipelineValidator *Validator,
 	errToMessageConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
 	return &Reconciler{
@@ -67,6 +71,8 @@ func New(
 		config:                config,
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,
+		gatewayProber:         gatewayProber,
+		pipelineValidator:     pipelineValidator,
 		errToMessageConverter: errToMessageConverter,
 	}
 }

@@ -240,6 +240,10 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		OTLPServiceName: config.LogGatewayServiceName,
 	}
 
+	pipelineValidator := &logpipelineotel.Validator{
+		// TODO: Add validators
+	}
+
 	rbac := otelcollector.MakeLogGatewayRBAC(
 		types.NamespacedName{
 			Name:      otelLogGatewayName,
@@ -254,6 +258,8 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 			RBAC:   rbac,
 		},
 		&gateway.Builder{Reader: client},
+		&workloadstatus.DeploymentProber{Client: client},
+		pipelineValidator,
 		&conditions.ErrorToMessageConverter{})
 
 	return otelReconciler, nil
