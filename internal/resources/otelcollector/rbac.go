@@ -244,6 +244,7 @@ func WithKymaStatsRules() ClusterRoleOption {
 		Resources: []string{"logpipelines"},
 		Verbs:     []string{"get", "list", "watch"},
 	}}
+
 	return func(cr *rbacv1.ClusterRole) {
 		cr.Rules = append(cr.Rules, kymaStatsRules...)
 	}
