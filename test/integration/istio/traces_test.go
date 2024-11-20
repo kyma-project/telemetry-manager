@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -158,6 +158,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			verifyCustomAppSpans(backendExportURL, appName, appNs)
 			verifyCustomAppSpans(istiofiedBackendExportURL, appName, appNs)
 		})
+		It("Should have no noisy spans of communication to telemetry-otlp-traces endpoint", func() {
+			verifyNoIstioNoiseSpans(backendExportURL, istiofiedAppNs)
+			verifyNoIstioNoiseSpans(istiofiedBackendExportURL, istiofiedAppNs)
+		})
 	})
 })
 
@@ -193,6 +197,21 @@ func verifyIstioSpans(backendURL, namespace string) {
 			// Identify istio-proxy traces by component=proxy attribute
 			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
 			HaveSpanAttributes(HaveKeyWithValue("istio.namespace", namespace)),
+		)))))
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+func verifyNoIstioNoiseSpans(backendURL, namespace string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(backendURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+		g.Expect(resp).NotTo(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
+			// Identify istio-proxy traces by component=proxy attribute
+			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
+			// All calls to telemetry-otlp-traces should be dropped
+			HaveSpanAttributes(HaveKeyWithValue("http.url", "http://telemetry-otlp-traces.kyma-system.svc.cluster.local:4318/v1/traces")),
 		)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

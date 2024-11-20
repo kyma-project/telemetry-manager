@@ -16,9 +16,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
+	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const (
@@ -127,7 +128,7 @@ func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    ad.defaultLabels(),
+			Labels:    labels.MakeDefaultLabel(ad.Config.BaseName),
 		},
 	}
 
@@ -139,7 +140,7 @@ func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    ad.defaultLabels(),
+			Labels:    labels.MakeDefaultLabel(ad.Config.BaseName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -158,7 +159,7 @@ func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    ad.defaultLabels(),
+			Labels:    labels.MakeDefaultLabel(ad.Config.BaseName),
 		},
 		Subjects: []rbacv1.Subject{{Name: ad.Config.BaseName, Namespace: ad.Config.Namespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
@@ -178,11 +179,11 @@ func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    ad.defaultLabels(),
+			Labels:    labels.MakeDefaultLabel(ad.Config.BaseName),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
-				MatchLabels: ad.defaultLabels(),
+				MatchLabels: labels.MakeDefaultLabel(ad.Config.BaseName),
 			},
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
@@ -238,7 +239,7 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    ad.defaultLabels(),
+			Labels:    labels.MakeDefaultLabel(ad.Config.BaseName),
 		},
 		Data: map[string]string{
 			prometheusConfigFileName: prometheusConfigYAML,
@@ -250,7 +251,7 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 
-	selectorLabels := ad.defaultLabels()
+	selectorLabels := labels.MakeDefaultLabel(ad.Config.BaseName)
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "false"
 
@@ -281,12 +282,6 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 				Spec: podSpec,
 			},
 		},
-	}
-}
-
-func (ad *ApplierDeleter) defaultLabels() map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name": ad.Config.BaseName,
 	}
 }
 
@@ -405,7 +400,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    ad.defaultLabels(),
+			Labels:    labels.MakeDefaultLabel(ad.Config.BaseName),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -416,7 +411,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 					TargetPort: intstr.FromInt32(port),
 				},
 			},
-			Selector: ad.defaultLabels(),
+			Selector: labels.MakeDefaultLabel(ad.Config.BaseName),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
