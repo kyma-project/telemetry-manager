@@ -78,11 +78,11 @@ type Reconciler struct {
 
 	agentApplierDeleter   AgentApplierDeleter
 	agentConfigBuilder    AgentConfigBuilder
-	agentProber           commonstatus.DaemonSetProber
+	agentProber           commonstatus.Prober
 	flowHealthProber      FlowHealthProber
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         commonstatus.DeploymentProber
+	gatewayProber         commonstatus.Prober
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
@@ -95,11 +95,11 @@ func New(
 	config Config,
 	agentApplierDeleter AgentApplierDeleter,
 	agentConfigBuilder AgentConfigBuilder,
-	agentProber commonstatus.DaemonSetProber,
+	agentProber commonstatus.Prober,
 	flowHealthProber FlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber commonstatus.DeploymentProber,
+	gatewayProber commonstatus.Prober,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,

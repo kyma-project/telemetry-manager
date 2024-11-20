@@ -7,8 +7,6 @@ linters:
   enable-all: true
   disable:
     # Depreacted linters
-    - gomnd
-    - execinquery
     - exportloopref
     # Linters to be enabled after fixing the issues
     - cyclop

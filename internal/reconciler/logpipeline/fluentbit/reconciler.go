@@ -53,7 +53,7 @@ type Reconciler struct {
 	syncer syncer
 
 	// Dependencies
-	agentProber        commonstatus.DaemonSetProber
+	agentProber        commonstatus.Prober
 	flowHealthProber   logpipeline.FlowHealthProber
 	istioStatusChecker logpipeline.IstioStatusChecker
 	pipelineValidator  *Validator
@@ -64,7 +64,7 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, healthProber logpipeline.FlowHealthProber, checker logpipeline.IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+func New(client client.Client, config Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker logpipeline.IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,
