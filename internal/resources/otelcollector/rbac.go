@@ -186,6 +186,7 @@ func WithKubeletStatsRules() ClusterRoleOption {
 		Resources: []string{"nodes", "nodes/stats", "nodes/proxy"},
 		Verbs:     []string{"get", "list", "watch"},
 	}}
+
 	return func(cr *rbacv1.ClusterRole) {
 		cr.Rules = append(cr.Rules, kubeletStatsRules...)
 	}
@@ -201,6 +202,7 @@ func WithPrometheusRules() ClusterRoleOption {
 		NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
 		Verbs:           []string{"get"},
 	}}
+
 	return func(cr *rbacv1.ClusterRole) {
 		cr.Rules = append(cr.Rules, prometheusRules...)
 	}
@@ -217,6 +219,7 @@ func WithK8sAttributeRules() ClusterRoleOption {
 		Resources: []string{"replicasets"},
 		Verbs:     []string{"get", "list", "watch"},
 	}}
+
 	return func(cr *rbacv1.ClusterRole) {
 		cr.Rules = append(cr.Rules, k8sAttributeRules...)
 	}
