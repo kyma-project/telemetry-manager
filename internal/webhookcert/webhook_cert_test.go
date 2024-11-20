@@ -28,7 +28,7 @@ var (
 		Name:      "telemetry-webhook-cert",
 		Namespace: systemNamespace,
 	}
-	name        = "telemetry-validation.webhook.kyma-project.io"
+	name        = "telemetry-validating-webhook.kyma-project.io"
 	webhookName = types.NamespacedName{
 		Name: name,
 	}

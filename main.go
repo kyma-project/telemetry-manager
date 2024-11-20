@@ -528,7 +528,7 @@ func createWebhookConfig() telemetry.WebhookConfig {
 				Namespace: telemetryNamespace,
 			},
 			WebhookName: types.NamespacedName{
-				Name: "telemetry-validation.webhook.kyma-project.io",
+				Name: "telemetry-validating-webhook.kyma-project.io",
 			},
 		},
 	}
