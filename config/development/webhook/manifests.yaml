@@ -29,6 +29,30 @@ webhooks:
         resources:
           - metricpipelines
         scope: '*'
+  - name: mutating.v1beta1.metricpipelines.telemetry.kyma-project.io
+    clientConfig:
+      service:
+        name: telemetry-manager-webhook
+        namespace: kyma-system
+        path: /mutate-telemetry-kyma-project-io-v1beta1-metricpipeline
+        port: 443
+    admissionReviewVersions:
+      - v1beta1
+      - v1
+    sideEffects: None
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+      - apiGroups:
+          - telemetry.kyma-project.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - metricpipelines
+        scope: '*'
   - name: mutating.v1alpha1.tracepipelines.telemetry.kyma-project.io
     clientConfig:
       service:
@@ -53,6 +77,30 @@ webhooks:
         resources:
           - tracepipelines
         scope: '*'
+  - name: mutating.v1beta1.tracepipelines.telemetry.kyma-project.io
+    clientConfig:
+      service:
+        name: telemetry-manager-webhook
+        namespace: kyma-system
+        path: /mutate-telemetry-kyma-project-io-v1beta1-tracepipeline
+        port: 443
+    admissionReviewVersions:
+      - v1beta1
+      - v1
+    sideEffects: None
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+      - apiGroups:
+          - telemetry.kyma-project.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - tracepipelines
+        scope: '*'
   - name: mutating.v1alpha1.logpipelines.telemetry.kyma-project.io
     clientConfig:
       service:
@@ -71,6 +119,30 @@ webhooks:
           - telemetry.kyma-project.io
         apiVersions:
           - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - logpipelines
+        scope: '*'
+  - name: mutating.v1beta1.logpipelines.telemetry.kyma-project.io
+    clientConfig:
+      service:
+        name: telemetry-manager-webhook
+        namespace: kyma-system
+        path: /mutate-telemetry-kyma-project-io-v1beta1-logpipeline
+        port: 443
+    admissionReviewVersions:
+      - v1beta1
+      - v1
+    sideEffects: None
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+      - apiGroups:
+          - telemetry.kyma-project.io
+        apiVersions:
+          - v1beta1
         operations:
           - CREATE
           - UPDATE

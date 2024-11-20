@@ -35,6 +35,6 @@ resources:
 - crd
 - ../rbac
 - ../manager
-- ../webhook
+- webhook
 - ../busola
 - ../networking

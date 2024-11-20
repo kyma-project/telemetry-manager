@@ -352,25 +352,30 @@ func setupMutatingWebhooks(mgr manager.Manager) error {
 	if err := metricpipelinewebhookv1alpha1.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup metric pipeline v1alpha1 webhook: %w", err)
 	}
-
-	if err := metricpipelinewebhookv1beta1.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to setup metric pipeline v1beta1 webhook: %w", err)
+	
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := metricpipelinewebhookv1beta1.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup metric pipeline v1beta1 webhook: %w", err)
+		}
 	}
 
 	if err := tracepipelinewebhookv1alpha1.SetupTracePipelineWebhookWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup trace pipeline v1alpha1 webhook: %w", err)
 	}
-
-	if err := tracepipelinewebhookv1beta1.SetupTracePipelineWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to setup trace pipeline v1beta1 webhook: %w", err)
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := tracepipelinewebhookv1beta1.SetupTracePipelineWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup trace pipeline v1beta1 webhook: %w", err)
+		}
 	}
 
 	if err := logpipelinewebhookv1alpha1.SetupLogPipelineWebhookWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup log pipeline v1alpha1 webhook: %w", err)
 	}
 
-	if err := logpipelinewebhookv1beta1.SetupLogPipelineWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to setup log pipeline v1beta1 webhook: %w", err)
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := logpipelinewebhookv1beta1.SetupLogPipelineWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup log pipeline v1beta1 webhook: %w", err)
+		}
 	}
 
 	return nil
