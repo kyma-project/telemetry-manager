@@ -334,9 +334,10 @@ func run() error {
 		return fmt.Errorf("failed to setup trace pipeline webhook: %w", err)
 	}
 
-	mgr.GetWebhookServer().Register("/mutate-logpipeline", &webhook.Admission{
-		Handler: logpipelinewebhook.NewDefaultingWebhookHandler(scheme),
-	})
+	if err := logpipelinewebhook.SetupLogPipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup log pipeline webhook: %w", err)
+	}
+
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
 		selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
