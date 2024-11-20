@@ -10,7 +10,7 @@ webhooks:
       service:
         name: telemetry-manager-webhook
         namespace: kyma-system
-        path: /mutate-metricpipeline
+        path: /mutate-telemetry-kyma-project-io-v1alpha1-metricpipeline
         port: 443
     admissionReviewVersions:
       - v1beta1
@@ -34,7 +34,7 @@ webhooks:
       service:
         name: telemetry-manager-webhook
         namespace: kyma-system
-        path: /mutate-tracepipeline
+        path: /mutate-telemetry-kyma-project-io-v1alpha1-tracepipeline
         port: 443
     admissionReviewVersions:
       - v1beta1

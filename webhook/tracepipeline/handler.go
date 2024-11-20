@@ -9,7 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-// +kubebuilder:webhook:path=/mutate-tracepipeline,mutating=true,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=tracepipelines,verbs=create;update,versions=v1alpha1,name=mutating.tracepipelines.telemetry.kyma-project.io,admissionReviewVersions=v1,v1beta1
 // +kubebuilder:object:generate=false
 var _ webhook.CustomDefaulter = &TracePipelineDefaulter{}
 

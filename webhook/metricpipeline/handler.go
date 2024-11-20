@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// +kubebuilder:webhook:path=/mutate-metricpipeline,mutating=true,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=metricpipelines,verbs=create;update,versions=v1alpha1,name=mutating.metricpipelines.telemetry.kyma-project.io,admissionReviewVersions=v1,v1beta1
 // +kubebuilder:object:generate=false
 var _ webhook.CustomDefaulter = &MetricPipelineDefaulter{}
 
