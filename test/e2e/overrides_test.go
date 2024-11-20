@@ -72,7 +72,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 	}
 
-	assertTelemetryReconciliationDisabled := func(ctx context.Context, k8sClient client.Client, webhookName string, labelKey string) {
+	assertTelemetryReconciliationDisabled := func(ctx context.Context, k8sClient client.Client, webhookName string) {
 		key := types.NamespacedName{
 			Name: webhookName,
 		}
@@ -197,7 +197,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		It("Should disable the reconciliation of the telemetry CR", func() {
-			assertTelemetryReconciliationDisabled(ctx, k8sClient, kitkyma.ValidatingWebhookName, appNameLabelKey)
+			assertTelemetryReconciliationDisabled(ctx, k8sClient, kitkyma.ValidatingWebhookName)
 		})
 	})
 })
