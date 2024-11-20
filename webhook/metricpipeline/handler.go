@@ -2,16 +2,19 @@ package metricpipeline
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"fmt"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type MetricPipelineDefaults struct {
+// +kubebuilder:webhook:path=/mutate-metricpipeline,mutating=true,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=metricpipelines,verbs=create;update,versions=v1alpha1,name=mutating.metricpipelines.telemetry.kyma-project.io,admissionReviewVersions=v1,v1beta1
+// +kubebuilder:object:generate=false
+var _ webhook.CustomDefaulter = &MetricPipelineDefaulter{}
+
+type MetricPipelineDefaulter struct {
 	ExcludeNamespaces         []string
 	RuntimeInputResources     RuntimeInputResourceDefaults
 	DefaultOTLPOutputProtocol string
@@ -28,14 +31,9 @@ type RuntimeInputResourceDefaults struct {
 	Job         bool
 }
 
-type DefaultingWebhookHandler struct {
-	defaults MetricPipelineDefaults
-	decoder  admission.Decoder
-}
-
-func NewDefaultingWebhookHandler(scheme *runtime.Scheme) *DefaultingWebhookHandler {
-	return &DefaultingWebhookHandler{
-		defaults: MetricPipelineDefaults{
+func SetupMetricPipelineWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{}).
+		WithDefaulter(&MetricPipelineDefaulter{
 			ExcludeNamespaces: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 			RuntimeInputResources: RuntimeInputResourceDefaults{
 				Pod:         true,
@@ -48,107 +46,99 @@ func NewDefaultingWebhookHandler(scheme *runtime.Scheme) *DefaultingWebhookHandl
 				Job:         true,
 			},
 			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
-		},
-		decoder: admission.NewDecoder(scheme),
-	}
+		}).
+		Complete()
 }
 
-func (dh DefaultingWebhookHandler) Handle(ctx context.Context, request admission.Request) admission.Response {
-	pipeline := &telemetryv1alpha1.MetricPipeline{}
-
-	err := dh.decoder.Decode(request, pipeline)
-	if err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
+func (md MetricPipelineDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	pipeline, ok := obj.(*telemetryv1alpha1.MetricPipeline)
+	if !ok {
+		return fmt.Errorf("expected an MetricPipeline object but got %T", obj)
 	}
 
-	dh.applyDefaults(pipeline)
+	md.applyDefaults(pipeline)
 
-	marshaledPipeline, err := json.Marshal(pipeline)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	return admission.PatchResponseFromRaw(request.Object.Raw, marshaledPipeline)
+	return nil
 }
 
-func (dh DefaultingWebhookHandler) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
+func (md MetricPipelineDefaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Namespaces == nil {
 		pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{
-			Exclude: dh.defaults.ExcludeNamespaces,
+			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
 	if pipeline.Spec.Input.Istio != nil && pipeline.Spec.Input.Istio.Namespaces == nil {
 		pipeline.Spec.Input.Istio.Namespaces = &telemetryv1alpha1.NamespaceSelector{
-			Exclude: dh.defaults.ExcludeNamespaces,
+			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
-		pipeline.Spec.Output.OTLP.Protocol = dh.defaults.DefaultOTLPOutputProtocol
+		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}
 
 	if pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Namespaces == nil {
 		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1alpha1.NamespaceSelector{
-			Exclude: dh.defaults.ExcludeNamespaces,
+			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime != nil {
-		dh.applyRuntimeInputResourceDefaults(pipeline)
+		md.applyRuntimeInputResourceDefaults(pipeline)
 	}
 }
 
-func (dh DefaultingWebhookHandler) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
+func (md MetricPipelineDefaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if pipeline.Spec.Input.Runtime.Resources == nil {
 		pipeline.Spec.Input.Runtime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Pod == nil {
 		pipeline.Spec.Input.Runtime.Resources.Pod = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-			Enabled: &dh.defaults.RuntimeInputResources.Pod,
+			Enabled: &md.RuntimeInputResources.Pod,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Container == nil {
 		pipeline.Spec.Input.Runtime.Resources.Container = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-			Enabled: &dh.defaults.RuntimeInputResources.Container,
+			Enabled: &md.RuntimeInputResources.Container,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Node == nil {
 		pipeline.Spec.Input.Runtime.Resources.Node = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-			Enabled: &dh.defaults.RuntimeInputResources.Node,
+			Enabled: &md.RuntimeInputResources.Node,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Volume == nil {
 		pipeline.Spec.Input.Runtime.Resources.Volume = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-			Enabled: &dh.defaults.RuntimeInputResources.Volume,
+			Enabled: &md.RuntimeInputResources.Volume,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.DaemonSet == nil {
 		pipeline.Spec.Input.Runtime.Resources.DaemonSet = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-			Enabled: &dh.defaults.RuntimeInputResources.DaemonSet,
+			Enabled: &md.RuntimeInputResources.DaemonSet,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Deployment == nil {
 		pipeline.Spec.Input.Runtime.Resources.Deployment = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-			Enabled: &dh.defaults.RuntimeInputResources.Deployment,
+			Enabled: &md.RuntimeInputResources.Deployment,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.StatefulSet == nil {
 		pipeline.Spec.Input.Runtime.Resources.StatefulSet = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-			Enabled: &dh.defaults.RuntimeInputResources.StatefulSet,
+			Enabled: &md.RuntimeInputResources.StatefulSet,
 		}
 	}
 
 	if pipeline.Spec.Input.Runtime.Resources.Job == nil {
 		pipeline.Spec.Input.Runtime.Resources.Job = &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-			Enabled: &dh.defaults.RuntimeInputResources.Job,
+			Enabled: &md.RuntimeInputResources.Job,
 		}
 	}
 }

@@ -2,53 +2,42 @@ package tracepipeline
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
+	"fmt"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-type TracePipelineDefaults struct {
+// +kubebuilder:webhook:path=/mutate-tracepipeline,mutating=true,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=tracepipelines,verbs=create;update,versions=v1alpha1,name=mutating.tracepipelines.telemetry.kyma-project.io,admissionReviewVersions=v1,v1beta1
+// +kubebuilder:object:generate=false
+var _ webhook.CustomDefaulter = &TracePipelineDefaulter{}
+
+type TracePipelineDefaulter struct {
 	DefaultOTLPOutputProtocol string
 }
 
-type DefaultingWebhookHandler struct {
-	defaults TracePipelineDefaults
-	decoder  admission.Decoder
-}
-
-func NewDefaultingWebhookHandler(scheme *runtime.Scheme) *DefaultingWebhookHandler {
-	return &DefaultingWebhookHandler{
-		defaults: TracePipelineDefaults{
+func SetupTracePipelineWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.TracePipeline{}).
+		WithDefaulter(&TracePipelineDefaulter{
 			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
-		},
-		decoder: admission.NewDecoder(scheme),
-	}
+		}).
+		Complete()
 }
 
-func (dh DefaultingWebhookHandler) Handle(ctx context.Context, request admission.Request) admission.Response {
-	pipeline := &telemetryv1alpha1.TracePipeline{}
-
-	err := dh.decoder.Decode(request, pipeline)
-	if err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
+func (td TracePipelineDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	pipeline, ok := obj.(*telemetryv1alpha1.TracePipeline)
+	if !ok {
+		return fmt.Errorf("expected an TracePipeline object but got %T", obj)
 	}
 
-	dh.applyDefaults(pipeline)
+	td.applyDefaults(pipeline)
 
-	marshaledPipeline, err := json.Marshal(pipeline)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	return admission.PatchResponseFromRaw(request.Object.Raw, marshaledPipeline)
+	return nil
 }
 
-func (dh DefaultingWebhookHandler) applyDefaults(pipeline *telemetryv1alpha1.TracePipeline) {
+func (td TracePipelineDefaulter) applyDefaults(pipeline *telemetryv1alpha1.TracePipeline) {
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
-		pipeline.Spec.Output.OTLP.Protocol = dh.defaults.DefaultOTLPOutputProtocol
+		pipeline.Spec.Output.OTLP.Protocol = td.DefaultOTLPOutputProtocol
 	}
 }

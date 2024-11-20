@@ -325,12 +325,15 @@ func run() error {
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
 		Handler: logparserwebhook.NewValidatingWebhookHandler(scheme),
 	})
-	mgr.GetWebhookServer().Register("/mutate-metricpipeline", &webhook.Admission{
-		Handler: metricpipelinewebhook.NewDefaultingWebhookHandler(scheme),
-	})
-	mgr.GetWebhookServer().Register("/mutate-tracepipeline", &webhook.Admission{
-		Handler: tracepipelinewebhook.NewDefaultingWebhookHandler(scheme),
-	})
+
+	if err := metricpipelinewebhook.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup metric pipeline webhook: %w", err)
+	}
+
+	if err := tracepipelinewebhook.SetupTracePipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup trace pipeline webhook: %w", err)
+	}
+
 	mgr.GetWebhookServer().Register("/mutate-logpipeline", &webhook.Admission{
 		Handler: logpipelinewebhook.NewDefaultingWebhookHandler(scheme),
 	})
