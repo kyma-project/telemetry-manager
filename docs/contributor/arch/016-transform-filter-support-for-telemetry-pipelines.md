@@ -1,4 +1,4 @@
-# 16. Transform and Filter support for OpenTelemetry based Pipelines
+# 16. Transform and Filter Support for OpenTelemetry-based Pipelines
 
 Date: 2024-10-10
 
@@ -12,9 +12,9 @@ In the default setup of metric and trace pipelines, users currently cannot filte
 
 ## Decision
 
-We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using a single Filter and Transform Processor. This processor will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as they need; and only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
+We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using a single Filter and Transform Processor. This processor will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as needed; only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
 
-Example configuration MetricPipeline:
+MetricPipeline example configuration:
     
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -43,7 +43,7 @@ spec:
         value: ingest-otlp.services.sap.hana.ondemand.com:443
 ```
 
-Example configuration TracePipeline:
+TracePipeline example configuration:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -65,9 +65,9 @@ spec:
 ```
 ### Solution
 
-The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process. The OTTL library provides two categories of functions, the [editor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#editors) functions and the [converters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#converters).
+The OTTL library offers functions to validate, filter, and transform data by parsing and executing expressions. To ensure robustness and stability, we will limit the available filter and transform functions to a carefully selected subset. This subset will be curated based on common use cases, ensuring essential functionality without overcomplicating the configuration process. The OTTL library provides two categories of functions: the [editor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#editors) functions and the [converters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#converters).
 - The editor functions are used to modify the data. The current pipelines use a small subset of OTTL functions like setting a value, adding or removing attributes, and filtering data based on conditions. We will use this subset of editor functions to provide the necessary functionality to the users. If needed, other functions can be added.
-- The converter functions are used in the OTTL condition expressions to convert the data type to compare it with the expected value. They support a broad variety of data types, including xml, json, and string. We probably only need basic operation like string comparison, formatting and data type checks. 
+- The converter functions are used in the OTTL condition expressions to convert the data type to compare it with the expected value. They support a broad variety of data types, including XML, JSON, and string. We probably only need basic operations like string comparison, formatting, and data type checks. 
 
 
 The OTTL supports three types of error modes to handle errors in the OTTL expression execution:
@@ -75,9 +75,9 @@ The OTTL supports three types of error modes to handle errors in the OTTL expres
 - `slient` : The processor ignores errors returned by conditions, does not log them, and continues on to the next condition.
 - `propagate` : The processor returns the error up the pipeline. This will result in the payload being dropped from the collector.
 
-The recommended error mode is `ignore` and this will be used as default configuration.
+The recommended error mode is `ignore`, and this will be used as the default configuration.
 
-The OTTL context will be embedded in the OTTL statements (in progress with [issue #29017](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017)) and will be available in the upcoming beta version. The solution will not implement the context as configuration parameter.
+The OTTL context will be embedded in the OTTL statements (in progress with [issue #29017](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017)) and will be available in the upcoming beta version. The solution will not implement the context as a configuration parameter.
 
 To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be near the end of the pipeline chain, before the exporters.
 
@@ -112,7 +112,7 @@ The OTTL library is still in its alpha phase, meaning that updates to the packag
 
 To mitigate this risk, we suggest the following measures:
 - The [beta version](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/28892) of the OTTL library will be used in the OTel Collector to ensure that the library is stable and reliable.
-- New Versions of OTTL with Breaking Changes: The breaking changes of the OTTL library are released with backward compatibility with following the process described [here](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/coding-guidelines.md#breaking-changes), the backward compatibility provided via `feature gates`, those `feature gates` are available over several releases. This helps us adapt the changes and reduce the chance of widespread disruption. There is an exception breaking changes with public Go API, the breaking changes with public Go API most likely will not follow the process described [here](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/coding-guidelines.md#breaking-changes). Since those changes are not end-user-faced changes and may require changes in our implementation uses the public API. 
+- New Versions of OTTL with Breaking Changes: The breaking changes of the OTTL library are released with backward compatibility following the [breaking changes](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/coding-guidelines.md#breaking-changes) process. The backward compatibility is provided via `feature gates`. They are available in several releases. This helps us adapt to the changes and reduce the chance of widespread disruption. There are exceptional breaking changes with public Go API. These breaking changes most likely will not follow the breaking changes process. Since those changes are not end-user-faced, they may require changes in our implementation using the public API. 
 - Thorough Testing: We will maintain strict version control of the OTTL library, ensuring that each update is thoroughly tested. Automated tests will validate that existing pipelines continue to work as expected.
 - Documentation: We will provide detailed documentation and practical examples of how to configure filter and transformation processors using OTTL expressions.
 - Community Support: We will actively engage with the OpenTelemetry community to address any issues or concerns that arise from using the OTTL library.
