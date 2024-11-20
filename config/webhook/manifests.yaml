@@ -16,7 +16,7 @@ webhooks:
         port: 443
     failurePolicy: Fail
     matchPolicy: Exact
-    name: validation.logpipelines.telemetry.kyma-project.io
+    name: validating-logpipelines.kyma-project.io
     namespaceSelector: {}
     objectSelector: {}
     rules:
@@ -43,7 +43,7 @@ webhooks:
         port: 443
     failurePolicy: Fail
     matchPolicy: Exact
-    name: validation.logparsers.telemetry.kyma-project.io
+    name: validating-logparsers.kyma-project.io
     namespaceSelector: {}
     objectSelector: {}
     rules:

@@ -115,7 +115,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 
 				logPipelineWebhook := validatingWebhookConfiguration.Webhooks[0]
-				g.Expect(logPipelineWebhook.Name).Should(Equal("validation.logpipelines.telemetry.kyma-project.io"))
+				g.Expect(logPipelineWebhook.Name).Should(Equal("validating-logpipelines.kyma-project.io"))
 				g.Expect(logPipelineWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
 				g.Expect(logPipelineWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
 				g.Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
@@ -127,7 +127,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
 
 				logParserWebhook := validatingWebhookConfiguration.Webhooks[1]
-				g.Expect(logParserWebhook.Name).Should(Equal("validation.logparsers.telemetry.kyma-project.io"))
+				g.Expect(logParserWebhook.Name).Should(Equal("validating-logparsers.kyma-project.io"))
 				g.Expect(logParserWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
 				g.Expect(logParserWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
 				g.Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))

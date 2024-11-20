@@ -83,7 +83,7 @@ var (
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
-				Name:           "validation.logpipelines.telemetry.kyma-project.io",
+				Name:           "validating-logpipelines.kyma-project.io",
 				SideEffects:    &sideEffects,
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -110,7 +110,7 @@ var (
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
-				Name:           "validation.logparsers.telemetry.kyma-project.io",
+				Name:           "validating-logparsers.kyma-project.io",
 				SideEffects:    &sideEffects,
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
