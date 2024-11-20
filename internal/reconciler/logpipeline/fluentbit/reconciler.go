@@ -44,6 +44,10 @@ type Config struct {
 	RestConfig          rest.Config
 }
 
+type IstioStatusChecker interface {
+	IsIstioActive(ctx context.Context) bool
+}
+
 var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
 type Reconciler struct {
@@ -55,7 +59,7 @@ type Reconciler struct {
 	// Dependencies
 	agentProber        commonstatus.DaemonSetProber
 	flowHealthProber   logpipeline.FlowHealthProber
-	istioStatusChecker logpipeline.IstioStatusChecker
+	istioStatusChecker IstioStatusChecker
 	pipelineValidator  *Validator
 	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
@@ -64,7 +68,7 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, healthProber logpipeline.FlowHealthProber, checker logpipeline.IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,

@@ -55,7 +55,8 @@ type Reconciler struct {
 	errToMessageConverter commonstatus.ErrorToMessageConverter
 }
 
-func New(client client.Client,
+func New(
+	client client.Client,
 	config Config,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,

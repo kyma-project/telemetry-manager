@@ -8,10 +8,13 @@ filename: "{{.InterfaceName | snakecase}}.go"
 packages:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline:
     interfaces:
-      DaemonSetAnnotator:
-      FlowHealthProber:
       OverridesHandler:
       ErrorToMessageConverter:
+      FlowHealthProber:
+  github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel:
+    interfaces:
+      GatewayApplierDeleter:
+      GatewayConfigBuilder:
   github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline:
     interfaces:
       FlowHealthProber:
