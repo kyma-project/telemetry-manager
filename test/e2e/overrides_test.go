@@ -197,7 +197,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		It("Should disable the reconciliation of the telemetry CR", func() {
-			assertTelemetryReconciliationDisabled(ctx, k8sClient, kitkyma.WebhookName, appNameLabelKey)
+			assertTelemetryReconciliationDisabled(ctx, k8sClient, kitkyma.ValidatingWebhookName, appNameLabelKey)
 		})
 	})
 })

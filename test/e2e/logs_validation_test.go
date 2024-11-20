@@ -27,7 +27,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
