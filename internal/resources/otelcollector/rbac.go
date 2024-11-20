@@ -136,7 +136,6 @@ func MakeMetricGatewayRBAC(name types.NamespacedName) Rbac {
 
 type RoleOption func(*rbacv1.Role)
 
-// returns a role option since resources needed are only namespace scoped
 // WithSingletonCreatorRules returns a role option since resources needed are only namespace scoped
 func WithSingletonCreatorRules() RoleOption {
 	return func(r *rbacv1.Role) {
