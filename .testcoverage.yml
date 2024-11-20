@@ -49,6 +49,8 @@ override:
     path: ^webhook/logpipeline$
   - threshold: 83
     path: ^internal/utils/logpipeline$
+  - threshold: 75
+    path: ^webhook/tracepipeline$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
