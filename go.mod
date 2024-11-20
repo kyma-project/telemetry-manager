@@ -15,7 +15,6 @@ require (
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/collector/pdata v1.19.0
 	go.uber.org/zap v1.27.0
-	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/protobuf v1.35.1
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.24.0
@@ -70,6 +69,7 @@ require (
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
 	google.golang.org/grpc v1.67.1 // indirect
