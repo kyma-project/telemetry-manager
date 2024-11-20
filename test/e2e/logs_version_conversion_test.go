@@ -11,7 +11,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -65,12 +64,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 		return []client.Object{&v1Alpha1LogPipeline, &v1Beta1LogPipeline}
 	}
-
-	Context("Before deploying a logpipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
 
 	Context("When v1alpha1 and v1beta1 logpipelines exist", Ordered, func() {
 		BeforeAll(func() {

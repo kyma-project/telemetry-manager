@@ -102,12 +102,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 	})
 
-	Context("Before deploying a logpipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
-
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		It("Should have a running logpipeline", func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)

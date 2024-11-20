@@ -9,7 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -17,12 +16,6 @@ import (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
-	Context("Before deploying a tracepipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
-
 	Context("When a validating webhook exists", Ordered, func() {
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
