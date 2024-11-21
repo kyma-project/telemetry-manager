@@ -56,8 +56,7 @@ import (
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
-	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
-	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
+	logparserwebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1"
 	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
 	logpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1"
 	metricpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1alpha1"
@@ -324,10 +323,10 @@ func run() error {
 	}
 
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{
-		Handler: logpipelinewebhook.NewValidatingWebhookHandler(mgr.GetClient(), scheme),
+		Handler: logpipelinewebhookv1alpha1.NewValidatingWebhookHandler(mgr.GetClient(), scheme),
 	})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
-		Handler: logparserwebhook.NewValidatingWebhookHandler(scheme),
+		Handler: logparserwebhookv1alpha1.NewValidatingWebhookHandler(scheme),
 	})
 
 	if err := setupMutatingWebhooks(mgr); err != nil {
