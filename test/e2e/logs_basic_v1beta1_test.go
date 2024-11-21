@@ -98,4 +98,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			assert.LogsDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
+
+	Context("When a logpipeline with OTLP output exists", Ordered, func() {
+		// TODO: Copy from v1alpha1
+	})
 })

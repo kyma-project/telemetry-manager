@@ -32,6 +32,18 @@ func LogsDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix str
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+func LogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(backendExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(
+			HaveFlatLogs(ContainElement(HaveNamespace(Equal(namespace)))),
+		))
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
 func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
