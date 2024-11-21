@@ -47,12 +47,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 		return objs
 	}
 
-	Context("Before deploying a metricpipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
-
 	Context("When a metricpipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
