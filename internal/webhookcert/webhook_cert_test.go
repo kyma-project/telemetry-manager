@@ -217,7 +217,7 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 	require.True(t, certValid)
 }
 
-func TestUpdateValidatingWebhookConfig(t *testing.T) {
+func TestUpdateWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
@@ -259,6 +259,15 @@ func TestUpdateValidatingWebhookConfig(t *testing.T) {
 	certValid, err = chainChecker.checkRoot(context.Background(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
+
+	var updatedMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
+
+	err = client.Get(context.Background(), config.MutatingWebhookName, &updatedMutatingWebhookConfiguration)
+	require.NoError(t, err)
+
+	mutatingCertValid, err := chainChecker.checkRoot(context.Background(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	require.NoError(t, err)
+	require.True(t, mutatingCertValid)
 }
 
 func TestCreateSecret(t *testing.T) {
@@ -334,4 +343,18 @@ func TestReuseExistingCertificate(t *testing.T) {
 		updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle,
 		updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+
+	var newMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
+	err = client.Get(context.Background(), config.MutatingWebhookName, &newMutatingWebhookConfiguration)
+	require.NoError(t, err)
+
+	err = EnsureCertificate(context.TODO(), client, config)
+	require.NoError(t, err)
+
+	var updatedMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
+	err = client.Get(context.Background(), config.MutatingWebhookName, &updatedMutatingWebhookConfiguration)
+	require.NoError(t, err)
+
+	require.Equal(t, newMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
+		updatedMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 }
