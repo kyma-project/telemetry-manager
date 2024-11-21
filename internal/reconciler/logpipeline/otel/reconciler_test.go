@@ -616,6 +616,7 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock.AssertExpectations(t)
 	})
 
+	// TODO: Scenario requires secretRefValidator to be implemented
 	t.Run("Check different Pod Error Conditions", func(t *testing.T) {
 		tests := []struct {
 			name            string
