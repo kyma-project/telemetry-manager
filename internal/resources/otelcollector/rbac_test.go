@@ -64,38 +64,27 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/stats", "nodes/proxy"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
 				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
 				Verbs:           []string{"get"},
-			},
-			{
+			}, {
 				APIGroups: []string{""},
-				Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
+				Resources: []string{"endpoints", "events", "namespaces", "namespaces/status", "nodes", "nodes/metrics", "nodes/proxy", "nodes/spec", "nodes/stats", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
 				Verbs:     []string{"get", "list", "watch"},
 			}, {
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
 				Verbs:     []string{"get", "list", "watch"},
 			}, {
-				APIGroups: []string{"extensions"},
-				Resources: []string{"daemonsets", "deployments", "replicasets"},
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get", "list", "watch"},
 			}, {
 				APIGroups: []string{"batch"},
-				Resources: []string{"jobs", "cronjobs"},
+				Resources: []string{"cronjobs", "jobs"},
 				Verbs:     []string{"get", "list", "watch"},
 			}, {
-				APIGroups: []string{"autoscaling"},
-				Resources: []string{"horizontalpodautoscalers"},
+				APIGroups: []string{"extensions"},
+				Resources: []string{"daemonsets", "deployments", "replicasets"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
 		}
@@ -167,17 +156,7 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 			},
 			{
 				APIGroups: []string{"telemetry.kyma-project.io"},
-				Resources: []string{"metricpipelines"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"telemetry.kyma-project.io"},
-				Resources: []string{"tracepipelines"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"telemetry.kyma-project.io"},
-				Resources: []string{"logpipelines"},
+				Resources: []string{"logpipelines", "metricpipelines", "tracepipelines"},
 				Verbs:     []string{"get", "list", "watch"},
 			}}
 
@@ -220,6 +199,34 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 
 		checkRoleBinding(t, rb, name, namespace)
 	})
+}
+
+func TestNormalizePolicyRules(t *testing.T) {
+	expectedRules := []rbacv1.PolicyRule{
+		{
+			NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
+			Verbs:           []string{"get"},
+		}, {
+			APIGroups: []string{""},
+			Resources: []string{"endpoints", "nodes", "nodes/metrics", "nodes/proxy", "nodes/stats", "pods", "services"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+	kubeletStatsRules := []rbacv1.PolicyRule{{
+		APIGroups: []string{""},
+		Resources: []string{"nodes", "nodes/stats", "nodes/proxy"},
+		Verbs:     []string{"get", "list", "watch"},
+	}}
+	prometheusRules := []rbacv1.PolicyRule{{
+		APIGroups: []string{""},
+		Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
+		Verbs:           []string{"get"},
+	}}
+	polRules := NormalizePolicyRules(append(kubeletStatsRules, prometheusRules...))
+	require.Equal(t, expectedRules, polRules)
 }
 
 func checkClusterRoleBinding(t *testing.T, crb *rbacv1.ClusterRoleBinding, name, namespace string) {
