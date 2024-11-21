@@ -14,33 +14,30 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
-	telemetryNamespace = "telemetry-system"
-	webhookService     = types.NamespacedName{
+	systemNamespace = "kyma-system"
+	webhookService  = types.NamespacedName{
 		Name:      "telemetry-manager-webhook",
-		Namespace: telemetryNamespace,
+		Namespace: systemNamespace,
 	}
 	caBundleSecret = types.NamespacedName{
 		Name:      "telemetry-webhook-cert",
-		Namespace: telemetryNamespace,
+		Namespace: systemNamespace,
 	}
-	validatingName        = "validation.webhook.telemetry.kyma-project.io"
+	nameValidatingWebhook = "telemetry-validating-webhook.kyma-project.io"
 	validatingWebhookName = types.NamespacedName{
-		Name: validatingName,
+		Name: nameValidatingWebhook,
 	}
-	mutatingName        = "telemetry-mutating.webhook.telemetry.kyma-project.io"
+
+	nameMutatingWebhook = "telemetry-mutating-webhook.kyma-project.io"
 	mutatingWebhookName = types.NamespacedName{
-		Name: mutatingName,
+		Name: nameMutatingWebhook,
 	}
-	labels = map[string]string{
-		"control-plane":                    "telemetry-manager",
-		"app.kubernetes.io/instance":       "telemetry",
-		"app.kubernetes.io/validatingName": "manager",
-		"kyma-project.io/component":        "controller",
-	}
+
 	logPipelinesCRD = apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "logpipelines.telemetry.kyma-project.io",
@@ -54,90 +51,131 @@ var (
 			},
 		},
 	}
+	labels = map[string]string{
+		"app.kubernetes.io/component":  "telemetry",
+		"app.kubernetes.io/instance":   "telemetry-manager",
+		"app.kubernetes.io/managed-by": "kustomize",
+		"app.kubernetes.io/name":       "telemetry-manager",
+		"app.kubernetes.io/part-of":    "kyma",
+		"control-plane":                "telemetry-manager",
+	}
+	failurePolicy = admissionregistrationv1.Fail
+	matchPolicy   = admissionregistrationv1.Exact
+	sideEffects   = admissionregistrationv1.SideEffectClassNone
+	operations    = []admissionregistrationv1.OperationType{
+		admissionregistrationv1.Create,
+		admissionregistrationv1.Update,
+	}
+	apiGroups                             = []string{"telemetry.kyma-project.io"}
+	apiVersions                           = []string{"v1alpha1"}
+	scope                                 = admissionregistrationv1.AllScopes
+	servicePort                           = int32(443)
+	timeout                               = int32(15)
+	initialValidatingWebhookConfiguration = admissionregistrationv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   nameValidatingWebhook,
+			Labels: labels,
+		},
+		Webhooks: []admissionregistrationv1.ValidatingWebhook{
+			{
+				AdmissionReviewVersions: []string{"v1beta1", "v1"},
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
+						Port:      &servicePort,
+						Path:      ptr.To("/validate-logpipeline"),
+					},
+				},
+				FailurePolicy:  &failurePolicy,
+				MatchPolicy:    &matchPolicy,
+				Name:           "validating-logpipelines.kyma-project.io",
+				SideEffects:    &sideEffects,
+				TimeoutSeconds: &timeout,
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: operations,
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   apiGroups,
+							APIVersions: apiVersions,
+							Scope:       &scope,
+							Resources:   []string{"logpipelines"},
+						},
+					},
+				},
+			},
+			{
+				AdmissionReviewVersions: []string{"v1beta1", "v1"},
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
+						Port:      &servicePort,
+						Path:      ptr.To("/validate-logparser"),
+					},
+				},
+				FailurePolicy:  &failurePolicy,
+				MatchPolicy:    &matchPolicy,
+				Name:           "validating-logparsers.kyma-project.io",
+				SideEffects:    &sideEffects,
+				TimeoutSeconds: &timeout,
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: operations,
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   apiGroups,
+							APIVersions: apiVersions,
+							Scope:       &scope,
+							Resources:   []string{"logparsers"},
+						},
+					},
+				},
+			},
+		},
+	}
 
 	mutatingWebhookConfiguration = admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: mutatingName,
+			Name:   nameMutatingWebhook,
+			Labels: labels,
+		},
+		Webhooks: []admissionregistrationv1.MutatingWebhook{
+			{
+				AdmissionReviewVersions: []string{"v1beta1", "v1"},
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
+						Port:      &servicePort,
+						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-metricpipeline"),
+					},
+				},
+				FailurePolicy:  &failurePolicy,
+				MatchPolicy:    &matchPolicy,
+				Name:           "mutating.v1alpha1.metricpipelines.telemetry.kyma-project.io",
+				SideEffects:    &sideEffects,
+				TimeoutSeconds: &timeout,
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: operations,
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   apiGroups,
+							APIVersions: apiVersions,
+							Scope:       &scope,
+							Resources:   []string{"metricpipelines"},
+						},
+					},
+				},
+			},
 		},
 	}
 )
 
-func TestEnsureCertificate_CreatesValidatingWebhookConfig(t *testing.T) {
+func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &mutatingWebhookConfiguration).Build()
-
-	certDir, err := os.MkdirTemp("", "certificate")
-	require.NoError(t, err)
-	defer func(path string) {
-		deleteErr := os.RemoveAll(path)
-		require.NoError(t, deleteErr)
-	}(certDir)
-
-	config := Config{
-		CertDir:               certDir,
-		ServiceName:           webhookService,
-		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: validatingWebhookName,
-		MutatingWebhookName:   mutatingWebhookName,
-	}
-
-	err = EnsureCertificate(context.TODO(), client, config)
-	require.NoError(t, err)
-
-	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
-	require.NoError(t, err)
-
-	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-
-	err = client.Get(context.Background(), config.ValidatingWebhookName, &validatingWebhookConfiguration)
-	require.NoError(t, err)
-
-	require.Equal(t, validatingName, validatingWebhookConfiguration.Name)
-	require.Equal(t, labels, validatingWebhookConfiguration.Labels)
-
-	require.Equal(t, 2, len(validatingWebhookConfiguration.Webhooks))
-
-	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[0].TimeoutSeconds)
-	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
-
-	var chainChecker certChainCheckerImpl
-	certValid, err := chainChecker.checkRoot(context.Background(), serverCert, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.NoError(t, err)
-	require.True(t, certValid)
-
-	certValid, err = chainChecker.checkRoot(context.Background(), serverCert, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
-	require.NoError(t, err)
-	require.True(t, certValid)
-
-	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Name)
-	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Name)
-
-	require.Equal(t, webhookService.Namespace, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Namespace)
-	require.Equal(t, webhookService.Namespace, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Namespace)
-
-	require.Equal(t, int32(443), *validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Port)
-	require.Equal(t, int32(443), *validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Port)
-
-	require.Equal(t, "/validate-logpipeline", *validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Path)
-	require.Equal(t, "/validate-logparser", *validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Path)
-
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].APIGroups, "telemetry.kyma-project.io")
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].APIGroups, "telemetry.kyma-project.io")
-
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].APIVersions, "v1alpha1")
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].APIVersions, "v1alpha1")
-
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].Resources, "logpipelines")
-	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].Resources, "logparsers")
-}
-
-func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
-	scheme := runtime.NewScheme()
-	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &mutatingWebhookConfiguration).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &initialValidatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -179,93 +217,11 @@ func TestEnsureCertificate_PatchesConversionWebhookConfig(t *testing.T) {
 	require.True(t, certValid)
 }
 
-func TestUpdateWebhookCertificate(t *testing.T) {
+func TestUpdateValidatingWebhookConfig(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
 
-	logPipelinePath := "/validate-logpipeline"
-	logParserPath := "/validate-logparser"
-	failurePolicy := admissionregistrationv1.Fail
-	matchPolicy := admissionregistrationv1.Exact
-	sideEffects := admissionregistrationv1.SideEffectClassNone
-	operations := []admissionregistrationv1.OperationType{
-		admissionregistrationv1.Create,
-		admissionregistrationv1.Update,
-	}
-	apiGroups := []string{"telemetry.kyma-project.io"}
-	apiVersions := []string{"v1alpha1"}
-	scope := admissionregistrationv1.AllScopes
-	servicePort := int32(443)
-	timeout := int32(15)
-	certificate := []byte("123")
-
-	initialValidatingWebhookConfiguration := admissionregistrationv1.ValidatingWebhookConfiguration{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   validatingName,
-			Labels: labels,
-		},
-
-		Webhooks: []admissionregistrationv1.ValidatingWebhook{
-			{
-				AdmissionReviewVersions: []string{"v1beta1", "v1"},
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Name:      webhookService.Name,
-						Namespace: webhookService.Namespace,
-						Port:      &servicePort,
-						Path:      &logPipelinePath,
-					},
-					CABundle: certificate,
-				},
-				FailurePolicy:  &failurePolicy,
-				MatchPolicy:    &matchPolicy,
-				Name:           "validation.logpipelines.telemetry.kyma-project.io",
-				SideEffects:    &sideEffects,
-				TimeoutSeconds: &timeout,
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logpipelines"},
-						},
-					},
-				},
-			},
-			{
-				AdmissionReviewVersions: []string{"v1beta1", "v1"},
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Name:      webhookService.Name,
-						Namespace: webhookService.Namespace,
-						Port:      &servicePort,
-						Path:      &logParserPath,
-					},
-					CABundle: certificate,
-				},
-				FailurePolicy:  &failurePolicy,
-				MatchPolicy:    &matchPolicy,
-				Name:           "validation.logparsers.telemetry.kyma-project.io",
-				SideEffects:    &sideEffects,
-				TimeoutSeconds: &timeout,
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logparsers"},
-						},
-					},
-				},
-			},
-		},
-	}
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &initialValidatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
@@ -292,11 +248,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 
-	key := types.NamespacedName{
-		Name: validatingName,
-	}
-
-	err = client.Get(context.Background(), key, &updatedValidatingWebhookConfiguration)
+	err = client.Get(context.Background(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	var chainChecker certChainCheckerImpl
@@ -313,7 +265,7 @@ func TestCreateSecret(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &mutatingWebhookConfiguration).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &initialValidatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -346,7 +298,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &mutatingWebhookConfiguration).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &initialValidatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
@@ -368,14 +320,14 @@ func TestReuseExistingCertificate(t *testing.T) {
 	require.NoError(t, err)
 
 	var newValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	err = client.Get(context.Background(), types.NamespacedName{Name: validatingName}, &newValidatingWebhookConfiguration)
+	err = client.Get(context.Background(), config.ValidatingWebhookName, &newValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	err = client.Get(context.Background(), types.NamespacedName{Name: validatingName}, &updatedValidatingWebhookConfiguration)
+	err = client.Get(context.Background(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,

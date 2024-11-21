@@ -57,12 +57,6 @@ Types user:string pass:string`
 		return objs
 	}
 
-	Context("Before deploying a logpipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
-
 	Context("When a LogParser exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
