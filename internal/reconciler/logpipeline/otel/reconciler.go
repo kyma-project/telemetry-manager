@@ -103,7 +103,21 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	// TODO: Check if no pipeline is reconcilable. Not a priority, do this later.
+	// TODO: Implement this
+	// reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
+	// }
+
+	// if len(reconcilablePipelines) == 0 {
+	// 	logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
+
+	// 	if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+	// 		return fmt.Errorf("failed to delete gateway resources: %w", err)
+	// 	}
+
+	// 	return nil
+	// }
 
 	if err := r.reconcileLogGateway(ctx, pipeline, allPipelines); err != nil {
 		return fmt.Errorf("failed to reconcile log gateway: %w", err)
@@ -153,11 +167,11 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 
 	for i := range telemetries.Items {
 		telemetrySpec := telemetries.Items[i].Spec
-		if telemetrySpec.Trace == nil {
+		if telemetrySpec.Log == nil {
 			continue
 		}
 
-		scaling := telemetrySpec.Trace.Gateway.Scaling
+		scaling := telemetrySpec.Log.Gateway.Scaling
 		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
 			continue
 		}

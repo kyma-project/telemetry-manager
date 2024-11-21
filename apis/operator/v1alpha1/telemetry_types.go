@@ -43,6 +43,9 @@ type TelemetrySpec struct {
 
 	// +optional
 	Metric *MetricSpec `json:"metric,omitempty"`
+
+	// +optional
+	Log *LogSpec `json:"log,omitempty"`
 }
 
 // MetricSpec defines the behavior of the metric gateway
@@ -60,6 +63,15 @@ type TraceSpec struct {
 }
 
 type TraceGatewaySpec struct {
+	Scaling Scaling `json:"scaling,omitempty"`
+}
+
+// LogSpec defines the behavior of the log gateway
+type LogSpec struct {
+	Gateway LogGatewaySpec `json:"gateway,omitempty"`
+}
+
+type LogGatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
