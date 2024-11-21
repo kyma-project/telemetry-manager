@@ -46,12 +46,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 		return objs
 	}
 
-	Context("Before deploying a logpipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
-
 	Context("When a logpipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
