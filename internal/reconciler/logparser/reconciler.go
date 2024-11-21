@@ -49,14 +49,14 @@ type Reconciler struct {
 	client.Client
 
 	config           Config
-	prober           commonstatus.DaemonSetProber
+	prober           commonstatus.Prober
 	annotator        DaemonSetAnnotator
 	syncer           syncer
 	overridesHandler *overrides.Handler
 	errorConverter   commonstatus.ErrorToMessageConverter
 }
 
-func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler, errToMsgConverter commonstatus.ErrorToMessageConverter) *Reconciler {
+func New(client client.Client, config Config, prober commonstatus.Prober, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler, errToMsgConverter commonstatus.ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:           client,
 		config:           config,
