@@ -43,7 +43,7 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run("log gateway probing failed", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://endpoint.com")).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
@@ -91,7 +91,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("log gateway deployment is not ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://endpoint.com")).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
@@ -139,7 +139,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("log gateway deployment is ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://endpoint.com")).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
@@ -662,7 +662,7 @@ func TestReconcile(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().Build()
+				pipeline := testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
