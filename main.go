@@ -56,8 +56,13 @@ import (
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
-	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
-	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
+	logparserwebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1"
+	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
+	logpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1"
+	metricpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1alpha1"
+	metricpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1beta1"
+	tracepipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1alpha1"
+	tracepipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1beta1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -168,6 +173,8 @@ func init() {
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch
 
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
+
+// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
 
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -317,11 +324,16 @@ func run() error {
 	}
 
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{
-		Handler: logpipelinewebhook.NewValidatingWebhookHandler(mgr.GetClient(), scheme),
+		Handler: logpipelinewebhookv1alpha1.NewValidatingWebhookHandler(mgr.GetClient(), scheme),
 	})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
-		Handler: logparserwebhook.NewValidatingWebhookHandler(scheme),
+		Handler: logparserwebhookv1alpha1.NewValidatingWebhookHandler(scheme),
 	})
+
+	if err := setupMutatingWebhooks(mgr); err != nil {
+		return fmt.Errorf("failed to setup mutating webhooks: %w", err)
+	}
+
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
 		selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
@@ -331,6 +343,40 @@ func run() error {
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
+	}
+
+	return nil
+}
+
+func setupMutatingWebhooks(mgr manager.Manager) error {
+	if err := metricpipelinewebhookv1alpha1.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup metric pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := metricpipelinewebhookv1beta1.SetupMetricPipelineWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup metric pipeline v1beta1 webhook: %w", err)
+		}
+	}
+
+	if err := tracepipelinewebhookv1alpha1.SetupTracePipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup trace pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := tracepipelinewebhookv1beta1.SetupTracePipelineWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup trace pipeline v1beta1 webhook: %w", err)
+		}
+	}
+
+	if err := logpipelinewebhookv1alpha1.SetupLogPipelineWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup log pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := logpipelinewebhookv1beta1.SetupLogPipelineWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup log pipeline v1beta1 webhook: %w", err)
+		}
 	}
 
 	return nil
@@ -531,8 +577,11 @@ func createWebhookConfig() telemetry.WebhookConfig {
 				Name:      "telemetry-webhook-cert",
 				Namespace: telemetryNamespace,
 			},
-			WebhookName: types.NamespacedName{
+			ValidatingWebhookName: types.NamespacedName{
 				Name: "telemetry-validating-webhook.kyma-project.io",
+			},
+			MutatingWebhookName: types.NamespacedName{
+				Name: "telemetry-mutating-webhook.kyma-project.io",
 			},
 		},
 	}

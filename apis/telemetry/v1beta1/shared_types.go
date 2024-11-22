@@ -35,7 +35,6 @@ const (
 // +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
 type OTLPOutput struct {
 	// Defines the OTLP protocol (http or grpc). Default is grpc.
-	// +kubebuilder:default:=grpc
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol OTLPProtocol `json:"protocol,omitempty"`
 	// Defines the host and port (<host>:<port>) of an OTLP endpoint.

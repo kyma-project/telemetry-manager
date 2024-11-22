@@ -101,14 +101,12 @@ spec:
                           description: Defines whether to drop all Kubernetes labels. The default is `false`.
                           type: boolean
                         enabled:
-                          default: true
                           description: If enabled, application logs are collected. The default is `true`.
                           type: boolean
                         keepAnnotations:
                           description: Defines whether to keep all Kubernetes annotations. The default is `false`.
                           type: boolean
                         keepOriginalBody:
-                          default: true
                           description: If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `KeepOriginalBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. The default is `true`.
                           type: boolean
                         namespaces:
