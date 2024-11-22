@@ -222,4 +222,12 @@ func TestBuildConfig(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, string(goldenFile), string(configYAML))
 	})
+
+	t.Run("failed to make otlp exporter config", func(t *testing.T) {
+		_, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test-fail").WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("nonexistent-secret", "default", "user", "password")).Build(),
+		})
+		require.Error(t, err)
+		require.ErrorContains(t, err, "failed to make otlp exporter config")
+	})
 }
