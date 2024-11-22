@@ -12,7 +12,7 @@ func HaveFlatHTTPLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLogHTTP, error) {
 		lds, err := unmarshalHTTPLogs(jsonLogs)
 		if err != nil {
-			return nil, fmt.Errorf("HaveFlatLogs requires a valid OTLP JSON document: %w", err)
+			return nil, fmt.Errorf("HaveFlatHTTPLogs requires a valid OTLP JSON document: %w", err)
 		}
 
 		fl := flattenAllHTTPLogs(lds)
