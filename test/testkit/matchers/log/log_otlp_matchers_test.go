@@ -44,7 +44,7 @@ var _ = Describe("HaveFlatOTLPLogs", func() {
 		rl := ld.ResourceLogs().AppendEmpty()
 		sl := rl.ScopeLogs().AppendEmpty()
 		lr := sl.LogRecords().AppendEmpty()
-		
+
 		// set log body
 		lr.Body().SetStr("Test first log body")
 

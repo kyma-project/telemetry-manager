@@ -61,6 +61,7 @@ func LogPipelineHealthy(ctx context.Context, k8sClient client.Client, pipelineNa
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
+//nolint:dupl //LogPipelineOtelHealthy and LogPipelineHealthy have similarities, but they are not the same
 func LogPipelineOtelHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline

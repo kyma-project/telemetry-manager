@@ -109,11 +109,13 @@ func NewDeployment(namespace string, signalType SignalType, opts ...Option) *kit
 
 func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 	var gatewayPushURL string
-	if signalType == SignalTypeTraces {
+
+	switch {
+	case signalType == SignalTypeTraces:
 		gatewayPushURL = "telemetry-otlp-traces.kyma-system:4317"
-	} else if signalType == SignalTypeMetrics {
+	case signalType == SignalTypeMetrics:
 		gatewayPushURL = "telemetry-otlp-metrics.kyma-system:4317"
-	} else if signalType == SignalTypeLogs {
+	case signalType == SignalTypeLogs:
 		gatewayPushURL = "telemetry-otlp-logs.kyma-system:4317"
 	}
 

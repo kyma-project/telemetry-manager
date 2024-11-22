@@ -17,7 +17,6 @@ type FlatLogHTTP struct {
 	KubernetesAttributes           map[string]string
 	KubernetesLabelAttributes      map[string]any
 	KubernetesAnnotationAttributes map[string]any
-	
 }
 
 func unmarshalHTTPLogs(jsonlMetrics []byte) ([]plog.Logs, error) {

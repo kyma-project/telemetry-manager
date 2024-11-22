@@ -11,8 +11,8 @@ func makeProcessorsConfig() Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:      gatewayprocs.K8sAttributesProcessorConfig(),
-		InsertClusterName:  gatewayprocs.InsertClusterNameProcessorConfig(),
+		K8sAttributes:     gatewayprocs.K8sAttributesProcessorConfig(),
+		InsertClusterName: gatewayprocs.InsertClusterNameProcessorConfig(),
 	}
 }
 
