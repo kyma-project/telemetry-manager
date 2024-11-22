@@ -7,42 +7,42 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-// FlatLog holds all needed information about a log record.
+// FlatLogHTTP holds all needed information about a log record.
 // Gomega doesn't handle deeply nested data structure very well and generates large, unreadable diffs when paired with the deeply nested structure of plogs.
 //
 // Introducing a go struct with a flat data structure by extracting necessary information from different levels of plogs makes accessing the information easier than using plog.Logs directly and improves the readability of the test output logs.
-type FlatLog struct {
+type FlatLogHTTP struct {
 	LogRecordAttributes            map[string]string
 	LogRecordBody                  string
 	KubernetesAttributes           map[string]string
 	KubernetesLabelAttributes      map[string]any
 	KubernetesAnnotationAttributes map[string]any
-	ResourceAttributes             map[string]string
+	
 }
 
-func unmarshalLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
+func unmarshalHTTPLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
 	return matchers.UnmarshalSignals[plog.Logs](jsonlMetrics, func(buf []byte) (plog.Logs, error) {
 		var unmarshaler plog.JSONUnmarshaler
 		return unmarshaler.UnmarshalLogs(buf)
 	})
 }
 
-// flattenAllLogs flattens an array of pdata.Logs log record to a slice of FlatLog.
+// flattenAllHTTPLogs flattens an array of pdata.Logs log record to a slice of FlatLog.
 // It converts the deeply nested pdata.Logs data structure to a flat struct, to make it more readable in the test output logs.
-func flattenAllLogs(lds []plog.Logs) []FlatLog {
-	var flatLogs []FlatLog
+func flattenAllHTTPLogs(lds []plog.Logs) []FlatLogHTTP {
+	var flatLogs []FlatLogHTTP
 
 	for _, ld := range lds {
-		flatLogs = append(flatLogs, flattenLogs(ld)...)
+		flatLogs = append(flatLogs, flattenHTTPLogs(ld)...)
 	}
 
 	return flatLogs
 }
 
-// flattenMetrics converts a single pdata.Log log record to a slice of FlatMetric
+// flattenHTTPLogs converts a single pdata.Log log record to a slice of FlatMetric
 // It takes relevant information from different levels of pdata and puts it into a FlatLog go struct.
-func flattenLogs(ld plog.Logs) []FlatLog {
-	var flatLogs []FlatLog
+func flattenHTTPLogs(ld plog.Logs) []FlatLogHTTP {
+	var flatLogs []FlatLogHTTP
 
 	for i := range ld.ResourceLogs().Len() {
 		resourceLogs := ld.ResourceLogs().At(i)
@@ -52,13 +52,12 @@ func flattenLogs(ld plog.Logs) []FlatLog {
 				lr := scopeLogs.LogRecords().At(k)
 				k8sAttrs := getKubernetesAttributes(lr)
 
-				flatLogs = append(flatLogs, FlatLog{
-					LogRecordAttributes:            attributeToMap(lr.Attributes()),
+				flatLogs = append(flatLogs, FlatLogHTTP{
+					LogRecordAttributes:            attributeToMapHTTP(lr.Attributes()),
 					LogRecordBody:                  lr.Body().AsString(),
-					KubernetesAttributes:           attributeToMap(k8sAttrs),
+					KubernetesAttributes:           attributeToMapHTTP(k8sAttrs),
 					KubernetesLabelAttributes:      getKubernetesMaps("labels", k8sAttrs),
 					KubernetesAnnotationAttributes: getKubernetesMaps("annotations", k8sAttrs),
-					ResourceAttributes:             attributeToMap(resourceLogs.Resource().Attributes()),
 				})
 			}
 		}
@@ -67,8 +66,8 @@ func flattenLogs(ld plog.Logs) []FlatLog {
 	return flatLogs
 }
 
-// attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
-func attributeToMap(attrs pcommon.Map) map[string]string {
+// attributeToMapHTTP converts pdata.AttributeMap to a map using the string representation of the values.
+func attributeToMapHTTP(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
 
 	attrs.Range(func(k string, v pcommon.Value) bool {

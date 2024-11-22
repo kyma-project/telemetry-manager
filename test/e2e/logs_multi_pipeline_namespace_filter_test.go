@@ -99,7 +99,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backendIncludeNamespaceExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatHTTPLogs(ContainElement(
 					HaveNamespace(Equal(mock1Ns)),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -110,7 +110,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backendIncludeNamespaceExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(Not(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatHTTPLogs(Not(ContainElement(
 					HaveNamespace(Equal(mock2Ns)),
 				)))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -121,7 +121,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatHTTPLogs(ContainElement(
 					HaveNamespace(Equal(mock2Ns)),
 				)),
 				))
@@ -133,7 +133,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(Not(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatHTTPLogs(Not(ContainElement(
 					HaveNamespace(Equal(mock1Ns)),
 				)))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())

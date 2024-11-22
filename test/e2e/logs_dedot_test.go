@@ -80,7 +80,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatLogs(ContainElement(HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
+					HaveFlatHTTPLogs(ContainElement(HaveKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

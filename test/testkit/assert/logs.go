@@ -26,7 +26,7 @@ func LogsDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix str
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(
+		g.Expect(resp).To(HaveHTTPBody(HaveFlatHTTPLogs(ContainElement(
 			HavePodName(ContainSubstring(expectedPodNamePrefix))),
 		)))
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -39,7 +39,7 @@ func LogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExpor
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
+			HaveFlatOTLPLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
 		))
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

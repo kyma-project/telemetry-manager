@@ -88,7 +88,7 @@ Types user:string pass:string`
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(SatisfyAll(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatHTTPLogs(ContainElement(SatisfyAll(
 					HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
 					HaveLogRecordAttributes(HaveKeyWithValue("pass", "bar")),
 				)))))
