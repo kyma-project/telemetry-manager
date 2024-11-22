@@ -106,9 +106,9 @@ func TestReconcile(t *testing.T) {
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
-		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
+			// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -268,9 +268,9 @@ func TestReconcile(t *testing.T) {
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
-		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
+			// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -410,9 +410,9 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
 				pipelineValidatorWithStubs := &Validator{
-				// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-				// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-				// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
+					// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
+					// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -537,9 +537,9 @@ func TestReconcile(t *testing.T) {
 				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 				pipelineValidatorWithStubs := &Validator{
-				// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-				// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-				// 	SecretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr),
+					// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
+					// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					// 	SecretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr),
 				}
 
 				errToMsg := &conditions.ErrorToMessageConverter{}
@@ -600,9 +600,9 @@ func TestReconcile(t *testing.T) {
 		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
 
 		pipelineValidatorWithStubs := &Validator{
-		// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-		// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-		// 	SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+			// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
+			// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			// 	SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
 		}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -678,9 +678,9 @@ func TestReconcile(t *testing.T) {
 				gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 				pipelineValidatorWithStubs := &Validator{
-				// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-				// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-				// 	SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+					// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
+					// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+					// 	SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
 				}
 
 				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.probeGatewayErr)
