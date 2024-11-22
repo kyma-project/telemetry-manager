@@ -222,7 +222,51 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 	})
 }
 
-// TODO: Test MakeLogGatewayRBAC
+func TestMakeLogGatewayRBAC(t *testing.T) {
+	name := "test-gateway"
+	namespace := "test-namespace"
+
+	rbac := MakeLogGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace})
+
+	t.Run("should have a cluster role", func(t *testing.T) {
+		cr := rbac.clusterRole
+		expectedRules := []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		}
+
+		require.NotNil(t, cr)
+		require.Equal(t, name, cr.Name)
+		require.Equal(t, namespace, cr.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, cr.Labels)
+		require.Equal(t, expectedRules, cr.Rules)
+	})
+
+	t.Run("should have a cluster role binding", func(t *testing.T) {
+		crb := rbac.clusterRoleBinding
+		checkClusterRoleBinding(t, crb, name, namespace)
+	})
+
+	t.Run("should not have a role", func(t *testing.T) {
+		r := rbac.role
+		require.Nil(t, r)
+	})
+
+	t.Run("should not have a role binding", func(t *testing.T) {
+		rb := rbac.roleBinding
+		require.Nil(t, rb)
+	})
+}
 
 func checkClusterRoleBinding(t *testing.T, crb *rbacv1.ClusterRoleBinding, name, namespace string) {
 	require.NotNil(t, crb)
