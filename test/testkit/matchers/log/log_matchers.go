@@ -81,3 +81,10 @@ func HaveLogBody(matcher types.GomegaMatcher) types.GomegaMatcher {
 		return fl.LogRecordBody
 	}, matcher)
 }
+
+// HaveResourceAttributes extracts resource attributes from FlatLog and applies the matcher to them.
+func HaveResourceAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLog) map[string]string {
+		return fl.ResourceAttributes
+	}, matcher)
+}

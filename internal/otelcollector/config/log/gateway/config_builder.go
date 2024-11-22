@@ -24,8 +24,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 			Service:    config.DefaultService(make(config.Pipelines)),
 			Extensions: config.DefaultExtensions(),
 		},
-		Receivers: makeReceiversConfig(),
-		Exporters: make(Exporters),
+		Receivers:  makeReceiversConfig(),
+		Processors: makeProcessorsConfig(),
+		Exporters:  make(Exporters),
 	}
 
 	envVars := make(otlpexporter.EnvVars)
@@ -92,6 +93,12 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 
 	return config.Pipeline{
 		Receivers: []string{"otlp"},
+		Processors: []string{
+			"memory_limiter",
+			"k8sattributes",
+			"resource/insert-cluster-name",
+			"batch",
+		},
 		Exporters: exporterIDs,
 	}
 }

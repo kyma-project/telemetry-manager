@@ -17,6 +17,7 @@ type FlatLog struct {
 	KubernetesAttributes           map[string]string
 	KubernetesLabelAttributes      map[string]any
 	KubernetesAnnotationAttributes map[string]any
+	ResourceAttributes             map[string]string
 }
 
 func unmarshalLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
@@ -52,12 +53,12 @@ func flattenLogs(ld plog.Logs) []FlatLog {
 				k8sAttrs := getKubernetesAttributes(lr)
 
 				flatLogs = append(flatLogs, FlatLog{
-					// log record doesn't contain kubernetes attributes
 					LogRecordAttributes:            attributeToMap(lr.Attributes()),
 					LogRecordBody:                  lr.Body().AsString(),
 					KubernetesAttributes:           attributeToMap(k8sAttrs),
 					KubernetesLabelAttributes:      getKubernetesMaps("labels", k8sAttrs),
 					KubernetesAnnotationAttributes: getKubernetesMaps("annotations", k8sAttrs),
+					ResourceAttributes:             attributeToMap(resourceLogs.Resource().Attributes()),
 				})
 			}
 		}

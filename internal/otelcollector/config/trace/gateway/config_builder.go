@@ -93,7 +93,8 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 
 	return config.Pipeline{
 		Receivers: []string{"otlp"},
-		Processors: []string{"memory_limiter",
+		Processors: []string{
+			"memory_limiter",
 			"k8sattributes",
 			"filter/drop-noisy-spans",
 			"resource/insert-cluster-name",

@@ -39,7 +39,7 @@ func LogsFromNamespaceDelivered(proxyClient *apiserverproxy.Client, backendExpor
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatLogs(ContainElement(HaveNamespace(Equal(namespace)))),
+			HaveFlatLogs(ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)))),
 		))
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
