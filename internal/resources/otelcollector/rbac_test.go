@@ -222,6 +222,8 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 	})
 }
 
+// TODO: Test MakeLogGatewayRBAC
+
 func checkClusterRoleBinding(t *testing.T, crb *rbacv1.ClusterRoleBinding, name, namespace string) {
 	require.NotNil(t, crb)
 	require.Equal(t, name, crb.Name)

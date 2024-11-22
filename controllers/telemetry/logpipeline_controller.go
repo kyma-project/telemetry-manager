@@ -41,7 +41,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -209,12 +208,20 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		return nil, err
 	}
 
-	fbReconciler := logpipelinefluentbit.New(client, fbConfig, &workloadstatus.DaemonSetProber{Client: client}, flowHealthProber, istiostatus.NewChecker(discoveryClient), pipelineValidator, &conditions.ErrorToMessageConverter{})
+	fbReconciler := logpipelinefluentbit.New(
+		client,
+		fbConfig,
+		&workloadstatus.DaemonSetProber{Client: client},
+		flowHealthProber,
+		istiostatus.NewChecker(discoveryClient),
+		pipelineValidator,
+		&conditions.ErrorToMessageConverter{})
 
 	return fbReconciler, nil
 }
 
-func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.LogPipelineProber) (*logpipelineotel.Reconciler, error) {
+//nolint:unparam // An error could be returned after implementing the IstioStatusChecker
+func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, _ *prober.LogPipelineProber) (*logpipelineotel.Reconciler, error) {
 	otelConfig := logpipelineotel.Config{
 		LogGatewayName:     otelLogGatewayName,
 		TelemetryNamespace: config.TelemetryNamespace,
@@ -250,7 +257,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 			Namespace: config.TelemetryNamespace,
 		})
 
-	otelReconciler := otel.New(
+	otelReconciler := logpipelineotel.New(
 		client,
 		otelConfig,
 		&otelcollector.GatewayApplierDeleter{

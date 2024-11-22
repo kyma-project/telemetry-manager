@@ -52,10 +52,9 @@ type Reconciler struct {
 	config Config
 
 	// Dependencies
-	flowHealthProber      FlowHealthProber
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         commonstatus.DeploymentProber
+	gatewayProber         commonstatus.Prober
 	pipelineValidator     *Validator
 	errToMessageConverter commonstatus.ErrorToMessageConverter
 }
@@ -65,7 +64,7 @@ func New(
 	config Config,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber commonstatus.DeploymentProber,
+	gatewayProber commonstatus.Prober,
 	pipelineValidator *Validator,
 	errToMessageConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {

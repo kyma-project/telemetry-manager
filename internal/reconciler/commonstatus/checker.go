@@ -17,10 +17,6 @@ const (
 	SignalTypeLogs    = "logs"
 )
 
-type DeploymentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) error
-}
-
 type Prober interface {
 	IsReady(ctx context.Context, name types.NamespacedName) error
 }
