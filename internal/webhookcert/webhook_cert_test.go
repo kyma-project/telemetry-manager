@@ -167,6 +167,60 @@ var (
 					},
 				},
 			},
+			{
+				AdmissionReviewVersions: []string{"v1beta1", "v1"},
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
+						Port:      &servicePort,
+						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-tracepipeline"),
+					},
+				},
+				FailurePolicy:  &failurePolicy,
+				MatchPolicy:    &matchPolicy,
+				Name:           "mutating.v1alpha1.tracepipelines.telemetry.kyma-project.io",
+				SideEffects:    &sideEffects,
+				TimeoutSeconds: &timeout,
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: operations,
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   apiGroups,
+							APIVersions: apiVersions,
+							Scope:       &scope,
+							Resources:   []string{"tracepipelines"},
+						},
+					},
+				},
+			},
+			{
+				AdmissionReviewVersions: []string{"v1beta1", "v1"},
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
+						Port:      &servicePort,
+						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-logpipeline"),
+					},
+				},
+				FailurePolicy:  &failurePolicy,
+				MatchPolicy:    &matchPolicy,
+				Name:           "mutating.v1alpha1.logpipelines.telemetry.kyma-project.io",
+				SideEffects:    &sideEffects,
+				TimeoutSeconds: &timeout,
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: operations,
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   apiGroups,
+							APIVersions: apiVersions,
+							Scope:       &scope,
+							Resources:   []string{"logpipelines"},
+						},
+					},
+				},
+			},
 		},
 	}
 )
@@ -268,6 +322,14 @@ func TestUpdateWebhookConfig(t *testing.T) {
 	mutatingCertValid, err := chainChecker.checkRoot(context.Background(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, mutatingCertValid)
+
+	mutatingCertValid, err = chainChecker.checkRoot(context.Background(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.NoError(t, err)
+	require.True(t, mutatingCertValid)
+
+	mutatingCertValid, err = chainChecker.checkRoot(context.Background(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[2].ClientConfig.CABundle)
+	require.NoError(t, err)
+	require.True(t, mutatingCertValid)
 }
 
 func TestCreateSecret(t *testing.T) {
@@ -354,4 +416,8 @@ func TestReuseExistingCertificate(t *testing.T) {
 
 	require.Equal(t, newMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
 		updatedMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	require.Equal(t, newMutatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle,
+		updatedMutatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.Equal(t, newMutatingWebhookConfiguration.Webhooks[2].ClientConfig.CABundle,
+		updatedMutatingWebhookConfiguration.Webhooks[2].ClientConfig.CABundle)
 }
