@@ -1,4 +1,4 @@
-package validation
+package logpipeline
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ var (
 	ErrInvalidPipelineDefinition = errors.New("invalid log pipeline definition")
 )
 
-func ValidateSpec(lp *telemetryv1alpha1.LogPipeline) error {
+func validateSpec(lp *telemetryv1alpha1.LogPipeline) error {
 	if err := validateOutput(lp); err != nil {
 		return err
 	}

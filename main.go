@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -59,7 +58,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
-	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -160,7 +158,7 @@ func init() {
 // +kubebuilder:rbac:urls=/metrics,verbs=get
 // +kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
-// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;patch
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;update
 
 // +kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
@@ -319,10 +317,10 @@ func run() error {
 	}
 
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{
-		Handler: createLogPipelineValidator(mgr.GetClient()),
+		Handler: logpipelinewebhook.NewValidatingWebhookHandler(mgr.GetClient(), scheme),
 	})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
-		Handler: createLogParserValidator(mgr.GetClient()),
+		Handler: logparserwebhook.NewValidatingWebhookHandler(scheme),
 	})
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
@@ -506,26 +504,6 @@ func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
 
-func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
-	// TODO: Align max log pipeline enforcement with the method used in the TracePipeline/MetricPipeline controllers,
-	// replacing the current validating webhook approach.
-	const maxLogPipelines = 5
-
-	return logpipelinewebhook.NewValidatingWebhookHandler(
-		client,
-		validation.NewVariablesValidator(client),
-		validation.NewMaxPipelinesValidator(maxLogPipelines),
-		validation.NewFilesValidator(),
-		admission.NewDecoder(scheme),
-	)
-}
-
-func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
-	return logparserwebhook.NewValidatingWebhookHandler(
-		client,
-		admission.NewDecoder(scheme))
-}
-
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
 		Config: selfmonitor.Config{
@@ -554,7 +532,7 @@ func createWebhookConfig() telemetry.WebhookConfig {
 				Namespace: telemetryNamespace,
 			},
 			WebhookName: types.NamespacedName{
-				Name: "validation.webhook.telemetry.kyma-project.io",
+				Name: "telemetry-validating-webhook.kyma-project.io",
 			},
 		},
 	}

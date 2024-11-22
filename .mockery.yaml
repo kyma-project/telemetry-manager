@@ -5,6 +5,7 @@ outpkg: "mocks"
 dir: "{{.InterfaceDir}}/mocks/"
 mockname: "{{.InterfaceName | firstUpper}}"
 filename: "{{.InterfaceName | snakecase}}.go"
+issue-845-fix: True
 packages:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline:
     interfaces:
@@ -41,8 +42,3 @@ packages:
   github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober:
     interfaces:
       alertGetter:
-  github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation:
-    interfaces:
-      FilesValidator:
-      MaxPipelinesValidator:
-      VariablesValidator:

@@ -1,28 +1,12 @@
-package validation
+package logpipeline
 
 import (
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-type VariablesValidator interface {
-	Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error
-}
-
-type variablesValidator struct {
-	client client.Client
-}
-
-func NewVariablesValidator(client client.Client) VariablesValidator {
-	return &variablesValidator{
-		client: client,
-	}
-}
-
-func (v *variablesValidator) Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
+func validateVariables(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
 	if len(logPipeline.Spec.Variables) == 0 {
 		return nil
 	}

@@ -395,7 +395,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-By default, container and Pod metrics are collected.
+By default, metrics for all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet and Job) are collected.
 To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
 
 The following example collects only DaemonSet, Deployment, StatefulSet and Job metrics:
@@ -714,7 +714,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
 
-**Remedy**:
+**Solution**:
 
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
 2. Check if the backend is up and reachable.
@@ -729,7 +729,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
-**Remedy**:
+**Solution**:
 
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
 2. If backend is limiting the rate by refusing metrics, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
@@ -741,7 +741,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: Your SDK version is incompatible with the OTel Collector version.
 
-**Remedy**:
+**Solution**:
 
 1. Check which SDK version you are using for instrumentation.
 2. Investigate whether it is compatible with the OTel Collector version.
@@ -757,20 +757,21 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 <!-- markdown-link-check-disable-next-line -->
 **Cause 1**: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
 
-**Remedy 1**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
+**Solution 1**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
 
 - Configure the workload using “STRICT” mTLS mode (for example, by applying a corresponding PeerAuthentication).
 - Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 <!-- markdown-link-check-disable-next-line -->
 **Cause 2**: The Service definition enabling the scrape with Prometheus annotations does not reveal the application protocol to use in the port definition. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
 
-**Remedy 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
+**Solution 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
 
 **Cause 3**: A deny-all `NetworkPolicy` was created in the workload namespace, which prevents that the agent can scrape metrics from annotated workloads.
 
-**Remedy 3**: Create a separate `NetworkPolicy` to explicitly let the agent scrape your workload using the `telemetry.kyma-project.io/metric-scrape` label.
+**Solution 3**: Create a separate `NetworkPolicy` to explicitly let the agent scrape your workload using the `telemetry.kyma-project.io/metric-scrape` label.
 
 For example, see the following `NetworkPolicy` configuration:
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -798,7 +799,7 @@ spec:
 
 **Cause**: The backend export rate is too low compared to the gateway ingestion rate.
 
-**Remedy**:
+**Solution**:
 
 - Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
 
@@ -812,4 +813,4 @@ spec:
 
 **Cause**: Gateway cannot receive metrics at the given rate.
 
-**Remedy**: Manually scale out the gateway by increasing the number of replicas for the Metric gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Solution**: Manually scale out the gateway by increasing the number of replicas for the Metric gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).

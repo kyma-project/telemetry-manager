@@ -72,10 +72,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 			}, "1m", "10s").Should(Succeed())
 
 		})
-
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
 	})
 
 	Context("When a metricpipeline exists", Ordered, func() {
