@@ -66,7 +66,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-webhook.kyma-project.io
 webhooks:
-  - name: mutating.v1alpha1.metricpipelines.telemetry.kyma-project.io
+  - name: mutating-metricpipelines-v1alpha1.kyma-project.io
     clientConfig:
       service:
         name: telemetry-manager-webhook
@@ -93,7 +93,7 @@ webhooks:
         resources:
           - metricpipelines
         scope: '*'
-  - name: mutating.v1alpha1.tracepipelines.telemetry.kyma-project.io
+  - name: mutating-tracepipelines-v1alpha1.kyma-project.io
     clientConfig:
       service:
         name: telemetry-manager-webhook
@@ -120,7 +120,7 @@ webhooks:
         resources:
           - tracepipelines
         scope: '*'
-  - name: mutating.v1alpha1.logpipelines.telemetry.kyma-project.io
+  - name: mutating-logpipelines-v1alpha1.kyma-project.io
     clientConfig:
       service:
         name: telemetry-manager-webhook
