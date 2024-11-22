@@ -36,9 +36,6 @@ patches:
       version: v1
       kind: MutatingWebhookConfiguration
       name: mutating-webhook.kyma-project.io
-    options:
-      allowNameChange: false
-      alloKindChange: false
 
 resources:
 - crd
