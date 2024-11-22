@@ -77,6 +77,9 @@ webhooks:
       - v1beta1
       - v1
     sideEffects: None
+    failurePolicy: Fail
+    matchPolicy: Exact
+    timeoutSeconds: 15
     namespaceSelector: {}
     objectSelector: {}
     rules:
@@ -101,6 +104,9 @@ webhooks:
       - v1beta1
       - v1
     sideEffects: None
+    failurePolicy: Fail
+    matchPolicy: Exact
+    timeoutSeconds: 15
     namespaceSelector: {}
     objectSelector: {}
     rules:
@@ -125,6 +131,9 @@ webhooks:
       - v1beta1
       - v1
     sideEffects: None
+    failurePolicy: Fail
+    matchPolicy: Exact
+    timeoutSeconds: 15
     namespaceSelector: {}
     objectSelector: {}
     rules:
