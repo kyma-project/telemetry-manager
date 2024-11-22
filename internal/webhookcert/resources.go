@@ -25,7 +25,7 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 	}
 
 	if err := updateMutatingWebhookConfig(ctx, c, caBundle, config); err != nil {
-		return fmt.Errorf("failed to update mutating webhook configuration: %w", err)
+		return fmt.Errorf("failed to update mutating webhook with CA bundle: %w", err)
 	}
 
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
