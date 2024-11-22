@@ -9,7 +9,7 @@ require (
 	github.com/k3d-io/k3d/v5 v5.7.4
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
 	github.com/mikefarah/yq/v4 v4.44.5
-	github.com/onsi/ginkgo/v2 v2.21.0
+	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/vektra/mockery/v2 v2.48.0
 	github.com/vladopajic/go-test-coverage/v2 v2.11.0
 	golang.org/x/tools v0.27.0
