@@ -18,9 +18,14 @@ const (
 // applyWebhookConfigResources applies the following webhook configurations:
 // 1- Updates validating webhook configuration with the provided CA bundle.
 // 2- Updates LogPipeline CRD with conversion webhook configuration.
+// 3- Updates mutating webhook configuration with the provided CA bundle.
 func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
 	if err := updateValidatingWebhookConfig(ctx, c, caBundle, config); err != nil {
 		return fmt.Errorf("failed to update validating webhook with CA bundle: %w", err)
+	}
+
+	if err := updateMutatingWebhookConfig(ctx, c, caBundle, config); err != nil {
+		return fmt.Errorf("failed to update mutating webhook with CA bundle: %w", err)
 	}
 
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
@@ -33,12 +38,13 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 
 func updateValidatingWebhookConfig(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
 	var validatingWebhookConfig admissionregistrationv1.ValidatingWebhookConfiguration
-	if err := c.Get(ctx, config.WebhookName, &validatingWebhookConfig); err != nil {
+	if err := c.Get(ctx, config.ValidatingWebhookName, &validatingWebhookConfig); err != nil {
 		return fmt.Errorf("failed to get validating webhook configuration: %w", err)
 	}
 
-	validatingWebhookConfig.Webhooks[0].ClientConfig.CABundle = caBundle
-	validatingWebhookConfig.Webhooks[1].ClientConfig.CABundle = caBundle
+	for i := range len(validatingWebhookConfig.Webhooks) {
+		validatingWebhookConfig.Webhooks[i].ClientConfig.CABundle = caBundle
+	}
 
 	return c.Update(ctx, &validatingWebhookConfig)
 }
@@ -70,4 +76,17 @@ func updateLogPipelineCRDWithConversionWebhookConfig(ctx context.Context, c clie
 	logPipelineCRD.Spec.Conversion = &conversion
 
 	return c.Update(ctx, &logPipelineCRD)
+}
+
+func updateMutatingWebhookConfig(ctx context.Context, c client.Client, caBundle []byte, config Config) error {
+	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
+	if err := c.Get(ctx, config.MutatingWebhookName, &mutatingWebhook); err != nil {
+		return fmt.Errorf("failed to get mutating webhook: %w", err)
+	}
+
+	for i := range len(mutatingWebhook.Webhooks) {
+		mutatingWebhook.Webhooks[i].ClientConfig.CABundle = caBundle
+	}
+
+	return c.Update(ctx, &mutatingWebhook)
 }

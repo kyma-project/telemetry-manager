@@ -1,4 +1,4 @@
-package logparser
+package v1alpha1
 
 import (
 	"fmt"
