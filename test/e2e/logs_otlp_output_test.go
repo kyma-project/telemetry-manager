@@ -20,6 +20,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -35,13 +36,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(suite.IsOperational()))
+		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsOperational()))
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
+		
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
-
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithOTLPOutput(
@@ -55,8 +56,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
 		logPipeline := pipelineBuilder.Build()
-		objs = append(objs, &logPipeline)
 
+		objs = append(objs,
+			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeLogs).K8sObject(),
+			&logPipeline,
+		)
 		return objs
 	}
 
@@ -88,7 +92,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		})
 
 		It("Should have a running pipeline", Label(suite.LabelOperational), func() {
-			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineOtelHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen logs", Label(suite.LabelOperational), func() {
