@@ -28,14 +28,14 @@ var (
 		Name:      "telemetry-webhook-cert",
 		Namespace: systemNamespace,
 	}
-	nameValidatingWebhook = "telemetry-validating-webhook.kyma-project.io"
-	validatingWebhookName = types.NamespacedName{
-		Name: nameValidatingWebhook,
+	validatingWebhookName           = "telemetry-validating-webhook.kyma-project.io"
+	validatingWebhookNamespacedName = types.NamespacedName{
+		Name: validatingWebhookName,
 	}
 
-	nameMutatingWebhook = "telemetry-mutating-webhook.kyma-project.io"
-	mutatingWebhookName = types.NamespacedName{
-		Name: nameMutatingWebhook,
+	mutatingWebhookName           = "telemetry-mutating-webhook.kyma-project.io"
+	mutatingWebhookNamespacedName = types.NamespacedName{
+		Name: mutatingWebhookName,
 	}
 
 	logPipelinesCRD = apiextensionsv1.CustomResourceDefinition{
@@ -73,7 +73,7 @@ var (
 	timeout                               = int32(15)
 	initialValidatingWebhookConfiguration = admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   nameValidatingWebhook,
+			Name:   validatingWebhookName,
 			Labels: labels,
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
@@ -136,7 +136,7 @@ var (
 
 	mutatingWebhookConfiguration = admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   nameMutatingWebhook,
+			Name:   mutatingWebhookName,
 			Labels: labels,
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
@@ -188,8 +188,8 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: validatingWebhookName,
-		MutatingWebhookName:   mutatingWebhookName,
+		ValidatingWebhookName: validatingWebhookNamespacedName,
+		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -236,8 +236,8 @@ func TestUpdateWebhookConfig(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: validatingWebhookName,
-		MutatingWebhookName:   mutatingWebhookName,
+		ValidatingWebhookName: validatingWebhookNamespacedName,
+		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -288,8 +288,8 @@ func TestCreateSecret(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: validatingWebhookName,
-		MutatingWebhookName:   mutatingWebhookName,
+		ValidatingWebhookName: validatingWebhookNamespacedName,
+		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -321,8 +321,8 @@ func TestReuseExistingCertificate(t *testing.T) {
 		CertDir:               certDir,
 		ServiceName:           webhookService,
 		CASecretName:          caBundleSecret,
-		ValidatingWebhookName: validatingWebhookName,
-		MutatingWebhookName:   mutatingWebhookName,
+		ValidatingWebhookName: validatingWebhookNamespacedName,
+		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)

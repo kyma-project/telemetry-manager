@@ -25,7 +25,7 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 	}
 
 	if err := updateMutatingWebhookConfig(ctx, c, caBundle, config); err != nil {
-		return fmt.Errorf("failed to patch mutating webhook configuration: %w", err)
+		return fmt.Errorf("failed to update mutating webhook configuration: %w", err)
 	}
 
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
@@ -42,8 +42,9 @@ func updateValidatingWebhookConfig(ctx context.Context, c client.Client, caBundl
 		return fmt.Errorf("failed to get validating webhook configuration: %w", err)
 	}
 
-	validatingWebhookConfig.Webhooks[0].ClientConfig.CABundle = caBundle
-	validatingWebhookConfig.Webhooks[1].ClientConfig.CABundle = caBundle
+	for i := range len(validatingWebhookConfig.Webhooks) {
+		validatingWebhookConfig.Webhooks[i].ClientConfig.CABundle = caBundle
+	}
 
 	return c.Update(ctx, &validatingWebhookConfig)
 }
