@@ -21,7 +21,7 @@ OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.114.0-
 TELEMETRY_GEN_IMAGE="ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.114.0"
 LOG_SIZE=2000
 LOG_RATE=1000
-PROMAPI="http://localhost:9090/api/v1/query"
+PROMAPI="n/a"
 
 function help() {
     echo "Usage: $0 -m <max_pipeline> -b <backpressure_test> -n <test_name> -t <test_target> -d <test_duration> -r <log_rate> -s <log_size>"
@@ -83,6 +83,10 @@ function setup() {
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update
     helm upgrade --install -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE" prometheus-community/kube-prometheus-stack -f hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
+
+    DOMAIN = $(kubectl -n kube-system get cm shoot-info -ojsonpath={.data.domain})
+    sed -e "s|DOMAIN|$DOMAIN|g" hack/load-tests/prometheus-setup.yaml | kubectl apply -f -
+    PROMAPI="http://prometheus.$DOMAIN/api/v1/query"
 
     case "$TEST_TARGET" in
         traces) setup_trace ;;
@@ -217,10 +221,7 @@ function wait_for_selfmonitor_resources() {
 }
 
 function cleanup() {
-    kubectl -n "$PROMETHEUS_NAMESPACE" port-forward "$(kubectl -n "$PROMETHEUS_NAMESPACE" get service -l app=kube-prometheus-stack-prometheus -oname)" 9090 &
-    sleep 3
-
-    echo -e "Test results collecting"
+    echo -e "Collecting test results"
     case "$TEST_TARGET" in
         traces) get_result_and_cleanup_trace ;;
         metrics) get_result_and_cleanup_metric ;;
@@ -362,7 +363,7 @@ function get_result_and_cleanup_log_otel() {
 
 function get_result_and_cleanup_fluentbit() {
   RESULT_TYPE="log"
-  PROMAPI="http://localhost:9090/api/v1/query"
+
   QUERY_RECEIVED='query=round(sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])) / 1024)'
   QUERY_EXPORTED='query=round(sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])) / 1024)'
   QUERY_QUEUE='query=round(sum(avg_over_time(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[20m])) / 1024)'
@@ -389,7 +390,6 @@ function get_result_and_cleanup_fluentbit() {
 }
 
 function get_result_and_cleanup_selfmonitor() {
-    PROMAPI="http://localhost:9090/api/v1/query"
     QUERY_SCRAPESAMPLES='query=round(sum(sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor-metrics"}[20m]) / 1200))'
     QUERY_SERIESCREATED='query=round(sum(max_over_time(prometheus_tsdb_head_series{service="telemetry-self-monitor-metrics"}[20m])))'
     QUERY_WALSTORAGESIZE='query=round(sum(max_over_time(prometheus_tsdb_wal_storage_size_bytes{service="telemetry-self-monitor-metrics"}[20m])))'

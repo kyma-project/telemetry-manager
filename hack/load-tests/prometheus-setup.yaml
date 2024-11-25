@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: prometheus
+spec:
+  gateways:
+  - kyma-system/kyma-gateway
+  hosts:
+  - prometheus.DOMAIN
+  http:
+  - route:
+    - destination:
+        host: prometheus-kube-prometheus-prometheus.prometheus.svc.cluster.local
+        port:
+          number: 8080
