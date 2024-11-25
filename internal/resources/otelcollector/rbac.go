@@ -1,12 +1,9 @@
 package otelcollector
 
 import (
-	"fmt"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sort"
-	"strings"
 
 	"github.com/kyma-project/telemetry-manager/internal/labels"
 )
@@ -43,8 +40,6 @@ func WithClusterRole(options ...ClusterRoleOption) RBACOption {
 		for _, o := range options {
 			o(clusterRole)
 		}
-
-		clusterRole.Rules = NormalizePolicyRules(clusterRole.Rules)
 
 		r.clusterRole = clusterRole
 	}
@@ -253,172 +248,4 @@ func WithKymaStatsRules() ClusterRoleOption {
 	return func(cr *rbacv1.ClusterRole) {
 		cr.Rules = append(cr.Rules, kymaStatsRules...)
 	}
-}
-
-type Rule struct {
-	Groups        []string
-	Resources     []string
-	ResourceNames []string
-	Verbs         []string
-	URLs          []string
-}
-
-type ruleKey struct {
-	Groups        string
-	Resources     string
-	ResourceNames string
-	URLs          string
-}
-
-func (key ruleKey) String() string {
-	return fmt.Sprintf("%s + %s + %s + %s", key.Groups, key.Resources, key.ResourceNames, key.URLs)
-}
-
-// ruleKeys implements sort.Interface
-type ruleKeys []ruleKey
-
-func (keys ruleKeys) Len() int           { return len(keys) }
-func (keys ruleKeys) Swap(i, j int)      { keys[i], keys[j] = keys[j], keys[i] }
-func (keys ruleKeys) Less(i, j int) bool { return keys[i].String() < keys[j].String() }
-
-func (r *Rule) key() ruleKey {
-	r.normalize()
-	return ruleKey{
-		Groups:        strings.Join(r.Groups, "&"),
-		Resources:     strings.Join(r.Resources, "&"),
-		ResourceNames: strings.Join(r.ResourceNames, "&"),
-		URLs:          strings.Join(r.URLs, "&"),
-	}
-}
-
-func (r *Rule) keyWithGroupResourceNamesURLsVerbs() string {
-	key := r.key()
-	verbs := strings.Join(r.Verbs, "&")
-	return fmt.Sprintf("%s + %s + %s + %s", key.Groups, key.ResourceNames, key.URLs, verbs)
-}
-
-func (r *Rule) keyWithResourcesResourceNamesURLsVerbs() string {
-	key := r.key()
-	verbs := strings.Join(r.Verbs, "&")
-	return fmt.Sprintf("%s + %s + %s + %s", key.Resources, key.ResourceNames, key.URLs, verbs)
-}
-
-func (r *Rule) keyWitGroupResourcesResourceNamesVerbs() string {
-	key := r.key()
-	verbs := strings.Join(r.Verbs, "&")
-	return fmt.Sprintf("%s + %s + %s + %s", key.Groups, key.Resources, key.ResourceNames, verbs)
-}
-
-func (r *Rule) normalize() {
-	r.Groups = removeDupAndSort(r.Groups)
-	r.Resources = removeDupAndSort(r.Resources)
-	r.ResourceNames = removeDupAndSort(r.ResourceNames)
-	r.Verbs = removeDupAndSort(r.Verbs)
-	r.URLs = removeDupAndSort(r.URLs)
-}
-
-func removeDupAndSort(strs []string) []string {
-	set := make(map[string]bool)
-	for _, str := range strs {
-		if _, ok := set[str]; !ok {
-			set[str] = true
-		}
-	}
-	var result []string
-	for str := range set {
-		result = append(result, str)
-	}
-	sort.Strings(result)
-	return result
-}
-
-func policyRuleToRule(p rbacv1.PolicyRule) *Rule {
-	return &Rule{
-		Groups:        p.APIGroups,
-		Resources:     p.Resources,
-		ResourceNames: p.ResourceNames,
-		Verbs:         p.Verbs,
-		URLs:          p.NonResourceURLs,
-	}
-}
-
-func (r *Rule) ToPolicyRule() rbacv1.PolicyRule {
-	return rbacv1.PolicyRule{
-		APIGroups:       r.Groups,
-		Resources:       r.Resources,
-		ResourceNames:   r.ResourceNames,
-		Verbs:           r.Verbs,
-		NonResourceURLs: r.URLs,
-	}
-}
-
-func NormalizePolicyRules(rules []rbacv1.PolicyRule) []rbacv1.PolicyRule {
-	// Convert PolicyRules to internal Rules
-	var internalRules []*Rule
-	for _, rule := range rules {
-		internalRules = append(internalRules, policyRuleToRule(rule))
-	}
-
-	ruleMap := make(map[ruleKey]*Rule)
-	// First pass: merge exact matches
-	for _, rule := range internalRules {
-		key := rule.key()
-		if _, ok := ruleMap[key]; !ok {
-			ruleMap[key] = rule
-			continue
-		}
-		existing := ruleMap[key]
-		existing.Verbs = removeDupAndSort(append(existing.Verbs, rule.Verbs...))
-	}
-
-	// Deduplicate resources
-	ruleMapWithoutResources := make(map[string][]*Rule)
-	for _, rule := range ruleMap {
-		key := rule.keyWithGroupResourceNamesURLsVerbs()
-		ruleMapWithoutResources[key] = append(ruleMapWithoutResources[key], rule)
-	}
-
-	ruleMap = make(map[ruleKey]*Rule)
-	for _, rules := range ruleMapWithoutResources {
-		rule := rules[0]
-		for _, mergeRule := range rules[1:] {
-			rule.Resources = append(rule.Resources, mergeRule.Resources...)
-		}
-		rule.normalize()
-		key := rule.key()
-		ruleMap[key] = rule
-	}
-
-	// Deduplicate groups
-	ruleMapWithoutGroup := make(map[string][]*Rule)
-	for _, rule := range ruleMap {
-		key := rule.keyWithResourcesResourceNamesURLsVerbs()
-		ruleMapWithoutGroup[key] = append(ruleMapWithoutGroup[key], rule)
-	}
-
-	ruleMap = make(map[ruleKey]*Rule)
-	for _, rules := range ruleMapWithoutGroup {
-		rule := rules[0]
-		for _, mergeRule := range rules[1:] {
-			rule.Groups = append(rule.Groups, mergeRule.Groups...)
-		}
-		rule.normalize()
-		key := rule.key()
-		ruleMap[key] = rule
-	}
-
-	// Get all keys and sort them
-	var keys []ruleKey
-	for key := range ruleMap {
-		keys = append(keys, key)
-	}
-	sort.Sort(ruleKeys(keys))
-
-	// Build result in sorted order
-	var result []rbacv1.PolicyRule
-	for _, key := range keys {
-		result = append(result, ruleMap[key].ToPolicyRule())
-	}
-
-	return result
 }
