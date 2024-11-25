@@ -51,7 +51,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
               weight: 100
       containers:
-        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.114.0
+        - image: TELEMETRY_GEN_IMAGE
           args:
             - logs
             - --severity-number

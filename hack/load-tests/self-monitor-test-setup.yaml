@@ -195,7 +195,7 @@ metadata:
   name: telemetry-receiver
   namespace: self-monitor-load-test
   labels:
-    app: telemetry-receiver
+    app.kubernetes.io/name: telemetry-receiver
 data:
   config.yaml: |
     receivers:
@@ -247,18 +247,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: docker-receiver
+    app.kubernetes.io/name: docker-receiver
   name: telemetry-receiver
   namespace: self-monitor-load-test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: telemetry-receiver
+      app.kubernetes.io/name: telemetry-receiver
   template:
     metadata:
       labels:
-        app: telemetry-receiver
+        app.kubernetes.io/name: telemetry-receiver
         sidecar.istio.io/inject: "true"
     spec:
       volumes:
@@ -306,7 +306,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: telemetry-receiver
+    app.kubernetes.io/name: telemetry-receiver
   name: telemetry-receiver
   namespace: self-monitor-load-test
 spec:
@@ -324,7 +324,7 @@ spec:
       protocol: TCP
       targetPort: 4318
   selector:
-    app: telemetry-receiver
+    app.kubernetes.io/name: telemetry-receiver
 
 ---
 
@@ -332,18 +332,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: metric-load-generator
+    app.kubernetes.io/name: metric-load-generator
   name: metric-load-generator
   namespace: self-monitor-load-test
 spec:
   replicas: 10
   selector:
     matchLabels:
-      app: metric-load-generator
+      app.kubernetes.io/name: metric-load-generator
   template:
     metadata:
       labels:
-        app: metric-load-generator
+        app.kubernetes.io/name: metric-load-generator
         sidecar.istio.io/inject: "true"
     spec:
       affinity:
@@ -359,7 +359,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
               weight: 100
       containers:
-        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.114.0
+        - image: TELEMETRY_GEN_IMAGE
           args:
             - metrics
             - --otlp-insecure
@@ -413,11 +413,11 @@ spec:
   replicas: 10
   selector:
     matchLabels:
-      app: metric-agent-load-generator
+      app.kubernetes.io/name: metric-agent-load-generator
   template:
     metadata:
       labels:
-        app: metric-agent-load-generator
+        app.kubernetes.io/name: metric-agent-load-generator
         sidecar.istio.io/inject: "true"
       annotations:
         prometheus.io/path: /metrics
@@ -448,7 +448,6 @@ spec:
           resources:
             limits:
               memory: "256Mi"
-              cpu: "200m"
           ports:
             - containerPort: 8080
               protocol: TCP
@@ -460,18 +459,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: trace-load-generator
+    app.kubernetes.io/name: trace-load-generator
   name: trace-load-generator
   namespace: self-monitor-load-test
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: trace-load-generator
+      app.kubernetes.io/name: trace-load-generator
   template:
     metadata:
       labels:
-        app: trace-load-generator
+        app.kubernetes.io/name: trace-load-generator
         sidecar.istio.io/inject: "true"
     spec:
       affinity:
@@ -487,7 +486,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
               weight: 100
       containers:
-        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.114.0
+        - image: TELEMETRY_GEN_IMAGE
           args:
             - traces
             - --otlp-insecure

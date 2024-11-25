@@ -18,6 +18,7 @@ TEST_TARGET="traces"
 TEST_NAME="No Name"
 TEST_DURATION=1200
 OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.114.0-main"
+TELEMETRY_GEN_IMAGE="ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.114.0"
 LOG_SIZE=2000
 LOG_RATE=1000
 PROMAPI="http://localhost:9090/api/v1/query"
@@ -64,6 +65,7 @@ function print_config() {
     echo "  Test Target: $TEST_TARGET"
     echo "  Test Duration: $TEST_DURATION"
     echo "  OTEL Image: $OTEL_IMAGE"
+    echo "  Telemetry Gen Image: $TELEMETRY_GEN_IMAGE"
     echo "  Max Pipeline: $MAX_PIPELINE"
     echo "  Backpressure Test: $BACKPRESSURE_TEST"
     echo "  Log Rate: $LOG_RATE"
@@ -98,7 +100,7 @@ function setup_trace() {
     fi
 
     # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/trace-load-test-setup.yaml | kubectl apply -f -
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/trace-load-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
       kubectl apply -f hack/load-tests/trace-backpressure-config.yaml
@@ -111,7 +113,7 @@ function setup_metric() {
     fi
 
     # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-load-test-setup.yaml | kubectl apply -f -
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-load-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
         kubectl apply -f hack/load-tests/metric-backpressure-config.yaml
@@ -120,7 +122,7 @@ function setup_metric() {
 
 function setup_metric_agent() {
     # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-agent-test-setup.yaml | kubectl apply -f -
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-agent-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
       kubectl apply -f hack/load-tests/metric-agent-backpressure-config.yaml
@@ -133,7 +135,7 @@ function setup_fluentbit() {
     fi
 
     # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/log-fluentbit-test-setup.yaml | kubectl apply -f -
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/log-fluentbit-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
       kubectl apply -f hack/load-tests/log-fluentbit-backpressure-config.yaml
@@ -154,7 +156,7 @@ EOF
 
 function setup_selfmonitor() {
     # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/self-monitor-test-setup.yaml | kubectl apply -f -
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/self-monitor-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 }
 
 function wait_for_resources() {
