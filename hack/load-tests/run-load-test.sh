@@ -21,7 +21,8 @@ OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.114.0-
 TELEMETRY_GEN_IMAGE="ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.114.0"
 LOG_SIZE=2000
 LOG_RATE=1000
-PROMAPI="n/a"
+PROMAPI=""
+DOMAIN=""
 
 function help() {
     echo "Usage: $0 -m <max_pipeline> -b <backpressure_test> -n <test_name> -t <test_target> -d <test_duration> -r <log_rate> -s <log_size>"
@@ -84,9 +85,14 @@ function setup() {
     helm repo update
     helm upgrade --install -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE" prometheus-community/kube-prometheus-stack -f hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
 
-    DOMAIN = $(kubectl -n kube-system get cm shoot-info -ojsonpath={.data.domain})
+    DOMAIN=$(kubectl -n kube-system get cm shoot-info --ignore-not-found=true -ojsonpath={.data.domain})
     sed -e "s|DOMAIN|$DOMAIN|g" hack/load-tests/prometheus-setup.yaml | kubectl apply -f -
-    PROMAPI="http://prometheus.$DOMAIN/api/v1/query"
+
+    if [[ -n "$DOMAIN" ]]; then
+     PROMAPI="http://prometheus.$DOMAIN/api/v1/query"
+    else
+     PROMAPI="http://localhost:8080/api/v1/query"
+    fi
 
     case "$TEST_TARGET" in
         traces) setup_trace ;;
@@ -222,6 +228,12 @@ function wait_for_selfmonitor_resources() {
 }
 
 function cleanup() {
+    
+    if [[ -z "$DOMAIN" ]]; then
+     kubectl -n "$PROMETHEUS_NAMESPACE" port-forward "$(kubectl -n "$PROMETHEUS_NAMESPACE" get service -l app=kube-prometheus-stack-prometheus -oname)" 9090 &
+     sleep 3
+    fi
+
     echo -e "Collecting test results"
     case "$TEST_TARGET" in
         traces) get_result_and_cleanup_trace ;;
