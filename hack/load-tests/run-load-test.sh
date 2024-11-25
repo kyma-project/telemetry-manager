@@ -238,7 +238,7 @@ function cleanup() {
     fi
 
     echo "Check connectivity to prometheus"
-    curl $PROMAPI/metrics
+    curl $PROMAPI
 
     echo -e "Collecting test results"
     case "$TEST_TARGET" in
