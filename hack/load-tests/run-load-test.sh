@@ -165,6 +165,7 @@ function setup_selfmonitor() {
 
 function wait_for_resources() {
   kubectl -n "$PROMETHEUS_NAMESPACE" rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus
+  echo "Using prometheus with domain $PROMAPI"
 
   case "$TEST_TARGET" in
     traces) wait_for_trace_resources ;;
