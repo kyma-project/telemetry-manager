@@ -87,12 +87,14 @@ function setup() {
     helm upgrade --install -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE" prometheus-community/kube-prometheus-stack -f hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
 
     DOMAIN=$(kubectl -n kube-system get cm shoot-info --ignore-not-found=true -ojsonpath={.data.domain})
-    sed -e "s|DOMAIN|$DOMAIN|g" hack/load-tests/prometheus-setup.yaml | kubectl apply -f -
 
     if [[ -n "$DOMAIN" ]]; then
-     PROMAPI="http://prometheus.$DOMAIN/api/v1/query"
+      kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/api-gateway-manager.yaml
+      kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/apigateway-default-cr.yaml
+      sed -e "s|DOMAIN|$DOMAIN|g" hack/load-tests/prometheus-setup.yaml | kubectl apply -f -
+      PROMAPI="http://prometheus.$DOMAIN/api/v1/query"
     else
-     PROMAPI="http://localhost:8080/api/v1/query"
+      PROMAPI="http://localhost:8080/api/v1/query"
     fi
 
     case "$TEST_TARGET" in
@@ -236,7 +238,7 @@ function cleanup() {
     fi
 
     echo "Check connectivity to prometheus"
-    curl $PROMAPI
+    curl $PROMAPI/metrics
 
     echo -e "Collecting test results"
     case "$TEST_TARGET" in
