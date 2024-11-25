@@ -23,6 +23,7 @@ LOG_SIZE=2000
 LOG_RATE=1000
 PROMAPI=""
 DOMAIN=""
+OVERLAY=""
 
 function help() {
     echo "Usage: $0 -m <max_pipeline> -b <backpressure_test> -n <test_name> -t <test_target> -d <test_duration> -r <log_rate> -s <log_size>"
@@ -234,6 +235,9 @@ function cleanup() {
      sleep 3
     fi
 
+    echo "Check connectivity to prometheus"
+    curl $PROMAPI
+
     echo -e "Collecting test results"
     case "$TEST_TARGET" in
         traces) get_result_and_cleanup_trace ;;
@@ -243,6 +247,8 @@ function cleanup() {
         logs-otel) get_result_and_cleanup_log_otel ;;
         self-monitor) get_result_and_cleanup_selfmonitor ;;
     esac
+
+    echo -e "Data collected, writing reports"
 
     # export all variables starting with RESULT_
     export ${!RESULT_*}
@@ -286,7 +292,10 @@ function get_result_and_cleanup_trace() {
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
   RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-  kill %1
+  if [[ -z "$DOMAIN" ]]; then
+    echo "Killing port-forward"
+    kill %1
+  fi
 
   if [[ "$MAX_PIPELINE" == "true" ]]; then
     kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
@@ -313,7 +322,10 @@ function get_result_and_cleanup_metric() {
     RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-    kill %1
+    if [[ -z "$DOMAIN" ]]; then
+      echo "Killing port-forward"
+      kill %1
+    fi
 
     if [[ "$MAX_PIPELINE" == "true" ]]; then
       kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
@@ -342,7 +354,11 @@ function get_result_and_cleanup_metricagent() {
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
     RESULT_RESTARTS_AGENT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-    kill %1
+    if [[ -z "$DOMAIN" ]]; then
+      echo "Killing port-forward"
+      kill %1
+    fi
+
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
       kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
     fi
@@ -365,7 +381,10 @@ function get_result_and_cleanup_log_otel() {
   RESULT_RESTARTS_GATEWAY=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
   RESULT_RESTARTS_GENERATOR=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-load-generator -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-  kill %1
+  if [[ -z "$DOMAIN" ]]; then
+    echo "Killing port-forward"
+    kill %1
+  fi
 
   if [[ "$OVERLAY" == "batch" ]]; then
     kubectl delete -k hack/load-tests/otel-logs/batch
@@ -390,7 +409,10 @@ function get_result_and_cleanup_fluentbit() {
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
   RESULT_RESTARTS_FLUENTBIT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-  kill %1
+  if [[ -z "$DOMAIN" ]]; then
+    echo "Killing port-forward"
+    kill %1
+  fi
 
   if [[ "$MAX_PIPELINE" == "true" ]]; then
     kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
@@ -418,11 +440,13 @@ function get_result_and_cleanup_selfmonitor() {
     RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[0].value[1]')
     RESULT_RESTARTS_SELFMONITOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-self-monitor -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-    kill %1
+    if [[ -z "$DOMAIN" ]]; then
+      echo "Killing port-forward"
+      kill %1
+    fi
+
     kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
 }
-
-
 
 # cleanup on exit. cleanup also collects the results and writes them to a file
 trap cleanup EXIT
