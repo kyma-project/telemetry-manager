@@ -74,11 +74,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running log gateway deployment", Label(suite.LabelOperational), func() {
+		It("Should have a running log gateway deployment", func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.LogGatewayName)
 		})
 
-		It("Should have 2 log gateway replicas", Label(suite.LabelOperational), func() {
+		It("Should have 2 log gateway replicas", func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.LogGatewayName, &deployment)
@@ -87,24 +87,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
-		It("Should have a log backend running", Label(suite.LabelOperational), func() {
+		It("Should have a log backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should have a running pipeline", Label(suite.LabelOperational), func() {
+		It("Should have a running pipeline", func() {
 			assert.LogPipelineOtelHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen logs", Label(suite.LabelOperational), func() {
+		It("Should deliver telemetrygen logs", func() {
 			assert.LogsFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
 		})
 
-		It("Should be able to get log gateway metrics endpoint", Label(suite.LabelOperational), func() {
+		It("Should be able to get log gateway metrics endpoint", func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.LogGatewayMetricsService.Namespace, kitkyma.LogGatewayMetricsService.Name, "metrics", ports.Metrics)
 			assert.EmitsOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
-		It("Should have a working network policy", Label(suite.LabelOperational), func() {
+		It("Should have a working network policy", func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			Expect(k8sClient.Get(ctx, kitkyma.LogGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
 
