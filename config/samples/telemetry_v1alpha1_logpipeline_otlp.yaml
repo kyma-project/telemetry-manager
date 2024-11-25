@@ -122,4 +122,5 @@ spec:
     otlp:
       endpoint:
         value: http://log-sink.log-sink-otlp:4317
+      protocol: grpc
 
