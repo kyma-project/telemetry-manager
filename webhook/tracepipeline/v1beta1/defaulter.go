@@ -18,7 +18,7 @@ type TracePipelineDefaulter struct {
 	DefaultOTLPOutputProtocol telemetryv1beta1.OTLPProtocol
 }
 
-func SetupTracePipelineWebhookWithManager(mgr ctrl.Manager) error {
+func SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1beta1.TracePipeline{}).
 		WithDefaulter(&TracePipelineDefaulter{
 			DefaultOTLPOutputProtocol: telemetryv1beta1.OTLPProtocolGRPC,

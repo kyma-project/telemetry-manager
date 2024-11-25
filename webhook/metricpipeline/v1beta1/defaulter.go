@@ -31,7 +31,7 @@ type RuntimeInputResourceDefaults struct {
 	Job         bool
 }
 
-func SetupMetricPipelineWebhookWithManager(mgr ctrl.Manager) error {
+func SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{}).
 		WithDefaulter(&MetricPipelineDefaulter{
 			ExcludeNamespaces: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},

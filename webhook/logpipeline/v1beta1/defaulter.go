@@ -20,7 +20,7 @@ type LogPipelineDefaulter struct {
 	DefaultOTLPOutputProtocol    telemetryv1beta1.OTLPProtocol
 }
 
-func SetupLogPipelineWebhookWithManager(mgr ctrl.Manager) error {
+func SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1beta1.LogPipeline{}).
 		WithDefaulter(&LogPipelineDefaulter{
 			RuntimeInputEnabled:          true,
