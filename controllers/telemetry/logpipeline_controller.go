@@ -54,13 +54,17 @@ import (
 
 const (
 	// FluentBit
-	fbSectionsConfigMapName   = "telemetry-fluent-bit-sections"
-	fbFilesConfigMapName      = "telemetry-fluent-bit-files"
-	fbLuaConfigMapName        = "telemetry-fluent-bit-luascripts"
-	fbParsersConfigMapName    = "telemetry-fluent-bit-parsers"
-	fbEnvConfigSecretName     = "telemetry-fluent-bit-env"
-	fbTLSFileConfigSecretName = "telemetry-fluent-bit-output-tls-config"
-	fbDaemonSetName           = "telemetry-fluent-bit"
+	fbSectionsConfigMapName    = "telemetry-fluent-bit-sections"
+	fbFilesConfigMapName       = "telemetry-fluent-bit-files"
+	fbLuaConfigMapName         = "telemetry-fluent-bit-luascripts"
+	fbParsersConfigMapName     = "telemetry-fluent-bit-parsers"
+	fbEnvConfigSecretName      = "telemetry-fluent-bit-env"
+	fbTLSFileConfigSecretName  = "telemetry-fluent-bit-output-tls-config"
+	fbDaemonSetName            = "telemetry-fluent-bit"
+	fbDefaultInputTag          = "tele"
+	fbDefaultMemoryBufferLimit = "10M"
+	fbDefaultStorageType       = "filesystem"
+	fbDefaultFsBufferLimit     = "1G"
 
 	// OTel
 	otelLogGatewayName = "telemetry-log-gateway"
@@ -181,10 +185,10 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		TLSFileConfigSecret: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: config.TelemetryNamespace},
 		DaemonSet:           types.NamespacedName{Name: fbDaemonSetName, Namespace: config.TelemetryNamespace},
 		PipelineDefaults: builder.PipelineDefaults{
-			InputTag:          "tele",
-			MemoryBufferLimit: "10M",
-			StorageType:       "filesystem",
-			FsBufferLimit:     "1G",
+			InputTag:          fbDefaultInputTag,
+			MemoryBufferLimit: fbDefaultMemoryBufferLimit,
+			StorageType:       fbDefaultStorageType,
+			FsBufferLimit:     fbDefaultFsBufferLimit,
 		},
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:    config.FluentBitImage,
