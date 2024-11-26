@@ -91,8 +91,8 @@ function setup() {
     if [[ -n "$DOMAIN" ]]; then
       kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/api-gateway-manager.yaml
       kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/apigateway-default-cr.yaml
-      sed -e "s|DOMAIN|$DOMAIN|g" hack/load-tests/prometheus-setup.yaml | kubectl apply -f -
-      PROMAPI="http://prometheus.$DOMAIN/api/v1/query"
+      sed -e "s|DOMAIN|$DOMAIN|g" hack/load-tests/prometheus-setup.yaml | sed -e "s|PROMETHEUS_NAMESPACE|$PROMETHEUS_NAMESPACE|g" | kubectl apply -f -
+      PROMAPI="https://prometheus.$DOMAIN/api/v1/query"
     else
       PROMAPI="http://localhost:8080/api/v1/query"
     fi
@@ -237,7 +237,7 @@ function cleanup() {
      sleep 3
     fi
 
-    echo "Check connectivity to prometheus"
+    echo "Check connectivity to prometheus using URL: $PROMAPI"
     curl $PROMAPI
 
     echo -e "Collecting test results"
