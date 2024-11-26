@@ -323,7 +323,7 @@ func run() error {
 	}
 
 	if err := setupAdmissionsWebhooks(mgr); err != nil {
-		return fmt.Errorf("failed to setup mutating webhooks: %w", err)
+		return fmt.Errorf("failed to setup admission webhooks: %w", err)
 	}
 
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
