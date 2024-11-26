@@ -7,6 +7,6 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager) {
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
-		Handler: NewValidatingWebhookHandler(mgr.GetScheme()),
+		Handler: newValidateHandler(mgr.GetScheme()),
 	})
 }

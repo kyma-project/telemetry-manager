@@ -9,7 +9,7 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.LogPipeline{}).
-		WithDefaulter(&LogPipelineDefaulter{
+		WithDefaulter(&defaulter{
 			ApplicationInputEnabled:          true,
 			ApplicationInputKeepOriginalBody: true,
 		}).
@@ -18,7 +18,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{
-		Handler: NewValidatingWebhookHandler(mgr.GetClient(), mgr.GetScheme()),
+		Handler: newValidateHandler(mgr.GetClient(), mgr.GetScheme()),
 	})
 
 	return nil

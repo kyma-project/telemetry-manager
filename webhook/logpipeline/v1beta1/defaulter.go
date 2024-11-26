@@ -12,9 +12,9 @@ import (
 )
 
 // +kubebuilder:object:generate=false
-var _ webhook.CustomDefaulter = &LogPipelineDefaulter{}
+var _ webhook.CustomDefaulter = &defaulter{}
 
-type LogPipelineDefaulter struct {
+type defaulter struct {
 	RuntimeInputEnabled          bool
 	RuntimeInputKeepOriginalBody bool
 	DefaultOTLPOutputProtocol    telemetryv1beta1.OTLPProtocol
@@ -22,7 +22,7 @@ type LogPipelineDefaulter struct {
 
 func SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1beta1.LogPipeline{}).
-		WithDefaulter(&LogPipelineDefaulter{
+		WithDefaulter(&defaulter{
 			RuntimeInputEnabled:          true,
 			RuntimeInputKeepOriginalBody: true,
 			DefaultOTLPOutputProtocol:    telemetryv1beta1.OTLPProtocolGRPC,
@@ -30,7 +30,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-func (ld LogPipelineDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
 	pipeline, ok := obj.(*telemetryv1beta1.LogPipeline)
 	if !ok {
 		return fmt.Errorf("expected an LogPipeline object but got %T", obj)
@@ -41,7 +41,7 @@ func (ld LogPipelineDefaulter) Default(ctx context.Context, obj runtime.Object) 
 	return nil
 }
 
-func (ld LogPipelineDefaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
+func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 	if pipeline.Spec.Input.Runtime != nil {
 		if pipeline.Spec.Input.Runtime.Enabled == nil {
 			pipeline.Spec.Input.Runtime.Enabled = &ld.RuntimeInputEnabled
