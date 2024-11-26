@@ -6,7 +6,7 @@ require (
 	github.com/bombsimon/wsl/v4 v4.4.1
 	github.com/golangci/golangci-lint v1.62.2
 	github.com/google/yamlfmt v0.14.0
-	github.com/k3d-io/k3d/v5 v5.7.4
+	github.com/k3d-io/k3d/v5 v5.7.5
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
 	github.com/mikefarah/yq/v4 v4.44.5
 	github.com/onsi/ginkgo/v2 v2.22.0
