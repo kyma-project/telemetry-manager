@@ -15,6 +15,7 @@ on:
     workflows: ["PR Integration"]
     types:
       - completed
+      - requested
 
 jobs:
   all-checks:
