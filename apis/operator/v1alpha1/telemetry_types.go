@@ -97,7 +97,7 @@ const (
 )
 
 type StaticScaling struct {
-	// Replicas defines a static number of pods to run the gateway. Minimum is 1.
+	// Replicas defines a static number of Pods to run the gateway. Minimum is 1.
 	// +kubebuilder:validation:Minimum=1
 	Replicas int32 `json:"replicas,omitempty"`
 }
