@@ -456,4 +456,13 @@ print_config
 setup
 wait_for_resources
 # wait for the test to finish
+
+for (( c=$TEST_DURATION; c>=0; c=c-60 ))
+do  
+  echo "Time remaining: $c seconds"
+  sleep 60
+
+done
+
+
 sleep $TEST_DURATION
