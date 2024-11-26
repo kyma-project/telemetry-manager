@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -18,16 +17,6 @@ type defaulter struct {
 	RuntimeInputEnabled          bool
 	RuntimeInputKeepOriginalBody bool
 	DefaultOTLPOutputProtocol    telemetryv1beta1.OTLPProtocol
-}
-
-func SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1beta1.LogPipeline{}).
-		WithDefaulter(&defaulter{
-			RuntimeInputEnabled:          true,
-			RuntimeInputKeepOriginalBody: true,
-			DefaultOTLPOutputProtocol:    telemetryv1beta1.OTLPProtocolGRPC,
-		}).
-		Complete()
 }
 
 func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
