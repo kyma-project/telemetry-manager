@@ -11,9 +11,9 @@ import (
 )
 
 func TestDefault(t *testing.T) {
-	defaulter := MetricPipelineDefaulter{
+	sut := defaulter{
 		ExcludeNamespaces: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
-		RuntimeInputResources: RuntimeInputResourceDefaults{
+		RuntimeInputResources: runtimeInputResourceDefaults{
 			Pod:         true,
 			Container:   true,
 			Node:        true,
@@ -233,7 +233,7 @@ func TestDefault(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := defaulter.Default(context.Background(), tt.input)
+			err := sut.Default(context.Background(), tt.input)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, tt.input)
 		})
