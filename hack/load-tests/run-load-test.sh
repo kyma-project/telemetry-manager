@@ -77,6 +77,7 @@ function print_config() {
 }
 
 function setup() {
+    echo -e "Deploying prometheus stack"
     kubectl create namespace "$PROMETHEUS_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
     [ "$TEST_TARGET" != "logs-otel" ] && kubectl label namespace kyma-system istio-injection=enabled --overwrite
@@ -96,6 +97,7 @@ function setup() {
     else
       PROMAPI="http://localhost:8080/api/v1/query"
     fi
+    echo -e "Prometheus stack deployed accessable at: $PROMAPI"
 
     case "$TEST_TARGET" in
         traces) setup_trace ;;
@@ -108,6 +110,7 @@ function setup() {
 }
 
 function setup_trace() {
+    echo -e "Deploying trace test setup"
     if [[ "$MAX_PIPELINE" == "true" ]]; then
       kubectl apply -f hack/load-tests/trace-max-pipeline.yaml
     fi
@@ -121,11 +124,11 @@ function setup_trace() {
 }
 
 function setup_metric() {
+    echo -e "Deploying metric test setup"
     if [[ "$MAX_PIPELINE" == "true" ]]; then
         kubectl apply -f hack/load-tests/metric-max-pipeline.yaml
     fi
 
-    # Deploy test setup
     sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-load-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
@@ -134,7 +137,7 @@ function setup_metric() {
 }
 
 function setup_metric_agent() {
-    # Deploy test setup
+    echo -e "Deploying metric agent test setup"
     sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-agent-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
@@ -143,6 +146,7 @@ function setup_metric_agent() {
 }
 
 function setup_fluentbit() {
+    echo -e "Deploying fluentbit test setup"
     if [[ "$MAX_PIPELINE" == "true" ]]; then
       kubectl apply -f hack/load-tests/log-fluentbit-max-pipeline.yaml
     fi
@@ -156,6 +160,7 @@ function setup_fluentbit() {
 }
 
 function setup_logs_otel() {
+    echo -e "Deploying otel log test setup"
     cat > hack/load-tests/otel-logs/base/base.env <<EOF
 LOG_RATE=$LOG_RATE
 LOG_CONTENT=$(for i in $(seq $LOG_SIZE); do echo -n X; done)
@@ -168,13 +173,12 @@ EOF
 }
 
 function setup_selfmonitor() {
-    # Deploy test setup
+    echo -e "Deploying self-monitor test setup"
     sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/self-monitor-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 }
 
 function wait_for_resources() {
-  kubectl -n "$PROMETHEUS_NAMESPACE" rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus
-  echo "Using prometheus with domain $PROMAPI"
+  wait_for_prometheus_resources
 
   case "$TEST_TARGET" in
     traces) wait_for_trace_resources ;;
@@ -185,7 +189,11 @@ function wait_for_resources() {
     self-monitor) wait_for_selfmonitor_resources ;;
   esac
 
-  echo -e "\nRunning Tests\n"
+  echo -e "\nAll resources are ready\n"
+}
+
+function wait_for_prometheus_resources() {
+    kubectl -n "$PROMETHEUS_NAMESPACE" rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus
 }
 
 function wait_for_trace_resources() {
@@ -231,14 +239,16 @@ function wait_for_selfmonitor_resources() {
 }
 
 function cleanup() {
-    
+    echo -e "Check prometheus healthiness"
+    wait_for_prometheus_resources
+
+    echo -e "Check connectivity to prometheus using URL: $PROMAPI"
+    curl $PROMAPI
+
     if [[ -z "$DOMAIN" ]]; then
      kubectl -n "$PROMETHEUS_NAMESPACE" port-forward "$(kubectl -n "$PROMETHEUS_NAMESPACE" get service -l app=kube-prometheus-stack-prometheus -oname)" 9090 &
      sleep 3
     fi
-
-    echo "Check connectivity to prometheus using URL: $PROMAPI"
-    curl $PROMAPI
 
     echo -e "Collecting test results"
     case "$TEST_TARGET" in
@@ -276,7 +286,6 @@ EOF
 
     helm delete -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE"
     kubectl delete namespace "$PROMETHEUS_NAMESPACE"
-
 }
 
 function get_result_and_cleanup_trace() {
@@ -295,7 +304,7 @@ function get_result_and_cleanup_trace() {
   RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
   if [[ -z "$DOMAIN" ]]; then
-    echo "Killing port-forward"
+    echo -e "Killing port-forward"
     kill %1
   fi
 
@@ -325,7 +334,7 @@ function get_result_and_cleanup_metric() {
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
     if [[ -z "$DOMAIN" ]]; then
-      echo "Killing port-forward"
+      echo -e "Killing port-forward"
       kill %1
     fi
 
@@ -357,7 +366,7 @@ function get_result_and_cleanup_metricagent() {
     RESULT_RESTARTS_AGENT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
     if [[ -z "$DOMAIN" ]]; then
-      echo "Killing port-forward"
+      echo -e "Killing port-forward"
       kill %1
     fi
 
@@ -384,7 +393,7 @@ function get_result_and_cleanup_log_otel() {
   RESULT_RESTARTS_GENERATOR=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-load-generator -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
   if [[ -z "$DOMAIN" ]]; then
-    echo "Killing port-forward"
+    echo -e "Killing port-forward"
     kill %1
   fi
 
@@ -412,7 +421,7 @@ function get_result_and_cleanup_fluentbit() {
   RESULT_RESTARTS_FLUENTBIT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
   if [[ -z "$DOMAIN" ]]; then
-    echo "Killing port-forward"
+    echo -e "Killing port-forward"
     kill %1
   fi
 
@@ -443,7 +452,7 @@ function get_result_and_cleanup_selfmonitor() {
     RESULT_RESTARTS_SELFMONITOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-self-monitor -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
     if [[ -z "$DOMAIN" ]]; then
-      echo "Killing port-forward"
+      echo -e "Killing port-forward"
       kill %1
     fi
 
@@ -453,9 +462,11 @@ function get_result_and_cleanup_selfmonitor() {
 # cleanup on exit. cleanup also collects the results and writes them to a file
 trap cleanup EXIT
 print_config
+echo -e "Preparing test setup"
 setup
+echo -e "Waiting till test setup is ready"
 wait_for_resources
-# wait for the test to finish
+echo -e "Test setup is ready, starting test"
 
 for (( c=$TEST_DURATION; c>=0; c=c-60 ))
 do  
@@ -463,6 +474,3 @@ do
   sleep 60
 
 done
-
-
-sleep $TEST_DURATION
