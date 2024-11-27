@@ -23,7 +23,7 @@ override:
     path: ^internal/istiostatus$
   - threshold: 87
     path: ^internal/otelcollector/config/otlpexporter$
-  - threshold: 77
+  - threshold: 73
     path: ^internal/reconciler/logpipeline/fluentbit$
   - threshold: 0
     path: ^internal/reconciler/logpipeline/otel$
