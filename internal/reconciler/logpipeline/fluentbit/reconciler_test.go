@@ -78,7 +78,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -109,7 +109,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -140,7 +140,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -172,7 +172,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -213,7 +213,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -254,7 +254,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -298,7 +298,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -387,7 +387,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -525,7 +525,7 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -648,7 +648,7 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -743,7 +743,7 @@ func TestReconcile(t *testing.T) {
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -787,7 +787,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -843,7 +843,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, &testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -990,7 +990,7 @@ func TestCalculateChecksum(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithObjects(&dsConfig, &sectionsConfig, &filesConfig, &luaConfig, &parsersConfig, &envSecret, &certSecret).Build()
 
-	r := New(client, config, nil, nil, nil, nil, nil)
+	r := New(client, &config, nil, nil, nil, nil, nil)
 	ctx := context.Background()
 
 	checksum, err := r.calculateChecksum(ctx)

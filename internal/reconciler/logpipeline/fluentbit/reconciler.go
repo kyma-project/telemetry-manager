@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -51,6 +52,68 @@ type Config struct {
 	RestConfig          rest.Config
 }
 
+type ConfigOption func(*Config)
+
+func WithFluentBitImage(image string) ConfigOption {
+	return func(c *Config) {
+		c.DaemonSetConfig.FluentBitImage = image
+	}
+}
+
+func WithExporterImage(image string) ConfigOption {
+	return func(c *Config) {
+		c.DaemonSetConfig.ExporterImage = image
+	}
+}
+
+func WithPriorityClassName(name string) ConfigOption {
+	return func(c *Config) {
+		c.DaemonSetConfig.PriorityClassName = name
+	}
+}
+
+func WithCPULimit(limit resource.Quantity) ConfigOption {
+	return func(c *Config) {
+		c.DaemonSetConfig.CPULimit = limit
+	}
+}
+
+func WithMemoryLimit(limit resource.Quantity) ConfigOption {
+	return func(c *Config) {
+		c.DaemonSetConfig.MemoryLimit = limit
+	}
+}
+
+func WithCPURequest(request resource.Quantity) ConfigOption {
+	return func(c *Config) {
+		c.DaemonSetConfig.CPURequest = request
+	}
+}
+
+func WithMemoryRequest(request resource.Quantity) ConfigOption {
+	return func(c *Config) {
+		c.DaemonSetConfig.MemoryRequest = request
+	}
+}
+
+func NewConfig(baseName string, namespace string, options ...ConfigOption) *Config {
+	config := &Config{
+		SectionsConfigMap:   types.NamespacedName{Name: baseName + "-sections", Namespace: namespace},
+		FilesConfigMap:      types.NamespacedName{Name: baseName + "-files", Namespace: namespace},
+		LuaConfigMap:        types.NamespacedName{Name: baseName + "-luascripts", Namespace: namespace},
+		ParsersConfigMap:    types.NamespacedName{Name: baseName + "-parsers", Namespace: namespace},
+		EnvConfigSecret:     types.NamespacedName{Name: baseName + "-env", Namespace: namespace},
+		TLSFileConfigSecret: types.NamespacedName{Name: baseName + "-output-tls-config", Namespace: namespace},
+		DaemonSet:           types.NamespacedName{Name: baseName, Namespace: namespace},
+	}
+
+	for _, opt := range options {
+		opt(config)
+	}
+
+	return config
+}
+
 type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
@@ -60,7 +123,7 @@ var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 type Reconciler struct {
 	client.Client
 
-	config Config
+	config *Config
 	syncer syncer
 
 	// Dependencies
@@ -75,7 +138,7 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, config Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+func New(client client.Client, config *Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
 	config.PipelineDefaults = builder.PipelineDefaults{
 		InputTag:          defaultInputTag,
 		MemoryBufferLimit: defaultMemoryBufferLimit,
