@@ -7,11 +7,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-// FlatLogHTTP holds all needed information about a log record.
+// FlatLogFluentBit holds all needed information about a FluentBit log record.
 // Gomega doesn't handle deeply nested data structure very well and generates large, unreadable diffs when paired with the deeply nested structure of plogs.
 //
-// Introducing a go struct with a flat data structure by extracting necessary information from different levels of plogs makes accessing the information easier than using plog.Logs directly and improves the readability of the test output logs.
-type FlatLogHTTP struct {
+// Introducing a go struct with a flat data structure by extracting necessary information from different levels of plogs makes accessing the information easier than using plog.
+// Logs directly and improves the readability of the test output logs.
+type FlatLogFluentBit struct {
 	LogRecordAttributes            map[string]string
 	LogRecordBody                  string
 	KubernetesAttributes           map[string]string
@@ -28,8 +29,8 @@ func unmarshalHTTPLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
 
 // flattenAllHTTPLogs flattens an array of pdata.Logs log record to a slice of FlatLog.
 // It converts the deeply nested pdata.Logs data structure to a flat struct, to make it more readable in the test output logs.
-func flattenAllHTTPLogs(lds []plog.Logs) []FlatLogHTTP {
-	var flatLogs []FlatLogHTTP
+func flattenAllHTTPLogs(lds []plog.Logs) []FlatLogFluentBit {
+	var flatLogs []FlatLogFluentBit
 
 	for _, ld := range lds {
 		flatLogs = append(flatLogs, flattenHTTPLogs(ld)...)
@@ -40,8 +41,8 @@ func flattenAllHTTPLogs(lds []plog.Logs) []FlatLogHTTP {
 
 // flattenHTTPLogs converts a single pdata.Log log record to a slice of FlatMetric
 // It takes relevant information from different levels of pdata and puts it into a FlatLog go struct.
-func flattenHTTPLogs(ld plog.Logs) []FlatLogHTTP {
-	var flatLogs []FlatLogHTTP
+func flattenHTTPLogs(ld plog.Logs) []FlatLogFluentBit {
+	var flatLogs []FlatLogFluentBit
 
 	for i := range ld.ResourceLogs().Len() {
 		resourceLogs := ld.ResourceLogs().At(i)
@@ -51,7 +52,7 @@ func flattenHTTPLogs(ld plog.Logs) []FlatLogHTTP {
 				lr := scopeLogs.LogRecords().At(k)
 				k8sAttrs := getKubernetesAttributes(lr)
 
-				flatLogs = append(flatLogs, FlatLogHTTP{
+				flatLogs = append(flatLogs, FlatLogFluentBit{
 					LogRecordAttributes:            attributeToMapHTTP(lr.Attributes()),
 					LogRecordBody:                  lr.Body().AsString(),
 					KubernetesAttributes:           attributeToMapHTTP(k8sAttrs),

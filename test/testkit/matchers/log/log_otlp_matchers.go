@@ -8,7 +8,7 @@ import (
 )
 
 func HaveFlatOTLPLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLogOTLP, error) {
+	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLogOtel, error) {
 		tds, err := unmarshalOTLPLogs(jsonLogs)
 		if err != nil {
 			return nil, fmt.Errorf("HaveFlatOTLPLogs requires a valid OTLP JSON document: %w", err)
@@ -22,7 +22,7 @@ func HaveFlatOTLPLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 // HaveResourceAttributes extracts resource attributes from FlatLog and applies the matcher to them.
 func HaveResourceAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(fl FlatLogOTLP) map[string]string {
+	return gomega.WithTransform(func(fl FlatLogOtel) map[string]string {
 		return fl.ResourceAttributes
 	}, matcher)
 }

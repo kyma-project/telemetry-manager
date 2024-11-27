@@ -6,7 +6,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-var flsOTLP = []FlatLogOTLP{
+var flsOtel = []FlatLogOtel{
 	{
 		LogRecordBody: "Test first log body",
 		ResourceAttributes: map[string]string{
@@ -54,13 +54,13 @@ var _ = Describe("HaveFlatOTLPLogs", func() {
 		attrs.PutStr("k8s.pod.ip", "10.42.1.76")
 		attrs.PutStr("k8s.deployment.name", "backend")
 
-		Expect(mustMarshalOTLPLogs(ld)).Should(HaveFlatOTLPLogs(ContainElements(flsOTLP[0])))
+		Expect(mustMarshalOTLPLogs(ld)).Should(HaveFlatOTLPLogs(ContainElements(flsOtel[0])))
 	})
 })
 
 var _ = Describe("HaveResourceAttributes", func() {
 	It("should apply matcher", func() {
-		Expect(flsOTLP).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))))
+		Expect(flsOtel).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))))
 	})
 })
 
