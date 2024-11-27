@@ -35,7 +35,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -54,17 +53,14 @@ import (
 
 const (
 	// FluentBit
-	fbSectionsConfigMapName    = "telemetry-fluent-bit-sections"
-	fbFilesConfigMapName       = "telemetry-fluent-bit-files"
-	fbLuaConfigMapName         = "telemetry-fluent-bit-luascripts"
-	fbParsersConfigMapName     = "telemetry-fluent-bit-parsers"
-	fbEnvConfigSecretName      = "telemetry-fluent-bit-env"
-	fbTLSFileConfigSecretName  = "telemetry-fluent-bit-output-tls-config"
-	fbDaemonSetName            = "telemetry-fluent-bit"
-	fbDefaultInputTag          = "tele"
-	fbDefaultMemoryBufferLimit = "10M"
-	fbDefaultStorageType       = "filesystem"
-	fbDefaultFsBufferLimit     = "1G"
+	fbBaseName                 = "telemetry-fluent-bit"
+	fbSectionsConfigMapName    = fbBaseName + "-sections"
+	fbFilesConfigMapName       = fbBaseName + "-files"
+	fbLuaConfigMapName         = fbBaseName + "-luascripts"
+	fbParsersConfigMapName     = fbBaseName + "-parsers"
+	fbEnvConfigSecretName      = fbBaseName + "-env"
+	fbTLSFileConfigSecretName  = fbBaseName + "-output-tls-config"
+	fbDaemonSetName            = fbBaseName
 
 	// OTel
 	otelLogGatewayName = "telemetry-log-gateway"
@@ -184,12 +180,6 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		EnvConfigSecret:     types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: config.TelemetryNamespace},
 		TLSFileConfigSecret: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: config.TelemetryNamespace},
 		DaemonSet:           types.NamespacedName{Name: fbDaemonSetName, Namespace: config.TelemetryNamespace},
-		PipelineDefaults: builder.PipelineDefaults{
-			InputTag:          fbDefaultInputTag,
-			MemoryBufferLimit: fbDefaultMemoryBufferLimit,
-			StorageType:       fbDefaultStorageType,
-			FsBufferLimit:     fbDefaultFsBufferLimit,
-		},
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:    config.FluentBitImage,
 			ExporterImage:     config.ExporterImage,

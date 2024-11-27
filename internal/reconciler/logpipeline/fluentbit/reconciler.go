@@ -30,6 +30,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
+const (
+	defaultInputTag          = "tele"
+	defaultMemoryBufferLimit = "10M"
+	defaultStorageType       = "filesystem"
+	defaultFsBufferLimit     = "1G"
+)
+
 type Config struct {
 	DaemonSet           types.NamespacedName
 	SectionsConfigMap   types.NamespacedName
@@ -69,6 +76,13 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 }
 
 func New(client client.Client, config Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+	config.PipelineDefaults = builder.PipelineDefaults{
+		InputTag:          defaultInputTag,
+		MemoryBufferLimit: defaultMemoryBufferLimit,
+		StorageType:       defaultStorageType,
+		FsBufferLimit:     defaultFsBufferLimit,
+	}
+
 	return &Reconciler{
 		Client:             client,
 		config:             config,
