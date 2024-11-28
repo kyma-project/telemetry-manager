@@ -181,7 +181,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
 
-			sut := NewValidatingWebhookHandler(fakeClient, scheme)
+			sut := newValidateHandler(fakeClient, scheme)
 
 			response := sut.Handle(context.Background(), admissionRequestFrom(t, *tt.logPipeline))
 
