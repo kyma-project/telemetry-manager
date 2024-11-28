@@ -243,10 +243,15 @@ function cleanup() {
     wait_for_prometheus_resources
 
     echo -e "Describe prometheus pod for debugging"
-    kubectl describe pod -l app.kubernetes.io/name=prometheus 
+    kubectl -n $PROMETHEUS_NAMESPACE describe pod -l app.kubernetes.io/name=prometheus
 
     echo -e "Check connectivity to prometheus using URL: $PROMAPI"
-    curl $PROMAPI
+    PROMETHEUS_API_ENDPOINT_STATUS=$(curl -fs --data-urlencode "query=up" $PROMAPI | jq -r '.status')
+
+    if [[ "$PROMETHEUS_API_ENDPOINT_STATUS" != "success" ]]; then
+     echo "Prometheus API endpoint is not healthy"
+     kill %1
+    fi
 
     if [[ -z "$DOMAIN" ]]; then
      kubectl -n "$PROMETHEUS_NAMESPACE" port-forward "$(kubectl -n "$PROMETHEUS_NAMESPACE" get service -l app=kube-prometheus-stack-prometheus -oname)" 9090 &
