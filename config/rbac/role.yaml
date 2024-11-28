@@ -125,6 +125,7 @@ rules:
       - get
       - patch
       - update
+
   # policy rules for fluent bit
   - apiGroups:
       - ""
@@ -135,6 +136,7 @@ rules:
       - get
       - list
       - watch
+
   # policy rules for metric agent
   - apiGroups:
       - ""
@@ -202,6 +204,7 @@ rules:
       - get
       - list
       - watch
+
   # policy rules for metric gateway
   - apiGroups:
       - ""
@@ -238,6 +241,7 @@ rules:
       - get
       - list
       - watch
+
   # policy rules for self monitor
   - apiGroups:
       - ""
@@ -249,6 +253,7 @@ rules:
       - get
       - list
       - watch
+
   # policy rules for trace gateway
   - apiGroups:
       - ""
