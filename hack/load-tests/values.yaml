@@ -115,8 +115,8 @@ prometheus:
             regex: ([^:]+)(?::\d+)?;(\d+)
             replacement: $1:$2
           - source_labels: [__meta_kubernetes_namespace]
-            action: drop
-            regex: kube-system
+            action: keep
+            regex: kyma-system
           - source_labels: [__meta_kubernetes_namespace]
             action: replace
             target_label: namespace
