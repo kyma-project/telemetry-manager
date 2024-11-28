@@ -21,7 +21,7 @@ import (
 
 type syncer struct {
 	client.Client
-	config *Config
+	config Config
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {

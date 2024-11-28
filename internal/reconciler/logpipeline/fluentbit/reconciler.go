@@ -44,7 +44,7 @@ var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 type Reconciler struct {
 	client.Client
 
-	config *Config
+	config Config
 	syncer syncer
 
 	// Dependencies
@@ -59,7 +59,7 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, config *Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+func New(client client.Client, config Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
 	config.PipelineDefaults = builder.PipelineDefaults{
 		InputTag:          defaultInputTag,
 		MemoryBufferLimit: defaultMemoryBufferLimit,

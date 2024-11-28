@@ -75,8 +75,8 @@ func WithMemoryRequest(request resource.Quantity) ConfigOption {
 	}
 }
 
-func NewConfig(baseName string, namespace string, options ...ConfigOption) *Config {
-	config := &Config{
+func NewConfig(baseName string, namespace string, options ...ConfigOption) Config {
+	config := Config{
 		SectionsConfigMap:   types.NamespacedName{Name: baseName + "-sections", Namespace: namespace},
 		FilesConfigMap:      types.NamespacedName{Name: baseName + "-files", Namespace: namespace},
 		LuaConfigMap:        types.NamespacedName{Name: baseName + "-luascripts", Namespace: namespace},
@@ -93,7 +93,7 @@ func NewConfig(baseName string, namespace string, options ...ConfigOption) *Conf
 	}
 
 	for _, opt := range options {
-		opt(config)
+		opt(&config)
 	}
 
 	return config
