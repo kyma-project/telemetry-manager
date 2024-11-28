@@ -242,9 +242,6 @@ function cleanup() {
     echo -e "Check prometheus healthiness"
     wait_for_prometheus_resources
 
-    echo -e "Describe prometheus pod for debugging"
-    kubectl -n $PROMETHEUS_NAMESPACE describe pod -l app.kubernetes.io/name=prometheus
-
     echo -e "Check connectivity to prometheus using URL: $PROMAPI"
     PROMETHEUS_API_ENDPOINT_STATUS=$(curl -fs --data-urlencode "query=up" $PROMAPI | jq -r '.status')
 
