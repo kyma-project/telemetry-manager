@@ -193,49 +193,49 @@ function wait_for_resources() {
 }
 
 function wait_for_prometheus_resources() {
-    kubectl -n "$PROMETHEUS_NAMESPACE" rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus
+    kubectl -n "$PROMETHEUS_NAMESPACE" rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus --timeout=60s
 }
 
 function wait_for_trace_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway
-    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-load-generator
-    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-receiver
+    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway --timeout=60s
+    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-load-generator --timeout=60s
+    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-receiver --timeout=60s
 }
 
 function wait_for_metric_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-load-generator
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver
+    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
+    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-load-generator --timeout=60s
+    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver --timeout=60s
 }
 
 function wait_for_metric_agent_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway
-    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-agent-load-generator
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver
+    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
+    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent --timeout=60s
+    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-agent-load-generator --timeout=60s
+    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver --timeout=60s
 }
 
 function wait_for_fluentbit_resources() {
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver
-    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver --timeout=60s
+    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit --timeout=60s
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator --timeout=60s
 }
 
 function wait_for_otel_log_resources() {
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-gateway
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver --timeout=60s
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-gateway --timeout=60s
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator --timeout=60s
 }
 
 function wait_for_selfmonitor_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway
-    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent
-    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment telemetry-receiver
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment trace-load-generator
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-load-generator
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-agent-load-generator
+    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway --timeout=60s
+    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
+    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent --timeout=60s
+    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit --timeout=60s
+    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment telemetry-receiver --timeout=60s
+    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment trace-load-generator --timeout=60s
+    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-load-generator --timeout=60s
+    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-agent-load-generator --timeout=60s
 }
 
 function cleanup() {
