@@ -31,7 +31,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPi
 
 	envVars := make(otlpexporter.EnvVars)
 
-	const maxQueueSize = 256
+	const maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
 	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
