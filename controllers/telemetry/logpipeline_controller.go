@@ -53,14 +53,14 @@ import (
 
 const (
 	// FluentBit
-	fbBaseName                 = "telemetry-fluent-bit"
-	fbSectionsConfigMapName    = fbBaseName + "-sections"
-	fbFilesConfigMapName       = fbBaseName + "-files"
-	fbLuaConfigMapName         = fbBaseName + "-luascripts"
-	fbParsersConfigMapName     = fbBaseName + "-parsers"
-	fbEnvConfigSecretName      = fbBaseName + "-env"
-	fbTLSFileConfigSecretName  = fbBaseName + "-output-tls-config"
-	fbDaemonSetName            = fbBaseName
+	fbBaseName                = "telemetry-fluent-bit"
+	fbSectionsConfigMapName   = fbBaseName + "-sections"
+	fbFilesConfigMapName      = fbBaseName + "-files"
+	fbLuaConfigMapName        = fbBaseName + "-luascripts"
+	fbParsersConfigMapName    = fbBaseName + "-parsers"
+	fbEnvConfigSecretName     = fbBaseName + "-env"
+	fbTLSFileConfigSecretName = fbBaseName + "-output-tls-config"
+	fbDaemonSetName           = fbBaseName
 
 	// OTel
 	otelLogGatewayName = "telemetry-log-gateway"
