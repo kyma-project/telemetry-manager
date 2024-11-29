@@ -20,28 +20,28 @@ type FlatLogFluentBit struct {
 	KubernetesAnnotationAttributes map[string]any
 }
 
-func unmarshalHTTPLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
+func unmarshalFluentBitLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
 	return matchers.UnmarshalSignals[plog.Logs](jsonlMetrics, func(buf []byte) (plog.Logs, error) {
 		var unmarshaler plog.JSONUnmarshaler
 		return unmarshaler.UnmarshalLogs(buf)
 	})
 }
 
-// flattenAllHTTPLogs flattens an array of pdata.Logs log record to a slice of FlatLog.
+// flattenAllFluentBitLogs flattens an array of pdata.Logs log record to a slice of FlatLogFluentBit.
 // It converts the deeply nested pdata.Logs data structure to a flat struct, to make it more readable in the test output logs.
-func flattenAllHTTPLogs(lds []plog.Logs) []FlatLogFluentBit {
+func flattenAllFluentBitLogs(lds []plog.Logs) []FlatLogFluentBit {
 	var flatLogs []FlatLogFluentBit
 
 	for _, ld := range lds {
-		flatLogs = append(flatLogs, flattenHTTPLogs(ld)...)
+		flatLogs = append(flatLogs, flattenFluentBitLogs(ld)...)
 	}
 
 	return flatLogs
 }
 
-// flattenHTTPLogs converts a single pdata.Log log record to a slice of FlatMetric
-// It takes relevant information from different levels of pdata and puts it into a FlatLog go struct.
-func flattenHTTPLogs(ld plog.Logs) []FlatLogFluentBit {
+// flattenFluentBitLogs converts a single pdata.Log log record to a slice of FlatLogFluentBit
+// It takes relevant information from different levels of pdata and puts it into a FlatLogFluentBit go struct.
+func flattenFluentBitLogs(ld plog.Logs) []FlatLogFluentBit {
 	var flatLogs []FlatLogFluentBit
 
 	for i := range ld.ResourceLogs().Len() {
@@ -53,9 +53,9 @@ func flattenHTTPLogs(ld plog.Logs) []FlatLogFluentBit {
 				k8sAttrs := getKubernetesAttributes(lr)
 
 				flatLogs = append(flatLogs, FlatLogFluentBit{
-					LogRecordAttributes:            attributeToMapHTTP(lr.Attributes()),
+					LogRecordAttributes:            attributeToMapFluentBit(lr.Attributes()),
 					LogRecordBody:                  lr.Body().AsString(),
-					KubernetesAttributes:           attributeToMapHTTP(k8sAttrs),
+					KubernetesAttributes:           attributeToMapFluentBit(k8sAttrs),
 					KubernetesLabelAttributes:      getKubernetesMaps("labels", k8sAttrs),
 					KubernetesAnnotationAttributes: getKubernetesMaps("annotations", k8sAttrs),
 				})
@@ -66,8 +66,8 @@ func flattenHTTPLogs(ld plog.Logs) []FlatLogFluentBit {
 	return flatLogs
 }
 
-// attributeToMapHTTP converts pdata.AttributeMap to a map using the string representation of the values.
-func attributeToMapHTTP(attrs pcommon.Map) map[string]string {
+// attributeToMapFluentBit converts pdata.AttributeMap to a map using the string representation of the values.
+func attributeToMapFluentBit(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
 
 	attrs.Range(func(k string, v pcommon.Value) bool {

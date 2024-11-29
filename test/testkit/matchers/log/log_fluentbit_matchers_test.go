@@ -28,24 +28,24 @@ var flsFluentBit = []FlatLogFluentBit{
 	},
 }
 
-var _ = Describe("HaveFlatHTTPLogs", func() {
+var _ = Describe("HaveFlatFluentBitLogs", func() {
 	It("should apply matcher to transform valid log data", func() {
 		ld := plog.NewLogs()
-		Expect(mustMarshalHTTPLogs(ld)).Should(HaveFlatHTTPLogs(ContainElements()))
+		Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatFluentBitLogs(ContainElements()))
 	})
 
 	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatHTTPLogs(BeEmpty()))
+		Expect([]byte{}).Should(HaveFlatFluentBitLogs(BeEmpty()))
 	})
 
 	It("should return error for nil input", func() {
-		success, err := HaveFlatHTTPLogs(BeEmpty()).Match(nil)
+		success, err := HaveFlatFluentBitLogs(BeEmpty()).Match(nil)
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
 
 	It("should return error for invalid input type", func() {
-		success, err := HaveFlatHTTPLogs(BeEmpty()).Match(struct{}{})
+		success, err := HaveFlatFluentBitLogs(BeEmpty()).Match(struct{}{})
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
@@ -76,7 +76,7 @@ var _ = Describe("HaveFlatHTTPLogs", func() {
 		k8sAttrs.PutStr("container_name", "test-container")
 		k8sAttrs.PutStr("namespace_name", "test-namespace")
 
-		Expect(mustMarshalHTTPLogs(ld)).Should(HaveFlatHTTPLogs(ContainElement(flsFluentBit[0])))
+		Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatFluentBitLogs(ContainElement(flsFluentBit[0])))
 	})
 })
 
@@ -142,7 +142,7 @@ var _ = Describe("HaveLogBody", func() {
 	})
 })
 
-func mustMarshalHTTPLogs(ld plog.Logs) []byte {
+func mustMarshalFluentBitLogs(ld plog.Logs) []byte {
 	var marshaler plog.JSONMarshaler
 
 	bytes, err := marshaler.MarshalLogs(ld)

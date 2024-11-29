@@ -7,14 +7,14 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
-func HaveFlatOTLPLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveFlatOtelLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLogOtel, error) {
-		tds, err := unmarshalOTLPLogs(jsonLogs)
+		tds, err := unmarshalOtelLogs(jsonLogs)
 		if err != nil {
-			return nil, fmt.Errorf("HaveFlatOTLPLogs requires a valid OTLP JSON document: %w", err)
+			return nil, fmt.Errorf("HaveFlatOtelLogs requires a valid OTLP JSON document: %w", err)
 		}
 
-		ft := flattenAllOTLPLogs(tds)
+		ft := flattenAllOtelLogs(tds)
 
 		return ft, nil
 	}, matcher)

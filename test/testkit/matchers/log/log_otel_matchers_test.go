@@ -17,24 +17,24 @@ var flsOtel = []FlatLogOtel{
 	},
 }
 
-var _ = Describe("HaveFlatOTLPLogs", func() {
+var _ = Describe("HaveFlatOtelLogs", func() {
 	It("should apply matcher to valid log data", func() {
 		td := plog.NewLogs()
-		Expect(mustMarshalOTLPLogs(td)).Should(HaveFlatOTLPLogs(ContainElements()))
+		Expect(mustMarshalOtelLogs(td)).Should(HaveFlatOtelLogs(ContainElements()))
 	})
 
 	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatOTLPLogs(BeEmpty()))
+		Expect([]byte{}).Should(HaveFlatOtelLogs(BeEmpty()))
 	})
 
 	It("should return error for nil input", func() {
-		success, err := HaveFlatOTLPLogs(BeEmpty()).Match(nil)
+		success, err := HaveFlatOtelLogs(BeEmpty()).Match(nil)
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
 
 	It("should return error for invalid input type", func() {
-		success, err := HaveFlatOTLPLogs(BeEmpty()).Match(struct{}{})
+		success, err := HaveFlatOtelLogs(BeEmpty()).Match(struct{}{})
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
@@ -54,7 +54,7 @@ var _ = Describe("HaveFlatOTLPLogs", func() {
 		attrs.PutStr("k8s.pod.ip", "10.42.1.76")
 		attrs.PutStr("k8s.deployment.name", "backend")
 
-		Expect(mustMarshalOTLPLogs(ld)).Should(HaveFlatOTLPLogs(ContainElements(flsOtel[0])))
+		Expect(mustMarshalOtelLogs(ld)).Should(HaveFlatOtelLogs(ContainElements(flsOtel[0])))
 	})
 })
 
@@ -64,7 +64,7 @@ var _ = Describe("HaveResourceAttributes", func() {
 	})
 })
 
-func mustMarshalOTLPLogs(ld plog.Logs) []byte {
+func mustMarshalOtelLogs(ld plog.Logs) []byte {
 	var marshaler plog.JSONMarshaler
 
 	bytes, err := marshaler.MarshalLogs(ld)

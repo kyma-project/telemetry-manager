@@ -18,28 +18,28 @@ type FlatLogOtel struct {
 	LogRecordBody      string
 }
 
-func unmarshalOTLPLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
+func unmarshalOtelLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
 	return matchers.UnmarshalSignals[plog.Logs](jsonlMetrics, func(buf []byte) (plog.Logs, error) {
 		var unmarshaler plog.JSONUnmarshaler
 		return unmarshaler.UnmarshalLogs(buf)
 	})
 }
 
-// flattenAllOTLPLogs flattens an array of plog.Logs to a slice of FlatLogOTLP.
+// flattenAllOtelLogs flattens an array of plog.Logs to a slice of FlatLogOtel.
 // It converts the deeply nested plog.Logs data structure to a flat struct, to make it more readable in the test output logs.
-func flattenAllOTLPLogs(lds []plog.Logs) []FlatLogOtel {
+func flattenAllOtelLogs(lds []plog.Logs) []FlatLogOtel {
 	var flatLogs []FlatLogOtel
 
 	for _, ld := range lds {
-		flatLogs = append(flatLogs, flattenOTLPLogs(ld)...)
+		flatLogs = append(flatLogs, flattenOtelLogs(ld)...)
 	}
 
 	return flatLogs
 }
 
-// flattenOTLPLogs converts a single plog.Logs to a slice of FlatLogOTLP
-// It takes relevant information from different levels of pdata and puts it into a FlatLogOTLP go struct.
-func flattenOTLPLogs(ld plog.Logs) []FlatLogOtel {
+// flattenOtelLogs converts a single plog.Logs to a slice of FlatLogOtel
+// It takes relevant information from different levels of pdata and puts it into a FlatLogOtel go struct.
+func flattenOtelLogs(ld plog.Logs) []FlatLogOtel {
 	var flatLogs []FlatLogOtel
 
 	for i := range ld.ResourceLogs().Len() {
@@ -49,7 +49,7 @@ func flattenOTLPLogs(ld plog.Logs) []FlatLogOtel {
 			for k := range scopeLogs.LogRecords().Len() {
 				lr := scopeLogs.LogRecords().At(k)
 				flatLogs = append(flatLogs, FlatLogOtel{
-					ResourceAttributes: attributeToMapOTLP(resourceLogs.Resource().Attributes()),
+					ResourceAttributes: attributeToMapOtel(resourceLogs.Resource().Attributes()),
 					LogRecordBody:      lr.Body().AsString(),
 				})
 			}
@@ -60,7 +60,7 @@ func flattenOTLPLogs(ld plog.Logs) []FlatLogOtel {
 }
 
 // attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
-func attributeToMapOTLP(attrs pcommon.Map) map[string]string {
+func attributeToMapOtel(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
 
 	attrs.Range(func(k string, v pcommon.Value) bool {

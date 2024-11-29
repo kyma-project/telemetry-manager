@@ -106,7 +106,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatHTTPLogs(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(
 					HaveLogRecordAttributes(HaveKey(BeElementOf(istio.AccessLogAttributeKeys))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

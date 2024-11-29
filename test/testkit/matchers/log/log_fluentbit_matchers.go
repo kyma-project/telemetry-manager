@@ -8,14 +8,14 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
-func HaveFlatHTTPLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveFlatFluentBitLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLogFluentBit, error) {
-		lds, err := unmarshalHTTPLogs(jsonLogs)
+		lds, err := unmarshalFluentBitLogs(jsonLogs)
 		if err != nil {
-			return nil, fmt.Errorf("HaveFlatHTTPLogs requires a valid OTLP JSON document: %w", err)
+			return nil, fmt.Errorf("HaveFlatFluentBitLogs requires a valid OTLP JSON document: %w", err)
 		}
 
-		fl := flattenAllHTTPLogs(lds)
+		fl := flattenAllFluentBitLogs(lds)
 
 		return fl, nil
 	}, matcher)
