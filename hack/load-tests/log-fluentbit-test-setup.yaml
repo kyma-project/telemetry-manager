@@ -33,15 +33,15 @@ metadata:
   name: log-receiver
   namespace: log-load-test
   labels:
-    app: log-receiver
+    app.kubernetes.io/name: log-receiver
 spec:
   selector:
     matchLabels:
-      app: log-receiver
+      app.kubernetes.io/name: log-receiver
   template:
     metadata:
       labels:
-        app: log-receiver
+        app.kubernetes.io/name: log-receiver
         sidecar.istio.io/inject: "true"
     spec:
       containers:
@@ -71,11 +71,11 @@ spec:
   replicas: 10
   selector:
     matchLabels:
-      app: logs-load-generator
+      app.kubernetes.io/name: logs-load-generator
   template:
     metadata:
       labels:
-        app: logs-load-generator
+        app.kubernetes.io/name: logs-load-generator
     spec:
       affinity:
         podAntiAffinity:
@@ -99,7 +99,6 @@ spec:
           name: flog
           resources:
             limits:
-              cpu: 50m
               memory: 200Mi
             requests:
               cpu: 10m
@@ -110,7 +109,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: log-receiver
+    app.kubernetes.io/name: log-receiver
   name: log-receiver
   namespace: log-load-test
 spec:
@@ -128,7 +127,7 @@ spec:
       protocol: TCP
       targetPort: 4318
   selector:
-    app: log-receiver
+    app.kubernetes.io/name: log-receiver
 
 ---
 apiVersion: telemetry.kyma-project.io/v1alpha1
