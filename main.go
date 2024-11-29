@@ -93,7 +93,7 @@ var (
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241024-8bc3f6a8"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.9"
-	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
+	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.114.0-main"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.3-cfb181f"
 
 	cacheSyncPeriod           = 1 * time.Minute
