@@ -173,7 +173,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 	return fbReconciler, nil
 }
 
-//nolint:unparam // An error could be returned after implementing the IstioStatusChecker
+//nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
 func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, _ *prober.LogPipelineProber) (*logpipelineotel.Reconciler, error) {
 	otelConfig := logpipelineotel.Config{
 		LogGatewayName:     otelLogGatewayName,
