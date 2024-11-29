@@ -160,7 +160,7 @@ func TestBuildConfig(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expectedQueueSize := 85
+		expectedQueueSize := 85 // Total queue size (256) divided by the number of pipelines (3)
 		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-1"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-2"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-3"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
