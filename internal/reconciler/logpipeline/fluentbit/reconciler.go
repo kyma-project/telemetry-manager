@@ -11,6 +11,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -34,6 +36,20 @@ const (
 	defaultStorageType       = "filesystem"
 	defaultFsBufferLimit     = "1G"
 )
+
+type Config struct {
+	DaemonSet           types.NamespacedName
+	SectionsConfigMap   types.NamespacedName
+	FilesConfigMap      types.NamespacedName
+	LuaConfigMap        types.NamespacedName
+	ParsersConfigMap    types.NamespacedName
+	EnvConfigSecret     types.NamespacedName
+	TLSFileConfigSecret types.NamespacedName
+	PipelineDefaults    builder.PipelineDefaults
+	Overrides           overrides.Config
+	DaemonSetConfig     fluentbit.DaemonSetConfig
+	RestConfig          rest.Config
+}
 
 type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool

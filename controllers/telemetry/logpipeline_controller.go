@@ -41,6 +41,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
@@ -52,7 +53,14 @@ import (
 
 const (
 	// FluentBit
-	fbBaseName = "telemetry-fluent-bit"
+	fbBaseName                 = "telemetry-fluent-bit"
+	fbSectionsConfigMapName    = fbBaseName + "-sections"
+	fbFilesConfigMapName       = fbBaseName + "-files"
+	fbLuaConfigMapName         = fbBaseName + "-luascripts"
+	fbParsersConfigMapName     = fbBaseName + "-parsers"
+	fbEnvConfigSecretName      = fbBaseName + "-env"
+	fbTLSFileConfigSecretName  = fbBaseName + "-output-tls-config"
+	fbDaemonSetName            = fbBaseName
 
 	// OTel
 	otelLogGatewayName = "telemetry-log-gateway"
@@ -164,17 +172,24 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.LogPipelineProber) (*logpipelinefluentbit.Reconciler, error) {
-	fbConfig := logpipelinefluentbit.NewConfig(
-		fbBaseName,
-		config.TelemetryNamespace,
-		logpipelinefluentbit.WithFluentBitImage(config.FluentBitImage),
-		logpipelinefluentbit.WithExporterImage(config.ExporterImage),
-		logpipelinefluentbit.WithPriorityClassName(config.FluentBitPriorityClassName),
-		logpipelinefluentbit.WithCPULimit(fbCPULimit),
-		logpipelinefluentbit.WithMemoryLimit(fbMemoryLimit),
-		logpipelinefluentbit.WithCPURequest(fbCPURequest),
-		logpipelinefluentbit.WithMemoryRequest(fbMemoryRequest),
-	)
+	fbConfig := logpipelinefluentbit.Config{
+		SectionsConfigMap:   types.NamespacedName{Name: fbSectionsConfigMapName, Namespace: config.TelemetryNamespace},
+		FilesConfigMap:      types.NamespacedName{Name: fbFilesConfigMapName, Namespace: config.TelemetryNamespace},
+		LuaConfigMap:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: config.TelemetryNamespace},
+		ParsersConfigMap:    types.NamespacedName{Name: fbParsersConfigMapName, Namespace: config.TelemetryNamespace},
+		EnvConfigSecret:     types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: config.TelemetryNamespace},
+		TLSFileConfigSecret: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: config.TelemetryNamespace},
+		DaemonSet:           types.NamespacedName{Name: fbDaemonSetName, Namespace: config.TelemetryNamespace},
+		DaemonSetConfig: fluentbit.DaemonSetConfig{
+			FluentBitImage:    config.FluentBitImage,
+			ExporterImage:     config.ExporterImage,
+			PriorityClassName: config.FluentBitPriorityClassName,
+			CPULimit:          fbCPULimit,
+			MemoryLimit:       fbMemoryLimit,
+			CPURequest:        fbCPURequest,
+			MemoryRequest:     fbMemoryRequest,
+		},
+	}
 
 	pipelineValidator := &logpipelinefluentbit.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
