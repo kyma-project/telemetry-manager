@@ -23,7 +23,7 @@ override:
     path: ^internal/istiostatus$
   - threshold: 87
     path: ^internal/otelcollector/config/otlpexporter$
-  - threshold: 73
+  - threshold: 77
     path: ^internal/reconciler/logpipeline/fluentbit$
   - threshold: 0
     path: ^internal/reconciler/logpipeline/otel$
@@ -35,7 +35,7 @@ override:
     path: ^internal/reconciler/telemetry$
   - threshold: 74
     path: ^internal/reconciler/tracepipeline$
-  - threshold: 75
+  - threshold: 82
     path: ^internal/resources/otelcollector$
   - threshold: 78
     path: ^internal/resources/selfmonitor$
@@ -55,7 +55,6 @@ override:
     path: ^webhook/tracepipeline/v1alpha1$
   - threshold: 75
     path: ^webhook/tracepipeline/v1beta1$
-
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:

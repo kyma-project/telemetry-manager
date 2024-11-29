@@ -10,13 +10,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
-var (
-	defaultCPULimit      = resource.MustParse("1")
-	defaultMemoryLimit   = resource.MustParse("1Gi")
-	defaultCPURequest    = resource.MustParse("100m")
-	defaultMemoryRequest = resource.MustParse("50Mi")
-)
-
 type Config struct {
 	DaemonSet           types.NamespacedName
 	SectionsConfigMap   types.NamespacedName
@@ -84,12 +77,6 @@ func NewConfig(baseName string, namespace string, options ...ConfigOption) Confi
 		EnvConfigSecret:     types.NamespacedName{Name: baseName + "-env", Namespace: namespace},
 		TLSFileConfigSecret: types.NamespacedName{Name: baseName + "-output-tls-config", Namespace: namespace},
 		DaemonSet:           types.NamespacedName{Name: baseName, Namespace: namespace},
-		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			CPULimit:      defaultCPULimit,
-			MemoryLimit:   defaultMemoryLimit,
-			CPURequest:    defaultCPURequest,
-			MemoryRequest: defaultMemoryRequest,
-		},
 	}
 
 	for _, opt := range options {

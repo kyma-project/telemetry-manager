@@ -22,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -50,9 +51,30 @@ import (
 )
 
 const (
+	// FluentBit
 	fbBaseName = "telemetry-fluent-bit"
 
+	// OTel
 	otelLogGatewayName = "telemetry-log-gateway"
+)
+
+var (
+	// FluentBit
+	fbCPULimit      = resource.MustParse("1")
+	fbMemoryLimit   = resource.MustParse("1Gi")
+	fbCPURequest    = resource.MustParse("100m")
+	fbMemoryRequest = resource.MustParse("50Mi")
+
+	// OTel
+	// TODO: Check if these values need to be adjusted
+	logGatewayBaseCPULimit         = resource.MustParse("700m")
+	logGatewayDynamicCPULimit      = resource.MustParse("500m")
+	logGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
+	logGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
+	logGatewayBaseCPURequest       = resource.MustParse("100m")
+	logGatewayDynamicCPURequest    = resource.MustParse("100m")
+	logGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	logGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
 // LogPipelineController reconciles a LogPipeline object
@@ -148,6 +170,10 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		logpipelinefluentbit.WithFluentBitImage(config.FluentBitImage),
 		logpipelinefluentbit.WithExporterImage(config.ExporterImage),
 		logpipelinefluentbit.WithPriorityClassName(config.FluentBitPriorityClassName),
+		logpipelinefluentbit.WithCPULimit(fbCPULimit),
+		logpipelinefluentbit.WithMemoryLimit(fbMemoryLimit),
+		logpipelinefluentbit.WithCPURequest(fbCPURequest),
+		logpipelinefluentbit.WithMemoryRequest(fbMemoryRequest),
 	)
 
 	pipelineValidator := &logpipelinefluentbit.Validator{
@@ -185,10 +211,18 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 			BaseName:  otelLogGatewayName,
 			Namespace: config.TelemetryNamespace,
 		},
-		Deployment: otelcollector.NewDeploymentConfig(
-			otelcollector.WithImage(config.OTelCollectorImage),
-			otelcollector.WithPriorityClassName(config.LogGatewayPriorityClassName),
-		),
+		Deployment: otelcollector.DeploymentConfig{
+			Image:                config.OTelCollectorImage,
+			PriorityClassName:    config.LogGatewayPriorityClassName,
+			BaseCPULimit:         logGatewayBaseCPULimit,
+			DynamicCPULimit:      logGatewayDynamicCPULimit,
+			BaseMemoryLimit:      logGatewayBaseMemoryLimit,
+			DynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
+			BaseCPURequest:       logGatewayBaseCPURequest,
+			DynamicCPURequest:    logGatewayDynamicCPURequest,
+			BaseMemoryRequest:    logGatewayBaseMemoryRequest,
+			DynamicMemoryRequest: logGatewayDynamicMemoryRequest,
+		},
 		OTLPServiceName: config.LogGatewayServiceName,
 	}
 
