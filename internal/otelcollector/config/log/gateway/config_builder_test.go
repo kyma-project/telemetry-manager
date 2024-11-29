@@ -29,15 +29,16 @@ func TestBuildConfig(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
+		const endpointEnvVar = "OTLP_ENDPOINT_TEST"
+		expectedEndpoint := fmt.Sprintf("${%s}", endpointEnvVar)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
 		require.Equal(t, expectedEndpoint, otlpExporterConfig.OTLP.Endpoint)
 
-		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST")
-		require.Equal(t, "http://localhost", string(envVars["OTLP_ENDPOINT_TEST"]))
+		require.Contains(t, envVars, endpointEnvVar)
+		require.Equal(t, "http://localhost", string(envVars[endpointEnvVar]))
 	})
 
 	t.Run("secure", func(t *testing.T) {
