@@ -158,6 +158,7 @@ func TestBuildConfig(t *testing.T) {
 			testutils.NewTracePipelineBuilder().WithName("test-3").Build()})
 
 		require.NoError(t, err)
+
 		expectedQueueSize := 85
 		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-1"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 		require.Equal(t, expectedQueueSize, collectorConfig.Exporters["otlp/test-2"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
