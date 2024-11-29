@@ -149,7 +149,7 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("single pipeline queue size", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()})
 		require.NoError(t, err)
-		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
+		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {

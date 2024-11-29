@@ -193,7 +193,7 @@ func TestMakeConfig(t *testing.T) {
 			BuildOptions{},
 		)
 		require.NoError(t, err)
-		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
+		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {
