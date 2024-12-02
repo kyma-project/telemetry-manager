@@ -4,9 +4,9 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
-  #####################################
-  # policy rules for the manager itself
-  #####################################
+  ##########################
+  # Policy rules for manager
+  ##########################
   - apiGroups:
       - ""
     resources:
@@ -129,7 +129,7 @@ rules:
       - update
 
   #############################
-  # policy rules for fluent bit
+  # Policy rules for fluent-bit
   #############################
   - apiGroups:
       - ""
@@ -142,7 +142,7 @@ rules:
       - watch
 
   ###############################
-  # policy rules for metric agent
+  # Policy rules for metric-agent
   ###############################
   - apiGroups:
       - ""
@@ -212,7 +212,7 @@ rules:
       - watch
 
   #################################
-  # policy rules for metric gateway
+  # Policy rules for metric-gateway
   #################################
   - apiGroups:
       - ""
@@ -251,7 +251,7 @@ rules:
       - watch
 
   ###############################
-  # policy rules for self monitor
+  # Policy rules for self-monitor
   ###############################
   - apiGroups:
       - ""
@@ -265,7 +265,7 @@ rules:
       - watch
 
   ################################
-  # policy rules for trace gateway
+  # Policy rules for trace-gateway
   ################################
   - apiGroups:
       - ""
