@@ -5,11 +5,11 @@ metadata:
 spec:
   input:
     runtime:
-      enabled: true
+      enabled: false # the agent is not responsible for runtime data, also the load returned will be stable and not relevant here
     prometheus:
-      enabled: true
+      enabled: true # 
     istio:
-      enabled: true
+      enabled: false # it is not a scenario with load on communication with many pods, so the load will be stable and not relevant here
   output:
     otlp:
       tls:
@@ -33,12 +33,12 @@ spec:
   replicas: 20
   selector:
     matchLabels:
-      app: metric-agent-load-generator
+      app.kubernetes.io/name: metric-agent-load-generator
   template:
     metadata:
       labels:
-        app: metric-agent-load-generator
-        sidecar.istio.io/inject: "true"
+        app.kubernetes.io/name: metric-agent-load-generator
+        sidecar.istio.io/inject: "false" # do not use istio for the pods to have pod scraping possible
       annotations:
         prometheus.io/path: /metrics
         prometheus.io/port: "8080"
@@ -67,7 +67,6 @@ spec:
           resources:
             limits:
               memory: "256Mi"
-              cpu: "200m"
           ports:
             - containerPort: 8080
               protocol: TCP
@@ -80,7 +79,7 @@ metadata:
   name: metric-receiver
   namespace: metric-load-test
   labels:
-    app: metric-receiver
+    app.kubernetes.io/name: metric-receiver
 data:
   config.yaml: |
     receivers:
@@ -105,18 +104,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: metric-receiver
+    app.kubernetes.io/name: metric-receiver
   name: metric-receiver
   namespace: metric-load-test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: metric-receiver
+      app.kubernetes.io/name: metric-receiver
   template:
     metadata:
       labels:
-        app: metric-receiver
+        app.kubernetes.io/name: metric-receiver
         sidecar.istio.io/inject: "true"
     spec:
       volumes:
@@ -150,7 +149,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: metric-receiver
+    app.kubernetes.io/name: metric-receiver
   name: metric-receiver
   namespace: metric-load-test
 spec:
@@ -164,7 +163,7 @@ spec:
       protocol: TCP
       targetPort: 4318
   selector:
-    app: metric-receiver
+    app.kubernetes.io/name: metric-receiver
 
 ---
 apiVersion: v1
@@ -174,7 +173,7 @@ metadata:
     prometheus.io/port: "8080"
     prometheus.io/scrape: "true"
   labels:
-    app: metric-agent-load-generator
+    app.kubernetes.io/name: metric-agent-load-generator
   name: metric-agent-load-generator
   namespace: metric-load-test
 spec:
@@ -185,5 +184,5 @@ spec:
       protocol: TCP
       targetPort: 8080
   selector:
-    app: metric-agent-load-generator
+    app.kubernetes.io/name: metric-agent-load-generator
   type: ClusterIP

@@ -21,18 +21,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: metric-load-generator
+    app.kubernetes.io/name: metric-load-generator
   name: metric-load-generator
   namespace: metric-load-test
 spec:
   replicas: 20
   selector:
     matchLabels:
-      app: metric-load-generator
+      app.kubernetes.io/name: metric-load-generator
   template:
     metadata:
       labels:
-        app: metric-load-generator
+        app.kubernetes.io/name: metric-load-generator
         sidecar.istio.io/inject: "true"
     spec:
       affinity:
@@ -48,7 +48,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
               weight: 100
       containers:
-        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.111.0
+        - image: TELEMETRY_GEN_IMAGE
           args:
           - metrics
           - --otlp-insecure
@@ -98,7 +98,7 @@ metadata:
   name: metric-receiver
   namespace: metric-load-test
   labels:
-    app: metric-receiver
+    app.kubernetes.io/name: metric-receiver
 data:
   config.yaml: |
     receivers:
@@ -123,18 +123,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: metric-receiver
+    app.kubernetes.io/name: metric-receiver
   name: metric-receiver
   namespace: metric-load-test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: metric-receiver
+      app.kubernetes.io/name: metric-receiver
   template:
     metadata:
       labels:
-        app: metric-receiver
+        app.kubernetes.io/name: metric-receiver
         sidecar.istio.io/inject: "true"
     spec:
       volumes:
@@ -168,7 +168,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: metric-receiver
+    app.kubernetes.io/name: metric-receiver
   name: metric-receiver
   namespace: metric-load-test
 spec:
@@ -182,5 +182,5 @@ spec:
       protocol: TCP
       targetPort: 4318
   selector:
-    app: metric-receiver
+    app.kubernetes.io/name: metric-receiver
 

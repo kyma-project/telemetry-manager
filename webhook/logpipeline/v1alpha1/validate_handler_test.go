@@ -27,7 +27,7 @@ func TestHandle(t *testing.T) {
 		logPipeline := testutils.NewLogPipelineBuilder().WithName("custom-output").WithCustomOutput("Name stdout").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
 
-		sut := NewValidatingWebhookHandler(fakeClient, scheme)
+		sut := newValidateHandler(fakeClient, scheme)
 
 		response := sut.Handle(context.Background(), admissionRequestFrom(t, logPipeline))
 
@@ -97,7 +97,7 @@ func TestHandle(t *testing.T) {
 
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
 
-				sut := NewValidatingWebhookHandler(fakeClient, scheme)
+				sut := newValidateHandler(fakeClient, scheme)
 
 				response := sut.Handle(context.Background(), admissionRequestFrom(t, logPipeline))
 				require.Equal(t, tt.allowed, response.Allowed)
