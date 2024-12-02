@@ -7,6 +7,8 @@ const (
 	metricAgentScrapeSelector   = "telemetry.kyma-project.io/metric-scrape"
 	metricGatewayIngestSelector = "telemetry.kyma-project.io/metric-ingest"
 	metricGatewayExportSelector = "telemetry.kyma-project.io/metric-export"
+	logGatewayIngestSelector    = "telemetry.kyma-project.io/log-ingest"
+	logGatewayExportSelector    = "telemetry.kyma-project.io/log-export"
 	istioSidecarInjectLabel     = "sidecar.istio.io/inject"
 )
 
@@ -39,5 +41,13 @@ func MakeTraceGatewaySelectorLabel(baseName string) map[string]string {
 		traceGatewayIngestSelector: "true",
 		traceGatewayExportSelector: "true",
 		istioSidecarInjectLabel:    "true",
+	}
+}
+
+func MakeLogGatewaySelectorLabel(baseName string) map[string]string {
+	return map[string]string{
+		selectorLabelKey:         baseName,
+		logGatewayIngestSelector: "true",
+		logGatewayExportSelector: "true",
 	}
 }

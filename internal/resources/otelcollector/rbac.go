@@ -17,7 +17,7 @@ type Rbac struct {
 
 type RBACOption func(*Rbac, types.NamespacedName)
 
-func NewRBAC(name types.NamespacedName, options ...RBACOption) *Rbac {
+func newRBAC(name types.NamespacedName, options ...RBACOption) *Rbac {
 	rbac := &Rbac{}
 
 	for _, o := range options {
@@ -27,7 +27,7 @@ func NewRBAC(name types.NamespacedName, options ...RBACOption) *Rbac {
 	return rbac
 }
 
-func WithClusterRole(options ...ClusterRoleOption) RBACOption {
+func withClusterRole(options ...ClusterRoleOption) RBACOption {
 	return func(r *Rbac, name types.NamespacedName) {
 		clusterRole := &rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
@@ -45,7 +45,7 @@ func WithClusterRole(options ...ClusterRoleOption) RBACOption {
 	}
 }
 
-func WithClusterRoleBinding() RBACOption {
+func withClusterRoleBinding() RBACOption {
 	return func(r *Rbac, name types.NamespacedName) {
 		r.clusterRoleBinding = &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
@@ -63,7 +63,7 @@ func WithClusterRoleBinding() RBACOption {
 	}
 }
 
-func WithRole(options ...RoleOption) RBACOption {
+func withRole(options ...RoleOption) RBACOption {
 	return func(r *Rbac, name types.NamespacedName) {
 		role := &rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
@@ -82,7 +82,7 @@ func WithRole(options ...RoleOption) RBACOption {
 	}
 }
 
-func WithRoleBinding() RBACOption {
+func withRoleBinding() RBACOption {
 	return func(r *Rbac, name types.NamespacedName) {
 		r.roleBinding = &rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
@@ -107,37 +107,45 @@ func WithRoleBinding() RBACOption {
 }
 
 func MakeTraceGatewayRBAC(name types.NamespacedName) Rbac {
-	return *NewRBAC(
+	return *newRBAC(
 		name,
-		WithClusterRole(WithK8sAttributeRules()),
-		WithClusterRoleBinding(),
+		withClusterRole(withK8sAttributeRules()),
+		withClusterRoleBinding(),
 	)
 }
 
 func MakeMetricAgentRBAC(name types.NamespacedName) Rbac {
-	return *NewRBAC(
+	return *newRBAC(
 		name,
-		WithClusterRole(WithKubeletStatsRules(), WithPrometheusRules(), WithK8sClusterRules()),
-		WithClusterRoleBinding(),
-		WithRole(WithSingletonCreatorRules()),
-		WithRoleBinding(),
+		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
+		withClusterRoleBinding(),
+		withRole(withSingletonCreatorRules()),
+		withRoleBinding(),
 	)
 }
 
 func MakeMetricGatewayRBAC(name types.NamespacedName) Rbac {
-	return *NewRBAC(
+	return *newRBAC(
 		name,
-		WithClusterRole(WithK8sAttributeRules(), WithKymaStatsRules()),
-		WithClusterRoleBinding(),
-		WithRole(WithSingletonCreatorRules()),
-		WithRoleBinding(),
+		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
+		withClusterRoleBinding(),
+		withRole(withSingletonCreatorRules()),
+		withRoleBinding(),
+	)
+}
+
+func MakeLogGatewayRBAC(name types.NamespacedName) Rbac {
+	return *newRBAC(
+		name,
+		withClusterRole(withK8sAttributeRules()),
+		withClusterRoleBinding(),
 	)
 }
 
 type RoleOption func(*rbacv1.Role)
 
-// WithSingletonCreatorRules returns a role option since resources needed are only namespace scoped
-func WithSingletonCreatorRules() RoleOption {
+// withSingletonCreatorRules returns a role option since resources needed are only namespace scoped
+func withSingletonCreatorRules() RoleOption {
 	return func(r *rbacv1.Role) {
 		// policy rules needed for the singletonreceivercreator component
 		singletonCreatorRules := []rbacv1.PolicyRule{{
@@ -151,7 +159,7 @@ func WithSingletonCreatorRules() RoleOption {
 
 type ClusterRoleOption func(*rbacv1.ClusterRole)
 
-func WithK8sClusterRules() ClusterRoleOption {
+func withK8sClusterRules() ClusterRoleOption {
 	return func(cr *rbacv1.ClusterRole) {
 		// policy rules needed for the k8sclusterreceiver component
 		k8sClusterRules := []rbacv1.PolicyRule{{
@@ -179,7 +187,7 @@ func WithK8sClusterRules() ClusterRoleOption {
 	}
 }
 
-func WithKubeletStatsRules() ClusterRoleOption {
+func withKubeletStatsRules() ClusterRoleOption {
 	// policy rules needed for the kubeletstatsreceiver component
 	kubeletStatsRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
@@ -192,7 +200,7 @@ func WithKubeletStatsRules() ClusterRoleOption {
 	}
 }
 
-func WithPrometheusRules() ClusterRoleOption {
+func withPrometheusRules() ClusterRoleOption {
 	// policy rules needed for the prometheusreceiver component
 	prometheusRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
@@ -208,7 +216,7 @@ func WithPrometheusRules() ClusterRoleOption {
 	}
 }
 
-func WithK8sAttributeRules() ClusterRoleOption {
+func withK8sAttributeRules() ClusterRoleOption {
 	// policy rules needed for the k8sattributeprocessor component
 	k8sAttributeRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
@@ -225,7 +233,7 @@ func WithK8sAttributeRules() ClusterRoleOption {
 	}
 }
 
-func WithKymaStatsRules() ClusterRoleOption {
+func withKymaStatsRules() ClusterRoleOption {
 	// policy rules needed for the kymastatsreceiver component
 	kymaStatsRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{"operator.kyma-project.io"},

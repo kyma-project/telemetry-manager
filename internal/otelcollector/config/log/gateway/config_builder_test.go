@@ -24,24 +24,25 @@ func TestBuildConfig(t *testing.T) {
 	sut := Builder{Reader: fakeClient}
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
+		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 		})
 		require.NoError(t, err)
 
-		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
+		const endpointEnvVar = "OTLP_ENDPOINT_TEST"
+		expectedEndpoint := fmt.Sprintf("${%s}", endpointEnvVar)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
 		require.Equal(t, expectedEndpoint, otlpExporterConfig.OTLP.Endpoint)
 
-		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST")
-		require.Equal(t, "http://localhost", string(envVars["OTLP_ENDPOINT_TEST"]))
+		require.Contains(t, envVars, endpointEnvVar)
+		require.Equal(t, "http://localhost", string(envVars[endpointEnvVar]))
 	})
 
 	t.Run("secure", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
@@ -50,8 +51,8 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("insecure", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
 
@@ -60,8 +61,8 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
-		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
+		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
@@ -79,8 +80,8 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("custom header", func(t *testing.T) {
-		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
+		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
 		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-custom-header")
@@ -96,8 +97,8 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("mtls", func(t *testing.T) {
-		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "cert", "key")).Build(),
+		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "cert", "key")).Build(),
 		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-mtls")
@@ -114,7 +115,7 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()})
 		require.NoError(t, err)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
@@ -124,7 +125,7 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()})
 		require.NoError(t, err)
 
 		metricreaders := []config.MetricReader{
@@ -146,16 +147,16 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()})
 		require.NoError(t, err)
 		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-1").Build(),
-			testutils.NewTracePipelineBuilder().WithName("test-2").Build(),
-			testutils.NewTracePipelineBuilder().WithName("test-3").Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test-1").WithOTLPOutput().Build(),
+			testutils.NewLogPipelineBuilder().WithName("test-2").WithOTLPOutput().Build(),
+			testutils.NewLogPipelineBuilder().WithName("test-3").WithOTLPOutput().Build()})
 
 		require.NoError(t, err)
 
@@ -166,61 +167,52 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()})
 		require.NoError(t, err)
 
-		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "otlp")
+		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test")
+		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Receivers, "otlp")
 
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter/drop-noisy-spans")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource/insert-cluster-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "transform/resolve-service-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[5], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[6], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "batch")
 
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
+		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Exporters, "otlp/test")
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
-		collectorConfig, envVars, err := sut.Build(context.Background(), []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test-1").Build(),
-			testutils.NewTracePipelineBuilder().WithName("test-2").Build()})
+		collectorConfig, envVars, err := sut.Build(context.Background(), []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test-1").WithOTLPOutput().Build(),
+			testutils.NewLogPipelineBuilder().WithName("test-2").WithOTLPOutput().Build()})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-1")
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-2")
 
-		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-1")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Exporters, "otlp/test-1")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "otlp")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter/drop-noisy-spans")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource/insert-cluster-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "transform/resolve-service-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[5], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[6], "batch")
+		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test-1")
+		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-1"].Exporters, "otlp/test-1")
+		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-1"].Receivers, "otlp")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[2], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[3], "batch")
 
-		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-2")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "otlp/test-2")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "otlp")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter/drop-noisy-spans")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource/insert-cluster-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "transform/resolve-service-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[5], "resource/drop-kyma-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[6], "batch")
+		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test-2")
+		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-2"].Exporters, "otlp/test-2")
+		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-2"].Receivers, "otlp")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[2], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[3], "batch")
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_1")
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_2")
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		config, _, err := sut.Build(context.Background(), []telemetryv1alpha1.TracePipeline{
-			testutils.NewTracePipelineBuilder().WithName("test").Build(),
+		config, _, err := sut.Build(context.Background(), []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build(),
 		})
 		require.NoError(t, err)
 
@@ -233,5 +225,13 @@ func TestBuildConfig(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, string(goldenFile), string(configYAML))
+	})
+
+	t.Run("failed to make otlp exporter config", func(t *testing.T) {
+		_, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithName("test-fail").WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("nonexistent-secret", "default", "user", "password")).Build(),
+		})
+		require.Error(t, err)
+		require.ErrorContains(t, err, "failed to make otlp exporter config")
 	})
 }

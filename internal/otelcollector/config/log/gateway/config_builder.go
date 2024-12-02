@@ -22,7 +22,7 @@ type Builder struct {
 	Reader client.Reader
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*Config, otlpexporter.EnvVars, error) {
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
 			Service:    config.DefaultService(make(config.Pipelines)),
@@ -48,9 +48,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 			pipeline.Spec.Output.OTLP,
 			pipeline.Name,
 			queueSize,
-			otlpexporter.SignalTypeTrace,
+			otlpexporter.SignalTypeLog,
 		)
-		if err := addComponentsForTracePipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
+		if err := addComponentsForLogPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -73,8 +73,8 @@ func makeReceiversConfig() Receivers {
 	}
 }
 
-// addComponentsForTracePipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.TracePipeline.
-func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.TracePipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+// addComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
+func addComponentsForLogPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
@@ -85,7 +85,7 @@ func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otl
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
-	pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)
+	pipelineID := fmt.Sprintf("logs/%s", pipeline.Name)
 	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID)
 
 	return nil
@@ -99,10 +99,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 		Processors: []string{
 			"memory_limiter",
 			"k8sattributes",
-			"filter/drop-noisy-spans",
 			"resource/insert-cluster-name",
-			"transform/resolve-service-name",
-			"resource/drop-kyma-attributes",
 			"batch",
 		},
 		Exporters: exporterIDs,
