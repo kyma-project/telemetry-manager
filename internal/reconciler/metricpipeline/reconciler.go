@@ -30,8 +30,6 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	AgentName          string
-	GatewayName        string
 	ModuleVersion      string
 	TelemetryNamespace string
 }
@@ -267,7 +265,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	metricGatewaySelectorLabels := labels.MakeMetricGatewaySelectorLabel(r.config.GatewayName)
+	metricGatewaySelectorLabels := labels.MakeMetricGatewaySelectorLabel(otelcollector.MetricGatewayName)
 
 	opts := otelcollector.GatewayApplyOptions{
 		AllowedPorts:                   allowedPorts,
@@ -310,7 +308,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	metricAgentSelectorLabels := labels.MakeMetricAgentSelectorLabel(r.config.AgentName)
+	metricAgentSelectorLabels := labels.MakeMetricAgentSelectorLabel(otelcollector.MetricAgentName)
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,

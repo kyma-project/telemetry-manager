@@ -12,21 +12,9 @@ type Config struct {
 type GatewayConfig struct {
 	Config
 
-	Deployment      DeploymentConfig
-	OTLPServiceName string
-}
-
-type DeploymentConfig struct {
-	Image                string
-	PriorityClassName    string
-	BaseCPULimit         resource.Quantity
-	DynamicCPULimit      resource.Quantity
-	BaseMemoryLimit      resource.Quantity
-	DynamicMemoryLimit   resource.Quantity
-	BaseCPURequest       resource.Quantity
-	DynamicCPURequest    resource.Quantity
-	BaseMemoryRequest    resource.Quantity
-	DynamicMemoryRequest resource.Quantity
+	Image             string
+	PriorityClassName string
+	OTLPServiceName   string
 }
 
 type AgentConfig struct {

@@ -23,13 +23,21 @@ import (
 )
 
 const (
+	MetricAgentName     = "telemetry-metric-agent"
 	istioCertVolumeName = "istio-certs"
 	IstioCertPath       = "/etc/istio-output-certs"
 )
 
+var (
+	metricAgentCPULimit      = resource.MustParse("1")
+	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
+	metricAgentCPURequest    = resource.MustParse("15m")
+	metricAgentMemoryRequest = resource.MustParse("50Mi")
+)
+
 type AgentApplierDeleter struct {
 	Config AgentConfig
-	RBAC   Rbac
+	RBAC   rbac
 }
 
 type AgentApplyOptions struct {

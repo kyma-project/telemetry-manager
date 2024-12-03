@@ -8,17 +8,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/labels"
 )
 
-type Rbac struct {
+type rbac struct {
 	clusterRole        *rbacv1.ClusterRole
 	clusterRoleBinding *rbacv1.ClusterRoleBinding
 	role               *rbacv1.Role
 	roleBinding        *rbacv1.RoleBinding
 }
 
-type RBACOption func(*Rbac, types.NamespacedName)
+type RBACOption func(*rbac, types.NamespacedName)
 
-func newRBAC(name types.NamespacedName, options ...RBACOption) *Rbac {
-	rbac := &Rbac{}
+func newRBAC(name types.NamespacedName, options ...RBACOption) *rbac {
+	rbac := &rbac{}
 
 	for _, o := range options {
 		o(rbac, name)
@@ -28,7 +28,7 @@ func newRBAC(name types.NamespacedName, options ...RBACOption) *Rbac {
 }
 
 func withClusterRole(options ...ClusterRoleOption) RBACOption {
-	return func(r *Rbac, name types.NamespacedName) {
+	return func(r *rbac, name types.NamespacedName) {
 		clusterRole := &rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
@@ -46,7 +46,7 @@ func withClusterRole(options ...ClusterRoleOption) RBACOption {
 }
 
 func withClusterRoleBinding() RBACOption {
-	return func(r *Rbac, name types.NamespacedName) {
+	return func(r *rbac, name types.NamespacedName) {
 		r.clusterRoleBinding = &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
@@ -64,7 +64,7 @@ func withClusterRoleBinding() RBACOption {
 }
 
 func withRole(options ...RoleOption) RBACOption {
-	return func(r *Rbac, name types.NamespacedName) {
+	return func(r *rbac, name types.NamespacedName) {
 		role := &rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
@@ -83,7 +83,7 @@ func withRole(options ...RoleOption) RBACOption {
 }
 
 func withRoleBinding() RBACOption {
-	return func(r *Rbac, name types.NamespacedName) {
+	return func(r *rbac, name types.NamespacedName) {
 		r.roleBinding = &rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
@@ -106,15 +106,15 @@ func withRoleBinding() RBACOption {
 	}
 }
 
-func MakeTraceGatewayRBAC(name types.NamespacedName) Rbac {
+func makeTraceGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
-		name,
+		types.NamespacedName{Name: TraceGatewayName, Namespace: namespace},
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
 	)
 }
 
-func MakeMetricAgentRBAC(name types.NamespacedName) Rbac {
+func MakeMetricAgentRBAC(name types.NamespacedName) rbac {
 	return *newRBAC(
 		name,
 		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
@@ -124,9 +124,9 @@ func MakeMetricAgentRBAC(name types.NamespacedName) Rbac {
 	)
 }
 
-func MakeMetricGatewayRBAC(name types.NamespacedName) Rbac {
+func makeMetricGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
-		name,
+		types.NamespacedName{Name: MetricGatewayName, Namespace: namespace},
 		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
 		withRole(withSingletonCreatorRules()),
@@ -134,9 +134,9 @@ func MakeMetricGatewayRBAC(name types.NamespacedName) Rbac {
 	)
 }
 
-func MakeLogGatewayRBAC(name types.NamespacedName) Rbac {
+func makeLogGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
-		name,
+		types.NamespacedName{Name: LogGatewayName, Namespace: namespace},
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
 	)

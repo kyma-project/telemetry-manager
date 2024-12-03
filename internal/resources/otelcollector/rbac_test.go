@@ -145,7 +145,7 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 	name := "test-gateway"
 	namespace := "test-namespace"
 
-	rbac := MakeMetricGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace})
+	rbac := makeMetricGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace})
 
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole

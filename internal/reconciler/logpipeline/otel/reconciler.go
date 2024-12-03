@@ -27,7 +27,6 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	LogGatewayName     string
 	TelemetryNamespace string
 }
 
@@ -180,7 +179,7 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	logGatewaySelectorLabels := labels.MakeLogGatewaySelectorLabel(r.config.LogGatewayName)
+	logGatewaySelectorLabels := labels.MakeLogGatewaySelectorLabel(otelcollector.LogGatewayName)
 
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),

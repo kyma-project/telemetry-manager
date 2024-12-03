@@ -322,7 +322,7 @@ func TestDeleteAgentResources(t *testing.T) {
 	})
 }
 
-func createAgentRBAC() Rbac {
+func createAgentRBAC() rbac {
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      agentName,
@@ -352,7 +352,7 @@ func createAgentRBAC() Rbac {
 		},
 	}
 
-	return Rbac{
+	return rbac{
 		clusterRole:        clusterRole,
 		clusterRoleBinding: clusterRoleBinding,
 		role:               nil,

@@ -22,7 +22,7 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, rbac Rbac, allowedPorts []int32) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, rbac rbac, allowedPorts []int32) error {
 	// Create service account before RBAC resources
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)

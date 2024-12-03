@@ -52,7 +52,6 @@ import (
 )
 
 const (
-	// FluentBit
 	fbBaseName                = "telemetry-fluent-bit"
 	fbSectionsConfigMapName   = fbBaseName + "-sections"
 	fbFilesConfigMapName      = fbBaseName + "-files"
@@ -61,9 +60,6 @@ const (
 	fbEnvConfigSecretName     = fbBaseName + "-env"
 	fbTLSFileConfigSecretName = fbBaseName + "-output-tls-config"
 	fbDaemonSetName           = fbBaseName
-
-	// OTel
-	otelLogGatewayName = "telemetry-log-gateway"
 )
 
 var (
@@ -72,17 +68,6 @@ var (
 	fbMemoryLimit   = resource.MustParse("1Gi")
 	fbCPURequest    = resource.MustParse("100m")
 	fbMemoryRequest = resource.MustParse("50Mi")
-
-	// OTel
-	// TODO: Check if these values need to be adjusted
-	logGatewayBaseCPULimit         = resource.MustParse("700m")
-	logGatewayDynamicCPULimit      = resource.MustParse("500m")
-	logGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
-	logGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
-	logGatewayBaseCPURequest       = resource.MustParse("100m")
-	logGatewayDynamicCPURequest    = resource.MustParse("100m")
-	logGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
-	logGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
 // LogPipelineController reconciles a LogPipeline object
@@ -99,7 +84,6 @@ type LogPipelineControllerConfig struct {
 	OTelCollectorImage          string
 	FluentBitPriorityClassName  string
 	LogGatewayPriorityClassName string
-	LogGatewayServiceName       string
 	RestConfig                  *rest.Config
 	SelfMonitorName             string
 	TelemetryNamespace          string
@@ -217,47 +201,17 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
 func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, _ *prober.LogPipelineProber) (*logpipelineotel.Reconciler, error) {
 	otelConfig := logpipelineotel.Config{
-		LogGatewayName:     otelLogGatewayName,
 		TelemetryNamespace: config.TelemetryNamespace,
-	}
-
-	gatewayConfig := otelcollector.GatewayConfig{
-		Config: otelcollector.Config{
-			BaseName:  otelLogGatewayName,
-			Namespace: config.TelemetryNamespace,
-		},
-		Deployment: otelcollector.DeploymentConfig{
-			Image:                config.OTelCollectorImage,
-			PriorityClassName:    config.LogGatewayPriorityClassName,
-			BaseCPULimit:         logGatewayBaseCPULimit,
-			DynamicCPULimit:      logGatewayDynamicCPULimit,
-			BaseMemoryLimit:      logGatewayBaseMemoryLimit,
-			DynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
-			BaseCPURequest:       logGatewayBaseCPURequest,
-			DynamicCPURequest:    logGatewayDynamicCPURequest,
-			BaseMemoryRequest:    logGatewayBaseMemoryRequest,
-			DynamicMemoryRequest: logGatewayDynamicMemoryRequest,
-		},
-		OTLPServiceName: config.LogGatewayServiceName,
 	}
 
 	pipelineValidator := &logpipelineotel.Validator{
 		// TODO: Add validators
 	}
 
-	rbac := otelcollector.MakeLogGatewayRBAC(
-		types.NamespacedName{
-			Name:      otelLogGatewayName,
-			Namespace: config.TelemetryNamespace,
-		})
-
 	otelReconciler := logpipelineotel.New(
 		client,
 		otelConfig,
-		&otelcollector.GatewayApplierDeleter{
-			Config: gatewayConfig,
-			RBAC:   rbac,
-		},
+		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		pipelineValidator,

@@ -45,7 +45,6 @@ import (
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	TraceGatewayName   string
 	TelemetryNamespace string
 }
 
@@ -246,7 +245,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	traceGatewaySelectorLabels := labels.MakeTraceGatewaySelectorLabel(r.config.TraceGatewayName)
+	traceGatewaySelectorLabels := labels.MakeTraceGatewaySelectorLabel(otelcollector.TraceGatewayName)
 
 	opts := otelcollector.GatewayApplyOptions{
 		AllowedPorts:                   allowedPorts,
