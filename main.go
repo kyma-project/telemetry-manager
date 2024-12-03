@@ -74,7 +74,7 @@ var (
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
 	// TODO: replace with build version based on git revision
-	version = "main"
+	version = "1.29.0"
 
 	// Operator flags
 	certDir                   string
@@ -93,7 +93,7 @@ var (
 const (
 	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241024-8bc3f6a8"
 	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.2.2"
-	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.114.0-main"
+	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.114.0-1.29.0"
 	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.0.1-857b814"
 
 	cacheSyncPeriod           = 1 * time.Minute
