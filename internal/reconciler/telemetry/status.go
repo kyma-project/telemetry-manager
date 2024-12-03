@@ -126,7 +126,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, telemet
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
-	return makeOTLPEndpoints(otelcollector.MetricGatewayName, config.Metrics.Namespace), nil
+	return makeOTLPEndpoints(otelcollector.MetricOTLPServiceName, config.Metrics.Namespace), nil
 }
 
 func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndpoints {

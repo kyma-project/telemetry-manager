@@ -114,9 +114,9 @@ func makeTraceGatewayRBAC(namespace string) rbac {
 	)
 }
 
-func MakeMetricAgentRBAC(name types.NamespacedName) rbac {
+func makeMetricAgentRBAC(namespace string) rbac {
 	return *newRBAC(
-		name,
+		types.NamespacedName{Name: MetricAgentName, Namespace: namespace},
 		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
 		withClusterRoleBinding(),
 		withRole(withSingletonCreatorRules()),

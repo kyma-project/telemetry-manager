@@ -47,8 +47,6 @@ func TestReconcile(t *testing.T) {
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
 	testConfig := Config{
-		AgentName:          "agent",
-		GatewayName:        "gateway",
 		TelemetryNamespace: "default",
 	}
 

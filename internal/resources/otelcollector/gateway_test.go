@@ -48,8 +48,18 @@ func TestApplyGatewayResources(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	sut := GatewayApplierDeleter{
-		Config: createGatewayConfig(),
-		RBAC:   createGatewayRBAC(),
+		baseName:             gatewayName,
+		namespace:            gatewayNamespace,
+		otlpServiceName:      otlpServiceName,
+		rbac:                 makeDummyGatewayRBAC(),
+		baseCPULimit:         baseCPULimit,
+		dynamicCPULimit:      dynamicCPULimit,
+		baseMemoryLimit:      baseMemoryLimit,
+		dynamicMemoryLimit:   dynamicMemoryLimit,
+		baseCPURequest:       baseCPURequest,
+		dynamicCPURequest:    dynamicCPURequest,
+		baseMemoryRequest:    baseMemoryRequest,
+		dynamicMemoryRequest: dynamicMemoryRequest,
 	}
 
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
@@ -90,7 +100,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": gatewayName,
 		}, cr.Labels)
-		require.Equal(t, sut.RBAC.clusterRole.Rules, cr.Rules)
+		require.Equal(t, sut.rbac.clusterRole.Rules, cr.Rules)
 	})
 
 	t.Run("should create cluster role binding", func(t *testing.T) {
@@ -130,7 +140,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": gatewayName,
 		}, r.Labels)
-		require.Equal(t, sut.RBAC.role.Rules, r.Rules)
+		require.Equal(t, sut.rbac.role.Rules, r.Rules)
 	})
 
 	t.Run("should create role binding", func(t *testing.T) {
@@ -377,8 +387,18 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	sut := GatewayApplierDeleter{
-		Config: createGatewayConfig(),
-		RBAC:   createGatewayRBAC(),
+		baseName:             gatewayName,
+		namespace:            gatewayNamespace,
+		otlpServiceName:      otlpServiceName,
+		rbac:                 makeDummyGatewayRBAC(),
+		baseCPULimit:         baseCPULimit,
+		dynamicCPULimit:      dynamicCPULimit,
+		baseMemoryLimit:      baseMemoryLimit,
+		dynamicMemoryLimit:   dynamicMemoryLimit,
+		baseCPURequest:       baseCPURequest,
+		dynamicCPURequest:    dynamicCPURequest,
+		baseMemoryRequest:    baseMemoryRequest,
+		dynamicMemoryRequest: dynamicMemoryRequest,
 	}
 
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
@@ -433,8 +453,18 @@ func TestDeleteGatewayResources(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	sut := GatewayApplierDeleter{
-		Config: createGatewayConfig(),
-		RBAC:   createGatewayRBAC(),
+		baseName:             gatewayName,
+		namespace:            gatewayNamespace,
+		otlpServiceName:      otlpServiceName,
+		rbac:                 makeDummyGatewayRBAC(),
+		baseCPULimit:         baseCPULimit,
+		dynamicCPULimit:      dynamicCPULimit,
+		baseMemoryLimit:      baseMemoryLimit,
+		dynamicMemoryLimit:   dynamicMemoryLimit,
+		baseCPURequest:       baseCPURequest,
+		dynamicCPURequest:    dynamicCPURequest,
+		baseMemoryRequest:    baseMemoryRequest,
+		dynamicMemoryRequest: dynamicMemoryRequest,
 	}
 
 	// Create gateway resources before testing deletion
@@ -525,28 +555,7 @@ func TestDeleteGatewayResources(t *testing.T) {
 	})
 }
 
-func createGatewayConfig() GatewayConfig {
-	return GatewayConfig{
-		Config: Config{
-			BaseName:  gatewayName,
-			Namespace: gatewayNamespace,
-		},
-		OTLPServiceName: otlpServiceName,
-
-		Deployment: DeploymentConfig{
-			BaseCPURequest:       baseCPURequest,
-			DynamicCPURequest:    dynamicCPURequest,
-			BaseCPULimit:         baseCPULimit,
-			DynamicCPULimit:      dynamicCPULimit,
-			BaseMemoryRequest:    baseMemoryRequest,
-			DynamicMemoryRequest: dynamicMemoryRequest,
-			BaseMemoryLimit:      baseMemoryLimit,
-			DynamicMemoryLimit:   dynamicMemoryLimit,
-		},
-	}
-}
-
-func createGatewayRBAC() rbac {
+func makeDummyGatewayRBAC() rbac {
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,

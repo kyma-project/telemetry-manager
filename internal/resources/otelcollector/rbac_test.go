@@ -5,15 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestMakeTraceGatewayRBAC(t *testing.T) {
-	name := "test-gateway"
 	namespace := "test-namespace"
+	rbac := makeTraceGatewayRBAC(namespace)
 
-	rbac := MakeTraceGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace})
-
+	expectedName := TraceGatewayName
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
@@ -30,17 +28,17 @@ func TestMakeTraceGatewayRBAC(t *testing.T) {
 		}
 
 		require.NotNil(t, cr)
-		require.Equal(t, name, cr.Name)
+		require.Equal(t, expectedName, cr.Name)
 		require.Equal(t, namespace, cr.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": expectedName,
 		}, cr.Labels)
 		require.Equal(t, expectedRules, cr.Rules)
 	})
 
 	t.Run("should have a cluster role binding", func(t *testing.T) {
 		crb := rbac.clusterRoleBinding
-		checkClusterRoleBinding(t, crb, name, namespace)
+		checkClusterRoleBinding(t, crb, expectedName, namespace)
 	})
 
 	t.Run("should not have a role", func(t *testing.T) {
@@ -55,11 +53,10 @@ func TestMakeTraceGatewayRBAC(t *testing.T) {
 }
 
 func TestMakeMetricAgentRBAC(t *testing.T) {
-	name := "test-agent"
 	namespace := "test-namespace"
+	rbac := makeMetricAgentRBAC(namespace)
 
-	rbac := MakeMetricAgentRBAC(types.NamespacedName{Name: name, Namespace: namespace})
-
+	expectedName := "test-agent"
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
@@ -101,17 +98,17 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		}
 
 		require.NotNil(t, cr)
-		require.Equal(t, cr.Name, name)
+		require.Equal(t, cr.Name, expectedName)
 		require.Equal(t, cr.Namespace, namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": expectedName,
 		}, cr.Labels)
 		require.Equal(t, cr.Rules, expectedRules)
 	})
 
 	t.Run("should have a cluster role binding", func(t *testing.T) {
 		crb := rbac.clusterRoleBinding
-		checkClusterRoleBinding(t, crb, name, namespace)
+		checkClusterRoleBinding(t, crb, expectedName, namespace)
 	})
 
 	t.Run("should have a role", func(t *testing.T) {
@@ -125,10 +122,10 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		}
 
 		require.NotNil(t, r)
-		require.Equal(t, name, r.Name)
+		require.Equal(t, expectedName, r.Name)
 		require.Equal(t, namespace, r.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": expectedName,
 		}, r.Labels)
 		require.Equal(t, expectedRules, r.Rules)
 	})
@@ -137,16 +134,15 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		rb := rbac.roleBinding
 		require.NotNil(t, rb)
 
-		checkRoleBinding(t, rb, name, namespace)
+		checkRoleBinding(t, rb, expectedName, namespace)
 	})
 }
 
 func TestMakeMetricGatewayRBAC(t *testing.T) {
-	name := "test-gateway"
 	namespace := "test-namespace"
+	rbac := makeMetricGatewayRBAC(namespace)
 
-	rbac := makeMetricGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace})
-
+	expectedName := MetricGatewayName
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
@@ -182,17 +178,17 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 			}}
 
 		require.NotNil(t, cr)
-		require.Equal(t, name, cr.Name)
+		require.Equal(t, expectedName, cr.Name)
 		require.Equal(t, namespace, cr.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": expectedName,
 		}, cr.Labels)
 		require.Equal(t, expectedRules, cr.Rules)
 	})
 
 	t.Run("should have a cluster role binding", func(t *testing.T) {
 		crb := rbac.clusterRoleBinding
-		checkClusterRoleBinding(t, crb, name, namespace)
+		checkClusterRoleBinding(t, crb, expectedName, namespace)
 	})
 
 	t.Run("should have a role", func(t *testing.T) {
@@ -206,10 +202,10 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 		}
 
 		require.NotNil(t, r)
-		require.Equal(t, name, r.Name)
+		require.Equal(t, expectedName, r.Name)
 		require.Equal(t, namespace, r.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": expectedName,
 		}, r.Labels)
 		require.Equal(t, expectedRules, r.Rules)
 	})
@@ -218,16 +214,15 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 		rb := rbac.roleBinding
 		require.NotNil(t, rb)
 
-		checkRoleBinding(t, rb, name, namespace)
+		checkRoleBinding(t, rb, expectedName, namespace)
 	})
 }
 
 func TestMakeLogGatewayRBAC(t *testing.T) {
-	name := "test-gateway"
 	namespace := "test-namespace"
+	rbac := makeLogGatewayRBAC(namespace)
 
-	rbac := MakeLogGatewayRBAC(types.NamespacedName{Name: name, Namespace: namespace})
-
+	expectedName := LogGatewayName
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
@@ -244,17 +239,17 @@ func TestMakeLogGatewayRBAC(t *testing.T) {
 		}
 
 		require.NotNil(t, cr)
-		require.Equal(t, name, cr.Name)
+		require.Equal(t, expectedName, cr.Name)
 		require.Equal(t, namespace, cr.Namespace)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
+			"app.kubernetes.io/name": expectedName,
 		}, cr.Labels)
 		require.Equal(t, expectedRules, cr.Rules)
 	})
 
 	t.Run("should have a cluster role binding", func(t *testing.T) {
 		crb := rbac.clusterRoleBinding
-		checkClusterRoleBinding(t, crb, name, namespace)
+		checkClusterRoleBinding(t, crb, expectedName, namespace)
 	})
 
 	t.Run("should not have a role", func(t *testing.T) {

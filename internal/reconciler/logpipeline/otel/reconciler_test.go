@@ -33,7 +33,6 @@ func TestReconcile(t *testing.T) {
 	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
 
 	testConfig := Config{
-		LogGatewayName:     "gateway",
 		TelemetryNamespace: "default",
 	}
 
