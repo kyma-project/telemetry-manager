@@ -103,23 +103,28 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		return nil, err
 	}
 
+	agentConfigBuilder := &agent.Builder{
+		Config: agent.BuilderConfig{
+			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.MetricGatewayName},
+		},
+	}
+
+	gatewayConfigBuilder := &gateway.Builder{Reader: client}
+
 	reconcilerConfig := metricpipeline.Config{
 		ModuleVersion:      config.ModuleVersion,
 		TelemetryNamespace: config.TelemetryNamespace,
 	}
+
 	reconciler := metricpipeline.New(
 		client,
 		reconcilerConfig,
-		nil,
-		&agent.Builder{
-			Config: agent.BuilderConfig{
-				GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.MetricGatewayName},
-			},
-		},
+		otelcollector.NewMetricAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricAgentPriorityClassName),
+		agentConfigBuilder,
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		otelcollector.NewMetricGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricGatewayPriorityClassName),
-		&gateway.Builder{Reader: client},
+		gatewayConfigBuilder,
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),

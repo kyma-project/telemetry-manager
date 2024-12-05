@@ -23,9 +23,10 @@ import (
 )
 
 const (
-	MetricAgentName     = "telemetry-metric-agent"
+	IstioCertPath   = "/etc/istio-output-certs"
+	MetricAgentName = "telemetry-metric-agent"
+
 	istioCertVolumeName = "istio-certs"
-	IstioCertPath       = "/etc/istio-output-certs"
 )
 
 var (
@@ -35,9 +36,32 @@ var (
 	metricAgentMemoryRequest = resource.MustParse("50Mi")
 )
 
+func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
+	rbac := makeMetricAgentRBAC(namespace)
+	return &AgentApplierDeleter{
+		baseName:          MetricAgentName,
+		image:             image,
+		namespace:         namespace,
+		priorityClassName: priorityClassName,
+		rbac:              rbac,
+		cpuLimit:          metricAgentCPULimit,
+		memoryLimit:       metricAgentMemoryLimit,
+		cpuRequest:        metricAgentCPURequest,
+		memoryRequest:     metricAgentMemoryRequest,
+	}
+}
+
 type AgentApplierDeleter struct {
-	Config AgentConfig
-	RBAC   rbac
+	baseName          string
+	image             string
+	namespace         string
+	priorityClassName string
+	rbac              rbac
+
+	cpuLimit      resource.Quantity
+	memoryLimit   resource.Quantity
+	cpuRequest    resource.Quantity
+	memoryRequest resource.Quantity
 }
 
 type AgentApplyOptions struct {
@@ -47,9 +71,9 @@ type AgentApplyOptions struct {
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	name := types.NamespacedName{Namespace: aad.Config.Namespace, Name: aad.Config.BaseName}
+	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
 
-	if err := applyCommonResources(ctx, c, name, aad.RBAC, opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, aad.rbac, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -70,14 +94,14 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: aad.Config.BaseName, Namespace: aad.Config.Namespace}
+	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
-		Name:      aad.Config.BaseName,
-		Namespace: aad.Config.Namespace,
+		Name:      aad.baseName,
+		Namespace: aad.namespace,
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
@@ -94,21 +118,20 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 }
 
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
-	selectorLabels := labels.MakeDefaultLabel(aad.Config.BaseName)
+	selectorLabels := labels.MakeDefaultLabel(aad.baseName)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))
 
-	dsConfig := aad.Config.DaemonSet
 	resources := aad.makeAgentResourceRequirements()
 	podSpec := makePodSpec(
-		aad.Config.BaseName,
-		dsConfig.Image,
-		commonresources.WithPriorityClass(dsConfig.PriorityClassName),
+		aad.baseName,
+		aad.image,
+		commonresources.WithPriorityClass(aad.priorityClassName),
 		commonresources.WithResources(resources),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-		commonresources.WithGoMemLimitEnvVar(dsConfig.MemoryLimit),
+		commonresources.WithGoMemLimitEnvVar(aad.memoryLimit),
 		withVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}}),
@@ -121,8 +144,8 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      aad.Config.BaseName,
-			Namespace: aad.Config.Namespace,
+			Name:      aad.baseName,
+			Namespace: aad.namespace,
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -141,16 +164,14 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 }
 
 func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceRequirements {
-	dsConfig := aad.Config.DaemonSet
-
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    dsConfig.CPULimit,
-			corev1.ResourceMemory: dsConfig.MemoryLimit,
+			corev1.ResourceCPU:    aad.cpuLimit,
+			corev1.ResourceMemory: aad.memoryLimit,
 		},
 		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    dsConfig.CPURequest,
-			corev1.ResourceMemory: dsConfig.MemoryRequest,
+			corev1.ResourceCPU:    aad.cpuRequest,
+			corev1.ResourceMemory: aad.memoryRequest,
 		},
 	}
 }

@@ -56,7 +56,7 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 	namespace := "test-namespace"
 	rbac := makeMetricAgentRBAC(namespace)
 
-	expectedName := "test-agent"
+	expectedName := MetricAgentName
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{

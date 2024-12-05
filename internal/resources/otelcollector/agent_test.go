@@ -29,13 +29,9 @@ func TestApplyAgentResources(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	sut := AgentApplierDeleter{
-		Config: AgentConfig{
-			Config: Config{
-				BaseName:  agentName,
-				Namespace: agentNamespace,
-			},
-		},
-		RBAC: createAgentRBAC(),
+		baseName:  agentName,
+		namespace: agentNamespace,
+		rbac:      createAgentRBAC(),
 	}
 
 	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
@@ -73,7 +69,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": agentName,
 		}, cr.Labels)
-		require.Equal(t, sut.RBAC.clusterRole.Rules, cr.Rules)
+		require.Equal(t, sut.rbac.clusterRole.Rules, cr.Rules)
 	})
 
 	t.Run("should create cluster role binding", func(t *testing.T) {
@@ -259,13 +255,9 @@ func TestDeleteAgentResources(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	sut := AgentApplierDeleter{
-		Config: AgentConfig{
-			Config: Config{
-				BaseName:  agentName,
-				Namespace: agentNamespace,
-			},
-		},
-		RBAC: createAgentRBAC(),
+		baseName:  agentName,
+		namespace: agentNamespace,
+		rbac:      createAgentRBAC(),
 	}
 
 	// Create agent resources before testing deletion
