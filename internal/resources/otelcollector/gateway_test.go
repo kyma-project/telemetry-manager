@@ -20,7 +20,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kyma-project/telemetry-manager/internal/labels"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 var (
@@ -559,7 +559,7 @@ func makeDummyGatewayRBAC() rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: gatewayNamespace,
-			Labels:    labels.MakeDefaultLabel(gatewayName),
+			Labels:    commonresources.MakeDefaultLabels(gatewayName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -574,7 +574,7 @@ func makeDummyGatewayRBAC() rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: gatewayNamespace,
-			Labels:    labels.MakeDefaultLabel(gatewayName),
+			Labels:    commonresources.MakeDefaultLabels(gatewayName),
 		},
 		Subjects: []rbacv1.Subject{{Name: gatewayName, Namespace: gatewayNamespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
@@ -588,7 +588,7 @@ func makeDummyGatewayRBAC() rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: gatewayNamespace,
-			Labels:    labels.MakeDefaultLabel(gatewayName),
+			Labels:    commonresources.MakeDefaultLabels(gatewayName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -603,7 +603,7 @@ func makeDummyGatewayRBAC() rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
 			Namespace: gatewayNamespace,
-			Labels:    labels.MakeDefaultLabel(gatewayName),
+			Labels:    commonresources.MakeDefaultLabels(gatewayName),
 		},
 		Subjects: []rbacv1.Subject{{Name: gatewayName, Namespace: gatewayNamespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{

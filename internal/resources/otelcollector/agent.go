@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -124,7 +123,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 }
 
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
-	selectorLabels := labels.MakeDefaultLabel(aad.baseName)
+	selectorLabels := commonresources.MakeDefaultLabels(aad.baseName)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))

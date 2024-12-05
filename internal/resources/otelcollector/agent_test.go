@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kyma-project/telemetry-manager/internal/labels"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 var (
@@ -320,7 +320,7 @@ func createAgentRBAC() rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      agentName,
 			Namespace: agentNamespace,
-			Labels:    labels.MakeDefaultLabel(agentName),
+			Labels:    commonresources.MakeDefaultLabels(agentName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -335,7 +335,7 @@ func createAgentRBAC() rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      agentName,
 			Namespace: agentNamespace,
-			Labels:    labels.MakeDefaultLabel(agentName),
+			Labels:    commonresources.MakeDefaultLabels(agentName),
 		},
 		Subjects: []rbacv1.Subject{{Name: agentName, Namespace: agentNamespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{

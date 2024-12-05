@@ -5,7 +5,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/internal/labels"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 type rbac struct {
@@ -33,7 +33,7 @@ func withClusterRole(options ...ClusterRoleOption) RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    labels.MakeDefaultLabel(name.Name),
+				Labels:    commonresources.MakeDefaultLabels(name.Name),
 			},
 			Rules: []rbacv1.PolicyRule{},
 		}
@@ -51,7 +51,7 @@ func withClusterRoleBinding() RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    labels.MakeDefaultLabel(name.Name),
+				Labels:    commonresources.MakeDefaultLabels(name.Name),
 			},
 			Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 			RoleRef: rbacv1.RoleRef{
@@ -69,7 +69,7 @@ func withRole(options ...RoleOption) RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    labels.MakeDefaultLabel(name.Name),
+				Labels:    commonresources.MakeDefaultLabels(name.Name),
 			},
 			Rules: []rbacv1.PolicyRule{},
 		}
@@ -88,7 +88,7 @@ func withRoleBinding() RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    labels.MakeDefaultLabel(name.Name),
+				Labels:    commonresources.MakeDefaultLabels(name.Name),
 			},
 			Subjects: []rbacv1.Subject{
 				{

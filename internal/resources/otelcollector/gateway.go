@@ -20,7 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -264,7 +263,7 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	selectorLabels := labels.MakeDefaultLabel(gad.baseName)
+	selectorLabels := commonresources.MakeDefaultLabels(gad.baseName)
 
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
@@ -363,7 +362,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	labels := labels.MakeDefaultLabel(gad.baseName)
+	labels := commonresources.MakeDefaultLabels(gad.baseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -393,7 +392,7 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	labels := labels.MakeDefaultLabel(gad.baseName)
+	labels := commonresources.MakeDefaultLabels(gad.baseName)
 
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
