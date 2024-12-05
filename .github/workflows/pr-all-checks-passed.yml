@@ -16,6 +16,7 @@ on:
     workflows: ["PR Integration"]
     types:
       - completed
+      - requested
 
 jobs:
   all-checks:
@@ -26,6 +27,6 @@ jobs:
     steps:
       - uses: wechuli/allcheckspassed@2e5e8bbc775f5680ed5d02e3a22e2fc7219792ac
         with:
-          delay: '5'
+          delay: '0'
           retries: '30'
           polling_interval: '1'

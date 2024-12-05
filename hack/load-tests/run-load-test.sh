@@ -17,10 +17,13 @@ BACKPRESSURE_TEST="false"
 TEST_TARGET="traces"
 TEST_NAME="No Name"
 TEST_DURATION=1200
-OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
+OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.114.0-main"
+TELEMETRY_GEN_IMAGE="ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.114.0"
 LOG_SIZE=2000
 LOG_RATE=1000
-PROMAPI="http://localhost:9090/api/v1/query"
+PROMAPI=""
+DOMAIN=""
+OVERLAY=""
 
 function help() {
     echo "Usage: $0 -m <max_pipeline> -b <backpressure_test> -n <test_name> -t <test_target> -d <test_duration> -r <log_rate> -s <log_size>"
@@ -64,6 +67,7 @@ function print_config() {
     echo "  Test Target: $TEST_TARGET"
     echo "  Test Duration: $TEST_DURATION"
     echo "  OTEL Image: $OTEL_IMAGE"
+    echo "  Telemetry Gen Image: $TELEMETRY_GEN_IMAGE"
     echo "  Max Pipeline: $MAX_PIPELINE"
     echo "  Backpressure Test: $BACKPRESSURE_TEST"
     echo "  Log Rate: $LOG_RATE"
@@ -73,6 +77,7 @@ function print_config() {
 }
 
 function setup() {
+    echo -e "Deploying prometheus stack"
     kubectl create namespace "$PROMETHEUS_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
     [ "$TEST_TARGET" != "logs-otel" ] && kubectl label namespace kyma-system istio-injection=enabled --overwrite
@@ -81,6 +86,18 @@ function setup() {
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update
     helm upgrade --install -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE" prometheus-community/kube-prometheus-stack -f hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
+
+    DOMAIN=$(kubectl -n kube-system get cm shoot-info --ignore-not-found=true -ojsonpath={.data.domain})
+
+    if [[ -n "$DOMAIN" ]]; then
+      kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/api-gateway-manager.yaml
+      kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/apigateway-default-cr.yaml
+      sed -e "s|DOMAIN|$DOMAIN|g" hack/load-tests/prometheus-setup.yaml | sed -e "s|PROMETHEUS_NAMESPACE|$PROMETHEUS_NAMESPACE|g" | kubectl apply -f -
+      PROMAPI="https://prometheus.$DOMAIN/api/v1/query"
+    else
+      PROMAPI="http://localhost:8080/api/v1/query"
+    fi
+    echo -e "Prometheus stack deployed accessable at: $PROMAPI"
 
     case "$TEST_TARGET" in
         traces) setup_trace ;;
@@ -93,12 +110,13 @@ function setup() {
 }
 
 function setup_trace() {
+    echo -e "Deploying trace test setup"
     if [[ "$MAX_PIPELINE" == "true" ]]; then
       kubectl apply -f hack/load-tests/trace-max-pipeline.yaml
     fi
 
     # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/trace-load-test-setup.yaml | kubectl apply -f -
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/trace-load-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
       kubectl apply -f hack/load-tests/trace-backpressure-config.yaml
@@ -106,12 +124,12 @@ function setup_trace() {
 }
 
 function setup_metric() {
+    echo -e "Deploying metric test setup"
     if [[ "$MAX_PIPELINE" == "true" ]]; then
         kubectl apply -f hack/load-tests/metric-max-pipeline.yaml
     fi
 
-    # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-load-test-setup.yaml | kubectl apply -f -
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-load-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
         kubectl apply -f hack/load-tests/metric-backpressure-config.yaml
@@ -119,8 +137,8 @@ function setup_metric() {
 }
 
 function setup_metric_agent() {
-    # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-agent-test-setup.yaml | kubectl apply -f -
+    echo -e "Deploying metric agent test setup"
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-agent-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
       kubectl apply -f hack/load-tests/metric-agent-backpressure-config.yaml
@@ -128,12 +146,13 @@ function setup_metric_agent() {
 }
 
 function setup_fluentbit() {
+    echo -e "Deploying fluentbit test setup"
     if [[ "$MAX_PIPELINE" == "true" ]]; then
       kubectl apply -f hack/load-tests/log-fluentbit-max-pipeline.yaml
     fi
 
     # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/log-fluentbit-test-setup.yaml | kubectl apply -f -
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/log-fluentbit-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
       kubectl apply -f hack/load-tests/log-fluentbit-backpressure-config.yaml
@@ -141,6 +160,7 @@ function setup_fluentbit() {
 }
 
 function setup_logs_otel() {
+    echo -e "Deploying otel log test setup"
     cat > hack/load-tests/otel-logs/base/base.env <<EOF
 LOG_RATE=$LOG_RATE
 LOG_CONTENT=$(for i in $(seq $LOG_SIZE); do echo -n X; done)
@@ -153,12 +173,12 @@ EOF
 }
 
 function setup_selfmonitor() {
-    # Deploy test setup
-    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/self-monitor-test-setup.yaml | kubectl apply -f -
+    echo -e "Deploying self-monitor test setup"
+    sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/self-monitor-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 }
 
 function wait_for_resources() {
-  kubectl -n "$PROMETHEUS_NAMESPACE" rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus
+  wait_for_prometheus_resources
 
   case "$TEST_TARGET" in
     traces) wait_for_trace_resources ;;
@@ -169,56 +189,73 @@ function wait_for_resources() {
     self-monitor) wait_for_selfmonitor_resources ;;
   esac
 
-  echo -e "\nRunning Tests\n"
+  echo -e "\nAll resources are ready\n"
+}
+
+function wait_for_prometheus_resources() {
+    kubectl -n "$PROMETHEUS_NAMESPACE" rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus --timeout=60s
 }
 
 function wait_for_trace_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway
-    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-load-generator
-    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-receiver
+    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway --timeout=60s
+    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-load-generator --timeout=60s
+    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-receiver --timeout=60s
 }
 
 function wait_for_metric_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-load-generator
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver
+    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
+    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-load-generator --timeout=60s
+    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver --timeout=60s
 }
 
 function wait_for_metric_agent_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway
-    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-agent-load-generator
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver
+    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
+    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent --timeout=60s
+    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-agent-load-generator --timeout=60s
+    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver --timeout=60s
 }
 
 function wait_for_fluentbit_resources() {
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver
-    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver --timeout=60s
+    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit --timeout=60s
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator --timeout=60s
 }
 
 function wait_for_otel_log_resources() {
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-gateway
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver --timeout=60s
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-gateway --timeout=60s
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator --timeout=60s
 }
 
 function wait_for_selfmonitor_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway
-    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent
-    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment telemetry-receiver
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment trace-load-generator
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-load-generator
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-agent-load-generator
+    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway --timeout=60s
+    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
+    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent --timeout=60s
+    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit --timeout=60s
+    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment telemetry-receiver --timeout=60s
+    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment trace-load-generator --timeout=60s
+    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-load-generator --timeout=60s
+    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-agent-load-generator --timeout=60s
 }
 
 function cleanup() {
-    kubectl -n "$PROMETHEUS_NAMESPACE" port-forward "$(kubectl -n "$PROMETHEUS_NAMESPACE" get service -l app=kube-prometheus-stack-prometheus -oname)" 9090 &
-    sleep 3
+    echo -e "Check prometheus healthiness"
+    wait_for_prometheus_resources
 
-    echo -e "Test results collecting"
+    echo -e "Check connectivity to prometheus using URL: $PROMAPI"
+    PROMETHEUS_API_ENDPOINT_STATUS=$(curl -fs --data-urlencode "query=up" $PROMAPI | jq -r '.status')
+
+    if [[ "$PROMETHEUS_API_ENDPOINT_STATUS" != "success" ]]; then
+     echo "Prometheus API endpoint is not healthy"
+     kill %1
+    fi
+
+    if [[ -z "$DOMAIN" ]]; then
+     kubectl -n "$PROMETHEUS_NAMESPACE" port-forward "$(kubectl -n "$PROMETHEUS_NAMESPACE" get service -l app=kube-prometheus-stack-prometheus -oname)" 9090 &
+     sleep 3
+    fi
+
+    echo -e "Collecting test results"
     case "$TEST_TARGET" in
         traces) get_result_and_cleanup_trace ;;
         metrics) get_result_and_cleanup_metric ;;
@@ -227,6 +264,8 @@ function cleanup() {
         logs-otel) get_result_and_cleanup_log_otel ;;
         self-monitor) get_result_and_cleanup_selfmonitor ;;
     esac
+
+    echo -e "Data collected, writing reports"
 
     # export all variables starting with RESULT_
     export ${!RESULT_*}
@@ -252,7 +291,6 @@ EOF
 
     helm delete -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE"
     kubectl delete namespace "$PROMETHEUS_NAMESPACE"
-
 }
 
 function get_result_and_cleanup_trace() {
@@ -270,7 +308,10 @@ function get_result_and_cleanup_trace() {
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
   RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-  kill %1
+  if [[ -z "$DOMAIN" ]]; then
+    echo -e "Killing port-forward"
+    kill %1
+  fi
 
   if [[ "$MAX_PIPELINE" == "true" ]]; then
     kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
@@ -297,7 +338,10 @@ function get_result_and_cleanup_metric() {
     RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-    kill %1
+    if [[ -z "$DOMAIN" ]]; then
+      echo -e "Killing port-forward"
+      kill %1
+    fi
 
     if [[ "$MAX_PIPELINE" == "true" ]]; then
       kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
@@ -326,7 +370,11 @@ function get_result_and_cleanup_metricagent() {
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
     RESULT_RESTARTS_AGENT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-    kill %1
+    if [[ -z "$DOMAIN" ]]; then
+      echo -e "Killing port-forward"
+      kill %1
+    fi
+
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
       kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
     fi
@@ -349,7 +397,10 @@ function get_result_and_cleanup_log_otel() {
   RESULT_RESTARTS_GATEWAY=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
   RESULT_RESTARTS_GENERATOR=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-load-generator -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-  kill %1
+  if [[ -z "$DOMAIN" ]]; then
+    echo -e "Killing port-forward"
+    kill %1
+  fi
 
   if [[ "$OVERLAY" == "batch" ]]; then
     kubectl delete -k hack/load-tests/otel-logs/batch
@@ -360,7 +411,7 @@ function get_result_and_cleanup_log_otel() {
 
 function get_result_and_cleanup_fluentbit() {
   RESULT_TYPE="log"
-  PROMAPI="http://localhost:9090/api/v1/query"
+
   QUERY_RECEIVED='query=round(sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])) / 1024)'
   QUERY_EXPORTED='query=round(sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])) / 1024)'
   QUERY_QUEUE='query=round(sum(avg_over_time(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[20m])) / 1024)'
@@ -374,7 +425,10 @@ function get_result_and_cleanup_fluentbit() {
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
   RESULT_RESTARTS_FLUENTBIT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-  kill %1
+  if [[ -z "$DOMAIN" ]]; then
+    echo -e "Killing port-forward"
+    kill %1
+  fi
 
   if [[ "$MAX_PIPELINE" == "true" ]]; then
     kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
@@ -387,7 +441,6 @@ function get_result_and_cleanup_fluentbit() {
 }
 
 function get_result_and_cleanup_selfmonitor() {
-    PROMAPI="http://localhost:9090/api/v1/query"
     QUERY_SCRAPESAMPLES='query=round(sum(sum_over_time(scrape_samples_scraped{service="telemetry-self-monitor-metrics"}[20m]) / 1200))'
     QUERY_SERIESCREATED='query=round(sum(max_over_time(prometheus_tsdb_head_series{service="telemetry-self-monitor-metrics"}[20m])))'
     QUERY_WALSTORAGESIZE='query=round(sum(max_over_time(prometheus_tsdb_wal_storage_size_bytes{service="telemetry-self-monitor-metrics"}[20m])))'
@@ -403,16 +456,26 @@ function get_result_and_cleanup_selfmonitor() {
     RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[0].value[1]')
     RESULT_RESTARTS_SELFMONITOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-self-monitor -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
-    kill %1
+    if [[ -z "$DOMAIN" ]]; then
+      echo -e "Killing port-forward"
+      kill %1
+    fi
+
     kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
 }
-
-
 
 # cleanup on exit. cleanup also collects the results and writes them to a file
 trap cleanup EXIT
 print_config
+echo -e "Preparing test setup"
 setup
+echo -e "Waiting till test setup is ready"
 wait_for_resources
-# wait for the test to finish
-sleep $TEST_DURATION
+echo -e "Test setup is ready, starting test"
+
+for (( c=$TEST_DURATION; c>=0; c=c-60 ))
+do  
+  echo "Time remaining: $c seconds"
+  sleep 60
+
+done
