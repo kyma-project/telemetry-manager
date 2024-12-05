@@ -29,15 +29,17 @@ func TestApplyAgentResources(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	sut := AgentApplierDeleter{
-		baseName:  agentName,
+		baseName: agentName,
+		extraPodLabel: map[string]string{
+			"foo": "bar",
+		},
 		namespace: agentNamespace,
 		rbac:      createAgentRBAC(),
 	}
 
 	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
-		AllowedPorts:            []int32{5555, 6666},
-		CollectorConfigYAML:     agentCfg,
-		ComponentSelectorLabels: labels.MakeMetricAgentSelectorLabel(agentName),
+		AllowedPorts:        []int32{5555, 6666},
+		CollectorConfigYAML: agentCfg,
 	})
 	require.NoError(t, err)
 
@@ -204,9 +206,8 @@ func TestApplyAgentResources(t *testing.T) {
 			"app.kubernetes.io/name": agentName,
 		}, ds.Spec.Selector.MatchLabels, "must have expected daemonset selector labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                  agentName,
-			"sidecar.istio.io/inject":                 "true",
-			"telemetry.kyma-project.io/metric-scrape": "true",
+			"app.kubernetes.io/name": agentName,
+			"foo":                    "bar",
 		}, ds.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
 		// annotations

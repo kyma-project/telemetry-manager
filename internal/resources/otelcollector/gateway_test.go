@@ -48,7 +48,10 @@ func TestApplyGatewayResources(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	sut := GatewayApplierDeleter{
-		baseName:             gatewayName,
+		baseName: gatewayName,
+		extraPodLabels: map[string]string{
+			"foo": "bar",
+		},
 		namespace:            gatewayNamespace,
 		otlpServiceName:      otlpServiceName,
 		rbac:                 makeDummyGatewayRBAC(),
@@ -66,7 +69,6 @@ func TestApplyGatewayResources(t *testing.T) {
 		AllowedPorts:                   []int32{5555, 6666},
 		CollectorConfigYAML:            gatewayCfg,
 		CollectorEnvVars:               envVars,
-		ComponentSelectorLabels:        labels.MakeTraceGatewaySelectorLabel(gatewayName),
 		Replicas:                       replicas,
 		ResourceRequirementsMultiplier: 1,
 	})
@@ -291,10 +293,8 @@ func TestApplyGatewayResources(t *testing.T) {
 			"app.kubernetes.io/name": gatewayName,
 		}, dep.Spec.Selector.MatchLabels, "must have expected deployment selector labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                 gatewayName,
-			"sidecar.istio.io/inject":                "true",
-			"telemetry.kyma-project.io/trace-ingest": "true",
-			"telemetry.kyma-project.io/trace-export": "true",
+			"app.kubernetes.io/name": gatewayName,
+			"foo":                    "bar",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
 		// annotations
@@ -387,7 +387,10 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	sut := GatewayApplierDeleter{
-		baseName:             gatewayName,
+		baseName: gatewayName,
+		extraPodLabels: map[string]string{
+			"foo": "bar",
+		},
 		namespace:            gatewayNamespace,
 		otlpServiceName:      otlpServiceName,
 		rbac:                 makeDummyGatewayRBAC(),
@@ -402,12 +405,11 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	}
 
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
-		CollectorConfigYAML:     gatewayCfg,
-		CollectorEnvVars:        envVars,
-		ComponentSelectorLabels: labels.MakeTraceGatewaySelectorLabel(gatewayName),
-		IstioEnabled:            true,
-		IstioExcludePorts:       []int32{1111, 2222},
-		Replicas:                replicas,
+		CollectorConfigYAML: gatewayCfg,
+		CollectorEnvVars:    envVars,
+		IstioEnabled:        true,
+		IstioExcludePorts:   []int32{1111, 2222},
+		Replicas:            replicas,
 	})
 	require.NoError(t, err)
 
@@ -431,10 +433,8 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 		require.Equal(t, replicas, *dep.Spec.Replicas)
 
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                 gatewayName,
-			"telemetry.kyma-project.io/trace-ingest": "true",
-			"telemetry.kyma-project.io/trace-export": "true",
-			"sidecar.istio.io/inject":                "true",
+			"app.kubernetes.io/name": gatewayName,
+			"foo":                    "bar",
 		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
 		// annotations
@@ -469,12 +469,11 @@ func TestDeleteGatewayResources(t *testing.T) {
 
 	// Create gateway resources before testing deletion
 	err := sut.ApplyResources(ctx, client, GatewayApplyOptions{
-		CollectorConfigYAML:     gatewayCfg,
-		CollectorEnvVars:        envVars,
-		ComponentSelectorLabels: labels.MakeTraceGatewaySelectorLabel(gatewayName),
-		IstioEnabled:            true,
-		IstioExcludePorts:       []int32{1111, 2222},
-		Replicas:                replicas,
+		CollectorConfigYAML: gatewayCfg,
+		CollectorEnvVars:    envVars,
+		IstioEnabled:        true,
+		IstioExcludePorts:   []int32{1111, 2222},
+		Replicas:            replicas,
 	})
 	require.NoError(t, err)
 

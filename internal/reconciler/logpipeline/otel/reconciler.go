@@ -12,7 +12,6 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
@@ -179,12 +178,9 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	logGatewaySelectorLabels := labels.MakeLogGatewaySelectorLabel(otelcollector.LogGatewayName)
-
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
-		ComponentSelectorLabels:        logGatewaySelectorLabels,
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}

@@ -26,7 +26,8 @@ const (
 	IstioCertPath   = "/etc/istio-output-certs"
 	MetricAgentName = "telemetry-metric-agent"
 
-	istioCertVolumeName = "istio-certs"
+	istioCertVolumeName  = "istio-certs"
+	metricAgentScrapeKey = "telemetry.kyma-project.io/metric-scrape"
 )
 
 var (
@@ -37,8 +38,14 @@ var (
 )
 
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
+	extraLabels := map[string]string{
+		metricAgentScrapeKey:  "true",
+		istioSidecarInjectKey: "true",
+	}
+
 	return &AgentApplierDeleter{
 		baseName:          MetricAgentName,
+		extraPodLabel:     extraLabels,
 		image:             image,
 		namespace:         namespace,
 		priorityClassName: priorityClassName,
@@ -52,6 +59,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 
 type AgentApplierDeleter struct {
 	baseName          string
+	extraPodLabel     map[string]string
 	image             string
 	namespace         string
 	priorityClassName string
@@ -64,9 +72,8 @@ type AgentApplierDeleter struct {
 }
 
 type AgentApplyOptions struct {
-	AllowedPorts            []int32
-	CollectorConfigYAML     string
-	ComponentSelectorLabels map[string]string
+	AllowedPorts        []int32
+	CollectorConfigYAML string
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
@@ -82,7 +89,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
@@ -116,7 +123,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
 	selectorLabels := labels.MakeDefaultLabel(aad.baseName)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
@@ -141,6 +148,10 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 		}),
 	)
 
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, selectorLabels)
+	maps.Copy(podLabels, aad.extraPodLabel)
+
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      aad.baseName,
@@ -153,7 +164,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      opts.ComponentSelectorLabels,
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,

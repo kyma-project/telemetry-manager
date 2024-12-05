@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -34,6 +35,15 @@ const (
 	MetricOTLPServiceName = "telemetry-otlp-metrics"
 	TraceOTLPServiceName  = "telemetry-otlp-traces"
 	LogOTLPServiceName    = "telemetry-otlp-logs"
+
+	// label keys
+	logGatewayIngestKey    = "telemetry.kyma-project.io/log-ingest"
+	logGatewayExportKey    = "telemetry.kyma-project.io/log-export"
+	traceGatewayIngestKey  = "telemetry.kyma-project.io/trace-ingest"
+	traceGatewayExportKey  = "telemetry.kyma-project.io/trace-export"
+	metricGatewayIngestKey = "telemetry.kyma-project.io/metric-ingest"
+	metricGatewayExportKey = "telemetry.kyma-project.io/metric-export"
+	istioSidecarInjectKey  = "sidecar.istio.io/inject"
 )
 
 var (
@@ -67,8 +77,14 @@ var (
 )
 
 func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		logGatewayIngestKey: "true",
+		logGatewayExportKey: "true",
+	}
+
 	return &GatewayApplierDeleter{
 		baseName:             LogGatewayName,
+		extraPodLabels:       extraLabels,
 		image:                image,
 		namespace:            namespace,
 		priorityClassName:    priorityClassName,
@@ -85,8 +101,15 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 }
 
 func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		traceGatewayIngestKey: "true",
+		traceGatewayExportKey: "true",
+		istioSidecarInjectKey: "true",
+	}
+
 	return &GatewayApplierDeleter{
 		baseName:             MetricGatewayName,
+		extraPodLabels:       extraLabels,
 		image:                image,
 		namespace:            namespace,
 		priorityClassName:    priorityClassName,
@@ -103,8 +126,15 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 }
 
 func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		metricGatewayIngestKey: "true",
+		metricGatewayExportKey: "true",
+		istioSidecarInjectKey:  "true",
+	}
+
 	return &GatewayApplierDeleter{
 		baseName:             TraceGatewayName,
+		extraPodLabels:       extraLabels,
 		image:                image,
 		namespace:            namespace,
 		otlpServiceName:      TraceOTLPServiceName,
@@ -123,6 +153,7 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 
 type GatewayApplierDeleter struct {
 	baseName          string
+	extraPodLabels    map[string]string
 	image             string
 	namespace         string
 	otlpServiceName   string
@@ -140,12 +171,11 @@ type GatewayApplierDeleter struct {
 }
 
 type GatewayApplyOptions struct {
-	AllowedPorts            []int32
-	CollectorConfigYAML     string
-	CollectorEnvVars        map[string][]byte
-	ComponentSelectorLabels map[string]string
-	IstioEnabled            bool
-	IstioExcludePorts       []int32
+	AllowedPorts        []int32
+	CollectorConfigYAML string
+	CollectorEnvVars    map[string][]byte
+	IstioEnabled        bool
+	IstioExcludePorts   []int32
 	// Replicas specifies the number of gateway replicas.
 	Replicas int32
 	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
@@ -252,6 +282,10 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, selectorLabels)
+	maps.Copy(podLabels, gad.extraPodLabels)
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
@@ -265,7 +299,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      opts.ComponentSelectorLabels,
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,
