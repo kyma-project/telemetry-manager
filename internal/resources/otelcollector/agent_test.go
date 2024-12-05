@@ -27,7 +27,7 @@ var (
 	agentCfg       = "dummy otel collector config"
 )
 
-func TestApplyAgentResources(t *testing.T) {
+func TestMetricAgent_ApplyResources(t *testing.T) {
 	var objects []client.Object
 	client := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {

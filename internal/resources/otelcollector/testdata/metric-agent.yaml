@@ -183,9 +183,9 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   labels:
-    app.kubernetes.io/name: kyma-system
-  name: kyma-system
-  namespace: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
 rules:
 - apiGroups:
   - ""
@@ -276,26 +276,26 @@ kind: ClusterRoleBinding
 metadata:
   creationTimestamp: null
   labels:
-    app.kubernetes.io/name: kyma-system
-  name: kyma-system
-  namespace: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: kyma-system
+  name: telemetry-metric-agent
 subjects:
 - kind: ServiceAccount
-  name: kyma-system
-  namespace: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   creationTimestamp: null
   labels:
-    app.kubernetes.io/name: kyma-system
-  name: kyma-system
-  namespace: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
 rules:
 - apiGroups:
   - coordination.k8s.io
@@ -315,15 +315,15 @@ kind: RoleBinding
 metadata:
   creationTimestamp: null
   labels:
-    app.kubernetes.io/name: kyma-system
-  name: kyma-system
-  namespace: telemetry-metric-agent
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: kyma-system
+  name: telemetry-metric-agent
 subjects:
 - kind: ServiceAccount
-  name: kyma-system
-  namespace: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
 ---
