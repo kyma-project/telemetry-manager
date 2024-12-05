@@ -35,6 +35,10 @@ func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedNa
 		msg = conditions.MessageForMetricPipeline(reason)
 	}
 
+	if signalType == SignalTypeLogs {
+		msg = conditions.MessageForLogPipeline(reason)
+	}
+
 	err := prober.IsReady(ctx, namespacedName)
 	if err != nil && !workloadstatus.IsRolloutInProgressError(err) {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe gateway - set condition as not healthy")

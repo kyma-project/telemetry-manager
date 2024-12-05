@@ -33,9 +33,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(proxyClient)
-
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
-		logPipelineBuilder := testutils.NewLogPipelineBuilder().
+
+		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
 			WithHTTPOutput(
 				testutils.HTTPHostFromSecret(
@@ -46,10 +46,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				testutils.HTTPPort(backend.Port()),
 			)
 		if suite.IsOperational() {
-			logPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
+			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
-		logPipeline := logPipelineBuilder.Build()
-
+		logPipeline := pipelineBuilder.Build()
 		objs = append(objs, &logPipeline)
 
 		return objs

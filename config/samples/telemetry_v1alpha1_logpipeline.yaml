@@ -21,22 +21,22 @@ spec:
       name: log-sink
     spec:
       containers:
-      - args:
-        - -i http
-        - -o stdout
-        - -q
-        image: fluent/fluent-bit:latest
-        livenessProbe:
-          tcpSocket:
-            port: http-ingest
-        name: log-sink
-        ports:
-        - containerPort: 9880
-          name: http-ingest
-          protocol: TCP
-        readinessProbe:
-          tcpSocket:
-            port: http-ingest
+        - args:
+            - -i http
+            - -o stdout
+            - -q
+          image: fluent/fluent-bit:latest
+          livenessProbe:
+            tcpSocket:
+              port: http-ingest
+          name: log-sink
+          ports:
+            - containerPort: 9880
+              name: http-ingest
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: http-ingest
 ---
 apiVersion: v1
 kind: Service
@@ -45,10 +45,10 @@ metadata:
   namespace: log-sink
 spec:
   ports:
-  - name: http-ingest
-    port: 9880
-    protocol: TCP
-    targetPort: http-ingest
+    - name: http-ingest
+      port: 9880
+      protocol: TCP
+      targetPort: http-ingest
   selector:
     app: log-sink
 ---
@@ -73,12 +73,12 @@ spec:
         app: log-gen
     spec:
       containers:
-      - image: mingrammer/flog:latest
-        name: flog
-        args:
-        - -b=64
-        - -f=json
-        - -l
+        - image: mingrammer/flog:latest
+          name: flog
+          args:
+            - -b=64
+            - -f=json
+            - -l
 ---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogPipeline

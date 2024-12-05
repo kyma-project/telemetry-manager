@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,7 +42,7 @@ spec:
           readOnlyRootFilesystem: false
           capabilities:
             drop:
-            - ALL
+              - ALL
         livenessProbe:
           httpGet:
             path: /healthz
@@ -64,8 +63,8 @@ spec:
             cpu: 5m
             memory: 50Mi
         volumeMounts:
-        - mountPath: /tmp
-          name: crt-volume
+          - mountPath: /tmp
+            name: crt-volume
         env:
         - name: GOMEMLIMIT
           value: "300MiB"
@@ -76,7 +75,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
       volumes:
-      - name: crt-volume
-        emptyDir: {}
+        - name: crt-volume
+          emptyDir: {}
       serviceAccountName: manager
       terminationGracePeriodSeconds: 10

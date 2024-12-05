@@ -14,6 +14,7 @@ const (
 	MetricGatewayBaseName = "telemetry-metric-gateway"
 	MetricAgentBaseName   = "telemetry-metric-agent"
 	TraceGatewayBaseName  = "telemetry-trace-gateway"
+	LogGatewayBaseName    = "telemetry-log-gateway"
 	FluentBitBaseName     = "telemetry-fluent-bit"
 	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
@@ -21,6 +22,7 @@ const (
 
 	MetricGatewayServiceName = "telemetry-otlp-metrics"
 	TraceGatewayServiceName  = "telemetry-otlp-traces"
+	LogGatewayServiceName    = "telemetry-otlp-logs"
 )
 
 var (
@@ -56,6 +58,16 @@ var (
 	TraceGatewayClusterRole        = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayConfigMap          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+
+	LogGatewayName               = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
+	LogGatewayMetricsService     = types.NamespacedName{Name: LogGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}
+	LogGatewayNetworkPolicy      = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
+	LogGatewaySecretName         = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
+	LogGatewayOTLPService        = types.NamespacedName{Name: LogGatewayServiceName, Namespace: SystemNamespaceName}
+	LogGatewayServiceAccount     = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
+	LogGatewayClusterRole        = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
+	LogGatewayClusterRoleBinding = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
+	LogGatewayConfigMap          = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
 
 	FluentBitDaemonSetName          = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
 	FluentBitServiceAccount         = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
