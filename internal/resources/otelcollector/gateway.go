@@ -67,13 +67,12 @@ var (
 )
 
 func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
-	rbac := makeLogGatewayRBAC(namespace)
 	return &GatewayApplierDeleter{
 		baseName:             LogGatewayName,
 		image:                image,
 		namespace:            namespace,
 		priorityClassName:    priorityClassName,
-		rbac:                 rbac,
+		rbac:                 makeLogGatewayRBAC(namespace),
 		baseCPULimit:         logGatewayBaseCPULimit,
 		dynamicCPULimit:      logGatewayDynamicCPULimit,
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
@@ -86,13 +85,12 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 }
 
 func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
-	rbac := makeMetricGatewayRBAC(namespace)
 	return &GatewayApplierDeleter{
 		baseName:             MetricGatewayName,
 		image:                image,
 		namespace:            namespace,
 		priorityClassName:    priorityClassName,
-		rbac:                 rbac,
+		rbac:                 makeMetricGatewayRBAC(namespace),
 		baseCPULimit:         metricGatewayBaseCPULimit,
 		dynamicCPULimit:      metricGatewayDynamicCPULimit,
 		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
@@ -105,14 +103,13 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 }
 
 func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
-	rbac := makeTraceGatewayRBAC(namespace)
 	return &GatewayApplierDeleter{
 		baseName:             TraceGatewayName,
 		image:                image,
 		namespace:            namespace,
 		otlpServiceName:      TraceOTLPServiceName,
 		priorityClassName:    priorityClassName,
-		rbac:                 rbac,
+		rbac:                 makeTraceGatewayRBAC(namespace),
 		baseCPULimit:         traceGatewayBaseCPULimit,
 		dynamicCPULimit:      traceGatewayDynamicCPULimit,
 		baseMemoryLimit:      traceGatewayBaseMemoryLimit,

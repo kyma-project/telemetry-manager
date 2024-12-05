@@ -37,13 +37,12 @@ var (
 )
 
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
-	rbac := makeMetricAgentRBAC(namespace)
 	return &AgentApplierDeleter{
 		baseName:          MetricAgentName,
 		image:             image,
 		namespace:         namespace,
 		priorityClassName: priorityClassName,
-		rbac:              rbac,
+		rbac:              makeMetricAgentRBAC(namespace),
 		cpuLimit:          metricAgentCPULimit,
 		memoryLimit:       metricAgentMemoryLimit,
 		cpuRequest:        metricAgentCPURequest,

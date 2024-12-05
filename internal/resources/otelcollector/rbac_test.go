@@ -12,6 +12,7 @@ func TestMakeTraceGatewayRBAC(t *testing.T) {
 	rbac := makeTraceGatewayRBAC(namespace)
 
 	expectedName := TraceGatewayName
+
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
@@ -57,6 +58,7 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 	rbac := makeMetricAgentRBAC(namespace)
 
 	expectedName := MetricAgentName
+
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
@@ -143,6 +145,7 @@ func TestMakeMetricGatewayRBAC(t *testing.T) {
 	rbac := makeMetricGatewayRBAC(namespace)
 
 	expectedName := MetricGatewayName
+
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
@@ -223,6 +226,7 @@ func TestMakeLogGatewayRBAC(t *testing.T) {
 	rbac := makeLogGatewayRBAC(namespace)
 
 	expectedName := LogGatewayName
+
 	t.Run("should have a cluster role", func(t *testing.T) {
 		cr := rbac.clusterRole
 		expectedRules := []rbacv1.PolicyRule{
