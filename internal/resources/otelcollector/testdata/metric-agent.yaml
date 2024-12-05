@@ -171,6 +171,11 @@ spec:
         cidr: 0.0.0.0/0
     - ipBlock:
         cidr: ::/0
+    ports:
+    - port: 5555
+      protocol: TCP
+    - port: 6666
+      protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: telemetry-metric-agent
