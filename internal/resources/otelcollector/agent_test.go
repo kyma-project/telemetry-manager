@@ -36,7 +36,7 @@ func TestApplyAgentResources(t *testing.T) {
 		},
 	}).Build()
 
-	image := "otel/collector:latest"
+	image := "opentelemetry/collector:latest"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
 	sut := NewMetricAgentApplierDeleter(image, namespace, priorityClassName)
@@ -52,7 +52,7 @@ func TestApplyAgentResources(t *testing.T) {
 	goldenFileBytes, err := os.ReadFile("testdata/metric-agent.yaml")
 	require.NoError(t, err)
 
-	require.Equal(t, goldenFileBytes, bytes)
+	require.Equal(t, string(goldenFileBytes), string(bytes))
 }
 
 func TestDeleteAgentResources(t *testing.T) {
