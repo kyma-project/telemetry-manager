@@ -4,6 +4,7 @@ env:
   IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.number }}
 
 on:
+  merge_group:
   pull_request:
     branches:
       - "main"
