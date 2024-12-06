@@ -50,7 +50,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/metric-gateway-istio.yaml",
-			saveGoldenFile: false,
 		},
 	}
 
