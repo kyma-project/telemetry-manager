@@ -6,7 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -22,7 +26,9 @@ func TestGateway_ApplyResources(t *testing.T) {
 	tests := []struct {
 		name           string
 		sut            *GatewayApplierDeleter
+		istioEnabled   bool
 		goldenFilePath string
+		saveGoldenFile bool
 	}{
 		{
 			name:           "metric gateway",
@@ -39,13 +45,24 @@ func TestGateway_ApplyResources(t *testing.T) {
 			sut:            NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
 			goldenFilePath: "testdata/log-gateway.yaml",
 		},
+		{
+			name:           "metric gateway with istio",
+			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			istioEnabled:   true,
+			goldenFilePath: "testdata/metric-gateway-istio.yaml",
+			saveGoldenFile: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var objects []client.Object
 
-			client := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+			scheme := runtime.NewScheme()
+			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 					objects = append(objects, obj)
 					// Nothing has to be created, just add created object to the list
@@ -59,11 +76,16 @@ func TestGateway_ApplyResources(t *testing.T) {
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),
 				},
-				Replicas: 2,
+				IstioEnabled: tt.istioEnabled,
+				Replicas:     2,
 			})
 			require.NoError(t, err)
 
-			bytes, err := testutils.MarshalYAML(objects)
+			if tt.saveGoldenFile {
+				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
+			}
+
+			bytes, err := testutils.MarshalYAML(scheme, objects)
 			require.NoError(t, err)
 
 			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)

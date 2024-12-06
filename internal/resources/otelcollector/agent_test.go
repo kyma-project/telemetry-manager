@@ -6,7 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -14,8 +18,12 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-func TestMetricAgent_ApplyResources(t *testing.T) {
+func TestAgent_ApplyResources(t *testing.T) {
 	var objects []client.Object
+
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 
 	client := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -36,7 +44,7 @@ func TestMetricAgent_ApplyResources(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bytes, err := testutils.MarshalYAML(objects)
+	bytes, err := testutils.MarshalYAML(scheme, objects)
 	require.NoError(t, err)
 
 	goldenFileBytes, err := os.ReadFile("testdata/metric-agent.yaml")
@@ -45,7 +53,7 @@ func TestMetricAgent_ApplyResources(t *testing.T) {
 	require.Equal(t, string(goldenFileBytes), string(bytes))
 }
 
-func TestMetricAgent_DeleteResources(t *testing.T) {
+func TestAgent_DeleteResources(t *testing.T) {
 	var created []client.Object
 
 	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{

@@ -6,20 +6,18 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"testing"
 
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
-func MarshalYAML(objects []client.Object) ([]byte, error) {
-	scheme := runtime.NewScheme()
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
+// MarshalYAML marshals a list of objects into a YAML byte slice. It is used to compare the expected objects with the actual ones in golden file tests.
+func MarshalYAML(scheme *runtime.Scheme, objects []client.Object) ([]byte, error) {
 	// TypeMeta is not set by default, so we need to set it manually
 	for _, obj := range objects {
 		gvk, err := apiutil.GVKForObject(obj, scheme)
@@ -48,13 +46,15 @@ func MarshalYAML(objects []client.Object) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func SaveAsYAML(objects []client.Object, path string) error {
-	objectsYAML, err := MarshalYAML(objects)
-	if err != nil {
-		return fmt.Errorf("failed to marshal objects to YAML: %w", err)
-	}
+// SaveAsYAML dumps the list of objects as a YAML file. Used to generate golden files, never should be committed.
+func SaveAsYAML(t *testing.T, scheme *runtime.Scheme, objects []client.Object, path string) {
+	objectsYAML, err := MarshalYAML(scheme, objects)
+	require.NoError(t, err)
 
-	return os.WriteFile(path, objectsYAML, 0600)
+	err = os.WriteFile(path, objectsYAML, 0600)
+	require.NoError(t, err)
+
+	t.Fatalf("Golden file %s has been saved, please verify it and remove this line", path)
 }
 
 func compareObjects(a, b client.Object) int {
