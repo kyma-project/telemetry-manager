@@ -3,6 +3,7 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 
@@ -43,6 +44,15 @@ func MarshalYAML(objects []client.Object) ([]byte, error) {
 	}
 
 	return buffer.Bytes(), nil
+}
+
+func SaveAsYAML(objects []client.Object, path string) error {
+	objectsYAML, err := MarshalYAML(objects)
+	if err != nil {
+		return fmt.Errorf("failed to marshal objects to YAML: %w", err)
+	}
+
+	return os.WriteFile(path, objectsYAML, 0644)
 }
 
 func compareObjects(a, b client.Object) int {
