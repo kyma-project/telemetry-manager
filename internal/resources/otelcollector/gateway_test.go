@@ -101,8 +101,9 @@ func TestGateway_DeleteResources(t *testing.T) {
 	priorityClassName := "normal"
 
 	tests := []struct {
-		name string
-		sut  *GatewayApplierDeleter
+		name         string
+		sut          *GatewayApplierDeleter
+		istioEnabled bool
 	}{
 		{
 			name: "metric gateway",
@@ -116,13 +117,22 @@ func TestGateway_DeleteResources(t *testing.T) {
 			name: "log gateway",
 			sut:  NewLogGatewayApplierDeleter(image, namespace, priorityClassName),
 		},
+		{
+			name:         "metric gateway with istio",
+			sut:          NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			istioEnabled: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var created []client.Object
 
-			fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+			scheme := runtime.NewScheme()
+			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 					created = append(created, obj)
 					return c.Create(ctx, obj)
@@ -132,10 +142,11 @@ func TestGateway_DeleteResources(t *testing.T) {
 			err := tt.sut.ApplyResources(context.Background(), fakeClient, GatewayApplyOptions{
 				AllowedPorts:        []int32{5555, 6666},
 				CollectorConfigYAML: "dummy",
+				IstioEnabled:        tt.istioEnabled,
 			})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(context.Background(), fakeClient, false)
+			err = tt.sut.DeleteResources(context.Background(), fakeClient, tt.istioEnabled)
 			require.NoError(t, err)
 
 			for i := range created {
