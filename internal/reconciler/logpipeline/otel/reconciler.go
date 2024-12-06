@@ -25,10 +25,6 @@ import (
 
 const defaultReplicaCount int32 = 2
 
-type Config struct {
-	TelemetryNamespace string
-}
-
 type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
@@ -47,7 +43,7 @@ var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 type Reconciler struct {
 	client.Client
 
-	config Config
+	telemetryNamespace string
 
 	// Dependencies
 	gatewayApplierDeleter GatewayApplierDeleter
@@ -59,7 +55,7 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	config Config,
+	telemetryNamespace string,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
 	gatewayProber commonstatus.Prober,
@@ -68,7 +64,7 @@ func New(
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
-		config:                config,
+		telemetryNamespace:    telemetryNamespace,
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,
 		gatewayProber:         gatewayProber,

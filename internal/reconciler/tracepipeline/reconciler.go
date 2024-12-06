@@ -43,10 +43,6 @@ import (
 
 const defaultReplicaCount int32 = 2
 
-type Config struct {
-	TelemetryNamespace string
-}
-
 type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
 }
@@ -76,7 +72,7 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	config Config
+	telemetryNamespace string
 
 	// Dependencies
 	flowHealthProber      FlowHealthProber
@@ -92,7 +88,7 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	config Config,
+	telemetryNamespace string,
 	flowHealthProber FlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
@@ -105,7 +101,7 @@ func New(
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
-		config:                config,
+		telemetryNamespace:    telemetryNamespace,
 		flowHealthProber:      flowHealthProber,
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,

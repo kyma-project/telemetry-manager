@@ -99,13 +99,9 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		return nil, err
 	}
 
-	reconcilerConfig := tracepipeline.Config{
-		TelemetryNamespace: config.TelemetryNamespace,
-	}
-
 	reconciler := tracepipeline.New(
 		client,
-		reconcilerConfig,
+		config.TelemetryNamespace,
 		flowHealthProber,
 		otelcollector.NewTraceGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.TraceGatewayPriorityClassName),
 		&gateway.Builder{Reader: client},

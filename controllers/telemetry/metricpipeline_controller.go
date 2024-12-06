@@ -111,14 +111,10 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 
 	gatewayConfigBuilder := &gateway.Builder{Reader: client}
 
-	reconcilerConfig := metricpipeline.Config{
-		ModuleVersion:      config.ModuleVersion,
-		TelemetryNamespace: config.TelemetryNamespace,
-	}
-
 	reconciler := metricpipeline.New(
 		client,
-		reconcilerConfig,
+		config.TelemetryNamespace,
+		config.ModuleVersion,
 		otelcollector.NewMetricAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricAgentPriorityClassName),
 		agentConfigBuilder,
 		&workloadstatus.DaemonSetProber{Client: client},

@@ -200,17 +200,13 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
 func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, _ *prober.LogPipelineProber) (*logpipelineotel.Reconciler, error) {
-	otelConfig := logpipelineotel.Config{
-		TelemetryNamespace: config.TelemetryNamespace,
-	}
-
 	pipelineValidator := &logpipelineotel.Validator{
 		// TODO: Add validators
 	}
 
 	otelReconciler := logpipelineotel.New(
 		client,
-		otelConfig,
+		config.TelemetryNamespace,
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},

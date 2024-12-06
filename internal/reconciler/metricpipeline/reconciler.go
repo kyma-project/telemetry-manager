@@ -28,11 +28,6 @@ import (
 
 const defaultReplicaCount int32 = 2
 
-type Config struct {
-	ModuleVersion      string
-	TelemetryNamespace string
-}
-
 type AgentConfigBuilder interface {
 	Build(pipelines []telemetryv1alpha1.MetricPipeline, options agent.BuildOptions) *agent.Config
 }
@@ -71,7 +66,9 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	config Config
+	telemetryNamespace string
+	// TODO(skhalash): introduce an embed pkg exposing the module version set by go build
+	moduleVersion string
 
 	agentApplierDeleter   AgentApplierDeleter
 	agentConfigBuilder    AgentConfigBuilder
@@ -89,7 +86,8 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	config Config,
+	telemetryNamespace string,
+	moduleVersion string,
 	agentApplierDeleter AgentApplierDeleter,
 	agentConfigBuilder AgentConfigBuilder,
 	agentProber commonstatus.Prober,
@@ -105,7 +103,8 @@ func New(
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
-		config:                config,
+		telemetryNamespace:    telemetryNamespace,
+		moduleVersion:         moduleVersion,
 		agentApplierDeleter:   agentApplierDeleter,
 		agentConfigBuilder:    agentConfigBuilder,
 		agentProber:           agentProber,
@@ -244,8 +243,8 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		GatewayNamespace:            r.config.TelemetryNamespace,
-		InstrumentationScopeVersion: r.config.ModuleVersion,
+		GatewayNamespace:            r.telemetryNamespace,
+		InstrumentationScopeVersion: r.moduleVersion,
 	})
 
 	if err != nil {
@@ -290,8 +289,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
-		InstrumentationScopeVersion: r.config.ModuleVersion,
-		AgentNamespace:              r.config.TelemetryNamespace,
+		InstrumentationScopeVersion: r.moduleVersion,
+		AgentNamespace:              r.telemetryNamespace,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
