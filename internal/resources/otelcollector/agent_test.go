@@ -25,6 +25,7 @@ func TestMetricAgent_ApplyResources(t *testing.T) {
 	client := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 			objects = append(objects, obj)
+			// Nothing has to be created, just add created object to the list
 			return nil
 		},
 	}).Build()
