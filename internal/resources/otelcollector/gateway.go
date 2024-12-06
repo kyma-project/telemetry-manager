@@ -101,9 +101,9 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 
 func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		traceGatewayIngestKey: "true",
-		traceGatewayExportKey: "true",
-		istioSidecarInjectKey: "true",
+		metricGatewayIngestKey: "true",
+		metricGatewayExportKey: "true",
+		istioSidecarInjectKey:  "true",
 	}
 
 	return &GatewayApplierDeleter{

@@ -38,7 +38,7 @@ func TestMetricGateway_ApplyResources(t *testing.T) {
 	bytes, err := testutils.MarshalYAML(objects)
 	require.NoError(t, err)
 
-	goldenFileBytes, err := os.ReadFile("testdata/metric-agent.yaml")
+	goldenFileBytes, err := os.ReadFile("testdata/metric-gateway.yaml")
 	require.NoError(t, err)
 
 	require.Equal(t, string(goldenFileBytes), string(bytes))
