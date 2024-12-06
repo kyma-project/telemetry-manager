@@ -104,7 +104,7 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 	extraLabels := map[string]string{
 		metricGatewayIngestKey: "true",
 		metricGatewayExportKey: "true",
-		istioSidecarInjectKey:  "true",
+		istioSidecarInjectKey:  "true", // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
@@ -130,7 +130,7 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 	extraLabels := map[string]string{
 		traceGatewayIngestKey: "true",
 		traceGatewayExportKey: "true",
-		istioSidecarInjectKey: "true",
+		istioSidecarInjectKey: "true", // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{

@@ -10,18 +10,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	apiutils "sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 func MarshalYAML(objects []client.Object) ([]byte, error) {
 	scheme := runtime.NewScheme()
-	clientgoscheme.AddToScheme(scheme)
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	//TypeMeta is not set by default, so we need to set it manually
+	// TypeMeta is not set by default, so we need to set it manually
 	for _, obj := range objects {
-		gvk, err := apiutils.GVKForObject(obj, scheme)
+		gvk, err := apiutil.GVKForObject(obj, scheme)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get GVK for object %T: %w", obj, err)
 		}
@@ -29,10 +30,11 @@ func MarshalYAML(objects []client.Object) ([]byte, error) {
 		obj.GetObjectKind().SetGroupVersionKind(gvk)
 	}
 
-	//Always sort to have a deterministic output
+	// Always sort to have a deterministic output
 	slices.SortFunc(objects, compareObjects)
 
 	e := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme, scheme)
+
 	var buffer bytes.Buffer
 
 	for _, obj := range objects {
@@ -52,7 +54,7 @@ func SaveAsYAML(objects []client.Object, path string) error {
 		return fmt.Errorf("failed to marshal objects to YAML: %w", err)
 	}
 
-	return os.WriteFile(path, objectsYAML, 0644)
+	return os.WriteFile(path, objectsYAML, 0600)
 }
 
 func compareObjects(a, b client.Object) int {
@@ -74,8 +76,10 @@ func compareGVKs(a, b schema.GroupVersionKind) int {
 	if cmp := strings.Compare(a.Group, b.Group); cmp != 0 {
 		return cmp
 	}
+
 	if cmp := strings.Compare(a.Version, b.Version); cmp != 0 {
 		return cmp
 	}
+
 	return strings.Compare(a.Kind, b.Kind)
 }

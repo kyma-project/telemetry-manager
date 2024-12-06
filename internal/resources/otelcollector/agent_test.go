@@ -14,14 +14,9 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-var (
-	agentNamespace = "my-namespace"
-	agentName      = "my-agent"
-	agentCfg       = "dummy otel collector config"
-)
-
 func TestMetricAgent_ApplyResources(t *testing.T) {
 	var objects []client.Object
+
 	client := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 			objects = append(objects, obj)
@@ -39,6 +34,7 @@ func TestMetricAgent_ApplyResources(t *testing.T) {
 		AllowedPorts:        []int32{5555, 6666},
 		CollectorConfigYAML: "dummy",
 	})
+	require.NoError(t, err)
 
 	bytes, err := testutils.MarshalYAML(objects)
 	require.NoError(t, err)
@@ -51,10 +47,11 @@ func TestMetricAgent_ApplyResources(t *testing.T) {
 
 func TestMetricAgent_DeleteResources(t *testing.T) {
 	var created []client.Object
+
 	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
-		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
+		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 			created = append(created, obj)
-			return c.Create(context.Background(), obj)
+			return c.Create(ctx, obj)
 		},
 	}).Build()
 

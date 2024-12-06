@@ -39,7 +39,7 @@ var (
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
 		metricAgentScrapeKey:  "true",
-		istioSidecarInjectKey: "true",
+		istioSidecarInjectKey: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
 	}
 
 	return &AgentApplierDeleter{
@@ -126,26 +126,32 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	selectorLabels := commonresources.MakeDefaultLabels(aad.baseName)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
-	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))
+	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
 
 	resources := aad.makeAgentResourceRequirements()
-	podSpec := makePodSpec(
-		aad.baseName,
-		aad.image,
+
+	opts := []podSpecOption{
 		commonresources.WithPriorityClass(aad.priorityClassName),
 		commonresources.WithResources(resources),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
 		commonresources.WithGoMemLimitEnvVar(aad.memoryLimit),
-		withVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		}}),
+
+		// emptyDir volume for Istio certificates
+		withVolume(corev1.Volume{
+			Name: istioCertVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}),
 		withVolumeMount(corev1.VolumeMount{
 			Name:      istioCertVolumeName,
 			MountPath: IstioCertPath,
 			ReadOnly:  true,
 		}),
-	)
+	}
+
+	podSpec := makePodSpec(aad.baseName, aad.image, opts...)
 
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, selectorLabels)
@@ -185,7 +191,8 @@ func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceR
 	}
 }
 
-func makeIstioTLSPodAnnotations(istioCertPath string) map[string]string {
+func makeIstioAnnotations(istioCertPath string) map[string]string {
+	// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume. However, the sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
 	return map[string]string{
 		"proxy.istio.io/config": fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
