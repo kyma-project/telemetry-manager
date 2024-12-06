@@ -13,37 +13,57 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func TestMetricGateway_ApplyResources(t *testing.T) {
-	var objects []client.Object
-	client := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
-		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
-			objects = append(objects, obj)
-			// Nothing has to be created, just add created object to the list
-			return nil
-		},
-	}).Build()
-
+func TestGateway_ApplyResources(t *testing.T) {
 	image := "opentelemetry/collector:latest"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
-	sut := NewMetricGatewayApplierDeleter(image, namespace, priorityClassName)
-
-	err := sut.ApplyResources(context.Background(), client, GatewayApplyOptions{
-		AllowedPorts:        []int32{5555, 6666},
-		CollectorConfigYAML: "dummy",
-		CollectorEnvVars: map[string][]byte{
-			"DUMMY_ENV_VAR": []byte("foo"),
+	tests := []struct {
+		name           string
+		sut            *GatewayApplierDeleter
+		goldenFilePath string
+	}{
+		{
+			name:           "metric gateway",
+			sut:            NewMetricGatewayApplierDeleter(image, namespace, priorityClassName),
+			goldenFilePath: "testdata/metric-gateway.yaml",
 		},
-		Replicas: 2,
-	})
+		{
+			name:           "trace gateway",
+			sut:            NewTraceGatewayApplierDeleter(image, namespace, priorityClassName),
+			goldenFilePath: "testdata/trace-gateway.yaml",
+		},
+	}
 
-	bytes, err := testutils.MarshalYAML(objects)
-	require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var objects []client.Object
+			client := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+				Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
+					objects = append(objects, obj)
+					// Nothing has to be created, just add created object to the list
+					return nil
+				},
+			}).Build()
 
-	goldenFileBytes, err := os.ReadFile("testdata/metric-gateway.yaml")
-	require.NoError(t, err)
+			err := tt.sut.ApplyResources(context.Background(), client, GatewayApplyOptions{
+				AllowedPorts:        []int32{5555, 6666},
+				CollectorConfigYAML: "dummy",
+				CollectorEnvVars: map[string][]byte{
+					"DUMMY_ENV_VAR": []byte("foo"),
+				},
+				Replicas: 2,
+			})
 
-	require.Equal(t, string(goldenFileBytes), string(bytes))
+			bytes, err := testutils.MarshalYAML(objects)
+			require.NoError(t, err)
+
+			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)
+			require.NoError(t, err)
+
+			require.Equal(t, string(goldenFileBytes), string(bytes))
+
+		})
+	}
 }
 
 func TestMetricGateway_DeleteResources(t *testing.T) {
