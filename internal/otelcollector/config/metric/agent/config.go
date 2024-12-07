@@ -187,10 +187,16 @@ type StaticDiscoveryConfig struct {
 }
 
 type KubernetesDiscoveryConfig struct {
-	Role Role `yaml:"role"`
+	Role      Role                   `yaml:"role"`
+	Selectors []K8SDiscoverySelector `yaml:"selectors,omitempty"`
 }
 
 type Role string
+
+type K8SDiscoverySelector struct {
+	Role  Role   `yaml:"role"`
+	Field string `yaml:"field"`
+}
 
 const (
 	RoleEndpoints Role = "endpoints"

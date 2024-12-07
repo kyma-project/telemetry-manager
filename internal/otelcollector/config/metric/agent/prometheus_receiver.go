@@ -18,8 +18,9 @@ const (
 type AnnotatedResource string
 
 const (
-	AnnotatedPod     AnnotatedResource = "pod"
-	AnnotatedService AnnotatedResource = "service"
+	AnnotatedPod                   AnnotatedResource = "pod"
+	AnnotatedService               AnnotatedResource = "service"
+	PodNodeSelectorFieldExpression string            = "spec.nodeName=${MY_NODE_NAME}"
 )
 
 const (
@@ -35,11 +36,21 @@ func makePrometheusConfigForPods() *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	scrapeConfig := ScrapeConfig{
-		ScrapeInterval:             scrapeInterval,
-		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
-		JobName:                    appPodsJobName,
-		RelabelConfigs:             makePrometheusPodsRelabelConfigs(),
+		ScrapeInterval: scrapeInterval,
+		SampleLimit:    sampleLimit,
+		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
+			{
+				Role: RolePod,
+				Selectors: []K8SDiscoverySelector{
+					{
+						Role:  RolePod,
+						Field: PodNodeSelectorFieldExpression,
+					},
+				},
+			},
+		},
+		JobName:        appPodsJobName,
+		RelabelConfigs: makePrometheusPodsRelabelConfigs(),
 	}
 
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, scrapeConfig)
@@ -55,9 +66,19 @@ func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	baseScrapeConfig := ScrapeConfig{
-		ScrapeInterval:             scrapeInterval,
-		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
+		ScrapeInterval: scrapeInterval,
+		SampleLimit:    sampleLimit,
+		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
+			{
+				Role: RoleEndpoints,
+				Selectors: []K8SDiscoverySelector{
+					{
+						Role:  RolePod,
+						Field: PodNodeSelectorFieldExpression,
+					},
+				},
+			},
+		},
 	}
 
 	httpScrapeConfig := baseScrapeConfig
@@ -142,11 +163,21 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
 				{
-					JobName:                    "istio-proxy",
-					SampleLimit:                sampleLimit,
-					MetricsPath:                "/stats/prometheus",
-					ScrapeInterval:             scrapeInterval,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
+					JobName:        "istio-proxy",
+					SampleLimit:    sampleLimit,
+					MetricsPath:    "/stats/prometheus",
+					ScrapeInterval: scrapeInterval,
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
+						{
+							Role: RolePod,
+							Selectors: []K8SDiscoverySelector{
+								{
+									Role:  RolePod,
+									Field: PodNodeSelectorFieldExpression,
+								},
+							},
+						},
+					},
 					RelabelConfigs: []RelabelConfig{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),
 						keepIfIstioProxy(),
