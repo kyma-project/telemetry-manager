@@ -39,13 +39,11 @@ type Config struct {
 }
 
 type TracesConfig struct {
-	OTLPServiceName string
-	Namespace       string
+	Namespace string
 }
 
 type MetricsConfig struct {
-	OTLPServiceName string
-	Namespace       string
+	Namespace string
 }
 
 type WebhookConfig struct {
