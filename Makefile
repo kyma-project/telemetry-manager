@@ -108,7 +108,7 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	$(YAMLFMT)
 
 .PHONY: manifests-dev
-manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
+manifests-dev: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 	$(YAMLFMT)
 
