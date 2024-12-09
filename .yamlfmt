@@ -1,6 +1,8 @@
 ---
 include:
 - config
+exclude:
+- config/manager/kustomization.yaml
 formatter:
   type: basic
   indentless_arrays: true
