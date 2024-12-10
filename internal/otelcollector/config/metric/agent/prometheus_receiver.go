@@ -18,8 +18,9 @@ const (
 type AnnotatedResource string
 
 const (
-	AnnotatedPod     AnnotatedResource = "pod"
-	AnnotatedService AnnotatedResource = "service"
+	AnnotatedPod                   AnnotatedResource = "pod"
+	AnnotatedService               AnnotatedResource = "service"
+	PodNodeSelectorFieldExpression string            = "spec.nodeName=${MY_NODE_NAME}"
 )
 
 const (
@@ -37,7 +38,7 @@ func makePrometheusConfigForPods() *PrometheusReceiver {
 	scrapeConfig := ScrapeConfig{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
+		KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RolePod),
 		JobName:                    appPodsJobName,
 		RelabelConfigs:             makePrometheusPodsRelabelConfigs(),
 	}
@@ -57,7 +58,7 @@ func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
 	baseScrapeConfig := ScrapeConfig{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
+		KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RoleEndpoints),
 	}
 
 	httpScrapeConfig := baseScrapeConfig
@@ -146,7 +147,7 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 					SampleLimit:                sampleLimit,
 					MetricsPath:                "/stats/prometheus",
 					ScrapeInterval:             scrapeInterval,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
+					KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RolePod),
 					RelabelConfigs: []RelabelConfig{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),
 						keepIfIstioProxy(),
@@ -289,5 +290,19 @@ func dropIfSchemeHTTPS() RelabelConfig {
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
 		Regex:        "(https)",
+	}
+}
+
+func makeDiscoveryConfigWithNodeSelector(role Role) []KubernetesDiscoveryConfig {
+	return []KubernetesDiscoveryConfig{
+		{
+			Role: role,
+			Selectors: []K8SDiscoverySelector{
+				{
+					Role:  RolePod,
+					Field: PodNodeSelectorFieldExpression,
+				},
+			},
+		},
 	}
 }
