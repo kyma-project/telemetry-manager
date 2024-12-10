@@ -115,8 +115,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
-		// TODO: Set 'false' to 'r.istioStatusChecker.IsIstioActive(ctx)' istio is implemented for this type of pipeline
-		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, false); err != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
 
