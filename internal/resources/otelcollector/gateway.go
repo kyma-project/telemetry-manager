@@ -77,8 +77,9 @@ var (
 
 func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		logGatewayIngestKey: "true",
-		logGatewayExportKey: "true",
+		logGatewayIngestKey:   "true",
+		logGatewayExportKey:   "true",
+		istioSidecarInjectKey: "true", // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
