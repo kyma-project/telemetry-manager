@@ -36,21 +36,11 @@ func makePrometheusConfigForPods() *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	scrapeConfig := ScrapeConfig{
-		ScrapeInterval: scrapeInterval,
-		SampleLimit:    sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
-			{
-				Role: RolePod,
-				Selectors: []K8SDiscoverySelector{
-					{
-						Role:  RolePod,
-						Field: PodNodeSelectorFieldExpression,
-					},
-				},
-			},
-		},
-		JobName:        appPodsJobName,
-		RelabelConfigs: makePrometheusPodsRelabelConfigs(),
+		ScrapeInterval:             scrapeInterval,
+		SampleLimit:                sampleLimit,
+		KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RolePod),
+		JobName:                    appPodsJobName,
+		RelabelConfigs:             makePrometheusPodsRelabelConfigs(),
 	}
 
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, scrapeConfig)
@@ -66,19 +56,9 @@ func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	baseScrapeConfig := ScrapeConfig{
-		ScrapeInterval: scrapeInterval,
-		SampleLimit:    sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
-			{
-				Role: RoleEndpoints,
-				Selectors: []K8SDiscoverySelector{
-					{
-						Role:  RolePod,
-						Field: PodNodeSelectorFieldExpression,
-					},
-				},
-			},
-		},
+		ScrapeInterval:             scrapeInterval,
+		SampleLimit:                sampleLimit,
+		KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RoleEndpoints),
 	}
 
 	httpScrapeConfig := baseScrapeConfig
@@ -163,21 +143,11 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
 				{
-					JobName:        "istio-proxy",
-					SampleLimit:    sampleLimit,
-					MetricsPath:    "/stats/prometheus",
-					ScrapeInterval: scrapeInterval,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
-						{
-							Role: RolePod,
-							Selectors: []K8SDiscoverySelector{
-								{
-									Role:  RolePod,
-									Field: PodNodeSelectorFieldExpression,
-								},
-							},
-						},
-					},
+					JobName:                    "istio-proxy",
+					SampleLimit:                sampleLimit,
+					MetricsPath:                "/stats/prometheus",
+					ScrapeInterval:             scrapeInterval,
+					KubernetesDiscoveryConfigs: makeDiscoveryConfigWithNodeSelector(RolePod),
 					RelabelConfigs: []RelabelConfig{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),
 						keepIfIstioProxy(),
@@ -320,5 +290,19 @@ func dropIfSchemeHTTPS() RelabelConfig {
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
 		Regex:        "(https)",
+	}
+}
+
+func makeDiscoveryConfigWithNodeSelector(role Role) []KubernetesDiscoveryConfig {
+	return []KubernetesDiscoveryConfig{
+		{
+			Role: role,
+			Selectors: []K8SDiscoverySelector{
+				{
+					Role:  RolePod,
+					Field: PodNodeSelectorFieldExpression,
+				},
+			},
+		},
 	}
 }
