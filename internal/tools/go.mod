@@ -10,7 +10,7 @@ require (
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
 	github.com/mikefarah/yq/v4 v4.44.5
 	github.com/onsi/ginkgo/v2 v2.22.0
-	github.com/vektra/mockery/v2 v2.49.2
+	github.com/vektra/mockery/v2 v2.50.0
 	github.com/vladopajic/go-test-coverage/v2 v2.11.0
 	golang.org/x/tools v0.28.0
 	sigs.k8s.io/controller-tools v0.16.5
