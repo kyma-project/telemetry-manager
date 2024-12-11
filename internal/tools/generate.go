@@ -1,4 +1,5 @@
-//go:build common
+//go:build gen
+// +build gen
 
 package main
 
@@ -92,7 +93,7 @@ package common
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = f.WriteString(fmt.Sprintf("\"%s\"\n", data["DEFAULT_SELFMONITORIMAGE"]))
+	_, err = f.WriteString(fmt.Sprintf("\"%s\"\n", data["DEFAULT_SELFMONITOR_IMAGE"]))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -158,7 +159,7 @@ func generateSecScanConfig(data map[string]string) {
 
 	enc := yaml.NewEncoder(file)
 
-	imgs := []string{data["ENV_IMG"], data["DEFAULT_FLUENTBIT_EXPORTER_IMAGE"], data["DEFAULT_FLUENTBIT_IMAGE"], data["DEFAULT_OTEL_COLLECTOR_IMAGE"], data["DEFAULT_SELFMONITORIMAGE"], data["DEFAULT_TELEMETRYGEN_IMAGE"]}
+	imgs := []string{data["ENV_IMG"], data["DEFAULT_FLUENTBIT_EXPORTER_IMAGE"], data["DEFAULT_FLUENTBIT_IMAGE"], data["DEFAULT_OTEL_COLLECTOR_IMAGE"], data["DEFAULT_SELFMONITOR_IMAGE"], data["DEFAULT_TELEMETRYGEN_IMAGE"]}
 	secScanCfg := secScanConfig{
 		ModuleName: "telemetry",
 		Protocode:  imgs,
