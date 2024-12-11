@@ -74,7 +74,7 @@ var (
 	setupLog           = ctrl.Log.WithName("setup")
 	telemetryNamespace string
 	// TODO: replace with build version based on git revision
-	version = "1.29.0"
+	version = "1.29.1"
 
 	// Operator flags
 	certDir                   string
