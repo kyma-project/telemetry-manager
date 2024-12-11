@@ -2,6 +2,7 @@ package selfmonitor
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -9,9 +10,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 const (
@@ -98,15 +105,25 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 }
 
 func TestApplySelfMonitorResources(t *testing.T) {
-	ctx := context.Background()
-	client := fake.NewClientBuilder().Build()
+	var objects []client.Object
 
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
+		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
+			objects = append(objects, obj)
+			// Nothing has to be created, just add created object to the list
+			return nil
+		},
+	}).Build()
 	sut := ApplierDeleter{
 		Config: Config{
 			BaseName:  name,
 			Namespace: namespace,
 		},
 	}
+
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	opts := ApplyOptions{
 		AlertRulesFileName:       alertRulesFileName,
@@ -118,33 +135,16 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	err := sut.ApplyResources(ctx, client, opts)
 	require.NoError(t, err)
 
-	t.Run("should create collector Config configmap", func(t *testing.T) {
-		verifyConfigMapIsPresent(ctx, t, client)
-	})
+	// uncomment to re-generate golden file
+	// testutils.SaveAsYAML(t, scheme, objects, "testdata/self-monitor.yaml")
 
-	t.Run("should create a deployment", func(t *testing.T) {
-		verifyDeploymentIsPreset(ctx, t, client)
-	})
+	bytes, err := testutils.MarshalYAML(scheme, objects)
+	require.NoError(t, err)
 
-	t.Run("should create role", func(t *testing.T) {
-		verifyRoleIsPresent(ctx, t, client)
-	})
+	goldenFileBytes, err := os.ReadFile("testdata/self-monitor.yaml")
+	require.NoError(t, err)
 
-	t.Run("should create role binding", func(t *testing.T) {
-		verifyRoleBindingIsPresent(ctx, t, client)
-	})
-
-	t.Run("should create service account", func(t *testing.T) {
-		verifyServiceAccountIsPresent(ctx, t, client)
-	})
-
-	t.Run("should create network policy", func(t *testing.T) {
-		verifyNetworkPolicy(ctx, t, client)
-	})
-
-	t.Run("should create service", func(t *testing.T) {
-		verifyService(ctx, t, client)
-	})
+	require.Equal(t, string(goldenFileBytes), string(bytes))
 }
 
 func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.Client) {
