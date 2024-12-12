@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -38,6 +39,10 @@ type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
+type IstioStatusChecker interface {
+	IsIstioActive(ctx context.Context) bool
+}
+
 var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
 type Reconciler struct {
@@ -49,6 +54,7 @@ type Reconciler struct {
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
 	gatewayProber         commonstatus.Prober
+	istioStatusChecker    IstioStatusChecker
 	pipelineValidator     *Validator
 	errToMessageConverter commonstatus.ErrorToMessageConverter
 }
@@ -59,6 +65,7 @@ func New(
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
 	gatewayProber commonstatus.Prober,
+	istioStatusChecker IstioStatusChecker,
 	pipelineValidator *Validator,
 	errToMessageConverter commonstatus.ErrorToMessageConverter,
 ) *Reconciler {
@@ -68,6 +75,7 @@ func New(
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,
 		gatewayProber:         gatewayProber,
+		istioStatusChecker:    istioStatusChecker,
 		pipelineValidator:     pipelineValidator,
 		errToMessageConverter: errToMessageConverter,
 	}
@@ -107,8 +115,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
-		// TODO: Set 'false' to 'r.istioStatusChecker.IsIstioActive(ctx)' istio is implemented for this type of pipeline
-		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, false); err != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
 
@@ -174,9 +181,19 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+
+	allowedPorts := getGatewayPorts()
+	if isIstioActive {
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+	}
+
 	opts := otelcollector.GatewayApplyOptions{
+		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
+		IstioEnabled:                   isIstioActive,
+		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
@@ -217,4 +234,13 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	return defaultReplicaCount
+}
+
+func getGatewayPorts() []int32 {
+	return []int32{
+		ports.Metrics,
+		ports.HealthCheck,
+		ports.OTLPHTTP,
+		ports.OTLPGRPC,
+	}
 }
