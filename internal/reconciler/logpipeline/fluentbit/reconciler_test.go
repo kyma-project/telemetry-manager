@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"testing"
 	"time"
 
@@ -1075,4 +1078,61 @@ func TestCalculateChecksum(t *testing.T) {
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating certificate secret")
 	})
+}
+
+func TestCreateOrUpdateFluentBit(t *testing.T) {
+	var objects []client.Object
+	var logPipe telemetryv1alpha1.LogPipeline
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+	pipeline := testutils.NewLogPipelineBuilder().WithName("test-fluentbit-resources").WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithCustomFilter("Name grep").Build()
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).WithInterceptorFuncs(interceptor.Funcs{
+		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
+			objects = append(objects, obj)
+			return c.Create(ctx, obj)
+		},
+	}).Build()
+
+	proberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+	flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
+	flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.LogPipelineProbeResult{}, nil)
+
+	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	pipelineValidatorWithStubs := &Validator{
+		EndpointValidator:  stubs.NewEndpointValidator(nil),
+		TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+		SecretRefValidator: stubs.NewSecretRefValidator(nil),
+	}
+
+	testConfig := Config{
+		DaemonSet:           types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		SectionsConfigMap:   types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
+		FilesConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
+		LuaConfigMap:        types.NamespacedName{Name: "test-telemetry-fluent-bit-lua", Namespace: "default"},
+		ParsersConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
+		EnvConfigSecret:     types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
+		TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+		DaemonSetConfig: fluentbit.DaemonSetConfig{
+			FluentBitImage: "fluent/bit:latest",
+			ExporterImage:  "exporter:latest",
+		},
+	}
+	errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+
+	sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+	require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &logPipe))
+
+	err := sut.Reconcile(context.Background(), &logPipe)
+	require.NoError(t, err)
+
+	bytes, err := testutils.MarshalYAML(scheme, objects)
+	require.NoError(t, err)
+
+	goldenFileBytes, err := os.ReadFile("testdata/fluent-bit.yaml")
+	require.NoError(t, err)
+
+	require.Equal(t, string(goldenFileBytes), string(bytes))
 }
