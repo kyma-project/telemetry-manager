@@ -20,6 +20,7 @@ import (
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
@@ -31,6 +32,8 @@ func TestReconcile(t *testing.T) {
 
 	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
 	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+
+	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
 	telemetryNamespace := "default"
 
@@ -63,6 +66,7 @@ func TestReconcile(t *testing.T) {
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
+			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
@@ -111,6 +115,7 @@ func TestReconcile(t *testing.T) {
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
+			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
@@ -159,6 +164,7 @@ func TestReconcile(t *testing.T) {
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
+			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
 		err := sut.Reconcile(context.Background(), &pipeline)
