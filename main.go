@@ -49,6 +49,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
+	commonconsts "github.com/kyma-project/telemetry-manager/internal/common"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
@@ -91,11 +92,6 @@ var (
 )
 
 const (
-	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241024-8bc3f6a8"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.2.2"
-	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.115.0-main"
-	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.0.1-857b814"
-
 	cacheSyncPeriod           = 1 * time.Minute
 	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
 	telemetryNamespaceDefault = "default"
@@ -134,10 +130,10 @@ func run() error {
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
 
-	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
-	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOTelCollectorImage, "Image for OpenTelemetry Collector")
-	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
+	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", commonconsts.DefaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
+	flag.StringVar(&fluentBitImage, "fluent-bit-image", commonconsts.DefaultFluentBitImage, "Image for fluent-bit")
+	flag.StringVar(&otelCollectorImage, "otel-collector-image", commonconsts.DefaultOTelCollectorImage, "Image for OpenTelemetry Collector")
+	flag.StringVar(&selfMonitorImage, "self-monitor-image", commonconsts.DefaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
 
