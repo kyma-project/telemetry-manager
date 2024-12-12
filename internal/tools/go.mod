@@ -8,9 +8,9 @@ require (
 	github.com/google/yamlfmt v0.14.0
 	github.com/k3d-io/k3d/v5 v5.7.5
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
-	github.com/mikefarah/yq/v4 v4.44.5
+	github.com/mikefarah/yq/v4 v4.44.6
 	github.com/onsi/ginkgo/v2 v2.22.0
-	github.com/vektra/mockery/v2 v2.49.2
+	github.com/vektra/mockery/v2 v2.50.0
 	github.com/vladopajic/go-test-coverage/v2 v2.11.0
 	golang.org/x/tools v0.28.0
 	sigs.k8s.io/controller-tools v0.16.5
@@ -80,7 +80,7 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/elliotchance/orderedmap v1.6.0 // indirect
+	github.com/elliotchance/orderedmap v1.7.0 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
