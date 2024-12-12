@@ -8,11 +8,11 @@ require (
 	github.com/google/yamlfmt v0.14.0
 	github.com/k3d-io/k3d/v5 v5.7.5
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
-	github.com/mikefarah/yq/v4 v4.44.5
+	github.com/mikefarah/yq/v4 v4.44.6
 	github.com/onsi/ginkgo/v2 v2.22.0
-	github.com/vektra/mockery/v2 v2.49.1
+	github.com/vektra/mockery/v2 v2.50.0
 	github.com/vladopajic/go-test-coverage/v2 v2.11.0
-	golang.org/x/tools v0.27.0
+	golang.org/x/tools v0.28.0
 	sigs.k8s.io/controller-tools v0.16.5
 	sigs.k8s.io/kustomize/kustomize/v5 v5.5.0
 )
@@ -80,7 +80,7 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/elliotchance/orderedmap v1.6.0 // indirect
+	github.com/elliotchance/orderedmap v1.7.0 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
@@ -288,17 +288,17 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/crypto v0.29.0 // indirect
+	golang.org/x/crypto v0.30.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
-	golang.org/x/sync v0.9.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/term v0.26.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240725223205-93522f1f2a9f // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
