@@ -314,13 +314,11 @@ func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayAp
 	memoryRequest := gad.baseMemoryRequest.DeepCopy()
 	memoryLimit := gad.baseMemoryLimit.DeepCopy()
 	cpuRequest := gad.baseCPURequest.DeepCopy()
-	cpuLimit := gad.baseCPULimit.DeepCopy()
 
 	for range opts.ResourceRequirementsMultiplier {
 		memoryRequest.Add(gad.dynamicMemoryRequest)
 		memoryLimit.Add(gad.dynamicMemoryLimit)
 		cpuRequest.Add(gad.dynamicCPURequest)
-		cpuLimit.Add(gad.dynamicCPULimit)
 	}
 
 	resources := corev1.ResourceRequirements{
@@ -329,7 +327,6 @@ func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayAp
 			corev1.ResourceMemory: memoryRequest,
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    cpuLimit,
 			corev1.ResourceMemory: memoryLimit,
 		},
 	}
