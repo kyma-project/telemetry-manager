@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	constants "github.com/kyma-project/telemetry-manager/internal/constant"
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
@@ -81,7 +82,7 @@ func (d *Deployment) containers() []corev1.Container {
 	containers := []corev1.Container{
 		{
 			Name:  "otel-collector",
-			Image: testkit.DefaultOTelCollectorImage,
+			Image: constants.DefaultOTelCollectorImage,
 			Args:  []string{"--config=/etc/collector/config.yaml"},
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser: ptr.To[int64](101),
