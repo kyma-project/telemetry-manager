@@ -28,8 +28,8 @@ This release process covers the steps to release new major and minor versions fo
      Update the `newTag` field for the `telemetry-manager` image with the new module version following the `x.y.z` pattern, such as `1.0.0`.
    - `main.go`:
       - Update the `version` variable with the new module version following the `x.y.z` pattern.
-   - `make generate`:
-     Run the `make generate` command to update the `sec-scanners-config.yaml`, and source code file with the new image versions. 
+   - `make generate-env`:
+     Run the `make generate-env` command to update the `sec-scanners-config.yaml`, and source code file with the new image versions. 
 
 6. Merge the PR.
    

@@ -121,6 +121,10 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing D
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
 	cd $(TOOLS_MOD_DIR) && go generate -tags gen .
 
+.PHONY: generate-env
+generate-env:
+	cd $(TOOLS_MOD_DIR) && go generate -tags gen .
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...

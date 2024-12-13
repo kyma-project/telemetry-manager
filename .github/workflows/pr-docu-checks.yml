@@ -23,7 +23,7 @@ jobs:
         uses: "./.github/template/setup-golang"
 
       - name: Verify manifests
-        run: make crd-docs-gen manifests-dev check-clean
+        run: make crd-docs-gen manifests-dev generate-env check-clean
 
   markdown-link-check:
     runs-on: ubuntu-latest
