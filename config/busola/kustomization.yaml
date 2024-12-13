@@ -1,3 +1,4 @@
+---
 resources:
 - logpipeline_busola_extension_cm.yaml
 - tracepipeline_busola_extension_cm.yaml
