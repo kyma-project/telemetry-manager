@@ -40,7 +40,8 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             echo 'TAGS=${{ github.ref_name }}' >> "$GITHUB_OUTPUT"
           elif [[ $GITHUB_EVENT_NAME == 'merge_group' ]]; then
-            echo 'TAGS=${{ github.event.merge_group.head_sha }}' >> "$GITHUB_OUTPUT"
+            {
+              echo 'TAGS=${{ github.event.merge_group.head_sha }}' >> "$GITHUB_OUTPUT"
           else
             {
               echo 'tags<<TAGS'
