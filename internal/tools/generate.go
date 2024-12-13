@@ -129,7 +129,7 @@ package testkit
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = f.WriteString(fmt.Sprintf("\"%s\"\n", data["DEFAULT_TELEMETRYGEN_IMAGE"]))
+	_, err = f.WriteString(fmt.Sprintf("\"%s\"\n", data["DEFAULT_TEST_TELEMETRYGEN_IMAGE"]))
 	if err != nil {
 		log.Fatal(err)
 	}
