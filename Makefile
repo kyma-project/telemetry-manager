@@ -119,6 +119,7 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing D
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
+	cd $(TOOLS_MOD_DIR) && go generate -tags gen .
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
