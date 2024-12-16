@@ -17,7 +17,7 @@ For the test environment, the following setup was used:
 1. Deploy Telemetry Manager:
 
    ```shell
-   make deploy-dev
+   make deploy-experimental
    ```
 
 2. Deploy monitoring and Istio:
