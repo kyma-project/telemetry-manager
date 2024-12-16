@@ -57,7 +57,7 @@ K3D              := $(TOOLS_BIN_DIR)/k3d
 POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
 
 $(POPULATE_IMAGES):
-	cd $(TOOLS_MOD_DIR) && go build -o $(POPULATE_IMAGES) generate.go
+	cd $(TOOLS_MOD_DIR)/populateimages && go build -o $(POPULATE_IMAGES) main.go
 
 # Sub-makefile
 include hack/make/provision.mk
