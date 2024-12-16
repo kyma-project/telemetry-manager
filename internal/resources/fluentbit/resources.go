@@ -26,7 +26,6 @@ type DaemonSetConfig struct {
 	FluentBitConfigPrepperImage string
 	ExporterImage               string
 	PriorityClassName           string
-	CPULimit                    resource.Quantity
 	MemoryLimit                 resource.Quantity
 	CPURequest                  resource.Quantity
 	MemoryRequest               resource.Quantity
@@ -39,7 +38,6 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 			corev1.ResourceMemory: dsConfig.MemoryRequest,
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    dsConfig.CPULimit,
 			corev1.ResourceMemory: dsConfig.MemoryLimit,
 		},
 	}
@@ -51,7 +49,6 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 			corev1.ResourceMemory: resource.MustParse("5Mi"),
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
 			corev1.ResourceMemory: resource.MustParse("50Mi"),
 		},
 	}
