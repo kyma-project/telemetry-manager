@@ -21,7 +21,7 @@ make docker-build
 make docker-push
 
 echo "deploy manager image for version $LATEST_TAG"
-IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-experimental
 
 echo "rollback to current git ref already to have make target and script changes available"
 git restore .
@@ -40,7 +40,7 @@ echo "build manager image for version $CURRENT_COMMIT"
 hack/build-image.sh
 
 echo "deploy manager image for version $CURRENT_COMMIT"
-IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-experimental
 
 echo "run upgrade test"
 bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
