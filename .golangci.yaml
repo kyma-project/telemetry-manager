@@ -3,7 +3,7 @@ run:
   timeout: 10m
   build-tags:
     - e2e
-    - build
+    - tools
 linters:
   enable-all: true
   disable:
