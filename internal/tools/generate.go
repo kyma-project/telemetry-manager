@@ -39,7 +39,7 @@ func main() {
 }
 
 func generateCommonConstants(data map[string]string) {
-	f, err := os.Create("./internal/constant/images.go")
+	f, err := os.Create("./internal/images/images.go")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -49,8 +49,8 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/constant"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+	"github.com/kyma-project/telemetry-manager/internal/images"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
@@ -130,10 +130,10 @@ func run() error {
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
 
-	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", constant.DefaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	flag.StringVar(&fluentBitImage, "fluent-bit-image", constant.DefaultFluentBitImage, "Image for fluent-bit")
-	flag.StringVar(&otelCollectorImage, "otel-collector-image", constant.DefaultOTelCollectorImage, "Image for OpenTelemetry Collector")
-	flag.StringVar(&selfMonitorImage, "self-monitor-image", constant.DefaultSelfMonitorImage, "Image for self-monitor")
+	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", images.DefaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
+	flag.StringVar(&fluentBitImage, "fluent-bit-image", images.DefaultFluentBitImage, "Image for fluent-bit")
+	flag.StringVar(&otelCollectorImage, "otel-collector-image", images.DefaultOTelCollectorImage, "Image for OpenTelemetry Collector")
+	flag.StringVar(&selfMonitorImage, "self-monitor-image", images.DefaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
 
