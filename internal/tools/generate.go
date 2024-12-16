@@ -1,4 +1,5 @@
-//go:build gen
+//go:build tools
+// +build tools
 
 package main
 
@@ -10,8 +11,6 @@ import (
 	"os"
 	"path/filepath"
 )
-
-//go:generate go run generate.go
 
 type secScanConfig struct {
 	ModuleName  string      `yaml:"module-name"`
@@ -27,7 +26,7 @@ type whiteSource struct {
 
 func main() {
 
-	data, err := godotenv.Read(filepath.Join("../../", ".env"))
+	data, err := godotenv.Read(filepath.Join(".", ".env"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +39,7 @@ func main() {
 }
 
 func generateCommonConstants(data map[string]string) {
-	f, err := os.Create("../constant/images.go")
+	f, err := os.Create("./internal/constant/images.go")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -104,7 +103,7 @@ package constant
 }
 
 func generateTestKitCommonConstants(data map[string]string) {
-	f, err := os.Create("../../test/testkit/images.go")
+	f, err := os.Create("./test/testkit/images.go")
 	if err != nil {
 		log.Fatal(err)
 	}

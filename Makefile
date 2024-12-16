@@ -34,7 +34,7 @@ TOOLS_PKG_NAMES_CLEAN  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/
 TOOLS_BIN_NAMES  := $(addprefix $(TOOLS_BIN_DIR)/, $(notdir $(TOOLS_PKG_NAMES_CLEAN)))
 
 .PHONY: install-tools
-install-tools: $(TOOLS_BIN_NAMES)
+install-tools: $(TOOLS_BIN_NAMES) $(GENERATE_CONST)
 
 $(TOOLS_BIN_DIR):
 	if [ ! -d $@ ]; then mkdir -p $@; fi
@@ -54,6 +54,10 @@ YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
 WSL				 := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
+GENERATE_CONST   := $(TOOLS_BIN_DIR)/generate-const
+
+$(GENERATE_CONST):
+	cd $(TOOLS_MOD_DIR) && go build -o $(GENERATE_CONST) generate.go
 
 # Sub-makefile
 include hack/make/provision.mk
@@ -122,8 +126,8 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing D
 	cd $(TOOLS_MOD_DIR) && go generate -tags gen .
 
 .PHONY: generate-env
-generate-env:
-	cd $(TOOLS_MOD_DIR) && go generate -tags gen .
+generate-env: $(GENERATE_CONST)
+	$(GENERATE_CONST)
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
