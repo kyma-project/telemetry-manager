@@ -118,16 +118,13 @@ manifests-dev: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, Cl
 	$(YAMLFMT)
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(GENERATE_CONST) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
-	cd $(TOOLS_MOD_DIR) && go generate -tags gen .
-
-.PHONY: generate-env
-generate-env: $(GENERATE_CONST)
 	$(GENERATE_CONST)
+
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -163,7 +160,7 @@ build: generate fmt vet tidy ## Build manager binary.
 
 check-clean: ## Check if repo is clean up-to-date. Used after code generation
 	@echo "Checking if all generated files are up-to-date"
-	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-dev crd-docs-gen generate-env' to update them." && exit 1)
+	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-dev crd-docs-gen' to update them." && exit 1)
 
 
 tls.key:
