@@ -39,7 +39,7 @@ runs:
     - name: Deploy module experimental
       if: ${{ !inputs.release }}
       shell: bash
-      run: make --debug deploy-dev
+      run: make --debug deploy-experimental
 
     - name: Wait for manager readiness
       shell: bash
