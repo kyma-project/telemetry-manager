@@ -20,27 +20,39 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
+const (
+	defaultInputTag          = "tele"
+	defaultMemoryBufferLimit = "10M"
+	defaultStorageType       = "filesystem"
+	defaultFsBufferLimit     = "1G"
+)
+
 type Config struct {
-	DaemonSet             types.NamespacedName
-	SectionsConfigMap     types.NamespacedName
-	FilesConfigMap        types.NamespacedName
-	LuaConfigMap          types.NamespacedName
-	ParsersConfigMap      types.NamespacedName
-	EnvSecret             types.NamespacedName
-	OutputTLSConfigSecret types.NamespacedName
-	PipelineDefaults      builder.PipelineDefaults
-	Overrides             overrides.Config
-	DaemonSetConfig       fluentbit.DaemonSetConfig
-	RestConfig            rest.Config
+	DaemonSet           types.NamespacedName
+	SectionsConfigMap   types.NamespacedName
+	FilesConfigMap      types.NamespacedName
+	LuaConfigMap        types.NamespacedName
+	ParsersConfigMap    types.NamespacedName
+	EnvConfigSecret     types.NamespacedName
+	TLSFileConfigSecret types.NamespacedName
+	PipelineDefaults    builder.PipelineDefaults
+	Overrides           overrides.Config
+	DaemonSetConfig     fluentbit.DaemonSetConfig
+	RestConfig          rest.Config
+}
+
+type IstioStatusChecker interface {
+	IsIstioActive(ctx context.Context) bool
 }
 
 var _ logpipeline.LogPipelineReconciler = &Reconciler{}
@@ -52,18 +64,25 @@ type Reconciler struct {
 	syncer syncer
 
 	// Dependencies
-	agentProber        commonstatus.DaemonSetProber
+	agentProber        commonstatus.Prober
 	flowHealthProber   logpipeline.FlowHealthProber
-	istioStatusChecker logpipeline.IstioStatusChecker
+	istioStatusChecker IstioStatusChecker
 	pipelineValidator  *Validator
 	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
 
-func (r *Reconciler) SupportedOutput() telemetryv1alpha1.Mode {
-	return telemetryv1alpha1.FluentBit
+func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
+	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, config Config, prober commonstatus.DaemonSetProber, healthProber logpipeline.FlowHealthProber, checker logpipeline.IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+func New(client client.Client, config Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+	config.PipelineDefaults = builder.PipelineDefaults{
+		InputTag:          defaultInputTag,
+		MemoryBufferLimit: defaultMemoryBufferLimit,
+		StorageType:       defaultStorageType,
+		FsBufferLimit:     defaultFsBufferLimit,
+	}
+
 	return &Reconciler{
 		Client:             client,
 		config:             config,
@@ -319,13 +338,13 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	}
 
 	var envSecret corev1.Secret
-	if err := r.Get(ctx, r.config.EnvSecret, &envSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.EnvSecret.Namespace, r.config.EnvSecret.Name, err)
+	if err := r.Get(ctx, r.config.EnvConfigSecret, &envSecret); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.EnvConfigSecret.Namespace, r.config.EnvConfigSecret.Name, err)
 	}
 
 	var tlsSecret corev1.Secret
-	if err := r.Get(ctx, r.config.OutputTLSConfigSecret, &tlsSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.OutputTLSConfigSecret.Namespace, r.config.OutputTLSConfigSecret.Name, err)
+	if err := r.Get(ctx, r.config.TLSFileConfigSecret, &tlsSecret); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.TLSFileConfigSecret.Namespace, r.config.TLSFileConfigSecret.Name, err)
 	}
 
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil

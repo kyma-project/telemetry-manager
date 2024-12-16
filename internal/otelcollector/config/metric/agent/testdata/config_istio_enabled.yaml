@@ -33,10 +33,10 @@ service:
                 - singleton_receiver_creator/k8s_cluster
             processors:
                 - memory_limiter
+                - filter/drop-non-pvc-volumes-metrics
                 - resource/delete-service-name
                 - transform/set-instrumentation-scope-runtime
                 - transform/insert-skip-enrichment-attribute
-                - filter/drop-k8s-cluster-metrics
                 - batch
             exporters:
                 - otlp
@@ -63,6 +63,8 @@ receivers:
         metric_groups:
             - container
             - pod
+            - node
+            - volume
         metrics:
             container.cpu.usage:
                 enabled: true
@@ -113,9 +115,27 @@ receivers:
                         enabled: false
                     k8s.namespace.phase:
                         enabled: false
+                    k8s.hpa.current_replicas:
+                        enabled: false
+                    k8s.hpa.desired_replicas:
+                        enabled: false
+                    k8s.hpa.min_replicas:
+                        enabled: false
+                    k8s.hpa.max_replicas:
+                        enabled: false
+                    k8s.replicaset.available:
+                        enabled: false
+                    k8s.replicaset.desired:
+                        enabled: false
                     k8s.replication_controller.available:
                         enabled: false
                     k8s.replication_controller.desired:
+                        enabled: false
+                    k8s.resource_quota.hard_limit:
+                        enabled: false
+                    k8s.resource_quota.used:
+                        enabled: false
+                    k8s.cronjob.active_jobs:
                         enabled: false
     prometheus/app-pods:
         config:
@@ -136,17 +156,10 @@ receivers:
                     - source_labels: [__meta_kubernetes_pod_container_init]
                       regex: (true)
                       action: drop
-                    - source_labels: [__meta_kubernetes_pod_container_name]
-                      regex: (istio-proxy)
-                      action: drop
                     - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
                       regex: (istio)
                       target_label: __scheme__
                       replacement: https
-                      action: replace
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
-                      regex: (https?)
-                      target_label: __scheme__
                       action: replace
                     - source_labels: [__scheme__]
                       regex: (https)
@@ -162,53 +175,9 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: pod
-                - job_name: app-pods-secure
-                  sample_limit: 50000
-                  scrape_interval: 30s
-                  relabel_configs:
-                    - source_labels: [__meta_kubernetes_pod_node_name]
-                      regex: ${MY_NODE_NAME}
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-                      regex: "true"
-                      action: keep
-                    - source_labels: [__meta_kubernetes_pod_phase]
-                      regex: Pending|Succeeded|Failed
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_container_init]
-                      regex: (true)
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_container_name]
-                      regex: (istio-proxy)
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
-                      regex: (istio)
-                      target_label: __scheme__
-                      replacement: https
-                      action: replace
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
-                      regex: (https?)
-                      target_label: __scheme__
-                      action: replace
-                    - source_labels: [__scheme__]
-                      regex: (http)
-                      action: drop
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-                      regex: (.+)
-                      target_label: __metrics_path__
-                      action: replace
-                    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-                      regex: ([^:]+)(?::\d+)?;(\d+)
-                      target_label: __address__
-                      replacement: $$1:$$2
-                      action: replace
-                  kubernetes_sd_configs:
-                    - role: pod
-                  tls_config:
-                    ca_file: /etc/istio-output-certs/root-cert.pem
-                    cert_file: /etc/istio-output-certs/cert-chain.pem
-                    key_file: /etc/istio-output-certs/key.pem
-                    insecure_skip_verify: true
+                      selectors:
+                        - role: pod
+                          field: spec.nodeName=${MY_NODE_NAME}
     prometheus/app-services:
         config:
             scrape_configs:
@@ -257,6 +226,9 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: endpoints
+                      selectors:
+                        - role: pod
+                          field: spec.nodeName=${MY_NODE_NAME}
                 - job_name: app-services-secure
                   sample_limit: 50000
                   scrape_interval: 30s
@@ -302,6 +274,9 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: endpoints
+                      selectors:
+                        - role: pod
+                          field: spec.nodeName=${MY_NODE_NAME}
                   tls_config:
                     ca_file: /etc/istio-output-certs/root-cert.pem
                     cert_file: /etc/istio-output-certs/cert-chain.pem
@@ -333,6 +308,9 @@ receivers:
                       action: keep
                   kubernetes_sd_configs:
                     - role: pod
+                      selectors:
+                        - role: pod
+                          field: spec.nodeName=${MY_NODE_NAME}
 processors:
     batch:
         send_batch_size: 1024
@@ -383,10 +361,14 @@ processors:
                 - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
               conditions:
                 - IsMatch(name, "^k8s.node.*")
-    filter/drop-k8s-cluster-metrics:
+                - IsMatch(name, "^k8s.statefulset.*")
+                - IsMatch(name, "^k8s.daemonset.*")
+                - IsMatch(name, "^k8s.deployment.*")
+                - IsMatch(name, "^k8s.job.*")
+    filter/drop-non-pvc-volumes-metrics:
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime" and IsMatch(name, "^k8s.(deployment|cronjob|daemonset|hpa|job|replicaset|resource_quota|statefulset).*")
+                - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317

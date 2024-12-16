@@ -1,9 +1,5 @@
 package v1alpha1
 
-import (
-	"k8s.io/apimachinery/pkg/types"
-)
-
 type ValueType struct {
 	// The value as plain text.
 	Value string `json:"value,omitempty"`
@@ -11,61 +7,21 @@ type ValueType struct {
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
 
-func (v *ValueType) IsDefined() bool {
-	if v == nil {
-		return false
-	}
-
-	if v.Value != "" {
-		return true
-	}
-
-	return v.ValueFrom != nil && v.ValueFrom.IsSecretKeyRef()
-}
-
 type ValueFromSource struct {
 	// Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 }
 
-func (v *ValueFromSource) IsSecretKeyRef() bool {
-	return v.SecretKeyRef != nil && v.SecretKeyRef.Name != "" && v.SecretKeyRef.Key != ""
-}
-
 type SecretKeyRef struct {
 	// The name of the Secret containing the referenced value
+	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 	// The name of the Namespace containing the Secret with the referenced value.
+	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace,omitempty"`
 	// The name of the attribute of the Secret holding the referenced value.
+	// +kubebuilder:validation:Required
 	Key string `json:"key,omitempty"`
-}
-
-func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
-	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
-}
-
-type Header struct {
-	// Defines the header name.
-	Name string `json:"name"`
-	// Defines the header value.
-	ValueType `json:",inline"`
-	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
-	Prefix string `json:"prefix,omitempty"`
-}
-
-// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
-type OTLPTLS struct {
-	// Defines whether to send requests using plaintext instead of TLS.
-	Insecure bool `json:"insecure,omitempty"`
-	// Defines whether to skip server certificate verification when using TLS.
-	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
-	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
-	CA *ValueType `json:"ca,omitempty"`
-	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
-	Cert *ValueType `json:"cert,omitempty"`
-	// Defines the client key to use when using TLS. The key must be provided in PEM format.
-	Key *ValueType `json:"key,omitempty"`
 }
 
 const (
@@ -78,7 +34,6 @@ const (
 type OTLPOutput struct {
 	// Defines the OTLP protocol (http or grpc). Default is grpc.
 	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:default:=grpc
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol string `json:"protocol,omitempty"`
 	// Defines the host and port (<host>:<port>) of an OTLP endpoint.
@@ -108,8 +63,27 @@ type BasicAuthOptions struct {
 	Password ValueType `json:"password"`
 }
 
-func (b *BasicAuthOptions) IsDefined() bool {
-	return b.User.IsDefined() && b.Password.IsDefined()
+type Header struct {
+	// Defines the header name.
+	Name string `json:"name"`
+	// Defines the header value.
+	ValueType `json:",inline"`
+	// Defines an optional header value prefix. The prefix is separated from the value by a space character.
+	Prefix string `json:"prefix,omitempty"`
+}
+
+// +kubebuilder:validation:XValidation:rule="has(self.cert) == has(self.key)", message="Can define either both 'cert' and 'key', or neither"
+type OTLPTLS struct {
+	// Defines whether to send requests using plaintext instead of TLS.
+	Insecure bool `json:"insecure,omitempty"`
+	// Defines whether to skip server certificate verification when using TLS.
+	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
+	CA *ValueType `json:"ca,omitempty"`
+	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
+	Cert *ValueType `json:"cert,omitempty"`
+	// Defines the client key to use when using TLS. The key must be provided in PEM format.
+	Key *ValueType `json:"key,omitempty"`
 }
 
 // OTLPInput defines the collection of push-based metrics that use the OpenTelemetry protocol.

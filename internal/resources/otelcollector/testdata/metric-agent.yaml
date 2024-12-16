@@ -1,0 +1,333 @@
+apiVersion: v1
+data:
+  relay.conf: dummy
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "8888"
+    prometheus.io/scheme: http
+    prometheus.io/scrape: "true"
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+    telemetry.kyma-project.io/self-monitor: enabled
+  name: telemetry-metric-agent-metrics
+  namespace: kyma-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app.kubernetes.io/name: telemetry-metric-agent
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-metric-agent
+  template:
+    metadata:
+      annotations:
+        checksum/config: 6a334c19c8f1698c843d1c40ef9c228c222b0c04f9945a359a3e932c2aa11ac7
+        proxy.istio.io/config: |
+          # configure an env variable OUTPUT_CERTS to write certificates to the given folder
+          proxyMetadata:
+            OUTPUT_CERTS: /etc/istio-output-certs
+        sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
+        traffic.sidecar.istio.io/excludeInboundPorts: "8888"
+        traffic.sidecar.istio.io/includeOutboundIPRanges: ""
+        traffic.sidecar.istio.io/includeOutboundPorts: "4317"
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/name: telemetry-metric-agent
+        sidecar.istio.io/inject: "true"
+        telemetry.kyma-project.io/metric-scrape: "true"
+    spec:
+      containers:
+      - args:
+        - --config=/conf/relay.conf
+        env:
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: GOMEMLIMIT
+          value: "1006632960"
+        envFrom:
+        - secretRef:
+            name: telemetry-metric-agent
+            optional: true
+        image: opentelemetry/collector:latest
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+        name: collector
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+        resources:
+          limits:
+            memory: 1200Mi
+          requests:
+            cpu: 15m
+            memory: 50Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /conf
+          name: config
+        - mountPath: /etc/istio-output-certs
+          name: istio-certs
+          readOnly: true
+      priorityClassName: normal
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: telemetry-metric-agent
+      volumes:
+      - configMap:
+          items:
+          - key: relay.conf
+            path: relay.conf
+          name: telemetry-metric-agent
+        name: config
+      - emptyDir: {}
+        name: istio-certs
+  updateStrategy: {}
+status:
+  currentNumberScheduled: 0
+  desiredNumberScheduled: 0
+  numberMisscheduled: 0
+  numberReady: 0
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+spec:
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+    ports:
+    - port: 5555
+      protocol: TCP
+    - port: 6666
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-metric-agent
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - nodes/stats
+  - nodes/proxy
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - nodes/metrics
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - /metrics
+  - /metrics/cadvisor
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - events
+  - namespaces
+  - namespaces/status
+  - nodes
+  - nodes/spec
+  - pods
+  - pods/status
+  - replicationcontrollers
+  - replicationcontrollers/status
+  - resourcequotas
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: telemetry-metric-agent
+subjects:
+- kind: ServiceAccount
+  name: telemetry-metric-agent
+  namespace: kyma-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: telemetry-metric-agent
+subjects:
+- kind: ServiceAccount
+  name: telemetry-metric-agent
+  namespace: kyma-system
+---

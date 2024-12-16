@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/utils/k8s/mocks"
 )
 
 func TestSyncSectionsConfigMap(t *testing.T) {
@@ -37,7 +37,7 @@ func TestSyncSectionsConfigMap(t *testing.T) {
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -68,7 +68,7 @@ alias foo`,
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -105,7 +105,7 @@ alias bar`
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -161,11 +161,11 @@ func TestSyncFilesConfigMap(t *testing.T) {
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Files: []telemetryv1alpha1.FileMount{
+				Files: []telemetryv1alpha1.LogPipelineFileMount{
 					{Name: "lua-script", Content: "here comes some lua code"},
 					{Name: "js-script", Content: "here comes some js code"},
 				},
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -194,10 +194,10 @@ alias foo`,
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Files: []telemetryv1alpha1.FileMount{
+				Files: []telemetryv1alpha1.LogPipelineFileMount{
 					{Name: "lua-script", Content: "here comes some lua code"},
 				},
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -227,10 +227,10 @@ alias foo`,
 				Name: "noop",
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Files: []telemetryv1alpha1.FileMount{
+				Files: []telemetryv1alpha1.LogPipelineFileMount{
 					{Name: "lua-script", Content: "here comes some lua code"},
 				},
-				Output: telemetryv1alpha1.Output{
+				Output: telemetryv1alpha1.LogPipelineOutput{
 					Custom: `
 name  null
 alias foo`,
@@ -272,8 +272,8 @@ func TestSyncEnvSecret(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "http"},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.Output{
-						HTTP: &telemetryv1alpha1.HTTPOutput{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "localhost"},
 							User: telemetryv1alpha1.ValueType{Value: "admin"},
 							Password: telemetryv1alpha1.ValueType{
@@ -303,8 +303,8 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&credsSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
-		err := sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var envSecret corev1.Secret
@@ -327,15 +327,15 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&passwordSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
-		err := sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		passwordSecret.Data["password"] = []byte("qwertz")
 		err = fakeClient.Update(context.Background(), &passwordSecret)
 		require.NoError(t, err)
 
-		err = sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		err = sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var envSecret corev1.Secret
@@ -356,13 +356,13 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&passwordSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
-		err := sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		now := metav1.Now()
 		allPipelines.Items[0].SetDeletionTimestamp(&now)
-		err = sut.syncEnvSecret(context.Background(), allPipelines.Items)
+		err = sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var envSecret corev1.Secret
@@ -382,10 +382,10 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pipeline-1"},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.Output{
-						HTTP: &telemetryv1alpha1.HTTPOutput{
+					Output: telemetryv1alpha1.LogPipelineOutput{
+						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "localhost"},
-							TLSConfig: telemetryv1alpha1.TLSConfig{
+							TLS: telemetryv1alpha1.LogPipelineOutputTLS{
 								Disabled:                  false,
 								SkipCertificateValidation: false,
 								CA: &telemetryv1alpha1.ValueType{
@@ -422,14 +422,14 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
 		config := Config{
-			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
 		sut := syncer{fakeClient, config}
-		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.TLSFileConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
@@ -452,21 +452,21 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
 		config := Config{
-			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
 		sut := syncer{fakeClient, config}
-		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		keySecret.Data["my-key.key"] = []byte("new-fake-key-value")
 		err = fakeClient.Update(context.Background(), &keySecret)
 		require.NoError(t, err)
 
-		err = sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err = sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.TLSFileConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
@@ -487,19 +487,19 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&keySecret).Build()
 
 		config := Config{
-			OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
 		sut := syncer{fakeClient, config}
-		err := sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		now := metav1.Now()
 		allPipelines.Items[0].SetDeletionTimestamp(&now)
-		err = sut.syncTLSConfigSecret(context.Background(), allPipelines.Items)
+		err = sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), config.OutputTLSConfigSecret, &tlsConfigSecret)
+		err = fakeClient.Get(context.Background(), config.TLSFileConfigSecret, &tlsConfigSecret)
 		require.NoError(t, err)
 		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")

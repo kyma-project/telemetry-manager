@@ -13,7 +13,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -48,12 +48,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 
 		return objs
 	}
-
-	Context("Before deploying a tracepipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
 
 	Context("When a tracepipeline exists", Ordered, func() {
 		BeforeAll(func() {

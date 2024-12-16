@@ -21,18 +21,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: trace-load-generator
+    app.kubernetes.io/name: trace-load-generator
   name: trace-load-generator
   namespace: trace-load-test
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: trace-load-generator
+      app.kubernetes.io/name: trace-load-generator
   template:
     metadata:
       labels:
-        app: trace-load-generator
+        app.kubernetes.io/name: trace-load-generator
         sidecar.istio.io/inject: "true"
     spec:
       affinity:
@@ -41,14 +41,14 @@ spec:
             - podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: app
+                    - key: app.kubernetes.io/name
                       operator: In
                       values:
                         - trace-load-generator
                 topologyKey: kubernetes.io/hostname
               weight: 100
       containers:
-        - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.111.0
+        - image: TELEMETRY_GEN_IMAGE
           args:
           - traces
           - --otlp-insecure
@@ -156,7 +156,7 @@ metadata:
   name: trace-receiver
   namespace: trace-load-test
   labels:
-    app: trace-receiver
+    app.kubernetes.io/name: trace-receiver
 data:
   config.yaml: |
     receivers:
@@ -181,7 +181,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: trace-receiver
+    app.kubernetes.io/name: trace-receiver
     sidecar.istio.io/inject: "true"
   name: trace-receiver
   namespace: trace-load-test
@@ -189,11 +189,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: trace-receiver
+      app.kubernetes.io/name: trace-receiver
   template:
     metadata:
       labels:
-        app: trace-receiver
+        app.kubernetes.io/name: trace-receiver
         sidecar.istio.io/inject: "true"
     spec:
       volumes:
@@ -227,7 +227,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: trace-receiver
+    app.kubernetes.io/name: trace-receiver
   name: trace-receiver
   namespace: trace-load-test
 spec:
@@ -241,4 +241,4 @@ spec:
       protocol: TCP
       targetPort: 4318
   selector:
-    app: trace-receiver
+    app.kubernetes.io/name: trace-receiver

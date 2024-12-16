@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -57,12 +57,6 @@ Types user:string pass:string`
 		return objs
 	}
 
-	Context("Before deploying a logpipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
-
 	Context("When a LogParser exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -94,7 +88,7 @@ Types user:string pass:string`
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(SatisfyAll(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
 					HaveLogRecordAttributes(HaveKeyWithValue("user", "foo")),
 					HaveLogRecordAttributes(HaveKeyWithValue("pass", "bar")),
 				)))))

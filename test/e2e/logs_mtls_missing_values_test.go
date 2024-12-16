@@ -11,7 +11,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -50,7 +50,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
 					Key:  &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
 				}),
@@ -62,7 +62,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					CA:  &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 					Key: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientKeyPem.String()},
 				}),
@@ -74,7 +74,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					CA:   &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 					Cert: &telemetryv1alpha1.ValueType{Value: clientCerts.ClientCertPem.String()},
 				}),
@@ -86,7 +86,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					Disabled:                  true,
 					SkipCertificateValidation: true,
 				}),
@@ -98,7 +98,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithHTTPOutput(
 				testutils.HTTPHost(backend.Host()),
 				testutils.HTTPPort(backend.Port()),
-				testutils.HTTPClientTLS(telemetryv1alpha1.TLSConfig{
+				testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
 					CA: &telemetryv1alpha1.ValueType{Value: clientCerts.CaCertPem.String()},
 				}),
 			).

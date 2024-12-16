@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.1-alpine3.20 AS builder
+FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.4-alpine3.21 AS builder
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests

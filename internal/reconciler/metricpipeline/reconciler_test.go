@@ -30,7 +30,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
@@ -46,11 +46,8 @@ func TestReconcile(t *testing.T) {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
-	testConfig := Config{
-		AgentName:          "agent",
-		GatewayName:        "gateway",
-		TelemetryNamespace: "default",
-	}
+	telemetryNamespace := "default"
+	moduleVersion := "1.0.0"
 
 	t.Run("metric gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
@@ -83,7 +80,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -143,7 +141,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -203,7 +202,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -269,7 +269,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -337,7 +338,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -405,7 +407,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -474,7 +477,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -537,7 +541,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -601,7 +606,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -763,7 +769,8 @@ func TestReconcile(t *testing.T) {
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
 					fakeClient,
-					testConfig,
+					telemetryNamespace,
+					moduleVersion,
 					&mocks.AgentApplierDeleter{},
 					&mocks.AgentConfigBuilder{},
 					agentProberStub,
@@ -907,7 +914,8 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(
 					fakeClient,
-					testConfig,
+					telemetryNamespace,
+					moduleVersion,
 					agentApplierDeleterMock,
 					&mocks.AgentConfigBuilder{},
 					agentProberStub,
@@ -992,7 +1000,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1062,7 +1071,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1136,7 +1146,8 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			testConfig,
+			telemetryNamespace,
+			moduleVersion,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1261,7 +1272,8 @@ func TestReconcile(t *testing.T) {
 
 				sut := Reconciler{
 					Client:                fakeClient,
-					config:                testConfig,
+					telemetryNamespace:    telemetryNamespace,
+					moduleVersion:         moduleVersion,
 					agentConfigBuilder:    agentConfigBuilderMock,
 					gatewayConfigBuilder:  gatewayConfigBuilderMock,
 					agentApplierDeleter:   agentApplierDeleterMock,

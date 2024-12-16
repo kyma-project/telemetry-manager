@@ -1,10 +1,12 @@
 name: Branch Integration
 
 on:
+  merge_group:
+    branches:
+      - "release-*"
   push:
     branches:
       - "main"
-      - "release-*"
     paths-ignore:
       - 'docs/**'
       - 'dependencies/**'
@@ -19,7 +21,7 @@ jobs:
     strategy:
         fail-fast: false # if one version is not working, continue tests on other versions
         matrix:
-          k8s_version: [1.29, 1.30]
+          k8s_version: [1.30, 1.31]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo
@@ -34,7 +36,9 @@ jobs:
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
-        TRIGGER: "${{ github.ref_name }}"
+        # sets trigger to SHA if used in merge_group, but to ref_name if used in push
+        # even if ref_name is available in merge_group event, it will be neglected
+        TRIGGER: "${{ github.event.merge_group.head_sha || github.ref_name }}"
         QUERY_INTERVAL: 30
 
     # save gardener kubeconfig to a temp file in order to pass it to the command

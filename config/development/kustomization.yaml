@@ -1,3 +1,4 @@
+---
 # Adds namespace to all resources.
 namespace: kyma-system
 
@@ -20,16 +21,22 @@ labels:
     app.kubernetes.io/managed-by: kustomize
 
 patches:
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/containers/0/args/-
-        value: --enable-v1beta1-log-pipelines=true
-      - op: add
-        path: /spec/template/spec/containers/0/args/-
-        value: --enable-log-pipelines-otlp=true
-    target:
-      kind: Deployment
-      name: manager
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --enable-v1beta1-log-pipelines=true
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --enable-log-pipelines-otlp=true
+  target:
+    kind: Deployment
+    name: manager
+- path: webhook-patches.yaml
+  target:
+    group: admissionregistration.k8s.io
+    version: v1
+    kind: MutatingWebhookConfiguration
+    name: mutating-webhook.kyma-project.io
 
 resources:
 - crd

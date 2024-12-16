@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 type ConfigMap struct {
@@ -27,7 +27,7 @@ func NewConfigMap(name, namespace, path string, signalType SignalType, certs *te
 	}
 }
 
-const metricsAndTracesConfigTemplate = `receivers:
+const otelConfigTemplate = `receivers:
   otlp:
     protocols:
       grpc:
@@ -73,7 +73,7 @@ service:
       exporters:
         - file`
 
-const LogConfigTemplate = `receivers:
+const logConfigTemplate = `receivers:
   fluentforward:
     endpoint: localhost:8006
   otlp:
@@ -106,15 +106,19 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 
 	switch {
 	case cm.signalType == SignalTypeLogs:
-		configTemplate = LogConfigTemplate
+		configTemplate = logConfigTemplate
 	case cm.certs != nil:
 		configTemplate = tlsConfigTemplate
 	default:
-		configTemplate = metricsAndTracesConfigTemplate
+		configTemplate = otelConfigTemplate
 	}
 
 	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
-	config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
+	if cm.signalType == SignalTypeLogsOtel {
+		config = strings.Replace(config, "{{ SIGNAL_TYPE }}", "logs", 1)
+	} else {
+		config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
+	}
 
 	data := make(map[string]string)
 

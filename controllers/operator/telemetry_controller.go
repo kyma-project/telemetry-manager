@@ -32,9 +32,9 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
+	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 )
 
 type TelemetryController struct {
@@ -77,23 +77,23 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&corev1.Secret{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1alpha1.Telemetry{}),
-			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged())).
+			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged())).
 		Watches(
 			&admissionregistrationv1.ValidatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
-			ctrlbuilder.WithPredicates(predicate.UpdateOrDelete())).
+			ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
-			ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete())).
+			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
-			ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete())).
+			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
-			ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete()))
+			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()))
 
 	return b.Complete(r)
 }
@@ -105,7 +105,7 @@ func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Obje
 		return nil
 	}
 
-	if webhook.Name != r.config.Webhook.CertConfig.WebhookName.Name {
+	if webhook.Name != r.config.Webhook.CertConfig.ValidatingWebhookName.Name {
 		return nil
 	}
 

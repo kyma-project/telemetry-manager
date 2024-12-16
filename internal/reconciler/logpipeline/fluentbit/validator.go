@@ -5,7 +5,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
-	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -18,7 +17,7 @@ type TLSCertValidator interface {
 }
 
 type SecretRefValidator interface {
-	Validate(ctx context.Context, getter secretref.Getter) error
+	ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
 }
 
 type Validator struct {
@@ -28,7 +27,7 @@ type Validator struct {
 }
 
 func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	if err := v.SecretRefValidator.Validate(ctx, pipeline); err != nil {
+	if err := v.SecretRefValidator.ValidateLogPipeline(ctx, pipeline); err != nil {
 		return err
 	}
 
@@ -40,9 +39,9 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 
 	if tlsValidationRequired(pipeline) {
 		tlsConfig := tlscert.TLSBundle{
-			Cert: pipeline.Spec.Output.HTTP.TLSConfig.Cert,
-			Key:  pipeline.Spec.Output.HTTP.TLSConfig.Key,
-			CA:   pipeline.Spec.Output.HTTP.TLSConfig.CA,
+			Cert: pipeline.Spec.Output.HTTP.TLS.Cert,
+			Key:  pipeline.Spec.Output.HTTP.TLS.Key,
+			CA:   pipeline.Spec.Output.HTTP.TLS.CA,
 		}
 
 		if err := v.TLSCertValidator.Validate(ctx, tlsConfig); err != nil {
@@ -59,5 +58,5 @@ func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
 		return false
 	}
 
-	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil || http.TLSConfig.CA != nil
+	return http.TLS.Cert != nil || http.TLS.Key != nil || http.TLS.CA != nil
 }

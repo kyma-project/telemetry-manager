@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -28,38 +27,31 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 var (
 	ErrUnsupportedOutputType = fmt.Errorf("unsupported output type")
 )
 
-type LogPipelineReconciler interface {
-	Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-	SupportedOutput() telemetryv1alpha1.Mode
-}
-
-type DaemonSetAnnotator interface {
-	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
-}
-
 type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
+}
+
+type LogPipelineReconciler interface {
+	Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
+	SupportedOutput() logpipelineutils.Mode
 }
 
 type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
-type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
-}
-
 type Reconciler struct {
 	client.Client
 
 	overridesHandler OverridesHandler
-	reconcilers      map[telemetryv1alpha1.Mode]LogPipelineReconciler
+	reconcilers      map[logpipelineutils.Mode]LogPipelineReconciler
 }
 
 func New(
@@ -68,7 +60,7 @@ func New(
 	overridesHandler OverridesHandler,
 	reconcilers ...LogPipelineReconciler,
 ) *Reconciler {
-	reconcilersMap := make(map[telemetryv1alpha1.Mode]LogPipelineReconciler)
+	reconcilersMap := make(map[logpipelineutils.Mode]LogPipelineReconciler)
 	for _, r := range reconcilers {
 		reconcilersMap[r.SupportedOutput()] = r
 	}
@@ -110,15 +102,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, err
 }
 
-func GetOutputType(t *telemetryv1alpha1.LogPipeline) telemetryv1alpha1.Mode {
+func GetOutputType(t *telemetryv1alpha1.LogPipeline) logpipelineutils.Mode {
 	if t.Spec.Output.OTLP != nil {
-		return telemetryv1alpha1.OTel
+		return logpipelineutils.OTel
 	}
 
-	return telemetryv1alpha1.FluentBit
+	return logpipelineutils.FluentBit
 }
 
-func GetPipelinesForType(ctx context.Context, client client.Client, mode telemetryv1alpha1.Mode) ([]telemetryv1alpha1.LogPipeline, error) {
+func GetPipelinesForType(ctx context.Context, client client.Client, mode logpipelineutils.Mode) ([]telemetryv1alpha1.LogPipeline, error) {
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := client.List(ctx, &allPipelines); err != nil {
 		return nil, fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)

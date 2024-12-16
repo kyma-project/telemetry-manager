@@ -4,29 +4,13 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
-- nonResourceURLs:
-  - /metrics
-  - /metrics/cadvisor
-  verbs:
-  - get
+##########################
+# Policy rules for manager
+##########################
 - apiGroups:
   - ""
   resources:
-  - endpoints
-  - namespaces
-  - namespaces/status
-  - nodes
-  - nodes/metrics
-  - nodes/proxy
-  - nodes/spec
-  - nodes/stats
-  - pods
-  - pods/status
-  - replicationcontrollers
-  - replicationcontrollers/status
-  - resourcequotas
   - secrets
-  - services
   verbs:
   - get
   - list
@@ -37,13 +21,11 @@ rules:
   - events
   verbs:
   - create
-  - get
-  - list
   - patch
-  - watch
 - apiGroups:
   - admissionregistration.k8s.io
   resources:
+  - mutatingwebhookconfigurations
   - validatingwebhookconfigurations
   verbs:
   - create
@@ -60,38 +42,10 @@ rules:
   verbs:
   - get
   - list
-  - patch
+  - update
   - watch
 - apiGroups:
   - apps
-  resources:
-  - daemonsets
-  - deployments
-  - replicasets
-  - statefulsets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - autoscaling
-  resources:
-  - horizontalpodautoscalers
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - cronjobs
-  - jobs
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - extensions
   resources:
   - daemonsets
   - deployments
@@ -173,6 +127,163 @@ rules:
   - get
   - patch
   - update
+
+#############################
+# Policy rules for fluent-bit
+#############################
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+
+###############################
+# Policy rules for metric-agent
+###############################
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - nodes/metrics
+  - nodes/stats
+  - nodes/proxy
+  - nodes/spec
+  - services
+  - endpoints
+  - pods
+  - pods/status
+  - events
+  - namespaces
+  - namespaces/status
+  - replicationcontrollers
+  - replicationcontrollers/status
+  - resourcequotas
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - /metrics
+  - /metrics/cadvisor
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+
+#################################
+# Policy rules for metric-gateway
+#################################
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - metricpipelines
+  - tracepipelines
+  - logpipelines
+  verbs:
+  - get
+  - list
+  - watch
+
+###############################
+# Policy rules for self-monitor
+###############################
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+
+################################
+# Policy rules for trace-gateway
+################################
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

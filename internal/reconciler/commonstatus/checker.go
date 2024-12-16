@@ -17,11 +17,7 @@ const (
 	SignalTypeLogs    = "logs"
 )
 
-type DeploymentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) error
-}
-
-type DaemonSetProber interface {
+type Prober interface {
 	IsReady(ctx context.Context, name types.NamespacedName) error
 }
 
@@ -30,13 +26,17 @@ type ErrorToMessageConverter interface {
 }
 
 //nolint:dupl // abstracting the common code will still have duplicates
-func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
+func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonGatewayReady
 	msg := conditions.MessageForTracePipeline(reason)
 
 	if signalType == SignalTypeMetrics {
 		msg = conditions.MessageForMetricPipeline(reason)
+	}
+
+	if signalType == SignalTypeLogs {
+		msg = conditions.MessageForLogPipeline(reason)
 	}
 
 	err := prober.IsReady(ctx, namespacedName)
@@ -63,7 +63,7 @@ func GetGatewayHealthyCondition(ctx context.Context, prober DeploymentProber, na
 }
 
 //nolint:dupl // abstracting the common code will still have duplicates and would complicate the code.
-func GetAgentHealthyCondition(ctx context.Context, prober DaemonSetProber, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
+func GetAgentHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonAgentReady
 	msg := conditions.MessageForLogPipeline(reason)

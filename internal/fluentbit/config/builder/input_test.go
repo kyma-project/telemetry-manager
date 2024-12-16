@@ -30,7 +30,7 @@ func TestCreateInput(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.Input{},
+			Input: telemetryv1alpha1.LogPipelineInput{},
 		},
 	}
 
@@ -83,9 +83,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"include system",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Namespaces: telemetryv1alpha1.InputNamespaces{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 								System: true,
 							},
 						},
@@ -104,9 +104,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"include foo namespace",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Namespaces: telemetryv1alpha1.InputNamespaces{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 								Include: []string{
 									"foo",
 								},
@@ -127,9 +127,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"include foo container",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Containers: telemetryv1alpha1.InputContainers{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 								Include: []string{
 									"foo",
 								},
@@ -154,14 +154,14 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"include foo namespace and bar container",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Namespaces: telemetryv1alpha1.InputNamespaces{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 								Include: []string{
 									"foo",
 								},
 							},
-							Containers: telemetryv1alpha1.InputContainers{
+							Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 								Include: []string{
 									"bar",
 								},
@@ -182,15 +182,15 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"include foo and bar namespace, include istio-proxy container",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Namespaces: telemetryv1alpha1.InputNamespaces{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 								Include: []string{
 									"foo",
 									"bar",
 								},
 							},
-							Containers: telemetryv1alpha1.InputContainers{
+							Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 								Include: []string{
 									"istio-proxy",
 								},
@@ -213,9 +213,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"exclude foo namespace",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Namespaces: telemetryv1alpha1.InputNamespaces{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 								Exclude: []string{
 									"foo",
 								},
@@ -237,12 +237,12 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"include system, exclude foo container",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Namespaces: telemetryv1alpha1.InputNamespaces{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 								System: true,
 							},
-							Containers: telemetryv1alpha1.InputContainers{
+							Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 								Exclude: []string{
 									"foo",
 								},
@@ -264,9 +264,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"exclude foo container",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Containers: telemetryv1alpha1.InputContainers{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 								Exclude: []string{
 									"foo",
 								},
@@ -292,14 +292,14 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"exclude foo namespace, exclude bar container",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Namespaces: telemetryv1alpha1.InputNamespaces{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 								Exclude: []string{
 									"foo",
 								},
 							},
-							Containers: telemetryv1alpha1.InputContainers{
+							Containers: telemetryv1alpha1.LogPipelineContainerSelector{
 								Exclude: []string{
 									"bar",
 								},
@@ -322,9 +322,9 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			"include system and foo namespaces",
 			&telemetryv1alpha1.LogPipeline{
 				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Input: telemetryv1alpha1.Input{
-						Application: &telemetryv1alpha1.ApplicationInput{
-							Namespaces: telemetryv1alpha1.InputNamespaces{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 								Include: []string{
 									"kyma-system",
 									"kube-system",

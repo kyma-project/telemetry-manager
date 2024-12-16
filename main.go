@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -51,15 +50,19 @@ import (
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
+	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
-	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
-	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
-	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
+	logparserwebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1"
+	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
+	logpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1"
+	metricpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1alpha1"
+	metricpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1beta1"
+	tracepipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1alpha1"
+	tracepipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1beta1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -88,19 +91,21 @@ var (
 )
 
 const (
-	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241024-8bc3f6a8"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.1.9"
-	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.111.0-main"
-	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.53.2-cc4f64c"
+	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241212-e4adf27f"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.2.2"
+	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.115.0-main"
+	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.0.1-857b814"
 
 	cacheSyncPeriod           = 1 * time.Minute
 	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
 	telemetryNamespaceDefault = "default"
-	metricOTLPServiceName     = "telemetry-otlp-metrics"
 	selfMonitorName           = "telemetry-self-monitor"
-	traceOTLPServiceName      = "telemetry-otlp-traces"
-	webhookServerPort         = 9443
 	webhookServiceName        = "telemetry-manager-webhook"
+
+	healthProbePort = 8081
+	metricsPort     = 8080
+	pprofPort       = 6060
+	webhookPort     = 9443
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -113,81 +118,6 @@ func init() {
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
-
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logpipelines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logpipelines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logpipelines/finalizers,verbs=update
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logparsers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logparsers/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logparsers/finalizers,verbs=update
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=tracepipelines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=tracepipelines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=metricpipelines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=metricpipelines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=metricpipelines/finalizers,verbs=update
-
-// +kubebuilder:rbac:groups=operator.kyma-project.io,namespace=system,resources=telemetries,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=operator.kyma-project.io,namespace=system,resources=telemetries/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=operator.kyma-project.io,namespace=system,resources=telemetries/finalizers,verbs=update
-// +kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries,verbs=get;list;watch
-
-// +kubebuilder:rbac:groups="",namespace=system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",namespace=system,resources=services,verbs=get;list;watch;create;update;patch;delete
-
-// +kubebuilder:rbac:groups="",namespace=system,resources=secrets,verbs=create;update;patch;delete
-// +kubebuilder:rbac:groups="",namespace=system,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=nodes/metrics,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=nodes/stats,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=nodes/proxy,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=namespaces/status,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=nodes/spec,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=pods/status,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=replicationcontrollers,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=replicationcontrollers/status,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=resourcequotas,verbs=get;list;watch
-// +kubebuilder:rbac:urls=/metrics,verbs=get
-// +kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
-
-// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;patch
-
-// +kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
-// +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
-// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch
-
-// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
-
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
-
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
-
-// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch
-// +kubebuilder:rbac:groups=networking.k8s.io,namespace=system,resources=networkpolicies,verbs=create;update;patch;delete
-
-// +kubebuilder:rbac:groups=security.istio.io,resources=peerauthentications,verbs=get;list;watch
-// +kubebuilder:rbac:groups=security.istio.io,namespace=system,resources=peerauthentications,verbs=create;update;patch;delete
-
-// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch
-
-// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch
-// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch
-
-// +kubebuilder:rbac:groups=extensions,resources=daemonsets,verbs=get;list;watch
-// +kubebuilder:rbac:groups=extensions,resources=deployments,verbs=get;list;watch
-// +kubebuilder:rbac:groups=extensions,resources=replicasets,verbs=get;list;watch
-
-// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func main() {
 	if err := run(); err != nil {
@@ -221,7 +151,7 @@ func run() error {
 
 	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
 
-	zapLogger, err := logger.New(overrides.AtomicLevel())
+	zapLogger, err := loggerutils.New(overrides.AtomicLevel())
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}
@@ -238,14 +168,14 @@ func run() error {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
-		Metrics:                 metricsserver.Options{BindAddress: ":8080"},
-		HealthProbeBindAddress:  ":8081",
-		PprofBindAddress:        ":6060",
+		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
+		HealthProbeBindAddress:  fmt.Sprintf(":%d", healthProbePort),
+		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
 		LeaderElection:          true,
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
 		WebhookServer: webhook.NewServer(webhook.Options{
-			Port:    webhookServerPort,
+			Port:    webhookPort,
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
@@ -313,12 +243,10 @@ func run() error {
 		return fmt.Errorf("failed to enable webhook server: %w", err)
 	}
 
-	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{
-		Handler: createLogPipelineValidator(mgr.GetClient()),
-	})
-	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{
-		Handler: createLogParserValidator(mgr.GetClient()),
-	})
+	if err := setupAdmissionsWebhooks(mgr); err != nil {
+		return fmt.Errorf("failed to setup admission webhooks: %w", err)
+	}
+
 	mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 		mgr.GetClient(),
 		selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
@@ -333,6 +261,42 @@ func run() error {
 	return nil
 }
 
+func setupAdmissionsWebhooks(mgr manager.Manager) error {
+	if err := metricpipelinewebhookv1alpha1.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup metric pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := metricpipelinewebhookv1beta1.SetupWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup metric pipeline v1beta1 webhook: %w", err)
+		}
+	}
+
+	if err := tracepipelinewebhookv1alpha1.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup trace pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := tracepipelinewebhookv1beta1.SetupWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup trace pipeline v1beta1 webhook: %w", err)
+		}
+	}
+
+	if err := logpipelinewebhookv1alpha1.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup log pipeline v1alpha1 webhook: %w", err)
+	}
+
+	if featureflags.IsEnabled(featureflags.V1Beta1) {
+		if err := logpipelinewebhookv1beta1.SetupWithManager(mgr); err != nil {
+			return fmt.Errorf("failed to setup log pipeline v1beta1 webhook: %w", err)
+		}
+	}
+
+	logparserwebhookv1alpha1.SetupWithManager(mgr)
+
+	return nil
+}
+
 func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) error {
 	setupLog.Info("Setting up telemetry controller")
 
@@ -342,12 +306,10 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 		operator.TelemetryControllerConfig{
 			Config: telemetry.Config{
 				Traces: telemetry.TracesConfig{
-					OTLPServiceName: traceOTLPServiceName,
-					Namespace:       telemetryNamespace,
+					Namespace: telemetryNamespace,
 				},
 				Metrics: telemetry.MetricsConfig{
-					OTLPServiceName: metricOTLPServiceName,
-					Namespace:       telemetryNamespace,
+					Namespace: telemetryNamespace,
 				},
 				Webhook:     webhookConfig,
 				SelfMonitor: selfMonitorConfig,
@@ -388,12 +350,14 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.LogPipelineControllerConfig{
-			ExporterImage:      fluentBitExporterImage,
-			FluentBitImage:     fluentBitImage,
-			PriorityClassName:  highPriorityClassName,
-			RestConfig:         mgr.GetConfig(),
-			SelfMonitorName:    selfMonitorName,
-			TelemetryNamespace: telemetryNamespace,
+			ExporterImage:               fluentBitExporterImage,
+			FluentBitImage:              fluentBitImage,
+			OTelCollectorImage:          otelCollectorImage,
+			FluentBitPriorityClassName:  highPriorityClassName,
+			LogGatewayPriorityClassName: normalPriorityClassName,
+			RestConfig:                  mgr.GetConfig(),
+			SelfMonitorName:             selfMonitorName,
+			TelemetryNamespace:          telemetryNamespace,
 		},
 	)
 	if err != nil {
@@ -432,7 +396,6 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 			SelfMonitorName:               selfMonitorName,
 			TelemetryNamespace:            telemetryNamespace,
 			TraceGatewayPriorityClassName: normalPriorityClassName,
-			TraceGatewayServiceName:       traceOTLPServiceName,
 		},
 	)
 	if err != nil {
@@ -455,7 +418,6 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		telemetrycontrollers.MetricPipelineControllerConfig{
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
-			MetricGatewayServiceName:       metricOTLPServiceName,
 			ModuleVersion:                  version,
 			OTelCollectorImage:             otelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),
@@ -498,26 +460,6 @@ func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
 
-func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
-	// TODO: Align max log pipeline enforcement with the method used in the TracePipeline/MetricPipeline controllers,
-	// replacing the current validating webhook approach.
-	const maxLogPipelines = 5
-
-	return logpipelinewebhook.NewValidatingWebhookHandler(
-		client,
-		validation.NewVariablesValidator(client),
-		validation.NewMaxPipelinesValidator(maxLogPipelines),
-		validation.NewFilesValidator(),
-		admission.NewDecoder(scheme),
-	)
-}
-
-func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
-	return logparserwebhook.NewValidatingWebhookHandler(
-		client,
-		admission.NewDecoder(scheme))
-}
-
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
 		Config: selfmonitor.Config{
@@ -545,8 +487,11 @@ func createWebhookConfig() telemetry.WebhookConfig {
 				Name:      "telemetry-webhook-cert",
 				Namespace: telemetryNamespace,
 			},
-			WebhookName: types.NamespacedName{
-				Name: "validation.webhook.telemetry.kyma-project.io",
+			ValidatingWebhookName: types.NamespacedName{
+				Name: "telemetry-validating-webhook.kyma-project.io",
+			},
+			MutatingWebhookName: types.NamespacedName{
+				Name: "telemetry-mutating-webhook.kyma-project.io",
 			},
 		},
 	}

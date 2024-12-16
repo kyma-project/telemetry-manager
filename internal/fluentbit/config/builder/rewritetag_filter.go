@@ -5,14 +5,15 @@ import (
 	"strings"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
-func getEmitterPostfixByOutput(output *telemetryv1alpha1.Output) string {
-	if output.IsHTTPDefined() {
+func getEmitterPostfixByOutput(output *telemetryv1alpha1.LogPipelineOutput) string {
+	if logpipelineutils.IsHTTPDefined(output) {
 		return "http"
 	}
 
-	if !output.IsCustomDefined() {
+	if !logpipelineutils.IsCustomDefined(output) {
 		return ""
 	}
 
@@ -42,7 +43,7 @@ func createRewriteTagFilter(logPipeline *telemetryv1alpha1.LogPipeline, defaults
 		AddConfigParam("Emitter_Storage.type", defaults.StorageType).
 		AddConfigParam("Emitter_Mem_Buf_Limit", defaults.MemoryBufferLimit)
 
-	var containers telemetryv1alpha1.InputContainers
+	var containers telemetryv1alpha1.LogPipelineContainerSelector
 	if logPipeline.Spec.Input.Application != nil {
 		containers = logPipeline.Spec.Input.Application.Containers
 	}

@@ -14,8 +14,10 @@ data:
     receivers:
       otlp:
         protocols:
-          grpc: {}
-          http: {}
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
     exporters:
       debug:
         verbosity: detailed
@@ -44,19 +46,19 @@ spec:
         app: metric-sink
     spec:
       volumes:
-        - name: config
-          configMap:
-            name: metric-sink-config
+      - name: config
+        configMap:
+          name: metric-sink-config
       securityContext:
         fsGroup: 101
       containers:
-        - image: otel/opentelemetry-collector-contrib:latest
-          name: collector
-          volumeMounts:
-            - name: config
-              mountPath: /etc/collector
-          args:
-            - --config=/etc/collector/config.yaml
+      - image: otel/opentelemetry-collector-contrib:latest
+        name: collector
+        volumeMounts:
+        - name: config
+          mountPath: /etc/collector
+        args:
+        - --config=/etc/collector/config.yaml
 ---
 apiVersion: v1
 kind: Service
@@ -65,14 +67,14 @@ metadata:
   namespace: metric-sink
 spec:
   ports:
-    - name: grpc-otlp
-      port: 4317
-      protocol: TCP
-      targetPort: 4317
-    - name: http-otlp
-      port: 4318
-      protocol: TCP
-      targetPort: 4318
+  - name: grpc-otlp
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-otlp
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
   selector:
     app: metric-sink
 ---
@@ -97,18 +99,18 @@ spec:
         app: metric-gen
     spec:
       containers:
-        - image: europe-docker.pkg.dev/kyma-project/prod/examples/monitoring-custom-metrics:v20230905-b823fd14
-          imagePullPolicy: IfNotPresent
-          name: metric-gen
-          ports:
-            - containerPort: 8080
-              name: http-metrics
-              protocol: TCP
-          resources:
-            limits:
-              memory: 100Mi
-            requests:
-              memory: 32Mi
+      - image: europe-docker.pkg.dev/kyma-project/prod/examples/monitoring-custom-metrics:v20230905-b823fd14
+        imagePullPolicy: IfNotPresent
+        name: metric-gen
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+          protocol: TCP
+        resources:
+          limits:
+            memory: 100Mi
+          requests:
+            memory: 32Mi
 ---
 apiVersion: v1
 kind: Service
@@ -121,10 +123,10 @@ metadata:
   namespace: metric-gen
 spec:
   ports:
-    - name: http-metrics
-      port: 8080
-      protocol: TCP
-      targetPort: 8080
+  - name: http-metrics
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
   selector:
     app: metric-gen
   type: ClusterIP

@@ -313,14 +313,16 @@ spec:
 
 The Metric agent is configured with a generic scrape configuration, which uses annotations to specify the endpoints to scrape in the cluster.
 
-For metrics ingestion to start automatically, simply apply the following annotations either to a Service that resolves your metrics port, or directly to the Pod:
+For metrics ingestion to start automatically, use the annotations of the following table.
+If an Istio sidecar is present, apply them to a Service that resolves your metrics port.
+Only if Istio sidecar is not present, you can alternatively apply the annotations directly to the Pod.
 
-| Annotation Key                     | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
-|------------------------------------|-------------------|-------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `prometheus.io/scrape` (mandatory) | `true`, `false` | none | Controls whether Prometheus automatically scrapes metrics from this target.                                                                                                                                                                                                                                                             |
-| `prometheus.io/port` (mandatory)   | `8080`, `9100` | none | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
-| `prometheus.io/path`               | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
-| `prometheus.io/scheme`             | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
+| Annotation Key                                                   | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
+|------------------------------------------------------------------|-------------------|-------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `prometheus.io/scrape` (mandatory)                               | `true`, `false` | none | Controls whether Prometheus automatically scrapes metrics from this target.                                                                                                                                                                                                                                                             |
+| `prometheus.io/port` (mandatory)                                 | `8080`, `9100` | none | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
+| `prometheus.io/path`                                             | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
+| `prometheus.io/scheme` (only relevant when annotating a Service) | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
 
 If you're running the Pod targeted by a Service with Istio, Istio must be able to derive the [appProtocol](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol) from the Service port definition; otherwise the communication for scraping the metric endpoint cannot be established. You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
 
@@ -393,10 +395,10 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-By default, container and Pod metrics are collected.
+By default, metrics for all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet and Job) are collected.
 To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
 
-The following example collects only the Pod metrics:
+The following example collects only DaemonSet, Deployment, StatefulSet and Job metrics:
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -409,13 +411,21 @@ The following example collects only the Pod metrics:
         enabled: true
         resources:
           pod:
-            enabled: true
+            enabled: false
           container:
             enabled: false
           node:
             enabled: false
           volume:
             enabled: false
+          daemonset:
+            enabled: true
+          deployment:
+            enabled: true
+          statefulset:
+            enabled: true
+          job:
+            enabled: true
     output:
       otlp:
         endpoint:
@@ -479,6 +489,33 @@ If Volume metrics are enabled, the following metrics are collected:
   - `k8s.volume.inodes`
   - `k8s.volume.inodes.free`
   - `k8s.volume.inodes.used`
+
+If Deployment metrics are enabled, the following metrics are collected:
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.deployment.available`
+  - `k8s.deployment.desired`
+
+If DaemonSet metrics are enabled, the following metrics are collected:
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.daemonset.current_scheduled_nodes`
+  - `k8s.daemonset.desired_scheduled_nodes`
+  - `k8s.daemonset.misscheduled_nodes`
+  - `k8s.daemonset.ready_nodes`
+
+If StatefulSet metrics are enabled, the following metrics are collected:
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.statefulset.current_pods`
+  - `k8s.statefulset.desired_pods`
+  - `k8s.statefulset.ready_pods`
+  - `k8s.statefulset.updated_pods`
+
+If Job metrics are enabled, the following metrics are collected:
+- From the [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver):
+  - `k8s.job.active_pods`
+  - `k8s.job.desired_successful_pods`
+  - `k8s.job.failed_pods`
+  - `k8s.job.max_parallel_pods`
+  - `k8s.job.successful_pods`
 
 ### 7. Activate Istio Metrics
 
@@ -677,7 +714,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
 
-**Remedy**:
+**Solution**:
 
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
 2. Check if the backend is up and reachable.
@@ -692,7 +729,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
-**Remedy**:
+**Solution**:
 
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
 2. If backend is limiting the rate by refusing metrics, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
@@ -704,7 +741,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: Your SDK version is incompatible with the OTel Collector version.
 
-**Remedy**:
+**Solution**:
 
 1. Check which SDK version you are using for instrumentation.
 2. Investigate whether it is compatible with the OTel Collector version.
@@ -720,14 +757,41 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 <!-- markdown-link-check-disable-next-line -->
 **Cause 1**: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
 
-**Remedy 1**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
+**Solution 1**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
 
 - Configure the workload using “STRICT” mTLS mode (for example, by applying a corresponding PeerAuthentication).
 - Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 <!-- markdown-link-check-disable-next-line -->
 **Cause 2**: The Service definition enabling the scrape with Prometheus annotations does not reveal the application protocol to use in the port definition. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
 
-**Remedy 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
+**Solution 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
+
+**Cause 3**: A deny-all `NetworkPolicy` was created in the workload namespace, which prevents that the agent can scrape metrics from annotated workloads.
+
+**Solution 3**: Create a separate `NetworkPolicy` to explicitly let the agent scrape your workload using the `telemetry.kyma-project.io/metric-scrape` label.
+
+For example, see the following `NetworkPolicy` configuration:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traffic-from-agent
+spec:
+  podSelector: 
+    matchLabels:
+      app.kubernetes.io/name: "annotated-workload" # <your workload here>
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kyma-system
+      podSelector:
+        matchLabels:
+          telemetry.kyma-project.io/metric-scrape: "true"
+  policyTypes:
+  - Ingress
+```
 
 ### Gateway Buffer Filling Up
 
@@ -735,7 +799,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: The backend export rate is too low compared to the gateway ingestion rate.
 
-**Remedy**:
+**Solution**:
 
 - Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
 
@@ -749,4 +813,4 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: Gateway cannot receive metrics at the given rate.
 
-**Remedy**: Manually scale out the gateway by increasing the number of replicas for the Metric gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Solution**: Manually scale out the gateway by increasing the number of replicas for the Metric gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).

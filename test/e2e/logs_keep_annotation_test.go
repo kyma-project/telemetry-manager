@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -49,12 +49,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		return objs
 	}
 
-	Context("Before deploying a logpipeline", func() {
-		It("Should have a healthy webhook", func() {
-			assert.WebhookHealthy(ctx, k8sClient)
-		})
-	})
-
 	Context("When a logpipeline that keeps annotations and drops labels exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -85,7 +79,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(
 					ContainElement(HaveKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0"))),
 				),
 				))
@@ -97,7 +91,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(Not(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(Not(ContainElement(
 					HaveKubernetesLabels(Not(BeEmpty()))))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())

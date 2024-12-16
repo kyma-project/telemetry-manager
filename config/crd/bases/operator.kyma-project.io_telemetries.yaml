@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.4
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: telemetries.operator.kyma-project.io
 spec:
   group: operator.kyma-project.io
@@ -18,15 +18,12 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .metadata.generation
-      name: generation
-      type: integer
-    - jsonPath: .metadata.creationTimestamp
-      name: age
-      type: date
     - jsonPath: .status.state
       name: state
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: age
+      type: date
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -58,9 +55,7 @@ spec:
                   gateway:
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
                         properties:
                           static:
                             description: |-
@@ -68,15 +63,13 @@ spec:
                               StaticScalingStrategyType.
                             properties:
                               replicas:
-                                description: Replicas defines a static number of pods
-                                  to run the gateway. Minimum is 1.
+                                description: Replicas defines a static number of Pods to run the gateway. Minimum is 1.
                                 format: int32
                                 minimum: 1
                                 type: integer
                             type: object
                           type:
-                            description: Type of scaling strategy. Default is none,
-                              using a fixed amount of replicas.
+                            description: Type of scaling strategy. Default is none, using a fixed amount of replicas.
                             enum:
                             - Static
                             type: string
@@ -89,9 +82,7 @@ spec:
                   gateway:
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
                         properties:
                           static:
                             description: |-
@@ -99,15 +90,13 @@ spec:
                               StaticScalingStrategyType.
                             properties:
                               replicas:
-                                description: Replicas defines a static number of pods
-                                  to run the gateway. Minimum is 1.
+                                description: Replicas defines a static number of Pods to run the gateway. Minimum is 1.
                                 format: int32
                                 minimum: 1
                                 type: integer
                             type: object
                           type:
-                            description: Type of scaling strategy. Default is none,
-                              using a fixed amount of replicas.
+                            description: Type of scaling strategy. Default is none, using a fixed amount of replicas.
                             enum:
                             - Static
                             type: string
@@ -123,8 +112,7 @@ spec:
                   Conditions contain a set of conditionals to determine the State of Status.
                   If all Conditions are met, State is expected to be in StateReady.
                 items:
-                  description: Condition contains details for one aspect of the current
-                    state of this API Resource.
+                  description: Condition contains details for one aspect of the current state of this API Resource.
                   properties:
                     lastTransitionTime:
                       description: |-
@@ -182,8 +170,7 @@ spec:
                 nullable: true
                 properties:
                   metrics:
-                    description: metrics contains the endpoints for metric gateway
-                      supporting OTLP.
+                    description: metrics contains the endpoints for metric gateway supporting OTLP.
                     properties:
                       grpc:
                         description: GRPC endpoint for OTLP.
@@ -193,8 +180,7 @@ spec:
                         type: string
                     type: object
                   traces:
-                    description: traces contains the endpoints for trace gateway supporting
-                      OTLP.
+                    description: traces contains the endpoints for trace gateway supporting OTLP.
                     properties:
                       grpc:
                         description: GRPC endpoint for OTLP.

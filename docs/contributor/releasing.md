@@ -32,7 +32,7 @@ This release process covers the steps to release new major and minor versions fo
       - Ensure that all other images have the same versions as those used in the `main.go` file.
    - `main.go`:
       - Update the `version` variable with the new module version following the `x.y.z` pattern.
-      - Update the `defaultOtelImage` variable with the image referenced in `sec-scanners-config.yaml`. For example, `defaultOtelImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"`
+      - Update the `defaultOTelCollectorImage` variable with the image referenced in `sec-scanners-config.yaml`. For example, `defaultOtelImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"`
 
 6. Merge the PR.
    
@@ -46,16 +46,14 @@ This release process covers the steps to release new major and minor versions fo
 
    ```bash
    git tag {RELEASE_VERSION}
-   git tag {RELEASE_DEV_VERSION}
    ```
 
-   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`.
+   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`.
 
 9.  Push the tags to the upstream repository.
 
    ```bash
    git push upstream {RELEASE_VERSION}
-   git push upstream {RELEASE_DEV_VERSION}
    ```
 
    The {RELEASE_VERSION} tag triggers the GitHub actions `Build Image` and `Tag Release`. The `Build Image` action builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. `Tag Release` action creates the GitHub release.

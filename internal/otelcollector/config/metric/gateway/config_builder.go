@@ -13,6 +13,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
+const (
+	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
+)
+
 type Builder struct {
 	Reader client.Reader
 }
@@ -36,7 +40,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	envVars := make(otlpexporter.EnvVars)
 
-	const maxQueueSize = 256
 	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {
@@ -140,6 +143,22 @@ func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, 
 
 	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeVolumeInputEnabled(input) {
 		cfg.Processors.DropRuntimeVolumeMetrics = makeDropRuntimeVolumeMetricsConfig()
+	}
+
+	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeDeploymentInputEnabled(input) {
+		cfg.Processors.DropRuntimeDeploymentMetrics = makeDropRuntimeDeploymentMetricsConfig()
+	}
+
+	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeStatefulSetInputEnabled(input) {
+		cfg.Processors.DropRuntimeStatefulSetMetrics = makeDropRuntimeStatefulSetMetricsConfig()
+	}
+
+	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeDaemonSetInputEnabled(input) {
+		cfg.Processors.DropRuntimeDaemonSetMetrics = makeDropRuntimeDaemonSetMetricsConfig()
+	}
+
+	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeJobInputEnabled(input) {
+		cfg.Processors.DropRuntimeJobMetrics = makeDropRuntimeJobMetricsConfig()
 	}
 }
 

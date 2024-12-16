@@ -17,10 +17,10 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -39,13 +39,11 @@ type Config struct {
 }
 
 type TracesConfig struct {
-	OTLPServiceName string
-	Namespace       string
+	Namespace string
 }
 
 type MetricsConfig struct {
-	OTLPServiceName string
-	Namespace       string
+	Namespace string
 }
 
 type WebhookConfig struct {
@@ -138,6 +136,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	if err := r.deleteOldValidatingWebhook(ctx); err != nil {
+		return fmt.Errorf("failed to delete old validating webhook: %w", err)
+	}
+
 	if err := r.handleFinalizer(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
@@ -255,11 +257,6 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 			return nil
 		}
 
-		err := r.deleteWebhook(ctx)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete webhook: %w", err)
-		}
-
 		controllerutil.RemoveFinalizer(telemetry, finalizer)
 
 		if err := r.Update(ctx, telemetry); err != nil {
@@ -268,16 +265,6 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	}
 
 	return nil
-}
-
-func (r *Reconciler) deleteWebhook(ctx context.Context) error {
-	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: r.config.Webhook.CertConfig.WebhookName.Name,
-		},
-	}
-
-	return r.Delete(ctx, webhook)
 }
 
 func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
@@ -304,12 +291,30 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var webhook admissionregistrationv1.ValidatingWebhookConfiguration
-	if err := r.Get(ctx, r.config.Webhook.CertConfig.WebhookName, &webhook); err != nil {
+	if err := r.Get(ctx, r.config.Webhook.CertConfig.ValidatingWebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
 
 	if err := k8sutils.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
 		return fmt.Errorf("failed to update webhook: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) deleteOldValidatingWebhook(ctx context.Context) error {
+	oldValidatingWebhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "validation.webhook.telemetry.kyma-project.io",
+		},
+	}
+
+	if err := r.Delete(ctx, oldValidatingWebhook); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to delete old validating webhook: %w", err)
 	}
 
 	return nil

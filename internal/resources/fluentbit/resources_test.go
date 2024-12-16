@@ -19,7 +19,6 @@ func TestMakeDaemonSet(t *testing.T) {
 		FluentBitConfigPrepperImage: "foo-configprepper",
 		ExporterImage:               "foo-exporter",
 		PriorityClassName:           "foo-prio-class",
-		CPULimit:                    resource.MustParse(".25"),
 		MemoryLimit:                 resource.MustParse("400Mi"),
 		CPURequest:                  resource.MustParse(".1"),
 		MemoryRequest:               resource.MustParse("100Mi"),
@@ -39,9 +38,10 @@ func TestMakeDaemonSet(t *testing.T) {
 		"app.kubernetes.io/instance": "telemetry",
 	}, daemonSet.Spec.Selector.MatchLabels)
 	require.Equal(t, map[string]string{
-		"app.kubernetes.io/name":     "fluent-bit",
-		"app.kubernetes.io/instance": "telemetry",
-		"sidecar.istio.io/inject":    "true",
+		"app.kubernetes.io/name":               "fluent-bit",
+		"app.kubernetes.io/instance":           "telemetry",
+		"sidecar.istio.io/inject":              "true",
+		"telemetry.kyma-project.io/log-export": "true",
 	}, daemonSet.Spec.Template.ObjectMeta.Labels)
 	require.NotEmpty(t, daemonSet.Spec.Template.Spec.Containers[0].EnvFrom)
 	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")
@@ -54,7 +54,6 @@ func TestMakeDaemonSet(t *testing.T) {
 	resources := daemonSet.Spec.Template.Spec.Containers[0].Resources
 	require.Equal(t, ds.CPURequest, *resources.Requests.Cpu(), "cpu requests should be defined")
 	require.Equal(t, ds.MemoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
-	require.Equal(t, ds.CPULimit, *resources.Limits.Cpu(), "cpu limit should be defined")
 	require.Equal(t, ds.MemoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
 
 	containerSecurityContext := daemonSet.Spec.Template.Spec.Containers[0].SecurityContext
