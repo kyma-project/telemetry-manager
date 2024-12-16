@@ -101,7 +101,7 @@ crd-docs-gen: $(TABLE_GEN) manifests## Generates CRD spec into docs folder
 	$(TABLE_GEN) --crd-filename ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: manifests
-manifests: generate $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
+manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
 	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=config/crd/bases
 	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=config/crd/bases
@@ -113,7 +113,7 @@ manifests: generate $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfig
 	$(YAMLFMT)
 
 .PHONY: manifests-dev
-manifests-dev: generate $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
+manifests-dev: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 	$(YAMLFMT)
 
@@ -158,7 +158,7 @@ check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
 build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
 
-check-clean: manifests manifests-dev crd-docs-gen ## Check if repo is clean up-to-date. Used after code generation
+check-clean: generate manifests manifests-dev crd-docs-gen ## Check if repo is clean up-to-date. Used after code generation
 	@echo "Checking if all generated files are up-to-date"
 	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-dev crd-docs-gen' to update them." && exit 1)
 
