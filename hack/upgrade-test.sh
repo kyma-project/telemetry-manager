@@ -21,7 +21,7 @@ make docker-build
 make docker-push
 
 echo "deploy manager image for version $LATEST_TAG"
-IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-experimental
+IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 
 echo "rollback to current git ref already to have make target and script changes available"
 git restore .
