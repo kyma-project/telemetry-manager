@@ -34,7 +34,7 @@ TOOLS_PKG_NAMES_CLEAN  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/
 TOOLS_BIN_NAMES  := $(addprefix $(TOOLS_BIN_DIR)/, $(notdir $(TOOLS_PKG_NAMES_CLEAN)))
 
 .PHONY: install-tools
-install-tools: $(TOOLS_BIN_NAMES) $(GENERATE_CONST)
+install-tools: $(TOOLS_BIN_NAMES) $(POPULATE_IMAGES)
 
 $(TOOLS_BIN_DIR):
 	if [ ! -d $@ ]; then mkdir -p $@; fi
@@ -54,10 +54,10 @@ YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
 WSL				 := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
-GENERATE_CONST   := $(TOOLS_BIN_DIR)/generate-const
+POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
 
-$(GENERATE_CONST):
-	cd $(TOOLS_MOD_DIR) && go build -o $(GENERATE_CONST) generate.go
+$(POPULATE_IMAGES):
+	cd $(TOOLS_MOD_DIR) && go build -o $(POPULATE_IMAGES) generate.go
 
 # Sub-makefile
 include hack/make/provision.mk
@@ -112,18 +112,18 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	$(YQ) eval 'del(.. | select(has("log")).log)' -i ./config/crd/bases/operator.kyma-project.io_telemetries.yaml
 	$(YAMLFMT)
 
-.PHONY: manifests-dev
-manifests-dev: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
+.PHONY: manifests-experimental
+manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
 	$(YAMLFMT)
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(GENERATE_CONST) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
-	$(GENERATE_CONST)
+	$(POPULATE_IMAGES)
 
 
 .PHONY: fmt
@@ -160,7 +160,7 @@ build: generate fmt vet tidy ## Build manager binary.
 
 check-clean: generate manifests manifests-dev crd-docs-gen ## Check if repo is clean up-to-date. Used after code generation
 	@echo "Checking if all generated files are up-to-date"
-	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-dev crd-docs-gen' to update them." && exit 1)
+	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen' to update them." && exit 1)
 
 
 tls.key:
@@ -213,11 +213,11 @@ deploy: manifests $(KUSTOMIZE) ## Deploy resources based on the release (default
 undeploy: $(KUSTOMIZE) ## Undeploy resources based on the release (default) variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: deploy-dev
-deploy-dev: manifests-dev $(KUSTOMIZE) ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
+.PHONY: deploy-experimental
+deploy-experimental: manifests-experimental $(KUSTOMIZE) ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/development | kubectl apply -f -
 
-.PHONY: undeploy-dev
-undeploy-dev: $(KUSTOMIZE) ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+.PHONY: undeploy-experimental
+undeploy-experimental: $(KUSTOMIZE) ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/development | kubectl delete --ignore-not-found=$(ignore-not-found) -f -

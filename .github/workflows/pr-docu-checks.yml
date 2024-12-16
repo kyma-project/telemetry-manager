@@ -13,6 +13,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  verify-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Verify manifests
+        run: make crd-docs-gen manifests-experimental check-clean
+
   markdown-link-check:
     runs-on: ubuntu-latest
     steps:

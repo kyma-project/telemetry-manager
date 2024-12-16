@@ -28,7 +28,9 @@ This release process covers the steps to release new major and minor versions fo
      Update the `newTag` field for the `telemetry-manager` image with the new module version following the `x.y.z` pattern, such as `1.0.0`.
    - `main.go`:
       - Update the `version` variable with the new module version following the `x.y.z` pattern.
-
+   - `make generate`
+      - Run `make generate` to update the images in the `sec-scanners-config.yaml` and other files.
+   
 6. Merge the PR.
    
 7. To make sure that the release tags point to the HEAD commit of the `telemetry-manager/{RELEASE_BRANCH}` branch, rebase the upstream branch into the local branch after the merge was successful.
@@ -41,16 +43,14 @@ This release process covers the steps to release new major and minor versions fo
 
    ```bash
    git tag {RELEASE_VERSION}
-   git tag {RELEASE_DEV_VERSION}
    ```
 
-   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`.
+   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`.
 
 9.  Push the tags to the upstream repository.
 
    ```bash
    git push upstream {RELEASE_VERSION}
-   git push upstream {RELEASE_DEV_VERSION}
    ```
 
    The {RELEASE_VERSION} tag triggers the GitHub actions `Build Image` and `Tag Release`. The `Build Image` action builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. `Tag Release` action creates the GitHub release.
