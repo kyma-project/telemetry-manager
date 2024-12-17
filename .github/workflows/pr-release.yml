@@ -1,0 +1,21 @@
+name: Check Release Branch
+
+on:
+  pull_request:
+    branches:
+      - "release-*"
+jobs:
+  validate-envs:
+    name: Validate .env file
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # check that the .env file does not contain references to the main branch
+      - name: Check .env file
+        run: |
+          if grep -q "main" .env; then
+            echo "The .env file contains references to the main branch"
+            exit 1
+          fi
