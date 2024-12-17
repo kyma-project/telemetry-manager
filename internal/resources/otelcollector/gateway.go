@@ -47,6 +47,8 @@ const (
 
 var (
 	// TODO(skhalash): the resource requirements are copy-pasted from the trace gateway and need to be adjusted
+	logGatewayBaseCPULimit         = resource.MustParse("700m")
+	logGatewayDynamicCPULimit      = resource.MustParse("500m")
 	logGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
 	logGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
 	logGatewayBaseCPURequest       = resource.MustParse("100m")
@@ -54,6 +56,8 @@ var (
 	logGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
 	logGatewayDynamicMemoryRequest = resource.MustParse("0")
 
+	metricGatewayBaseCPULimit         = resource.MustParse("900m")
+	metricGatewayDynamicCPULimit      = resource.MustParse("100m")
 	metricGatewayBaseMemoryLimit      = resource.MustParse("512Mi")
 	metricGatewayDynamicMemoryLimit   = resource.MustParse("512Mi")
 	metricGatewayBaseCPURequest       = resource.MustParse("25m")
@@ -61,6 +65,8 @@ var (
 	metricGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
 	metricGatewayDynamicMemoryRequest = resource.MustParse("0")
 
+	traceGatewayBaseCPULimit         = resource.MustParse("700m")
+	traceGatewayDynamicCPULimit      = resource.MustParse("500m")
 	traceGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
 	traceGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
 	traceGatewayBaseCPURequest       = resource.MustParse("100m")
@@ -84,6 +90,8 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 		otlpServiceName:      LogOTLPServiceName,
 		priorityClassName:    priorityClassName,
 		rbac:                 makeLogGatewayRBAC(namespace),
+		baseCPULimit:         logGatewayBaseCPULimit,
+		dynamicCPULimit:      logGatewayDynamicCPULimit,
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
 		baseCPURequest:       logGatewayBaseCPURequest,
@@ -108,6 +116,8 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 		otlpServiceName:      MetricOTLPServiceName,
 		priorityClassName:    priorityClassName,
 		rbac:                 makeMetricGatewayRBAC(namespace),
+		baseCPULimit:         metricGatewayBaseCPULimit,
+		dynamicCPULimit:      metricGatewayDynamicCPULimit,
 		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
 		baseCPURequest:       metricGatewayBaseCPURequest,
@@ -132,6 +142,8 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 		otlpServiceName:      TraceOTLPServiceName,
 		priorityClassName:    priorityClassName,
 		rbac:                 makeTraceGatewayRBAC(namespace),
+		baseCPULimit:         traceGatewayBaseCPULimit,
+		dynamicCPULimit:      traceGatewayDynamicCPULimit,
 		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
 		baseCPURequest:       traceGatewayBaseCPURequest,
@@ -150,6 +162,8 @@ type GatewayApplierDeleter struct {
 	priorityClassName string
 	rbac              rbac
 
+	baseCPULimit         resource.Quantity
+	dynamicCPULimit      resource.Quantity
 	baseMemoryLimit      resource.Quantity
 	dynamicMemoryLimit   resource.Quantity
 	baseCPURequest       resource.Quantity
@@ -300,11 +314,13 @@ func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayAp
 	memoryRequest := gad.baseMemoryRequest.DeepCopy()
 	memoryLimit := gad.baseMemoryLimit.DeepCopy()
 	cpuRequest := gad.baseCPURequest.DeepCopy()
+	cpuLimit := gad.baseCPULimit.DeepCopy()
 
 	for range opts.ResourceRequirementsMultiplier {
 		memoryRequest.Add(gad.dynamicMemoryRequest)
 		memoryLimit.Add(gad.dynamicMemoryLimit)
 		cpuRequest.Add(gad.dynamicCPURequest)
+		cpuLimit.Add(gad.dynamicCPULimit)
 	}
 
 	resources := corev1.ResourceRequirements{
@@ -313,6 +329,7 @@ func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayAp
 			corev1.ResourceMemory: memoryRequest,
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    cpuLimit,
 			corev1.ResourceMemory: memoryLimit,
 		},
 	}

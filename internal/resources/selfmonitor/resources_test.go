@@ -182,6 +182,7 @@ func verifyDeploymentIsPreset(ctx context.Context, t *testing.T, client client.C
 	resources := container.Resources
 	require.True(t, cpuRequest.Equal(*resources.Requests.Cpu()), "cpu requests should be defined")
 	require.True(t, memoryRequest.Equal(*resources.Requests.Memory()), "memory requests should be defined")
+	require.True(t, cpuLimit.Equal(*resources.Limits.Cpu()), "cpu limit should be defined")
 	require.True(t, memoryLimit.Equal(*resources.Limits.Memory()), "memory limit should be defined")
 
 	// security contexts

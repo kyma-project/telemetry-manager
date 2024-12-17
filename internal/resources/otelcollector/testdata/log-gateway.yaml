@@ -150,6 +150,7 @@ spec:
             port: 13133
         resources:
           limits:
+            cpu: 700m
             memory: 500Mi
           requests:
             cpu: 100m

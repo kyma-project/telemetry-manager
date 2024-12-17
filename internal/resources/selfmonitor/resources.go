@@ -34,6 +34,7 @@ var (
 	storageVolumeSize = resource.MustParse("1000Mi")
 	cpuRequest        = resource.MustParse("10m")
 	memoryRequest     = resource.MustParse("50Mi")
+	cpuLimit          = resource.MustParse("200m")
 	memoryLimit       = resource.MustParse("180Mi")
 )
 
@@ -383,6 +384,7 @@ func makePodSpec(baseName, image, configPath, configFile string, opts ...commonr
 func makeResourceRequirements() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    cpuLimit,
 			corev1.ResourceMemory: memoryLimit,
 		},
 		Requests: map[corev1.ResourceName]resource.Quantity{
