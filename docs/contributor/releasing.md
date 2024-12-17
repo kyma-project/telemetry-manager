@@ -23,17 +23,14 @@ This release process covers the steps to release new major and minor versions fo
    Create a PR to `telemetry-manager/{RELEASE_BRANCH}` with the following changes:
    - `.env`:  
      For the `ENV_IMG` variable, update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `ENV_IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
+     For the `DEFAULT_OTEL_COLLECTOR_IMAGE` variable, update the tag of the `kyma-otel-collector` image with the new version released from the [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) repository. For example, `europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.100.0-1.0.0.
    - `config/manager/kustomization.yaml`:  
      Update the `newTag` field for the `telemetry-manager` image with the new module version following the `x.y.z` pattern, such as `1.0.0`.
-   - `sec-scanners-config.yaml`:  
-     For the images listed in the `protecode` field:
-      - Update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
-      - Update the tag of the `kyma-otel-collector` image with the new version released from the [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) repository. For example, `europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.100.0-1.0.0
-      - Ensure that all other images have the same versions as those used in the `main.go` file.
    - `main.go`:
       - Update the `version` variable with the new module version following the `x.y.z` pattern.
-      - Update the `defaultOTelCollectorImage` variable with the image referenced in `sec-scanners-config.yaml`. For example, `defaultOtelImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"`
-
+   - `make generate`
+      - Run `make generate` to update the images in the `sec-scanners-config.yaml` and other files.
+   
 6. Merge the PR.
    
 7. To make sure that the release tags point to the HEAD commit of the `telemetry-manager/{RELEASE_BRANCH}` branch, rebase the upstream branch into the local branch after the merge was successful.
