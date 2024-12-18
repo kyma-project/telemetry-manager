@@ -50,6 +50,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+	"github.com/kyma-project/telemetry-manager/internal/images"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
@@ -91,18 +92,10 @@ var (
 )
 
 const (
-	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241024-8bc3f6a8"
-	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.2.2"
-	defaultOTelCollectorImage     = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.114.0-main"
-	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.0.1-857b814"
-
 	cacheSyncPeriod           = 1 * time.Minute
 	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
 	telemetryNamespaceDefault = "default"
-	metricOTLPServiceName     = "telemetry-otlp-metrics"
 	selfMonitorName           = "telemetry-self-monitor"
-	traceOTLPServiceName      = "telemetry-otlp-traces"
-	logOTLPServiceName        = "telemetry-otlp-logs"
 	webhookServiceName        = "telemetry-manager-webhook"
 
 	healthProbePort = 8081
@@ -137,10 +130,10 @@ func run() error {
 	flag.StringVar(&highPriorityClassName, "high-priority-class-name", "", "High priority class name used by managed DaemonSets")
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
 
-	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
-	flag.StringVar(&otelCollectorImage, "otel-collector-image", defaultOTelCollectorImage, "Image for OpenTelemetry Collector")
-	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
+	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", images.DefaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
+	flag.StringVar(&fluentBitImage, "fluent-bit-image", images.DefaultFluentBitImage, "Image for fluent-bit")
+	flag.StringVar(&otelCollectorImage, "otel-collector-image", images.DefaultOTelCollectorImage, "Image for OpenTelemetry Collector")
+	flag.StringVar(&selfMonitorImage, "self-monitor-image", images.DefaultSelfMonitorImage, "Image for self-monitor")
 
 	flag.Parse()
 
@@ -309,12 +302,10 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 		operator.TelemetryControllerConfig{
 			Config: telemetry.Config{
 				Traces: telemetry.TracesConfig{
-					OTLPServiceName: traceOTLPServiceName,
-					Namespace:       telemetryNamespace,
+					Namespace: telemetryNamespace,
 				},
 				Metrics: telemetry.MetricsConfig{
-					OTLPServiceName: metricOTLPServiceName,
-					Namespace:       telemetryNamespace,
+					Namespace: telemetryNamespace,
 				},
 				Webhook:     webhookConfig,
 				SelfMonitor: selfMonitorConfig,
@@ -360,7 +351,6 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			OTelCollectorImage:          otelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,
-			LogGatewayServiceName:       logOTLPServiceName,
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,
@@ -402,7 +392,6 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 			SelfMonitorName:               selfMonitorName,
 			TelemetryNamespace:            telemetryNamespace,
 			TraceGatewayPriorityClassName: normalPriorityClassName,
-			TraceGatewayServiceName:       traceOTLPServiceName,
 		},
 	)
 	if err != nil {
@@ -425,7 +414,6 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		telemetrycontrollers.MetricPipelineControllerConfig{
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
-			MetricGatewayServiceName:       metricOTLPServiceName,
 			ModuleVersion:                  version,
 			OTelCollectorImage:             otelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),

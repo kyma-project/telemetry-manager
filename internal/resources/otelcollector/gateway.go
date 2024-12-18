@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -19,25 +20,150 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
+const (
+	LogGatewayName    = "telemetry-log-gateway"
+	MetricGatewayName = "telemetry-metric-gateway"
+	TraceGatewayName  = "telemetry-trace-gateway"
+
+	MetricOTLPServiceName = "telemetry-otlp-metrics"
+	TraceOTLPServiceName  = "telemetry-otlp-traces"
+	LogOTLPServiceName    = "telemetry-otlp-logs"
+
+	// label keys
+	logGatewayIngestKey    = "telemetry.kyma-project.io/log-ingest"
+	logGatewayExportKey    = "telemetry.kyma-project.io/log-export"
+	traceGatewayIngestKey  = "telemetry.kyma-project.io/trace-ingest"
+	traceGatewayExportKey  = "telemetry.kyma-project.io/trace-export"
+	metricGatewayIngestKey = "telemetry.kyma-project.io/metric-ingest"
+	metricGatewayExportKey = "telemetry.kyma-project.io/metric-export"
+	istioSidecarInjectKey  = "sidecar.istio.io/inject"
+)
+
+var (
+	// TODO(skhalash): the resource requirements are copy-pasted from the trace gateway and need to be adjusted
+	logGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
+	logGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
+	logGatewayBaseCPURequest       = resource.MustParse("100m")
+	logGatewayDynamicCPURequest    = resource.MustParse("100m")
+	logGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	logGatewayDynamicMemoryRequest = resource.MustParse("0")
+
+	metricGatewayBaseMemoryLimit      = resource.MustParse("512Mi")
+	metricGatewayDynamicMemoryLimit   = resource.MustParse("512Mi")
+	metricGatewayBaseCPURequest       = resource.MustParse("25m")
+	metricGatewayDynamicCPURequest    = resource.MustParse("0")
+	metricGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	metricGatewayDynamicMemoryRequest = resource.MustParse("0")
+
+	traceGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
+	traceGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
+	traceGatewayBaseCPURequest       = resource.MustParse("100m")
+	traceGatewayDynamicCPURequest    = resource.MustParse("100m")
+	traceGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	traceGatewayDynamicMemoryRequest = resource.MustParse("0")
+)
+
+func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		logGatewayIngestKey:   "true",
+		logGatewayExportKey:   "true",
+		istioSidecarInjectKey: "true", // inject istio sidecar
+	}
+
+	return &GatewayApplierDeleter{
+		baseName:             LogGatewayName,
+		extraPodLabels:       extraLabels,
+		image:                image,
+		namespace:            namespace,
+		otlpServiceName:      LogOTLPServiceName,
+		priorityClassName:    priorityClassName,
+		rbac:                 makeLogGatewayRBAC(namespace),
+		baseMemoryLimit:      logGatewayBaseMemoryLimit,
+		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
+		baseCPURequest:       logGatewayBaseCPURequest,
+		dynamicCPURequest:    logGatewayDynamicCPURequest,
+		baseMemoryRequest:    logGatewayBaseMemoryRequest,
+		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
+	}
+}
+
+func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		metricGatewayIngestKey: "true",
+		metricGatewayExportKey: "true",
+		istioSidecarInjectKey:  "true", // inject istio sidecar
+	}
+
+	return &GatewayApplierDeleter{
+		baseName:             MetricGatewayName,
+		extraPodLabels:       extraLabels,
+		image:                image,
+		namespace:            namespace,
+		otlpServiceName:      MetricOTLPServiceName,
+		priorityClassName:    priorityClassName,
+		rbac:                 makeMetricGatewayRBAC(namespace),
+		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
+		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
+		baseCPURequest:       metricGatewayBaseCPURequest,
+		dynamicCPURequest:    metricGatewayDynamicCPURequest,
+		baseMemoryRequest:    metricGatewayBaseMemoryRequest,
+		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
+	}
+}
+
+func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		traceGatewayIngestKey: "true",
+		traceGatewayExportKey: "true",
+		istioSidecarInjectKey: "true", // inject istio sidecar
+	}
+
+	return &GatewayApplierDeleter{
+		baseName:             TraceGatewayName,
+		extraPodLabels:       extraLabels,
+		image:                image,
+		namespace:            namespace,
+		otlpServiceName:      TraceOTLPServiceName,
+		priorityClassName:    priorityClassName,
+		rbac:                 makeTraceGatewayRBAC(namespace),
+		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
+		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
+		baseCPURequest:       traceGatewayBaseCPURequest,
+		dynamicCPURequest:    traceGatewayDynamicCPURequest,
+		baseMemoryRequest:    traceGatewayBaseMemoryRequest,
+		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
+	}
+}
+
 type GatewayApplierDeleter struct {
-	Config GatewayConfig
-	RBAC   Rbac
+	baseName          string
+	extraPodLabels    map[string]string
+	image             string
+	namespace         string
+	otlpServiceName   string
+	priorityClassName string
+	rbac              rbac
+
+	baseMemoryLimit      resource.Quantity
+	dynamicMemoryLimit   resource.Quantity
+	baseCPURequest       resource.Quantity
+	dynamicCPURequest    resource.Quantity
+	baseMemoryRequest    resource.Quantity
+	dynamicMemoryRequest resource.Quantity
 }
 
 type GatewayApplyOptions struct {
-	AllowedPorts            []int32
-	CollectorConfigYAML     string
-	CollectorEnvVars        map[string][]byte
-	ComponentSelectorLabels map[string]string
-	IstioEnabled            bool
-	IstioExcludePorts       []int32
+	AllowedPorts        []int32
+	CollectorConfigYAML string
+	CollectorEnvVars    map[string][]byte
+	IstioEnabled        bool
+	IstioExcludePorts   []int32
 	// Replicas specifies the number of gateway replicas.
 	Replicas int32
 	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
@@ -47,9 +173,9 @@ type GatewayApplyOptions struct {
 }
 
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
-	name := types.NamespacedName{Namespace: gad.Config.Namespace, Name: gad.Config.BaseName}
+	name := types.NamespacedName{Namespace: gad.namespace, Name: gad.baseName}
 
-	if err := applyCommonResources(ctx, c, name, gad.RBAC, opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, gad.rbac, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -85,14 +211,14 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: gad.Config.BaseName, Namespace: gad.Config.Namespace}
+	name := types.NamespacedName{Name: gad.baseName, Namespace: gad.namespace}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
-		Name:      gad.Config.BaseName,
-		Namespace: gad.Config.Namespace,
+		Name:      gad.baseName,
+		Namespace: gad.namespace,
 	}
 
 	secret := corev1.Secret{ObjectMeta: objectMeta}
@@ -110,7 +236,7 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
 	}
 
-	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.Config.OTLPServiceName, Namespace: gad.Config.Namespace}}
+	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
@@ -126,19 +252,17 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	selectorLabels := labels.MakeDefaultLabel(gad.Config.BaseName)
+	selectorLabels := commonresources.MakeDefaultLabels(gad.baseName)
 
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
 	resources := gad.makeGatewayResourceRequirements(opts)
 	affinity := makePodAffinity(selectorLabels)
 
-	deploymentConfig := gad.Config.Deployment
-
 	podSpec := makePodSpec(
-		gad.Config.BaseName,
-		deploymentConfig.Image,
-		commonresources.WithPriorityClass(deploymentConfig.PriorityClassName),
+		gad.baseName,
+		gad.image,
+		commonresources.WithPriorityClass(gad.priorityClassName),
 		commonresources.WithResources(resources),
 		withAffinity(affinity),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -146,10 +270,14 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, selectorLabels)
+	maps.Copy(podLabels, gad.extraPodLabels)
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      gad.Config.BaseName,
-			Namespace: gad.Config.Namespace,
+			Name:      gad.baseName,
+			Namespace: gad.namespace,
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -159,7 +287,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      opts.ComponentSelectorLabels,
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,
@@ -169,18 +297,14 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayApplyOptions) corev1.ResourceRequirements {
-	deploymentConfig := gad.Config.Deployment
-
-	memoryRequest := deploymentConfig.BaseMemoryRequest.DeepCopy()
-	memoryLimit := deploymentConfig.BaseMemoryLimit.DeepCopy()
-	cpuRequest := deploymentConfig.BaseCPURequest.DeepCopy()
-	cpuLimit := deploymentConfig.BaseCPULimit.DeepCopy()
+	memoryRequest := gad.baseMemoryRequest.DeepCopy()
+	memoryLimit := gad.baseMemoryLimit.DeepCopy()
+	cpuRequest := gad.baseCPURequest.DeepCopy()
 
 	for range opts.ResourceRequirementsMultiplier {
-		memoryRequest.Add(deploymentConfig.DynamicMemoryRequest)
-		memoryLimit.Add(deploymentConfig.DynamicMemoryLimit)
-		cpuRequest.Add(deploymentConfig.DynamicCPURequest)
-		cpuLimit.Add(deploymentConfig.DynamicCPULimit)
+		memoryRequest.Add(gad.dynamicMemoryRequest)
+		memoryLimit.Add(gad.dynamicMemoryLimit)
+		cpuRequest.Add(gad.dynamicCPURequest)
 	}
 
 	resources := corev1.ResourceRequirements{
@@ -189,7 +313,6 @@ func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayAp
 			corev1.ResourceMemory: memoryRequest,
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    cpuLimit,
 			corev1.ResourceMemory: memoryLimit,
 		},
 	}
@@ -225,12 +348,12 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	labels := labels.MakeDefaultLabel(gad.Config.BaseName)
+	labels := commonresources.MakeDefaultLabels(gad.baseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      gad.Config.OTLPServiceName,
-			Namespace: gad.Config.Namespace,
+			Name:      gad.otlpServiceName,
+			Namespace: gad.namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -255,12 +378,12 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	labels := labels.MakeDefaultLabel(gad.Config.BaseName)
+	labels := commonresources.MakeDefaultLabels(gad.baseName)
 
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      gad.Config.BaseName,
-			Namespace: gad.Config.Namespace,
+			Name:      gad.baseName,
+			Namespace: gad.namespace,
 			Labels:    labels,
 		},
 		Spec: istiosecurityv1.PeerAuthentication{

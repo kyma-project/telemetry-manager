@@ -15,14 +15,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, rbac Rbac, allowedPorts []int32) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, rbac rbac, allowedPorts []int32) error {
 	// Create service account before RBAC resources
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
@@ -65,7 +64,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, labels.MakeDefaultLabel(name.Name))); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, commonresources.MakeDefaultLabels(name.Name))); err != nil {
 		return fmt.Errorf("failed to create network policy: %w", err)
 	}
 
@@ -124,7 +123,7 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels.MakeDefaultLabel(name.Name),
+			Labels:    commonresources.MakeDefaultLabels(name.Name),
 		},
 	}
 
@@ -136,7 +135,7 @@ func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels.MakeDefaultLabel(name.Name),
+			Labels:    commonresources.MakeDefaultLabels(name.Name),
 		},
 		Data: map[string]string{
 			configMapKey: collectorConfigYAML,
@@ -149,14 +148,14 @@ func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels.MakeDefaultLabel(name.Name),
+			Labels:    commonresources.MakeDefaultLabels(name.Name),
 		},
 		Data: secretData,
 	}
 }
 
 func makeMetricsService(name types.NamespacedName) *corev1.Service {
-	labels := labels.MakeDefaultLabel(name.Name)
+	labels := commonresources.MakeDefaultLabels(name.Name)
 	selectorLabels := make(map[string]string)
 	maps.Copy(selectorLabels, labels)
 	labels["telemetry.kyma-project.io/self-monitor"] = "enabled"

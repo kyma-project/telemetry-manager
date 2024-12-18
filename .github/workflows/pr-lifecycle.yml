@@ -1,6 +1,7 @@
 name: PR Lifecycle
 
 on:
+  merge_group:
   pull_request:
     branches:
       - "main"
@@ -38,7 +39,7 @@ jobs:
           GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
           GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
           echo "Deploying Manager using image europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}"
-          IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
+          IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-experimental
 
       - name: Wait for manager readiness
         shell: bash
@@ -61,14 +62,17 @@ jobs:
         run: "./hack/await_image.sh"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          TRIGGER: "${{ github.event.pull_request.head.sha }}"
+          # sets trigger depending on event being either pull_request or merge_group
+          TRIGGER: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
           QUERY_INTERVAL: 30
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
       - name: Deploy with current version
         shell: bash
         run: |
-          IMG=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.number }} make deploy-dev
+          # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
+          TAG="${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}"
+          IMG=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-experimental
 
       - name: Wait for manager readiness
         shell: bash
