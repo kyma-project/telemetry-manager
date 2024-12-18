@@ -19,41 +19,65 @@ import (
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
-	var objects []client.Object
-
-	scheme := runtime.NewScheme()
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
-
-	client := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
-		Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
-			objects = append(objects, obj)
-			// Nothing has to be created, just add created object to the list
-			return nil
-		},
-	}).Build()
-
 	image := "opentelemetry/collector:dummy"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
-	sut := NewMetricAgentApplierDeleter(image, namespace, priorityClassName)
 
-	err := sut.ApplyResources(context.Background(), client, AgentApplyOptions{
-		AllowedPorts:        []int32{5555, 6666},
-		CollectorConfigYAML: "dummy",
-	})
-	require.NoError(t, err)
+	tests := []struct {
+		name           string
+		sut            *AgentApplierDeleter
+		goldenFilePath string
+		saveGoldenFile bool
+	}{
+		{
+			name:           "metric agent",
+			sut:            NewMetricAgentApplierDeleter(image, namespace, priorityClassName),
+			goldenFilePath: "testdata/metric-agent.yaml",
+		},
+	}
 
-	bytes, err := testutils.MarshalYAML(scheme, objects)
-	require.NoError(t, err)
+	for _, tt := range tests {
+		var objects []client.Object
 
-	goldenFileBytes, err := os.ReadFile("testdata/metric-agent.yaml")
-	require.NoError(t, err)
+		scheme := runtime.NewScheme()
+		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+		utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 
-	require.Equal(t, string(goldenFileBytes), string(bytes))
+		fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
+				objects = append(objects, obj)
+				// Nothing has to be created, just add created object to the list
+				return nil
+			},
+		}).Build()
+
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.sut.ApplyResources(context.Background(), fakeClient, AgentApplyOptions{
+				AllowedPorts:        []int32{5555, 6666},
+				CollectorConfigYAML: "dummy",
+			})
+			require.NoError(t, err)
+
+			if tt.saveGoldenFile {
+				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
+			}
+
+			bytes, err := testutils.MarshalYAML(scheme, objects)
+			require.NoError(t, err)
+
+			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)
+			require.NoError(t, err)
+
+			require.Equal(t, string(goldenFileBytes), string(bytes))
+		})
+	}
 }
 
 func TestAgent_DeleteResources(t *testing.T) {
+	image := "opentelemetry/collector:dummy"
+	namespace := "kyma-system"
+	priorityClassName := "normal"
+
 	var created []client.Object
 
 	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
@@ -63,23 +87,32 @@ func TestAgent_DeleteResources(t *testing.T) {
 		},
 	}).Build()
 
-	image := "opentelemetry/collector:dummy"
-	namespace := "kyma-system"
-	priorityClassName := "normal"
-	sut := NewMetricAgentApplierDeleter(image, namespace, priorityClassName)
+	tests := []struct {
+		name string
+		sut  *AgentApplierDeleter
+	}{
+		{
+			name: "metric agent",
+			sut:  NewMetricAgentApplierDeleter(image, namespace, priorityClassName),
+		},
+	}
 
-	err := sut.ApplyResources(context.Background(), fakeClient, AgentApplyOptions{
-		AllowedPorts:        []int32{5555, 6666},
-		CollectorConfigYAML: "dummy",
-	})
-	require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.sut.ApplyResources(context.Background(), fakeClient, AgentApplyOptions{
+				AllowedPorts:        []int32{5555, 6666},
+				CollectorConfigYAML: "dummy",
+			})
+			require.NoError(t, err)
 
-	err = sut.DeleteResources(context.Background(), fakeClient)
-	require.NoError(t, err)
+			err = tt.sut.DeleteResources(context.Background(), fakeClient)
+			require.NoError(t, err)
 
-	for i := range created {
-		// an update operation on a non-existent object should return a NotFound error
-		err = fakeClient.Get(context.Background(), client.ObjectKeyFromObject(created[i]), created[i])
-		require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
+			for i := range created {
+				// an update operation on a non-existent object should return a NotFound error
+				err = fakeClient.Get(context.Background(), client.ObjectKeyFromObject(created[i]), created[i])
+				require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
+			}
+		})
 	}
 }
