@@ -33,7 +33,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 	}).Build()
 
-	image := "opentelemetry/collector:latest"
+	image := "opentelemetry/collector:dummy"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
 	sut := NewMetricAgentApplierDeleter(image, namespace, priorityClassName)
@@ -63,7 +63,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 		},
 	}).Build()
 
-	image := "opentelemetry/collector:latest"
+	image := "opentelemetry/collector:dummy"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
 	sut := NewMetricAgentApplierDeleter(image, namespace, priorityClassName)
