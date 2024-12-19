@@ -179,6 +179,7 @@ connectors:
         default_pipelines:
             - metrics/test-attributes-enrichment
         error_mode: ignore
+        match_once: true
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
