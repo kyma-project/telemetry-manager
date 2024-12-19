@@ -12,7 +12,7 @@ In the default setup of metric and trace pipelines, users currently cannot filte
 
 ## Decision
 
-We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using a single Filter and Transform Processor. This processor will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as needed; only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
+We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using Filter and Transform Processor. These processors will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as needed; only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
 
 MetricPipeline example configuration:
     
@@ -23,15 +23,24 @@ metadata:
   name: metricpipeline-sample
 spec:
   transform:
-    conditions:
+    - name: set-description
+      conditions:
       - type == METRIC_DATA_TYPE_SUM
-    statements:
+      - IsMatch(attributes["service.name"], "unknown")
+      statements:
       - set(description, "Sum")
+    - name: convert-to-gauge
+      conditions:
+      - type == METRIC_DATA_TYPE_SUM
+      - IsMatch(attributes["service.name"], "unknown")
+      statements:
+      - convert_sum_to_gauge() where name == "system.processes.count" and (type == METRIC_DATA_TYPE_SUM or IsMatch(attributes["service.name"], "unknown")
   filter:
-    metric:
-        - type == METRIC_DATA_TYPE_NONE
-    datapoint:
-        - metric.name == "k8s.pod.phase" and value_int == 4
+    - name: filter-by-metric
+      metric:
+      - type == METRIC_DATA_TYPE_NONE
+      datapoint:
+      - metric.name == "k8s.pod.phase" and value_int == 4
   input:
       istio:
         enabled: true
@@ -52,11 +61,16 @@ metadata:
   name: tracepipeline-sample
 spec:
   transform:
-    statements:
-        - set(status.code, 1) where attributes["http.path"] == "/health"
+    - name: set-status-code
+      statements:
+      - set(status.code, 1) where attributes["http.path"] == "/health"
   filter:
-    span:
+    - name: filter-by-span
+      span:
       - IsMatch(resource.attributes["k8s.pod.name"], "my-pod-name.*")
+    - name: filter-by-attribute
+      spanevent:
+      - 'attributes["grpc"] == true'   
   output:
     otlp:
       endpoint:
@@ -79,12 +93,33 @@ The recommended error mode is `ignore`, and this will be used as the default con
 
 The OTTL context will be embedded in the OTTL statements (in progress with [issue #29017](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017)) and will be available in the upcoming beta version. The solution will not implement the context as a configuration parameter.
 
-To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be near the end of the pipeline chain, before the exporters.
+To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processors will be near the end of the pipeline chain, before the exporters.
 
 See the OTel configuration:
 
 ```yaml
 service:
+    processors:
+      transform/custom-set-description:
+        error_mode: ignore
+        metric_statements:
+        - conditions:
+          - type == METRIC_DATA_TYPE_SUM
+          - IsMatch(attributes["service.name"], "unknown")
+          statements:
+          - set(description, "Sum")
+      transform/custom-convert-to-gauge:
+        error_mode: ignore
+        metric_statements:
+        - statements:
+          - convert_sum_to_gauge() where name == "system.processes.count"
+      filter/custom-filter-by-metric:
+        error_mode: ignore
+        metrics:
+          metric:
+          - type == METRIC_DATA_TYPE_NONE
+          datapoint:
+          - metric.name == "k8s.pod.phase" and value_int == 4
     pipelines:
         metrics/test-output:
             receivers:
@@ -97,8 +132,9 @@ service:
                 - transform/set-instrumentation-scope-kyma
                 - resource/insert-cluster-name
                 - resource/delete-skip-enrichment-attribute
-                - transform/custom-transform-processor
-                - filter/custom-filter-processor
+                - transform/custom-set-description
+                - transform/custom-convert-to-gauge
+                - filter/custom-filter-by-metric
                 - batch
             exporters:
                 - otlp/test
