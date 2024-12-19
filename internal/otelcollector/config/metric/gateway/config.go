@@ -97,6 +97,7 @@ type Connectors map[string]any
 type RoutingConnector struct {
 	DefaultPipelines []string                     `yaml:"default_pipelines"`
 	ErrorMode        string                       `yaml:"error_mode"`
+	MatchOnce        bool                         `yaml:"match_once"`
 	Table            []RoutingConnectorTableEntry `yaml:"table"`
 }
 
