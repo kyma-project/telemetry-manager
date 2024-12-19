@@ -21,7 +21,7 @@ This release process covers the steps to release new major and minor versions fo
 
 5. Bump the `telemetry-manager/{RELEASE_BRANCH}` branch with the new versions for the dependent images.
    Create a PR to `telemetry-manager/{RELEASE_BRANCH}` with the following changes:
-   - Update docker images in the `.env` file:  
+   - Update Docker images in the `.env` file:  
       - Update the `ENV_IMG` variable, update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `ENV_IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
       - Update the `DEFAULT_OTEL_COLLECTOR_IMAGE` variable, update the tag of the `kyma-otel-collector` image with the new version released from the [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) repository. For example, `DEFAULT_OTEL_COLLECTOR_IMAGE=europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.100.0-1.0.0`.
    - Update `config/manager/kustomization.yaml`:  
