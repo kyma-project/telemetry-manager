@@ -191,7 +191,7 @@ func main() {
 	http.Handle("/terminate", wrappedTerminateHandler)
 
 	//Start the HTTP server
-	logger.Info("Starting server on port" + strconv.Itoa(serverPort))
+	logger.Info("Starting server on port " + strconv.Itoa(serverPort))
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 	if err != nil {
