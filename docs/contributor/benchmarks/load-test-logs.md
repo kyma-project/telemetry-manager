@@ -34,9 +34,9 @@ The tests are executed for 20 minutes, so that each test case has a stabilized o
 <div class="table-wrapper" markdown="block">
 
 | config | logs received l/s | logs exported l/s | logs queued | cpu | memory MB | no. restarts of gateway | no. restarts of generator |
-| --- | --- | --- | --- | --- | --- | ---|
-| single | 7193 | 7195 | 16824 | 2.5 | 826 | 0 | 1 |
-| batch | 16428 | 16427 | 0 | 3 | 265 | 0 | 1 |
+| ------ | ----------------- | ----------------- | ----------- | --- | --------- | ----------------------- | ------------------------- |
+| single | 7193              | 7195              | 16824       | 2.5 | 826       | 0                       | 1                         |
+| batch  | 16428             | 16427             | 0           | 3   | 265       | 0                       | 1                         |
 </div>
 
 ## Interpretation

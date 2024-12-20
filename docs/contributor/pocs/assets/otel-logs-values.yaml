@@ -129,3 +129,6 @@ config:
 extraEnvsFrom:
   - secretRef:
       name: sap-cloud-logging
+
+image:
+  repository: "otel/opentelemetry-collector-k8s"

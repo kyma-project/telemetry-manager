@@ -116,7 +116,7 @@ config:
 
   exporters:
     otlp:
-      endpoint: log-gateway-opentelemetry-collector:4317
+      endpoint: telemetry-otlp-logs.kyma-system:4317
       tls:
         insecure: true
   service:
@@ -125,7 +125,7 @@ config:
         address: ${MY_POD_IP}:8888
     pipelines:
       logs:
-        processors: {}
+        processors: []
         exporters:
           - otlp
 
@@ -142,9 +142,10 @@ ports:
     enabled: true
 
 serviceMonitor:
-  enabled: true
+  enabled: false
   metricsEndpoints:
     - port: metrics
 
 image:
   pullPolicy: Always
+  repository: "otel/opentelemetry-collector-k8s"

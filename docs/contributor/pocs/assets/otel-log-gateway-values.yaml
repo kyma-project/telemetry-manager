@@ -73,6 +73,7 @@ securityContext:
 
 image:
   pullPolicy: Always
+  repository: "otel/opentelemetry-collector-k8s"
 
 rollout:
   rollingUpdate: {}
