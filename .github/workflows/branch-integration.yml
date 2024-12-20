@@ -1,12 +1,10 @@
 name: Branch Integration
 
 on:
-  merge_group:
-    branches:
-      - "release-*"
   push:
     branches:
       - "main"
+      - "release-*"
     paths-ignore:
       - 'docs/**'
       - 'dependencies/**'
