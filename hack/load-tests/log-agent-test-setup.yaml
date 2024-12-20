@@ -23,7 +23,7 @@ metadata:
   name: log-load-generator
   namespace: log-load-test
 spec:
-  replicas: 11
+  replicas: 10
   selector:
     matchLabels:
       app.kubernetes.io/name: logs-load-generator
@@ -115,9 +115,9 @@ spec:
           name: otel-collector
           resources:
             limits:
-              memory: 1024Mi
+              memory: 2048Mi
             requests:
-              memory: 1024Mi
+              memory: 2048Mi
           volumeMounts:
             - name: collector-config
               mountPath: /etc/collector
