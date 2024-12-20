@@ -3,6 +3,7 @@ run:
   timeout: 10m
   build-tags:
     - e2e
+    - tools
 linters:
   enable-all: true
   disable:
@@ -146,6 +147,7 @@ linters-settings:
         alias: slicesutils
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/test
         alias: testutils
+
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
     check-blank: true # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.

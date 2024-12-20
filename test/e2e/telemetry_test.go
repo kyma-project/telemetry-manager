@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -186,7 +187,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		AfterAll(func() {
-			// Re-create Telemetry for remaining tests
+			// Recreate Telemetry for remaining tests
 			Eventually(func(g Gomega) {
 				newTelemetry := []client.Object{kitk8s.NewTelemetry("default", "kyma-system").K8sObject()}
 				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, newTelemetry...)).Should(Succeed())
@@ -197,6 +198,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateReady))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+
+			// When the Telemetry CR is deleted, the CA cert secret is also deleted. Upon recreating the Telemetry CR,
+			// the CA cert, server cert, and CA bundles in the webhook configurations are regenerated.
+			// However, due to this change: https://github.com/kubernetes-sigs/controller-runtime/pull/3020,
+			// the HTTPS server may take up to 10 seconds to start using the new cert.
+			// This sleep ensures the server has sufficient time to switch to the new cert.
+			time.Sleep(15 * time.Second)
 		})
 
 		It("Should have Telemetry resource", func() {

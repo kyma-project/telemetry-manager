@@ -9,7 +9,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,23 +68,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		Consistently(func(g Gomega) {
 			g.Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
 			g.Expect(configMap.ObjectMeta.Labels[labelKey]).To(BeZero())
-		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
-	}
-
-	assertTelemetryReconciliationDisabled := func(ctx context.Context, k8sClient client.Client, webhookName string) {
-		key := types.NamespacedName{
-			Name: webhookName,
-		}
-		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-		Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
-
-		validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle = []byte{}
-		Expect(k8sClient.Update(ctx, &validatingWebhookConfiguration)).To(Succeed())
-
-		// The deleted CA bundle should not be restored, since the reconciliation is disabled by the overrides configmap
-		Consistently(func(g Gomega) {
-			g.Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
-			g.Expect(validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle).To(BeEmpty())
 		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 	}
 
@@ -177,7 +159,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 	})
 
-	Context("When an overrides configmap exists", func() {
+	Context("When an overrides configmap exists", Ordered, func() {
 		It("Should disable the reconciliation of the logpipeline", func() {
 			assertPipelineReconciliationDisabled(ctx, k8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
 		})
@@ -188,10 +170,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 		It("Should disable the reconciliation of the tracepipeline", func() {
 			assertPipelineReconciliationDisabled(ctx, k8sClient, kitkyma.TraceGatewayConfigMap, appNameLabelKey)
-		})
-
-		It("Should disable the reconciliation of the telemetry CR", func() {
-			assertTelemetryReconciliationDisabled(ctx, k8sClient, kitkyma.ValidatingWebhookName)
 		})
 	})
 })

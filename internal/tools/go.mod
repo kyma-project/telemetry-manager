@@ -11,7 +11,7 @@ require (
 	github.com/mikefarah/yq/v4 v4.44.6
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/vektra/mockery/v2 v2.50.0
-	github.com/vladopajic/go-test-coverage/v2 v2.11.0
+	github.com/vladopajic/go-test-coverage/v2 v2.11.1
 	golang.org/x/tools v0.28.0
 	sigs.k8s.io/controller-tools v0.16.5
 	sigs.k8s.io/kustomize/kustomize/v5 v5.5.0
@@ -154,6 +154,7 @@ require (
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/jjti/go-spancheck v0.6.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/julz/importas v0.1.0 // indirect
@@ -288,7 +289,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/crypto v0.30.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/image v0.18.0 // indirect

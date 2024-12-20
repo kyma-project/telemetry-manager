@@ -55,6 +55,18 @@ jobs:
       - name: Run coverage check
         run: make check-coverage
 
+  verify-code-generated:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Verify all code and manifests were generated and committed
+        run: make check-clean
+
   gitleaks:
     runs-on: ubuntu-latest
     steps:

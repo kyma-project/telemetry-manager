@@ -6,14 +6,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/kyma-project/telemetry-manager/internal/images"
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 const (
-	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.115.0-main"
-	nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
-	fluentDImage       = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
+	nginxImage   = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
+	fluentDImage = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
 )
 
 type Deployment struct {
@@ -82,7 +82,7 @@ func (d *Deployment) containers() []corev1.Container {
 	containers := []corev1.Container{
 		{
 			Name:  "otel-collector",
-			Image: otelCollectorImage,
+			Image: images.DefaultOTelCollectorImage,
 			Args:  []string{"--config=/etc/collector/config.yaml"},
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser: ptr.To[int64](101),
