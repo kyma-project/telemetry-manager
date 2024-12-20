@@ -23,24 +23,19 @@ metadata:
   name: metricpipeline-sample
 spec:
   transform:
-    - name: set-description
-      conditions:
+    - conditions:
       - type == METRIC_DATA_TYPE_SUM
       - IsMatch(attributes["service.name"], "unknown")
       statements:
       - set(description, "Sum")
-    - name: convert-to-gauge
-      conditions:
-      - type == METRIC_DATA_TYPE_SUM
-      - IsMatch(attributes["service.name"], "unknown")
+    - conditions:
+      - type == METRIC_DATA_TYPE_NONE
       statements:
       - convert_sum_to_gauge() where name == "system.processes.count" and (type == METRIC_DATA_TYPE_SUM or IsMatch(attributes["service.name"], "unknown")
   filter:
-    - name: filter-by-metric
-      metric:
-      - type == METRIC_DATA_TYPE_NONE
-      datapoint:
+      conditions:
       - metric.name == "k8s.pod.phase" and value_int == 4
+      - metric.type == METRIC_DATA_TYPE_NONE
   input:
       istio:
         enabled: true
@@ -61,16 +56,14 @@ metadata:
   name: tracepipeline-sample
 spec:
   transform:
-    - name: set-status-code
+    - conditions:
+      - IsMatch(span.resource.attributes["k8s.pod.name"], "my-pod-name.*")
       statements:
       - set(status.code, 1) where attributes["http.path"] == "/health"
   filter:
-    - name: filter-by-span
-      span:
-      - IsMatch(resource.attributes["k8s.pod.name"], "my-pod-name.*")
-    - name: filter-by-attribute
-      spanevent:
-      - 'attributes["grpc"] == true'   
+      conditions:
+      - attributes["grpc"] == true
+      - IsMatch(span.resource.attributes["k8s.pod.name"], "my-pod-name.*")
   output:
     otlp:
       endpoint:
@@ -93,6 +86,9 @@ The recommended error mode is `ignore`, and this will be used as the default con
 
 The OTTL context will be embedded in the OTTL statements (in progress with [issue #29017](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017)) and will be available in the upcoming beta version. The solution will not implement the context as a configuration parameter.
 
+The proposed API uses no context configuration for filter processors, instead allowing to configure only condition expressions; the conditions will be translated to the `datapoint` context for metrics and `spanevent` context for traces. 
+That accessing higher-level context is still possible via OTTL expressions, for example accessing the `metric` context from `datapoint` context is possible via expression `metric.*` and accessing `span` context from `spanevent` context via expression `span.*`.
+
 To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processors will be near the end of the pipeline chain, before the exporters.
 
 See the OTel configuration:
@@ -100,7 +96,7 @@ See the OTel configuration:
 ```yaml
 service:
     processors:
-      transform/custom-set-description:
+      transform/custom:
         error_mode: ignore
         metric_statements:
         - conditions:
@@ -108,18 +104,16 @@ service:
           - IsMatch(attributes["service.name"], "unknown")
           statements:
           - set(description, "Sum")
-      transform/custom-convert-to-gauge:
-        error_mode: ignore
-        metric_statements:
-        - statements:
+        - conditions:
+          - type == METRIC_DATA_TYPE_NONE
+          statements:
           - convert_sum_to_gauge() where name == "system.processes.count"
-      filter/custom-filter-by-metric:
+      filter/custom:
         error_mode: ignore
         metrics:
-          metric:
-          - type == METRIC_DATA_TYPE_NONE
           datapoint:
           - metric.name == "k8s.pod.phase" and value_int == 4
+          - metric.type == METRIC_DATA_TYPE_NONE
     pipelines:
         metrics/test-output:
             receivers:
@@ -132,9 +126,8 @@ service:
                 - transform/set-instrumentation-scope-kyma
                 - resource/insert-cluster-name
                 - resource/delete-skip-enrichment-attribute
-                - transform/custom-set-description
-                - transform/custom-convert-to-gauge
-                - filter/custom-filter-by-metric
+                - transform/custom
+                - filter/custom
                 - batch
             exporters:
                 - otlp/test
