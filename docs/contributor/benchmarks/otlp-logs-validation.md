@@ -70,6 +70,16 @@ helm upgrade --install -n "prometheus" "prometheus" prometheus-community/kube-pr
 k apply -f telemetry-manager/hack/load-tests/log-agent-test-setup.yaml
 ```
 
+For executing the load tests, the generated logs have to be isolated, hence the following line should be replaced in the ConfigMap of the log agent:
+
+``` yaml
+receivers:
+  filelog:
+    # ...
+    include:
+    - /var/log/pods/*/*/*.log # replace with "/var/log/pods/log-load-test*/*flog*/*.log"
+```
+
 For the 🏋️‍♀️ Backpressure Scenario additionally apply:
 ``` bash
 k apply -f telemetry-manager/hack/load-tests/log-backpressure-config.yaml
@@ -246,7 +256,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
     - Agent Memory: 73/74
     - Agent CPU: 0.7/0.6
     - Gateway QUEUE: 0
-- - **Generator:** 14 replicas x 10 MB (16:35 - 16:40)
+- **Generator:** 14 replicas x 10 MB (16:35 - 16:40)
   - **Results:**
     - Agent RECEIVED/EXPORTED: 7.54K
     - Gateway RECEIVED/EXPORTED: 7.54K
