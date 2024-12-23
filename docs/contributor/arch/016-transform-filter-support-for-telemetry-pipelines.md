@@ -12,7 +12,7 @@ In the default setup of metric and trace pipelines, users currently cannot filte
 
 ## Decision
 
-We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using Filter and Transform Processor. These processors will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as needed; only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
+We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using Filter and Transform processors. These processors will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as needed; only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
 
 MetricPipeline example configuration:
     
@@ -86,8 +86,8 @@ The recommended error mode is `ignore`, and this will be used as the default con
 
 The OTTL context will be embedded in the OTTL statements (in progress with [issue #29017](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017)) and will be available in the upcoming beta version. The solution will not implement the context as a configuration parameter.
 
-The proposed API uses no context configuration for filter processors, instead allowing to configure only condition expressions; the conditions will be translated to the `datapoint` context for metrics and `spanevent` context for traces. 
-That accessing higher-level context is still possible via OTTL expressions, for example accessing the `metric` context from `datapoint` context is possible via expression `metric.*` and accessing `span` context from `spanevent` context via expression `span.*`.
+The proposed API uses no context configuration for filter processors. Instead, it only allows the configuration of condition expressions. The conditions are translated to the `datapoint` context for metrics and the `spanevent` context for traces. 
+Accessing higher-level context is still possible via OTTL expressions. For example, accessing the `metric` context from the `datapoint` context is possible via the expression `metric.*`, and accessing the `span` context from the `spanevent` context via the expression `span.*`.
 
 To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processors will be near the end of the pipeline chain, before the exporters.
 
