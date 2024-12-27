@@ -14,6 +14,7 @@ const (
 	RuleNameGatewayExporterQueueAlmostFull = "GatewayExporterQueueAlmostFull"
 	RuleNameGatewayExporterEnqueueFailed   = "GatewayExporterEnqueueFailed"
 	RuleNameGatewayReceiverRefusedData     = "GatewayReceiverRefusedData"
+	RuleNameGatewayNoDataDelivered         = "GatewayNoDataDelivered"
 
 	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
 	RuleNameLogAgentExporterSentLogs    = "AgentExporterSentLogs"

@@ -88,7 +88,8 @@ func (p *OTelPipelineProber) healthy(alerts []promv1.Alert, pipelineName string)
 	return !(p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName) ||
 		p.isFiring(alerts, config.RuleNameGatewayExporterQueueAlmostFull, pipelineName) ||
 		p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName) ||
-		p.isFiring(alerts, config.RuleNameGatewayReceiverRefusedData, pipelineName))
+		p.isFiring(alerts, config.RuleNameGatewayReceiverRefusedData, pipelineName) ||
+		p.isFiring(alerts, config.RuleNameGatewayNoDataDelivered, pipelineName))
 }
 
 func (p *OTelPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {

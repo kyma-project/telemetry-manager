@@ -11,6 +11,7 @@ const (
 	metricOtelCollectorExporterQueueCapacity = "otelcol_exporter_queue_capacity"
 	metricOtelCollectorExporterEnqueueFailed = "otelcol_exporter_enqueue_failed"
 	metricOtelCollectorReceiverRefused       = "otelcol_receiver_refused"
+	metricOtelCollectorReceiverAccepted      = "otelcol_receiver_accepted"
 )
 
 type otelCollectorRuleBuilder struct {
@@ -26,6 +27,7 @@ func (rb otelCollectorRuleBuilder) rules() []Rule {
 		rb.exporterQueueAlmostFullRule(),
 		rb.exporterEnqueueFailedRule(),
 		rb.receiverRefusedRule(),
+		rb.noDataDeliveredRule(),
 	}
 }
 
@@ -88,5 +90,17 @@ func (rb otelCollectorRuleBuilder) receiverRefusedRule() Rule {
 			sumBy(labelReceiver).
 			greaterThan(0).
 			build(),
+	}
+}
+
+func (rb otelCollectorRuleBuilder) noDataDeliveredRule() Rule {
+	receivedRule := rate(rb.formatMetricName(metricOtelCollectorReceiverAccepted), selectService(rb.serviceName)).sumBy(labelPipelineName).greaterThan(0).build()
+
+	exportedRule := rate(rb.formatMetricName(metricOtelCollectorExporterSent), selectService(rb.serviceName)).sumBy(labelPipelineName).equal(0).build()
+
+	return Rule{
+		Alert: rb.namePrefix + RuleNameGatewayNoDataDelivered,
+		Expr:  and(receivedRule, exportedRule),
+		For:   alertWaitTime,
 	}
 }
