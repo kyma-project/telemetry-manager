@@ -42,13 +42,13 @@ func (md defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
-	if pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Namespaces == nil {
+	if prometheusInputEnabled(pipeline) && pipeline.Spec.Input.Prometheus.Namespaces == nil {
 		pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
-	if pipeline.Spec.Input.Istio != nil && pipeline.Spec.Input.Istio.Namespaces == nil {
+	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.Namespaces == nil {
 		pipeline.Spec.Input.Istio.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
@@ -58,13 +58,13 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}
 
-	if pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Namespaces == nil {
+	if runtimeInputEnabled(pipeline) && pipeline.Spec.Input.Runtime.Namespaces == nil {
 		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
-	if pipeline.Spec.Input.Runtime != nil {
+	if runtimeInputEnabled(pipeline) {
 		md.applyRuntimeInputResourceDefaults(pipeline)
 	}
 }
@@ -121,4 +121,16 @@ func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha
 			Enabled: &md.RuntimeInputResources.Job,
 		}
 	}
+}
+
+func prometheusInputEnabled(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	return pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Enabled
+}
+
+func istioInputEnabled(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	return pipeline.Spec.Input.Istio != nil && pipeline.Spec.Input.Istio.Enabled
+}
+
+func runtimeInputEnabled(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	return pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Enabled
 }
