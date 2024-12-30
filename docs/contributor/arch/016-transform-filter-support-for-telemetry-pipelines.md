@@ -12,7 +12,7 @@ In the default setup of metric and trace pipelines, users currently cannot filte
 
 ## Decision
 
-We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using a single Filter and Transform Processor. This processor will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as needed; only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
+We will implement a consolidated solution in the OpenTelemetry Collector (OTel Collector) using Filter and Transform processors. These processors will use the OpenTelemetry Transformation and Transport Language (OTTL) to handle both filtering and transformation tasks. Users will be able to configure the processor as needed; only a subset of OTTL functions will be supported, focusing on the most common and impactful use cases.
 
 MetricPipeline example configuration:
     
@@ -23,15 +23,19 @@ metadata:
   name: metricpipeline-sample
 spec:
   transform:
-    conditions:
+    - conditions:
       - type == METRIC_DATA_TYPE_SUM
-    statements:
+      - IsMatch(attributes["service.name"], "unknown")
+      statements:
       - set(description, "Sum")
+    - conditions:
+      - type == METRIC_DATA_TYPE_NONE
+      statements:
+      - convert_sum_to_gauge() where name == "system.processes.count" and (type == METRIC_DATA_TYPE_SUM or IsMatch(attributes["service.name"], "unknown")
   filter:
-    metric:
-        - type == METRIC_DATA_TYPE_NONE
-    datapoint:
-        - metric.name == "k8s.pod.phase" and value_int == 4
+      conditions:
+      - metric.name == "k8s.pod.phase" and value_int == 4
+      - metric.type == METRIC_DATA_TYPE_NONE
   input:
       istio:
         enabled: true
@@ -52,11 +56,14 @@ metadata:
   name: tracepipeline-sample
 spec:
   transform:
-    statements:
-        - set(status.code, 1) where attributes["http.path"] == "/health"
+    - conditions:
+      - IsMatch(span.resource.attributes["k8s.pod.name"], "my-pod-name.*")
+      statements:
+      - set(status.code, 1) where attributes["http.path"] == "/health"
   filter:
-    span:
-      - IsMatch(resource.attributes["k8s.pod.name"], "my-pod-name.*")
+      conditions:
+      - attributes["grpc"] == true
+      - IsMatch(span.resource.attributes["k8s.pod.name"], "my-pod-name.*")
   output:
     otlp:
       endpoint:
@@ -79,12 +86,34 @@ The recommended error mode is `ignore`, and this will be used as the default con
 
 The OTTL context will be embedded in the OTTL statements (in progress with [issue #29017](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29017)) and will be available in the upcoming beta version. The solution will not implement the context as a configuration parameter.
 
-To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processor will be near the end of the pipeline chain, before the exporters.
+The proposed API uses no context configuration for filter processors. Instead, it only allows the configuration of condition expressions. The conditions are translated to the `datapoint` context for metrics and the `spanevent` context for traces. 
+Accessing higher-level context is still possible via OTTL expressions. For example, accessing the `metric` context from the `datapoint` context is possible via the expression `metric.*`, and accessing the `span` context from the `spanevent` context via the expression `span.*`.
+
+To ensure data consistency and sampling efficiency, the custom OTTL transformation and filtering processors will be near the end of the pipeline chain, before the exporters.
 
 See the OTel configuration:
 
 ```yaml
 service:
+    processors:
+      transform/custom:
+        error_mode: ignore
+        metric_statements:
+        - conditions:
+          - type == METRIC_DATA_TYPE_SUM
+          - IsMatch(attributes["service.name"], "unknown")
+          statements:
+          - set(description, "Sum")
+        - conditions:
+          - type == METRIC_DATA_TYPE_NONE
+          statements:
+          - convert_sum_to_gauge() where name == "system.processes.count"
+      filter/custom:
+        error_mode: ignore
+        metrics:
+          datapoint:
+          - metric.name == "k8s.pod.phase" and value_int == 4
+          - metric.type == METRIC_DATA_TYPE_NONE
     pipelines:
         metrics/test-output:
             receivers:
@@ -97,8 +126,8 @@ service:
                 - transform/set-instrumentation-scope-kyma
                 - resource/insert-cluster-name
                 - resource/delete-skip-enrichment-attribute
-                - transform/custom-transform-processor
-                - filter/custom-filter-processor
+                - transform/custom
+                - filter/custom
                 - batch
             exporters:
                 - otlp/test
