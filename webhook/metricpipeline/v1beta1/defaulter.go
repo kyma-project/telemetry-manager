@@ -54,10 +54,6 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 		}
 	}
 
-	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
-		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
-	}
-
 	if runtimeInputEnabled(pipeline) && pipeline.Spec.Input.Runtime.Namespaces == nil {
 		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
@@ -66,6 +62,10 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 
 	if runtimeInputEnabled(pipeline) {
 		md.applyRuntimeInputResourceDefaults(pipeline)
+	}
+
+	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
+		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}
 }
 
