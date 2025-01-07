@@ -36,7 +36,7 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 			pipeline.Spec.Input.Runtime.Enabled = &ld.RuntimeInputEnabled
 		}
 
-		if runtimeInputEnabled(pipeline) && pipeline.Spec.Input.Runtime.KeepOriginalBody == nil {
+		if *pipeline.Spec.Input.Runtime.Enabled && pipeline.Spec.Input.Runtime.KeepOriginalBody == nil {
 			pipeline.Spec.Input.Runtime.KeepOriginalBody = &ld.RuntimeInputKeepOriginalBody
 		}
 	}
@@ -44,8 +44,4 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = ld.DefaultOTLPOutputProtocol
 	}
-}
-
-func runtimeInputEnabled(pipeline *telemetryv1beta1.LogPipeline) bool {
-	return pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Enabled != nil && *pipeline.Spec.Input.Runtime.Enabled
 }

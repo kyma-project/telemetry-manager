@@ -35,12 +35,8 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
 			pipeline.Spec.Input.Application.Enabled = &ld.ApplicationInputEnabled
 		}
 
-		if applicationInputEnabled(pipeline) && pipeline.Spec.Input.Application.KeepOriginalBody == nil {
+		if *pipeline.Spec.Input.Application.Enabled && pipeline.Spec.Input.Application.KeepOriginalBody == nil {
 			pipeline.Spec.Input.Application.KeepOriginalBody = &ld.ApplicationInputKeepOriginalBody
 		}
 	}
-}
-
-func applicationInputEnabled(pipeline *telemetryv1alpha1.LogPipeline) bool {
-	return pipeline.Spec.Input.Application != nil && pipeline.Spec.Input.Application.Enabled != nil && *pipeline.Spec.Input.Application.Enabled
 }
