@@ -63,6 +63,27 @@ func TestDefault(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "should skip default ApplicationInput if set",
+			input: &telemetryv1alpha1.LogPipeline{
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Enabled: ptr.To(false),
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.LogPipeline{
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Input: telemetryv1alpha1.LogPipelineInput{
+						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+							Enabled: ptr.To(false),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
