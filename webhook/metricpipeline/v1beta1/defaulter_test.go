@@ -76,7 +76,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
-						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{},
+						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
+							Enabled: true,
+						},
 					},
 				},
 			},
@@ -84,6 +86,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
+							Enabled: true,
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
@@ -97,7 +100,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
-						Istio: &telemetryv1beta1.MetricPipelineIstioInput{},
+						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
+							Enabled: true,
+						},
 					},
 				},
 			},
@@ -105,6 +110,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
+							Enabled: true,
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
@@ -119,7 +125,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
-						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{},
+						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
+							Enabled: true,
+						},
 					},
 				},
 			},
@@ -127,6 +135,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
+							Enabled: true,
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
@@ -175,6 +184,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
+							Enabled: true,
 							Resources: &telemetryv1beta1.MetricPipelineRuntimeInputResources{
 								Pod: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
 									Enabled: ptr.To(false),
@@ -188,6 +198,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
+							Enabled: true,
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
@@ -224,6 +235,69 @@ func TestDefault(t *testing.T) {
 									Enabled: ptr.To(true),
 								},
 							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should not set default for Prometheus input",
+			input: &telemetryv1beta1.MetricPipeline{
+				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Input: telemetryv1beta1.MetricPipelineInput{
+						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
+							Enabled: false,
+						},
+					},
+				},
+			},
+			expected: &telemetryv1beta1.MetricPipeline{
+				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Input: telemetryv1beta1.MetricPipelineInput{
+						Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
+							Enabled: false,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should not set defaults for Istio input",
+			input: &telemetryv1beta1.MetricPipeline{
+				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Input: telemetryv1beta1.MetricPipelineInput{
+						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
+							Enabled: false,
+						},
+					},
+				},
+			},
+			expected: &telemetryv1beta1.MetricPipeline{
+				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Input: telemetryv1beta1.MetricPipelineInput{
+						Istio: &telemetryv1beta1.MetricPipelineIstioInput{
+							Enabled: false,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should not set defaults for Runtime input",
+			input: &telemetryv1beta1.MetricPipeline{
+				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Input: telemetryv1beta1.MetricPipelineInput{
+						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
+							Enabled: false,
+						},
+					},
+				},
+			},
+			expected: &telemetryv1beta1.MetricPipeline{
+				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Input: telemetryv1beta1.MetricPipelineInput{
+						Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
+							Enabled: false,
 						},
 					},
 				},
