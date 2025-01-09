@@ -11,6 +11,8 @@ const (
 	otelExporterQueueCapacityMetric = "otelcol_exporter_queue_capacity"
 	otelExporterEnqueueFailedMetric = "otelcol_exporter_enqueue_failed"
 	otelReceiverRefusedMetric       = "otelcol_receiver_refused"
+
+	thresholdQueueAlmostFull = 0.8
 )
 
 type otelCollectorRuleBuilder struct {
@@ -64,9 +66,12 @@ func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
 }
 
 func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
-	return div(otelExporterQueueSizeMetric, otelExporterQueueCapacityMetric, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
+	//queue size/capacacity do not have data type suffixes unlike other metrics
+	nomMetric := otelExporterQueueSizeMetric
+	denomMetric := otelExporterQueueCapacityMetric
+	return div(nomMetric, denomMetric, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
 		maxBy(labelPipelineName).
-		greaterThan(0.8). //nolint:mnd // alert on 80% full
+		greaterThan(thresholdQueueAlmostFull).
 		build()
 }
 
