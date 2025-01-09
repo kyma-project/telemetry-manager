@@ -38,38 +38,21 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 		return LogPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
+	allDropped := p.isFiring(alerts, config.RuleNameLogAgentAllDataDropped, pipelineName)
+	someDropped := p.isFiring(alerts, config.RuleNameLogAgentSomeDataDropped, pipelineName)
+	bufferFillingUp := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
+	noLogs := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+	healthy := !(allDropped || someDropped || bufferFillingUp || noLogs)
+
 	return LogPipelineProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
-			AllDataDropped:  p.allDataDropped(alerts, pipelineName),
-			SomeDataDropped: p.someDataDropped(alerts, pipelineName),
-			Healthy:         p.healthy(alerts, pipelineName),
+			AllDataDropped:  allDropped,
+			SomeDataDropped: someDropped,
+			Healthy:         healthy,
 		},
-		NoLogsDelivered: p.noLogsDelivered(alerts, pipelineName),
-		BufferFillingUp: p.bufferFillingUp(alerts, pipelineName),
+		NoLogsDelivered: noLogs,
+		BufferFillingUp: bufferFillingUp,
 	}, nil
-}
-
-func (p *LogPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	return p.isFiring(alerts, config.RuleNameLogAgentAllDataDropped, pipelineName)
-}
-
-func (p *LogPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	return p.isFiring(alerts, config.RuleNameLogAgentSomeDataDropped, pipelineName)
-}
-
-func (p *LogPipelineProber) bufferFillingUp(alerts []promv1.Alert, pipelineName string) bool {
-	return p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
-}
-
-func (p *LogPipelineProber) noLogsDelivered(alerts []promv1.Alert, pipelineName string) bool {
-	return p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
-}
-
-func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
-	return !p.allDataDropped(alerts, pipelineName) &&
-		!p.someDataDropped(alerts, pipelineName) &&
-		!p.bufferFillingUp(alerts, pipelineName) &&
-		!p.noLogsDelivered(alerts, pipelineName)
 }
 
 func (p *LogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
