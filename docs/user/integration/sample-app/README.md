@@ -23,6 +23,7 @@ For examples using the OTel-SDK in a different langue, please refer to the offic
 ## Exploring the Sample App
 
 The sample app is a small webserver written in Golang, which exposes to endpoints `forward` and `terminate`. When calling the endpoints via HTTP, metrics are getting counted up and spans are emmitted using OTLP exporters. Furthermore, structured logs are written to `stdout`.
+<!-- markdown-link-check-disable-next-line -->
 The application is located in the [`telemetry-manager`](https://github.com/kyma-project/telemetry-manager) repo in the folder [`docs/user/integration/sample-app`](https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app).
 
 ### Setup
@@ -72,6 +73,7 @@ By default the exporter are configured to print to stdout, so that you can run t
 1. Provide a tracing backend and activate it.
    Install [Jaeger in-cluster](../jaeger/README.md) or provide a custom backend supporting the OTLP protocol (like [SAP Cloud Logging](./../sap-cloud-logging/)).
 1. Provide a metric backend and activate it.
+   <!-- markdown-link-check-disable-next-line -->
    Install [Prometheus in-cluster](../prometheus/README.md) or provide a custom backend supporting the OTLP protocol (like [SAP Cloud Logging](./../sap-cloud-logging/)).
 1. Provide a log backend and activate it.
    Install [Loki in-cluster](../loki/README.md) or provide a custom backend supporting the OTLP protocol (like [SAP Cloud Logging](./../sap-cloud-logging/)).
@@ -93,7 +95,7 @@ By default the exporter are configured to print to stdout, so that you can run t
 1. Deploy the service using the prepared Deployment manifest and image:
 
     ```bash
-    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/doc/user/integration/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
+    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
     ```
 
 1. Verify the application:
@@ -114,5 +116,5 @@ Run the following commands to completely remove the sample app from the cluster:
 2. Run the following command to completely remove the example service and all its resources from the cluster:
 
     ```bash
-    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/doc/user/integration/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
+    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
     ```
