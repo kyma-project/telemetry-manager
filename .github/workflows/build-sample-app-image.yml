@@ -8,17 +8,52 @@ on:
   push:
     branches:
       - main
+      - sample-app
     paths:
       - "docs/user/integration/sample-app/**"
   workflow_dispatch:
 
 jobs:
+  envs:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.create-tags.outputs.tags }}
+
+    steps:
+      - name: create tags
+        id: create-tags
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+            {
+              echo 'tags<<TAGS'
+              echo '${{ github.ref_name }}'
+              echo 'latest'
+              echo 'TAGS'
+            } >> "$GITHUB_OUTPUT"
+          elif [[ $GITHUB_EVENT_NAME == 'merge_group' ]]; then
+            {
+              echo 'tags<<TAGS'
+              echo '${{ github.event.merge_group.head_sha }}'
+              echo 'latest'
+              echo 'TAGS'
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo 'tags<<TAGS'
+              echo 'PR-${{ github.event.pull_request.number }}'
+              echo '${{ github.event.pull_request.head.sha }}'
+              echo 'TAGS'
+            } >> "$GITHUB_OUTPUT"
+          fi
+
   build-image:
+    needs: envs
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
       name: samples/telemetry-sample-app
       dockerfile: Dockerfile
       context: docs/user/integration/sample-app
+      tags: ${{ needs.envs.outputs.tags }}
   list-images:
     needs: build-image
     runs-on: ubuntu-latest

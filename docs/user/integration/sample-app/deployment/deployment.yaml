@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: sample-app
-        image: athaler/sample-app:latest
+        image: europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest
         imagePullPolicy: Always
         resources:
           limits:
