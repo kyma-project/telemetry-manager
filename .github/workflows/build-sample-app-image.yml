@@ -1,0 +1,28 @@
+name: Telemetry Sample App Image Builder
+
+on:
+  pull_request_target:
+    paths:
+      - "docs/user/integration/sample-app/**"
+    types: [ opened, edited, synchronize, reopened, ready_for_review ]
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/user/integration/sample-app/**"
+  workflow_dispatch:
+
+jobs:
+  build-image:
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: samples/telemetry-sample-app
+      dockerfile: Dockerfile
+      context: docs/user/integration/sample-app
+  list-images:
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: List images
+        run: |
+          echo "${{ needs.build-image.outputs.images }}"
