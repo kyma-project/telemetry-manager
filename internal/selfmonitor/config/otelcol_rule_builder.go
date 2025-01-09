@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	//OTel Collector metrics
+	// OTel Collector metrics
 
 	// following metrics should be used with data type suffixes (metric points, spans, etc.)
 	otelExporterSent          = "otelcol_exporter_sent"
@@ -85,6 +85,7 @@ func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
 func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
 	nomMetric := otelExporterQueueSize
 	denomMetric := otelExporterQueueCapacity
+
 	return div(nomMetric, denomMetric, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
 		maxBy(labelPipelineName).
 		greaterThan(thresholdQueueAlmostFull).

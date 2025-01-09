@@ -43,6 +43,7 @@ func newOTelPipelineProber(selfMonitorName types.NamespacedName, matcher matcher
 	}, nil
 }
 
+//nolint:dupl // Keep it duplicated for now, as Fluent Bit logging will be replaced by OpenTelemetry
 func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OTelPipelineProbeResult, error) {
 	alerts, err := retrieveAlerts(ctx, p.getter)
 	if err != nil {

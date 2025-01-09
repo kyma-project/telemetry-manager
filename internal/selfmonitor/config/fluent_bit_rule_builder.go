@@ -8,7 +8,7 @@ const (
 	fluentBitMetricsServiceName        = "telemetry-fluent-bit-metrics"
 	fluentBitSidecarMetricsServiceName = "telemetry-fluent-bit-exporter-metrics"
 
-	//Fluent Bit metrics
+	// Fluent Bit metrics
 	fluentBitOutputProcBytesTotal      = "fluentbit_output_proc_bytes_total"
 	fluentBitInputBytesTotal           = "fluentbit_input_bytes_total"
 	fluentBitOutputDroppedRecordsTotal = "fluentbit_output_dropped_records_total"
