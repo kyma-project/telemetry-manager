@@ -25,10 +25,10 @@ groups:
         - alert: TraceGatewayThrottling
           expr: sum by (receiver) (rate(otelcol_receiver_refused_spans{service="telemetry-trace-gateway-metrics"}[5m])) > 0
           for: 1m0s
-        - alert: LogGatewayAllDataDropped
+        - alert: LogAgentAllDataDropped
           expr: ((telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"} > 900000000) or (sum by (pipeline_name) (rate(fluentbit_output_dropped_records_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0)) unless (sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0)
           for: 1m0s
-        - alert: LogGatewaySomeDataDropped
+        - alert: LogAgentSomeDataDropped
           expr: ((telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"} > 900000000) or (sum by (pipeline_name) (rate(fluentbit_output_dropped_records_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0)) and (sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0)
           for: 1m0s
         - alert: LogAgentBufferInUse
