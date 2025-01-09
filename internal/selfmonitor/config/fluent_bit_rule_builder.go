@@ -25,71 +25,62 @@ type fluentBitRuleBuilder struct {
 
 func (rb fluentBitRuleBuilder) rules() []Rule {
 	return []Rule{
-		rb.allDataDroppedRule(),
-		rb.someDataDroppedRule(),
-		rb.bufferInUseRule(),
-		rb.bufferFullRule(),
-		rb.noLogsDeliveredRule(),
+		rb.makeRule(RuleNameLogAgentAllDataDropped, rb.allDataDroppedExpr()),
+		rb.makeRule(RuleNameLogAgentSomeDataDropped, rb.someDataDroppedExpr()),
+		rb.makeRule(RuleNameLogAgentBufferInUse, rb.bufferInUseExpr()),
+		rb.makeRule(RuleNameLogAgentBufferFull, rb.bufferFullExpr()),
+		rb.makeRule(RuleNameLogAgentNoLogsDelivered, rb.noLogsDeliveredExpr()),
 	}
 }
 
-func (rb fluentBitRuleBuilder) allDataDroppedRule() Rule {
-	bufferFullExpr := instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
-		greaterThan(bufferUsage900MB).
-		build()
-
-	exporterDroppedExpr := rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
-		sumBy(labelPipelineName).
-		greaterThan(0).
-		build()
-
-	exporterSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
-		sumBy(labelPipelineName).
-		greaterThan(0).
-		build()
-
-	expr := unless(or(bufferFullExpr, exporterDroppedExpr), exporterSentExpr)
-
-	return rb.makeRule(RuleNameLogAgentAllDataDropped, expr)
+// Checks if all data is dropped due to a full buffer or exporter issues, with nothing successfully sent.
+func (rb fluentBitRuleBuilder) allDataDroppedExpr() string {
+	return unless(
+		or(rb.bufferFullExpr(), rb.exporterDroppedExpr()),
+		rb.exporterSentExpr(),
+	)
 }
 
-func (rb fluentBitRuleBuilder) someDataDroppedRule() Rule {
-	bufferFullExpr := instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
-		greaterThan(bufferUsage900MB).
-		build()
-
-	exporterDroppedExpr := rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
-		sumBy(labelPipelineName).
-		greaterThan(0).
-		build()
-
-	exporterSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
-		sumBy(labelPipelineName).
-		greaterThan(0).
-		build()
-
-	expr := and(or(bufferFullExpr, exporterDroppedExpr), exporterSentExpr)
-
-	return rb.makeRule(RuleNameLogAgentSomeDataDropped, expr)
+// Checks if some data is dropped while some is still successfully sent.
+func (rb fluentBitRuleBuilder) someDataDroppedExpr() string {
+	return and(
+		or(rb.bufferFullExpr(), rb.exporterDroppedExpr()),
+		rb.exporterSentExpr(),
+	)
 }
 
-func (rb fluentBitRuleBuilder) bufferInUseRule() Rule {
-	expr := instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
+// Checks if the exporter drop rate is greater than 0.
+func (rb fluentBitRuleBuilder) exporterDroppedExpr() string {
+	return rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		greaterThan(0).
+		build()
+}
+
+// Check if the exporter send rate is greater than 0.
+func (rb fluentBitRuleBuilder) exporterSentExpr() string {
+	return rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		greaterThan(0).
+		build()
+}
+
+// Check if the buffer usage is significant.
+func (rb fluentBitRuleBuilder) bufferInUseExpr() string {
+	return instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
 		greaterThan(bufferUsage300MB).
 		build()
-
-	return rb.makeRule(RuleNameLogAgentBufferInUse, expr)
 }
 
-func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
-	expr := instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
+// Check if the buffer usage is approaching the limit (1GB).
+func (rb fluentBitRuleBuilder) bufferFullExpr() string {
+	return instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
 		greaterThan(bufferUsage900MB).
 		build()
-
-	return rb.makeRule(RuleNameLogAgentBufferFull, expr)
 }
 
-func (rb fluentBitRuleBuilder) noLogsDeliveredRule() Rule {
+// Checks if logs are read but not sent by the exporter.
+func (rb fluentBitRuleBuilder) noLogsDeliveredExpr() string {
 	receiverReadExpr := rate(metricFluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
@@ -100,19 +91,13 @@ func (rb fluentBitRuleBuilder) noLogsDeliveredRule() Rule {
 		equal(0).
 		build()
 
-	expr := and(receiverReadExpr, exporterNotSentExpr)
-
-	return rb.makeRule(RuleNameLogAgentNoLogsDelivered, expr)
+	return and(receiverReadExpr, exporterNotSentExpr)
 }
 
 func (rb fluentBitRuleBuilder) makeRule(baseName, expr string) Rule {
 	return Rule{
-		Alert: rb.namePrefix() + baseName,
+		Alert: ruleNamePrefix(typeLogPipeline) + baseName,
 		Expr:  expr,
 		For:   alertWaitTime,
 	}
-}
-
-func (rb fluentBitRuleBuilder) namePrefix() string {
-	return ruleNamePrefix(typeLogPipeline)
 }

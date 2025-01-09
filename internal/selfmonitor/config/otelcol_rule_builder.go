@@ -30,14 +30,23 @@ func (rb otelCollectorRuleBuilder) rules() []Rule {
 	}
 }
 
+// Checks if all data is dropped due to a full buffer or exporter issues, with nothing successfully sent.
 func (rb otelCollectorRuleBuilder) allDataDroppedExpr() string {
-	return unless(or(rb.exporterEnqueueFailedExpr(), rb.exporterDroppedExpr()), rb.exporterSentExpr())
+	return unless(
+		or(rb.exporterEnqueueFailedExpr(), rb.exporterDroppedExpr()),
+		rb.exporterSentExpr(),
+	)
 }
 
+// Checks if some data is dropped while some is still successfully sent.
 func (rb otelCollectorRuleBuilder) someDataDroppedExpr() string {
-	return and(or(rb.exporterEnqueueFailedExpr(), rb.exporterDroppedExpr()), rb.exporterSentExpr())
+	return and(
+		or(rb.exporterEnqueueFailedExpr(), rb.exporterDroppedExpr()),
+		rb.exporterSentExpr(),
+	)
 }
 
+// Check if the exporter drop rate is greater than 0.
 func (rb otelCollectorRuleBuilder) exporterSentExpr() string {
 	metricName := rb.appendDataType(otelExporterSentMetric)
 
@@ -47,6 +56,7 @@ func (rb otelCollectorRuleBuilder) exporterSentExpr() string {
 		build()
 }
 
+// Check if the exporter send rate is greater than 0.
 func (rb otelCollectorRuleBuilder) exporterDroppedExpr() string {
 	metricName := rb.appendDataType(otelExporterSendFailedMetric)
 
@@ -56,6 +66,7 @@ func (rb otelCollectorRuleBuilder) exporterDroppedExpr() string {
 		build()
 }
 
+// Check if the exporter enqueue failure rate is greater than 0.
 func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
 	metricName := rb.appendDataType(otelExporterEnqueueFailedMetric)
 
@@ -65,6 +76,7 @@ func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
 		build()
 }
 
+// Check if the queue is almost full.
 func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
 	//queue size/capacacity do not have data type suffixes unlike other metrics
 	nomMetric := otelExporterQueueSizeMetric
@@ -75,6 +87,7 @@ func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
 		build()
 }
 
+// Check if the receiver data refusal rate is greater than 0.
 func (rb otelCollectorRuleBuilder) throttlingExpr() string {
 	metricName := rb.appendDataType(otelReceiverRefusedMetric)
 
