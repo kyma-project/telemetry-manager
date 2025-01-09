@@ -5,12 +5,17 @@ import (
 )
 
 const (
-	otelExporterSentMetric          = "otelcol_exporter_sent"
-	otelExporterSendFailedMetric    = "otelcol_exporter_send_failed"
-	otelExporterQueueSizeMetric     = "otelcol_exporter_queue_size"
-	otelExporterQueueCapacityMetric = "otelcol_exporter_queue_capacity"
-	otelExporterEnqueueFailedMetric = "otelcol_exporter_enqueue_failed"
-	otelReceiverRefusedMetric       = "otelcol_receiver_refused"
+	//OTel Collector metrics
+
+	// following metrics should be used with data type suffixes (metric points, spans, etc.)
+	otelExporterSent          = "otelcol_exporter_sent"
+	otelExporterSendFailed    = "otelcol_exporter_send_failed"
+	otelExporterEnqueueFailed = "otelcol_exporter_enqueue_failed"
+	otelReceiverRefused       = "otelcol_receiver_refused"
+
+	// queue size/capacacity metrics do not have data type suffixes unlike other metrics
+	otelExporterQueueSize     = "otelcol_exporter_queue_size"
+	otelExporterQueueCapacity = "otelcol_exporter_queue_capacity"
 
 	thresholdQueueAlmostFull = 0.8
 )
@@ -48,7 +53,7 @@ func (rb otelCollectorRuleBuilder) someDataDroppedExpr() string {
 
 // Check if the exporter drop rate is greater than 0.
 func (rb otelCollectorRuleBuilder) exporterSentExpr() string {
-	metricName := rb.appendDataType(otelExporterSentMetric)
+	metricName := rb.appendDataType(otelExporterSent)
 
 	return rate(metricName, selectService(rb.serviceName)).
 		sumBy(labelPipelineName).
@@ -58,7 +63,7 @@ func (rb otelCollectorRuleBuilder) exporterSentExpr() string {
 
 // Check if the exporter send rate is greater than 0.
 func (rb otelCollectorRuleBuilder) exporterDroppedExpr() string {
-	metricName := rb.appendDataType(otelExporterSendFailedMetric)
+	metricName := rb.appendDataType(otelExporterSendFailed)
 
 	return rate(metricName, selectService(rb.serviceName)).
 		sumBy(labelPipelineName).
@@ -68,7 +73,7 @@ func (rb otelCollectorRuleBuilder) exporterDroppedExpr() string {
 
 // Check if the exporter enqueue failure rate is greater than 0.
 func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
-	metricName := rb.appendDataType(otelExporterEnqueueFailedMetric)
+	metricName := rb.appendDataType(otelExporterEnqueueFailed)
 
 	return rate(metricName, selectService(rb.serviceName)).
 		sumBy(labelPipelineName).
@@ -78,9 +83,8 @@ func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
 
 // Check if the queue is almost full.
 func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
-	//queue size/capacacity do not have data type suffixes unlike other metrics
-	nomMetric := otelExporterQueueSizeMetric
-	denomMetric := otelExporterQueueCapacityMetric
+	nomMetric := otelExporterQueueSize
+	denomMetric := otelExporterQueueCapacity
 	return div(nomMetric, denomMetric, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
 		maxBy(labelPipelineName).
 		greaterThan(thresholdQueueAlmostFull).
@@ -89,7 +93,7 @@ func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
 
 // Check if the receiver data refusal rate is greater than 0.
 func (rb otelCollectorRuleBuilder) throttlingExpr() string {
-	metricName := rb.appendDataType(otelReceiverRefusedMetric)
+	metricName := rb.appendDataType(otelReceiverRefused)
 
 	return rate(metricName, selectService(rb.serviceName)).
 		sumBy(labelReceiver).

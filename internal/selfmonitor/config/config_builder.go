@@ -128,7 +128,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 
 func scrapableMetricsRegex() string {
 	fluentBitMetrics := []string{
-		metricFluentBitOutputProcBytesTotal,
+		fluentBitOutputProcBytesTotal,
 		metricFluentBitOutputDroppedRecordsTotal,
 		metricFluentBitInputBytesTotal,
 		metricFluentBitBufferUsageBytes,

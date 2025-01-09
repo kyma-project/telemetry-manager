@@ -8,10 +8,11 @@ const (
 	fluentBitMetricsServiceName        = "telemetry-fluent-bit-metrics"
 	fluentBitSidecarMetricsServiceName = "telemetry-fluent-bit-exporter-metrics"
 
-	metricFluentBitOutputProcBytesTotal      = "fluentbit_output_proc_bytes_total"
-	metricFluentBitInputBytesTotal           = "fluentbit_input_bytes_total"
-	metricFluentBitOutputDroppedRecordsTotal = "fluentbit_output_dropped_records_total"
-	metricFluentBitBufferUsageBytes          = "telemetry_fsbuffer_usage_bytes"
+	//Fluent Bit metrics
+	fluentBitOutputProcBytesTotal      = "fluentbit_output_proc_bytes_total"
+	fluentBitInputBytesTotal           = "fluentbit_input_bytes_total"
+	fluentBitOutputDroppedRecordsTotal = "fluentbit_output_dropped_records_total"
+	fluentBitBufferUsageBytes          = "telemetry_fsbuffer_usage_bytes"
 
 	bufferUsage300MB = 300000000
 	bufferUsage900MB = 900000000
@@ -51,7 +52,7 @@ func (rb fluentBitRuleBuilder) someDataDroppedExpr() string {
 
 // Checks if the exporter drop rate is greater than 0.
 func (rb fluentBitRuleBuilder) exporterDroppedExpr() string {
-	return rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
+	return rate(fluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
 		build()
@@ -59,7 +60,7 @@ func (rb fluentBitRuleBuilder) exporterDroppedExpr() string {
 
 // Check if the exporter send rate is greater than 0.
 func (rb fluentBitRuleBuilder) exporterSentExpr() string {
-	return rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+	return rate(fluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
 		build()
@@ -67,26 +68,26 @@ func (rb fluentBitRuleBuilder) exporterSentExpr() string {
 
 // Check if the buffer usage is significant.
 func (rb fluentBitRuleBuilder) bufferInUseExpr() string {
-	return instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
+	return instant(fluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
 		greaterThan(bufferUsage300MB).
 		build()
 }
 
 // Check if the buffer usage is approaching the limit (1GB).
 func (rb fluentBitRuleBuilder) bufferFullExpr() string {
-	return instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
+	return instant(fluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
 		greaterThan(bufferUsage900MB).
 		build()
 }
 
 // Checks if logs are read but not sent by the exporter.
 func (rb fluentBitRuleBuilder) noLogsDeliveredExpr() string {
-	receiverReadExpr := rate(metricFluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
+	receiverReadExpr := rate(fluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
 		build()
 
-	exporterNotSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+	exporterNotSentExpr := rate(fluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
 		sumBy(labelPipelineName).
 		equal(0).
 		build()
