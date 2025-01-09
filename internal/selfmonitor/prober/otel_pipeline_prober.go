@@ -61,20 +61,10 @@ func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OT
 }
 
 func (p *OTelPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	// exporterSentData := p.isFiring(alerts, config.RuleNameGatewayExporterSentData, pipelineName)
-	// exporterDroppedData := p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName)
-	// exporterEnqueueFailed := p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName)
-	//
-	// return !exporterSentData && (exporterDroppedData || exporterEnqueueFailed)
 	return p.isFiring(alerts, config.RuleNameGatewayAllDataDropped, pipelineName)
 }
 
 func (p *OTelPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	// exporterSentData := p.isFiring(alerts, config.RuleNameGatewayExporterSentData, pipelineName)
-	// exporterDroppedData := p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName)
-	// exporterEnqueueFailed := p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName)
-	//
-	// return exporterSentData && (exporterDroppedData || exporterEnqueueFailed)
 	return p.isFiring(alerts, config.RuleNameGatewaySomeDataDropped, pipelineName)
 }
 
@@ -87,10 +77,10 @@ func (p *OTelPipelineProber) throttling(alerts []promv1.Alert, pipelineName stri
 }
 
 func (p *OTelPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
-	return !(p.isFiring(alerts, config.RuleNameGatewayAllDataDropped, pipelineName) ||
-		p.isFiring(alerts, config.RuleNameGatewaySomeDataDropped, pipelineName) ||
-		p.isFiring(alerts, config.RuleNameGatewayQueueAlmostFull, pipelineName) ||
-		p.isFiring(alerts, config.RuleNameGatewayThrottling, pipelineName))
+	return !p.allDataDropped(alerts, pipelineName) &&
+		p.someDataDropped(alerts, pipelineName) &&
+		p.queueAlmostFull(alerts, pipelineName) &&
+		p.throttling(alerts, pipelineName)
 }
 
 func (p *OTelPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {

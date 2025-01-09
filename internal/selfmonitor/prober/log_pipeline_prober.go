@@ -50,37 +50,26 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 }
 
 func (p *LogPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
-	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
-
-	return !exporterSentLogs && (exporterDroppedLogs || bufferFull)
+	return p.isFiring(alerts, config.RuleNameLogAgentAllDataDropped, pipelineName)
 }
 
 func (p *LogPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
-	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
-
-	return exporterSentLogs && (exporterDroppedLogs || bufferFull)
-}
-
-func (p *LogPipelineProber) noLogsDelivered(alerts []promv1.Alert, pipelineName string) bool {
-	return p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+	return p.isFiring(alerts, config.RuleNameLogAgentSomeDataDropped, pipelineName)
 }
 
 func (p *LogPipelineProber) bufferFillingUp(alerts []promv1.Alert, pipelineName string) bool {
 	return p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
 }
 
-func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
-	// The pipeline is healthy if none of the following conditions are met:
-	bufferInUse := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
-	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
-	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-	noLogsDelivered := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+func (p *LogPipelineProber) noLogsDelivered(alerts []promv1.Alert, pipelineName string) bool {
+	return p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+}
 
-	return !(bufferInUse || bufferFull || exporterDroppedLogs || noLogsDelivered)
+func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
+	return !p.allDataDropped(alerts, pipelineName) &&
+		!p.someDataDropped(alerts, pipelineName) &&
+		!p.bufferFillingUp(alerts, pipelineName) &&
+		!p.noLogsDelivered(alerts, pipelineName)
 }
 
 func (p *LogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {

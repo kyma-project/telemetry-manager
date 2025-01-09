@@ -25,50 +25,68 @@ type fluentBitRuleBuilder struct {
 
 func (rb fluentBitRuleBuilder) rules() []Rule {
 	return []Rule{
-		rb.exporterSentRule(),
-		rb.exporterDroppedRule(),
+		rb.allDataDroppedRule(),
+		rb.someDataDroppedRule(),
 		rb.bufferInUseRule(),
 		rb.bufferFullRule(),
 		rb.noLogsDeliveredRule(),
 	}
 }
 
-func (rb fluentBitRuleBuilder) exporterSentRule() Rule {
-	return Rule{
-		Alert: rb.namePrefix() + RuleNameLogAgentExporterSentLogs,
-		Expr: rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
-			sumBy(labelPipelineName).
-			greaterThan(0).
-			build(),
-	}
+func (rb fluentBitRuleBuilder) allDataDroppedRule() Rule {
+	bufferFullExpr := instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
+		greaterThan(bufferUsage900MB).
+		build()
+
+	exporterDroppedExpr := rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		greaterThan(0).
+		build()
+
+	exporterSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		greaterThan(0).
+		build()
+
+	expr := unless(or(bufferFullExpr, exporterDroppedExpr), exporterSentExpr)
+
+	return rb.makeRule(RuleNameLogAgentAllDataDropped, expr)
 }
 
-func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
-	return Rule{
-		Alert: rb.namePrefix() + RuleNameLogAgentExporterDroppedLogs,
-		Expr: rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
-			sumBy(labelPipelineName).
-			greaterThan(0).
-			build(),
-	}
+func (rb fluentBitRuleBuilder) someDataDroppedRule() Rule {
+	bufferFullExpr := instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
+		greaterThan(bufferUsage900MB).
+		build()
+
+	exporterDroppedExpr := rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		greaterThan(0).
+		build()
+
+	exporterSentExpr := rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+		sumBy(labelPipelineName).
+		greaterThan(0).
+		build()
+
+	expr := and(or(bufferFullExpr, exporterDroppedExpr), exporterSentExpr)
+
+	return rb.makeRule(RuleNameLogAgentSomeDataDropped, expr)
 }
 
 func (rb fluentBitRuleBuilder) bufferInUseRule() Rule {
-	return Rule{
-		Alert: rb.namePrefix() + RuleNameLogAgentBufferInUse,
-		Expr: instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
-			greaterThan(bufferUsage300MB).
-			build(),
-	}
+	expr := instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
+		greaterThan(bufferUsage300MB).
+		build()
+
+	return rb.makeRule(RuleNameLogAgentBufferInUse, expr)
 }
 
 func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
-	return Rule{
-		Alert: rb.namePrefix() + RuleNameLogAgentBufferFull,
-		Expr: instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
-			greaterThan(bufferUsage900MB).
-			build(),
-	}
+	expr := instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
+		greaterThan(bufferUsage900MB).
+		build()
+
+	return rb.makeRule(RuleNameLogAgentBufferFull, expr)
 }
 
 func (rb fluentBitRuleBuilder) noLogsDeliveredRule() Rule {
@@ -82,9 +100,15 @@ func (rb fluentBitRuleBuilder) noLogsDeliveredRule() Rule {
 		equal(0).
 		build()
 
+	expr := and(receiverReadExpr, exporterNotSentExpr)
+
+	return rb.makeRule(RuleNameLogAgentNoLogsDelivered, expr)
+}
+
+func (rb fluentBitRuleBuilder) makeRule(baseName, expr string) Rule {
 	return Rule{
-		Alert: rb.namePrefix() + RuleNameLogAgentNoLogsDelivered,
-		Expr:  and(receiverReadExpr, exporterNotSentExpr),
+		Alert: rb.namePrefix() + baseName,
+		Expr:  expr,
 		For:   alertWaitTime,
 	}
 }
