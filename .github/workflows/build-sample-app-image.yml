@@ -1,4 +1,4 @@
-name: Telemetry Sample App Image Builder
+name: Build Sample App Image
 
 on:
   pull_request_target:

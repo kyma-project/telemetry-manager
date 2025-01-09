@@ -1,4 +1,4 @@
-name: Telemetry Self Monitor Image Builder
+name: Build Telemetry Self Monitor Image
 
 on:
   pull_request_target:
