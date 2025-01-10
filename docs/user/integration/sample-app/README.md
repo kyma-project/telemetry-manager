@@ -22,9 +22,11 @@ For examples using the OTel-SDK in a different langue, please refer to the offic
 
 ## Exploring the Sample App
 
-The sample app is a small webserver written in Golang, which exposes to endpoints `forward` and `terminate`. When calling the endpoints via HTTP, metrics are getting counted up and spans are emmitted using OTLP exporters. Furthermore, structured logs are written to `stdout`.
+The sample app is a small webserver written in Golang, which exposes two endpoints `forward` and `terminate`. When calling the endpoints via HTTP, metrics are getting counted up and spans are emitted using OTLP exporters. Furthermore, structured logs are written to `stdout`.
+
 <!-- markdown-link-check-disable-next-line -->
-The application is located in the [`telemetry-manager`](https://github.com/kyma-project/telemetry-manager) repo in the folder [`docs/user/integration/sample-app`](https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app).
+The application is located in the [`telemetry-manager`](https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app) repository.
+
 
 ### Setup
 
