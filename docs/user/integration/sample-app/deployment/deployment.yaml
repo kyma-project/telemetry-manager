@@ -33,6 +33,8 @@ spec:
           value: "http://telemetry-otlp-traces.kyma-system:4317"
         - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
           value: "http://telemetry-otlp-metrics.kyma-system:4317"
+        - name: TERMINATE_ENDPOINT
+          value: "sample-app:8080"
 ---
 kind: Service
 apiVersion: v1

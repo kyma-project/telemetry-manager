@@ -37,17 +37,19 @@ func newTraceProvider(exp trace.SpanExporter) *trace.TracerProvider {
 }
 
 func newTraceExporter(ctx context.Context) trace.SpanExporter {
-	if os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT") != "" {
+	if target := os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"); target != "" {
 		exporter, err := otlptracegrpc.New(ctx)
 		if err != nil {
 			panic(fmt.Errorf("creating OTLP trace exporter: %w", err))
 		}
+		logger.Info("Using OTLP trace exporter with target: " + target)
 		return exporter
 	}
 	exporter, err := stdouttrace.New()
 	if err != nil {
 		panic(fmt.Errorf("creating stdout trace exporter: %w", err))
 	}
+	logger.Info("Using console trace exporter")
 	return exporter
 }
 
@@ -75,16 +77,18 @@ func newMeterProvider(exp metric.Exporter) *metric.MeterProvider {
 }
 
 func newMetricExporter(ctx context.Context) metric.Exporter {
-	if os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT") != "" {
+	if target := os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"); target != "" {
 		exporter, err := otlpmetricgrpc.New(ctx)
 		if err != nil {
 			panic(fmt.Errorf("creating OTLP metric exporter: %w", err))
 		}
+		logger.Info("Using OTLP metric exporter with target: " + target)
 		return exporter
 	}
 	exporter, err := stdoutmetric.New()
 	if err != nil {
 		panic(fmt.Errorf("creating stdout metric exporter: %w", err))
 	}
+	logger.Info("Using console metric exporter")
 	return exporter
 }

@@ -35,6 +35,8 @@ var (
 
 	tracer = otel.Tracer("sample-app")
 	meter  = otel.Meter("sample-app")
+
+	terminateEndpoint string
 )
 
 func init() {
@@ -68,6 +70,12 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	var ok bool
+	if terminateEndpoint, ok = os.LookupEnv("TERMINATE_ENDPOINT"); !ok {
+		terminateEndpoint = fmt.Sprintf("localhost:%d", serverPort)
+	}
+	logger.Info("Using terminate endpoint: " + terminateEndpoint)
 }
 
 // randomTemp generates the temperature ranging from 60 to 90
@@ -89,7 +97,7 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 	_, span := tracer.Start(r.Context(), "forward")
 	defer span.End()
 
-	requestURL := fmt.Sprintf("http://localhost:%d/terminate", serverPort)
+	requestURL := fmt.Sprintf("http://%s/terminate", terminateEndpoint)
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		logger.ErrorContext(r.Context(), "client: could not create request", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
