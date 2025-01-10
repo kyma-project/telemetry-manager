@@ -83,10 +83,10 @@ func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
 
 // Check if the queue is almost full.
 func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
-	nomMetric := otelExporterQueueSize
-	denomMetric := otelExporterQueueCapacity
+	numMetric := otelExporterQueueSize
+	denumMetric := otelExporterQueueCapacity
 
-	return div(nomMetric, denomMetric, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
+	return div(numMetric, denumMetric, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
 		maxBy(labelPipelineName).
 		greaterThan(thresholdQueueAlmostFull).
 		build()
