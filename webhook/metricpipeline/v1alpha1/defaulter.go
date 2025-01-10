@@ -132,5 +132,5 @@ func istioInputEnabled(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func runtimeInputEnabled(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Enabled
+	return pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Enabled != nil && *pipeline.Spec.Input.Runtime.Enabled
 }

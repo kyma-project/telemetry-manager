@@ -94,7 +94,7 @@ type MetricPipelinePrometheusInput struct {
 // MetricPipelineRuntimeInput defines the runtime scraping section.
 type MetricPipelineRuntimeInput struct {
 	// If enabled, runtime metrics are scraped. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Describes whether runtime metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`

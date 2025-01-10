@@ -7,7 +7,7 @@ func IsPrometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool 
 }
 
 func IsRuntimeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Runtime != nil && input.Runtime.Enabled
+	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }
 
 func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {

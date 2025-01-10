@@ -72,7 +72,7 @@ func (b *MetricPipelineBuilder) WithRuntimeInput(enable bool, opts ...InputOptio
 		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
 	}
 
-	b.inRuntime.Enabled = enable
+	b.inRuntime.Enabled = &enable
 
 	if len(opts) == 0 {
 		return b

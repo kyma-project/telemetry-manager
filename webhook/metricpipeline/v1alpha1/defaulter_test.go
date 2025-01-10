@@ -126,7 +126,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: true,
+							Enabled: ptr.To(true),
 						},
 					},
 				},
@@ -135,7 +135,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: true,
+							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
@@ -184,7 +184,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: true,
+							Enabled: ptr.To(true),
 							Resources: &telemetryv1alpha1.MetricPipelineRuntimeInputResources{
 								Pod: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
 									Enabled: ptr.To(false),
@@ -198,7 +198,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: true,
+							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
@@ -288,7 +288,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: false,
+							Enabled: ptr.To(false),
 						},
 					},
 				},
@@ -297,7 +297,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: false,
+							Enabled: ptr.To(false),
 						},
 					},
 				},
