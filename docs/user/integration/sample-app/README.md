@@ -50,7 +50,8 @@ The application consists of the following Go files:
 
 ### Metrics
 
-- The `init` method defines the available metrics
+- The `init` method defines the available metrics:
+
   - `cpu.temperature.celsius` is a Gauge that is updated constantly using an observable.
 
   - `hd.errors.total` is a Counter that is increased on every `terminate` handler call.
@@ -79,7 +80,8 @@ The `main.go` file initializes the Golang `slog` logger, which is consistently u
 
 ### Running local
 
-By default, the exporter are configured to print to stdout, so that you can run the app from local.
+By default, the exporters are configured to print to stdout, so that you can run the app from local.
+
 
 
 1. Checkout the `telemetry-manager` repo and go to the folder `docs/user/integration/sample-app`.
