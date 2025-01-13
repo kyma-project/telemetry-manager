@@ -66,7 +66,7 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 func enableRuntimeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled {
+		if metric.IsRuntimeInputEnabled(input) {
 			return true
 		}
 	}

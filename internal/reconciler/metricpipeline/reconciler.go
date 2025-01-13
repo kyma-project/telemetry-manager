@@ -234,11 +234,20 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	input := pipeline.Spec.Input
-	isRuntimeInputEnabled := input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
-	isPrometheusInputEnabled := input.Prometheus != nil && input.Prometheus.Enabled != nil && *input.Prometheus.Enabled
-	isIstioInputEnabled := input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
 
-	return isRuntimeInputEnabled || isPrometheusInputEnabled || isIstioInputEnabled
+	return runtimeInputEnabled(input) || prometheusInputEnabled(input) || istioInputEnabled(input)
+}
+
+func istioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
+}
+
+func prometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Prometheus != nil && input.Prometheus.Enabled != nil && *input.Prometheus.Enabled
+}
+
+func runtimeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
