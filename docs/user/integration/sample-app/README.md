@@ -136,8 +136,6 @@ By default, the exporter are configured to print to stdout, so that you can run 
 
 Run the following commands to completely remove the sample app from the cluster:
 
-2. Run the following command to completely remove the example service and all its resources from the cluster:
-
-    ```bash
-    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
-    ```
+```bash
+kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
+```
