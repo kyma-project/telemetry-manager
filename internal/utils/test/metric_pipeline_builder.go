@@ -94,7 +94,7 @@ func (b *MetricPipelineBuilder) WithPrometheusInput(enable bool, opts ...InputOp
 		b.inPrometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
 	}
 
-	b.inPrometheus.Enabled = enable
+	b.inPrometheus.Enabled = &enable
 
 	if len(opts) == 0 {
 		return b
@@ -116,7 +116,7 @@ func (b *MetricPipelineBuilder) WithIstioInput(enable bool, opts ...InputOptions
 		b.inIstio = &telemetryv1alpha1.MetricPipelineIstioInput{}
 	}
 
-	b.inIstio.Enabled = enable
+	b.inIstio.Enabled = &enable
 
 	if len(opts) == 0 {
 		return b

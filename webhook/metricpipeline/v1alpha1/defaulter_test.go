@@ -77,7 +77,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: true,
+							Enabled: ptr.To(true),
 						},
 					},
 				},
@@ -86,7 +86,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: true,
+							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
@@ -101,7 +101,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: true,
+							Enabled: ptr.To(true),
 						},
 					},
 				},
@@ -110,7 +110,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: true,
+							Enabled: ptr.To(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
@@ -246,7 +246,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: false,
+							Enabled: ptr.To(false),
 						},
 					},
 				},
@@ -255,7 +255,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: false,
+							Enabled: ptr.To(false),
 						},
 					},
 				},
@@ -267,7 +267,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: false,
+							Enabled: ptr.To(false),
 						},
 					},
 				},
@@ -276,7 +276,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: false,
+							Enabled: ptr.To(false),
 						},
 					},
 				},

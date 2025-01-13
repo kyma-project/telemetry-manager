@@ -3,7 +3,7 @@ package metric
 import telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 
 func IsPrometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Prometheus != nil && input.Prometheus.Enabled
+	return input.Prometheus != nil && input.Prometheus.Enabled != nil && *input.Prometheus.Enabled
 }
 
 func IsRuntimeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
@@ -11,7 +11,7 @@ func IsRuntimeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 }
 
 func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Istio != nil && input.Istio.Enabled
+	return input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
 }
 
 func IsOTLPInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {

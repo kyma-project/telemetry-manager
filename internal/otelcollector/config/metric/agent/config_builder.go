@@ -178,7 +178,7 @@ func enableRuntimeJobMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 func enablePrometheusMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Prometheus != nil && input.Prometheus.Enabled {
+		if metric.IsPrometheusInputEnabled(input) {
 			return true
 		}
 	}
@@ -189,7 +189,7 @@ func enablePrometheusMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 func enableIstioMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Istio != nil && input.Istio.Enabled {
+		if metric.IsIstioInputEnabled(input) {
 			return true
 		}
 	}
