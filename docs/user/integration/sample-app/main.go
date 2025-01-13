@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -197,6 +198,9 @@ func main() {
 	http.Handle("/forward", wrappedForwardHandler)
 	http.Handle("/", wrappedForwardHandler)
 	http.Handle("/terminate", wrappedTerminateHandler)
+
+	// Register metrics endpoint in case a prometheus exporter is used
+	http.Handle("/metrics", promhttp.Handler())
 
 	//Start the HTTP server
 	logger.Info("Starting server on port " + strconv.Itoa(serverPort))

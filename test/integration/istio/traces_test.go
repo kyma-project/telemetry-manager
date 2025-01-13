@@ -105,12 +105,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
-			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
-			verifySidecarPresent(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app": "sample-app"})
+			verifySidecarPresent(istiofiedAppNs, map[string]string{"app": "sample-app"})
 		})
 
 		It("Should have sample app without istio sidecar", func() {
-			verifyAppIsRunning(appNs, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(appNs, map[string]string{"app": "sample-app"})
 		})
 
 		It("Should have a running trace gateway deployment", func() {
@@ -223,7 +223,7 @@ func verifyCustomIstiofiedAppSpans(backendURL, name, namespace string) {
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify sample app by serviceName attribute
-			HaveResourceAttributes(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
+			HaveResourceAttributes(HaveKeyWithValue("service.name", "sample-app")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		)))))
@@ -237,7 +237,7 @@ func verifyCustomAppSpans(backendURL, name, namespace string) {
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify sample app by serviceName attribute
-			HaveResourceAttributes(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
+			HaveResourceAttributes(HaveKeyWithValue("service.name", "sample-app")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		)))))

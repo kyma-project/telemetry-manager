@@ -23,7 +23,7 @@ var fts = []FlatTrace{
 	{
 		Name: "ingress-2",
 		ResourceAttributes: map[string]string{
-			"service.name":        "monitoring-custom-metrics",
+			"service.name":        "sample-app",
 			"k8s.pod.ip":          "10.42.1.73",
 			"k8s.deployment.name": "istio",
 		},

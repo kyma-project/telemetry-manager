@@ -56,7 +56,7 @@ var (
 	metricsPortName       = "http-metrics"
 	metricsEndpoint       = "/metrics"
 	selectorLabels        = map[string]string{
-		"app": "sample-metrics",
+		"app": "sample-app",
 	}
 
 	// DefaultMetricsNames is an alias for MetricNames.
@@ -170,7 +170,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "sample-metrics",
+					Name:  "sample-app",
 					Image: metricProducerImage,
 					Ports: []corev1.ContainerPort{
 						{
@@ -183,6 +183,10 @@ func (p *Pod) K8sObject() *corev1.Pod {
 						{
 							Name:  "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
 							Value: "http://telemetry-otlp-traces.kyma-system:4318/v1/traces",
+						},
+						{
+							Name:  "OTEL_METRICS_EXPORTER",
+							Value: "prometheus",
 						},
 					},
 					Resources: corev1.ResourceRequirements{
