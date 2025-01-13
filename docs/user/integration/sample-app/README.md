@@ -8,7 +8,8 @@
 | Backend type | custom in-cluster, third-party remote |
 | OTLP-native | yes |
 
-Learn how to instrument your custom Golang application using the [OTel SDK](https://opentelemetry.io/docs/languages/) and exporting metrics and trace data using the OTel SDK. You learn to configure the sample application to push trace and metric data using OTLP to the collector that's provided by Kyma, so that they are collected together with the related Istio trace data.
+Learn how to instrument your custom Golang application using the [OTel SDK](https://opentelemetry.io/docs/languages/) and how to export metrics and trace data using the OTel SDK. You learn to configure the sample application to push trace and metric data using OTLP to the collector that's provided by Kyma, so that they are collected together with the related Istio trace data.
+
 
 
 For examples using the OTel SDK in a different language, refer to the official [OTel guides](https://opentelemetry.io/docs/languages/) and the [OTel demo app](./../opentelemetry-demo/).
