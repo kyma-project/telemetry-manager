@@ -94,6 +94,14 @@ func and(exprs ...string) string {
 	return strings.Join(wrapInParentheses(exprs), " and ")
 }
 
+func or(exprs ...string) string {
+	return strings.Join(wrapInParentheses(exprs), " or ")
+}
+
+func unless(exprs ...string) string {
+	return strings.Join(wrapInParentheses(exprs), " unless ")
+}
+
 func wrapInParentheses(input []string) []string {
 	wrapped := make([]string, len(input))
 	for i, str := range input {
