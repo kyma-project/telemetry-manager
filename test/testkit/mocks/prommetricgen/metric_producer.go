@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/examples/monitoring-custom-metrics:v20230905-b823fd14"
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
 )
 
 type Metric struct {
@@ -34,28 +34,22 @@ const (
 var (
 	MetricCPUTemperature = Metric{
 		Type: pmetric.MetricTypeGauge,
-		Name: "cpu_temperature_celsius",
+		Name: "cpu.temperature.celsius",
 	}
 	MetricHardDiskErrorsTotal = Metric{
 		Type:   pmetric.MetricTypeSum,
-		Name:   "hd_errors_total",
+		Name:   "hd.errors.total",
 		Labels: []string{"device"},
 	}
 	MetricCPUEnergyHistogram = Metric{
 		Type:   pmetric.MetricTypeHistogram,
-		Name:   "cpu_energy_watt",
+		Name:   "cpu.energy.watt",
 		Labels: []string{"core"},
-	}
-	MetricHardwareHumidity = Metric{
-		Type:   pmetric.MetricTypeSummary,
-		Name:   "hw_humidity",
-		Labels: []string{"sensor"},
 	}
 	MetricNames = []string{
 		MetricCPUTemperature.Name,
 		MetricHardDiskErrorsTotal.Name,
 		MetricCPUEnergyHistogram.Name,
-		MetricHardwareHumidity.Name,
 	}
 
 	metricsPort     int32 = 8080
