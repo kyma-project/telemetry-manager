@@ -124,13 +124,13 @@ func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1beta1
 }
 
 func prometheusInputEnabled(pipeline *telemetryv1beta1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Enabled
+	return pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Enabled != nil && *pipeline.Spec.Input.Prometheus.Enabled
 }
 
 func istioInputEnabled(pipeline *telemetryv1beta1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Istio != nil && pipeline.Spec.Input.Istio.Enabled
+	return pipeline.Spec.Input.Istio != nil && pipeline.Spec.Input.Istio.Enabled != nil && *pipeline.Spec.Input.Istio.Enabled
 }
 
 func runtimeInputEnabled(pipeline *telemetryv1beta1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Enabled
+	return pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Enabled != nil && *pipeline.Spec.Input.Runtime.Enabled
 }
