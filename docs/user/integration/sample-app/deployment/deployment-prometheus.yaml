@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sample-app
+  name: sample-app-prom
   labels:
-    app.kubernetes.io/name: sample-app
+    app.kubernetes.io/name: sample-app-prom
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: sample-app
+      app.kubernetes.io/name: sample-app-prom
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: sample-app
+        app.kubernetes.io/name: sample-app-prom
         sidecar.istio.io/inject: "true"
     spec:
       containers:
-      - name: sample-app
+      - name: sample-app-prom
         image: europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest
         imagePullPolicy: Always
         resources:
@@ -34,19 +34,21 @@ spec:
         - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
           value: "http://telemetry-otlp-metrics.kyma-system:4317"
         - name: OTEL_METRICS_EXPORTER
-          value: "otlp"
+          value: "prometheus"
         - name: TERMINATE_ENDPOINT
-          value: "sample-app:8080"
+          value: "sample-app-prom:8080"
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: sample-app
+  name: sample-app-prom
   labels:
-    app.kubernetes.io/name: sample-app
+    app.kubernetes.io/name: sample-app-prom
+  annotations:
+    prometheus.io/scrape: "true"
 spec:
   selector:
-    app.kubernetes.io/name: sample-app
+    app.kubernetes.io/name: sample-app-prom
   ports:
   - name: http
     port: 8080

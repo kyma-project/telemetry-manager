@@ -99,7 +99,7 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 	defer span.End()
 
 	requestURL := fmt.Sprintf("http://%s/terminate", terminateEndpoint)
-	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, requestURL, nil)
 	if err != nil {
 		logger.ErrorContext(r.Context(), "client: could not create request", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
 
