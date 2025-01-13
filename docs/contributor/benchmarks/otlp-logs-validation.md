@@ -2,7 +2,7 @@
 
 This file documents the process of validating the whole LogPipeline with OTLP output flow. It starts by defining the setup, that consists of the manually deployed log agent, the already-implemented log gateway, and log generators using flog.
 
-The scope is to performance test the agent, observing the resulting values, in terms of throughput, resource consumption, reaction to backpressure, etc.
+The scope is to performance test the agent, observing the resulting values, in terms of throughput, resource consumption, reaction to backpressure, etc. And compare it to the previous FluentBit-based setup.
 
 
 
@@ -295,7 +295,13 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - 0% exporter send failed logs
 
 
-## 4. Conclusions
+## 4. Comparison with FluentBit setup
+In the FluentBit setup, for the very same scenario, the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
+- Exported Log Records per second: 3.913
+- Received Log Records per second: 3.868
+
+
+## 5. Conclusions
 
 - A lower performance can be expected, compared to the FluentBit counterpart setup.
 - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end, since the agent has no way of knowing when to stop, thus exports data continuously. (This is a known issue, that should get solved by the OTel community in the next half year)
