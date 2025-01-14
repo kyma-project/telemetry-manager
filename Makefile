@@ -102,8 +102,7 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=config/crd/bases
 	$(YQ) eval 'del(.. | select(has("otlp")).otlp)' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
 	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("otlp")) )' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
-	## Remove empty x-kubernetes-validations arrays from logpipeline crd that can be caused by previous yq manipulations
-	$(YQ) eval 'del(.. | select(select(has("x-kubernetes-validations"))."x-kubernetes-validations" | length == 0)."x-kubernetes-validations")' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
+
 
 .PHONY: manifests-dev
 manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
