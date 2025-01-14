@@ -21,9 +21,10 @@ func newOtelResource() *resource.Resource {
 	// Ensure default SDK resources and the required service name are set.
 	res, err := resource.New(
 		context.Background(),
+		resource.WithSchemaURL(semconv.SchemaURL),
 		resource.WithAttributes(semconv.ServiceName("sample-app")), // Default service name which might get overriden by OTEL_SERVICE_NAME.
-		resource.WithFromEnv(),      // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
-		resource.WithTelemetrySDK(), // Discover and provide information about the OpenTelemetry SDK used.
+		resource.WithFromEnv(),                                     // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
+		resource.WithTelemetrySDK(),                                // Discover and provide information about the OpenTelemetry SDK used.
 	)
 
 	if err != nil {
