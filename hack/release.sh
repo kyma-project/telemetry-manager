@@ -16,10 +16,10 @@ readonly CURRENT_VERSION="$1"
 function prepare_release_artefacts() {
      echo "Preparing release artefacts"
      cd config/manager && ${KUSTOMIZE} edit set image controller="${IMG}" && cd ../..
-     # Create the resources file that is used for creating the ModuleTemplate for regular
+     # Create the resources file that is used for creating the ModuleTemplate for fast and regular channels
      ${KUSTOMIZE} build config/default > telemetry-manager.yaml
-     # Create the resources file that is used for creating the ModuleTemplate for experimental release
-     ${KUSTOMIZE} build config/development > telemetry-manager-experimental.yaml
+     # Create the resources file that is used for creating the ModuleTemplate for experimental channel
+     ${KUSTOMIZE} build config/development > telemetry-manager-dev.yaml
      # Rename the file for Telemetry default CR to have a better naming as a release artefact
      cp ./config/samples/operator_v1alpha1_telemetry.yaml telemetry-default-cr.yaml
 }

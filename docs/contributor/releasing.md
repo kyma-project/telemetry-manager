@@ -46,14 +46,16 @@ This release process covers the steps to release new major and minor versions fo
 
    ```bash
    git tag {RELEASE_VERSION}
+   git tag {RELEASE_DEV_VERSION}
    ```
 
-   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`.
+   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`.
 
 9.  Push the tags to the upstream repository.
 
    ```bash
    git push upstream {RELEASE_VERSION}
+   git push upstream {RELEASE_DEV_VERSION}
    ```
 
    The {RELEASE_VERSION} tag triggers the GitHub actions `Build Image` and `Tag Release`. The `Build Image` action builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. `Tag Release` action creates the GitHub release.

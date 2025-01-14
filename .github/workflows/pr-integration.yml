@@ -64,7 +64,7 @@ jobs:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.ginkgo-labels }}
 
-  e2e-experimental:
+  e2e-dev:
     needs: setup
     strategy:
       fail-fast: false
