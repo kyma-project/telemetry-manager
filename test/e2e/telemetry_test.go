@@ -4,7 +4,6 @@ package e2e
 
 import (
 	"fmt"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,7 +15,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -111,12 +110,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 
 				logPipelineWebhook := validatingWebhookConfiguration.Webhooks[0]
-				g.Expect(logPipelineWebhook.Name).Should(Equal("validating-logpipelines.kyma-project.io"))
+				g.Expect(logPipelineWebhook.Name).Should(Equal("validation.logpipelines.telemetry.kyma-project.io"))
 				g.Expect(logPipelineWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
 				g.Expect(logPipelineWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
 				g.Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
@@ -128,7 +127,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
 
 				logParserWebhook := validatingWebhookConfiguration.Webhooks[1]
-				g.Expect(logParserWebhook.Name).Should(Equal("validating-logparsers.kyma-project.io"))
+				g.Expect(logParserWebhook.Name).Should(Equal("validation.logparsers.telemetry.kyma-project.io"))
 				g.Expect(logParserWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
 				g.Expect(logParserWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
 				g.Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
@@ -151,6 +150,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(secret.Data).Should(HaveKeyWithValue("ca.crt", Not(BeEmpty())))
 				g.Expect(secret.Data).Should(HaveKeyWithValue("ca.key", Not(BeEmpty())))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+
+		It("Should reconcile ValidatingWebhookConfiguration", func() {
+			testWebhookReconciliation()
 		})
 
 		It("Should reconcile CA bundle secret", func() {
@@ -187,7 +190,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 
 		AfterAll(func() {
-			// Recreate Telemetry for remaining tests
+			// Re-create Telemetry to have ValidatingWebhookConfiguration for remaining tests
 			Eventually(func(g Gomega) {
 				newTelemetry := []client.Object{kitk8s.NewTelemetry("default", "kyma-system").K8sObject()}
 				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, newTelemetry...)).Should(Succeed())
@@ -198,13 +201,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateReady))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-
-			// When the Telemetry CR is deleted, the CA cert secret is also deleted. Upon recreating the Telemetry CR,
-			// the CA cert, server cert, and CA bundles in the webhook configurations are regenerated.
-			// However, due to this change: https://github.com/kubernetes-sigs/controller-runtime/pull/3020,
-			// the HTTPS server may take up to 10 seconds to start using the new cert.
-			// This sleep ensures the server has sufficient time to switch to the new cert.
-			time.Sleep(15 * time.Second)
 		})
 
 		It("Should have Telemetry resource", func() {
@@ -213,6 +209,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateReady))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+
+		It("Should reconcile ValidatingWebhookConfiguration if LogPipeline exists", func() {
+			testWebhookReconciliation()
 		})
 
 		It("Should not delete Telemetry when LogPipeline exists", func() {
@@ -266,7 +266,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
-		It("Should not have CA bundle secret", func() {
+		It("Should not have Webhook and CA bundle", func() {
+			Eventually(func(g Gomega) {
+				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
+
 			Eventually(func(g Gomega) {
 				var secret corev1.Secret
 				g.Expect(k8sClient.Get(ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
@@ -274,3 +279,21 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 	})
 })
+
+func testWebhookReconciliation() {
+	var oldUID types.UID
+
+	By("Deleting ValidatingWebhookConfiguration", func() {
+		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+		oldUID = validatingWebhookConfiguration.UID
+		Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())
+	})
+
+	Eventually(func(g Gomega) {
+		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+		g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+		g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}

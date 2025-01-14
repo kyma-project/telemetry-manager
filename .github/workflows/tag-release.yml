@@ -30,4 +30,4 @@ jobs:
         run: hack/release.sh ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          GORELEASER_CURRENT_TAG: "${{ github.ref_name }}" # Explicitly set release tag to avoid ambiguity
+          GORELEASER_CURRENT_TAG: "${{ github.ref_name }}" # Explicitly set release tag to do not use -dev tag

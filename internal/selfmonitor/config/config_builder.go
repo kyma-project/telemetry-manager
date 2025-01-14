@@ -128,17 +128,17 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 
 func scrapableMetricsRegex() string {
 	fluentBitMetrics := []string{
-		fluentBitOutputProcBytesTotal,
-		fluentBitOutputDroppedRecordsTotal,
-		fluentBitInputBytesTotal,
-		fluentBitBufferUsageBytes,
+		metricFluentBitOutputProcBytesTotal,
+		metricFluentBitOutputDroppedRecordsTotal,
+		metricFluentBitInputBytesTotal,
+		metricFluentBitBufferUsageBytes,
 	}
 
 	otelCollectorMetrics := []string{
-		otelExporterSent,
-		otelExporterSendFailed,
-		otelExporterEnqueueFailed,
-		otelReceiverRefused,
+		metricOtelCollectorExporterSent,
+		metricOtelCollectorExporterSendFailed,
+		metricOtelCollectorExporterEnqueueFailed,
+		metricOtelCollectorReceiverRefused,
 	}
 
 	for i := range otelCollectorMetrics {
@@ -146,7 +146,7 @@ func scrapableMetricsRegex() string {
 	}
 
 	// exporter_queue_size and exporter_queue_capacity do not have a suffix
-	otelCollectorMetrics = append(otelCollectorMetrics, otelExporterQueueSize, otelExporterQueueCapacity)
+	otelCollectorMetrics = append(otelCollectorMetrics, metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity)
 
 	return strings.Join(append(fluentBitMetrics,
 		otelCollectorMetrics...), "|")

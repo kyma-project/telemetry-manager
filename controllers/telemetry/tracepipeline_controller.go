@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -42,11 +43,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -54,7 +55,19 @@ import (
 )
 
 const (
-	maxTracePipelines = 3
+	maxTracePipelines    = 3
+	traceGatewayBaseName = "telemetry-trace-gateway"
+)
+
+var (
+	traceGatewayBaseCPULimit         = resource.MustParse("700m")
+	traceGatewayDynamicCPULimit      = resource.MustParse("500m")
+	traceGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
+	traceGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
+	traceGatewayBaseCPURequest       = resource.MustParse("100m")
+	traceGatewayDynamicCPURequest    = resource.MustParse("100m")
+	traceGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	traceGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
 // TracePipelineController reconciles a TracePipeline object
@@ -70,6 +83,7 @@ type TracePipelineControllerConfig struct {
 	TelemetryNamespace            string
 	OTelCollectorImage            string
 	TraceGatewayPriorityClassName string
+	TraceGatewayServiceName       string
 }
 
 func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config TracePipelineControllerConfig) (*TracePipelineController, error) {
@@ -99,11 +113,15 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		return nil, err
 	}
 
+	reconcilerConfig := tracepipeline.Config{
+		TraceGatewayName:   traceGatewayBaseName,
+		TelemetryNamespace: config.TelemetryNamespace,
+	}
 	reconciler := tracepipeline.New(
 		client,
-		config.TelemetryNamespace,
+		reconcilerConfig,
 		flowHealthProber,
-		otelcollector.NewTraceGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.TraceGatewayPriorityClassName),
+		newTraceGatewayApplierDeleter(config),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
@@ -117,6 +135,39 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 	}, nil
+}
+
+func newTraceGatewayApplierDeleter(config TracePipelineControllerConfig) *otelcollector.GatewayApplierDeleter {
+	rbac := otelcollector.MakeTraceGatewayRBAC(
+		types.NamespacedName{
+			Name:      traceGatewayBaseName,
+			Namespace: config.TelemetryNamespace,
+		})
+
+	gatewayConfig := otelcollector.GatewayConfig{
+		Config: otelcollector.Config{
+			BaseName:  traceGatewayBaseName,
+			Namespace: config.TelemetryNamespace,
+		},
+		Deployment: otelcollector.DeploymentConfig{
+			Image:                config.OTelCollectorImage,
+			PriorityClassName:    config.TraceGatewayPriorityClassName,
+			BaseCPULimit:         traceGatewayBaseCPULimit,
+			DynamicCPULimit:      traceGatewayDynamicCPULimit,
+			BaseMemoryLimit:      traceGatewayBaseMemoryLimit,
+			DynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
+			BaseCPURequest:       traceGatewayBaseCPURequest,
+			DynamicCPURequest:    traceGatewayDynamicCPURequest,
+			BaseMemoryRequest:    traceGatewayBaseMemoryRequest,
+			DynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
+		},
+		OTLPServiceName: config.TraceGatewayServiceName,
+	}
+
+	return &otelcollector.GatewayApplierDeleter{
+		Config: gatewayConfig,
+		RBAC:   rbac,
+	}
 }
 
 func (r *TracePipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -148,14 +199,14 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 				mgr.GetRESTMapper(),
 				&telemetryv1alpha1.TracePipeline{},
 			),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
+			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged()),
 		)
 	}
 
 	return b.Watches(
 		&operatorv1alpha1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+		ctrlbuilder.WithPredicates(predicate.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 

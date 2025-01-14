@@ -13,11 +13,10 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -49,6 +48,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 
 		return objs
 	}
+
+	Context("Before deploying a tracepipeline", func() {
+		It("Should have a healthy webhook", func() {
+			assert.WebhookHealthy(ctx, k8sClient)
+		})
+	})
 
 	Context("When a tracepipeline exists", Ordered, func() {
 		BeforeAll(func() {
@@ -113,27 +118,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonAllDataDropped,
-			})
-		})
-
-		Context("Metric instrumentation", Ordered, func() {
-			It("Ensures that controller_runtime_webhook_requests_total is increased", func() {
-				// Pushing metrics to the metric gateway triggers an alert.
-				// It makes the self-monitor call the webhook, which in turn increases the counter.
-				assert.ManagerEmitsMetric(proxyClient,
-					HaveName(Equal("controller_runtime_webhook_requests_total")),
-					SatisfyAll(
-						HaveLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
-						HaveMetricValue(BeNumerically(">", 0)),
-					))
-			})
-
-			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
-				assert.ManagerEmitsMetric(
-					proxyClient,
-					HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
-					HaveMetricValue(BeNumerically(">", 0)),
-				)
 			})
 		})
 	})

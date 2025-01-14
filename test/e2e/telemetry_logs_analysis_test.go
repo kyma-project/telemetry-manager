@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -213,7 +213,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-")),
 						HaveLevel(MatchRegexp(logLevelsRegexp)),
 						HaveLogBody(Not( // whitelist possible (flaky/expected) errors
@@ -234,7 +234,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-")),
 						HaveLogBody(MatchRegexp(logLevelsRegexp)), // fluenbit does not log in JSON, so we need to check the body for errors
 					)))),
@@ -248,7 +248,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogAnalysis), Ordered, fu
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-")),
 						HaveLevel(MatchRegexp(logLevelsRegexp)),
 					)))),

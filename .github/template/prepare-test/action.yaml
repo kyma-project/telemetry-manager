@@ -26,8 +26,7 @@ runs:
       run: "./hack/await_image.sh"
       env:
         GITHUB_TOKEN: "${{ inputs.github-token }}"
-        # sets trigger depending on event being either pull_request or merge_group
-        TRIGGER: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
+        TRIGGER: "${{ github.event.pull_request.head.sha }}"
         QUERY_INTERVAL: 30
         IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
@@ -39,15 +38,11 @@ runs:
     - name: Deploy module experimental
       if: ${{ !inputs.release }}
       shell: bash
-      run: make --debug deploy-experimental
-
-    - name: Wait for manager deployment rollout
-      shell: bash
-      run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
+      run: make --debug deploy-dev
 
     - name: Wait for manager readiness
       shell: bash
-      run: kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
+      run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
     - name: Print cluster info
       shell: bash

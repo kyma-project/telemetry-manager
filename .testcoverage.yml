@@ -35,26 +35,16 @@ override:
     path: ^internal/reconciler/telemetry$
   - threshold: 74
     path: ^internal/reconciler/tracepipeline$
-  - threshold: 83
+  - threshold: 82
     path: ^internal/resources/otelcollector$
   - threshold: 78
     path: ^internal/resources/selfmonitor$
-  - threshold: 80
-    path: ^internal/validators/secretref$
   - threshold: 75
     path: ^internal/resourcelock$
-  - threshold: 84
-    path: ^internal/webhookcert$
   - threshold: 85
-    path: ^webhook/logpipeline/v1alpha1$
-  - threshold: 84
-    path: ^webhook/logpipeline/v1beta1$
-  - threshold: 83
-    path: ^internal/utils/logpipeline$
-  - threshold: 75
-    path: ^webhook/tracepipeline/v1alpha1$
-  - threshold: 75
-    path: ^webhook/tracepipeline/v1beta1$
+    path: ^internal/webhookcert$
+  - threshold: 73
+    path: ^webhook/logpipeline
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
@@ -65,12 +55,12 @@ exclude:
     - main
     - mocks
     - stubs
-    - ^internal/utils/k8s # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
-    - internal/utils/logger
+    - ^internal/k8sutils # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
+    - internal/logger
     - ^internal/reconciler/logparser # logparser reconciler will be removed soon
     - ^test # e2e and integration tests
     - webhook/logparser # logparser will be removed soon
-    - ^internal/utils/test # some functions in testutils are being used in e2e tests only
+    - ^internal/testutils # some functions in testutils are being used in e2e tests only
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by

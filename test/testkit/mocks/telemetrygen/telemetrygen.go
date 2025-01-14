@@ -7,7 +7,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
@@ -33,7 +32,6 @@ var (
 const (
 	SignalTypeTraces  = "traces"
 	SignalTypeMetrics = "metrics"
-	SignalTypeLogs    = "logs"
 	DefaultName       = "telemetrygen"
 )
 
@@ -110,14 +108,10 @@ func NewDeployment(namespace string, signalType SignalType, opts ...Option) *kit
 
 func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 	var gatewayPushURL string
-
-	switch signalType {
-	case SignalTypeTraces:
+	if signalType == SignalTypeTraces {
 		gatewayPushURL = "telemetry-otlp-traces.kyma-system:4317"
-	case SignalTypeMetrics:
+	} else if signalType == SignalTypeMetrics {
 		gatewayPushURL = "telemetry-otlp-metrics.kyma-system:4317"
-	case SignalTypeLogs:
-		gatewayPushURL = "telemetry-otlp-logs.kyma-system:4317"
 	}
 
 	spec := corev1.PodSpec{
@@ -125,7 +119,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 		Containers: []corev1.Container{
 			{
 				Name:  "telemetrygen",
-				Image: testkit.DefaultTelemetryGenImage,
+				Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.111.0",
 				Args: []string{
 					string(signalType),
 					"--rate",

@@ -30,6 +30,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -37,11 +38,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 const defaultReplicaCount int32 = 2
+
+type Config struct {
+	TraceGatewayName   string
+	TelemetryNamespace string
+}
 
 type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
@@ -72,13 +77,13 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	telemetryNamespace string
+	config Config
 
 	// Dependencies
 	flowHealthProber      FlowHealthProber
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         commonstatus.Prober
+	gatewayProber         commonstatus.DeploymentProber
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
@@ -88,11 +93,11 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	telemetryNamespace string,
+	config Config,
 	flowHealthProber FlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber commonstatus.Prober,
+	gatewayProber commonstatus.DeploymentProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,
@@ -101,7 +106,7 @@ func New(
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
+		config:                config,
 		flowHealthProber:      flowHealthProber,
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,

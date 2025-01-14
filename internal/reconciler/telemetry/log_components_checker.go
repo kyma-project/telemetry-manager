@@ -10,7 +10,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	slicesutils "github.com/kyma-project/telemetry-manager/internal/utils/slices"
+	"github.com/kyma-project/telemetry-manager/internal/extslices"
 )
 
 type logComponentsChecker struct {
@@ -119,12 +119,12 @@ func (l *logComponentsChecker) checkForResourceBlocksDeletionCondition(pipelines
 			Reason: conditions.ReasonResourceBlocksDeletion,
 			Message: generateDeletionBlockedMessage(blockingResources{
 				resourceType: "LogPipelines",
-				resourceNames: slicesutils.TransformFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) string {
+				resourceNames: extslices.TransformFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) string {
 					return p.Name
 				}),
 			}, blockingResources{
 				resourceType: "LogParsers",
-				resourceNames: slicesutils.TransformFunc(parsers, func(p telemetryv1alpha1.LogParser) string {
+				resourceNames: extslices.TransformFunc(parsers, func(p telemetryv1alpha1.LogParser) string {
 					return p.Name
 				}),
 			}),

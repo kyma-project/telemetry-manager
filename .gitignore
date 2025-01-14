@@ -41,8 +41,8 @@ tls.key
 moduletemplate.yaml
 # Generated manifests
 telemetry-manager.yaml
-# Generated manifests for experimental release
-telemetry-manager-experimental.yaml
+# Generated manifests for experimental channel
+telemetry-manager-dev.yaml
 # The default Telemetry CR which is installed by the lifecycle-manager
 telemetry-default-cr.yaml
 

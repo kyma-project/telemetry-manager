@@ -28,7 +28,6 @@ type ScrapingScheme string
 const (
 	SchemeHTTP  ScrapingScheme = "http"
 	SchemeHTTPS ScrapingScheme = "https"
-	SchemeNone  ScrapingScheme = "none"
 )
 
 var (
@@ -150,16 +149,12 @@ func (p *Pod) WithLabel(key, value string) *Pod {
 }
 
 func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
-	annotations := map[string]string{
+	return map[string]string{
 		"prometheus.io/scrape": "true",
 		"prometheus.io/path":   metricsEndpoint,
 		"prometheus.io/port":   strconv.Itoa(int(metricsPort)),
+		"prometheus.io/scheme": string(scheme),
 	}
-	if scheme != SchemeNone {
-		annotations["prometheus.io/scheme"] = string(scheme)
-	}
-
-	return annotations
 }
 
 func (p *Pod) K8sObject() *corev1.Pod {

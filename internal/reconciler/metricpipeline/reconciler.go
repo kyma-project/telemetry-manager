@@ -14,6 +14,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
@@ -22,11 +23,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
 const defaultReplicaCount int32 = 2
+
+type Config struct {
+	AgentName          string
+	GatewayName        string
+	ModuleVersion      string
+	TelemetryNamespace string
+}
 
 type AgentConfigBuilder interface {
 	Build(pipelines []telemetryv1alpha1.MetricPipeline, options agent.BuildOptions) *agent.Config
@@ -66,17 +73,15 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	telemetryNamespace string
-	// TODO(skhalash): introduce an embed pkg exposing the module version set by go build
-	moduleVersion string
+	config Config
 
 	agentApplierDeleter   AgentApplierDeleter
 	agentConfigBuilder    AgentConfigBuilder
-	agentProber           commonstatus.Prober
+	agentProber           commonstatus.DaemonSetProber
 	flowHealthProber      FlowHealthProber
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         commonstatus.Prober
+	gatewayProber         commonstatus.DeploymentProber
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
@@ -86,15 +91,14 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	telemetryNamespace string,
-	moduleVersion string,
+	config Config,
 	agentApplierDeleter AgentApplierDeleter,
 	agentConfigBuilder AgentConfigBuilder,
-	agentProber commonstatus.Prober,
+	agentProber commonstatus.DaemonSetProber,
 	flowHealthProber FlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber commonstatus.Prober,
+	gatewayProber commonstatus.DeploymentProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,
@@ -103,8 +107,7 @@ func New(
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
-		moduleVersion:         moduleVersion,
+		config:                config,
 		agentApplierDeleter:   agentApplierDeleter,
 		agentConfigBuilder:    agentConfigBuilder,
 		agentProber:           agentProber,
@@ -243,8 +246,8 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		GatewayNamespace:            r.telemetryNamespace,
-		InstrumentationScopeVersion: r.moduleVersion,
+		GatewayNamespace:            r.config.TelemetryNamespace,
+		InstrumentationScopeVersion: r.config.ModuleVersion,
 	})
 
 	if err != nil {
@@ -289,8 +292,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
-		InstrumentationScopeVersion: r.moduleVersion,
-		AgentNamespace:              r.telemetryNamespace,
+		InstrumentationScopeVersion: r.config.ModuleVersion,
+		AgentNamespace:              r.config.TelemetryNamespace,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)

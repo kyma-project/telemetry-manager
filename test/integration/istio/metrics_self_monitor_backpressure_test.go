@@ -11,7 +11,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -29,7 +29,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithAbortFaultInjection(75))
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithAbortFaultInjection(95))
 		objs = append(objs, backend.K8sObjects()...)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
@@ -46,6 +46,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 
 		return objs
 	}
+
+	Context("Before deploying a metricpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			assert.WebhookHealthy(ctx, k8sClient)
+		})
+	})
 
 	Context("When a metricpipeline exists", Ordered, func() {
 		BeforeAll(func() {

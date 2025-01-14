@@ -43,9 +43,6 @@ type TelemetrySpec struct {
 
 	// +optional
 	Metric *MetricSpec `json:"metric,omitempty"`
-
-	// +optional
-	Log *LogSpec `json:"log,omitempty"`
 }
 
 // MetricSpec defines the behavior of the metric gateway
@@ -63,15 +60,6 @@ type TraceSpec struct {
 }
 
 type TraceGatewaySpec struct {
-	Scaling Scaling `json:"scaling,omitempty"`
-}
-
-// LogSpec defines the behavior of the log gateway
-type LogSpec struct {
-	Gateway LogGatewaySpec `json:"gateway,omitempty"`
-}
-
-type LogGatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
@@ -97,7 +85,7 @@ const (
 )
 
 type StaticScaling struct {
-	// Replicas defines a static number of Pods to run the gateway. Minimum is 1.
+	// Replicas defines a static number of pods to run the gateway. Minimum is 1.
 	// +kubebuilder:validation:Minimum=1
 	Replicas int32 `json:"replicas,omitempty"`
 }

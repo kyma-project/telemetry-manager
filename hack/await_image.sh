@@ -20,7 +20,7 @@ START_TIME=$SECONDS
 
 until $(skopeo list-tags ${PROTOCOL}${IMAGE_REPO} | jq '.Tags|any(. == env.TRIGGER)'); do
   if (( SECONDS - START_TIME > TIMEOUT )); then
-    echo "Timeout reached: ${IMAGE_REPO}:${TRIGGER} not found within $(( TIMEOUT/60 )) minutes"
+    echo "Timeout reached: ${IMAGE_REPO}:${COMMIT_SHA} not found within $(( TIMEOUT/60 )) minutes"
     exit 1
   fi
   echo "Waiting for binary image: ${IMAGE_REPO}:${TRIGGER}"

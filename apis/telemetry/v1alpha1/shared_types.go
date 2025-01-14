@@ -1,10 +1,30 @@
 package v1alpha1
 
+import (
+	"k8s.io/apimachinery/pkg/types"
+)
+
 type ValueType struct {
 	// The value as plain text.
 	Value string `json:"value,omitempty"`
 	// The value as a reference to a resource.
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
+}
+
+func (v *ValueType) IsValid() bool {
+	if v == nil {
+		return false
+	}
+
+	if v.Value != "" {
+		return true
+	}
+
+	return v.ValueFrom != nil &&
+		v.ValueFrom.SecretKeyRef != nil &&
+		v.ValueFrom.SecretKeyRef.Name != "" &&
+		v.ValueFrom.SecretKeyRef.Key != "" &&
+		v.ValueFrom.SecretKeyRef.Namespace != ""
 }
 
 type ValueFromSource struct {
@@ -24,6 +44,10 @@ type SecretKeyRef struct {
 	Key string `json:"key,omitempty"`
 }
 
+func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
+}
+
 const (
 	OTLPProtocolHTTP string = "http"
 	OTLPProtocolGRPC string = "grpc"
@@ -34,6 +58,7 @@ const (
 type OTLPOutput struct {
 	// Defines the OTLP protocol (http or grpc). Default is grpc.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:default:=grpc
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol string `json:"protocol,omitempty"`
 	// Defines the host and port (<host>:<port>) of an OTLP endpoint.

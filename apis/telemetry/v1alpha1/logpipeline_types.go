@@ -18,6 +18,15 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+)
+
+type Mode int
+
+const (
+	OTel Mode = iota
+	FluentBit
 )
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
@@ -77,6 +86,7 @@ type LogPipelineInput struct {
 type LogPipelineApplicationInput struct {
 	// If enabled, application logs are collected. The default is `true`.
 	// +optional
+	// +kubebuilder:default=true
 	Enabled *bool `json:"enabled,omitempty"`
 	// Describes whether application logs from specific Namespaces are selected. The options are mutually exclusive. System Namespaces are excluded by default from the collection.
 	Namespaces LogPipelineNamespaceSelector `json:"namespaces,omitempty"`
@@ -88,6 +98,7 @@ type LogPipelineApplicationInput struct {
 	DropLabels bool `json:"dropLabels,omitempty"`
 	// If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `KeepOriginalBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. The default is `true`.
 	// +optional
+	// +kubebuilder:default=true
 	KeepOriginalBody *bool `json:"keepOriginalBody,omitempty"`
 }
 
@@ -184,4 +195,56 @@ type LogPipelineStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
 	UnsupportedMode *bool `json:"unsupportedMode,omitempty"`
+}
+
+func (i *LogPipelineInput) IsValid() bool {
+	return i != nil
+}
+
+func (o *LogPipelineOutput) IsCustomDefined() bool {
+	return o.Custom != ""
+}
+
+func (o *LogPipelineOutput) IsHTTPDefined() bool {
+	return o.HTTP != nil && o.HTTP.Host.IsValid()
+}
+
+func (o *LogPipelineOutput) IsOTLPDefined() bool {
+	return o.OTLP != nil
+}
+
+func (o *LogPipelineOutput) IsAnyDefined() bool {
+	return o.pluginCount() > 0
+}
+
+func (o *LogPipelineOutput) IsSingleDefined() bool {
+	return o.pluginCount() == 1
+}
+
+func (o *LogPipelineOutput) pluginCount() int {
+	plugins := 0
+	if o.IsCustomDefined() {
+		plugins++
+	}
+
+	if o.IsHTTPDefined() {
+		plugins++
+	}
+
+	if featureflags.IsEnabled(featureflags.LogPipelineOTLP) && o.IsOTLPDefined() {
+		plugins++
+	}
+
+	return plugins
+}
+
+// ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
+func (lp *LogPipeline) ContainsCustomPlugin() bool {
+	for _, filter := range lp.Spec.Filters {
+		if filter.Custom != "" {
+			return true
+		}
+	}
+
+	return lp.Spec.Output.IsCustomDefined()
 }

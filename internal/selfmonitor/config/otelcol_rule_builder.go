@@ -5,19 +5,12 @@ import (
 )
 
 const (
-	// OTel Collector metrics
-
-	// following metrics should be used with data type suffixes (metric points, spans, etc.)
-	otelExporterSent          = "otelcol_exporter_sent"
-	otelExporterSendFailed    = "otelcol_exporter_send_failed"
-	otelExporterEnqueueFailed = "otelcol_exporter_enqueue_failed"
-	otelReceiverRefused       = "otelcol_receiver_refused"
-
-	// queue size/capacacity metrics do not have data type suffixes unlike other metrics
-	otelExporterQueueSize     = "otelcol_exporter_queue_size"
-	otelExporterQueueCapacity = "otelcol_exporter_queue_capacity"
-
-	thresholdQueueAlmostFull = 0.8
+	metricOtelCollectorExporterSent          = "otelcol_exporter_sent"
+	metricOtelCollectorExporterSendFailed    = "otelcol_exporter_send_failed"
+	metricOtelCollectorExporterQueueSize     = "otelcol_exporter_queue_size"
+	metricOtelCollectorExporterQueueCapacity = "otelcol_exporter_queue_capacity"
+	metricOtelCollectorExporterEnqueueFailed = "otelcol_exporter_enqueue_failed"
+	metricOtelCollectorReceiverRefused       = "otelcol_receiver_refused"
 )
 
 type otelCollectorRuleBuilder struct {
@@ -28,88 +21,72 @@ type otelCollectorRuleBuilder struct {
 
 func (rb otelCollectorRuleBuilder) rules() []Rule {
 	return []Rule{
-		rb.makeRule(RuleNameGatewayAllDataDropped, rb.allDataDroppedExpr()),
-		rb.makeRule(RuleNameGatewaySomeDataDropped, rb.someDataDroppedExpr()),
-		rb.makeRule(RuleNameGatewayQueueAlmostFull, rb.queueAlmostFullExpr()),
-		rb.makeRule(RuleNameGatewayThrottling, rb.throttlingExpr()),
+		rb.exporterSentRule(),
+		rb.exporterDroppedRule(),
+		rb.exporterQueueAlmostFullRule(),
+		rb.exporterEnqueueFailedRule(),
+		rb.receiverRefusedRule(),
 	}
 }
 
-// Checks if all data is dropped due to a full buffer or exporter issues, with nothing successfully sent.
-func (rb otelCollectorRuleBuilder) allDataDroppedExpr() string {
-	return unless(
-		or(rb.exporterEnqueueFailedExpr(), rb.exporterDroppedExpr()),
-		rb.exporterSentExpr(),
-	)
-}
-
-// Checks if some data is dropped while some is still successfully sent.
-func (rb otelCollectorRuleBuilder) someDataDroppedExpr() string {
-	return and(
-		or(rb.exporterEnqueueFailedExpr(), rb.exporterDroppedExpr()),
-		rb.exporterSentExpr(),
-	)
-}
-
-// Check if the exporter drop rate is greater than 0.
-func (rb otelCollectorRuleBuilder) exporterSentExpr() string {
-	metricName := rb.appendDataType(otelExporterSent)
-
-	return rate(metricName, selectService(rb.serviceName)).
-		sumBy(labelPipelineName).
-		greaterThan(0).
-		build()
-}
-
-// Check if the exporter send rate is greater than 0.
-func (rb otelCollectorRuleBuilder) exporterDroppedExpr() string {
-	metricName := rb.appendDataType(otelExporterSendFailed)
-
-	return rate(metricName, selectService(rb.serviceName)).
-		sumBy(labelPipelineName).
-		greaterThan(0).
-		build()
-}
-
-// Check if the exporter enqueue failure rate is greater than 0.
-func (rb otelCollectorRuleBuilder) exporterEnqueueFailedExpr() string {
-	metricName := rb.appendDataType(otelExporterEnqueueFailed)
-
-	return rate(metricName, selectService(rb.serviceName)).
-		sumBy(labelPipelineName).
-		greaterThan(0).
-		build()
-}
-
-// Check if the queue is almost full.
-func (rb otelCollectorRuleBuilder) queueAlmostFullExpr() string {
-	numMetric := otelExporterQueueSize
-	denumMetric := otelExporterQueueCapacity
-
-	return div(numMetric, denumMetric, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
-		maxBy(labelPipelineName).
-		greaterThan(thresholdQueueAlmostFull).
-		build()
-}
-
-// Check if the receiver data refusal rate is greater than 0.
-func (rb otelCollectorRuleBuilder) throttlingExpr() string {
-	metricName := rb.appendDataType(otelReceiverRefused)
-
-	return rate(metricName, selectService(rb.serviceName)).
-		sumBy(labelReceiver).
-		greaterThan(0).
-		build()
-}
-
-func (rb otelCollectorRuleBuilder) appendDataType(baseMetricName string) string {
+func (rb otelCollectorRuleBuilder) formatMetricName(baseMetricName string) string {
 	return fmt.Sprintf("%s_%s", baseMetricName, rb.dataType)
 }
 
-func (rb otelCollectorRuleBuilder) makeRule(baseName, expr string) Rule {
+func (rb otelCollectorRuleBuilder) exporterSentRule() Rule {
+	metric := rb.formatMetricName(metricOtelCollectorExporterSent)
+
 	return Rule{
-		Alert: rb.namePrefix + baseName,
-		Expr:  expr,
-		For:   alertWaitTime,
+		Alert: rb.namePrefix + RuleNameGatewayExporterSentData,
+		Expr: rate(metric, selectService(rb.serviceName)).
+			sumBy(labelPipelineName).
+			greaterThan(0).
+			build(),
+	}
+}
+
+func (rb otelCollectorRuleBuilder) exporterDroppedRule() Rule {
+	metric := rb.formatMetricName(metricOtelCollectorExporterSendFailed)
+
+	return Rule{
+		Alert: rb.namePrefix + RuleNameGatewayExporterDroppedData,
+		Expr: rate(metric, selectService(rb.serviceName)).
+			sumBy(labelPipelineName).
+			greaterThan(0).
+			build(),
+	}
+}
+
+func (rb otelCollectorRuleBuilder) exporterQueueAlmostFullRule() Rule {
+	return Rule{
+		Alert: rb.namePrefix + RuleNameGatewayExporterQueueAlmostFull,
+		Expr: div(metricOtelCollectorExporterQueueSize, metricOtelCollectorExporterQueueCapacity, ignoringLabelsMatch("data_type"), selectService(rb.serviceName)).
+			maxBy(labelPipelineName).
+			greaterThan(0.8). //nolint:mnd // alert on 80% full
+			build(),
+	}
+}
+
+func (rb otelCollectorRuleBuilder) exporterEnqueueFailedRule() Rule {
+	metric := rb.formatMetricName(metricOtelCollectorExporterEnqueueFailed)
+
+	return Rule{
+		Alert: rb.namePrefix + RuleNameGatewayExporterEnqueueFailed,
+		Expr: rate(metric, selectService(rb.serviceName)).
+			sumBy(labelPipelineName).
+			greaterThan(0).
+			build(),
+	}
+}
+
+func (rb otelCollectorRuleBuilder) receiverRefusedRule() Rule {
+	metric := rb.formatMetricName(metricOtelCollectorReceiverRefused)
+
+	return Rule{
+		Alert: rb.namePrefix + RuleNameGatewayReceiverRefusedData,
+		Expr: rate(metric, selectService(rb.serviceName)).
+			sumBy(labelReceiver).
+			greaterThan(0).
+			build(),
 	}
 }

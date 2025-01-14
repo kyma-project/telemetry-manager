@@ -97,19 +97,19 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;container**  | object | Configures container runtime metrics scraping. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;container.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;daemonset**  | object | Configures DaemonSet runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;daemonset.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;daemonset.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;deployment**  | object | Configures Deployment runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;deployment.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;deployment.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;job**  | object | Configures Job runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;job.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;job.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;node**  | object | Configures Node runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;node.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;node.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod**  | object | Configures Pod runtime metrics scraping. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;pod.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;statefulset**  | object | Configures StatefulSet runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;statefulset.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;statefulset.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume**  | object | Configures Volume runtime metrics scraping. |
-| **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;resources.&#x200b;volume.&#x200b;enabled**  | boolean | If enabled, the runtime metrics for the resource are scraped. The default is `false`. |
 | **output**  | object | Configures the metric gateway. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |

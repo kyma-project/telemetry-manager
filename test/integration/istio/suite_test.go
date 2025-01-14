@@ -13,6 +13,7 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -26,6 +27,14 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+)
+
+var (
+	webhookName       = "validation.webhook.telemetry.kyma-project.io"
+	webhookCertSecret = types.NamespacedName{
+		Name:      "telemetry-webhook-cert",
+		Namespace: kitkyma.SystemNamespaceName,
+	}
 )
 
 var (
@@ -86,9 +95,9 @@ var _ = AfterSuite(func() {
 	if !suite.IsOperational() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
-			g.Expect(k8sClient.Get(ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 	}
 
