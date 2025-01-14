@@ -161,7 +161,7 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 
 		hdErrorsMeter.Add(ctx, 5, metric.WithAttributes(hdErrorsAttribute))
 
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error")
 
 		logger.ErrorContext(ctx, "Terminated errorful", slog.String("traceId", span.SpanContext().TraceID().String()))
