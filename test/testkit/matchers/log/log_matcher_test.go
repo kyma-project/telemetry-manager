@@ -10,7 +10,7 @@ import (
 
 var testTime = time.Date(2023, 12, 07, 9, 36, 38, 0, time.UTC)
 
-var flsFluentBit = []FlatLogFluentBit{
+var fls = []FlatLog{
 	{
 		LogRecordAttributes: map[string]string{
 			"level":     "INFO",
@@ -28,24 +28,24 @@ var flsFluentBit = []FlatLogFluentBit{
 	},
 }
 
-var _ = Describe("HaveFlatFluentBitLogs", func() {
+var _ = Describe("HaveFlatLogs", func() {
 	It("should apply matcher to transform valid log data", func() {
 		ld := plog.NewLogs()
-		Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatFluentBitLogs(ContainElements()))
+		Expect(mustMarshalLogs(ld)).Should(HaveFlatLogs(ContainElements()))
 	})
 
 	It("should fail when given empty byte slice", func() {
-		Expect([]byte{}).Should(HaveFlatFluentBitLogs(BeEmpty()))
+		Expect([]byte{}).Should(HaveFlatLogs(BeEmpty()))
 	})
 
 	It("should return error for nil input", func() {
-		success, err := HaveFlatFluentBitLogs(BeEmpty()).Match(nil)
+		success, err := HaveFlatLogs(BeEmpty()).Match(nil)
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
 
 	It("should return error for invalid input type", func() {
-		success, err := HaveFlatFluentBitLogs(BeEmpty()).Match(struct{}{})
+		success, err := HaveFlatLogs(BeEmpty()).Match(struct{}{})
 		Expect(err).Should(HaveOccurred())
 		Expect(success).Should(BeFalse())
 	})
@@ -76,31 +76,31 @@ var _ = Describe("HaveFlatFluentBitLogs", func() {
 		k8sAttrs.PutStr("container_name", "test-container")
 		k8sAttrs.PutStr("namespace_name", "test-namespace")
 
-		Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatFluentBitLogs(ContainElement(flsFluentBit[0])))
+		Expect(mustMarshalLogs(ld)).Should(HaveFlatLogs(ContainElement(fls[0])))
 	})
 })
 
 var _ = Describe("HaveContainerName", func() {
 	It("should apply matcher", func() {
-		Expect(flsFluentBit).Should(ContainElement(HaveContainerName(Equal("test-container"))))
+		Expect(fls).Should(ContainElement(HaveContainerName(Equal("test-container"))))
 	})
 })
 
 var _ = Describe("HaveNamespace", func() {
 	It("should apply matcher", func() {
-		Expect(flsFluentBit).Should(ContainElement(HaveNamespace(Equal("test-namespace"))))
+		Expect(fls).Should(ContainElement(HaveNamespace(Equal("test-namespace"))))
 	})
 })
 
 var _ = Describe("HavePodName", func() {
 	It("should apply matcher", func() {
-		Expect(flsFluentBit).Should(ContainElement(HavePodName(Equal("test-pod"))))
+		Expect(fls).Should(ContainElement(HavePodName(Equal("test-pod"))))
 	})
 })
 
 var _ = Describe("HaveLogRecordAttributes", func() {
 	It("should apply matcher", func() {
-		Expect(flsFluentBit).Should(ContainElement(HaveLogRecordAttributes(HaveKeyWithValue("user", "foo"))))
+		Expect(fls).Should(ContainElement(HaveLogRecordAttributes(HaveKeyWithValue("user", "foo"))))
 	})
 })
 
@@ -108,41 +108,41 @@ var _ = Describe("HaveTimestamp", func() {
 	It("should apply matcher", func() {
 		expectedTime, err := time.Parse(time.RFC3339, "2023-12-07T09:36:38Z")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(flsFluentBit).Should(ContainElement(HaveTimestamp(Equal(expectedTime))))
+		Expect(fls).Should(ContainElement(HaveTimestamp(Equal(expectedTime))))
 	})
 
 	It("should apply matcher on timestamp after", func() {
 		timestampAfter, err := time.Parse(time.RFC3339, "2023-12-08T09:36:38Z")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(flsFluentBit).Should(ContainElement(HaveTimestamp(BeTemporally("<", timestampAfter))))
+		Expect(fls).Should(ContainElement(HaveTimestamp(BeTemporally("<", timestampAfter))))
 	})
 
 	It("should apply matcher on timestamp before", func() {
 		timestampBefore, err := time.Parse(time.RFC3339, "2023-12-05T09:36:38Z")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(flsFluentBit).Should(ContainElement(HaveTimestamp(BeTemporally(">", timestampBefore))))
+		Expect(fls).Should(ContainElement(HaveTimestamp(BeTemporally(">", timestampBefore))))
 	})
 })
 
 var _ = Describe("HaveKubernetesAnnotations", func() {
 	It("should apply matcher", func() {
-		Expect(flsFluentBit).Should(ContainElement(HaveKubernetesAnnotations(HaveKey("app.kubernetes.io/name"))))
+		Expect(fls).Should(ContainElement(HaveKubernetesAnnotations(HaveKey("app.kubernetes.io/name"))))
 	})
 })
 
 var _ = Describe("HaveKubernetesLabels", func() {
 	It("should apply matcher", func() {
-		Expect(flsFluentBit).Should(ContainElement(HaveKubernetesLabels(HaveKey("app.kubernetes.io/istio"))))
+		Expect(fls).Should(ContainElement(HaveKubernetesLabels(HaveKey("app.kubernetes.io/istio"))))
 	})
 })
 
 var _ = Describe("HaveLogBody", func() {
 	It("should apply matcher", func() {
-		Expect(flsFluentBit).Should(ContainElement(HaveLogBody(Equal("Test first log body"))))
+		Expect(fls).Should(ContainElement(HaveLogBody(Equal("Test first log body"))))
 	})
 })
 
-func mustMarshalFluentBitLogs(ld plog.Logs) []byte {
+func mustMarshalLogs(ld plog.Logs) []byte {
 	var marshaler plog.JSONMarshaler
 
 	bytes, err := marshaler.MarshalLogs(ld)

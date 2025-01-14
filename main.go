@@ -102,7 +102,6 @@ const (
 	metricOTLPServiceName     = "telemetry-otlp-metrics"
 	selfMonitorName           = "telemetry-self-monitor"
 	traceOTLPServiceName      = "telemetry-otlp-traces"
-	logOTLPServiceName        = "telemetry-otlp-logs"
 	webhookServiceName        = "telemetry-manager-webhook"
 
 	healthProbePort = 8081
@@ -355,15 +354,12 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		telemetrycontrollers.LogPipelineControllerConfig{
-			ExporterImage:               fluentBitExporterImage,
-			FluentBitImage:              fluentBitImage,
-			OTelCollectorImage:          otelCollectorImage,
-			FluentBitPriorityClassName:  highPriorityClassName,
-			LogGatewayPriorityClassName: normalPriorityClassName,
-			LogGatewayServiceName:       logOTLPServiceName,
-			RestConfig:                  mgr.GetConfig(),
-			SelfMonitorName:             selfMonitorName,
-			TelemetryNamespace:          telemetryNamespace,
+			ExporterImage:      fluentBitExporterImage,
+			FluentBitImage:     fluentBitImage,
+			PriorityClassName:  highPriorityClassName,
+			RestConfig:         mgr.GetConfig(),
+			SelfMonitorName:    selfMonitorName,
+			TelemetryNamespace: telemetryNamespace,
 		},
 	)
 	if err != nil {

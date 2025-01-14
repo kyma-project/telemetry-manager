@@ -13,10 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
-const (
-	maxQueueSize = 256 // Maximum number of batches kept in memory before dropping
-)
-
 type Builder struct {
 	Reader client.Reader
 }
@@ -40,6 +36,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	envVars := make(otlpexporter.EnvVars)
 
+	const maxQueueSize = 256
 	queueSize := maxQueueSize / len(pipelines)
 
 	for i := range pipelines {

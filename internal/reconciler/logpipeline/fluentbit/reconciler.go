@@ -30,13 +30,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-const (
-	defaultInputTag          = "tele"
-	defaultMemoryBufferLimit = "10M"
-	defaultStorageType       = "filesystem"
-	defaultFsBufferLimit     = "1G"
-)
-
 type Config struct {
 	DaemonSet           types.NamespacedName
 	SectionsConfigMap   types.NamespacedName
@@ -51,10 +44,6 @@ type Config struct {
 	RestConfig          rest.Config
 }
 
-type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
-}
-
 var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
 type Reconciler struct {
@@ -66,7 +55,7 @@ type Reconciler struct {
 	// Dependencies
 	agentProber        commonstatus.Prober
 	flowHealthProber   logpipeline.FlowHealthProber
-	istioStatusChecker IstioStatusChecker
+	istioStatusChecker logpipeline.IstioStatusChecker
 	pipelineValidator  *Validator
 	errToMsgConverter  commonstatus.ErrorToMessageConverter
 }
@@ -75,14 +64,7 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, config Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
-	config.PipelineDefaults = builder.PipelineDefaults{
-		InputTag:          defaultInputTag,
-		MemoryBufferLimit: defaultMemoryBufferLimit,
-		StorageType:       defaultStorageType,
-		FsBufferLimit:     defaultFsBufferLimit,
-	}
-
+func New(client client.Client, config Config, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker logpipeline.IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,

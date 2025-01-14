@@ -40,10 +40,9 @@ const (
 type SignalType string
 
 const (
-	SignalTypeTraces   = "traces"
-	SignalTypeMetrics  = "metrics"
-	SignalTypeLogs     = "logs"
-	SignalTypeLogsOtel = "logs-otel"
+	SignalTypeTraces  = "traces"
+	SignalTypeMetrics = "metrics"
+	SignalTypeLogs    = "logs"
 )
 
 type Option func(*Backend)

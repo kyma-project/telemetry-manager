@@ -3,9 +3,8 @@
 package istio
 
 import (
-	"net/http"
-
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"net/http"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -106,7 +105,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(ContainElement(
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatLogs(ContainElement(
 					HaveLogRecordAttributes(HaveKey(BeElementOf(istio.AccessLogAttributeKeys))),
 				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

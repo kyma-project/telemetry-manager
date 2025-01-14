@@ -9,6 +9,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 )
 
 type LogPipelineBuilder struct {
@@ -264,10 +265,16 @@ func defaultHTTPOutput() *telemetryv1alpha1.LogPipelineHTTPOutput {
 		},
 	}
 }
-
 func defaultOTLPOutput() *telemetryv1alpha1.OTLPOutput {
 	return &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
-		Protocol: telemetryv1alpha1.OTLPProtocolGRPC,
+		Endpoint: telemetryv1alpha1.ValueType{Value: "127.0.0.1:4317"},
+		Protocol: endpoint.OTLPProtocolGRPC,
+		TLS: &telemetryv1alpha1.OTLPTLS{
+			Insecure:           true,
+			InsecureSkipVerify: true,
+			CA:                 nil,
+			Cert:               nil,
+			Key:                nil,
+		},
 	}
 }

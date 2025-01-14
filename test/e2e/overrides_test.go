@@ -117,7 +117,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+					HaveFlatLogs(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-manager")),
 						HaveLevel(Equal("INFO")),
 					))),
@@ -131,7 +131,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(Not(ContainElement(SatisfyAll(
+					HaveFlatLogs(Not(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-manager")),
 						HaveLevel(Equal("DEBUG")),
 						HaveTimestamp(BeTemporally(">=", now)),
@@ -167,7 +167,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					HaveFlatFluentBitLogs(ContainElement(SatisfyAll(
+					HaveFlatLogs(ContainElement(SatisfyAll(
 						HavePodName(ContainSubstring("telemetry-manager")),
 						HaveLevel(Equal("DEBUG")),
 						HaveTimestamp(BeTemporally(">=", now)),

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -34,17 +35,25 @@ var (
 	ErrUnsupportedOutputType = fmt.Errorf("unsupported output type")
 )
 
-type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
-}
-
 type LogPipelineReconciler interface {
 	Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
 	SupportedOutput() logpipelineutils.Mode
 }
 
+type DaemonSetAnnotator interface {
+	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
+}
+
+type FlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
+}
+
 type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
+}
+
+type IstioStatusChecker interface {
+	IsIstioActive(ctx context.Context) bool
 }
 
 type Reconciler struct {

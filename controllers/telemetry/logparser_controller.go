@@ -35,11 +35,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-const (
-	daemonSetName = "telemetry-fluent-bit"
-	configMapName = "telemetry-fluent-bit-parsers"
-)
-
 // LogParserController reconciles a Logparser object
 type LogParserController struct {
 	client.Client
@@ -53,8 +48,8 @@ type LogParserControllerConfig struct {
 
 func NewLogParserController(client client.Client, config LogParserControllerConfig) *LogParserController {
 	reconcilerCfg := logparser.Config{
-		ParsersConfigMap: types.NamespacedName{Name: configMapName, Namespace: config.TelemetryNamespace},
-		DaemonSet:        types.NamespacedName{Name: daemonSetName, Namespace: config.TelemetryNamespace},
+		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: config.TelemetryNamespace},
+		DaemonSet:        types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
 	}
 
 	reconciler := logparser.New(

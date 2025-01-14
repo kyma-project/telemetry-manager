@@ -127,10 +127,6 @@ linters-settings:
         alias: commonStatusStubs
       - pkg: k8s.io/client-go/testing
         alias: clienttesting
-      - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel
-        alias: logpipelineotel
-      - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks
-        alias: logpipelinemocks
       # Utils aliases
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/k8s
         alias: k8sutils

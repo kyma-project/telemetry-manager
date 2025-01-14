@@ -7,12 +7,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-// FlatLogFluentBit holds all needed information about a FluentBit log record.
+// FlatLog holds all needed information about a log record.
 // Gomega doesn't handle deeply nested data structure very well and generates large, unreadable diffs when paired with the deeply nested structure of plogs.
 //
-// Introducing a go struct with a flat data structure by extracting necessary information from different levels of plogs makes accessing the information easier than using plog.
-// Logs directly and improves the readability of the test output logs.
-type FlatLogFluentBit struct {
+// Introducing a go struct with a flat data structure by extracting necessary information from different levels of plogs makes accessing the information easier than using plog.Logs directly and improves the readability of the test output logs.
+type FlatLog struct {
 	LogRecordAttributes            map[string]string
 	LogRecordBody                  string
 	KubernetesAttributes           map[string]string
@@ -20,29 +19,29 @@ type FlatLogFluentBit struct {
 	KubernetesAnnotationAttributes map[string]any
 }
 
-func unmarshalFluentBitLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
+func unmarshalLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
 	return matchers.UnmarshalSignals[plog.Logs](jsonlMetrics, func(buf []byte) (plog.Logs, error) {
 		var unmarshaler plog.JSONUnmarshaler
 		return unmarshaler.UnmarshalLogs(buf)
 	})
 }
 
-// flattenAllFluentBitLogs flattens an array of pdata.Logs log record to a slice of FlatLogFluentBit.
+// flattenAllLogs flattens an array of pdata.Logs log record to a slice of FlatLog.
 // It converts the deeply nested pdata.Logs data structure to a flat struct, to make it more readable in the test output logs.
-func flattenAllFluentBitLogs(lds []plog.Logs) []FlatLogFluentBit {
-	var flatLogs []FlatLogFluentBit
+func flattenAllLogs(lds []plog.Logs) []FlatLog {
+	var flatLogs []FlatLog
 
 	for _, ld := range lds {
-		flatLogs = append(flatLogs, flattenFluentBitLogs(ld)...)
+		flatLogs = append(flatLogs, flattenLogs(ld)...)
 	}
 
 	return flatLogs
 }
 
-// flattenFluentBitLogs converts a single pdata.Log log record to a slice of FlatLogFluentBit
-// It takes relevant information from different levels of pdata and puts it into a FlatLogFluentBit go struct.
-func flattenFluentBitLogs(ld plog.Logs) []FlatLogFluentBit {
-	var flatLogs []FlatLogFluentBit
+// flattenMetrics converts a single pdata.Log log record to a slice of FlatMetric
+// It takes relevant information from different levels of pdata and puts it into a FlatLog go struct.
+func flattenLogs(ld plog.Logs) []FlatLog {
+	var flatLogs []FlatLog
 
 	for i := range ld.ResourceLogs().Len() {
 		resourceLogs := ld.ResourceLogs().At(i)
@@ -52,10 +51,11 @@ func flattenFluentBitLogs(ld plog.Logs) []FlatLogFluentBit {
 				lr := scopeLogs.LogRecords().At(k)
 				k8sAttrs := getKubernetesAttributes(lr)
 
-				flatLogs = append(flatLogs, FlatLogFluentBit{
-					LogRecordAttributes:            attributeToMapFluentBit(lr.Attributes()),
+				flatLogs = append(flatLogs, FlatLog{
+					// log record doesn't contain kubernetes attributes
+					LogRecordAttributes:            attributeToMap(lr.Attributes()),
 					LogRecordBody:                  lr.Body().AsString(),
-					KubernetesAttributes:           attributeToMapFluentBit(k8sAttrs),
+					KubernetesAttributes:           attributeToMap(k8sAttrs),
 					KubernetesLabelAttributes:      getKubernetesMaps("labels", k8sAttrs),
 					KubernetesAnnotationAttributes: getKubernetesMaps("annotations", k8sAttrs),
 				})
@@ -66,8 +66,8 @@ func flattenFluentBitLogs(ld plog.Logs) []FlatLogFluentBit {
 	return flatLogs
 }
 
-// attributeToMapFluentBit converts pdata.AttributeMap to a map using the string representation of the values.
-func attributeToMapFluentBit(attrs pcommon.Map) map[string]string {
+// attributeToMap converts pdata.AttributeMap to a map using the string representation of the values.
+func attributeToMap(attrs pcommon.Map) map[string]string {
 	attrMap := make(map[string]string)
 
 	attrs.Range(func(k string, v pcommon.Value) bool {

@@ -27,7 +27,7 @@ func NewConfigMap(name, namespace, path string, signalType SignalType, certs *te
 	}
 }
 
-const otelConfigTemplate = `receivers:
+const metricsAndTracesConfigTemplate = `receivers:
   otlp:
     protocols:
       grpc:
@@ -73,7 +73,7 @@ service:
       exporters:
         - file`
 
-const logConfigTemplate = `receivers:
+const LogConfigTemplate = `receivers:
   fluentforward:
     endpoint: localhost:8006
   otlp:
@@ -106,19 +106,15 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 
 	switch {
 	case cm.signalType == SignalTypeLogs:
-		configTemplate = logConfigTemplate
+		configTemplate = LogConfigTemplate
 	case cm.certs != nil:
 		configTemplate = tlsConfigTemplate
 	default:
-		configTemplate = otelConfigTemplate
+		configTemplate = metricsAndTracesConfigTemplate
 	}
 
 	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
-	if cm.signalType == SignalTypeLogsOtel {
-		config = strings.Replace(config, "{{ SIGNAL_TYPE }}", "logs", 1)
-	} else {
-		config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
-	}
+	config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
 
 	data := make(map[string]string)
 
