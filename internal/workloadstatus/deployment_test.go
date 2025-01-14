@@ -12,7 +12,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestDeploymentProber_WithStaticErrors(t *testing.T) {

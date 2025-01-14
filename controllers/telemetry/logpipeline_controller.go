@@ -38,12 +38,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -162,7 +162,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 				mgr.GetRESTMapper(),
 				&telemetryv1alpha1.LogPipeline{},
 			),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
+			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged()),
 		)
 	}
 

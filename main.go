@@ -51,11 +51,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
-	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
@@ -225,7 +225,7 @@ func run() error {
 
 	overrides.AtomicLevel().SetLevel(zapcore.InfoLevel)
 
-	zapLogger, err := loggerutils.New(overrides.AtomicLevel())
+	zapLogger, err := logger.New(overrides.AtomicLevel())
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}

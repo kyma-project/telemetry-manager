@@ -28,10 +28,10 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
-	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
-	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -77,6 +77,6 @@ func (r *LogParserController) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&corev1.ConfigMap{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogParser{}),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged())).
+			ctrlbuilder.WithPredicates(predicate.OwnedResourceChanged())).
 		Complete(r)
 }
