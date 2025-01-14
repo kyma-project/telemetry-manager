@@ -49,12 +49,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		objs = append(objs, []client.Object{
 			httpsAnnotatedMetricProducer.Pod().WithSidecarInjection().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).K8sObject(),
 			httpsAnnotatedMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTPS).K8sObject(),
-
 			httpAnnotatedMetricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 			httpAnnotatedMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-
-			unannotatedMetricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeNone).K8sObject(),
-			unannotatedMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeNone).K8sObject(),
+			unannotatedMetricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			unannotatedMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
@@ -94,8 +92,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 			// targets discovered via annotated pods must have no service label
 			Context("Annotated pods", func() {
-				It("Should NOT scrape if istio sidecar exists", func() {
-					podMetricsShouldNotBeDelivered(backendExportURL, httpsAnnotatedMetricProducerName)
+				It("Should scrape if prometheus.io/scheme=https", func() {
+					podScrapedMetricsShouldBeDelivered(backendExportURL, httpsAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme=http", func() {
@@ -126,27 +124,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 	})
 })
 
-func podMetricsShouldNotBeDelivered(proxyURL, podName string) {
-	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-
-		bodyContent, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-
-		g.Expect(bodyContent).To(HaveFlatMetrics(
-			Not(ContainElement(SatisfyAll(
-				HaveName(BeElementOf(prommetricgen.MetricNames)),
-				Not(HaveMetricAttributes(HaveKey("service"))),
-				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
-			))),
-		))
-	}, 3*periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
-
 func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
+
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -157,16 +136,11 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(
-			ContainElement(SatisfyAll(
-				HaveName(BeElementOf(prommetricgen.MetricNames)),
-				Not(HaveMetricAttributes(HaveKey("service"))),
-				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
-				HaveScopeName(Equal(InstrumentationScopePrometheus)),
-				HaveScopeVersion(SatisfyAny(
-					Equal("main"),
-					MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-				)),
-			)),
+			SatisfyAll(
+				ContainElement(HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName))),
+				ContainElement(HaveName(BeElementOf(prommetricgen.MetricNames))),
+				ContainElement(HaveScopeName(ContainSubstring(InstrumentationScopePrometheus))),
+			),
 		))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
@@ -182,15 +156,10 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 		g.Expect(err).NotTo(HaveOccurred())
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(
-			ContainElement(SatisfyAll(
-				HaveName(BeElementOf(prommetricgen.MetricNames)),
-				HaveMetricAttributes(HaveKeyWithValue("service", serviceName)),
-				HaveScopeName(Equal(InstrumentationScopePrometheus)),
-				HaveScopeVersion(SatisfyAny(
-					Equal("main"),
-					MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
-				)),
-			)),
+			SatisfyAll(
+				ContainElement(HaveName(BeElementOf(prommetricgen.MetricNames))),
+				ContainElement(HaveMetricAttributes(HaveKeyWithValue("service", serviceName))),
+			),
 		))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

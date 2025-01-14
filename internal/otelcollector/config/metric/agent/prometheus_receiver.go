@@ -23,53 +23,42 @@ const (
 )
 
 const (
-	scrapeInterval           = 30 * time.Second
-	sampleLimit              = 50000
-	appPodsJobName           = "app-pods"
-	appServicesJobName       = "app-services"
-	appServicesSecureJobName = "app-services-secure"
+	scrapeInterval = 30 * time.Second
+	sampleLimit    = 50000
 )
 
 // makePrometheusConfigForPods creates a Prometheus configuration for scraping Pods that are annotated with prometheus.io annotations.
-func makePrometheusConfigForPods() *PrometheusReceiver {
-	var config PrometheusReceiver
-
-	scrapeConfig := ScrapeConfig{
-		ScrapeInterval:             scrapeInterval,
-		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
-		JobName:                    appPodsJobName,
-		RelabelConfigs:             makePrometheusPodsRelabelConfigs(),
-	}
-
-	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, scrapeConfig)
-
-	return &config
+func makePrometheusConfigForPods(opts BuildOptions) *PrometheusReceiver {
+	return makePrometheusConfig(opts, "app-pods", RolePod, makePrometheusPodsRelabelConfigs)
 }
 
-// makePrometheusConfigForServices creates a Prometheus configuration for scraping Services that are annotated with prometheus.io annotations.
-// If Istio is enabled, an additional scrape job config is generated (suffixed with -secure) to scrape annotated Services over HTTPS using Istio certificate.
+// makePrometheusConfigForPods creates a Prometheus configuration for scraping Services that are annotated with prometheus.io annotations.
+func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
+	return makePrometheusConfig(opts, "app-services", RoleEndpoints, makePrometheusEndpointsRelabelConfigs)
+}
+
+// makePrometheusConfig generates a Prometheus receiver configuration for scraping either annotated Pods or Services (based on the provided role and relabelConfigFn).
+// If Istio is enabled, an additional scrape config is generated (prefixed with -secure) to scrape targets over HTTPS using Istio certificate.
 // Istio certificate is expected to be mounted at the provided path using the proxy.istio.io/config annotation.
 // See more: https://istio.io/latest/docs/ops/integrations/prometheus/#tls-settings
-func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
+func makePrometheusConfig(opts BuildOptions, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	baseScrapeConfig := ScrapeConfig{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
+		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: role}},
 	}
 
 	httpScrapeConfig := baseScrapeConfig
-	httpScrapeConfig.JobName = appServicesJobName
-	httpScrapeConfig.RelabelConfigs = makePrometheusEndpointsRelabelConfigs(false)
+	httpScrapeConfig.JobName = jobNamePrefix
+	httpScrapeConfig.RelabelConfigs = relabelConfigFn(false)
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
-	// If Istio is enabled, generate an additional scrape config for scraping annotated Services over HTTPS
 	if opts.IstioEnabled {
 		httpsScrapeConfig := baseScrapeConfig
-		httpsScrapeConfig.JobName = appServicesSecureJobName
-		httpsScrapeConfig.RelabelConfigs = makePrometheusEndpointsRelabelConfigs(true)
+		httpsScrapeConfig.JobName = jobNamePrefix + "-secure"
+		httpsScrapeConfig.RelabelConfigs = relabelConfigFn(true)
 		httpsScrapeConfig.TLSConfig = makeTLSConfig(opts.IstioCertPath)
 		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
 	}
@@ -81,18 +70,28 @@ func makePrometheusConfigForServices(opts BuildOptions) *PrometheusReceiver {
 // They restrict Pods that are selected for scraping and set internal labels (__address__, __scheme__, etc.).
 // See more: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod.
 //
-// Only Pods without Istio sidecars are selected.
-func makePrometheusPodsRelabelConfigs() []RelabelConfig {
-	return []RelabelConfig{
+// If requireHTTPS is true, only Pods with Istio sidecars or those explicitly marked with prometheus.io/scheme=http annotations are selected.
+// If requireHTTPS is false, only Pods without Istio sidecars or those marked with prometheus.io/scheme=https annotation are selected.
+func makePrometheusPodsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
+	relabelConfigs := []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedPod),
 		keepIfScrapingEnabled(AnnotatedPod),
 		dropIfPodNotRunning(),
 		dropIfInitContainer(),
+		dropIfIstioProxy(),
 		inferSchemeFromIstioInjectedLabel(),
-		dropIfSchemeHTTPS(),
-		inferMetricsPathFromAnnotation(AnnotatedPod),
-		inferAddressFromAnnotation(AnnotatedPod),
+		inferSchemeFromAnnotation(AnnotatedPod),
 	}
+
+	if requireHTTPS {
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTP())
+	} else {
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTPS())
+	}
+
+	return append(relabelConfigs,
+		inferMetricsPathFromAnnotation(AnnotatedPod),
+		inferAddressFromAnnotation(AnnotatedPod))
 }
 
 // makePrometheusEndpointsRelabelConfigs generates a set of relabel configs for the Endpoint role type.
