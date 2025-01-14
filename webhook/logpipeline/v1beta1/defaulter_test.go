@@ -23,7 +23,7 @@ func TestDefault(t *testing.T) {
 		expected *telemetryv1beta1.LogPipeline
 	}{
 		{
-			name: "should set default Runtime Input if not set",
+			name: "should set default ApplicationInput if not set",
 			input: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
@@ -43,7 +43,7 @@ func TestDefault(t *testing.T) {
 			},
 		},
 		{
-			name: "should skip default Runtime Input if set",
+			name: "should skip default ApplicationInput if set",
 			input: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
@@ -59,27 +59,6 @@ func TestDefault(t *testing.T) {
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 							Enabled:          ptr.To(true),
 							KeepOriginalBody: ptr.To(false),
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "should skip default Runtime Input if disabled",
-			input: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Input: telemetryv1beta1.LogPipelineInput{
-						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled: ptr.To(false),
-						},
-					},
-				},
-			},
-			expected: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Input: telemetryv1beta1.LogPipelineInput{
-						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled: ptr.To(false),
 						},
 					},
 				},
