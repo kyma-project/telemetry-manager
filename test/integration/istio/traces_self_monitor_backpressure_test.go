@@ -29,7 +29,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesBackpressure),
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithAbortFaultInjection(95))
+		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithAbortFaultInjection(75))
 		objs = append(objs, backend.K8sObjects()...)
 
 		tracePipeline := testutils.NewTracePipelineBuilder().
