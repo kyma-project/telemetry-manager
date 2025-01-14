@@ -109,6 +109,7 @@ spec:
                           The default is `false`.
                         type: boolean
                       enabled:
+                        default: true
                         description: If enabled, application logs are collected. The
                           default is `true`.
                         type: boolean
@@ -117,6 +118,7 @@ spec:
                           The default is `false`.
                         type: boolean
                       keepOriginalBody:
+                        default: true
                         description: If the `log` attribute contains a JSON payload
                           and it is successfully parsed, the `log` attribute will
                           be retained if `KeepOriginalBody` is set to `true`. Otherwise,
@@ -609,6 +611,7 @@ spec:
                           and /v1/traces
                         type: string
                       protocol:
+                        default: grpc
                         description: Defines the OTLP protocol (http or grpc). Default
                           is grpc.
                         enum:
@@ -995,6 +998,7 @@ spec:
                           The default is `false`.
                         type: boolean
                       enabled:
+                        default: true
                         description: If enabled, application logs are collected. The
                           default is `true`.
                         type: boolean
@@ -1003,6 +1007,7 @@ spec:
                           The default is `false`.
                         type: boolean
                       keepOriginalBody:
+                        default: true
                         description: If the `log` attribute contains a JSON payload
                           and it is successfully parsed, the `log` attribute will
                           be retained if `keepOriginalBody` is set to `true`. Otherwise,
@@ -1463,6 +1468,7 @@ spec:
                           and /v1/traces
                         type: string
                       protocol:
+                        default: grpc
                         description: Defines the OTLP protocol (http or grpc). Default
                           is grpc.
                         enum:

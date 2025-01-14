@@ -30,12 +30,6 @@ patches:
     target:
       kind: Deployment
       name: manager
-  - path: webhook-patches.yaml
-    target:
-      group: admissionregistration.k8s.io
-      version: v1
-      kind: MutatingWebhookConfiguration
-      name: mutating-webhook.kyma-project.io
 
 resources:
 - crd
