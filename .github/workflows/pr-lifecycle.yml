@@ -70,9 +70,7 @@ jobs:
       - name: Deploy with current version
         shell: bash
         run: |
-          # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
-          TAG="${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}"
-          IMG=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-dev
+          IMG=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.number }} make deploy-dev
 
       - name: Wait for manager readiness
         shell: bash
