@@ -40,6 +40,7 @@ var (
 	terminateEndpoint string
 )
 
+// init registers the metrics and sets up the environment
 func init() {
 	var err error
 	if _, err = meter.Float64ObservableGauge(
@@ -89,15 +90,19 @@ func randomEnergy() float64 {
 	return math.Round(rand.Float64() * 100)
 }
 
+// randBool generates a random bool
 func randBool() bool {
 	return rand.Intn(2) == 1
 }
 
+// forwardHandler handles the incoming request by forwarding it to the terminate endpoint
 func forwardHandler(w http.ResponseWriter, r *http.Request) {
 
+	// Initialize a new span for the current trace
 	ctx, span := tracer.Start(r.Context(), "forward")
 	defer span.End()
 
+	// Forward the request to the terminate endpoint using the instrumented HTTP client, so that trace context gets propagated
 	requestURL := fmt.Sprintf("http://%s/terminate", terminateEndpoint)
 	res, err := otelhttp.Get(ctx, requestURL)
 	if err != nil {
@@ -130,14 +135,18 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(resBody))
 }
 
+// terminateHandler handles the incoming request by terminating it randomly with a success or error response
 func terminateHandler(w http.ResponseWriter, r *http.Request) {
 
+	// Initialize a new span for the current trace with enriched attributes
 	ctx, span := tracer.Start(r.Context(), "terminate")
 	defer span.End()
-
 	span.SetAttributes(hdErrorsAttribute, cpuEnergyAttribute)
+
+	// Record metric and enrich it with attributes
 	cpuEnergyMeter.Record(ctx, randomEnergy(), metric.WithAttributes(cpuEnergyAttribute))
 
+	// Terminate the request randomly with a success or error response
 	if randBool() {
 		span.RecordError(fmt.Errorf("error"))
 		span.SetStatus(codes.Error, "error")
@@ -193,7 +202,6 @@ func main() {
 
 	//Start the HTTP server
 	logger.Info("Starting server on port " + strconv.Itoa(serverPort))
-
 	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 	if err != nil {
 		panic(err)
