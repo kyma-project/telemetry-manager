@@ -62,13 +62,13 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "pending alert",
+			name:         "pending alert should be ignored",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentBufferFull",
+							"alertname": "LogAgentAllDataDropped",
 						},
 						State: promv1.AlertStatePending,
 					},
@@ -81,13 +81,13 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "alert missing pipeline_name label",
+			name:         "alert missing pipeline_name label should be mapped to any pipeline",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentBufferFull",
+							"alertname": "LogAgentAllDataDropped",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -126,14 +126,14 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "MetricGatewayExporterDroppedData",
+							"alertname":     "MetricGatewayAllDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayExporterDroppedData",
+							"alertname":     "TraceGatewayAllDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -147,13 +147,13 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "exporter dropped data firing",
+			name:         "all data dropped alert firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentExporterDroppedLogs",
+							"alertname":     "LogAgentAllDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -167,67 +167,13 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "buffer full firing",
+			name:         "some data dropped alert firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentBufferFull",
-							"pipeline_name": "cls",
-						},
-						State: promv1.AlertStateFiring,
-					},
-				},
-			},
-			expected: LogPipelineProbeResult{
-				PipelineProbeResult: PipelineProbeResult{
-					AllDataDropped: true,
-				},
-			},
-		},
-		{
-			name:         "exporter sent logs and exporter dropped logs firing",
-			pipelineName: "cls",
-			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{
-					{
-						Labels: model.LabelSet{
-							"alertname":     "LogAgentExporterDroppedLogs",
-							"pipeline_name": "cls",
-						},
-						State: promv1.AlertStateFiring,
-					},
-					{
-						Labels: model.LabelSet{
-							"alertname":     "LogAgentExporterSentLogs",
-							"pipeline_name": "cls",
-						},
-						State: promv1.AlertStateFiring,
-					},
-				},
-			},
-			expected: LogPipelineProbeResult{
-				PipelineProbeResult: PipelineProbeResult{
-					SomeDataDropped: true,
-				},
-			},
-		},
-		{
-			name:         "exporter sent logs and buffer full firing",
-			pipelineName: "cls",
-			alerts: promv1.AlertsResult{
-				Alerts: []promv1.Alert{
-					{
-						Labels: model.LabelSet{
-							"alertname":     "LogAgentBufferFull",
-							"pipeline_name": "cls",
-						},
-						State: promv1.AlertStateFiring,
-					},
-					{
-						Labels: model.LabelSet{
-							"alertname":     "LogAgentExporterSentLogs",
+							"alertname":     "LogAgentSomeDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -259,18 +205,28 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "exporter sent logs firing",
+			name:         "buffer in use firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentExporterSentLogs",
+							"alertname":     "LogAgentBufferInUse",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
+			},
+			expected: LogPipelineProbeResult{
+				BufferFillingUp: true,
+			},
+		},
+		{
+			name:         "no alerts firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{},
 			},
 			expected: LogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
