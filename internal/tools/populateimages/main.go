@@ -165,7 +165,7 @@ package testkit
 }
 
 func generateSecScanConfig(data map[string]string) error {
-	file, err := os.Create("./sec-scanners-config.yaml")
+	file, err := os.Create("../../sec-scanners-config.yaml")
 	if err != nil {
 		return fmt.Errorf("error opening/creating file: %w", err)
 	}
