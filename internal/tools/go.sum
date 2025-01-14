@@ -725,8 +725,8 @@ github.com/uudashr/gocognit v1.1.3 h1:l+a111VcDbKfynh+airAy/DJQKaXh2m9vkoysMPSZy
 github.com/uudashr/gocognit v1.1.3/go.mod h1:aKH8/e8xbTRBwjbCkwZ8qt4l2EpKXl31KMHgSS+lZ2U=
 github.com/vbatts/tar-split v0.11.3 h1:hLFqsOLQ1SsppQNTMpkpPXClLDfC2A3Zgy9OUU+RVck=
 github.com/vbatts/tar-split v0.11.3/go.mod h1:9QlHN18E+fEH7RdG+QAJJcuya3rqT7eXSTY7wGrAokY=
-github.com/vektra/mockery/v2 v2.48.0 h1:pBhvOqRbBVAAtg6SWiLzJhm1FqGptBObiNSRA3l8cFo=
-github.com/vektra/mockery/v2 v2.48.0/go.mod h1:xO2DeYemEPC2tCzIZ+a1tifZ/7Laf/Chxg3vlc+oDsI=
+github.com/vektra/mockery/v2 v2.47.0 h1:/OgQNNsUxwKCC8rt6cRXxvfj7/f9mYrCbX4m/tcZpFQ=
+github.com/vektra/mockery/v2 v2.47.0/go.mod h1:xO2DeYemEPC2tCzIZ+a1tifZ/7Laf/Chxg3vlc+oDsI=
 github.com/vladopajic/go-test-coverage/v2 v2.10.5 h1:yDiQS0MEXBenO/cwn4z+dumip8q3NRa4AvvQkmSlvOA=
 github.com/vladopajic/go-test-coverage/v2 v2.10.5/go.mod h1:YJVPvuDIQLaz8cywkRrcthp6OcnCiFasscuqYlZN4rk=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
