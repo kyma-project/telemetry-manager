@@ -11,7 +11,7 @@ import (
 )
 
 func TestDefault(t *testing.T) {
-	sut := defaulter{
+	defaulter := LogPipelineDefaulter{
 		ApplicationInputEnabled:          true,
 		ApplicationInputKeepOriginalBody: true,
 	}
@@ -67,7 +67,7 @@ func TestDefault(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := sut.Default(context.Background(), tt.input)
+			err := defaulter.Default(context.Background(), tt.input)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, tt.input)
 		})

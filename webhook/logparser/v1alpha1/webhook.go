@@ -11,17 +11,17 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-type validateHandler struct {
+type ValidatingWebhookHandler struct {
 	decoder admission.Decoder
 }
 
-func newValidateHandler(scheme *runtime.Scheme) *validateHandler {
-	return &validateHandler{
+func NewValidatingWebhookHandler(scheme *runtime.Scheme) *ValidatingWebhookHandler {
+	return &ValidatingWebhookHandler{
 		decoder: admission.NewDecoder(scheme),
 	}
 }
 
-func (v *validateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	log := logf.FromContext(ctx)
 
 	logParser := &telemetryv1alpha1.LogParser{}

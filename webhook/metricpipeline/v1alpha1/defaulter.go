@@ -5,21 +5,22 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 // +kubebuilder:object:generate=false
-var _ webhook.CustomDefaulter = &defaulter{}
+var _ webhook.CustomDefaulter = &MetricPipelineDefaulter{}
 
-type defaulter struct {
+type MetricPipelineDefaulter struct {
 	ExcludeNamespaces         []string
-	RuntimeInputResources     runtimeInputResourceDefaults
+	RuntimeInputResources     RuntimeInputResourceDefaults
 	DefaultOTLPOutputProtocol string
 }
 
-type runtimeInputResourceDefaults struct {
+type RuntimeInputResourceDefaults struct {
 	Pod         bool
 	Container   bool
 	Node        bool
@@ -30,7 +31,26 @@ type runtimeInputResourceDefaults struct {
 	Job         bool
 }
 
-func (md defaulter) Default(ctx context.Context, obj runtime.Object) error {
+func SetupMetricPipelineWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{}).
+		WithDefaulter(&MetricPipelineDefaulter{
+			ExcludeNamespaces: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+			RuntimeInputResources: RuntimeInputResourceDefaults{
+				Pod:         true,
+				Container:   true,
+				Node:        true,
+				Volume:      true,
+				DaemonSet:   true,
+				Deployment:  true,
+				StatefulSet: true,
+				Job:         true,
+			},
+			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
+		}).
+		Complete()
+}
+
+func (md MetricPipelineDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	pipeline, ok := obj.(*telemetryv1alpha1.MetricPipeline)
 	if !ok {
 		return fmt.Errorf("expected an MetricPipeline object but got %T", obj)
@@ -41,7 +61,7 @@ func (md defaulter) Default(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
+func (md MetricPipelineDefaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Namespaces == nil {
 		pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
@@ -69,7 +89,7 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	}
 }
 
-func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
+func (md MetricPipelineDefaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if pipeline.Spec.Input.Runtime.Resources == nil {
 		pipeline.Spec.Input.Runtime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
 	}

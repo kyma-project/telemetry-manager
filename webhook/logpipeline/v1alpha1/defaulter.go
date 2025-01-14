@@ -5,20 +5,30 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 // +kubebuilder:object:generate=false
-var _ webhook.CustomDefaulter = &defaulter{}
+var _ webhook.CustomDefaulter = &LogPipelineDefaulter{}
 
-type defaulter struct {
+type LogPipelineDefaulter struct {
 	ApplicationInputEnabled          bool
 	ApplicationInputKeepOriginalBody bool
 }
 
-func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
+func SetupLogPipelineWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.LogPipeline{}).
+		WithDefaulter(&LogPipelineDefaulter{
+			ApplicationInputEnabled:          true,
+			ApplicationInputKeepOriginalBody: true,
+		}).
+		Complete()
+}
+
+func (ld LogPipelineDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	pipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
 	if !ok {
 		return fmt.Errorf("expected an LogPipeline object but got %T", obj)
@@ -29,7 +39,7 @@ func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
+func (ld LogPipelineDefaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
 	if pipeline.Spec.Input.Application != nil {
 		if pipeline.Spec.Input.Application.Enabled == nil {
 			pipeline.Spec.Input.Application.Enabled = &ld.ApplicationInputEnabled

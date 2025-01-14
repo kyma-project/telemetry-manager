@@ -15,22 +15,22 @@ import (
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
-type validateHandler struct {
+type ValidatingWebhookHandler struct {
 	client  client.Client
 	decoder admission.Decoder
 }
 
-func newValidateHandler(
+func NewValidatingWebhookHandler(
 	client client.Client,
 	scheme *runtime.Scheme,
-) *validateHandler {
-	return &validateHandler{
+) *ValidatingWebhookHandler {
+	return &ValidatingWebhookHandler{
 		client:  client,
 		decoder: admission.NewDecoder(scheme),
 	}
 }
 
-func (h *validateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (h *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	log := logf.FromContext(ctx)
 
 	logPipeline := &telemetryv1alpha1.LogPipeline{}
@@ -64,7 +64,7 @@ func (h *validateHandler) Handle(ctx context.Context, req admission.Request) adm
 	return admission.Allowed("LogPipeline validation successful")
 }
 
-func (h *validateHandler) validateLogPipeline(ctx context.Context, logPipeline *telemetryv1alpha1.LogPipeline) error {
+func (h *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logPipeline *telemetryv1alpha1.LogPipeline) error {
 	log := logf.FromContext(ctx)
 
 	var logPipelines telemetryv1alpha1.LogPipelineList

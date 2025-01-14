@@ -23,7 +23,7 @@ func TestValidateFirstPipeline(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
 
-	sut := newValidateHandler(fakeClient, scheme)
+	sut := NewValidatingWebhookHandler(fakeClient, scheme)
 
 	newPipeline := testutils.NewLogPipelineBuilder().Build()
 
@@ -46,7 +46,7 @@ func TestValidateLimitNotExceeded(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existingPipelines...).Build()
 
-	sut := newValidateHandler(fakeClient, scheme)
+	sut := NewValidatingWebhookHandler(fakeClient, scheme)
 
 	newPipeline := testutils.NewLogPipelineBuilder().Build()
 
@@ -69,7 +69,7 @@ func TestValidateLimitExceeded(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existingPipelines...).Build()
 
-	sut := newValidateHandler(fakeClient, scheme)
+	sut := NewValidatingWebhookHandler(fakeClient, scheme)
 
 	newPipeline := testutils.NewLogPipelineBuilder().Build()
 
@@ -89,7 +89,7 @@ func TestValidateUpdate(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&existingPipeline).Build()
 
-	sut := newValidateHandler(fakeClient, scheme)
+	sut := NewValidatingWebhookHandler(fakeClient, scheme)
 
 	response := sut.Handle(context.Background(), admissionRequestFrom(t, existingPipeline))
 

@@ -27,7 +27,7 @@ func TestVariableNotGloballyUnique(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&existingPipeline).Build()
 
-	sut := newValidateHandler(fakeClient, scheme)
+	sut := NewValidatingWebhookHandler(fakeClient, scheme)
 
 	newPipeline := testutils.NewLogPipelineBuilder().
 		WithName("log-pipeline-2").
@@ -48,7 +48,7 @@ func TestVariableValidator(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
 
-	sut := newValidateHandler(fakeClient, scheme)
+	sut := NewValidatingWebhookHandler(fakeClient, scheme)
 
 	newPipeline := testutils.NewLogPipelineBuilder().
 		WithName("log-pipeline-2").
