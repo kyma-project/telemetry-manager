@@ -30,6 +30,7 @@ const (
 )
 
 var (
+	metricAgentCPULimit      = resource.MustParse("1")
 	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
 	metricAgentCPURequest    = resource.MustParse("15m")
 	metricAgentMemoryRequest = resource.MustParse("50Mi")
@@ -48,6 +49,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 		namespace:         namespace,
 		priorityClassName: priorityClassName,
 		rbac:              makeMetricAgentRBAC(namespace),
+		cpuLimit:          metricAgentCPULimit,
 		memoryLimit:       metricAgentMemoryLimit,
 		cpuRequest:        metricAgentCPURequest,
 		memoryRequest:     metricAgentMemoryRequest,
@@ -62,6 +64,7 @@ type AgentApplierDeleter struct {
 	priorityClassName string
 	rbac              rbac
 
+	cpuLimit      resource.Quantity
 	memoryLimit   resource.Quantity
 	cpuRequest    resource.Quantity
 	memoryRequest resource.Quantity
@@ -178,6 +181,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    aad.cpuLimit,
 			corev1.ResourceMemory: aad.memoryLimit,
 		},
 		Requests: map[corev1.ResourceName]resource.Quantity{

@@ -64,6 +64,7 @@ const (
 
 var (
 	// FluentBit
+	fbCPULimit      = resource.MustParse("1")
 	fbMemoryLimit   = resource.MustParse("1Gi")
 	fbCPURequest    = resource.MustParse("100m")
 	fbMemoryRequest = resource.MustParse("50Mi")
@@ -167,6 +168,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 			FluentBitImage:    config.FluentBitImage,
 			ExporterImage:     config.ExporterImage,
 			PriorityClassName: config.FluentBitPriorityClassName,
+			CPULimit:          fbCPULimit,
 			MemoryLimit:       fbMemoryLimit,
 			CPURequest:        fbCPURequest,
 			MemoryRequest:     fbMemoryRequest,
