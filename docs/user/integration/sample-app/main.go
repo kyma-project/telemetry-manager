@@ -95,13 +95,13 @@ func randBool() bool {
 
 func forwardHandler(w http.ResponseWriter, r *http.Request) {
 
-	_, span := tracer.Start(r.Context(), "forward")
+	ctx, span := tracer.Start(r.Context(), "forward")
 	defer span.End()
 
 	requestURL := fmt.Sprintf("http://%s/terminate", terminateEndpoint)
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, requestURL, nil)
+	res, err := otelhttp.Get(ctx, requestURL)
 	if err != nil {
-		logger.ErrorContext(r.Context(), "client: could not create request", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
+		logger.ErrorContext(ctx, "client: error making http request", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
 
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "error")
@@ -111,23 +111,10 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		logger.ErrorContext(r.Context(), "client: error making http request", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
-
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "error")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Error")
-
-		return
-	}
-
+	defer res.Body.Close()
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		logger.ErrorContext(r.Context(), "client: could not read response body", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
+		logger.ErrorContext(ctx, "client: could not read response body", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
 
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "error")
@@ -138,33 +125,35 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.InfoContext(r.Context(), "Forwarded successful", slog.String("status", res.Status), slog.String("traceId", span.SpanContext().TraceID().String()))
+	logger.InfoContext(ctx, "Forwarded successful", slog.String("status", res.Status), slog.String("traceId", span.SpanContext().TraceID().String()))
 	w.WriteHeader(res.StatusCode)
 	fmt.Fprint(w, string(resBody))
 }
 
 func terminateHandler(w http.ResponseWriter, r *http.Request) {
 
-	_, span := tracer.Start(r.Context(), "terminate")
+	ctx, span := tracer.Start(r.Context(), "terminate")
 	defer span.End()
 
 	span.SetAttributes(hdErrorsAttribute, cpuEnergyAttribute)
-	cpuEnergyMeter.Record(r.Context(), randomEnergy(), metric.WithAttributes(cpuEnergyAttribute))
+	cpuEnergyMeter.Record(ctx, randomEnergy(), metric.WithAttributes(cpuEnergyAttribute))
 
 	if randBool() {
 		span.RecordError(fmt.Errorf("error"))
 		span.SetStatus(codes.Error, "error")
 
-		hdErrorsMeter.Add(r.Context(), 5, metric.WithAttributes(hdErrorsAttribute))
+		hdErrorsMeter.Add(ctx, 5, metric.WithAttributes(hdErrorsAttribute))
 
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Error")
 
+		logger.ErrorContext(ctx, "Terminated errorful", slog.String("traceId", span.SpanContext().TraceID().String()))
+
 		return
 	}
-	logger.InfoContext(r.Context(), "Terminated successful", slog.String("traceId", span.SpanContext().TraceID().String()))
+	logger.InfoContext(ctx, "Terminated successful", slog.String("traceId", span.SpanContext().TraceID().String()))
 
-	hdErrorsMeter.Add(r.Context(), 1, metric.WithAttributes(hdErrorsAttribute))
+	hdErrorsMeter.Add(ctx, 1, metric.WithAttributes(hdErrorsAttribute))
 	fmt.Fprintf(w, "Success")
 }
 
@@ -196,11 +185,11 @@ func main() {
 
 	// Register the handlers
 	http.Handle("/forward", wrappedForwardHandler)
-	http.Handle("/", wrappedForwardHandler)
 	http.Handle("/terminate", wrappedTerminateHandler)
+	http.Handle("/", wrappedForwardHandler)
 
 	// Register metrics endpoint in case a prometheus exporter is used
-	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", otelhttp.NewHandler(promhttp.Handler(), "metrics"))
 
 	//Start the HTTP server
 	logger.Info("Starting server on port " + strconv.Itoa(serverPort))
