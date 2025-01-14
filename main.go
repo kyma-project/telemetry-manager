@@ -99,7 +99,10 @@ const (
 	cacheSyncPeriod           = 1 * time.Minute
 	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
 	telemetryNamespaceDefault = "default"
+	metricOTLPServiceName     = "telemetry-otlp-metrics"
 	selfMonitorName           = "telemetry-self-monitor"
+	traceOTLPServiceName      = "telemetry-otlp-traces"
+	logOTLPServiceName        = "telemetry-otlp-logs"
 	webhookServiceName        = "telemetry-manager-webhook"
 
 	healthProbePort = 8081
@@ -306,10 +309,12 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 		operator.TelemetryControllerConfig{
 			Config: telemetry.Config{
 				Traces: telemetry.TracesConfig{
-					Namespace: telemetryNamespace,
+					OTLPServiceName: traceOTLPServiceName,
+					Namespace:       telemetryNamespace,
 				},
 				Metrics: telemetry.MetricsConfig{
-					Namespace: telemetryNamespace,
+					OTLPServiceName: metricOTLPServiceName,
+					Namespace:       telemetryNamespace,
 				},
 				Webhook:     webhookConfig,
 				SelfMonitor: selfMonitorConfig,
@@ -355,6 +360,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			OTelCollectorImage:          otelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,
+			LogGatewayServiceName:       logOTLPServiceName,
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,
@@ -396,6 +402,7 @@ func setupTracePipelineController(mgr manager.Manager, reconcileTriggerChan <-ch
 			SelfMonitorName:               selfMonitorName,
 			TelemetryNamespace:            telemetryNamespace,
 			TraceGatewayPriorityClassName: normalPriorityClassName,
+			TraceGatewayServiceName:       traceOTLPServiceName,
 		},
 	)
 	if err != nil {
@@ -418,6 +425,7 @@ func setupMetricPipelineController(mgr manager.Manager, reconcileTriggerChan <-c
 		telemetrycontrollers.MetricPipelineControllerConfig{
 			MetricAgentPriorityClassName:   highPriorityClassName,
 			MetricGatewayPriorityClassName: normalPriorityClassName,
+			MetricGatewayServiceName:       metricOTLPServiceName,
 			ModuleVersion:                  version,
 			OTelCollectorImage:             otelCollectorImage,
 			RestConfig:                     mgr.GetConfig(),

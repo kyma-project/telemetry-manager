@@ -14,6 +14,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
@@ -27,6 +28,13 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
+
+type Config struct {
+	AgentName          string
+	GatewayName        string
+	ModuleVersion      string
+	TelemetryNamespace string
+}
 
 type AgentConfigBuilder interface {
 	Build(pipelines []telemetryv1alpha1.MetricPipeline, options agent.BuildOptions) *agent.Config
@@ -66,9 +74,7 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	telemetryNamespace string
-	// TODO(skhalash): introduce an embed pkg exposing the module version set by go build
-	moduleVersion string
+	config Config
 
 	agentApplierDeleter   AgentApplierDeleter
 	agentConfigBuilder    AgentConfigBuilder
@@ -86,8 +92,7 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	telemetryNamespace string,
-	moduleVersion string,
+	config Config,
 	agentApplierDeleter AgentApplierDeleter,
 	agentConfigBuilder AgentConfigBuilder,
 	agentProber commonstatus.Prober,
@@ -103,8 +108,7 @@ func New(
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
-		moduleVersion:         moduleVersion,
+		config:                config,
 		agentApplierDeleter:   agentApplierDeleter,
 		agentConfigBuilder:    agentConfigBuilder,
 		agentProber:           agentProber,
@@ -243,8 +247,8 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		GatewayNamespace:            r.telemetryNamespace,
-		InstrumentationScopeVersion: r.moduleVersion,
+		GatewayNamespace:            r.config.TelemetryNamespace,
+		InstrumentationScopeVersion: r.config.ModuleVersion,
 	})
 
 	if err != nil {
@@ -263,10 +267,13 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
+	metricGatewaySelectorLabels := labels.MakeMetricGatewaySelectorLabel(r.config.GatewayName)
+
 	opts := otelcollector.GatewayApplyOptions{
 		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
+		ComponentSelectorLabels:        metricGatewaySelectorLabels,
 		IstioEnabled:                   isIstioActive,
 		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
@@ -289,8 +296,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
 		IstioEnabled:                isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
-		InstrumentationScopeVersion: r.moduleVersion,
-		AgentNamespace:              r.telemetryNamespace,
+		InstrumentationScopeVersion: r.config.ModuleVersion,
+		AgentNamespace:              r.config.TelemetryNamespace,
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
@@ -303,12 +310,15 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
+	metricAgentSelectorLabels := labels.MakeMetricAgentSelectorLabel(r.config.AgentName)
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
-			AllowedPorts:        allowedPorts,
-			CollectorConfigYAML: string(agentConfigYAML),
+			AllowedPorts:            allowedPorts,
+			CollectorConfigYAML:     string(agentConfigYAML),
+			ComponentSelectorLabels: metricAgentSelectorLabels,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)

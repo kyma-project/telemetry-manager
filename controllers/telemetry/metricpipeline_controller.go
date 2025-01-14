@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -55,7 +56,25 @@ import (
 )
 
 const (
-	maxMetricPipelines = 3
+	maxMetricPipelines    = 3
+	metricGatewayBaseName = "telemetry-metric-gateway"
+	metricAgentBaseName   = "telemetry-metric-agent"
+)
+
+var (
+	metricAgentCPULimit      = resource.MustParse("1")
+	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
+	metricAgentCPURequest    = resource.MustParse("15m")
+	metricAgentMemoryRequest = resource.MustParse("50Mi")
+
+	metricGatewayBaseCPULimit         = resource.MustParse("900m")
+	metricGatewayDynamicCPULimit      = resource.MustParse("100m")
+	metricGatewayBaseMemoryLimit      = resource.MustParse("512Mi")
+	metricGatewayDynamicMemoryLimit   = resource.MustParse("512Mi")
+	metricGatewayBaseCPURequest       = resource.MustParse("25m")
+	metricGatewayDynamicCPURequest    = resource.MustParse("0")
+	metricGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	metricGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
 // MetricPipelineController reconciles a MetricPipeline object
@@ -69,6 +88,7 @@ type MetricPipelineController struct {
 type MetricPipelineControllerConfig struct {
 	MetricAgentPriorityClassName   string
 	MetricGatewayPriorityClassName string
+	MetricGatewayServiceName       string
 	ModuleVersion                  string
 	OTelCollectorImage             string
 	RestConfig                     *rest.Config
@@ -103,24 +123,25 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		return nil, err
 	}
 
-	agentConfigBuilder := &agent.Builder{
-		Config: agent.BuilderConfig{
-			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.MetricOTLPServiceName},
-		},
+	reconcilerConfig := metricpipeline.Config{
+		AgentName:          metricAgentBaseName,
+		GatewayName:        metricGatewayBaseName,
+		ModuleVersion:      config.ModuleVersion,
+		TelemetryNamespace: config.TelemetryNamespace,
 	}
-
-	gatewayConfigBuilder := &gateway.Builder{Reader: client}
-
 	reconciler := metricpipeline.New(
 		client,
-		config.TelemetryNamespace,
-		config.ModuleVersion,
-		otelcollector.NewMetricAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricAgentPriorityClassName),
-		agentConfigBuilder,
+		reconcilerConfig,
+		newMetricAgentApplierDeleter(config),
+		&agent.Builder{
+			Config: agent.BuilderConfig{
+				GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: config.MetricGatewayServiceName},
+			},
+		},
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
-		otelcollector.NewMetricGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.MetricGatewayPriorityClassName),
-		gatewayConfigBuilder,
+		newMetricGatewayApplierDeleter(config),
+		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
 		istiostatus.NewChecker(discoveryClient),
 		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
@@ -134,6 +155,69 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 	}, nil
+}
+
+func newMetricAgentApplierDeleter(config MetricPipelineControllerConfig) *otelcollector.AgentApplierDeleter {
+	rbac := otelcollector.MakeMetricAgentRBAC(
+		types.NamespacedName{
+			Name:      metricAgentBaseName,
+			Namespace: config.TelemetryNamespace,
+		},
+	)
+
+	agentConfig := otelcollector.AgentConfig{
+		Config: otelcollector.Config{
+			BaseName:  metricAgentBaseName,
+			Namespace: config.TelemetryNamespace,
+		},
+		DaemonSet: otelcollector.DaemonSetConfig{
+			Image:             config.OTelCollectorImage,
+			PriorityClassName: config.MetricAgentPriorityClassName,
+			CPULimit:          metricAgentCPULimit,
+			MemoryLimit:       metricAgentMemoryLimit,
+			CPURequest:        metricAgentCPURequest,
+			MemoryRequest:     metricAgentMemoryRequest,
+		},
+	}
+
+	return &otelcollector.AgentApplierDeleter{
+		Config: agentConfig,
+		RBAC:   rbac,
+	}
+}
+
+func newMetricGatewayApplierDeleter(config MetricPipelineControllerConfig) *otelcollector.GatewayApplierDeleter {
+	rbac := otelcollector.MakeMetricGatewayRBAC(
+		types.NamespacedName{
+			Name:      metricGatewayBaseName,
+			Namespace: config.TelemetryNamespace,
+		},
+	)
+
+	gatewayConfig := otelcollector.GatewayConfig{
+		Config: otelcollector.Config{
+			BaseName:  metricGatewayBaseName,
+			Namespace: config.TelemetryNamespace,
+		},
+		Deployment: otelcollector.DeploymentConfig{
+			Image:                config.OTelCollectorImage,
+			PriorityClassName:    config.MetricGatewayPriorityClassName,
+			BaseCPULimit:         metricGatewayBaseCPULimit,
+			DynamicCPULimit:      metricGatewayDynamicCPULimit,
+			BaseMemoryLimit:      metricGatewayBaseMemoryLimit,
+			DynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
+			BaseCPURequest:       metricGatewayBaseCPURequest,
+			DynamicCPURequest:    metricGatewayDynamicCPURequest,
+			BaseMemoryRequest:    metricGatewayBaseMemoryRequest,
+			DynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
+		},
+		OTLPServiceName: config.MetricGatewayServiceName,
+	}
+
+	return &otelcollector.GatewayApplierDeleter{
+		Config: gatewayConfig,
+		RBAC:   rbac,
+	}
 }
 
 func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

@@ -12,6 +12,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
@@ -24,6 +25,11 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
+
+type Config struct {
+	LogGatewayName     string
+	TelemetryNamespace string
+}
 
 type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline) (*gateway.Config, otlpexporter.EnvVars, error)
@@ -43,7 +49,7 @@ var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 type Reconciler struct {
 	client.Client
 
-	telemetryNamespace string
+	config Config
 
 	// Dependencies
 	gatewayApplierDeleter GatewayApplierDeleter
@@ -55,7 +61,7 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	telemetryNamespace string,
+	config Config,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
 	gatewayProber commonstatus.Prober,
@@ -64,7 +70,7 @@ func New(
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
+		config:                config,
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,
 		gatewayProber:         gatewayProber,
@@ -174,9 +180,12 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
+	logGatewaySelectorLabels := labels.MakeLogGatewaySelectorLabel(r.config.LogGatewayName)
+
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
+		ComponentSelectorLabels:        logGatewaySelectorLabels,
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}

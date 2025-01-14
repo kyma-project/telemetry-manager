@@ -40,8 +40,8 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "all components are healthy",
 			config: &Config{
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
+				Metrics: MetricsConfig{OTLPServiceName: "metrics", Namespace: "telemetry-system"},
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -55,20 +55,19 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
 				Traces: &operatorv1alpha1.OTLPEndpoints{
-					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
-					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
+					GRPC: "http://traces.telemetry-system:4317",
+					HTTP: "http://traces.telemetry-system:4318",
 				},
 				Metrics: &operatorv1alpha1.OTLPEndpoints{
-					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
-					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
-				},
-			},
+					GRPC: "http://metrics.telemetry-system:4317",
+					HTTP: "http://metrics.telemetry-system:4318",
+				}},
 		},
 		{
 			name: "log components are unhealthy",
 			config: &Config{
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
+				Metrics: MetricsConfig{OTLPServiceName: "metrics", Namespace: "telemetry-system"},
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
@@ -82,19 +81,18 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
 				Traces: &operatorv1alpha1.OTLPEndpoints{
-					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
-					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
+					GRPC: "http://traces.telemetry-system:4317",
+					HTTP: "http://traces.telemetry-system:4318",
 				},
 				Metrics: &operatorv1alpha1.OTLPEndpoints{
-					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
-					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
-				},
-			},
+					GRPC: "http://metrics.telemetry-system:4317",
+					HTTP: "http://metrics.telemetry-system:4318",
+				}},
 		},
 		{
 			name: "trace components are unhealthy",
 			config: &Config{
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Metrics: MetricsConfig{OTLPServiceName: "metrics", Namespace: "telemetry-system"},
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -106,17 +104,15 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
-					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
-					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
-				},
-			},
+			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Metrics: &operatorv1alpha1.OTLPEndpoints{
+				GRPC: "http://metrics.telemetry-system:4317",
+				HTTP: "http://metrics.telemetry-system:4318",
+			}},
 		},
 		{
 			name: "metric components are unhealthy",
 			config: &Config{
-				Traces: TracesConfig{Namespace: "telemetry-system"},
+				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -128,12 +124,10 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Traces: &operatorv1alpha1.OTLPEndpoints{
-					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
-					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
-				},
-			},
+			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Traces: &operatorv1alpha1.OTLPEndpoints{
+				GRPC: "http://traces.telemetry-system:4317",
+				HTTP: "http://traces.telemetry-system:4318",
+			}},
 		},
 		{
 			name:                 "log components check error",
@@ -169,8 +163,8 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with no dependent resources",
 			config: &Config{
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
+				Metrics: MetricsConfig{OTLPServiceName: "metrics", Namespace: "telemetry-system"},
 			},
 			telemetry: &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
@@ -190,20 +184,18 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
 				Traces: &operatorv1alpha1.OTLPEndpoints{
-					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
-					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
-				},
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
-					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
-					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
-				},
-			},
+					GRPC: "http://traces.telemetry-system:4317",
+					HTTP: "http://traces.telemetry-system:4318",
+				}, Metrics: &operatorv1alpha1.OTLPEndpoints{
+					GRPC: "http://metrics.telemetry-system:4317",
+					HTTP: "http://metrics.telemetry-system:4318",
+				}},
 		},
 		{
 			name: "deleting with dependent resources",
 			config: &Config{
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
+				Metrics: MetricsConfig{OTLPServiceName: "metrics", Namespace: "telemetry-system"},
 			},
 			telemetry: &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
@@ -225,14 +217,14 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Metrics: &operatorv1alpha1.OTLPEndpoints{
-				GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
-				HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
+				GRPC: "http://metrics.telemetry-system:4317",
+				HTTP: "http://metrics.telemetry-system:4318",
 			}},
 		},
 		{
 			name: "metric agent is unhealthy",
 			config: &Config{
-				Traces: TracesConfig{Namespace: "telemetry-system"},
+				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -248,8 +240,8 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Traces: &operatorv1alpha1.OTLPEndpoints{
-				GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
-				HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
+				GRPC: "http://traces.telemetry-system:4317",
+				HTTP: "http://traces.telemetry-system:4318",
 			}},
 		},
 	}

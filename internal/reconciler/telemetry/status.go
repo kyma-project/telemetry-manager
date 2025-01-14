@@ -14,7 +14,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 type ComponentHealthChecker interface {
@@ -113,7 +112,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, telemetr
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
-	return makeOTLPEndpoints(otelcollector.TraceOTLPServiceName, config.Traces.Namespace), nil
+	return makeOTLPEndpoints(config.Traces.OTLPServiceName, config.Traces.Namespace), nil
 }
 
 func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, telemetryInDeletion bool) (*operatorv1alpha1.OTLPEndpoints, error) {
@@ -126,7 +125,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, telemet
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
-	return makeOTLPEndpoints(otelcollector.MetricOTLPServiceName, config.Metrics.Namespace), nil
+	return makeOTLPEndpoints(config.Metrics.OTLPServiceName, config.Metrics.Namespace), nil
 }
 
 func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndpoints {

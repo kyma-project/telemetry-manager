@@ -32,7 +32,10 @@ func TestReconcile(t *testing.T) {
 	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
 	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
 
-	telemetryNamespace := "default"
+	testConfig := Config{
+		LogGatewayName:     "gateway",
+		TelemetryNamespace: "default",
+	}
 
 	t.Run("log gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
@@ -59,7 +62,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -107,7 +110,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -155,7 +158,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
+			testConfig,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,

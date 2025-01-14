@@ -30,6 +30,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -42,6 +43,11 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
+
+type Config struct {
+	TraceGatewayName   string
+	TelemetryNamespace string
+}
 
 type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
@@ -72,7 +78,7 @@ type IstioStatusChecker interface {
 type Reconciler struct {
 	client.Client
 
-	telemetryNamespace string
+	config Config
 
 	// Dependencies
 	flowHealthProber      FlowHealthProber
@@ -88,7 +94,7 @@ type Reconciler struct {
 
 func New(
 	client client.Client,
-	telemetryNamespace string,
+	config Config,
 	flowHealthProber FlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
@@ -101,7 +107,7 @@ func New(
 ) *Reconciler {
 	return &Reconciler{
 		Client:                client,
-		telemetryNamespace:    telemetryNamespace,
+		config:                config,
 		flowHealthProber:      flowHealthProber,
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,
@@ -240,10 +246,13 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
+	traceGatewaySelectorLabels := labels.MakeTraceGatewaySelectorLabel(r.config.TraceGatewayName)
+
 	opts := otelcollector.GatewayApplyOptions{
 		AllowedPorts:                   allowedPorts,
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
+		ComponentSelectorLabels:        traceGatewaySelectorLabels,
 		IstioEnabled:                   isIstioActive,
 		IstioExcludePorts:              []int32{ports.Metrics},
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),

@@ -46,8 +46,11 @@ func TestReconcile(t *testing.T) {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
-	telemetryNamespace := "default"
-	moduleVersion := "1.0.0"
+	testConfig := Config{
+		AgentName:          "agent",
+		GatewayName:        "gateway",
+		TelemetryNamespace: "default",
+	}
 
 	t.Run("metric gateway deployment is not ready", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().Build()
@@ -80,8 +83,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -141,8 +143,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -202,8 +203,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -269,8 +269,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -338,8 +337,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -407,8 +405,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			agentApplierDeleterMock,
 			agentConfigBuilderMock,
 			agentProberStub,
@@ -477,8 +474,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -541,8 +537,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -606,8 +601,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -769,8 +763,7 @@ func TestReconcile(t *testing.T) {
 				errToMsg := &conditions.ErrorToMessageConverter{}
 				sut := New(
 					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
+					testConfig,
 					&mocks.AgentApplierDeleter{},
 					&mocks.AgentConfigBuilder{},
 					agentProberStub,
@@ -914,8 +907,7 @@ func TestReconcile(t *testing.T) {
 
 				sut := New(
 					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
+					testConfig,
 					agentApplierDeleterMock,
 					&mocks.AgentConfigBuilder{},
 					agentProberStub,
@@ -1000,8 +992,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1071,8 +1062,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			&mocks.AgentApplierDeleter{},
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1146,8 +1136,7 @@ func TestReconcile(t *testing.T) {
 
 		sut := New(
 			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
+			testConfig,
 			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
@@ -1272,8 +1261,7 @@ func TestReconcile(t *testing.T) {
 
 				sut := Reconciler{
 					Client:                fakeClient,
-					telemetryNamespace:    telemetryNamespace,
-					moduleVersion:         moduleVersion,
+					config:                testConfig,
 					agentConfigBuilder:    agentConfigBuilderMock,
 					gatewayConfigBuilder:  gatewayConfigBuilderMock,
 					agentApplierDeleter:   agentApplierDeleterMock,

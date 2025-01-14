@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -22,63 +23,25 @@ import (
 )
 
 const (
-	IstioCertPath   = "/etc/istio-output-certs"
-	MetricAgentName = "telemetry-metric-agent"
-
-	istioCertVolumeName  = "istio-certs"
-	metricAgentScrapeKey = "telemetry.kyma-project.io/metric-scrape"
+	istioCertVolumeName = "istio-certs"
+	IstioCertPath       = "/etc/istio-output-certs"
 )
-
-var (
-	metricAgentCPULimit      = resource.MustParse("1")
-	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
-	metricAgentCPURequest    = resource.MustParse("15m")
-	metricAgentMemoryRequest = resource.MustParse("50Mi")
-)
-
-func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
-	extraLabels := map[string]string{
-		metricAgentScrapeKey:  "true",
-		istioSidecarInjectKey: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
-	}
-
-	return &AgentApplierDeleter{
-		baseName:          MetricAgentName,
-		extraPodLabel:     extraLabels,
-		image:             image,
-		namespace:         namespace,
-		priorityClassName: priorityClassName,
-		rbac:              makeMetricAgentRBAC(namespace),
-		cpuLimit:          metricAgentCPULimit,
-		memoryLimit:       metricAgentMemoryLimit,
-		cpuRequest:        metricAgentCPURequest,
-		memoryRequest:     metricAgentMemoryRequest,
-	}
-}
 
 type AgentApplierDeleter struct {
-	baseName          string
-	extraPodLabel     map[string]string
-	image             string
-	namespace         string
-	priorityClassName string
-	rbac              rbac
-
-	cpuLimit      resource.Quantity
-	memoryLimit   resource.Quantity
-	cpuRequest    resource.Quantity
-	memoryRequest resource.Quantity
+	Config AgentConfig
+	RBAC   Rbac
 }
 
 type AgentApplyOptions struct {
-	AllowedPorts        []int32
-	CollectorConfigYAML string
+	AllowedPorts            []int32
+	CollectorConfigYAML     string
+	ComponentSelectorLabels map[string]string
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
+	name := types.NamespacedName{Namespace: aad.Config.Namespace, Name: aad.Config.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, aad.rbac, opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, aad.RBAC, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -88,7 +51,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
@@ -99,14 +62,14 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}
+	name := types.NamespacedName{Name: aad.Config.BaseName, Namespace: aad.Config.Namespace}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
-		Name:      aad.baseName,
-		Namespace: aad.namespace,
+		Name:      aad.Config.BaseName,
+		Namespace: aad.Config.Namespace,
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
@@ -122,45 +85,36 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
-	selectorLabels := commonresources.MakeDefaultLabels(aad.baseName)
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
+	selectorLabels := labels.MakeDefaultLabel(aad.Config.BaseName)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
-	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
+	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))
 
+	dsConfig := aad.Config.DaemonSet
 	resources := aad.makeAgentResourceRequirements()
-
-	opts := []podSpecOption{
-		commonresources.WithPriorityClass(aad.priorityClassName),
+	podSpec := makePodSpec(
+		aad.Config.BaseName,
+		dsConfig.Image,
+		commonresources.WithPriorityClass(dsConfig.PriorityClassName),
 		commonresources.WithResources(resources),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-		commonresources.WithGoMemLimitEnvVar(aad.memoryLimit),
-
-		// emptyDir volume for Istio certificates
-		withVolume(corev1.Volume{
-			Name: istioCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		}),
+		commonresources.WithGoMemLimitEnvVar(dsConfig.MemoryLimit),
+		withVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		}}),
 		withVolumeMount(corev1.VolumeMount{
 			Name:      istioCertVolumeName,
 			MountPath: IstioCertPath,
 			ReadOnly:  true,
 		}),
-	}
-
-	podSpec := makePodSpec(aad.baseName, aad.image, opts...)
-
-	podLabels := make(map[string]string)
-	maps.Copy(podLabels, selectorLabels)
-	maps.Copy(podLabels, aad.extraPodLabel)
+	)
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      aad.baseName,
-			Namespace: aad.namespace,
+			Name:      aad.Config.BaseName,
+			Namespace: aad.Config.Namespace,
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -169,7 +123,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
+					Labels:      opts.ComponentSelectorLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,
@@ -179,20 +133,21 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 }
 
 func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceRequirements {
+	dsConfig := aad.Config.DaemonSet
+
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    aad.cpuLimit,
-			corev1.ResourceMemory: aad.memoryLimit,
+			corev1.ResourceCPU:    dsConfig.CPULimit,
+			corev1.ResourceMemory: dsConfig.MemoryLimit,
 		},
 		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    aad.cpuRequest,
-			corev1.ResourceMemory: aad.memoryRequest,
+			corev1.ResourceCPU:    dsConfig.CPURequest,
+			corev1.ResourceMemory: dsConfig.MemoryRequest,
 		},
 	}
 }
 
-func makeIstioAnnotations(istioCertPath string) map[string]string {
-	// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume. However, the sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
+func makeIstioTLSPodAnnotations(istioCertPath string) map[string]string {
 	return map[string]string{
 		"proxy.istio.io/config": fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
