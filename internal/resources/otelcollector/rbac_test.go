@@ -65,12 +65,7 @@ func TestMakeMetricAgentRBAC(t *testing.T) {
 		expectedRules := []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/stats", "nodes/proxy"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods"},
+				Resources: []string{"nodes", "nodes/metrics", "nodes/stats", "nodes/proxy", "services", "endpoints", "pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
