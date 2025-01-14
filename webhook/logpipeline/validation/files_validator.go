@@ -1,4 +1,4 @@
-package logpipeline
+package validation
 
 import (
 	"fmt"
@@ -6,7 +6,18 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func validateFiles(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
+type FilesValidator interface {
+	Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error
+}
+
+type filesValidator struct {
+}
+
+func NewFilesValidator() FilesValidator {
+	return &filesValidator{}
+}
+
+func (f *filesValidator) Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
 	err := validateUniqueFileName(logPipeline, logPipelines)
 	if err != nil {
 		return err

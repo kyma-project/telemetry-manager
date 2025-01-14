@@ -20,13 +20,14 @@ type LogPipelineBuilder struct {
 	finalizers        []string
 	deletionTimeStamp metav1.Time
 
-	input            telemetryv1alpha1.LogPipelineInput
-	filters          []telemetryv1alpha1.LogPipelineFilter
-	httpOutput       *telemetryv1alpha1.LogPipelineHTTPOutput
-	otlpOutput       *telemetryv1alpha1.OTLPOutput
-	customOutput     string
-	files            []telemetryv1alpha1.LogPipelineFileMount
-	variables        []telemetryv1alpha1.LogPipelineVariableRef
+	input telemetryv1alpha1.LogPipelineInput
+
+	filters []telemetryv1alpha1.LogPipelineFilter
+
+	httpOutput   *telemetryv1alpha1.LogPipelineHTTPOutput
+	otlpOutput   *telemetryv1alpha1.OTLPOutput
+	customOutput string
+
 	statusConditions []metav1.Condition
 }
 
@@ -154,30 +155,6 @@ func (b *LogPipelineBuilder) WithCustomFilter(filter string) *LogPipelineBuilder
 	return b
 }
 
-func (b *LogPipelineBuilder) WithFile(name, content string) *LogPipelineBuilder {
-	b.files = append(b.files, telemetryv1alpha1.LogPipelineFileMount{
-		Name:    name,
-		Content: content,
-	})
-
-	return b
-}
-
-func (b *LogPipelineBuilder) WithVariable(name, secretName, secretNamespace, secretKey string) *LogPipelineBuilder {
-	b.variables = append(b.variables, telemetryv1alpha1.LogPipelineVariableRef{
-		Name: name,
-		ValueFrom: telemetryv1alpha1.ValueFromSource{
-			SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-				Name:      secretName,
-				Namespace: secretNamespace,
-				Key:       secretKey,
-			},
-		},
-	})
-
-	return b
-}
-
 func (b *LogPipelineBuilder) WithHTTPOutput(opts ...HTTPOutputOption) *LogPipelineBuilder {
 	b.httpOutput = defaultHTTPOutput()
 	for _, opt := range opts {
@@ -239,8 +216,6 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 				Custom: b.customOutput,
 				OTLP:   b.otlpOutput,
 			},
-			Files:     b.files,
-			Variables: b.variables,
 		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
 			Conditions: b.statusConditions,
