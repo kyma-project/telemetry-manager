@@ -177,7 +177,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 		})
 	})
 
-	Context("When an overrides configmap exists", Ordered, func() {
+	Context("When an overrides configmap exists", func() {
 		It("Should disable the reconciliation of the logpipeline", func() {
 			assertPipelineReconciliationDisabled(ctx, k8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
 		})

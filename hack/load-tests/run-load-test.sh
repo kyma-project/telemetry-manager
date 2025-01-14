@@ -6,8 +6,6 @@ set -o errexit  # exit immediately when a command fails.
 set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
 
-source .env
-
 PROMETHEUS_NAMESPACE="prometheus"
 HELM_PROM_RELEASE="prometheus"
 TRACE_NAMESPACE="trace-load-test"
@@ -19,8 +17,8 @@ BACKPRESSURE_TEST="false"
 TEST_TARGET="traces"
 TEST_NAME="No Name"
 TEST_DURATION=1200
-OTEL_IMAGE=$DEFAULT_OTEL_COLLECTOR_IMAGE
-TELEMETRY_GEN_IMAGE=$DEFAULT_TEST_TELEMETRYGEN_IMAGE
+OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.115.0-main"
+TELEMETRY_GEN_IMAGE="ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.115.0"
 LOG_SIZE=2000
 LOG_RATE=1000
 PROMAPI=""

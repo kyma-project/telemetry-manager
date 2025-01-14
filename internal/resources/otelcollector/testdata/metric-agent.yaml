@@ -93,7 +93,7 @@ spec:
         - secretRef:
             name: telemetry-metric-agent
             optional: true
-        image: opentelemetry/collector:dummy
+        image: opentelemetry/collector:latest
         livenessProbe:
           httpGet:
             path: /

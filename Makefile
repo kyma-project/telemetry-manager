@@ -34,7 +34,7 @@ TOOLS_PKG_NAMES_CLEAN  := $(shell grep -E $(TOOLS_MOD_REGEX) < $(TOOLS_MOD_DIR)/
 TOOLS_BIN_NAMES  := $(addprefix $(TOOLS_BIN_DIR)/, $(notdir $(TOOLS_PKG_NAMES_CLEAN)))
 
 .PHONY: install-tools
-install-tools: $(TOOLS_BIN_NAMES) $(POPULATE_IMAGES)
+install-tools: $(TOOLS_BIN_NAMES)
 
 $(TOOLS_BIN_DIR):
 	if [ ! -d $@ ]; then mkdir -p $@; fi
@@ -54,10 +54,6 @@ YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
 WSL				 := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
-POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
-
-$(POPULATE_IMAGES):
-	cd $(TOOLS_MOD_DIR)/populateimages && go build -o $(POPULATE_IMAGES) main.go
 
 # Sub-makefile
 include hack/make/provision.mk
@@ -118,13 +114,11 @@ manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfigur
 	$(YAMLFMT)
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(POPULATE_IMAGES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
-	$(POPULATE_IMAGES)
-
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -158,7 +152,7 @@ check-coverage: $(GO_TEST_COVERAGE) ## Check tests coverage.
 build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
 
-check-clean: generate manifests manifests-experimental crd-docs-gen ## Check if repo is clean up-to-date. Used after code generation
+check-clean: ## Check if repo is clean up-to-date. Used after code generation
 	@echo "Checking if all generated files are up-to-date"
 	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen' to update them." && exit 1)
 

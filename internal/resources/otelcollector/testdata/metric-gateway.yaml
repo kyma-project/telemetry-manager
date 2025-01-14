@@ -138,7 +138,7 @@ spec:
         - secretRef:
             name: telemetry-metric-gateway
             optional: true
-        image: opentelemetry/collector:dummy
+        image: opentelemetry/collector:latest
         livenessProbe:
           httpGet:
             path: /

@@ -56,8 +56,8 @@ func TestReconcile(t *testing.T) {
 		EnvConfigSecret:     types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
 		TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			FluentBitImage: "fluent/bit:dummy",
-			ExporterImage:  "exporter:dummy",
+			FluentBitImage: "fluent/bit:latest",
+			ExporterImage:  "exporter:latest",
 		},
 	}
 

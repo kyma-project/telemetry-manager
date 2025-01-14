@@ -19,7 +19,7 @@ import (
 )
 
 func TestGateway_ApplyResources(t *testing.T) {
-	image := "opentelemetry/collector:dummy"
+	image := "opentelemetry/collector:latest"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
 
@@ -96,7 +96,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 }
 
 func TestGateway_DeleteResources(t *testing.T) {
-	image := "opentelemetry/collector:dummy"
+	image := "opentelemetry/collector:latest"
 	namespace := "kyma-system"
 	priorityClassName := "normal"
 

@@ -7,7 +7,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
@@ -125,7 +124,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 		Containers: []corev1.Container{
 			{
 				Name:  "telemetrygen",
-				Image: testkit.DefaultTelemetryGenImage,
+				Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.115.0",
 				Args: []string{
 					string(signalType),
 					"--rate",
