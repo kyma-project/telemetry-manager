@@ -492,7 +492,7 @@ You cannot enable the following plugins, because they potentially harm the stabi
 
 **Cause**: Incorrect backend endpoint configuration (for example, using the wrong authentication credentials) or the backend being unreachable.
 
-**Solution**:
+**Remedy**:
 
 - Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
 - Check if the backend is up and reachable.
@@ -506,7 +506,7 @@ You cannot enable the following plugins, because they potentially harm the stabi
 
 **Cause**: It can happen due to a variety of reasons. For example, a possible reason may be that the backend is limiting the ingestion rate, or the backend is refusing logs because they are too large.
 
-**Solution**:
+**Remedy**:
 
 1. Check the `telemetry-fluent-bit` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
 2. If backend is limiting the rate by refusing logs, try the options described in [Agent Buffer Filling Up](#agent-buffer-filling-up).
@@ -518,7 +518,7 @@ You cannot enable the following plugins, because they potentially harm the stabi
 
 **Cause**: The backend export rate is too low compared to the log collection rate.
 
-**Solution**:
+**Remedy**:
 
 - Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
 

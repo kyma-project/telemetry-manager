@@ -443,7 +443,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials), or the backend is unreachable.
 
-**Solution**:
+**Remedy**:
 
 1. Check the `telemetry-trace-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
 2. Check if the backend is up and reachable.
@@ -458,7 +458,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
 
-**Solution**:
+**Remedy**:
 
 1. Check the `telemetry-trace-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
 2. If the backend is limiting the rate by refusing spans, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
@@ -468,7 +468,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: Your SDK version is incompatible with the OTel Collector version.
 
-**Solution**:
+**Remedy**:
 
 1. Check which SDK version you are using for instrumentation.
 2. Investigate whether it is compatible with the OTel Collector version.
@@ -478,7 +478,7 @@ To detect and fix such situations, check the pipeline status and check out [Trou
 
 **Cause**: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
 
-**Solution**:
+**Remedy**:
 
 To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
 If you just want to see traces for one particular request, you can manually force sampling:
@@ -508,7 +508,7 @@ If you just want to see traces for one particular request, you can manually forc
 
 **Cause**: The backend export rate is too low compared to the gateway ingestion rate.
 
-**Solution**:
+**Remedy**:
 
 - Option 1: Increase the maximum backend ingestion rate - for example, by scaling out the SAP Cloud Logging instances.
 - Option 2: Reduce the emitted spans in your applications.
@@ -522,4 +522,4 @@ If you just want to see traces for one particular request, you can manually forc
 
 **Cause**: Gateway cannot receive spans at the given rate.
 
-**Solution**: Manually scale out the gateway by increasing the number of replicas for the trace gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+**Remedy**: Manually scale out the gateway by increasing the number of replicas for the trace gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
