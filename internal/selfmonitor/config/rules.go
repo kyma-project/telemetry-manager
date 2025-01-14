@@ -9,17 +9,19 @@ import (
 
 const (
 	// OTEL Collector rule names. Note that the actual full names will be prefixed with Metric or Trace
-	RuleNameGatewayAllDataDropped  = "GatewayAllDataDropped"
-	RuleNameGatewaySomeDataDropped = "GatewaySomeDataDropped"
-	RuleNameGatewayQueueAlmostFull = "GatewayQueueAlmostFull"
-	RuleNameGatewayThrottling      = "GatewayThrottling"
+	RuleNameGatewayExporterSentData        = "GatewayExporterSentData"
+	RuleNameGatewayExporterDroppedData     = "GatewayExporterDroppedData"
+	RuleNameGatewayExporterQueueAlmostFull = "GatewayExporterQueueAlmostFull"
+	RuleNameGatewayExporterEnqueueFailed   = "GatewayExporterEnqueueFailed"
+	RuleNameGatewayReceiverRefusedData     = "GatewayReceiverRefusedData"
 
 	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
-	RuleNameLogAgentAllDataDropped  = "AgentAllDataDropped"
-	RuleNameLogAgentSomeDataDropped = "AgentSomeDataDropped"
-	RuleNameLogAgentBufferInUse     = "AgentBufferInUse"
-	RuleNameLogAgentBufferFull      = "AgentBufferFull"
-	RuleNameLogAgentNoLogsDelivered = "AgentNoLogsDelivered"
+	RuleNameLogAgentExporterSentLogs    = "AgentExporterSentLogs"
+	RuleNameLogAgentReceiverReadLogs    = "AgentReceiverReadLogs"
+	RuleNameLogAgentExporterDroppedLogs = "AgentExporterDroppedLogs"
+	RuleNameLogAgentBufferInUse         = "AgentBufferInUse"
+	RuleNameLogAgentBufferFull          = "AgentBufferFull"
+	RuleNameLogAgentNoLogsDelivered     = "AgentNoLogsDelivered"
 
 	// Common rule labels
 	labelService      = "service"

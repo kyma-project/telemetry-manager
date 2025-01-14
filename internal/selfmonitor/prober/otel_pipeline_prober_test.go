@@ -62,13 +62,13 @@ func TestOTelPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "pending alert should be ignored",
+			name:         "pending alert",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "TraceGatewayAllDataDropped",
+							"alertname": "TraceGatewayExporterDroppedData",
 						},
 						State: promv1.AlertStatePending,
 					},
@@ -81,13 +81,13 @@ func TestOTelPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "alert missing pipeline_name label should be mapped to any pipeline",
+			name:         "alert missing pipeline_name label",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "TraceGatewayAllDataDropped",
+							"alertname": "TraceGatewayExporterDroppedData",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -106,7 +106,7 @@ func TestOTelPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayAllDataDropped",
+							"alertname":     "TraceGatewayExporterDroppedData",
 							"pipeline_name": "dynatrace",
 						},
 						State: promv1.AlertStateFiring,
@@ -126,7 +126,7 @@ func TestOTelPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayAllDataDropped",
+							"alertname":     "TraceGatewayExporterDroppedData",
 							"pipeline_name": "cls-2",
 						},
 						State: promv1.AlertStateFiring,
@@ -146,7 +146,7 @@ func TestOTelPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "MetricGatewayAllDataDropped",
+							"alertname":     "MetricGatewayExporterDroppedData",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -167,13 +167,13 @@ func TestOTelPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "all data dropped alert firing",
+			name:         "exporter dropped data firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayAllDataDropped",
+							"alertname":     "TraceGatewayExporterDroppedData",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -187,13 +187,20 @@ func TestOTelPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "some data dropped alert firing",
+			name:         "exporter sent data and exporter dropped data firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewaySomeDataDropped",
+							"alertname":     "TraceGatewayExporterDroppedData",
+							"pipeline_name": "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname":     "TraceGatewayExporterSentData",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -207,13 +214,20 @@ func TestOTelPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "queue almost full alert firing",
+			name:         "exporter sent data and exporter enqueue failed firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayQueueAlmostFull",
+							"alertname":     "TraceGatewayExporterEnqueueFailed",
+							"pipeline_name": "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname":     "TraceGatewayExporterSentData",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -221,17 +235,33 @@ func TestOTelPipelineProber(t *testing.T) {
 				},
 			},
 			expected: OTelPipelineProbeResult{
-				QueueAlmostFull: true,
+				PipelineProbeResult: PipelineProbeResult{
+					SomeDataDropped: true,
+				},
 			},
 		},
 		{
-			name:         "throttling alert firing",
+			name:         "exporter sent data and exporter dropped data and exporter enqueue failed firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "TraceGatewayThrottling",
+							"alertname":     "TraceGatewayExporterEnqueueFailed",
+							"pipeline_name": "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname":     "TraceGatewayExporterDroppedData",
+							"pipeline_name": "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname":     "TraceGatewayExporterSentData",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -239,15 +269,53 @@ func TestOTelPipelineProber(t *testing.T) {
 				},
 			},
 			expected: OTelPipelineProbeResult{
-				Throttling: true,
+				PipelineProbeResult: PipelineProbeResult{
+					SomeDataDropped: true,
+				},
 			},
+		},
+		{
+			name:         "queue almost full firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname":     "TraceGatewayExporterQueueAlmostFull",
+							"pipeline_name": "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: OTelPipelineProbeResult{QueueAlmostFull: true},
+		},
+		{
+			name:         "receiver refused firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayReceiverRefusedData",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: OTelPipelineProbeResult{Throttling: true},
 		},
 		{
 			name:         "healthy",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
-					{},
+					{
+						Labels: model.LabelSet{
+							"alertname":     "TraceGatewayExporterSentData",
+							"pipeline_name": "cls",
+						},
+					},
 				},
 			},
 			expected: OTelPipelineProbeResult{

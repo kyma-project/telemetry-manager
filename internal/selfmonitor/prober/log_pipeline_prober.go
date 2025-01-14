@@ -32,28 +32,55 @@ func NewLogPipelineProber(selfMonitorName types.NamespacedName) (*LogPipelinePro
 	}, nil
 }
 
-//nolint:dupl // Keep it duplicated for now, as Fluent Bit logging will be replaced by OpenTelemetry
 func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (LogPipelineProbeResult, error) {
 	alerts, err := retrieveAlerts(ctx, p.getter)
 	if err != nil {
 		return LogPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	allDropped := p.isFiring(alerts, config.RuleNameLogAgentAllDataDropped, pipelineName)
-	someDropped := p.isFiring(alerts, config.RuleNameLogAgentSomeDataDropped, pipelineName)
-	bufferFillingUp := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
-	noLogs := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
-	healthy := !(allDropped || someDropped || bufferFillingUp || noLogs)
-
 	return LogPipelineProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
-			AllDataDropped:  allDropped,
-			SomeDataDropped: someDropped,
-			Healthy:         healthy,
+			AllDataDropped:  p.allDataDropped(alerts, pipelineName),
+			SomeDataDropped: p.someDataDropped(alerts, pipelineName),
+			Healthy:         p.healthy(alerts, pipelineName),
 		},
-		NoLogsDelivered: noLogs,
-		BufferFillingUp: bufferFillingUp,
+		NoLogsDelivered: p.noLogsDelivered(alerts, pipelineName),
+		BufferFillingUp: p.bufferFillingUp(alerts, pipelineName),
 	}, nil
+}
+
+func (p *LogPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
+	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
+	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
+
+	return !exporterSentLogs && (exporterDroppedLogs || bufferFull)
+}
+
+func (p *LogPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
+	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
+	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
+
+	return exporterSentLogs && (exporterDroppedLogs || bufferFull)
+}
+
+func (p *LogPipelineProber) noLogsDelivered(alerts []promv1.Alert, pipelineName string) bool {
+	return p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+}
+
+func (p *LogPipelineProber) bufferFillingUp(alerts []promv1.Alert, pipelineName string) bool {
+	return p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
+}
+
+func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
+	// The pipeline is healthy if none of the following conditions are met:
+	bufferInUse := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
+	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
+	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	noLogsDelivered := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+
+	return !(bufferInUse || bufferFull || exporterDroppedLogs || noLogsDelivered)
 }
 
 func (p *LogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {

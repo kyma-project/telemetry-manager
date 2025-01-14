@@ -16,11 +16,11 @@ func TestMakeConfigMarshalling(t *testing.T) {
 		ConfigPath:        "/dummy-configpath/",
 		AlertRuleFileName: "dymma-alerts.yml",
 	})
-	configYaml, err := yaml.Marshal(config)
+	monitorConfigYaml, err := yaml.Marshal(config)
 	require.NoError(t, err)
 
-	goldenFilePath := filepath.Join("testdata", "config.yaml")
-	goldenFile, err := os.ReadFile(goldenFilePath)
-	require.NoError(t, err, "failed to load golden file")
-	require.Equal(t, string(goldenFile), string(configYaml))
+	goldenMonitoringConfigPath := filepath.Join("testdata", "config.yaml")
+	goldenMonitoringFile, err := os.ReadFile(goldenMonitoringConfigPath)
+	require.NoError(t, err, "failed to load golden monitoring file")
+	require.Equal(t, string(goldenMonitoringFile), string(monitorConfigYaml))
 }

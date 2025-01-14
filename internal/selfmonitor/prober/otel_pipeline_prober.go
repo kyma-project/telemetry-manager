@@ -43,28 +43,52 @@ func newOTelPipelineProber(selfMonitorName types.NamespacedName, matcher matcher
 	}, nil
 }
 
-//nolint:dupl // Keep it duplicated for now, as Fluent Bit logging will be replaced by OpenTelemetry
 func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OTelPipelineProbeResult, error) {
 	alerts, err := retrieveAlerts(ctx, p.getter)
 	if err != nil {
 		return OTelPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	allDropped := p.isFiring(alerts, config.RuleNameGatewayAllDataDropped, pipelineName)
-	someDropped := p.isFiring(alerts, config.RuleNameGatewaySomeDataDropped, pipelineName)
-	queueAlmostFull := p.isFiring(alerts, config.RuleNameGatewayQueueAlmostFull, pipelineName)
-	throttling := p.isFiring(alerts, config.RuleNameGatewayThrottling, pipelineName)
-	healthy := !(allDropped || someDropped || queueAlmostFull || throttling)
-
 	return OTelPipelineProbeResult{
 		PipelineProbeResult: PipelineProbeResult{
-			AllDataDropped:  allDropped,
-			SomeDataDropped: someDropped,
-			Healthy:         healthy,
+			AllDataDropped:  p.allDataDropped(alerts, pipelineName),
+			SomeDataDropped: p.someDataDropped(alerts, pipelineName),
+			Healthy:         p.healthy(alerts, pipelineName),
 		},
-		QueueAlmostFull: queueAlmostFull,
-		Throttling:      throttling,
+		QueueAlmostFull: p.queueAlmostFull(alerts, pipelineName),
+		Throttling:      p.throttling(alerts, pipelineName),
 	}, nil
+}
+
+func (p *OTelPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
+	exporterSentData := p.isFiring(alerts, config.RuleNameGatewayExporterSentData, pipelineName)
+	exporterDroppedData := p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName)
+	exporterEnqueueFailed := p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName)
+
+	return !exporterSentData && (exporterDroppedData || exporterEnqueueFailed)
+}
+
+func (p *OTelPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
+	exporterSentData := p.isFiring(alerts, config.RuleNameGatewayExporterSentData, pipelineName)
+	exporterDroppedData := p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName)
+	exporterEnqueueFailed := p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName)
+
+	return exporterSentData && (exporterDroppedData || exporterEnqueueFailed)
+}
+
+func (p *OTelPipelineProber) queueAlmostFull(alerts []promv1.Alert, pipelineName string) bool {
+	return p.isFiring(alerts, config.RuleNameGatewayExporterQueueAlmostFull, pipelineName)
+}
+
+func (p *OTelPipelineProber) throttling(alerts []promv1.Alert, pipelineName string) bool {
+	return p.isFiring(alerts, config.RuleNameGatewayReceiverRefusedData, pipelineName)
+}
+
+func (p *OTelPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
+	return !(p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName) ||
+		p.isFiring(alerts, config.RuleNameGatewayExporterQueueAlmostFull, pipelineName) ||
+		p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName) ||
+		p.isFiring(alerts, config.RuleNameGatewayReceiverRefusedData, pipelineName))
 }
 
 func (p *OTelPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
