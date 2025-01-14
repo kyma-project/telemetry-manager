@@ -41,13 +41,9 @@ runs:
       shell: bash
       run: make --debug deploy-experimental
 
-    - name: Wait for manager deployment rollout
-      shell: bash
-      run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
-
     - name: Wait for manager readiness
       shell: bash
-      run: kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
+      run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
     - name: Print cluster info
       shell: bash
