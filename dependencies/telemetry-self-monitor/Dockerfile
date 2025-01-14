@@ -25,6 +25,8 @@ RUN make build
 
 FROM scratch
 
+LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
+
 COPY --from=builder /prometheus/prometheus /bin/prometheus
 
 USER       nobody
