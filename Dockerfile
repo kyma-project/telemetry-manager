@@ -21,6 +21,8 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager 
 
 FROM scratch
 
+LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
+
 WORKDIR /
 
 COPY --from=builder /telemetry-manager-workspace/manager .
