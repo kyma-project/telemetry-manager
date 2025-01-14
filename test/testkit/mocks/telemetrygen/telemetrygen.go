@@ -124,7 +124,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 		Containers: []corev1.Container{
 			{
 				Name:  "telemetrygen",
-				Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.115.0",
+				Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.114.0",
 				Args: []string{
 					string(signalType),
 					"--rate",
