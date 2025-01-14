@@ -31,8 +31,7 @@ func MarshalYAML(scheme *runtime.Scheme, objects []client.Object) ([]byte, error
 	// Always sort to have a deterministic output
 	slices.SortFunc(objects, compareObjects)
 
-	serializerOpts := json.SerializerOptions{Yaml: true}
-	e := json.NewSerializerWithOptions(json.DefaultMetaFactory, scheme, scheme, serializerOpts)
+	e := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme, scheme)
 
 	var buffer bytes.Buffer
 
