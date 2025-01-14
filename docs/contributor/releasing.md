@@ -32,7 +32,7 @@ This release process covers the steps to release new major and minor versions fo
       - Ensure that all other images have the same versions as those used in the `main.go` file.
    - `main.go`:
       - Update the `version` variable with the new module version following the `x.y.z` pattern.
-      - Update the `defaultOTelCollectorImage` variable with the image referenced in `sec-scanners-config.yaml`. For example, `defaultOtelImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"`
+      - Update the `defaultOtelImage` variable with the image referenced in `sec-scanners-config.yaml`. For example, `defaultOtelImage = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.104.0-1.20.0-rc1"`
 
 6. Merge the PR.
    
