@@ -175,9 +175,6 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: pod
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
     prometheus/app-services:
         config:
             scrape_configs:
@@ -226,9 +223,6 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: endpoints
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
                 - job_name: app-services-secure
                   sample_limit: 50000
                   scrape_interval: 30s
@@ -274,9 +268,6 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: endpoints
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
                   tls_config:
                     ca_file: /etc/istio-output-certs/root-cert.pem
                     cert_file: /etc/istio-output-certs/cert-chain.pem
@@ -308,9 +299,6 @@ receivers:
                       action: keep
                   kubernetes_sd_configs:
                     - role: pod
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
 processors:
     batch:
         send_batch_size: 1024

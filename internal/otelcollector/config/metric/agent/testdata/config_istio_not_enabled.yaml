@@ -164,9 +164,6 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: pod
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
     prometheus/app-services:
         config:
             scrape_configs:
@@ -215,9 +212,6 @@ receivers:
                       action: replace
                   kubernetes_sd_configs:
                     - role: endpoints
-                      selectors:
-                        - role: pod
-                          field: spec.nodeName=${MY_NODE_NAME}
 processors:
     batch:
         send_batch_size: 1024

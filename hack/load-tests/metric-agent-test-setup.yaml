@@ -50,7 +50,7 @@ spec:
             - podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: app.kubernetes.io/name
+                    - key: app
                       operator: In
                       values:
                         - metric-agent-load-generator
