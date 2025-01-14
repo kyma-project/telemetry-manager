@@ -34,16 +34,16 @@ const (
 var (
 	MetricCPUTemperature = Metric{
 		Type: pmetric.MetricTypeGauge,
-		Name: "cpu.temperature.celsius",
+		Name: "cpu_temperature_celsius",
 	}
 	MetricHardDiskErrorsTotal = Metric{
 		Type:   pmetric.MetricTypeSum,
-		Name:   "hd.errors.total",
+		Name:   "hd_errors_total",
 		Labels: []string{"device"},
 	}
 	MetricCPUEnergyHistogram = Metric{
 		Type:   pmetric.MetricTypeHistogram,
-		Name:   "cpu.energy.watt",
+		Name:   "cpu_energy_watt",
 		Labels: []string{"core"},
 	}
 	MetricNames = []string{
@@ -56,7 +56,7 @@ var (
 	metricsPortName       = "http-metrics"
 	metricsEndpoint       = "/metrics"
 	selectorLabels        = map[string]string{
-		"app": "sample-app",
+		"kubernetes.io/name": "metric-producer",
 	}
 
 	// DefaultMetricsNames is an alias for MetricNames.
@@ -170,7 +170,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "sample-app",
+					Name:  "metric-producer",
 					Image: metricProducerImage,
 					Ports: []corev1.ContainerPort{
 						{
@@ -183,6 +183,10 @@ func (p *Pod) K8sObject() *corev1.Pod {
 						{
 							Name:  "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
 							Value: "http://telemetry-otlp-traces.kyma-system:4318/v1/traces",
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "metric-producer",
 						},
 						{
 							Name:  "OTEL_METRICS_EXPORTER",

@@ -31,8 +31,10 @@ var (
 	hdErrorsMeter  metric.Int64Counter
 	cpuEnergyMeter metric.Float64Histogram
 
-	hdErrorsAttribute  = attribute.String("device", "/dev/sda")
-	cpuEnergyAttribute = attribute.String("core", "0")
+	hdErrorsAttributeSda = attribute.String("device", "/dev/sda")
+	hdErrorsAttributeSdb = attribute.String("device", "/dev/sdb")
+	cpuEnergyAttribute0  = attribute.String("core", "0")
+	cpuEnergyAttribute1  = attribute.String("core", "1")
 
 	tracer = otel.Tracer("")
 	meter  = otel.Meter("")
@@ -43,17 +45,6 @@ var (
 // init registers the metrics and sets up the environment
 func initMetrics() {
 	var err error
-	if _, err = meter.Float64ObservableGauge(
-		"cpu.temperature.celsius",
-		metric.WithDescription("Current temperature of the CPU."),
-		metric.WithUnit("celsius"),
-		metric.WithFloat64Callback(func(_ context.Context, o metric.Float64Observer) error {
-			o.Observe(randomTemp())
-			return nil
-		}),
-	); err != nil {
-		panic(err)
-	}
 
 	hdErrorsMeter, err = meter.Int64Counter(
 		"hd.errors.total",
@@ -70,6 +61,21 @@ func initMetrics() {
 		metric.WithUnit("core"),
 	)
 	if err != nil {
+		panic(err)
+	}
+
+	if _, err = meter.Float64ObservableGauge(
+		"cpu.temperature.celsius",
+		metric.WithDescription("Current temperature of the CPU."),
+		metric.WithUnit("celsius"),
+		metric.WithFloat64Callback(func(ctx context.Context, o metric.Float64Observer) error {
+			o.Observe(randomTemp())
+			//as there is no async histogram, use this callbacl to also record the other meters
+			hdErrorsMeter.Add(ctx, 1, metric.WithAttributes(hdErrorsAttributeSdb))
+			cpuEnergyMeter.Record(ctx, randomEnergy(), metric.WithAttributes(cpuEnergyAttribute1))
+			return nil
+		}),
+	); err != nil {
 		panic(err)
 	}
 }
@@ -149,17 +155,17 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 	// Initialize a new span for the current trace with enriched attributes
 	ctx, span := tracer.Start(r.Context(), "terminate")
 	defer span.End()
-	span.SetAttributes(hdErrorsAttribute, cpuEnergyAttribute)
+	span.SetAttributes(hdErrorsAttributeSda, cpuEnergyAttribute0)
 
 	// Record metric and enrich it with attributes
-	cpuEnergyMeter.Record(ctx, randomEnergy(), metric.WithAttributes(cpuEnergyAttribute))
+	cpuEnergyMeter.Record(ctx, randomEnergy(), metric.WithAttributes(cpuEnergyAttribute0))
 
 	// Terminate the request randomly with a success or error response
 	if randBool() {
-		span.RecordError(fmt.Errorf("error"))
+		span.RecordError(fmt.Errorf("Random logic decided to fail the request"))
 		span.SetStatus(codes.Error, "error")
 
-		hdErrorsMeter.Add(ctx, 5, metric.WithAttributes(hdErrorsAttribute))
+		hdErrorsMeter.Add(ctx, 5, metric.WithAttributes(hdErrorsAttributeSda))
 
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error")
@@ -170,7 +176,7 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	logger.InfoContext(ctx, "Terminated successful", slog.String("traceId", span.SpanContext().TraceID().String()))
 
-	hdErrorsMeter.Add(ctx, 1, metric.WithAttributes(hdErrorsAttribute))
+	hdErrorsMeter.Add(ctx, 1, metric.WithAttributes(hdErrorsAttributeSda))
 	fmt.Fprintf(w, "Success")
 }
 
