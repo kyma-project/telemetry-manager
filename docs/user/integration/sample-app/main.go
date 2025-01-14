@@ -34,14 +34,14 @@ var (
 	hdErrorsAttribute  = attribute.String("device", "/dev/sda")
 	cpuEnergyAttribute = attribute.String("core", "0")
 
-	tracer = otel.Tracer("sample-app")
-	meter  = otel.Meter("sample-app")
+	tracer = otel.Tracer("")
+	meter  = otel.Meter("")
 
 	terminateEndpoint string
 )
 
 // init registers the metrics and sets up the environment
-func init() {
+func initMetrics() {
 	var err error
 	if _, err = meter.Float64ObservableGauge(
 		"cpu.temperature.celsius",
@@ -72,7 +72,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
 
+func initTerminateEndpoint() {
 	var ok bool
 	if terminateEndpoint, ok = os.LookupEnv("TERMINATE_ENDPOINT"); !ok {
 		terminateEndpoint = fmt.Sprintf("localhost:%d", serverPort)
@@ -109,7 +111,7 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 		logger.ErrorContext(ctx, "client: error making http request", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
 
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "error")
+		span.SetStatus(codes.Error, "exception in client call")
 
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error")
@@ -122,7 +124,7 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 		logger.ErrorContext(ctx, "client: could not read response body", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
 
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "error")
+		span.SetStatus(codes.Error, "client call returned malformed body")
 
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error")
@@ -130,7 +132,13 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.InfoContext(ctx, "Forwarded successful", slog.String("status", res.Status), slog.String("traceId", span.SpanContext().TraceID().String()))
+	if res.StatusCode/100 != 2 {
+		logger.ErrorContext(ctx, "client: received error response code", slog.String("status", res.Status), slog.String("traceId", span.SpanContext().TraceID().String()))
+		span.SetStatus(codes.Error, "error")
+	} else {
+		logger.InfoContext(ctx, "Forwarded successful", slog.String("status", res.Status), slog.String("traceId", span.SpanContext().TraceID().String()))
+	}
+
 	w.WriteHeader(res.StatusCode)
 	fmt.Fprint(w, string(resBody))
 }
@@ -170,8 +178,9 @@ func main() {
 	ctx := context.Background()
 
 	// Instantiate the trace and metric providers
-	tp := newTraceProvider(newTraceExporter(ctx))
-	mp := newMeterProvider(newMetricExporter(ctx))
+	res := newOtelResource()
+	tp := newTraceProvider(newTraceExporter(ctx), res)
+	mp := newMeterProvider(newMetricReader(ctx), res)
 
 	// Handle shutdown properly so nothing leaks.
 	defer func() {
@@ -185,8 +194,14 @@ func main() {
 
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
+	// Initialize the metrics
+	initMetrics()
+
 	// Configure the HTTP server
 	http.DefaultClient.Timeout = 30 * time.Second
+
+	// Initialize the forward handler with the terminate endpoint to use
+	initTerminateEndpoint()
 
 	// Wrap the handler with OpenTelemetry instrumentation
 	wrappedForwardHandler := otelhttp.NewHandler(http.HandlerFunc(forwardHandler), "auto-forward")

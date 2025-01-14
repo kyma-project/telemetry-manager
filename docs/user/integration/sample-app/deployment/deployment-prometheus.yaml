@@ -35,6 +35,8 @@ spec:
           value: "http://telemetry-otlp-metrics.kyma-system:4317"
         - name: OTEL_METRICS_EXPORTER
           value: "prometheus"
+        - name: OTEL_SERVICE_NAME
+          value: "sample-app-prom"
         - name: TERMINATE_ENDPOINT
           value: "sample-app-prom:8080"
 ---

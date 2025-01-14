@@ -17,23 +17,25 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func newTraceProvider(exp trace.SpanExporter) *trace.TracerProvider {
+func newOtelResource() *resource.Resource {
 	// Ensure default SDK resources and the required service name are set.
-	r, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName("sample-app"),
-		),
+	res, err := resource.New(
+		context.Background(),
+		resource.WithAttributes(semconv.ServiceName("sample-app")), // Default service name which might get overriden by OTEL_SERVICE_NAME.
+		resource.WithFromEnv(),      // Discover and provide attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables.
+		resource.WithTelemetrySDK(), // Discover and provide information about the OpenTelemetry SDK used.
 	)
 
 	if err != nil {
 		panic(fmt.Errorf("creating resource: %w", err))
 	}
+	return res
+}
 
+func newTraceProvider(exp trace.SpanExporter, res *resource.Resource) *trace.TracerProvider {
 	return trace.NewTracerProvider(
 		trace.WithBatcher(exp),
-		trace.WithResource(r),
+		trace.WithResource(res),
 	)
 }
 
@@ -57,19 +59,7 @@ func newTraceExporter(ctx context.Context) trace.SpanExporter {
 	return exporter
 }
 
-func newMeterProvider(exp metric.Reader) *metric.MeterProvider {
-	// Ensure default SDK resources and the required service name are set.
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName("sample-app"),
-		),
-	)
-
-	if err != nil {
-		panic(fmt.Errorf("creating resource: %w", err))
-	}
+func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterProvider {
 
 	meterProvider := metric.NewMeterProvider(
 		metric.WithResource(res),
@@ -78,17 +68,17 @@ func newMeterProvider(exp metric.Reader) *metric.MeterProvider {
 	return meterProvider
 }
 
-func newMetricExporter(ctx context.Context) metric.Reader {
+func newMetricReader(ctx context.Context) metric.Reader {
 	var exporterEnv = os.Getenv("OTEL_METRICS_EXPORTER")
 	var endpointEnv = os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
 
 	if exporterEnv == "prometheus" {
-		exporter, err := prometheus.New()
+		reader, err := prometheus.New()
 		if err != nil {
-			panic(fmt.Errorf("creating prometheus metric exporter: %w", err))
+			panic(fmt.Errorf("creating prometheus metric reader: %w", err))
 		}
 		logger.Info("Using Prometheus metric exporter")
-		return exporter
+		return reader
 	}
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
