@@ -7,6 +7,8 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -134,6 +136,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	if err := r.deleteOldValidatingWebhook(ctx); err != nil {
+		return fmt.Errorf("failed to delete old validating webhook: %w", err)
+	}
+
 	if err := r.handleFinalizer(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
@@ -291,6 +297,24 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 
 	if err := k8sutils.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
 		return fmt.Errorf("failed to update webhook: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) deleteOldValidatingWebhook(ctx context.Context) error {
+	oldValidatingWebhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "validation.webhook.telemetry.kyma-project.io",
+		},
+	}
+
+	if err := r.Delete(ctx, oldValidatingWebhook); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to delete old validating webhook: %w", err)
 	}
 
 	return nil
