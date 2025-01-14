@@ -84,7 +84,7 @@ type Reconciler struct {
 	flowHealthProber      FlowHealthProber
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
-	gatewayProber         commonstatus.Prober
+	gatewayProber         commonstatus.DeploymentProber
 	istioStatusChecker    IstioStatusChecker
 	overridesHandler      OverridesHandler
 	pipelineLock          PipelineLock
@@ -98,7 +98,7 @@ func New(
 	flowHealthProber FlowHealthProber,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
-	gatewayProber commonstatus.Prober,
+	gatewayProber commonstatus.DeploymentProber,
 	istioStatusChecker IstioStatusChecker,
 	overridesHandler OverridesHandler,
 	pipelineLock PipelineLock,
