@@ -72,7 +72,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		vmaScrapeSpansGen := telemetrygen.NewPod(vmaScrapeSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
-			telemetrygen.WithTelemetryAttribute("upstream_cluster.name", "inbound|80|http://some-url"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Ingress"),
 			telemetrygen.WithTelemetryAttribute("user_agent", "vm_promscrape"),
 		).K8sObject()
 		healthzSpansGen := telemetrygen.NewPod(healthzSpansNs, telemetrygen.SignalTypeTraces,
@@ -80,7 +80,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
 			telemetrygen.WithTelemetryAttribute("istio.canonical_service", "istio-ingressgateway"),
-			telemetrygen.WithTelemetryAttribute("upstream_cluster.name", "outbound|80||http://some-url"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Egress"),
 			telemetrygen.WithTelemetryAttribute("http.url", "https://healthz.some-url/healthz/ready"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", "istio-system"),
 		).K8sObject()
@@ -92,7 +92,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		metricAgentScrapeSpansGen := telemetrygen.NewPod(metricAgentScrapeSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "GET"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
-			telemetrygen.WithTelemetryAttribute("upstream_cluster.name", "inbound||"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Ingress"),
 			telemetrygen.WithTelemetryAttribute("user_agent", "kyma-otelcol/0.1.0"),
 		).K8sObject()
 		metricAgentSpansGen := telemetrygen.NewPod(metricAgentSpansNs, telemetrygen.SignalTypeTraces,
@@ -108,7 +108,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		metricServiceSpansGen := telemetrygen.NewPod(metricServiceSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "POST"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
-			telemetrygen.WithTelemetryAttribute("upstream_cluster.name", "outbound||"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Egress"),
 			telemetrygen.WithTelemetryAttribute("http.url", "http://telemetry-otlp-metrics.kyma-system:4317"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
@@ -120,7 +120,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		traceServiceSpansGen := telemetrygen.NewPod(traceServiceSpansNs, telemetrygen.SignalTypeTraces,
 			telemetrygen.WithTelemetryAttribute("http.method", "POST"),
 			telemetrygen.WithTelemetryAttribute("component", "proxy"),
-			telemetrygen.WithTelemetryAttribute("upstream_cluster.name", "outbound|80||http://some-url"),
+			telemetrygen.WithTelemetryAttribute("OperationName", "Egress"),
 			telemetrygen.WithTelemetryAttribute("http.url", "http://telemetry-otlp-traces.kyma-system:4317"),
 			telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 		).K8sObject()
