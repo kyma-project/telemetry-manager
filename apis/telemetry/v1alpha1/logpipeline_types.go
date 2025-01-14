@@ -18,6 +18,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 )
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
@@ -186,4 +188,56 @@ type LogPipelineStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
 	UnsupportedMode *bool `json:"unsupportedMode,omitempty"`
+}
+
+func (i *LogPipelineInput) IsValid() bool {
+	return i != nil
+}
+
+func (o *LogPipelineOutput) IsCustomDefined() bool {
+	return o.Custom != ""
+}
+
+func (o *LogPipelineOutput) IsHTTPDefined() bool {
+	return o.HTTP != nil && o.HTTP.Host.IsValid()
+}
+
+func (o *LogPipelineOutput) IsOTLPDefined() bool {
+	return o.OTLP != nil
+}
+
+func (o *LogPipelineOutput) IsAnyDefined() bool {
+	return o.pluginCount() > 0
+}
+
+func (o *LogPipelineOutput) IsSingleDefined() bool {
+	return o.pluginCount() == 1
+}
+
+func (o *LogPipelineOutput) pluginCount() int {
+	plugins := 0
+	if o.IsCustomDefined() {
+		plugins++
+	}
+
+	if o.IsHTTPDefined() {
+		plugins++
+	}
+
+	if featureflags.IsEnabled(featureflags.LogPipelineOTLP) && o.IsOTLPDefined() {
+		plugins++
+	}
+
+	return plugins
+}
+
+// ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
+func (lp *LogPipeline) ContainsCustomPlugin() bool {
+	for _, filter := range lp.Spec.Filters {
+		if filter.Custom != "" {
+			return true
+		}
+	}
+
+	return lp.Spec.Output.IsCustomDefined()
 }

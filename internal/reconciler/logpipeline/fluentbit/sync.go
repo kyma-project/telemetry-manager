@@ -7,7 +7,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -15,8 +14,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
-	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
 type syncer struct {
@@ -39,7 +36,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return fmt.Errorf("failed to sync mounted files: %w", err)
 	}
 
-	if err := s.syncEnvConfigSecret(ctx, deployableLogPipelines); err != nil {
+	if err := s.syncEnvSecret(ctx, deployableLogPipelines); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("referenced secret not found: %v", err))
 			return nil
@@ -48,7 +45,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return err
 	}
 
-	if err := s.syncTLSFileConfigSecret(ctx, deployableLogPipelines); err != nil {
+	if err := s.syncTLSConfigSecret(ctx, deployableLogPipelines); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("referenced tls config secret not found: %v", err))
 			return nil
@@ -130,9 +127,9 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 	return nil
 }
 
-// Copies HTTP-specific attributes and user-provided variables to a secret that is later used for providing environment variables to the Fluent Bit configuration.
-func (s *syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.EnvConfigSecret)
+// TODO: Rename this method and EnvSecret + add documentation comments
+func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.EnvSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
 	}
@@ -147,15 +144,15 @@ func (s *syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemet
 
 		var httpOutput = logPipelines[i].Spec.Output.HTTP
 		if httpOutput != nil {
-			if copyErr := s.copyConfigSecretData(ctx, logPipelines[i].Name, &httpOutput.Host, &newSecret); copyErr != nil {
+			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Host, &newSecret); copyErr != nil {
 				return copyErr
 			}
 
-			if copyErr := s.copyConfigSecretData(ctx, logPipelines[i].Name, &httpOutput.User, &newSecret); copyErr != nil {
+			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.User, &newSecret); copyErr != nil {
 				return copyErr
 			}
 
-			if copyErr := s.copyConfigSecretData(ctx, logPipelines[i].Name, &httpOutput.Password, &newSecret); copyErr != nil {
+			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Password, &newSecret); copyErr != nil {
 				return copyErr
 			}
 		}
@@ -181,7 +178,7 @@ func (s *syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemet
 	return nil
 }
 
-func (s *syncer) copyConfigSecretData(ctx context.Context, prefix string, value *telemetryv1alpha1.ValueType, newSecret *corev1.Secret) error {
+func (s *syncer) copyEnvSecretData(ctx context.Context, prefix string, value *telemetryv1alpha1.ValueType, newSecret *corev1.Secret) error {
 	if value.Value != "" || value.ValueFrom == nil || value.ValueFrom.SecretKeyRef == nil {
 		return nil
 	}
@@ -196,10 +193,9 @@ func (s *syncer) copyConfigSecretData(ctx context.Context, prefix string, value 
 	return nil
 }
 
-// Copies TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
-// (since PEM-encoded strings exceed the maximum allowed length of environment variables on some Linux machines).
-func (s *syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.TLSFileConfigSecret)
+// TODO: Rename this method and OutputTLSConfigSecret + add documentation comments
+func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
 	}
@@ -213,19 +209,19 @@ func (s *syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []tel
 		}
 
 		output := logPipelines[i].Spec.Output
-		if !logpipelineutils.IsHTTPDefined(&output) {
+		if !output.IsHTTPDefined() {
 			continue
 		}
 
 		tlsConfig := output.HTTP.TLS
-		if sharedtypesutils.IsValid(tlsConfig.CA) {
+		if tlsConfig.CA.IsValid() {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.CA, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}
 
-		if sharedtypesutils.IsValid(tlsConfig.Cert) && sharedtypesutils.IsValid(tlsConfig.Key) {
+		if tlsConfig.Cert.IsValid() && tlsConfig.Key.IsValid() {
 			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Cert, targetCertVariable, newSecret.Data); err != nil {
 				return err
@@ -271,7 +267,7 @@ func (s *syncer) copyFromValueOrSecret(ctx context.Context, value telemetryv1alp
 
 func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
 	var source corev1.Secret
-	if err := s.Get(ctx, types.NamespacedName{Name: sourceRef.Name, Namespace: sourceRef.Namespace}, &source); err != nil {
+	if err := s.Get(ctx, sourceRef.NamespacedName(), &source); err != nil {
 		return fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", sourceRef.Name, sourceRef.Namespace, err)
 	}
 

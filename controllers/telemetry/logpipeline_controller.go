@@ -81,13 +81,13 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	}
 
 	fluentbitConfig := logpipelinefluentbit.Config{
-		SectionsConfigMap:   types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
-		FilesConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
-		LuaConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: config.TelemetryNamespace},
-		ParsersConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: config.TelemetryNamespace},
-		EnvConfigSecret:     types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: config.TelemetryNamespace},
-		TLSFileConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: config.TelemetryNamespace},
-		DaemonSet:           types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
+		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: config.TelemetryNamespace},
+		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: config.TelemetryNamespace},
+		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: config.TelemetryNamespace},
+		ParsersConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: config.TelemetryNamespace},
+		EnvSecret:             types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: config.TelemetryNamespace},
+		OutputTLSConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: config.TelemetryNamespace},
+		DaemonSet:             types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: config.TelemetryNamespace},
 		PipelineDefaults: builder.PipelineDefaults{
 			InputTag:          "tele",
 			MemoryBufferLimit: "10M",

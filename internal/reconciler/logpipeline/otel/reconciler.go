@@ -10,7 +10,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	pipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/pipelines"
 )
 
 var _ logpipeline.LogPipelineReconciler = &Reconciler{}
@@ -43,8 +43,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.
 	return err
 }
 
-func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
-	return logpipelineutils.OTel
+func (r *Reconciler) SupportedOutput() pipelineutils.LogPipelineMode {
+	return pipelineutils.OTel
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, _ *telemetryv1alpha1.LogPipeline) error {

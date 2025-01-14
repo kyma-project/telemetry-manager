@@ -8,7 +8,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
 
 var (
@@ -35,7 +34,7 @@ func validateOutput(lp *telemetryv1alpha1.LogPipeline) error {
 		return err
 	}
 
-	if logpipelineutils.IsHTTPDefined(&output) {
+	if output.IsHTTPDefined() {
 		if err := validateHTTPOutput(output.HTTP); err != nil {
 			return err
 		}
@@ -45,11 +44,11 @@ func validateOutput(lp *telemetryv1alpha1.LogPipeline) error {
 }
 
 func checkSingleOutputPlugin(output telemetryv1alpha1.LogPipelineOutput) error {
-	if !logpipelineutils.IsAnyDefined(&output) {
+	if !output.IsAnyDefined() {
 		return fmt.Errorf("no output plugin is defined, you must define one output plugin")
 	}
 
-	if !logpipelineutils.IsSingleDefined(&output) {
+	if !output.IsSingleDefined() {
 		return fmt.Errorf("multiple output plugins are defined, you must define only one output plugin")
 	}
 
@@ -160,7 +159,7 @@ func validateCustomFilter(content string) error {
 
 func validateInput(lp *telemetryv1alpha1.LogPipeline) error {
 	input := lp.Spec.Input
-	if !logpipelineutils.IsInputValid(&input) {
+	if !input.IsValid() {
 		return nil
 	}
 
