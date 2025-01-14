@@ -39,10 +39,9 @@ func TestMakeDaemonSet(t *testing.T) {
 		"app.kubernetes.io/instance": "telemetry",
 	}, daemonSet.Spec.Selector.MatchLabels)
 	require.Equal(t, map[string]string{
-		"app.kubernetes.io/name":               "fluent-bit",
-		"app.kubernetes.io/instance":           "telemetry",
-		"sidecar.istio.io/inject":              "true",
-		"telemetry.kyma-project.io/log-export": "true",
+		"app.kubernetes.io/name":     "fluent-bit",
+		"app.kubernetes.io/instance": "telemetry",
+		"sidecar.istio.io/inject":    "true",
 	}, daemonSet.Spec.Template.ObjectMeta.Labels)
 	require.NotEmpty(t, daemonSet.Spec.Template.Spec.Containers[0].EnvFrom)
 	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")

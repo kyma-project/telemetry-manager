@@ -16,7 +16,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -33,9 +32,8 @@ type AgentApplierDeleter struct {
 }
 
 type AgentApplyOptions struct {
-	AllowedPorts            []int32
-	CollectorConfigYAML     string
-	ComponentSelectorLabels map[string]string
+	AllowedPorts        []int32
+	CollectorConfigYAML string
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
@@ -51,7 +49,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
@@ -85,8 +83,10 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
-	selectorLabels := labels.MakeDefaultLabel(aad.Config.BaseName)
+func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
+	selectorLabels := defaultLabels(aad.Config.BaseName)
+	podLabels := maps.Clone(selectorLabels)
+	podLabels["sidecar.istio.io/inject"] = "true"
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(IstioCertPath))
@@ -123,7 +123,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      opts.ComponentSelectorLabels,
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,

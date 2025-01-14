@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -20,7 +21,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -32,12 +32,11 @@ type GatewayApplierDeleter struct {
 }
 
 type GatewayApplyOptions struct {
-	AllowedPorts            []int32
-	CollectorConfigYAML     string
-	CollectorEnvVars        map[string][]byte
-	ComponentSelectorLabels map[string]string
-	IstioEnabled            bool
-	IstioExcludePorts       []int32
+	AllowedPorts        []int32
+	CollectorConfigYAML string
+	CollectorEnvVars    map[string][]byte
+	IstioEnabled        bool
+	IstioExcludePorts   []int32
 	// Replicas specifies the number of gateway replicas.
 	Replicas int32
 	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
@@ -126,15 +125,29 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	selectorLabels := labels.MakeDefaultLabel(gad.Config.BaseName)
+	selectorLabels := defaultLabels(gad.Config.BaseName)
+	podLabels := maps.Clone(selectorLabels)
+	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", opts.IstioEnabled)
 
-	annotations := gad.makeAnnotations(configChecksum, opts)
+	annotations := map[string]string{"checksum/config": configChecksum}
+
+	if opts.IstioEnabled {
+		var excludeInboundPorts []string
+		for _, p := range opts.IstioExcludePorts {
+			excludeInboundPorts = append(excludeInboundPorts, fmt.Sprintf("%d", p))
+		}
+
+		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = strings.Join(excludeInboundPorts, ", ")
+		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
+		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
+		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
+		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
+	}
 
 	resources := gad.makeGatewayResourceRequirements(opts)
 	affinity := makePodAffinity(selectorLabels)
 
 	deploymentConfig := gad.Config.Deployment
-
 	podSpec := makePodSpec(
 		gad.Config.BaseName,
 		deploymentConfig.Image,
@@ -159,7 +172,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      opts.ComponentSelectorLabels,
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,
@@ -225,7 +238,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	labels := labels.MakeDefaultLabel(gad.Config.BaseName)
+	labels := defaultLabels(gad.Config.BaseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -255,7 +268,7 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	labels := labels.MakeDefaultLabel(gad.Config.BaseName)
+	labels := defaultLabels(gad.Config.BaseName)
 
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
@@ -268,23 +281,4 @@ func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
-}
-
-func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts GatewayApplyOptions) map[string]string {
-	annotations := map[string]string{"checksum/config": configChecksum}
-
-	if opts.IstioEnabled {
-		var excludeInboundPorts []string
-		for _, p := range opts.IstioExcludePorts {
-			excludeInboundPorts = append(excludeInboundPorts, fmt.Sprintf("%d", p))
-		}
-
-		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = strings.Join(excludeInboundPorts, ", ")
-		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
-		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
-		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
-		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
-	}
-
-	return annotations
 }

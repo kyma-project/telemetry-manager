@@ -14,8 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	"github.com/kyma-project/telemetry-manager/internal/labels"
 )
 
 var (
@@ -39,9 +37,8 @@ func TestApplyAgentResources(t *testing.T) {
 	}
 
 	err := sut.ApplyResources(ctx, client, AgentApplyOptions{
-		AllowedPorts:            []int32{5555, 6666},
-		CollectorConfigYAML:     agentCfg,
-		ComponentSelectorLabels: labels.MakeMetricAgentSelectorLabel(agentName),
+		AllowedPorts:        []int32{5555, 6666},
+		CollectorConfigYAML: agentCfg,
 	})
 	require.NoError(t, err)
 
@@ -208,9 +205,8 @@ func TestApplyAgentResources(t *testing.T) {
 			"app.kubernetes.io/name": agentName,
 		}, ds.Spec.Selector.MatchLabels, "must have expected daemonset selector labels")
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                  agentName,
-			"sidecar.istio.io/inject":                 "true",
-			"telemetry.kyma-project.io/metric-scrape": "true",
+			"app.kubernetes.io/name":  agentName,
+			"sidecar.istio.io/inject": "true",
 		}, ds.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
 		// annotations
@@ -327,7 +323,7 @@ func createAgentRBAC() Rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      agentName,
 			Namespace: agentNamespace,
-			Labels:    labels.MakeDefaultLabel(agentName),
+			Labels:    defaultLabels(agentName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -342,7 +338,7 @@ func createAgentRBAC() Rbac {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      agentName,
 			Namespace: agentNamespace,
-			Labels:    labels.MakeDefaultLabel(agentName),
+			Labels:    defaultLabels(agentName),
 		},
 		Subjects: []rbacv1.Subject{{Name: agentName, Namespace: agentNamespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
