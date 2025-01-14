@@ -127,7 +127,6 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 	return nil
 }
 
-// TODO: Rename this method and EnvSecret + add documentation comments
 func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
 	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.EnvSecret)
 	if err != nil {
@@ -142,18 +141,10 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 			continue
 		}
 
-		var httpOutput = logPipelines[i].Spec.Output.HTTP
-		if httpOutput != nil {
-			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Host, &newSecret); copyErr != nil {
-				return copyErr
-			}
-
-			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.User, &newSecret); copyErr != nil {
-				return copyErr
-			}
-
-			if copyErr := s.copyEnvSecretData(ctx, logPipelines[i].Name, &httpOutput.Password, &newSecret); copyErr != nil {
-				return copyErr
+		for _, ref := range logPipelines[i].GetEnvSecretRefs() {
+			targetKey := builder.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
+			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
+				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}
 		}
 
@@ -178,22 +169,6 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 	return nil
 }
 
-func (s *syncer) copyEnvSecretData(ctx context.Context, prefix string, value *telemetryv1alpha1.ValueType, newSecret *corev1.Secret) error {
-	if value.Value != "" || value.ValueFrom == nil || value.ValueFrom.SecretKeyRef == nil {
-		return nil
-	}
-
-	var ref = value.ValueFrom.SecretKeyRef
-
-	targetKey := builder.FormatEnvVarName(prefix, ref.Namespace, ref.Name, ref.Key)
-	if copyErr := s.copySecretData(ctx, *ref, targetKey, newSecret.Data); copyErr != nil {
-		return fmt.Errorf("unable to copy secret data: %w", copyErr)
-	}
-
-	return nil
-}
-
-// TODO: Rename this method and OutputTLSConfigSecret + add documentation comments
 func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
 	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
 	if err != nil {
