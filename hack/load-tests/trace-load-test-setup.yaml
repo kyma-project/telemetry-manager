@@ -41,7 +41,7 @@ spec:
             - podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: app.kubernetes.io/name
+                    - key: app
                       operator: In
                       values:
                         - trace-load-generator
