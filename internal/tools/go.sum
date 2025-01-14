@@ -399,8 +399,8 @@ github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8/go.mod h1:vgyd7OREkbtVE
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/julz/importas v0.1.0 h1:F78HnrsjY3cR7j0etXy5+TU1Zuy7Xt08X/1aJnH5xXY=
 github.com/julz/importas v0.1.0/go.mod h1:oSFU2R4XK/P7kNBrnL/FEQlDGN1/6WoxXEjSSXO0DV0=
-github.com/k3d-io/k3d/v5 v5.7.5 h1:rLzUV1XmCLfFkHZEU1YocnGGo2ccHAvCj79tC0yncdI=
-github.com/k3d-io/k3d/v5 v5.7.5/go.mod h1:bFlhRV/R1cPT42ZZzQAHPHUF33CbCT8VSbjtjTr3J1Y=
+github.com/k3d-io/k3d/v5 v5.7.4 h1:L7Ix6zFMqjoPuEJ5dctLb7kCFXXlF5js6I7bm+tEgo0=
+github.com/k3d-io/k3d/v5 v5.7.4/go.mod h1:bFlhRV/R1cPT42ZZzQAHPHUF33CbCT8VSbjtjTr3J1Y=
 github.com/karamaru-alpha/copyloopvar v1.1.0 h1:x7gNyKcC2vRBO1H2Mks5u1VxQtYvFiym7fCjIP8RPos=
 github.com/karamaru-alpha/copyloopvar v1.1.0/go.mod h1:u7CIfztblY0jZLOQZgH3oYsJzpC2A7S6u/lfgSXHy0k=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
