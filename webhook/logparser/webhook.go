@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 )
 
@@ -37,7 +36,6 @@ type ValidatingWebhookHandler struct {
 	decoder admission.Decoder
 }
 
-// TODO: Merge validation package with the webhook package, avoid useless dependency injection
 func NewValidatingWebhookHandler(client client.Client, decoder admission.Decoder) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
 		Client:  client,
@@ -73,7 +71,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 }
 
 func (v *ValidatingWebhookHandler) validateLogParser(logParser *telemetryv1alpha1.LogParser) error {
-	err := validation.ValidateSpec(logParser)
+	err := logParser.Validate()
 	if err != nil {
 		return err
 	}

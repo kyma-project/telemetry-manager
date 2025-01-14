@@ -1,13 +1,12 @@
-package validation
+package v1alpha1
 
 import (
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 )
 
-func ValidateSpec(lp *telemetryv1alpha1.LogParser) error {
+func (lp *LogParser) Validate() error {
 	if len(lp.Spec.Parser) == 0 {
 		return fmt.Errorf("log parser '%s' has no parser defined", lp.Name)
 	}

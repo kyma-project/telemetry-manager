@@ -44,7 +44,6 @@ type ValidatingWebhookHandler struct {
 	decoder               admission.Decoder
 }
 
-// TODO: Merge validation package with the webhook package, avoid useless dependency injection
 func NewValidatingWebhookHandler(
 	client client.Client,
 	variablesValidator validation.VariablesValidator,
@@ -118,7 +117,7 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 		return err
 	}
 
-	if err := validation.ValidateSpec(logPipeline); err != nil {
+	if err := logPipeline.Validate(); err != nil {
 		log.Error(err, "Failed to validate Fluent Bit input")
 		return err
 	}
