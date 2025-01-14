@@ -157,7 +157,7 @@ func init() {
 // +kubebuilder:rbac:urls=/metrics,verbs=get
 // +kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
-// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;update
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;patch
 
 // +kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
@@ -528,7 +528,7 @@ func createWebhookConfig() telemetry.WebhookConfig {
 				Namespace: telemetryNamespace,
 			},
 			WebhookName: types.NamespacedName{
-				Name: "telemetry-validating-webhook.kyma-project.io",
+				Name: "validation.webhook.telemetry.kyma-project.io",
 			},
 		},
 	}

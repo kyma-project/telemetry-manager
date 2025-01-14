@@ -49,6 +49,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesOutage), Order
 		return objs
 	}
 
+	Context("Before deploying a tracepipeline", func() {
+		It("Should have a healthy webhook", func() {
+			assert.WebhookHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a tracepipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()

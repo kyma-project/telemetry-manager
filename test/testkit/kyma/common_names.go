@@ -17,7 +17,7 @@ const (
 	FluentBitBaseName     = "telemetry-fluent-bit"
 	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
-	ValidatingWebhookName = "telemetry-validating-webhook.kyma-project.io"
+	WebhookName           = "validation.webhook.telemetry.kyma-project.io"
 
 	MetricGatewayServiceName = "telemetry-otlp-metrics"
 	TraceGatewayServiceName  = "telemetry-otlp-traces"

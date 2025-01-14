@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -16,11 +17,17 @@ import (
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			assert.WebhookHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a validating webhook exists", Ordered, func() {
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.WebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
