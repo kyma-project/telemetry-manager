@@ -11,7 +11,7 @@ require (
 	github.com/mikefarah/yq/v4 v4.44.3
 	github.com/onsi/ginkgo/v2 v2.21.0
 	github.com/vektra/mockery/v2 v2.46.3
-	github.com/vladopajic/go-test-coverage/v2 v2.10.4
+	github.com/vladopajic/go-test-coverage/v2 v2.10.2
 	golang.org/x/tools v0.26.0
 	sigs.k8s.io/controller-tools v0.16.5
 	sigs.k8s.io/kustomize/kustomize/v5 v5.5.0
