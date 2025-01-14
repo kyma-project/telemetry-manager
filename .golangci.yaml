@@ -147,6 +147,8 @@ linters-settings:
         alias: slicesutils
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/test
         alias: testutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline
+        alias: metricpipelineutils
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
