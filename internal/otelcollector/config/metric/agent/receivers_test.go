@@ -10,18 +10,6 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-type metricResource string
-
-const (
-	pod         metricResource = "pod"
-	container   metricResource = "container"
-	statefulset metricResource = "statefulset"
-	job         metricResource = "job"
-	deployment  metricResource = "deployment"
-	daemonset   metricResource = "daemonset"
-	none        metricResource = "none"
-)
-
 func TestReceivers(t *testing.T) {
 	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
 	sut := Builder{
@@ -54,52 +42,36 @@ func TestReceivers(t *testing.T) {
 					WithRuntimeInput(true).
 					Build(),
 
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(none),
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("default"),
 			},
 			{
-				name: "only pod metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
+				name: "only statefulset metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).
 					WithRuntimeInputPodMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(pod),
-			},
-			{
-				name: "only container metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
 					WithRuntimeInputContainerMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(container),
-			},
-			{
-				name: "only statefulset metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputStatefulSetMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(statefulset),
+					WithRuntimeInputStatefulSetMetrics(true).Build(),
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("statefulset"),
 			}, {
-				name: "only job metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputJobMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(job),
+				name: "only job metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputJobMetrics(true).Build(),
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("job"),
 			}, {
-				name: "only deployment metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputDeploymentMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(deployment),
+				name: "only deployment metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputDeploymentMetrics(true).Build(),
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("deployment"),
 			}, {
-				name: "only daemonset metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputDaemonSetMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(daemonset),
+				name: "only daemonset metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputDaemonSetMetrics(true).Build(),
+				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop("daemonset"),
 			},
 		}
 		for _, test := range tests {
@@ -135,39 +107,51 @@ func TestReceivers(t *testing.T) {
 			{
 				name:                 "default resources enabled",
 				pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
+				expectedMetricGroups: []MetricGroupType{"container", "pod"},
 			},
 			{
-				name: "only pod metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputPodMetrics(false).
-					Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypeNode, MetricGroupTypeVolume},
-			},
-			{
-				name: "only container metrics disabled",
+				name: "only pod metrics enabled",
 				pipeline: testutils.NewMetricPipelineBuilder().
 					WithRuntimeInput(true).
 					WithRuntimeInputContainerMetrics(false).
-					Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
-			},
-			{
-				name: "only node metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(true).
 					WithRuntimeInputNodeMetrics(false).
-					Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeVolume},
-			},
-			{
-				name: "only volume metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
 					WithRuntimeInputVolumeMetrics(false).
 					Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode},
+				expectedMetricGroups: []MetricGroupType{"pod"},
+			},
+			{
+				name: "only container metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputNodeMetrics(false).
+					WithRuntimeInputVolumeMetrics(false).
+					Build(),
+				expectedMetricGroups: []MetricGroupType{"container"},
+			},
+			{
+				name: "only node metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputNodeMetrics(true).
+					WithRuntimeInputVolumeMetrics(false).
+					Build(),
+				expectedMetricGroups: []MetricGroupType{"node"},
+			},
+			{
+				name: "only volume metrics enabled",
+				pipeline: testutils.NewMetricPipelineBuilder().
+					WithRuntimeInput(true).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputNodeMetrics(false).
+					WithRuntimeInputVolumeMetrics(true).
+					Build(),
+				expectedMetricGroups: []MetricGroupType{"volume"},
 			},
 		}
 
@@ -280,7 +264,7 @@ func TestReceivers(t *testing.T) {
 	})
 }
 
-func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K8sClusterMetricsToDrop {
+func getExpectedK8sClusterMetricsToDrop(resourceEnabled string) K8sClusterMetricsToDrop {
 	metricsToDrop := K8sClusterMetricsToDrop{}
 
 	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
@@ -312,6 +296,7 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 		K8sContainerMemoryRequest: MetricConfig{false},
 		K8sContainerMemoryLimit:   MetricConfig{false},
 	}
+
 	statefulMetricsToDrop := &K8sClusterStatefulSetMetricsToDrop{
 		K8sStatefulSetCurrentPods: MetricConfig{false},
 		K8sStatefulSetDesiredPods: MetricConfig{false},
@@ -338,28 +323,43 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 
 	metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
 
-	if disabledMetricResource == pod {
-		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
-	}
-
-	if disabledMetricResource == container {
-		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
-	}
-
-	if disabledMetricResource == statefulset {
+	if resourceEnabled == "default" {
 		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
-	}
-
-	if disabledMetricResource == job {
 		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
-	}
-
-	if disabledMetricResource == deployment {
 		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
+		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
 	}
 
-	if disabledMetricResource == daemonset {
+	if resourceEnabled == "statefulset" {
+		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
+		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
 		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
+	}
+
+	if resourceEnabled == "job" {
+		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
+		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
+		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
+	}
+
+	if resourceEnabled == "deployment" {
+		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
+		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
+		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
+	}
+
+	if resourceEnabled == "daemonset" {
+		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
+		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
+		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
 	}
 
 	return metricsToDrop
