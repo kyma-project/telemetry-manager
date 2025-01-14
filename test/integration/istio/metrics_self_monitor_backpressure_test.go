@@ -29,7 +29,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsBackpressure)
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithAbortFaultInjection(95))
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithAbortFaultInjection(75))
 		objs = append(objs, backend.K8sObjects()...)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
