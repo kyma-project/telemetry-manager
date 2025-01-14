@@ -231,7 +231,8 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &validatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
-	certDir := t.TempDir()
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
@@ -245,7 +246,7 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
-	err := EnsureCertificate(context.TODO(), client, config)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -277,7 +278,8 @@ func TestUpdateWebhookConfig(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &validatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
-	certDir := t.TempDir()
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
 
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
@@ -292,7 +294,7 @@ func TestUpdateWebhookConfig(t *testing.T) {
 		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
-	err := EnsureCertificate(context.TODO(), client, config)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	newServerCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -336,7 +338,8 @@ func TestCreateSecret(t *testing.T) {
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &validatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
-	certDir := t.TempDir()
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
 
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
@@ -351,7 +354,7 @@ func TestCreateSecret(t *testing.T) {
 		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
-	err := EnsureCertificate(context.TODO(), client, config)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var secret corev1.Secret
@@ -368,7 +371,8 @@ func TestReuseExistingCertificate(t *testing.T) {
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&logPipelinesCRD, &validatingWebhookConfiguration, &mutatingWebhookConfiguration).Build()
 
-	certDir := t.TempDir()
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
 
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
@@ -383,7 +387,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
-	err := EnsureCertificate(context.TODO(), client, config)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var newValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
