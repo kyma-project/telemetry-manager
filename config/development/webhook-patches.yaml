@@ -1,88 +1,88 @@
----
 
+---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-webhook.kyma-project.io
 webhooks:
-- name: mutating-metricpipelines-v1beta1.kyma-project.io
-  clientConfig:
-    service:
-      name: telemetry-manager-webhook
-      namespace: kyma-system
-      path: /mutate-telemetry-kyma-project-io-v1beta1-metricpipeline
-      port: 443
-  admissionReviewVersions:
-  - v1beta1
-  - v1
-  sideEffects: None
-  failurePolicy: Fail
-  matchPolicy: Exact
-  timeoutSeconds: 15
-  namespaceSelector: {}
-  objectSelector: {}
-  rules:
-  - apiGroups:
-    - telemetry.kyma-project.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - metricpipelines
-    scope: '*'
-- name: mutating-tracepipelines-v1beta1.kyma-project.io
-  clientConfig:
-    service:
-      name: telemetry-manager-webhook
-      namespace: kyma-system
-      path: /mutate-telemetry-kyma-project-io-v1beta1-tracepipeline
-      port: 443
-  admissionReviewVersions:
-  - v1beta1
-  - v1
-  sideEffects: None
-  failurePolicy: Fail
-  matchPolicy: Exact
-  timeoutSeconds: 15
-  namespaceSelector: {}
-  objectSelector: {}
-  rules:
-  - apiGroups:
-    - telemetry.kyma-project.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - tracepipelines
-    scope: '*'
-- name: mutating-logpipelines-v1beta1.kyma-project.io
-  clientConfig:
-    service:
-      name: telemetry-manager-webhook
-      namespace: kyma-system
-      path: /mutate-telemetry-kyma-project-io-v1beta1-logpipeline
-      port: 443
-  admissionReviewVersions:
-  - v1beta1
-  - v1
-  sideEffects: None
-  failurePolicy: Fail
-  matchPolicy: Exact
-  timeoutSeconds: 15
-  namespaceSelector: {}
-  objectSelector: {}
-  rules:
-  - apiGroups:
-    - telemetry.kyma-project.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - logpipelines
-    scope: '*'
+  - name: mutating-metricpipelines-v1beta1.kyma-project.io
+    clientConfig:
+      service:
+        name: telemetry-manager-webhook
+        namespace: kyma-system
+        path: /mutate-telemetry-kyma-project-io-v1beta1-metricpipeline
+        port: 443
+    admissionReviewVersions:
+      - v1beta1
+      - v1
+    sideEffects: None
+    failurePolicy: Fail
+    matchPolicy: Exact
+    timeoutSeconds: 15
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+      - apiGroups:
+          - telemetry.kyma-project.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - metricpipelines
+        scope: '*'
+  - name: mutating-tracepipelines-v1beta1.kyma-project.io
+    clientConfig:
+      service:
+        name: telemetry-manager-webhook
+        namespace: kyma-system
+        path: /mutate-telemetry-kyma-project-io-v1beta1-tracepipeline
+        port: 443
+    admissionReviewVersions:
+      - v1beta1
+      - v1
+    sideEffects: None
+    failurePolicy: Fail
+    matchPolicy: Exact
+    timeoutSeconds: 15
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+      - apiGroups:
+          - telemetry.kyma-project.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - tracepipelines
+        scope: '*'
+  - name: mutating-logpipelines-v1beta1.kyma-project.io
+    clientConfig:
+      service:
+        name: telemetry-manager-webhook
+        namespace: kyma-system
+        path: /mutate-telemetry-kyma-project-io-v1beta1-logpipeline
+        port: 443
+    admissionReviewVersions:
+      - v1beta1
+      - v1
+    sideEffects: None
+    failurePolicy: Fail
+    matchPolicy: Exact
+    timeoutSeconds: 15
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+      - apiGroups:
+          - telemetry.kyma-project.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - logpipelines
+        scope: '*'

@@ -46,19 +46,19 @@ spec:
         app: log-sink
     spec:
       volumes:
-      - name: config
-        configMap:
-          name: log-sink-config
+        - name: config
+          configMap:
+            name: log-sink-config
       securityContext:
         fsGroup: 101
       containers:
-      - image: otel/opentelemetry-collector-contrib:latest
-        name: collector
-        volumeMounts:
-        - name: config
-          mountPath: /etc/collector
-        args:
-        - --config=/etc/collector/config.yaml
+        - image: otel/opentelemetry-collector-contrib:latest
+          name: collector
+          volumeMounts:
+            - name: config
+              mountPath: /etc/collector
+          args:
+            - --config=/etc/collector/config.yaml
 ---
 apiVersion: v1
 kind: Service
@@ -67,14 +67,14 @@ metadata:
   namespace: log-sink-otlp
 spec:
   ports:
-  - name: grpc-otlp
-    port: 4317
-    protocol: TCP
-    targetPort: 4317
-  - name: http-otlp
-    port: 4318
-    protocol: TCP
-    targetPort: 4318
+    - name: grpc-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-otlp
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
   selector:
     app: log-sink
 ---
@@ -100,18 +100,18 @@ spec:
         app: log-gen
     spec:
       containers:
-      - command:
-        - /telemetrygen
-        - logs
-        - --otlp-endpoint
-        - telemetry-otlp-logs.kyma-system:4317
-        - --otlp-insecure
-        - --duration
-        - 1h
-        - --rate
-        - "10"
-        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.111.0
-        name: telemetrygen
+        - command:
+            - /telemetrygen
+            - logs
+            - --otlp-endpoint
+            - telemetry-otlp-logs.kyma-system:4317
+            - --otlp-insecure
+            - --duration
+            - 1h
+            - --rate
+            - "10"
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.111.0
+          name: telemetrygen
 ---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogPipeline

@@ -50,7 +50,6 @@ KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
 MOCKERY          := $(TOOLS_BIN_DIR)/mockery
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
 YQ               := $(TOOLS_BIN_DIR)/yq
-YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
 WSL				 := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
@@ -105,12 +104,10 @@ manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, 
 	$(YQ) eval 'del(.. | select(has("x-kubernetes-validations"))."x-kubernetes-validations"[] | select(.rule|contains("otlp")) )' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
 	## Remove empty x-kubernetes-validations arrays from logpipeline crd that can be caused by previous yq manipulations
 	$(YQ) eval 'del(.. | select(select(has("x-kubernetes-validations"))."x-kubernetes-validations" | length == 0)."x-kubernetes-validations")' -i ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml
-	$(YAMLFMT)
 
 .PHONY: manifests-dev
-manifests-dev: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
+manifests-dev: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=config/development/crd/bases
-	$(YAMLFMT)
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
