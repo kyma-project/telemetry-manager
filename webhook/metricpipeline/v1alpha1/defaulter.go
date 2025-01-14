@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
 // +kubebuilder:object:generate=false
@@ -42,25 +43,25 @@ func (md defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
-	if prometheusInputEnabled(pipeline) && pipeline.Spec.Input.Prometheus.Namespaces == nil {
+	if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Prometheus.Namespaces == nil {
 		pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
-	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.Namespaces == nil {
+	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Istio.Namespaces == nil {
 		pipeline.Spec.Input.Istio.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
-	if runtimeInputEnabled(pipeline) && pipeline.Spec.Input.Runtime.Namespaces == nil {
+	if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.Namespaces == nil {
 		pipeline.Spec.Input.Runtime.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 			Exclude: md.ExcludeNamespaces,
 		}
 	}
 
-	if runtimeInputEnabled(pipeline) {
+	if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) {
 		md.applyRuntimeInputResourceDefaults(pipeline)
 	}
 
@@ -121,16 +122,4 @@ func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha
 			Enabled: &md.RuntimeInputResources.Job,
 		}
 	}
-}
-
-func prometheusInputEnabled(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Prometheus != nil && pipeline.Spec.Input.Prometheus.Enabled != nil && *pipeline.Spec.Input.Prometheus.Enabled
-}
-
-func istioInputEnabled(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Istio != nil && pipeline.Spec.Input.Istio.Enabled != nil && *pipeline.Spec.Input.Istio.Enabled
-}
-
-func runtimeInputEnabled(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Runtime != nil && pipeline.Spec.Input.Runtime.Enabled != nil && *pipeline.Spec.Input.Runtime.Enabled
 }
