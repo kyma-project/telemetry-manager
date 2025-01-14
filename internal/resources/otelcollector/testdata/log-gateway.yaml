@@ -99,7 +99,6 @@ spec:
       creationTimestamp: null
       labels:
         app.kubernetes.io/name: telemetry-log-gateway
-        sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/log-export: "true"
         telemetry.kyma-project.io/log-ingest: "true"
     spec:

@@ -204,18 +204,12 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		// TODO: Add validators
 	}
 
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
-	if err != nil {
-		return nil, err
-	}
-
 	otelReconciler := logpipelineotel.New(
 		client,
 		config.TelemetryNamespace,
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
 		pipelineValidator,
 		&conditions.ErrorToMessageConverter{})
 
