@@ -1,6 +1,5 @@
 name: All Checks passed
 on:
-  merge_group:
   pull_request:
     types:
       [
