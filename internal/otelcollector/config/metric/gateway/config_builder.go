@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
 const (
@@ -97,11 +98,11 @@ func declareSingletonKymaStatsReceiverCreator(cfg *Config, opts BuildOptions) {
 func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
 
-	if metric.IsPrometheusInputEnabled(input) && !metric.IsPrometheusDiagnosticInputEnabled(input) {
+	if metricpipelineutils.IsPrometheusInputEnabled(input) && !metricpipelineutils.IsPrometheusDiagnosticInputEnabled(input) {
 		cfg.Processors.DropDiagnosticMetricsIfInputSourcePrometheus = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourcePrometheus))
 	}
 
-	if metric.IsIstioInputEnabled(input) && !metric.IsIstioDiagnosticInputEnabled(input) {
+	if metricpipelineutils.IsIstioInputEnabled(input) && !metricpipelineutils.IsIstioDiagnosticInputEnabled(input) {
 		cfg.Processors.DropDiagnosticMetricsIfInputSourceIstio = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourceIstio))
 	}
 }
@@ -109,19 +110,19 @@ func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipel
 func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
 
-	if !metric.IsRuntimeInputEnabled(input) {
+	if !metricpipelineutils.IsRuntimeInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
 
-	if !metric.IsPrometheusInputEnabled(input) {
+	if !metricpipelineutils.IsPrometheusInputEnabled(input) {
 		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
 
-	if !metric.IsIstioInputEnabled(input) {
+	if !metricpipelineutils.IsIstioInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
 	}
 
-	if !metric.IsOTLPInputEnabled(input) {
+	if !metricpipelineutils.IsOTLPInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceOTLP = makeDropIfInputSourceOTLPConfig()
 	}
 }
@@ -129,35 +130,35 @@ func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *
 func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
 
-	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimePodInputEnabled(input) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimePodInputEnabled(input) {
 		cfg.Processors.DropRuntimePodMetrics = makeDropRuntimePodMetricsConfig()
 	}
 
-	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeContainerInputEnabled(input) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeContainerInputEnabled(input) {
 		cfg.Processors.DropRuntimeContainerMetrics = makeDropRuntimeContainerMetricsConfig()
 	}
 
-	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeNodeInputEnabled(input) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeNodeInputEnabled(input) {
 		cfg.Processors.DropRuntimeNodeMetrics = makeDropRuntimeNodeMetricsConfig()
 	}
 
-	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeVolumeInputEnabled(input) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeVolumeInputEnabled(input) {
 		cfg.Processors.DropRuntimeVolumeMetrics = makeDropRuntimeVolumeMetricsConfig()
 	}
 
-	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeDeploymentInputEnabled(input) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeDeploymentInputEnabled(input) {
 		cfg.Processors.DropRuntimeDeploymentMetrics = makeDropRuntimeDeploymentMetricsConfig()
 	}
 
-	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeStatefulSetInputEnabled(input) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeStatefulSetInputEnabled(input) {
 		cfg.Processors.DropRuntimeStatefulSetMetrics = makeDropRuntimeStatefulSetMetricsConfig()
 	}
 
-	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeDaemonSetInputEnabled(input) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeDaemonSetInputEnabled(input) {
 		cfg.Processors.DropRuntimeDaemonSetMetrics = makeDropRuntimeDaemonSetMetricsConfig()
 	}
 
-	if metric.IsRuntimeInputEnabled(input) && !metric.IsRuntimeJobInputEnabled(input) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && !metricpipelineutils.IsRuntimeJobInputEnabled(input) {
 		cfg.Processors.DropRuntimeJobMetrics = makeDropRuntimeJobMetricsConfig()
 	}
 }
@@ -168,22 +169,22 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 	}
 
 	input := pipeline.Spec.Input
-	if metric.IsRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
+	if metricpipelineutils.IsRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Runtime.Namespaces, inputSourceEquals(metric.InputSourceRuntime))
 	}
 
-	if metric.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
+	if metricpipelineutils.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Prometheus.Namespaces, inputSourceEquals(metric.InputSourcePrometheus))
 	}
 
-	if metric.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
+	if metricpipelineutils.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceIstio)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Istio.Namespaces, inputSourceEquals(metric.InputSourceIstio))
 	}
 
-	if metric.IsOTLPInputEnabled(input) && input.OTLP != nil && shouldFilterByNamespace(input.OTLP.Namespaces) {
+	if metricpipelineutils.IsOTLPInputEnabled(input) && input.OTLP != nil && shouldFilterByNamespace(input.OTLP.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourceOTLP)
 		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.OTLP.Namespaces, otlpInputSource())
 	}
