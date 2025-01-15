@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/examples/monitoring-custom-metrics:v20230905-b823fd14"
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
 )
 
 type Metric struct {
@@ -46,23 +46,17 @@ var (
 		Name:   "cpu_energy_watt",
 		Labels: []string{"core"},
 	}
-	MetricHardwareHumidity = Metric{
-		Type:   pmetric.MetricTypeSummary,
-		Name:   "hw_humidity",
-		Labels: []string{"sensor"},
-	}
 	MetricNames = []string{
 		MetricCPUTemperature.Name,
 		MetricHardDiskErrorsTotal.Name,
 		MetricCPUEnergyHistogram.Name,
-		MetricHardwareHumidity.Name,
 	}
 
 	metricsPort     int32 = 8080
 	metricsPortName       = "http-metrics"
 	metricsEndpoint       = "/metrics"
 	selectorLabels        = map[string]string{
-		"app": "sample-metrics",
+		"app.kubernetes.io/name": "metric-producer",
 	}
 
 	// DefaultMetricsNames is an alias for MetricNames.
@@ -176,7 +170,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "sample-metrics",
+					Name:  "metric-producer",
 					Image: metricProducerImage,
 					Ports: []corev1.ContainerPort{
 						{
@@ -188,7 +182,15 @@ func (p *Pod) K8sObject() *corev1.Pod {
 					Env: []corev1.EnvVar{
 						{
 							Name:  "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-							Value: "http://telemetry-otlp-traces.kyma-system:4318/v1/traces",
+							Value: "http://telemetry-otlp-traces.kyma-system:4317",
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "metric-producer",
+						},
+						{
+							Name:  "OTEL_METRICS_EXPORTER",
+							Value: "prometheus",
 						},
 					},
 					Resources: corev1.ResourceRequirements{
