@@ -150,5 +150,5 @@ The provided `values.yaml` covers the following adjustments:
 
 1. To remove the example app and all its resources from the cluster, run the following command:
     ```bash
-    kubectl delete all -l kubernetes.io/name=sample-app -n $K8S_PROM_NAMESPACE
+    kubectl delete all -l app.kubernetes.io/name=sample-app -n $K8S_PROM_NAMESPACE
     ```
