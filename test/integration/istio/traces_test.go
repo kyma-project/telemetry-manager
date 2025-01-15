@@ -151,8 +151,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			verifyIstioSpans(istiofiedBackendExportURL, istiofiedAppNs)
 		})
 		It("Should have custom spans in the backend from istiofied workload", func() {
-			verifyCustomIstiofiedAppSpans(backendExportURL, istiofiedAppName, istiofiedAppNs)
-			verifyCustomIstiofiedAppSpans(istiofiedBackendExportURL, istiofiedAppName, istiofiedAppNs)
+			verifyCustomAppSpans(backendExportURL, istiofiedAppName, istiofiedAppNs)
+			verifyCustomAppSpans(istiofiedBackendExportURL, istiofiedAppName, istiofiedAppNs)
 		})
 		It("Should have custom spans in the backend from app-namespace", func() {
 			verifyCustomAppSpans(backendExportURL, appName, appNs)
@@ -212,20 +212,6 @@ func verifyNoIstioNoiseSpans(backendURL, namespace string) {
 			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
 			// All calls to telemetry-otlp-traces should be dropped
 			HaveSpanAttributes(HaveKeyWithValue("http.url", "http://telemetry-otlp-traces.kyma-system.svc.cluster.local:4318/v1/traces")),
-		)))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
-
-func verifyCustomIstiofiedAppSpans(backendURL, name, namespace string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
-			// Identify sample app by serviceName attribute
-			HaveResourceAttributes(HaveKeyWithValue("service.name", "metric-producer")),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

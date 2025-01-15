@@ -182,7 +182,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 					Env: []corev1.EnvVar{
 						{
 							Name:  "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-							Value: "http://telemetry-otlp-traces.kyma-system:4318/v1/traces",
+							Value: "http://telemetry-otlp-traces.kyma-system:4317",
 						},
 						{
 							Name:  "OTEL_SERVICE_NAME",

@@ -210,6 +210,16 @@ func checkInstrumentationScopeAndVersion(g Gomega, body []byte, scope1, scope2 s
 						ContainSubstring("PR-"),
 					)),
 			)),
+			SatisfyAll(
+				//the sample app is exposing some auto-instrumented metrics which the prometheus receiver will not change with the runtime scope
+				HaveScopeName(Equal("go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp")),
+				HaveScopeVersion(
+					SatisfyAny(
+						ContainSubstring("0."),
+					)),
+			)),
+
+			
 	),
 	), "only scope '%v' must be sent to the runtime backend", InstrumentationScopeRuntime)
 }
