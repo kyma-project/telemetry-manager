@@ -99,7 +99,7 @@ spec:
         app: metric-gen
     spec:
       containers:
-      - image: europe-docker.pkg.dev/kyma-project/prod/examples/monitoring-custom-metrics:v20230905-b823fd14
+      - image: europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest
         imagePullPolicy: IfNotPresent
         name: metric-gen
         ports:

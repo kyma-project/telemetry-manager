@@ -105,12 +105,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
-			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
-			verifySidecarPresent(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
+			verifySidecarPresent(istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 		})
 
 		It("Should have sample app without istio sidecar", func() {
-			verifyAppIsRunning(appNs, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(appNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 		})
 
 		It("Should have a running trace gateway deployment", func() {
@@ -151,8 +151,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			verifyIstioSpans(istiofiedBackendExportURL, istiofiedAppNs)
 		})
 		It("Should have custom spans in the backend from istiofied workload", func() {
-			verifyCustomIstiofiedAppSpans(backendExportURL, istiofiedAppName, istiofiedAppNs)
-			verifyCustomIstiofiedAppSpans(istiofiedBackendExportURL, istiofiedAppName, istiofiedAppNs)
+			verifyCustomAppSpans(backendExportURL, istiofiedAppName, istiofiedAppNs)
+			verifyCustomAppSpans(istiofiedBackendExportURL, istiofiedAppName, istiofiedAppNs)
 		})
 		It("Should have custom spans in the backend from app-namespace", func() {
 			verifyCustomAppSpans(backendExportURL, appName, appNs)
@@ -216,20 +216,6 @@ func verifyNoIstioNoiseSpans(backendURL, namespace string) {
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func verifyCustomIstiofiedAppSpans(backendURL, name, namespace string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
-			// Identify sample app by serviceName attribute
-			HaveResourceAttributes(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
-		)))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
-
 func verifyCustomAppSpans(backendURL, name, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
@@ -237,7 +223,7 @@ func verifyCustomAppSpans(backendURL, name, namespace string) {
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify sample app by serviceName attribute
-			HaveResourceAttributes(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
+			HaveResourceAttributes(HaveKeyWithValue("service.name", "metric-producer")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		)))))
