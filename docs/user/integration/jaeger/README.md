@@ -119,7 +119,7 @@ EOF
 
 ### Deploy a Workload and Activate Kyma’s TracePipeline Feature
 
-To see distributed traces visualized in Jaeger, follow the instructions for the [Sample app](../sample-app/README.md) or the [OpenTelemetry Demo App](../opentelemetry-demo/README.md).
+To see distributed traces visualized in Jaeger, follow the instructions for the [sample app](../sample-app/README.md) or the [OpenTelemetry Demo App](../opentelemetry-demo/README.md).
 
 ## Advanced Topics
 

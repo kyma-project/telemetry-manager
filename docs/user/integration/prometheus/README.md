@@ -31,19 +31,19 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 ## Context
 
-The Telemetry module supports shipping metrics from applications and the Istio service mesh to Prometheus using the OpenTelemetry protocol (OTLP). Prometheus is a widely used backend for collection and storage of metrics. The `kube-prometheus-stack` is a Helm chart which bundles Prometheus together with Grafana and the Alertmanager, to have an instant and comprehensive monitoring experience. Furthermore, it brings community-driven best practices on kubernetes monitoring including the node-exporter and kube-state-metrics component
+The Telemetry module supports shipping metrics from applications and the Istio service mesh to Prometheus using the OpenTelemetry protocol (OTLP). Prometheus is a widely used backend for collection and storage of metrics. The `kube-prometheus-stack` is a Helm chart which bundles Prometheus together with Grafana and the Alertmanager, to have an instant and comprehensive monitoring experience. Furthermore, it brings community-driven best practices on Kubernetes monitoring including the components node-exporter and kube-state-metrics.
 
-As the OpenTelemetry community is not that advanced yet in providing a full-blown Kubernetes monitoring, this guide shows how to combine the two worlds by integrating application and Istio metrics via the telemetry module, and the kubernetes monitoring via the features of the bundle.
+Because the OpenTelemetry community is not that advanced yet in providing a full-blown Kubernetes monitoring, this guide shows how to combine the two worlds by integrating application and Istio metrics with the Telemetry module, and the Kubernetes monitoring with the features of the bundle:
 
-In this guide you will first deploy the `kube-prometheus-stack`, then you will configure the telemetry module to start metric ingestion, and then you deploy the sample application to illustrate custom metric consumption.
+First, you first deploy the `kube-prometheus-stack`. Then, you configure the Telemetry module to start metric ingestion. Finally, you deploy the sample application to illustrate custom metric consumption.
 
 ![setup](./../assets/prometheus.drawio.svg)
 
-## Guide
+## Procedure
 
 ## Install the kube-prometheus-stack
 
-1. Export your Namespace as a variable. Replace the `{namespace}` placeholder in the following command and run it:
+1. Export your namespace as a variable. Replace the `{namespace}` placeholder in the following command and run it:
 
     ```bash
     export K8S_PROM_NAMESPACE="{namespace}"
@@ -52,7 +52,7 @@ In this guide you will first deploy the `kube-prometheus-stack`, then you will c
     ```bash
     kubectl create namespace $K8S_PROM_NAMESPACE
     ```
-   >**Note**: This Namespace must have **no** Istio sidecar injection enabled; that is, there must be no `istio-injection` label present on the Namespace. The Helm chart deploys jobs that will not succeed when Isto sidecar injection is enabled.
+   >**Note**: This namespace must have **no** Istio sidecar injection enabled; that is, there must be no `istio-injection` label present on the namespace. The Helm chart applies Kubernetes Jobs which fail when Istio sidecar injection is enabled.
 
 1. Export the Helm release name that you want to use. It can be any name, but be aware that all resources in the cluster will be prefixed with that name. Run the following command:
     ```bash
@@ -71,28 +71,28 @@ In this guide you will first deploy the `kube-prometheus-stack`, then you will c
     helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/values.yaml --set grafana.adminPassword=myPwd
     ```
 
-1. You can use the [values.yaml](./values.yaml) provided with this tutorial, which contains customized settings deviating from the default settings, or create your own one.
+1. You can use the [values.yaml](./values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
 The provided `values.yaml` covers the following adjustments:
-- Basic Istio setup to secure communication between Prometheus, Grafana and Alertmanager
-- Native OTLP receiver enabled for prometheus
+- Basic Istio setup to secure communication between Prometheus, Grafana, and Alertmanager
+- Native OTLP receiver enabled for Prometheus
 - Basic configuration of data persistence with retention
 - Basic resource limits for involved components
 
 ## Verify the kube-prometheus-stack
 
-1. You should see several Pods coming up in the Namespace, especially Prometheus, Grafana and Alertmanager. Assure that all Pods have the "Running" state.
-2. Browse the Prometheus dashboard and verify that all "Status->Targets" are healthy. The following command exposes the dashboard on `http://localhost:9090`:
+1. If the stack was provided successfully, you see several Pods coming up in the Namespace, especially Prometheus, Grafana, and Alertmanager. Assure that all Pods have the "Running" state.
+2. Browse the Prometheus dashboard and verify that all "Status->Targets" are healthy. To see the dashboard on `http://localhost:9090`, run:
    ```bash
    kubectl -n ${K8S_PROM_NAMESPACE} port-forward $(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -oname) 9090
    ```
-3. Browse the Grafana dashboard and verify that the dashboards are showing data. The user `admin` is preconfigured in the Helm chart; the password was provided in your `helm install` command. The following command exposes the dashboard on `http://localhost:3000`:
+3. Browse the Grafana dashboard and verify that the dashboards are showing data. The user `admin` is preconfigured in the Helm chart; the password was provided in your `helm install` command. To see the dashboard on `http://localhost:3000`, run:
    ```bash
    kubectl -n ${K8S_PROM_NAMESPACE} port-forward svc/${HELM_PROM_RELEASE}-grafana 3000:80
    ```
 
 ## Activate a MetricPipeline
 
-1. Apply a MetricPipeline resource having the output configured with the local prometheus URL and having the inputs enabled for collecting Istio metrics and collecting application metrics whose workloads are annotated with prometheus annotations.
+1. Apply a MetricPipeline resource that has the output configured with the local Prometheus URL and has the inputs enabled for collecting Istio metrics and collecting application metrics whose workloads are annotated with Prometheus annotations.
 ```yaml
 SERVICE=$(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -ojsonpath='{.items[*].metadata.name}')
 kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -124,9 +124,9 @@ EOF
 
 1. Port forward to Grafana once more and verify in the "Explore" view if metrics with prefix "istio_" are available.
 
-1. Optionally import the Istio Grafana dashboards as described [here](https://istio.io/latest/docs/ops/integrations/grafana/#option-2-import-from-grafanacom-into-an-existing-deployment) and verify that the dashboards are showing data
+1. Optionally, import the Istio Grafana dashboards (see [Istio: Import from grafana.com into an existing deployment](https://istio.io/latest/docs/ops/integrations/grafana/#option-2-import-from-grafanacom-into-an-existing-deployment)) and verify that the dashboards are showing data.
 
-## Deploy the sample application
+## Deploy the Sample Application
 
 1. Deploy the [sample app](./../sample-app/):
 
@@ -134,7 +134,7 @@ EOF
     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_PROM_NAMESPACE
     ```
 
-1. Go to your Grafana Dashboard as described above and check in the explore view for the metric `cpu_temperature_celsius` which is emmited by the sample app
+1. Go to your Grafana dashboard as described above and check in the **Explore** view for the metric `cpu_temperature_celsius`, which is emitted by the sample app.
 
 ### Cleanup
 
@@ -148,7 +148,7 @@ EOF
     helm delete MetricPipeline prometheus
     ```
 
-1. Run the following command to completely remove the example app and all its resources from the cluster:
+1. To remove the example app and all its resources from the cluster, run the following command:
     ```bash
     kubectl delete all -l kubernetes.io/name=sample-app -n $K8S_PROM_NAMESPACE
     ```
