@@ -119,13 +119,13 @@ EOF
 
 ### Deploy a Workload and Activate Kyma’s TracePipeline Feature
 
-To see distributed traces visualized in Jaeger, follow the instructions for the [OpenTelemetry Demo App](../opentelemetry-demo/README.md).
+To see distributed traces visualized in Jaeger, follow the instructions for the [Sample app](../sample-app/README.md) or the [OpenTelemetry Demo App](../opentelemetry-demo/README.md).
 
 ## Advanced Topics
 
 ### Integrate With Grafana
 
-Jaeger can be provided as a data source integrated into Grafana. For example, it can be part of a Grafana installation as described in the [Prometheus tutorial](https://github.com/kyma-project/examples/tree/main/prometheus).
+Jaeger can be provided as a data source integrated into Grafana. For example, it can be part of a Grafana installation as described in the [Prometheus integration guide](./../prometheus/README.md).
 
 1. To have a Jaeger data source as part of the Grafana installation, deploy a Grafana data source in the following way:
 
