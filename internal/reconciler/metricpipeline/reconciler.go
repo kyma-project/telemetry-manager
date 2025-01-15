@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -234,11 +235,8 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	input := pipeline.Spec.Input
-	isRuntimeInputEnabled := input.Runtime != nil && input.Runtime.Enabled
-	isPrometheusInputEnabled := input.Prometheus != nil && input.Prometheus.Enabled
-	isIstioInputEnabled := input.Istio != nil && input.Istio.Enabled
 
-	return isRuntimeInputEnabled || isPrometheusInputEnabled || isIstioInputEnabled
+	return metricpipelineutils.IsRuntimeInputEnabled(input) || metricpipelineutils.IsPrometheusInputEnabled(input) || metricpipelineutils.IsIstioInputEnabled(input)
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
