@@ -93,29 +93,29 @@ The provided `values.yaml` covers the following adjustments:
 ## Activate a MetricPipeline
 
 1. Apply a MetricPipeline resource that has the output configured with the local Prometheus URL and has the inputs enabled for collecting Istio metrics and collecting application metrics whose workloads are annotated with Prometheus annotations.
-```yaml
-SERVICE=$(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -ojsonpath='{.items[*].metadata.name}')
-kubectl apply -n sap-cloud-logging-integration -f - <<EOF
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-    name: prometheus
-spec:
-    input:
-        prometheus:
-            enabled: true
-            namespaces:
-                exclude:
-                - kyma-system
-        istio:
-            enabled: true
-    output:
-        otlp:
-            protocol: http
-            endpoint:
-                value: "http://${SERVICE}.${K8S_PROM_NAMESPACE}:9090/api/v1/otlp"
-EOF
-```
+    ```yaml
+    SERVICE=$(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -ojsonpath='{.items[*].metadata.name}')
+    kubectl apply -n sap-cloud-logging-integration -f - <<EOF
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: MetricPipeline
+    metadata:
+        name: prometheus
+    spec:
+        input:
+            prometheus:
+                enabled: true
+                namespaces:
+                    exclude:
+                    - kyma-system
+            istio:
+                enabled: true
+        output:
+            otlp:
+                protocol: http
+                endpoint:
+                    value: "http://${SERVICE}.${K8S_PROM_NAMESPACE}:9090/api/v1/otlp"
+    EOF
+    ```
 
 1. Verify the MetricPipeline health by verifying that all attributes are "true":
     ```sh
