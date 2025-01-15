@@ -29,8 +29,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), O
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithAbortFaultInjection(75))
-		logProducer := loggen.New(mockNs).WithReplicas(2).WithLoad(loggen.LoadHigh)
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithAbortFaultInjection(80))
+		logProducer := loggen.New(mockNs).WithReplicas(3).WithLoad(loggen.LoadHigh)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
 
