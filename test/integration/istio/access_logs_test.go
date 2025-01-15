@@ -78,7 +78,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 
 		It("Should have sample app running", func() {
 			listOptions := client.ListOptions{
-				LabelSelector: labels.SelectorFromSet(map[string]string{"kubernetes.io/name": "metric-producer"}),
+				LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "metric-producer"}),
 				Namespace:     sampleAppNs,
 			}
 

@@ -105,12 +105,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
-			verifyAppIsRunning(istiofiedAppNs, map[string]string{"kubernetes.io/name": "metric-producer"})
-			verifySidecarPresent(istiofiedAppNs, map[string]string{"kubernetes.io/name": "metric-producer"})
+			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
+			verifySidecarPresent(istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 		})
 
 		It("Should have sample app without istio sidecar", func() {
-			verifyAppIsRunning(appNs, map[string]string{"kubernetes.io/name": "metric-producer"})
+			verifyAppIsRunning(appNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 		})
 
 		It("Should have a running trace gateway deployment", func() {

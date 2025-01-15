@@ -56,7 +56,7 @@ var (
 	metricsPortName       = "http-metrics"
 	metricsEndpoint       = "/metrics"
 	selectorLabels        = map[string]string{
-		"kubernetes.io/name": "metric-producer",
+		"app.kubernetes.io/name": "metric-producer",
 	}
 
 	// DefaultMetricsNames is an alias for MetricNames.
