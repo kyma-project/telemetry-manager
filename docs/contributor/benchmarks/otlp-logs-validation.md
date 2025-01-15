@@ -239,7 +239,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
 - **Results:**
   - lower throughput as for the 1024 scenario
 
-#### ⏳⭐️ 19 Dec 2024, 15:55 - 16:15 (20 min)
+#### ⏳ 19 Dec 2024, 15:55 - 16:15 (20 min)
 - **Agent:** with CPU limit (1), no queue, with batch processing (1024)
 - **Mock Backend:** memory limit x2 (2048Mi)
 - **Generator:** 10 replicas x 10 MB
@@ -294,11 +294,38 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - 0% receiver refused logs
   - 0% exporter send failed logs
 
+#### ⏳ 15 Jan 2025, 12:31 - 12:51 (20 min)
+- **Generator:** 10 replicas x 10 MB
+- **Results:**
+  - Agent RECEIVED/EXPORTED: 14.4K
+  - Gateway RECEIVED/EXPORTED: 14.4K
+  - Agent Memory: 74/69
+  - Agent CPU: 0.9/0.8
+  - Gateway QUEUE: 0
+
+#### ⏳⭐️ 15 Jan 2025, 14:31 - 14:08 (20 min)
+- Gateway on 2 separate nodes
+- **Generator:** 10 replicas x 10 MB
+- **Results:**
+  - Agent RECEIVED/EXPORTED: 15.7K
+  - Gateway RECEIVED/EXPORTED: 15.7K
+  - Agent Memory: 82/71
+  - Agent CPU: 1/0.9
+  - Gateway CPU: 0.6/0.6
+  - Gateway Memory: 62/68
+  - Gateway QUEUE: 0
+
+#### 🪲 15 Jan 2025, Agent exports logs to a debug endpoint (5 min)
+- no networking involved
+- ~15K / agent
+
+
+#### Removing compression for the OTLP exporter boosts throughput
+
 
 ## 4. Comparison with FluentBit setup
 In the FluentBit setup, for the very same scenario, the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
-- Exported Log Records per second: 3.913
-- Received Log Records per second: 3.868
+- Exported Log Records/second: 27.8K
 
 
 ## 5. Conclusions
