@@ -166,7 +166,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Gateway RECEIVED/EXPORTED: 5.94K
   - Gateway QUEUE: 0
 
-#### ⏳⭐️ 18 Dec 2024, 15:24 - 15:34 (10 min)
+#### ⏳ 18 Dec 2024, 15:24 - 15:34 (10 min)
 - **Generator:** 10 replicas x 10 MB
 - **Agent:** with CPU limit (1), no queue
 - **Results:**
@@ -304,7 +304,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Gateway QUEUE: 0
 
 #### ⏳⭐️ 15 Jan 2025, 14:31 - 14:08 (20 min)
-- Gateway on 2 separate nodes
+- Gateways on separate nodes
 - **Generator:** 10 replicas x 10 MB
 - **Results:**
   - Agent RECEIVED/EXPORTED: 15.7K
@@ -319,8 +319,15 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
 - no networking involved
 - ~15K / agent
 
-
 #### Removing compression for the OTLP exporter boosts throughput
+
+#### ⏳ 15 Jan 2025, ? - ? (20 min)
+- Gateways on separate nodes
+- Compression disabled for OTLP exporters (on both agent and gateway) (default: gzip)
+- **Generator:** 20 replicas (new set-up)
+- **Results:**
+  - Agent RECEIVED/EXPORTED: 15.3K
+  - Gateway RECEIVED/EXPORTED: 15.3K
 
 
 ## 4. Comparison with FluentBit setup
@@ -329,7 +336,6 @@ In the FluentBit setup, for the very same scenario, the [load test](https://gith
 
 
 ## 5. Conclusions
-
 - A lower performance can be expected, compared to the FluentBit counterpart setup.
 - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end, since the agent has no way of knowing when to stop, thus exports data continuously. (This is a known issue, that should get solved by the OTel community in the next half year)
 - Agent slows down if the load is increased (i.e. more generators / more logs / more data).
