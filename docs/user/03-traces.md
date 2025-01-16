@@ -381,7 +381,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      kubernetes.io/name: "my-app"
+      app.kubernetes.io/name: "my-app"
   tracing:
   - providers:
     - name: "kyma-traces"
