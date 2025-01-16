@@ -54,7 +54,6 @@ prometheus:
   prometheusSpec:
 ####### This block is required to enable OTLP ingestion
     additionalConfig:
-      enableOTLPReceiver: true
       otlp:
         promoteResourceAttributes:
         - service.instance.id
