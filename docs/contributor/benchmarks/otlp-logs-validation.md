@@ -329,6 +329,18 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Agent RECEIVED/EXPORTED: 15.3K
   - Gateway RECEIVED/EXPORTED: 15.3K
 
+#### ⏳⭐️ 16 Jan 2025, ~13:17
+- Gateways on separate nodes
+- **Generator:** 10 replicas
+- **Results:**
+  - Agent RECEIVED/EXPORTED: 18.8K
+  - Gateway RECEIVED/EXPORTED: 18.8K
+  - Agent Memory: 76/73
+  - Agent CPU: 0.8/0.9
+  - Gateway Memory: 69/27
+  - Gateway CPU: 0.6/0.6
+  - Gateway QUEUE: 1/0
+
 
 ## 4. Comparison with FluentBit setup
 In the FluentBit setup, for the very same scenario, the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
