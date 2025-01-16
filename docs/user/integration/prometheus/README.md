@@ -26,8 +26,8 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 - UNIX shell or Windows Subsystem for Linux (WSL) to execute commands.
 
 > [!WARNING]
-- This guide describes a basic setup that you should not use in production. Typically, a production setup needs further configuration, like optimizing the amount of data to be collected and the required resource footprint of the installation. To achieve qualities like [high availability](https://prometheus.io/docs/introduction/faq/#can-prometheus-be-made-highly-available), [scalability](https://prometheus.io/docs/introduction/faq/#i-was-told-prometheus-doesnt-scale), or [durable long-term storage](https://prometheus.io/docs/operating/integrations/#remote-endpoints-and-storage), you need a more advanced setup.
-- This example uses the latest Grafana version, which is under AGPL-3.0 and might not be free of charge for commercial usage.
+> - This guide describes a basic setup that you should not use in production. Typically, a production setup needs further configuration, like optimizing the amount of data to be collected and the required resource footprint of the installation. To achieve qualities like [high availability](https://prometheus.io/docs/introduction/faq/#can-prometheus-be-made-highly-available), [scalability](https://prometheus.io/docs/introduction/faq/#i-was-told-prometheus-doesnt-scale), or [durable long-term storage](https://prometheus.io/docs/operating/integrations/#remote-endpoints-and-storage), you need a more advanced setup.
+> - This example uses the latest Grafana version, which is under AGPL-3.0 and might not be free of charge for commercial usage.
 
 ## Context
 
