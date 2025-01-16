@@ -102,7 +102,7 @@ The provided `values.yaml` covers the following adjustments:
 1. Apply a MetricPipeline resource that has the output configured with the local Prometheus URL and has the inputs enabled for collecting Istio metrics and collecting application metrics whose workloads are annotated with Prometheus annotations.
     ```yaml
     SERVICE=$(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -ojsonpath='{.items[*].metadata.name}')
-    kubectl apply -n sap-cloud-logging-integration -f - <<EOF
+    kubectl apply -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: MetricPipeline
     metadata:
