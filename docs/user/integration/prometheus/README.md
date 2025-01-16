@@ -48,7 +48,7 @@ First, you first deploy the `kube-prometheus-stack`. Then, you configure the Tel
 
 ## Procedure
 
-## Install the kube-prometheus-stack
+### Install the kube-prometheus-stack
 
 1. Export your namespace as a variable. Replace the `{namespace}` placeholder in the following command and run it:
 
@@ -85,7 +85,7 @@ The provided `values.yaml` covers the following adjustments:
 - Basic configuration of data persistence with retention
 - Basic resource limits for involved components
 
-## Verify the kube-prometheus-stack
+### Verify the kube-prometheus-stack
 
 1. If the stack was provided successfully, you see several Pods coming up in the Namespace, especially Prometheus, Grafana, and Alertmanager. Assure that all Pods have the "Running" state.
 2. Browse the Prometheus dashboard and verify that all "Status->Targets" are healthy. To see the dashboard on `http://localhost:9090`, run:
@@ -97,7 +97,7 @@ The provided `values.yaml` covers the following adjustments:
    kubectl -n ${K8S_PROM_NAMESPACE} port-forward svc/${HELM_PROM_RELEASE}-grafana 3000:80
    ```
 
-## Activate a MetricPipeline
+### Activate a MetricPipeline
 
 1. Apply a MetricPipeline resource that has the output configured with the local Prometheus URL and has the inputs enabled for collecting Istio metrics and collecting application metrics whose workloads are annotated with Prometheus annotations.
     ```yaml
