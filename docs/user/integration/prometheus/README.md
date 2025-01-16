@@ -14,6 +14,13 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
   - [Table of Content](#table-of-content)
   - [Prerequisites](#prerequisites)
   - [Context](#context)
+  - [Procedure](#procedure)
+    - [Install the kube-prometheus-stack](#install-the-kube-prometheus-stack)
+    - [Verify the kube-prometheus-stack](#verify-the-kube-prometheus-stack)
+    - [Activate a MetricPipeline](#activate-a-metricpipeline)
+    - [Deploy the Sample Application](#deploy-the-sample-application)
+    - [Verify the Setup](#verify-the-setup)
+    - [Cleanup](#cleanup)
 
 ## Prerequisites
 
@@ -122,10 +129,6 @@ The provided `values.yaml` covers the following adjustments:
     kubectl get metricpipeline prometheus
     ```
 
-1. Port forward to Grafana once more and verify in the "Explore" view if metrics with prefix "istio_" are available.
-
-1. Optionally, import the Istio Grafana dashboards (see [Istio: Import from grafana.com into an existing deployment](https://istio.io/latest/docs/ops/integrations/grafana/#option-2-import-from-grafanacom-into-an-existing-deployment)) and verify that the dashboards are showing data.
-
 ## Deploy the Sample Application
 
 1. Deploy the [sample app](./../sample-app/):
@@ -134,7 +137,20 @@ The provided `values.yaml` covers the following adjustments:
     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_PROM_NAMESPACE
     ```
 
-1. Go to your Grafana dashboard as described above and check in the **Explore** view for the metric `cpu_temperature_celsius`, which is emitted by the sample app.
+1. Verify that the Deployment of the sample-app is healthy:
+    ```sh
+    kubectl rollout status deployment sample-app
+    ```
+
+## Verify the Setup
+
+1. Port forward to Grafana once more
+
+1. Check in the **Explore** view for the metric with prefix "istio_", which are collected by the MetricPipeline using the `istio` input.
+
+1. Optionally, import the Istio Grafana dashboards (see [Istio: Import from grafana.com into an existing deployment](https://istio.io/latest/docs/ops/integrations/grafana/#option-2-import-from-grafanacom-into-an-existing-deployment)) and verify that the dashboards are showing data.
+
+1. Check in the **Explore** view for the metric `cpu_temperature_celsius`, which is pushed by the sample app to the gateway managed by the MetricPipeline.
 
 ### Cleanup
 
