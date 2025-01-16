@@ -55,7 +55,7 @@ First, you first deploy the `kube-prometheus-stack`. Then, you configure the Tel
     ```bash
     export K8S_PROM_NAMESPACE="{namespace}"
     ```
-1. If you haven't created the Namespace yet, now is the time to do so:
+1. If you haven't created the namespace yet, now is the time to do so:
     ```bash
     kubectl create namespace $K8S_PROM_NAMESPACE
     ```
