@@ -129,7 +129,7 @@ The provided `values.yaml` covers the following adjustments:
     kubectl get metricpipeline prometheus
     ```
 
-## Deploy the Sample Application
+### Deploy the Sample Application
 
 1. Deploy the [sample app](./../sample-app/):
 
@@ -142,7 +142,7 @@ The provided `values.yaml` covers the following adjustments:
     kubectl rollout status deployment sample-app
     ```
 
-## Verify the Setup
+### Verify the Setup
 
 1. Port forward to Grafana once more
 
