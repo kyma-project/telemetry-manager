@@ -36,18 +36,12 @@ func (rb fluentBitRuleBuilder) rules() []Rule {
 
 // Checks if all data is dropped due to a full buffer or exporter issues, with nothing successfully sent.
 func (rb fluentBitRuleBuilder) allDataDroppedExpr() string {
-	return unless(
-		or(rb.bufferFullExpr(), rb.exporterDroppedExpr()),
-		rb.exporterSentExpr(),
-	)
+	return unless(rb.exporterDroppedExpr(), rb.exporterSentExpr())
 }
 
 // Checks if some data is dropped while some is still successfully sent.
 func (rb fluentBitRuleBuilder) someDataDroppedExpr() string {
-	return and(
-		or(rb.bufferFullExpr(), rb.exporterDroppedExpr()),
-		rb.exporterSentExpr(),
-	)
+	return and(rb.exporterDroppedExpr(), rb.exporterSentExpr())
 }
 
 // Checks if the exporter drop rate is greater than 0.
