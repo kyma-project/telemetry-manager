@@ -31,7 +31,7 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 
 ## Context
 
-The Telemetry module supports shipping metrics from applications and the Istio service mesh to Prometheus using the OpenTelemetry protocol (OTLP). Prometheus is a widely used backend for collection and storage of metrics. The `kube-prometheus-stack` is a Helm chart which bundles Prometheus together with Grafana and the Alertmanager, to have an instant and comprehensive monitoring experience. Furthermore, it brings community-driven best practices on Kubernetes monitoring including the components node-exporter and kube-state-metrics.
+The Telemetry module supports shipping metrics from applications and the Istio service mesh to Prometheus using the OpenTelemetry protocol (OTLP). Prometheus is a widely used backend for collection and storage of metrics. To provide an instant and comprehensive monitoring experience, the `kube-prometheus-stack` Helm chart bundles Prometheus together with Grafana and the Alertmanager. Furthermore, it brings community-driven best practices on Kubernetes monitoring, including the components `node-exporter` and `kube-state-metrics`.
 
 Because the OpenTelemetry community is not that advanced yet in providing a full-blown Kubernetes monitoring, this guide shows how to combine the two worlds by integrating application and Istio metrics with the Telemetry module, and the Kubernetes monitoring with the features of the bundle:
 
@@ -52,7 +52,7 @@ First, you first deploy the `kube-prometheus-stack`. Then, you configure the Tel
     ```bash
     kubectl create namespace $K8S_PROM_NAMESPACE
     ```
-   >**Note**: This namespace must have **no** Istio sidecar injection enabled; that is, there must be no `istio-injection` label present on the namespace. The Helm chart applies Kubernetes Jobs which fail when Istio sidecar injection is enabled.
+   >**Note**: This namespace must have **no** Istio sidecar injection enabled; that is, there must be no `istio-injection` label present on the namespace. The Helm chart applies Kubernetes Jobs that fail when Istio sidecar injection is enabled.
 
 1. Export the Helm release name that you want to use. It can be any name, but be aware that all resources in the cluster will be prefixed with that name. Run the following command:
     ```bash
