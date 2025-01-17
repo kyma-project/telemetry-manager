@@ -43,7 +43,7 @@ var (
 )
 
 // init registers the metrics and sets up the environment
-func initMetrics() {
+func initMetrics() error {
 	var err error
 
 	hdErrorsMeter, err = meter.Int64Counter(
@@ -52,7 +52,7 @@ func initMetrics() {
 		metric.WithUnit("{device}"),
 	)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating hd.errors.total counter: %w", err)
 	}
 
 	cpuEnergyMeter, err = meter.Float64Histogram(
@@ -61,7 +61,7 @@ func initMetrics() {
 		metric.WithUnit("core"),
 	)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating cpu.energy.watt histogram: %w", err)
 	}
 
 	if _, err = meter.Float64ObservableGauge(
@@ -76,8 +76,9 @@ func initMetrics() {
 			return nil
 		}),
 	); err != nil {
-		panic(err)
+		return fmt.Errorf("error creating cpu.temperature.celsius gauge: %w", err)
 	}
+	return nil
 }
 
 func initTerminateEndpoint() {
@@ -162,7 +163,7 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Terminate the request randomly with a success or error response
 	if randBool() {
-		span.RecordError(fmt.Errorf("Random logic decided to fail the request"))
+		span.RecordError(fmt.Errorf("random logic decided to fail the request"))
 		span.SetStatus(codes.Error, "error")
 
 		hdErrorsMeter.Add(ctx, 5, metric.WithAttributes(hdErrorsAttributeSda))
@@ -180,13 +181,26 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Success")
 }
 
-func main() {
+func run() error {
 	ctx := context.Background()
 
 	// Instantiate the trace and metric providers
-	res := newOtelResource()
-	tp := newTraceProvider(newTraceExporter(ctx), res)
-	mp := newMeterProvider(newMetricReader(ctx), res)
+	res, err := newOtelResource()
+	if err != nil {
+		return fmt.Errorf("creating resource: %w", err)
+	}
+
+	te, err := newTraceExporter(ctx)
+	if err != nil {
+		return fmt.Errorf("creating trace exporter: %w", err)
+	}
+	tp := newTraceProvider(te, res)
+
+	mr, err := newMetricReader(ctx)
+	if err != nil {
+		return fmt.Errorf("creating meter provider: %w", err)
+	}
+	mp := newMeterProvider(mr, res)
 
 	// Handle shutdown properly so nothing leaks.
 	defer func() {
@@ -223,8 +237,16 @@ func main() {
 
 	//Start the HTTP server
 	logger.Info("Starting server on port " + strconv.Itoa(serverPort))
-	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error starting server: %w", err)
+	}
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		logger.Error("Error running server", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 }
