@@ -15,7 +15,7 @@ import (
 
 type secScanConfig struct {
 	ModuleName  string      `yaml:"module-name"`
-	Protocode   []string    `yaml:"protocode"`
+	Protecode   []string    `yaml:"protecode"`
 	WhiteSource whiteSource `yaml:"whitesource"`
 }
 
@@ -176,7 +176,7 @@ func generateSecScanConfig(data map[string]string) error {
 	imgs := []string{data["ENV_IMG"], data["DEFAULT_FLUENTBIT_EXPORTER_IMAGE"], data["DEFAULT_FLUENTBIT_IMAGE"], data["DEFAULT_OTEL_COLLECTOR_IMAGE"], data["DEFAULT_SELFMONITOR_IMAGE"]}
 	secScanCfg := secScanConfig{
 		ModuleName: "telemetry",
-		Protocode:  imgs,
+		Protecode:  imgs,
 		WhiteSource: whiteSource{
 			Language:    "golang-mod",
 			Subprojects: false,
