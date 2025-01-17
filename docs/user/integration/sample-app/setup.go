@@ -17,7 +17,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func newOtelResource() *resource.Resource {
+func newOtelResource() (*resource.Resource, error) {
 	// Ensure default SDK resources and the required service name are set.
 	res, err := resource.New(
 		context.Background(),
@@ -28,9 +28,9 @@ func newOtelResource() *resource.Resource {
 	)
 
 	if err != nil {
-		panic(fmt.Errorf("creating resource: %w", err))
+		return nil, fmt.Errorf("creating resource: %w", err)
 	}
-	return res
+	return res, nil
 }
 
 func newTraceProvider(exp trace.SpanExporter, res *resource.Resource) *trace.TracerProvider {
@@ -40,24 +40,24 @@ func newTraceProvider(exp trace.SpanExporter, res *resource.Resource) *trace.Tra
 	)
 }
 
-func newTraceExporter(ctx context.Context) trace.SpanExporter {
+func newTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
 	var exporterEnv = os.Getenv("OTEL_TRACES_EXPORTER")
 	var endpointEnv = os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
 		exporter, err := otlptracegrpc.New(ctx)
 		if err != nil {
-			panic(fmt.Errorf("creating OTLP trace exporter: %w", err))
+			return nil, fmt.Errorf("creating OTLP trace exporter: %w", err)
 		}
 		logger.Info("using OTLP trace exporter with endpoint: " + exporterEnv)
-		return exporter
+		return exporter, nil
 	}
 	exporter, err := stdouttrace.New()
 	if err != nil {
-		panic(fmt.Errorf("creating stdout trace exporter: %w", err))
+		return nil, fmt.Errorf("creating stdout trace exporter: %w", err)
 	}
 	logger.Info("using console trace exporter")
-	return exporter
+	return exporter, nil
 }
 
 func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterProvider {
@@ -69,33 +69,33 @@ func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterPr
 	return meterProvider
 }
 
-func newMetricReader(ctx context.Context) metric.Reader {
+func newMetricReader(ctx context.Context) (metric.Reader, error) {
 	var exporterEnv = os.Getenv("OTEL_METRICS_EXPORTER")
 	var endpointEnv = os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
 
 	if exporterEnv == "prometheus" {
 		reader, err := prometheus.New()
 		if err != nil {
-			panic(fmt.Errorf("creating prometheus metric reader: %w", err))
+			return nil, fmt.Errorf("creating prometheus metric reader: %w", err)
 		}
 		logger.Info("Using Prometheus metric exporter")
-		return reader
+		return reader, nil
 	}
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
 		exporter, err := otlpmetricgrpc.New(ctx)
 		if err != nil {
-			panic(fmt.Errorf("creating OTLP metric exporter: %w", err))
+			return nil, fmt.Errorf("creating OTLP metric exporter: %w", err)
 		}
 		logger.Info("using OTLP metric exporter with endpoint: " + endpointEnv)
-		return metric.NewPeriodicReader(exporter, metric.WithInterval(10*time.Second))
+		return metric.NewPeriodicReader(exporter, metric.WithInterval(10*time.Second)), nil
 	}
 	exporter, err := stdoutmetric.New()
 	if err != nil {
-		panic(fmt.Errorf("creating stdout metric exporter: %w", err))
+		return nil, fmt.Errorf("creating stdout metric exporter: %w", err)
 	}
 	logger.Info("using console metric exporter")
 	return metric.NewPeriodicReader(exporter,
 		// Default is 1m. Set to 10s for demonstrative purposes.
-		metric.WithInterval(5*time.Second))
+		metric.WithInterval(5*time.Second)), nil
 }
