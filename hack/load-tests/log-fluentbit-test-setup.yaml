@@ -99,6 +99,7 @@ spec:
           name: flog
           resources:
             limits:
+              cpu: 50m
               memory: 200Mi
             requests:
               cpu: 10m
