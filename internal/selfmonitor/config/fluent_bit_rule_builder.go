@@ -34,7 +34,7 @@ func (rb fluentBitRuleBuilder) rules() []Rule {
 	}
 }
 
-// Checks if all data is dropped due to a full buffer or exporter issues, with nothing successfully sent.
+// Checks if all data is dropped due to exporter issues, with nothing successfully sent.
 func (rb fluentBitRuleBuilder) allDataDroppedExpr() string {
 	return unless(rb.exporterDroppedExpr(), rb.exporterSentExpr())
 }

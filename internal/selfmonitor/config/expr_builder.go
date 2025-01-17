@@ -90,6 +90,9 @@ func (eb *exprBuilder) build() string {
 	return eb.expr
 }
 
+// Logical/set binary operators
+// https://prometheus.io/docs/prometheus/latest/querying/operators/#logical-set-binary-operators
+
 func and(exprs ...string) string {
 	return strings.Join(wrapInParentheses(exprs), " and ")
 }
