@@ -1,0 +1,36 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "labels": [
+        "area/dependency",
+        "kind/chore"
+    ],
+    "gomod": {
+        "enabled": false
+    },
+    "kustomize": {
+        "enabled": false
+    },
+    "dockerfile": {
+        "enabled": false
+    },
+    "helm-values": {
+        "enabled": false
+    },
+    "github-actions": {
+        "enabled": false
+    },
+    "customManagers": [
+        {
+            "customType": "regex",
+            "fileMatch": [
+                "^\\.env$"
+            ],
+            "matchStrings": [
+                "ENV_ISTIO_VERSION=(?<currentValue>\\d+?\\.\\d+?\\.\\d+?)"
+            ],
+            "datasourceTemplate": "github-releases",
+            "versioningTemplate": "semver",
+            "depNameTemplate": "kyma-project/istio"
+        }
+    ]
+}
