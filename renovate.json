@@ -1,5 +1,9 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "labels": [
+        "area/dependency",
+        "kind/chore"
+    ],
     "gomod": {
         "enabled": false
     },
@@ -26,11 +30,7 @@
             ],
             "datasourceTemplate": "github-releases",
             "versioningTemplate": "semver",
-            "depNameTemplate": "kyma-project/istio",
-            "labels": [
-                "area/dependency",
-                "kind/chore"
-            ]
+            "depNameTemplate": "kyma-project/istio"
         }
     ]
 }
