@@ -1,7 +1,11 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "addLabels": [
-        "area/dependency"
+    "extends": [
+      "config:recommended",
+    ],
+    "labels": [
+        "area/dependency",
+        "kind/chore"
     ],
     "gomod": {
         "enabled": false
