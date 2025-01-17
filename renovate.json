@@ -4,6 +4,7 @@
       "area/dependency",
       "kind/chore"
     ],
+    "enabledManagers": []
     "customManagers": [
       {
         "customType": "regex",
