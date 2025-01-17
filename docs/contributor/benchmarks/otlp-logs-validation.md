@@ -104,15 +104,15 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
 ```
 
 ### ⭐️ Best Results (Scenario: Single Pipeline)
-| Batching | RECEIVED  | EXPORTED  | QUEUE | MEMORY |  CPU  |
-| :------: | :-------: | :-------: | :---: | :----: | :---: |
-|    ❌     | max. 8.9K | max. 8.9K |   0   |  ~63   | ~0.5  |
-|    ✅     |   8.6K    |   8.6k    |   0   |  ~73   | ~0.6  |
+| Batching | RECEIVED | EXPORTED | QUEUE | MEMORY |  CPU  |
+| :------: | :------: | :------: | :---: | :----: | :---: |
+|    ❌     |    ?     |    ?     |   ?   |   ?    |   ?   |
+|    ✅     |    ?     |    ?     |   ?   |   ?    |   ?   |
 
 ### ⭐️🏋️‍♀️ Best Results (Scenario: Single Pipeline with Backpressure)
 | Batching | RECEIVED | EXPORTED | QUEUE | MEMORY |  CPU  |
 | :------: | :------: | :------: | :---: | :----: | :---: |
-|    ❌     |   6.8K   |   6.8K   | ~328  |  ~66   | ~0.5  |
+|    ❌     |    ?     |    ?     |   ?   |   ?    |   ?   |
 |    ✅     |    -     |    -     |   -   |   -    |   -   |
 
 ### 📊 Benchmarking Sessions
@@ -317,9 +317,11 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
 
 #### 🪲 15 Jan 2025, Agent exports logs to a debug endpoint (5 min)
 - no networking involved
-- ~15K / agent
+- ~15K / agent => ~30K
 
-#### Removing compression for the OTLP exporter boosts throughput
+#### Removing compression for the OTLP exporters (on both agent and gateway)
+- boosts throughput in the 4 nodes scenario
+- the change seemed to have no impact in the 2 nodes scenario
 
 #### ⏳ 15 Jan 2025, ? - ? (20 min)
 - Gateways on separate nodes
@@ -329,8 +331,9 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Agent RECEIVED/EXPORTED: 15.3K
   - Gateway RECEIVED/EXPORTED: 15.3K
 
-#### ⏳⭐️ 16 Jan 2025, ~13:17
+#### ⏳⭐️ 16 Jan 2025, ~13:17 (20 min)
 - Gateways on separate nodes
+- No Istio
 - **Generator:** 10 replicas
 - **Results:**
   - Agent RECEIVED/EXPORTED: 18.8K
@@ -341,9 +344,18 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Gateway CPU: 0.6/0.6
   - Gateway QUEUE: 1/0
 
+#### ⏳⭐️ 16 Jan 2025, ~13:56 (20 min)
+- No gateway involved, agent sending directly to mock backend
+- With Istio
+- **Generator:** 10 replicas
+- **Results:**
+  - Agent RECEIVED/EXPORTED: 19K
+  - Agent Memory: 82/74
+  - Agent CPU: 1.3/0.8
+
 
 ## 4. Comparison with FluentBit setup
-In the FluentBit setup, for the very same scenario, the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
+In the FluentBit setup, for the very same (initial) scenario, the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
 - Exported Log Records/second: 27.8K
 
 
