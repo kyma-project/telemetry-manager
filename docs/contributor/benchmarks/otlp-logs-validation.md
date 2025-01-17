@@ -294,6 +294,10 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - 0% receiver refused logs
   - 0% exporter send failed logs
 
+<!-- BKS -->
+<!-- ----------- KORBINIAN ERA ----------- -->
+<!-- ADKS -->
+
 #### ⏳ 15 Jan 2025, 12:31 - 12:51 (20 min)
 - **Generator:** 10 replicas x 10 MB
 - **Results:**
@@ -352,6 +356,50 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Agent RECEIVED/EXPORTED: 19K
   - Agent Memory: 82/74
   - Agent CPU: 1.3/0.8
+
+#### 🪲 17 Jan 2025, ~10:36
+- 1 node
+- No gateway involved, agent sending directly to mock backend
+- With Istio
+- Agent has everything removed (no processors)
+- **Generator:** 5 replicas
+- **Results (without batching):**
+  - Agent RECEIVED/EXPORTED: 11.8K / instance
+- **Results (with batching):**
+  - Agent RECEIVED/EXPORTED: 14K / instance
+
+#### 🪲 17 Jan 2025, ~11:48
+- 1 node
+- No gateway involved, agent sending directly to mock backend
+- With Istio
+- Agent has everything removed (no processors), then we incrementally add them
+- **Generator:** 30 replicas (10m CPU limit)
+- 📥 Debug Exporter:
+  - **Results (without batching):**
+    - Agent RECEIVED/EXPORTED: 16K / instance
+  - **Results (with batching):**
+    - Agent RECEIVED/EXPORTED: 22.4K / instance
+  - **Results (batching + filestorage):**
+    - Agent RECEIVED/EXPORTED: 20K / instance
+- 📥 OTEL Exporter:
+  - **Results (batching + filestorage):**
+    - Agent RECEIVED/EXPORTED: 15K / instance
+  - **Results (batching + filestorage + sending queue):**
+    - Agent RECEIVED/EXPORTED: 15K / instance
+
+#### 🪲 17 Jan 2025, ~13:16
+- No gateway involved, agent sending directly to mock backend
+- With Istio
+- **2 nodes:**
+  - **Generator:** 60 replicas (10m CPU limit)
+  - Agent RECEIVED/EXPORTED: 28.6K
+  - Agent Memory: 78/71
+  - Agent CPU: 1.3/1.3
+- **3 nodes:**
+  - **Generator:** 90 replicas (10m CPU limit)
+  - Agent RECEIVED/EXPORTED:  44.6K
+  - Agent Memory: ~76-90
+  - Agent CPU: ~1.3
 
 
 ## 4. Comparison with FluentBit setup
