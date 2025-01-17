@@ -72,4 +72,4 @@ jobs:
         with:
           payload-file-path: ".github/workflows/slack-message.json"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_HUSKIES_NOTIF_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

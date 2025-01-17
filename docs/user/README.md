@@ -72,26 +72,28 @@ For more information, see [Metrics](04-metrics.md) and [Telemetry Gateways](gate
 
 ## Integration Guides
 
-To learn about integration with SAP Cloud Logging, read [SAP Cloud Logging](integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
+To learn about integration with SAP Cloud Logging, read [SAP Cloud Logging](./integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
 
 For integration with other backends, such as Dynatrace, see:
-- [Dynatrace](integration/dynatrace/README.md)
-- [Loki](integration/loki/README.md)
-- [Jaeger](integration/jaeger/README.md)
-- [Amazon CloudWatch and AWS X-Ray](integration/aws-cloudwatch/README.md)
+- [Dynatrace](./integration/dynatrace/README.md)
+- [Prometheus](./integration/prometheus/README.md)
+- [Loki](./integration/loki/README.md)
+- [Jaeger](./integration/jaeger/README.md)
+- [Amazon CloudWatch and AWS X-Ray](./integration/aws-cloudwatch/README.md)
 
-To learn how to collect data from applications based on the OpenTelemetry Demo App, see:
+To learn how to collect data from applications based on the OpenTelemetry SDK, see:
 
-- [OpenTelemetry Demo App](integration/opentelemetry-demo/README.md)
+- [OpenTelemetry Demo App](./integration/opentelemetry-demo/README.md)
+- [Sample App](./integration/sample-app/) 
 
 ## API / Custom Resource Definitions
 
 The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions. To inspect the specification of the Telemetry module API, see:
 
-- [Telemetry CRD](resources/01-telemetry.md)
-- [LogPipeline CRD](resources/02-logpipeline.md)
-- [TracePipeline CRD](resources/04-tracepipeline.md)
-- [MetricPipeline CRD](resources/05-metricpipeline.md)
+- [Telemetry CRD](./resources/01-telemetry.md)
+- [LogPipeline CRD](./resources/02-logpipeline.md)
+- [TracePipeline CRD](./resources/04-tracepipeline.md)
+- [MetricPipeline CRD](./resources/05-metricpipeline.md)
 
 ## Resource Usage
 

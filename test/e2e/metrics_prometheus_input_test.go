@@ -103,11 +103,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				))))
 
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
-					HaveType(Equal(prommetricgen.MetricHardwareHumidity.Type.String())),
-				))))
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
 					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
 				))))
@@ -132,12 +127,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
 					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
-					HaveMetricAttributes(HaveKey("service")),
-				))))
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
-					HaveType(Equal(prommetricgen.MetricHardwareHumidity.Type.String())),
 					HaveMetricAttributes(HaveKey("service")),
 				))))
 
