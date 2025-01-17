@@ -25,7 +25,6 @@ For examples using the OTel SDK in a different language, refer to the official [
 
 The sample app is a small webserver written in Golang, which exposes two endpoints `forward` and `terminate`. When calling the endpoints via HTTP, metrics are counted up and spans are emitted using OTLP exporters. Furthermore, structured logs are written to `stdout`.
 
-<!-- markdown-link-check-disable-next-line -->
 The application is located in the [`telemetry-manager`](https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app) repository.
 
 ### Setup
@@ -77,7 +76,6 @@ By default, the exporters are configured to print to stdout, so that you can run
 1. Provide a tracing backend and activate it.
    Install [Jaeger in-cluster](../jaeger/README.md) or provide a custom backend supporting the OTLP protocol (like [SAP Cloud Logging](./../sap-cloud-logging/)).
 1. Provide a metric backend and activate it.
-   <!-- markdown-link-check-disable-next-line -->
    Install [Prometheus in-cluster](../prometheus/README.md) or provide a custom backend supporting the OTLP protocol (like [SAP Cloud Logging](./../sap-cloud-logging/)).
 1. Provide a log backend and activate it.
    Install [Loki in-cluster](../loki/README.md) or provide a custom backend supporting the OTLP protocol (like [SAP Cloud Logging](./../sap-cloud-logging/)).
