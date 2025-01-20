@@ -5,7 +5,6 @@ This file documents the process of validating the whole LogPipeline with OTLP ou
 The scope is to performance test the agent, observing the resulting values (such as throughput, resource consumption, reaction to backpressure), and to compare the agent to the previous FluentBit-based setup.
 
 
-
 ## Setup Configuration Steps
 
 - To set up the log agent with Helm, run:
@@ -31,12 +30,10 @@ The scope is to performance test the agent, observing the resulting values (such
     ```
 
 
-
-## Resulting Resources
+## Relevant/Configurable Resources
 
 - Log Agent ConfigMap (OTel Config)
 - Log Agent DaemonSet
-
 
 See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
@@ -59,8 +56,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 > `storage` = The ID of a storage extension to be used to store file offsets. File offsets enable the receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver manages offsets only in memory.
 
 
-
-## Benchmarking and Performance Tests Results
+## Benchmarking Setup
 
 1. Apply the configuration (with Prometheus):
     ``` bash
@@ -104,7 +100,10 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
     -- CPU
     round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-log-agent"}[20m])) by (pod), 0.1)
     ```
+
+
 ## Performance Tests Results
+
 ### 📊 Benchmarking Session #1
 
 | Icon | Meaning                                              |
