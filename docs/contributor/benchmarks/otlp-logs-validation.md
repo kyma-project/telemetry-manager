@@ -56,7 +56,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 - This is later mounted as a `hostPath` volume in the DaemonSet spec
 - Also set in the `storage` property of the filelog receiver
 
-> `storage` = The ID of a storage extension to be used to store file offsets. File offsets allow the receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver will manage offsets in memory only.
+> `storage` = The ID of a storage extension to be used to store file offsets. File offsets enable the receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver manages offsets only in memory.
 
 
 
