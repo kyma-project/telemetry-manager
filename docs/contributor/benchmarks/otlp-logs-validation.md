@@ -61,7 +61,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 ## 3. Benchmarking and Performance Tests Results
 
 Setup Configuration:
-``` bash
+   ``` bash
 k create ns prometheus
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
