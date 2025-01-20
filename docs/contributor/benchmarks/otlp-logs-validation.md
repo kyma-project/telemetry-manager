@@ -8,7 +8,7 @@ The scope is to performance test the agent, observing the resulting values (such
 
 ## 1. Set-up configuration steps
 
-### With Helm
+- To set up the log agent with Helm, run:
 
 ``` bash
 k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
