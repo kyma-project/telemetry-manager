@@ -227,7 +227,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
 - **Generator:** 10 replicas x 10 MB
 - **Agent:** with CPU limit (1), no queue, with batch processing (2048)
 - **Results:**
-  - lower throughput as for the 1024 scenario
+  - lower throughput than for the 1024 scenario
 
 #### ⏳ 19 Dec 2024, 15:55 - 16:15 (20 min)
 - **Agent:** with CPU limit (1), no queue, with batch processing (1024)
