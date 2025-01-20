@@ -1,4 +1,4 @@
-# OTel LogPipeline set-up validation
+# OTel LogPipeline Setup Validation
 
 This file documents the process of validating the whole LogPipeline with OTLP output flow. It defines the setup, that consists of the manually deployed log agent, the already-implemented log gateway, and log generators using flog.
 
@@ -6,7 +6,7 @@ The scope is to performance test the agent, observing the resulting values (such
 
 
 
-## 1. Set-up configuration steps
+## Setup Configuration Steps
 
 - To set up the log agent with Helm, run:
 
@@ -32,7 +32,7 @@ k apply -f ./otlp-logs-validation.yaml
 
 
 
-## 2. Resulting Resources
+## Resulting Resources
 
 ### Agent ConfigMap (OTel Config)
 
@@ -58,7 +58,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 
 
-## 3. Benchmarking and Performance Tests Results
+## Benchmarking and Performance Tests Results
 
 Setup Configuration:
    ``` bash
@@ -388,7 +388,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Agent CPU: ~1.3
 
 
-## 4. Comparison with FluentBit setup
+## Comparison with FluentBit Setup
 In the FluentBit setup, for the very same (initial) scenario (i.e. 10 generator replicas [old set-up] / 2 agents), the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
 - Exported Log Records/second: 27.8K
 
