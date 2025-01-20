@@ -201,7 +201,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - not increasing
 
 #### 🪲 19 Dec 2024, Agent exports logs directly to mock backend with batching processor (5 min)
-- networking, but with batching mechanism in-place
+- networking, but with batching mechanism in place
 - 10 log generators x 10 MB, batch size: 1024
   - 8.3K
   - MEM: 68/73
