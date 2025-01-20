@@ -49,6 +49,11 @@ updates:
       interval: "daily"
     commit-message:
       prefix: "chore"
+    groups:
+      otel:
+        patterns:
+          - "go.opentelemetry.io/otel/*"
+          - "go.opentelemetry.io/collector/*"
     labels:
       - "area/dependency"
       - "kind/chore"
