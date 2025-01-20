@@ -72,7 +72,7 @@ helm upgrade --install -n "prometheus" "prometheus" prometheus-community/kube-pr
 k apply -f telemetry-manager/hack/load-tests/log-agent-test-setup.yaml
 ```
 
-For executing the load tests, the generated logs have to be isolated, hence the following line should be replaced in the ConfigMap of the log agent:
+2. To execute the load tests, the generated logs must be isolated. Replace the following line in the ConfigMap of the log agent:
 
    ``` yaml
 receivers:
