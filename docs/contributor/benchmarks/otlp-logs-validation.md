@@ -182,7 +182,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Gateway QUEUE: 328
 - **Remarks:**
   - Agent does not stop when gateway refuses logs (because backpressure does not backpropagate)
-  - It slows down/stops in other scenarios (see bellow) => SUCCESS
+  - It slows down/stops in other scenarios (see below) => SUCCESS
 
 #### 🪲 19 Dec 2024, Agent exports logs to a debug endpoint (5 min)
 - no networking involved
