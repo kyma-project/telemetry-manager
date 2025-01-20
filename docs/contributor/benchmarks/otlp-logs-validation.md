@@ -397,13 +397,13 @@ In the FluentBit setup, for the very same (initial) scenario (i.e. 10 generator 
 
 ## Conclusions
 - Before 15 Jan. (first session):
-  - A lower performance can be expected, compared to the FluentBit counterpart setup.
-  - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end, since the agent has no way of knowing when to stop, thus exports data continuously. (This is a known issue, that should get solved by the OTel community in the next half year)
-  - Agent slows down if the load is increased (i.e. more generators / more logs / more data).
-  - The network communication between the agent and the gateway or/and the gateway represent a bottleneck in this setup, since when using just a debug endpoint as an exporter, higher throughput was observed.
+  - Compared to the FluentBit counterpart setup, a lower performance can be expected.
+  - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end. That's because the agent has no way of knowing when to stop, thus exports data continuously (this is a known issue, which is expected be solved by the OTel community in the next half year).
+  - If the load is increased (that is, more generators, more logs, or more data), the log agent slows down.
+  - The network communication between the agent and the gateway or/and the gateway represent a bottleneck in this setup. That's concluded because higher throughput was observed when using just a debug endpoint as an exporter.
   - CPU and Memory consumption are surprisingly low, and this was not improved by removing the limits (quite the opposite was observed, with the CPU throttling more often and the throughput decreasing).
-  - When enabling the batch processor, throughput was increasing, but this comes at the cost of losing logs in some scenarios.
-  - More/other methods of improving the throughput might still be worth investigating.
+  - If the batch processor is enabled, throughput increased. But this comes at the cost of losing logs in some scenarios.
+  - Further methods of improving the throughput might still be worth investigating.
 - After 15 jan. (second session):
   - Removing the gateway improves throughput
   - We now better understand the performance impact of each OTEL processor and of enabling/disabling compression
