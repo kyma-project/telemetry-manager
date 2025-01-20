@@ -42,7 +42,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 #### Things to take into consideration (at implementation)
 - Dynamically include/exclude of namespaces, based on LogPipeline spec attributes.
-- Exclude FluentBit container in OTel configuration and OTel container in FluentBit configuration
+- Exclude FluentBit container in OTel configuration, and OTel container in FluentBit configuration.
 - `receivers/filelog/operators`: The copy body to `attributes.original` must be avoided if `dropLogRawBody` flag is enabled
 
 ### Agent DaemonSet
