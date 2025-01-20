@@ -34,7 +34,9 @@ k apply -f ./otlp-logs-validation.yaml
 
 ## Resulting Resources
 
-### Agent ConfigMap (OTel Config)
+- Log Agent ConfigMap (OTel Config)
+- Log Agent DaemonSet
+
 
 See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
