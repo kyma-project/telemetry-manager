@@ -53,7 +53,6 @@ updates:
       otel:
         patterns:
           - "go.opentelemetry.io/otel/*"
-          - "go.opentelemetry.io/collector/*"
     labels:
       - "area/dependency"
       - "kind/chore"
