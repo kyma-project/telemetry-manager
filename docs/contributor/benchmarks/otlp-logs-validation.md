@@ -82,7 +82,7 @@ receivers:
     - /var/log/pods/*/*/*.log # replace with "/var/log/pods/log-load-test*/*flog*/*.log"
 ```
 
-For the 🏋️‍♀️ Backpressure Scenario additionally apply:
+3. If you want to run the 🏋️‍♀️ backpressure scenario, additionally apply:
    ``` bash
 k apply -f telemetry-manager/hack/load-tests/log-backpressure-config.yaml
 ```
