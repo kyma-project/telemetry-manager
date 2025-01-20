@@ -72,7 +72,7 @@ k apply -f telemetry-manager/hack/load-tests/log-agent-test-setup.yaml
 
 For executing the load tests, the generated logs have to be isolated, hence the following line should be replaced in the ConfigMap of the log agent:
 
-``` yaml
+   ``` yaml
 receivers:
   filelog:
     # ...
