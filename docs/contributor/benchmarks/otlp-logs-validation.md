@@ -44,10 +44,10 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 ### How does checkpointing work
 
-- By enabling the storeCheckpoint preset (Helm) the `file_storage` extension is activated in the receiver
-> - The `file_storage` has the path `/var/lib/otelcol`.
-- This is later mounted as a `hostPath` volume in the DaemonSet spec
-- Also set in the `storage` property of the filelog receiver
+> By enabling the storeCheckpoint preset (Helm) the `file_storage` extension is activated in the receiver
+> - The `file_storage` has the path `/var/lib/otelcol`
+> - This path is later mounted as a `hostPath` volume in the DaemonSet spec
+> - The extension is also set in the `storage` property of the filelog receiver
 
 > `storage` = The ID of a storage extension to be used to store file offsets. File offsets enable the receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver manages offsets only in memory.
 
