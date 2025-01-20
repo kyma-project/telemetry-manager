@@ -42,10 +42,6 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 - Exclude FluentBit container in OTel configuration, and OTel container in FluentBit configuration.
 - `receivers/filelog/operators`: The copy body to `attributes.original` must be avoided if `dropLogRawBody` flag is enabled.
 
-### Agent DaemonSet
-
-See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
-
 ### How does checkpointing work
 
 - By enabling the storeCheckpoint preset (Helm) the `file_storage` extension is activated in the receiver
@@ -78,7 +74,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
         - /var/log/pods/*/*/*.log # replace with "/var/log/pods/log-load-test*/*flog*/*.log"
     ```
 
-3. If you want to run the 🏋️‍♀️ backpressure scenario, additionally apply:
+3. If you want to run the backpressure scenario, additionally apply:
     ``` bash
     k apply -f telemetry-manager/hack/load-tests/log-backpressure-config.yaml
     ```
@@ -110,7 +106,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 | ---- | ---------------------------------------------------- |
 | ⏳    | Full-test, involving the whole setup, usually 20 min |
 | 🪲    | Debugging session, usually shorter, not so reliable  |
-| 🏋️‍♀️    | Backpressure Scenario                                |
+| 🏋️‍♀️    | Backpressure scenario                                |
 | ⭐️    | Best results observed (in a given scenario)          |
 
 #### ⏳ 18 Dec 2024, 13:45 - 14:05 (20 min)
@@ -400,7 +396,7 @@ In the FluentBit setup, for the very same (initial) scenario (i.e. 10 generator 
   - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end. That's because the agent has no way of knowing when to stop, thus exports data continuously (this is a known issue, which is expected be solved by the OTel community in the next half year).
   - If the load is increased (that is, more generators, more logs, or more data), the log agent slows down.
   - The network communication between the agent and the gateway or/and the gateway represent a bottleneck in this setup. That's concluded because higher throughput was observed when using just a debug endpoint as an exporter.
-  - CPU and Memory consumption are surprisingly low, and this was not improved by removing the limits (quite the opposite was observed, with the CPU throttling more often and the throughput decreasing).
+  - CPU and memory consumption are surprisingly low, and this was not improved by removing the limits (quite the opposite was observed, with the CPU throttling more often and the throughput decreasing).
   - If the batch processor is enabled, throughput increased. But this comes at the cost of losing logs in some scenarios.
   - Further methods of improving the throughput might still be worth investigating.
 - After 15 jan. (second session):
