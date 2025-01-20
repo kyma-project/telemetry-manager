@@ -10,25 +10,25 @@ The scope is to performance test the agent, observing the resulting values (such
 
 - To set up the log agent with Helm, run:
 
-  ``` bash
-k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
+    ``` bash
+    k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
 
-// Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
+    // Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
 
-helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+    helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 
-helm install -n kyma-system logging open-telemetry/opentelemetry-collector -f telemetry-manager/docs/contributor/pocs/assets/otel-log-agent-values.yaml
-```
+    helm install -n kyma-system logging open-telemetry/opentelemetry-collector -f telemetry-manager/docs/contributor/pocs/assets/otel-log-agent-values.yaml
+    ```
 
 - To set up the log agent manually, run:
 
-  ``` bash
-k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
+    ``` bash
+    k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
 
-// Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
+    // Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
 
-k apply -f ./otlp-logs-validation.yaml
-```
+    k apply -f ./otlp-logs-validation.yaml
+    ```
 
 
 
@@ -62,48 +62,48 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 ## Benchmarking and Performance Tests Results
 
-Setup Configuration:
-   ``` bash
-k create ns prometheus
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm upgrade --install -n "prometheus" "prometheus" prometheus-community/kube-prometheus-stack -f hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
+1. Apply the configuration (with Prometheus):
+    ``` bash
+    k create ns prometheus
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+    helm upgrade --install -n "prometheus" "prometheus" prometheus-community/kube-prometheus-stack -f hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
 
-k apply -f telemetry-manager/hack/load-tests/log-agent-test-setup.yaml
-```
+    k apply -f telemetry-manager/hack/load-tests/log-agent-test-setup.yaml
+    ```
 
 2. To execute the load tests, the generated logs must be isolated. Replace the following line in the ConfigMap of the log agent:
 
-   ``` yaml
-receivers:
-  filelog:
-    # ...
-    include:
-    - /var/log/pods/*/*/*.log # replace with "/var/log/pods/log-load-test*/*flog*/*.log"
-```
+    ``` yaml
+    receivers:
+      filelog:
+        # ...
+        include:
+        - /var/log/pods/*/*/*.log # replace with "/var/log/pods/log-load-test*/*flog*/*.log"
+    ```
 
 3. If you want to run the 🏋️‍♀️ backpressure scenario, additionally apply:
-   ``` bash
-k apply -f telemetry-manager/hack/load-tests/log-backpressure-config.yaml
-```
+    ``` bash
+    k apply -f telemetry-manager/hack/load-tests/log-backpressure-config.yaml
+    ```
 
-PromQL Queries:
-``` sql
--- RECEIVED
-round(sum(rate(otelcol_receiver_accepted_log_records{service="telemetry-log-agent-metrics"}[20m])))
+4. PromQL Queries used for measuring the results:
+    ``` sql
+    -- RECEIVED
+    round(sum(rate(otelcol_receiver_accepted_log_records{service="telemetry-log-agent-metrics"}[20m])))
 
--- EXPORTED
-round(sum(rate(otelcol_exporter_sent_log_records{service="telemetry-log-agent-metrics"}[20m])))
+    -- EXPORTED
+    round(sum(rate(otelcol_exporter_sent_log_records{service="telemetry-log-agent-metrics"}[20m])))
 
--- QUEUE
-avg(sum(otelcol_exporter_queue_size{service="telemetry-log-agent-metrics"}))
+    -- QUEUE
+    avg(sum(otelcol_exporter_queue_size{service="telemetry-log-agent-metrics"}))
 
--- MEMORY
-round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-log-agent"}[20m])) by (pod) / 1024 / 1024)
+    -- MEMORY
+    round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-log-agent"}[20m])) by (pod) / 1024 / 1024)
 
--- CPU
-round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-log-agent"}[20m])) by (pod), 0.1)
-```
+    -- CPU
+    round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-log-agent"}[20m])) by (pod), 0.1)
+    ```
 ## Performance Tests Results
 ### 📊 Benchmarking Session #1
 
