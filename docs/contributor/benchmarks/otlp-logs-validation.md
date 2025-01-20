@@ -10,7 +10,7 @@ The scope is to performance test the agent, observing the resulting values (such
 
 - To set up the log agent with Helm, run:
 
-``` bash
+  ``` bash
 k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
 
 // Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
