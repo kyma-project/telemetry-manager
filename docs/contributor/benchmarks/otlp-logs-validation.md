@@ -2,7 +2,7 @@
 
 This file documents the process of validating the whole LogPipeline with OTLP output flow. It defines the setup, that consists of the manually deployed log agent, the already-implemented log gateway, and log generators using flog.
 
-The scope is to performance test the agent, observing the resulting values, in terms of throughput, resource consumption, reaction to backpressure, etc. And compare it to the previous FluentBit-based setup.
+The scope is to performance test the agent, observing the resulting values (such as throughput, resource consumption, reaction to backpressure), and to compare the agent to the previous FluentBit-based setup.
 
 
 
