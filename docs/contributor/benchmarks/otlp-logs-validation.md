@@ -103,19 +103,7 @@ round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-syste
 round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-log-agent"}[20m])) by (pod), 0.1)
 ```
 
-### ⭐️ Best Results (Scenario: Single Pipeline)
-| Batching | RECEIVED | EXPORTED | QUEUE | MEMORY |  CPU  |
-| :------: | :------: | :------: | :---: | :----: | :---: |
-|    ❌     |    ?     |    ?     |   ?   |   ?    |   ?   |
-|    ✅     |    ?     |    ?     |   ?   |   ?    |   ?   |
-
-### ⭐️🏋️‍♀️ Best Results (Scenario: Single Pipeline with Backpressure)
-| Batching | RECEIVED | EXPORTED | QUEUE | MEMORY |  CPU  |
-| :------: | :------: | :------: | :---: | :----: | :---: |
-|    ❌     |    ?     |    ?     |   ?   |   ?    |   ?   |
-|    ✅     |    -     |    -     |   -   |   -    |   -   |
-
-### 📊 Benchmarking Sessions
+### 📊 Benchmarking Session #1
 
 | Icon | Meaning                                              |
 | ---- | ---------------------------------------------------- |
@@ -294,9 +282,7 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - 0% receiver refused logs
   - 0% exporter send failed logs
 
-<!-- BKS -->
-<!-- ----------- KORBINIAN ERA ----------- -->
-<!-- ADKS -->
+### 📊 Benchmarking Session #2
 
 #### ⏳ 15 Jan 2025, 12:31 - 12:51 (20 min)
 - **Generator:** 10 replicas x 10 MB
@@ -397,21 +383,28 @@ round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds
   - Agent CPU: 1.3/1.3
 - **3 nodes:**
   - **Generator:** 90 replicas (10m CPU limit)
-  - Agent RECEIVED/EXPORTED:  44.6K
+  - Agent RECEIVED/EXPORTED: 44.6K
   - Agent Memory: ~76-90
   - Agent CPU: ~1.3
 
 
 ## 4. Comparison with FluentBit setup
-In the FluentBit setup, for the very same (initial) scenario, the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
+In the FluentBit setup, for the very same (initial) scenario (i.e. 10 generator replicas [old set-up] / 2 agents), the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
 - Exported Log Records/second: 27.8K
 
 
 ## 5. Conclusions
-- A lower performance can be expected, compared to the FluentBit counterpart setup.
-- Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end, since the agent has no way of knowing when to stop, thus exports data continuously. (This is a known issue, that should get solved by the OTel community in the next half year)
-- Agent slows down if the load is increased (i.e. more generators / more logs / more data).
-- The network communication between the agent and the gateway or/and the gateway represent a bottleneck in this setup, since when using just a debug endpoint as an exporter, higher throughput was observed.
-- CPU and Memory consumption are surprisingly low, and this was not improved by removing the limits (quite the opposite was observed, with the CPU throttling more often and the throughput decreasing).
-- When enabling the batch processor, throughput was increasing, but this comes at the cost of losing logs in some scenarios.
-- More/other methods of improving the throughput might still be worth investigating.
+- Before 15 Jan. (first session):
+  - A lower performance can be expected, compared to the FluentBit counterpart setup.
+  - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end, since the agent has no way of knowing when to stop, thus exports data continuously. (This is a known issue, that should get solved by the OTel community in the next half year)
+  - Agent slows down if the load is increased (i.e. more generators / more logs / more data).
+  - The network communication between the agent and the gateway or/and the gateway represent a bottleneck in this setup, since when using just a debug endpoint as an exporter, higher throughput was observed.
+  - CPU and Memory consumption are surprisingly low, and this was not improved by removing the limits (quite the opposite was observed, with the CPU throttling more often and the throughput decreasing).
+  - When enabling the batch processor, throughput was increasing, but this comes at the cost of losing logs in some scenarios.
+  - More/other methods of improving the throughput might still be worth investigating.
+- After 15 jan. (second session):
+  - Removing the gateway improves throughput
+  - We now better understand the performance impact of each OTEL processor and of enabling/disabling compression
+  - Generators configuration greatly influence the setup => more generators exporting less data and taking less CPU leads to higher throughput than fewer generators taking more CPU and exporting more data
+  - There is a hard limit (see debug endpoint scenario) that we still not fully understand, since strictly based on the benchmarking numbers of OTEL, we should be getting higher throughput (i.e. something related to the infrastructure could be influencing this).
+  - We have now a more performant setup configuration, being more comparable with the numbers from the FluentBit setup
