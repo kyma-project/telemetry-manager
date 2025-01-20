@@ -20,7 +20,7 @@ helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm
 helm install -n kyma-system logging open-telemetry/opentelemetry-collector -f telemetry-manager/docs/contributor/pocs/assets/otel-log-agent-values.yaml
 ```
 
-### Manual
+- To set up the log agent manually, run:
 
 ``` bash
 k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
