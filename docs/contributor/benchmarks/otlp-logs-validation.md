@@ -81,7 +81,7 @@ receivers:
 ```
 
 For the 🏋️‍♀️ Backpressure Scenario additionally apply:
-``` bash
+   ``` bash
 k apply -f telemetry-manager/hack/load-tests/log-backpressure-config.yaml
 ```
 
