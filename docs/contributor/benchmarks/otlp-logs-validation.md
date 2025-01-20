@@ -22,7 +22,7 @@ helm install -n kyma-system logging open-telemetry/opentelemetry-collector -f te
 
 - To set up the log agent manually, run:
 
-``` bash
+  ``` bash
 k apply -f telemetry-manager/config/samples/operator_v1alpha1_telemetry.yaml
 
 // Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
