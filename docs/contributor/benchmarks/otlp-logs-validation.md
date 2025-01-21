@@ -403,7 +403,8 @@ In the FluentBit setup, for the very same (initial) scenario (that is, 10 genera
   - CPU and memory consumption are surprisingly low, and this was not improved by removing the limits (quite the opposite was observed, with the CPU throttling more often and the throughput decreasing).
   - If the batch processor is enabled, throughput increased. But this comes at the cost of losing logs in some scenarios.
   - Further methods of improving the throughput might still be worth investigating.
-- After 15 jan. (second session):
+
+### Benchmarking Session #2 (after 15 Jan)
   - Removing the gateway improves throughput
   - We now better understand the performance impact of each OTEL processor and of enabling/disabling compression
   - Generators configuration greatly influence the setup => more generators exporting less data and taking less CPU leads to higher throughput than fewer generators taking more CPU and exporting more data
