@@ -1,8 +1,12 @@
 # OTel LogPipeline Setup Validation
 
-This file documents the process of validating the whole LogPipeline with OTLP output flow. It defines the setup, that consists of the manually deployed log agent, the already-implemented log gateway, and log generators using flog.
-
-The scope is to performance test the agent, observing the resulting values (such as throughput, resource consumption, reaction to backpressure), and to compare the agent to the previous FluentBit-based setup.
+- [Setup Configuration Steps](#setup-configuration-steps)
+- [Resources Under Investigation](#resources-under-investigation)
+- [Benchmarking Setup](#benchmarking-setup)
+- [Performance Tests Results](#performance-tests-results)
+  - [📊 Benchmarking Session #1](#-benchmarking-session-1)
+  - [📊 Benchmarking Session #2](#-benchmarking-session-2)
+- [Conclusions](#conclusions)
 
 
 ## Setup Configuration Steps
@@ -42,14 +46,13 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 - Exclude FluentBit container in OTel configuration, and OTel container in FluentBit configuration.
 - `receivers/filelog/operators`: The copy body to `attributes.original` must be avoided if `dropLogRawBody` flag is enabled.
 
-### How does checkpointing work
-
-> By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is activated in the receiver.
+**How does checkpointing work?**
+> By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is activated in the filelog receiver.
 > - The `file_storage` has the path `/var/lib/otelcol`
 > - This path is later mounted as a `hostPath` volume in the DaemonSet spec
 > - The extension is also set in the `storage` property of the filelog receiver
 
-> `storage` = The ID of a storage extension to be used to store file offsets. File offsets enable the receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver manages offsets only in memory.
+> `storage` = The ID of a storage extension to be used to store file offsets. File offsets enable the filelog receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver manages offsets only in memory.
 
 
 ## Benchmarking Setup
@@ -79,7 +82,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
     k apply -f telemetry-manager/hack/load-tests/log-backpressure-config.yaml
     ```
 
-4. PromQL Queries used for measuring the results:
+4. You can use the following PromQL Queries for measuring the results (same/similar queries were used in measuring the results of the performance tests executed below):
     ``` sql
     -- RECEIVED
     round(sum(rate(otelcol_receiver_accepted_log_records{service="telemetry-log-agent-metrics"}[20m])))
