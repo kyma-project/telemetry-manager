@@ -42,7 +42,6 @@ We investigate the following resources (for details, see the [OTLP Logs Validati
 - Log Agent ConfigMap (OTel Config)
 - Log Agent DaemonSet
 
-See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 **Things to take into consideration, when implementing the Log Agent into Telemetry Manager:**
 - Dynamically include/exclude of namespaces, based on LogPipeline spec attributes.
