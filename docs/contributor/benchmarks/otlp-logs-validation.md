@@ -30,7 +30,7 @@ The scope is to performance test the agent, observing the resulting values (such
     ```
 
 
-## Relevant/Configurable Resources
+## Resources Under Investigation
 
 - Log Agent ConfigMap (OTel Config)
 - Log Agent DaemonSet
@@ -44,7 +44,7 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 ### How does checkpointing work
 
-> By enabling the storeCheckpoint preset (Helm) the `file_storage` extension is activated in the receiver
+> By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is activated in the receiver.
 > - The `file_storage` has the path `/var/lib/otelcol`
 > - This path is later mounted as a `hostPath` volume in the DaemonSet spec
 > - The extension is also set in the `storage` property of the filelog receiver
