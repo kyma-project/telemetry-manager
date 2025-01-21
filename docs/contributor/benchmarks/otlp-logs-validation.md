@@ -407,6 +407,6 @@ In the FluentBit setup, for the very same (initial) scenario (that is, 10 genera
 ### Benchmarking Session #2 (after 15 Jan)
   - Removing the gateway improves throughput.
   - We now better understand the performance impact of each OTel processor and of enabling or disabling compression.
-  - Generators configuration greatly influence the setup => more generators exporting less data and taking less CPU leads to higher throughput than fewer generators taking more CPU and exporting more data
+  - The generators' configuration greatly influences the setup: More generators exporting less data and taking less CPU leads to higher throughput than fewer generators taking more CPU and exporting more data.
   - There is a hard limit (see debug endpoint scenario) that we still not fully understand, since strictly based on the benchmarking numbers of OTEL, we should be getting higher throughput (i.e. something related to the infrastructure could be influencing this).
   - We have now a more performant setup configuration, being more comparable with the numbers from the FluentBit setup
