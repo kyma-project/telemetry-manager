@@ -397,7 +397,7 @@ In the FluentBit setup, for the very same (initial) scenario (that is, 10 genera
 ## Conclusions
 ### Benchmarking Session #1 (before 15 Jan)
   - Compared to the FluentBit counterpart setup, a lower performance can be expected.
-  - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end. That's because the agent has no way of knowing when to stop, thus exports data continuously (this is a known issue, which is expected be solved by the OTel community in the next half year).
+  - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued or lost on the gateway end. That's because the agent has no way of knowing when to stop, thus exports data continuously (this is a known issue, which is expected be solved by the OTel community in the next half year).
   - If the load is increased (that is, more generators, more logs, or more data), the log agent slows down.
   - The network communication between the agent and the gateway or/and the gateway represent a bottleneck in this setup. That's concluded because higher throughput was observed when using just a debug endpoint as an exporter.
   - CPU and memory consumption are surprisingly low, and this was not improved by removing the limits (quite the opposite was observed, with the CPU throttling more often and the throughput decreasing).
