@@ -9,7 +9,9 @@
 - [Conclusions](#conclusions)
 
 
-## Setup Configuration Steps
+## Configuring the Log Agent
+
+To configure the log agent, deploy the [OTLP Logs Validation YAML](./otlp-logs-validation.yaml) either with Helm or manually:
 
 - To set up the log agent with Helm, run:
 
