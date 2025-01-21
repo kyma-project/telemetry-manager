@@ -1,12 +1,11 @@
 # OTel LogPipeline Setup Validation
 
-- [Setup Configuration Steps](#setup-configuration-steps)
+- [Setup Configuration Steps](#configuring-the-log-agent)
 - [Resources Under Investigation](#resources-under-investigation)
 - [Benchmarking Setup](#benchmarking-setup)
 - [Performance Tests Results](#performance-tests-results)
-  - [📊 Benchmarking Session #1](#-benchmarking-session-1)
-  - [📊 Benchmarking Session #2](#-benchmarking-session-2)
 - [Conclusions](#conclusions)
+
 
 
 ## Configuring the Log Agent
