@@ -394,7 +394,6 @@ By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is a
 In the FluentBit setup, for the very same (initial) scenario (that is, 10 generator replicas [old set-up] or 2 agents), the [load test](https://github.com/kyma-project/telemetry-manager/actions/runs/12691802471) outputs the following values for the agent:
 - Exported Log Records/second: 27.8K
 
-
 ## Conclusions
 - Before 15 Jan. (first session):
   - Compared to the FluentBit counterpart setup, a lower performance can be expected.
