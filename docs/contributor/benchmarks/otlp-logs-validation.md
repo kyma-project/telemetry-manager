@@ -37,6 +37,7 @@ To configure the log agent, deploy the [OTLP Logs Validation YAML](./otlp-logs-v
 
 
 ## Resources Under Investigation
+We investigate the following resources (for details, see the [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)):
 
 - Log Agent ConfigMap (OTel Config)
 - Log Agent DaemonSet
