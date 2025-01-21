@@ -409,4 +409,4 @@ In the FluentBit setup, for the very same (initial) scenario (that is, 10 genera
   - We now better understand the performance impact of each OTel processor and of enabling or disabling compression.
   - The generators' configuration greatly influences the setup: More generators exporting less data and taking less CPU leads to higher throughput than fewer generators taking more CPU and exporting more data.
   - There is a hard limit (see debug endpoint scenario) that we still don't fully understand, because strictly based on the benchmarking numbers of OTel, we should be getting higher throughput. It's possible that something related to the infrastructure could be influencing this.
-  - We have now a more performant setup configuration, being more comparable with the numbers from the FluentBit setup
+  - We  now have a more performant setup configuration, being more comparable with the numbers from the FluentBit setup
