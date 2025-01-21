@@ -9,7 +9,9 @@
 - [Conclusions](#conclusions)
 
 
-## Setup Configuration Steps
+## Configuring the Log Agent
+
+To configure the log agent, deploy the [OTLP Logs Validation YAML](./otlp-logs-validation.yaml) either with Helm or manually:
 
 - To set up the log agent with Helm, run:
 
@@ -35,11 +37,11 @@
 
 
 ## Resources Under Investigation
+We investigate the following resources (for details, see the [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)):
 
 - Log Agent ConfigMap (OTel Config)
 - Log Agent DaemonSet
 
-See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 **Things to take into consideration, when implementing the Log Agent into Telemetry Manager:**
 - Dynamically include/exclude of namespaces, based on LogPipeline spec attributes.
@@ -48,9 +50,9 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 **How does checkpointing work?**
 By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is activated in the filelog receiver.
-- The `file_storage` has the path `/var/lib/otelcol`
-- This path is later mounted as a `hostPath` volume in the DaemonSet spec
-- The extension is also set in the `storage` property of the filelog receiver
+- The `file_storage` has the path `/var/lib/otelcol`.
+- Later, this path is mounted as a `hostPath` volume in the DaemonSet spec.
+- The extension is also set in the `storage` property of the filelog receiver.
 
 > **NOTE:** `storage` = The ID of a storage extension to be used to store file offsets. File offsets enable the filelog receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver manages offsets only in memory.
 
