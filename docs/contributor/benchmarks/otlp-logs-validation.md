@@ -47,12 +47,12 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 - `receivers/filelog/operators`: The copy body to `attributes.original` must be avoided if `dropLogRawBody` flag is enabled.
 
 **How does checkpointing work?**
-> By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is activated in the filelog receiver.
-> - The `file_storage` has the path `/var/lib/otelcol`
-> - This path is later mounted as a `hostPath` volume in the DaemonSet spec
-> - The extension is also set in the `storage` property of the filelog receiver
+By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is activated in the filelog receiver.
+- The `file_storage` has the path `/var/lib/otelcol`
+- This path is later mounted as a `hostPath` volume in the DaemonSet spec
+- The extension is also set in the `storage` property of the filelog receiver
 
-> `storage` = The ID of a storage extension to be used to store file offsets. File offsets enable the filelog receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver manages offsets only in memory.
+> **NOTE:** `storage` = The ID of a storage extension to be used to store file offsets. File offsets enable the filelog receiver to pick up where it left off in the case of a collector restart. If no storage extension is used, the receiver manages offsets only in memory.
 
 
 ## Benchmarking Setup
@@ -103,14 +103,14 @@ See [OTLP Logs Validation YAML](./otlp-logs-validation.yaml)
 
 ## Performance Tests Results
 
-### 📊 Benchmarking Session #1
-
 | Icon | Meaning                                              |
 | ---- | ---------------------------------------------------- |
 | ⏳    | Full-test, involving the whole setup, usually 20 min |
 | 🪲    | Debugging session, usually shorter, not so reliable  |
 | 🏋️‍♀️    | Backpressure scenario                                |
 | ⭐️    | Best results observed (in a given scenario)          |
+
+### 📊 Benchmarking Session #1
 
 #### ⏳ 18 Dec 2024, 13:45 - 14:05 (20 min)
 - **Generator:** 10 replicas x 10 MB
