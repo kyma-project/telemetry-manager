@@ -42,3 +42,17 @@ updates:
     labels:
       - "area/ci"
       - "kind/chore"
+
+  - package-ecosystem: "gomod"
+    directory: "/docs/user/integration/sample-app"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "chore"
+    groups:
+      otel:
+        patterns:
+          - "go.opentelemetry.io/otel/*"
+    labels:
+      - "area/dependency"
+      - "kind/chore"

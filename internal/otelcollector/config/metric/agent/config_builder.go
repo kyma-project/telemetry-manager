@@ -7,8 +7,8 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
 type BuilderConfig struct {
@@ -66,7 +66,7 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 func enableRuntimeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Runtime != nil && input.Runtime.Enabled {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) {
 			return true
 		}
 	}
@@ -90,7 +90,7 @@ func enableRuntimeResourcesMetricsScraping(pipelines []telemetryv1alpha1.MetricP
 func enableRuntimePodMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimePodInputEnabled(input) {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) && metricpipelineutils.IsRuntimePodInputEnabled(input) {
 			return true
 		}
 	}
@@ -101,7 +101,7 @@ func enableRuntimePodMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 func enableRuntimeContainerMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeContainerInputEnabled(input) {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) && metricpipelineutils.IsRuntimeContainerInputEnabled(input) {
 			return true
 		}
 	}
@@ -112,7 +112,7 @@ func enableRuntimeContainerMetricsScraping(pipelines []telemetryv1alpha1.MetricP
 func enableRuntimeNodeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeNodeInputEnabled(input) {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) && metricpipelineutils.IsRuntimeNodeInputEnabled(input) {
 			return true
 		}
 	}
@@ -123,7 +123,7 @@ func enableRuntimeNodeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeli
 func enableRuntimeVolumeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeVolumeInputEnabled(input) {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) && metricpipelineutils.IsRuntimeVolumeInputEnabled(input) {
 			return true
 		}
 	}
@@ -134,7 +134,7 @@ func enableRuntimeVolumeMetricsScraping(pipelines []telemetryv1alpha1.MetricPipe
 func enableRuntimeStatefulSetMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeStatefulSetInputEnabled(input) {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) && metricpipelineutils.IsRuntimeStatefulSetInputEnabled(input) {
 			return true
 		}
 	}
@@ -145,7 +145,7 @@ func enableRuntimeStatefulSetMetricsScraping(pipelines []telemetryv1alpha1.Metri
 func enableRuntimeDeploymentMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeDeploymentInputEnabled(input) {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) && metricpipelineutils.IsRuntimeDeploymentInputEnabled(input) {
 			return true
 		}
 	}
@@ -156,7 +156,7 @@ func enableRuntimeDeploymentMetricsScraping(pipelines []telemetryv1alpha1.Metric
 func enableRuntimeDaemonSetMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeDaemonSetInputEnabled(input) {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) && metricpipelineutils.IsRuntimeDaemonSetInputEnabled(input) {
 			return true
 		}
 	}
@@ -167,7 +167,7 @@ func enableRuntimeDaemonSetMetricsScraping(pipelines []telemetryv1alpha1.MetricP
 func enableRuntimeJobMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if metric.IsRuntimeInputEnabled(input) && metric.IsRuntimeJobInputEnabled(input) {
+		if metricpipelineutils.IsRuntimeInputEnabled(input) && metricpipelineutils.IsRuntimeJobInputEnabled(input) {
 			return true
 		}
 	}
@@ -178,7 +178,7 @@ func enableRuntimeJobMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 func enablePrometheusMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Prometheus != nil && input.Prometheus.Enabled {
+		if metricpipelineutils.IsPrometheusInputEnabled(input) {
 			return true
 		}
 	}
@@ -189,7 +189,7 @@ func enablePrometheusMetricsScraping(pipelines []telemetryv1alpha1.MetricPipelin
 func enableIstioMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Istio != nil && input.Istio.Enabled {
+		if metricpipelineutils.IsIstioInputEnabled(input) {
 			return true
 		}
 	}
