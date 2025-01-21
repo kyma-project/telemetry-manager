@@ -395,7 +395,7 @@ In the FluentBit setup, for the very same (initial) scenario (that is, 10 genera
 - Exported Log Records/second: 27.8K
 
 ## Conclusions
-- Before 15 Jan. (first session):
+### Benchmarking Session #1 (before 15 Jan)
   - Compared to the FluentBit counterpart setup, a lower performance can be expected.
   - Backpressure is currently not backpropagated from the gateway to the agent, resulting in logs being queued/lost on the gateway end. That's because the agent has no way of knowing when to stop, thus exports data continuously (this is a known issue, which is expected be solved by the OTel community in the next half year).
   - If the load is increased (that is, more generators, more logs, or more data), the log agent slows down.
