@@ -43,6 +43,16 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 			Key:     "app",
 			TagName: "kyma.app_name",
 		},
+		{
+			From:    "node",
+			Key:     "topology.kubernetes.io/region",
+			TagName: "cloud.region",
+		},
+		{
+			From:    "node",
+			Key:     "topology.kubernetes.io/zone",
+			TagName: "cloud.availability_zone",
+		},
 	}
 
 	config := K8sAttributesProcessorConfig()

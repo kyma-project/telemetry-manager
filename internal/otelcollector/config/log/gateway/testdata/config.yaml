@@ -65,6 +65,12 @@ processors:
                 - from: pod
                   key: app
                   tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
         pod_association:
             - sources:
                 - from: resource_attribute
@@ -74,11 +80,14 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
-    resource/insert-cluster-name:
+    resource/insert-cluster-attributes:
         attributes:
             - action: insert
               key: k8s.cluster.name
-              value: ${KUBERNETES_SERVICE_HOST}
+              value: ${CLUSTER_NAME}
+            - action: insert
+              key: cloud.provider
+              value: ${CLOUD_PROVIDER}
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

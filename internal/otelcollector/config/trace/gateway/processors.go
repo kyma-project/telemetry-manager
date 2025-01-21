@@ -11,11 +11,11 @@ func makeProcessorsConfig() Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:      gatewayprocs.K8sAttributesProcessorConfig(),
-		InsertClusterName:  gatewayprocs.InsertClusterNameProcessorConfig(),
-		DropNoisySpans:     makeDropNoisySpansConfig(),
-		ResolveServiceName: makeResolveServiceNameConfig(),
-		DropKymaAttributes: gatewayprocs.DropKymaAttributesProcessorConfig(),
+		K8sAttributes:           gatewayprocs.K8sAttributesProcessorConfig(),
+		InsertClusterAttributes: gatewayprocs.InsertClusterAttributesProcessorConfig(),
+		DropNoisySpans:          makeDropNoisySpansConfig(),
+		ResolveServiceName:      makeResolveServiceNameConfig(),
+		DropKymaAttributes:      gatewayprocs.DropKymaAttributesProcessorConfig(),
 	}
 }
 

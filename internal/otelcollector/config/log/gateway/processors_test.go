@@ -16,14 +16,17 @@ func TestProcessors(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 
-	t.Run("insert cluster name processor", func(t *testing.T) {
+	t.Run("insert cluster attributes processor", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()})
 		require.NoError(t, err)
 
-		require.Equal(t, 1, len(collectorConfig.Processors.InsertClusterName.Attributes))
-		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterName.Attributes[0].Action)
-		require.Equal(t, "k8s.cluster.name", collectorConfig.Processors.InsertClusterName.Attributes[0].Key)
-		require.Equal(t, "${KUBERNETES_SERVICE_HOST}", collectorConfig.Processors.InsertClusterName.Attributes[0].Value)
+		require.Equal(t, 2, len(collectorConfig.Processors.InsertClusterAttributes.Attributes))
+		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Action)
+		require.Equal(t, "k8s.cluster.name", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Key)
+		require.Equal(t, "${CLUSTER_NAME}", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Value)
+		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Action)
+		require.Equal(t, "cloud.provider", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Key)
+		require.Equal(t, "${CLOUD_PROVIDER}", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Value)
 	})
 
 	t.Run("memory limit processors", func(t *testing.T) {

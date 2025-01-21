@@ -17,7 +17,7 @@ func makeProcessorsConfig() Processors {
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
 		K8sAttributes:                 gatewayprocs.K8sAttributesProcessorConfig(),
-		InsertClusterName:             gatewayprocs.InsertClusterNameProcessorConfig(),
+		InsertClusterAttributes:       gatewayprocs.InsertClusterAttributesProcessorConfig(),
 		ResolveServiceName:            makeResolveServiceNameConfig(),
 		DropKymaAttributes:            gatewayprocs.DropKymaAttributesProcessorConfig(),
 		DeleteSkipEnrichmentAttribute: makeDeleteSkipEnrichmentAttributeConfig(),
