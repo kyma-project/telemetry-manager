@@ -210,7 +210,7 @@ func TestBuildConfig(t *testing.T) {
 
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "resource/insert-cluster-attributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Exporters, "otlp/test")
@@ -233,7 +233,7 @@ func TestBuildConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-1"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[2], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[2], "resource/insert-cluster-attributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[3], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test-2")
@@ -241,7 +241,7 @@ func TestBuildConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-2"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[2], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[2], "resource/insert-cluster-attributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[3], "batch")
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_1")
