@@ -17,7 +17,8 @@ COPY internal/ internal/
 COPY webhook/ webhook/
 
 # Clean up unused (test) dependencies and build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager main.go
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=linux go mod tidy && go build -a -o manager main.go
 
 FROM scratch
 
