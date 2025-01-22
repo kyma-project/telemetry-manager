@@ -22,17 +22,20 @@ func TestProcessors(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "CLUSTER_NAME",
+				CloudProvider: "CLOUD_PROVIDER",
+			},
 		)
 		require.NoError(t, err)
 
 		require.Equal(t, 2, len(collectorConfig.Processors.InsertClusterAttributes.Attributes))
 		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Action)
 		require.Equal(t, "k8s.cluster.name", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Key)
-		require.Equal(t, "${CLUSTER_NAME}", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Value)
+		require.Equal(t, "CLUSTER_NAME", collectorConfig.Processors.InsertClusterAttributes.Attributes[0].Value)
 		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Action)
 		require.Equal(t, "cloud.provider", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Key)
-		require.Equal(t, "${CLOUD_PROVIDER}", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Value)
+		require.Equal(t, "CLOUD_PROVIDER", collectorConfig.Processors.InsertClusterAttributes.Attributes[1].Value)
 	})
 
 	t.Run("memory limit processors", func(t *testing.T) {

@@ -10,14 +10,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 )
 
-func makeProcessorsConfig() Processors {
+func makeProcessorsConfig(opts BuildOptions) Processors {
 	return Processors{
 		BaseProcessors: config.BaseProcessors{
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
 		K8sAttributes:                 gatewayprocs.K8sAttributesProcessorConfig(),
-		InsertClusterAttributes:       gatewayprocs.InsertClusterAttributesProcessorConfig(),
+		InsertClusterAttributes:       gatewayprocs.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 		ResolveServiceName:            makeResolveServiceNameConfig(),
 		DropKymaAttributes:            gatewayprocs.DropKymaAttributesProcessorConfig(),
 		DeleteSkipEnrichmentAttribute: makeDeleteSkipEnrichmentAttributeConfig(),

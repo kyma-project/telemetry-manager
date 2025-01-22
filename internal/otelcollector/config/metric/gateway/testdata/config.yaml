@@ -127,10 +127,10 @@ processors:
         attributes:
             - action: insert
               key: k8s.cluster.name
-              value: ${CLUSTER_NAME}
+              value: test-cluster
             - action: insert
               key: cloud.provider
-              value: ${CLOUD_PROVIDER}
+              value: test-cloud-provider
     filter/drop-if-input-source-runtime:
         metrics:
             metric:
