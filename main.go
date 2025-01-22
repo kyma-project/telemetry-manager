@@ -183,12 +183,19 @@ func run() error {
 				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
 				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
 				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
 				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
 				&corev1.Secret{}:              {Field: setNamespaceFieldSelector()},
 				&operatorv1alpha1.Telemetry{}: {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}: {
+					Namespaces: map[string]cache.Config{
+						telemetryNamespace: {},
+						"kube-system": {
+							FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
+						},
+					},
+				},
 			},
 		},
 		Client: client.Options{
