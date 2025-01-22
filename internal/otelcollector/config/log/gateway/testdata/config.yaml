@@ -11,7 +11,7 @@ service:
             processors:
                 - memory_limiter
                 - k8sattributes
-                - resource/insert-cluster-name
+                - resource/insert-cluster-attributes
                 - batch
             exporters:
                 - otlp/test

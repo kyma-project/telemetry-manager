@@ -104,7 +104,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 		Processors: []string{
 			"memory_limiter",
 			"k8sattributes",
-			"resource/insert-cluster-name",
+			"resource/insert-cluster-attributes",
 			"batch",
 		},
 		Exporters: exporterIDs,

@@ -105,7 +105,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 			"memory_limiter",
 			"k8sattributes",
 			"filter/drop-noisy-spans",
-			"resource/insert-cluster-name",
+			"resource/insert-cluster-attributes",
 			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",
 			"batch",

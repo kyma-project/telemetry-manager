@@ -32,7 +32,7 @@ service:
                 - filter/drop-if-input-source-istio
                 - filter/drop-if-input-source-otlp
                 - transform/set-instrumentation-scope-kyma
-                - resource/insert-cluster-name
+                - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - batch
             exporters:
