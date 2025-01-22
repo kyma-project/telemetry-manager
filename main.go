@@ -176,26 +176,24 @@ func run() error {
 		}),
 		Cache: cache.Options{
 			SyncPeriod: ptr.To(cacheSyncPeriod),
-
+			DefaultNamespaces: map[string]cache.Config{
+				telemetryNamespace: {},
+				"kube-system": {
+					FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
+				},
+			},
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}:           {},
 				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
 				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
 				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
 				&corev1.Secret{}:              {Field: setNamespaceFieldSelector()},
 				&operatorv1alpha1.Telemetry{}: {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}: {
-					Namespaces: map[string]cache.Config{
-						telemetryNamespace: {},
-						"kube-system": {
-							FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
-						},
-					},
-				},
 			},
 		},
 		Client: client.Options{
