@@ -1,5 +1,5 @@
 module-name: telemetry
-protecode:
+protocode:
 - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
 - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241212-e4adf27f
 - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:3.2.2
