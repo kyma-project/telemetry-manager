@@ -15,16 +15,16 @@ func TestInsertClusterNameProcessorConfig(t *testing.T) {
 		{
 			Action: "insert",
 			Key:    "k8s.cluster.name",
-			Value:  "${CLUSTER_NAME}",
+			Value:  "test-cluster",
 		},
 		{
 			Action: "insert",
 			Key:    "cloud.provider",
-			Value:  "${CLOUD_PROVIDER}",
+			Value:  "test-cloud-provider",
 		},
 	}
 
-	config := InsertClusterAttributesProcessorConfig()
+	config := InsertClusterAttributesProcessorConfig("test-cluster", "test-cloud-provider")
 
 	require.ElementsMatch(expectedAttributeActions, config.Attributes, "Attributes should match")
 }

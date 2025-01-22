@@ -84,10 +84,10 @@ processors:
         attributes:
             - action: insert
               key: k8s.cluster.name
-              value: ${CLUSTER_NAME}
+              value: test-cluster
             - action: insert
               key: cloud.provider
-              value: ${CLOUD_PROVIDER}
+              value: test-cloud-provider
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

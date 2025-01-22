@@ -26,7 +26,12 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
-		})
+		},
+			BuildOptions{
+				ClusterName:   "test-cluster",
+				CloudProvider: "test-cloud-provider",
+			},
+		)
 		require.NoError(t, err)
 
 		const endpointEnvVar = "OTLP_ENDPOINT_TEST"
@@ -42,7 +47,10 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("secure", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
@@ -52,7 +60,10 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()})
+			testutils.NewLogPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
 
@@ -63,6 +74,9 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("basic auth", func(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
+		}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
@@ -82,6 +96,9 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("custom header", func(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
+		}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-custom-header")
@@ -99,6 +116,9 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("mtls", func(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "cert", "key")).Build(),
+		}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-mtls")
@@ -115,7 +135,10 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
 		require.NoError(t, err)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
@@ -125,7 +148,10 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
 		require.NoError(t, err)
 
 		metricreaders := []config.MetricReader{
@@ -147,7 +173,10 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
 		require.NoError(t, err)
 		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
@@ -156,7 +185,10 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-1").WithOTLPOutput().Build(),
 			testutils.NewLogPipelineBuilder().WithName("test-2").WithOTLPOutput().Build(),
-			testutils.NewLogPipelineBuilder().WithName("test-3").WithOTLPOutput().Build()})
+			testutils.NewLogPipelineBuilder().WithName("test-3").WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
 
 		require.NoError(t, err)
 
@@ -167,7 +199,10 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()})
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test")
@@ -184,7 +219,10 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(context.Background(), []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-1").WithOTLPOutput().Build(),
-			testutils.NewLogPipelineBuilder().WithName("test-2").WithOTLPOutput().Build()})
+			testutils.NewLogPipelineBuilder().WithName("test-2").WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-1")
@@ -213,6 +251,9 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("marshaling", func(t *testing.T) {
 		config, _, err := sut.Build(context.Background(), []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build(),
+		}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
 
@@ -230,6 +271,9 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("failed to make otlp exporter config", func(t *testing.T) {
 		_, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-fail").WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("nonexistent-secret", "default", "user", "password")).Build(),
+		}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
 		})
 		require.Error(t, err)
 		require.ErrorContains(t, err, "failed to make otlp exporter config")

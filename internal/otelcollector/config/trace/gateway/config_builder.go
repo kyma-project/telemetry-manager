@@ -22,14 +22,19 @@ type Builder struct {
 	Reader client.Reader
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*Config, otlpexporter.EnvVars, error) {
+type BuildOptions struct {
+	ClusterName   string
+	CloudProvider string
+}
+
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
 			Service:    config.DefaultService(make(config.Pipelines)),
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),
-		Processors: makeProcessorsConfig(),
+		Processors: makeProcessorsConfig(opts),
 		Exporters:  make(Exporters),
 	}
 
