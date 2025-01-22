@@ -124,7 +124,7 @@ service:
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
                 - transform/set-instrumentation-scope-kyma
-                - resource/insert-cluster-attributes
+                - resource/insert-cluster-name
                 - resource/delete-skip-enrichment-attribute
                 - transform/custom
                 - filter/custom
