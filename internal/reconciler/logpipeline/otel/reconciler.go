@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -43,14 +43,26 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) bool
 }
 
+type AgentConfigBuilder interface {
+	Build(options agent.BuildOptions) *agent.Config
+}
+
+type AgentApplierDeleter interface {
+	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
+	DeleteResources(ctx context.Context, c client.Client) error
+}
+
 var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
 
 	telemetryNamespace string
+	moduleVersion      string
 
 	// Dependencies
+	agentConfigBuilder    AgentConfigBuilder
+	agentApplierDeleter   AgentApplierDeleter
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
 	gatewayProber         commonstatus.Prober
@@ -62,6 +74,7 @@ type Reconciler struct {
 func New(
 	client client.Client,
 	telemetryNamespace string,
+	moduleVersion string,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
 	gatewayProber commonstatus.Prober,
@@ -72,6 +85,7 @@ func New(
 	return &Reconciler{
 		Client:                client,
 		telemetryNamespace:    telemetryNamespace,
+		moduleVersion:         moduleVersion,
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,
 		gatewayProber:         gatewayProber,
@@ -124,6 +138,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if err := r.reconcileLogGateway(ctx, pipeline, allPipelines); err != nil {
 		return fmt.Errorf("failed to reconcile log gateway: %w", err)
+	}
+
+	if isLogAgentRequired(pipeline) {
+		if err := r.reconcileLogAgent(ctx, pipeline); err != nil {
+			return fmt.Errorf("failed to reconcile log agent: %w", err)
+		}
 	}
 
 	return nil
@@ -209,6 +229,37 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 	return nil
 }
 
+func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+	agentConfig := r.agentConfigBuilder.Build(agent.BuildOptions{
+		InstrumentationScopeVersion: r.moduleVersion,
+		AgentNamespace:              r.telemetryNamespace,
+	})
+
+	agentConfigYAML, err := yaml.Marshal(agentConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal agent config: %w", err)
+	}
+
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	allowedPorts := getAgentPorts()
+	if isIstioActive {
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+	}
+
+	if err := r.agentApplierDeleter.ApplyResources(
+		ctx,
+		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
+		otelcollector.AgentApplyOptions{
+			AllowedPorts:        allowedPorts,
+			CollectorConfigYAML: string(agentConfigYAML),
+		},
+	); err != nil {
+		return fmt.Errorf("failed to apply agent resources: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	var telemetries operatorv1alpha1.TelemetryList
 	if err := r.List(ctx, &telemetries); err != nil {
@@ -243,4 +294,17 @@ func getGatewayPorts() []int32 {
 		ports.OTLPHTTP,
 		ports.OTLPGRPC,
 	}
+}
+
+func getAgentPorts() []int32 {
+	return []int32{
+		ports.Metrics,
+		ports.HealthCheck,
+	}
+}
+
+func isLogAgentRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+	input := pipeline.Spec.Input
+
+	return input.Application != nil && input.Application.Enabled != nil && *input.Application.Enabled
 }

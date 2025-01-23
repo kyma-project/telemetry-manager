@@ -354,6 +354,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,
+			ModuleVersion:               version,
 		},
 	)
 	if err != nil {

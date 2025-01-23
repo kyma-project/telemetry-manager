@@ -86,6 +86,7 @@ type LogPipelineControllerConfig struct {
 	RestConfig                  *rest.Config
 	SelfMonitorName             string
 	TelemetryNamespace          string
+	ModuleVersion               string
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
@@ -210,6 +211,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 	otelReconciler := logpipelineotel.New(
 		client,
 		config.TelemetryNamespace,
+		config.ModuleVersion,
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
