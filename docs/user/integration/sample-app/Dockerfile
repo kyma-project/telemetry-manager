@@ -1,5 +1,5 @@
 # Build the app binary
-FROM golang:1.23.5 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.23.5 AS builder
 
 # Copy the project
 WORKDIR /app
@@ -17,7 +17,8 @@ COPY *.go .
 
 # Clean up unused (test) dependencies and build
 RUN go mod tidy
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o main ./...
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -o main ./...
 
 # Use the scratch image for a minimal image
 FROM scratch

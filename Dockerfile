@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.5-alpine3.21 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.23.5-alpine3.21 AS builder
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
@@ -18,7 +18,7 @@ COPY webhook/ webhook/
 
 # Clean up unused (test) dependencies and build
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=linux go mod tidy && go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go mod tidy && go build -a -o manager main.go
 
 FROM scratch
 
