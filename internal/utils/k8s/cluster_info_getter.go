@@ -2,12 +2,23 @@ package k8s
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/types"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+const (
+	defaultClusterName                 = "${KUBERNETES_SERVICE_HOST}"
+	gardenerShootNameAttributeName     = "shootName"
+	gardenerCloudProviderAttributeName = "provider"
+)
+
+var defaultGardenerShootInfoCM = types.NamespacedName{
+	Namespace: "kube-system",
+	Name:      "shoot-info",
+}
 
 type ClusterInfo struct {
 	ClusterName   string
@@ -16,18 +27,19 @@ type ClusterInfo struct {
 
 func GetGardenerShootInfo(ctx context.Context, client client.Client) ClusterInfo {
 	shootInfo := corev1.ConfigMap{}
-	err := client.Get(ctx, types.NamespacedName{
-		Namespace: "kube-system",
-		Name:      "shoot-info",
-	}, &shootInfo)
 
+	err := client.Get(ctx, defaultGardenerShootInfoCM, &shootInfo)
+
+	// The shoot-info config map is used to store information about the Gardener cluster, such as the cluster name and the cloud provider.
+	// If cluster in a non Gardener cluster, the shoot-info config map will not exist, so we return the default values.
 	if err != nil {
 		logf.FromContext(ctx).V(1).Info("Failed get shoot-info config map")
-		return ClusterInfo{ClusterName: "${KUBERNETES_SERVICE_HOST}"}
+
+		return ClusterInfo{ClusterName: defaultClusterName}
 	}
 
 	return ClusterInfo{
-		ClusterName:   shootInfo.Data["shootName"],
-		CloudProvider: shootInfo.Data["provider"],
+		ClusterName:   shootInfo.Data[gardenerShootNameAttributeName],
+		CloudProvider: shootInfo.Data[gardenerCloudProviderAttributeName],
 	}
 }
