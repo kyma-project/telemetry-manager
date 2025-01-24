@@ -53,6 +53,16 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 			Key:     "topology.kubernetes.io/zone",
 			TagName: "cloud.availability_zone",
 		},
+		{
+			From:    "node",
+			Key:     "node.kubernetes.io/instance-type",
+			TagName: "host.type",
+		},
+		{
+			From:    "node",
+			Key:     "kubernetes.io/arch",
+			TagName: "host.arch",
+		},
 	}
 
 	config := K8sAttributesProcessorConfig()

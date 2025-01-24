@@ -115,6 +115,12 @@ processors:
                 - from: node
                   key: topology.kubernetes.io/zone
                   tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
         pod_association:
             - sources:
                 - from: resource_attribute
