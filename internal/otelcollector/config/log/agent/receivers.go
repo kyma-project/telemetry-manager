@@ -85,7 +85,7 @@ func makeMoveMessageToBody() Operator {
 func makeSeverityParser() Operator {
 	return Operator{
 		Id:        "severity-parser",
-		Type:      "severity",
+		Type:      "severity_parser",
 		IfExpr:    "attributes.level != nil",
 		ParseFrom: "attributes.level",
 	}
