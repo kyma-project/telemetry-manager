@@ -18,6 +18,7 @@ limitations under the License.
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -208,10 +209,18 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		return nil, err
 	}
 
+	agentConfigBuilder := &agent.Builder{
+		Config: agent.BuilderConfig{
+			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.LogOTLPServiceName},
+		},
+	}
+
 	otelReconciler := logpipelineotel.New(
 		client,
 		config.TelemetryNamespace,
 		config.ModuleVersion,
+		agentConfigBuilder,
+		&workloadstatus.DaemonSetProber{Client: client},
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},

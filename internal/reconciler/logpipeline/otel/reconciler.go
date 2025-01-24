@@ -62,6 +62,7 @@ type Reconciler struct {
 
 	// Dependencies
 	agentConfigBuilder    AgentConfigBuilder
+	agentProber           commonstatus.Prober
 	agentApplierDeleter   AgentApplierDeleter
 	gatewayApplierDeleter GatewayApplierDeleter
 	gatewayConfigBuilder  GatewayConfigBuilder
@@ -75,6 +76,8 @@ func New(
 	client client.Client,
 	telemetryNamespace string,
 	moduleVersion string,
+	agentConfigBuilder AgentConfigBuilder,
+	agentProber commonstatus.Prober,
 	gatewayApplierDeleter GatewayApplierDeleter,
 	gatewayConfigBuilder GatewayConfigBuilder,
 	gatewayProber commonstatus.Prober,
@@ -86,6 +89,8 @@ func New(
 		Client:                client,
 		telemetryNamespace:    telemetryNamespace,
 		moduleVersion:         moduleVersion,
+		agentConfigBuilder:    agentConfigBuilder,
+		agentProber:           agentProber,
 		gatewayApplierDeleter: gatewayApplierDeleter,
 		gatewayConfigBuilder:  gatewayConfigBuilder,
 		gatewayProber:         gatewayProber,
