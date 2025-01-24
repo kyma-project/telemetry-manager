@@ -22,7 +22,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -o main ./...
 
 # Use the scratch image for a minimal image
 FROM scratch
-LABEL source=git@github.com:kyma-project/telemetry-manager.git
+LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
 
 # Copy the binary, no further dependencies
 COPY --from=builder /app/main .
