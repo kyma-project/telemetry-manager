@@ -384,6 +384,8 @@ test results are printed out.
 | 3.1.8                   |  8385 | 27172 |   n/a |   n/a | 43983 | 102,093, | 0.8,0.8, | 4539 | 10019 |   n/a |  n/a | 2582036 | 545,550, | 0.4,0.4, | 3977 | 5080 |   n/a   | n/a  | 1905566 | 674,645, | 0.5,0.4, | 3278 | 1506 |  n/a | n/a | 4956213 | 702,651, | 0.3,0.3, |
 | 3.1.9                   | 9501  | 30914 |   n/a |   n/a | 28694 | 92,96,   | 0.9,0.9, | 4256 | 8250  |   n/a |  n/a | 2768750 | 484,526, | 0.4,0.4, | 3841 | 4288 |   n/a   | n/a  | 1887937 | 663,672, | 0.4,0.4, | 3022 | 1172 |  n/a | n/a | 5066455 | 718,719, | 0.3,0.2, |
 | 3.2.2                   | 10085 | 33856 | 28388 | 28388 | 23651 | 97,100,  | 0.9,1.0, | 3996 | 8550  | 11218 | 7158 | 2609962 | 624,694, | 0.4,0.3, | 3892 | 6580 | 10961   | 5520 | 1952452 | 641,745, | 0.4,0.5, | 2792 | 1135 | 7860 | 953 | 5238467 | 659,700, | 0.2,0.2, |
+| 3.2.4                   |  9699 | 32563 | 27301 | 27300 | 16423 | 98,93,   | 0.9,0.9, | 3750 | 6939  | 10530 | 5811 | 3110520 | 512,507, | 0.3,0.3, | 3842 | 6499 | 10819   | 5451 | 1962471 | 740,675, | 0.4,0.5, | 2823 | 1098 | 7945 | 921 | 5139943 | 693,678, | 0.2,0.2, |
+
 </div>
 
 > **NOTE:** The test results can vary up to 1000KByte/sec in the input, and up to 3000KByte/sec in the output processing rate with single pipeline tests. The multi pipeline test results can be lower than the single pipeline test results, because the test setup is shared between multiple pipelines and this may create pressure on the shared resources.
