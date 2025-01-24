@@ -20,9 +20,12 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(opts BuildOptions) *Config {
+	logService := config.DefaultService(makePipelinesConfig())
+	// Overwrite the extension from default service name
+	logService.Extensions = []string{"health_check", "pprof", "file_storage"}
 	return &Config{
 		Base: config.Base{
-			Service: config.DefaultService(makePipelinesConfig()),
+			Service: logService,
 		},
 
 		Receivers:  makeReceivers(),
