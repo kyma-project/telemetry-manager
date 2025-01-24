@@ -45,7 +45,6 @@ func TestConnectors(t *testing.T) {
 		expectedRoutingConnector := RoutingConnector{
 			DefaultPipelines: []string{"metrics/test-attributes-enrichment"},
 			ErrorMode:        "ignore",
-			MatchOnce:        true,
 			Table: []RoutingConnectorTableEntry{
 				{
 					Statement: "route() where attributes[\"io.kyma-project.telemetry.skip_enrichment\"] == \"true\"",
