@@ -41,17 +41,36 @@ func withEnvVarFromSource(envVarName, fieldPath string) podSpecOption {
 	}
 }
 
-func withVolumeMount(volumeMount corev1.VolumeMount) podSpecOption {
+func withVolumeMounts(volumeMounts []corev1.VolumeMount) podSpecOption {
 	return func(pod *corev1.PodSpec) {
-		for i := range pod.Containers {
-			pod.Containers[i].VolumeMounts = append(pod.Containers[i].VolumeMounts, volumeMount)
+		for _, v := range volumeMounts {
+			for i := range pod.Containers {
+				pod.Containers[i].VolumeMounts = append(pod.Containers[i].VolumeMounts, v)
+			}
 		}
 	}
 }
 
-func withVolume(volume corev1.Volume) podSpecOption {
+func withVolumes(volumes []corev1.Volume) podSpecOption {
 	return func(pod *corev1.PodSpec) {
-		pod.Volumes = append(pod.Volumes, volume)
+		for _, v := range volumes {
+			pod.Volumes = append(pod.Volumes, v)
+		}
+	}
+}
+
+func withSecurityContext(securityContext *corev1.SecurityContext) podSpecOption {
+	return func(pod *corev1.PodSpec) {
+		for i := range pod.Containers {
+			pod.Containers[i].SecurityContext = securityContext
+		}
+	}
+}
+
+func withPodSecurityContext(securityContext *corev1.PodSecurityContext) podSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.SecurityContext = securityContext
+
 	}
 }
 
@@ -72,19 +91,6 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 							},
 							Optional: ptr.To(true),
 						},
-					},
-				},
-				SecurityContext: &corev1.SecurityContext{
-					Privileged:               ptr.To(false),
-					RunAsUser:                ptr.To(collectorUser),
-					RunAsNonRoot:             ptr.To(true),
-					ReadOnlyRootFilesystem:   ptr.To(true),
-					AllowPrivilegeEscalation: ptr.To(false),
-					SeccompProfile: &corev1.SeccompProfile{
-						Type: corev1.SeccompProfileTypeRuntimeDefault,
-					},
-					Capabilities: &corev1.Capabilities{
-						Drop: []corev1.Capability{"ALL"},
 					},
 				},
 				VolumeMounts: []corev1.VolumeMount{{Name: "config", MountPath: "/conf"}},

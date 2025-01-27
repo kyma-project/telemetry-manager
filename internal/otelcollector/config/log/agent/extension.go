@@ -6,7 +6,8 @@ func makeExtensionsConfig() Extensions {
 	return Extensions{
 		BaseExtensions: config.DefaultBaseExtensions(),
 		FileStorage: &FileStorage{
-			Directory: "/var/log/otel",
+			//CreateDirectory: true,
+			Directory: "/var/lib/otelcol",
 		},
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"k8s.io/utils/ptr"
 	"maps"
 	"strconv"
 
@@ -24,16 +25,51 @@ import (
 const (
 	IstioCertPath   = "/etc/istio-output-certs"
 	MetricAgentName = "telemetry-metric-agent"
+	LogAgentName    = "telemetry-log-agent"
 
 	istioCertVolumeName  = "istio-certs"
 	metricAgentScrapeKey = "telemetry.kyma-project.io/metric-scrape"
+	logAgentScrapeKey    = "telemetry.kyma-project.io/log-scrape"
 )
 
 var (
 	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
 	metricAgentCPURequest    = resource.MustParse("15m")
 	metricAgentMemoryRequest = resource.MustParse("50Mi")
+
+	logAgentMemoryLimit   = resource.MustParse("1200Mi")
+	logAgentCPURequest    = resource.MustParse("15m")
+	logAgentMemoryRequest = resource.MustParse("50Mi")
 )
+
+func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
+	extraLabels := map[string]string{
+		logAgentScrapeKey:     "true",
+		istioSidecarInjectKey: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+	}
+	return &AgentApplierDeleter{
+		baseName:          LogAgentName,
+		extraPodLabel:     extraLabels,
+		image:             image,
+		namespace:         namespace,
+		priorityClassName: priorityClassName,
+		memoryLimit:       logAgentMemoryLimit,
+		cpuRequest:        logAgentCPURequest,
+		memoryRequest:     logAgentMemoryRequest,
+		volumes: []corev1.Volume{
+			makeIstioCertVolume(),
+			makePodLogsVolume(),
+			makeFileLogCheckpointVolume(),
+		},
+		volumeMounts: []corev1.VolumeMount{
+			makeIstioCertVolumeMount(),
+			makePodLogsVolumeMount(),
+			makeFileLogCheckPointVolumeMount(),
+		},
+		securityContext:    makeLogAgentSecurityContext(),
+		podSecurityContext: makeLogAgentPodSecurityContext(),
+	}
+}
 
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
@@ -42,15 +78,19 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 	}
 
 	return &AgentApplierDeleter{
-		baseName:          MetricAgentName,
-		extraPodLabel:     extraLabels,
-		image:             image,
-		namespace:         namespace,
-		priorityClassName: priorityClassName,
-		rbac:              makeMetricAgentRBAC(namespace),
-		memoryLimit:       metricAgentMemoryLimit,
-		cpuRequest:        metricAgentCPURequest,
-		memoryRequest:     metricAgentMemoryRequest,
+		baseName:           MetricAgentName,
+		extraPodLabel:      extraLabels,
+		image:              image,
+		namespace:          namespace,
+		priorityClassName:  priorityClassName,
+		rbac:               makeMetricAgentRBAC(namespace),
+		memoryLimit:        metricAgentMemoryLimit,
+		cpuRequest:         metricAgentCPURequest,
+		memoryRequest:      metricAgentMemoryRequest,
+		volumes:            []corev1.Volume{makeIstioCertVolume()},
+		volumeMounts:       []corev1.VolumeMount{makeIstioCertVolumeMount()},
+		securityContext:    makeMetricAgentSecurityContext(),
+		podSecurityContext: makeMetricAgentPodSecurityContext(),
 	}
 }
 
@@ -61,6 +101,11 @@ type AgentApplierDeleter struct {
 	namespace         string
 	priorityClassName string
 	rbac              rbac
+
+	volumes            []corev1.Volume
+	volumeMounts       []corev1.VolumeMount
+	securityContext    *corev1.SecurityContext
+	podSecurityContext *corev1.PodSecurityContext
 
 	memoryLimit   resource.Quantity
 	cpuRequest    resource.Quantity
@@ -134,18 +179,10 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
 		commonresources.WithGoMemLimitEnvVar(aad.memoryLimit),
 
-		// emptyDir volume for Istio certificates
-		withVolume(corev1.Volume{
-			Name: istioCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		}),
-		withVolumeMount(corev1.VolumeMount{
-			Name:      istioCertVolumeName,
-			MountPath: IstioCertPath,
-			ReadOnly:  true,
-		}),
+		withVolumes(aad.volumes),
+		withVolumeMounts(aad.volumeMounts),
+		withSecurityContext(aad.securityContext),
+		withPodSecurityContext(aad.podSecurityContext),
 	}
 
 	podSpec := makePodSpec(aad.baseName, aad.image, opts...)
@@ -198,5 +235,114 @@ proxyMetadata:
 		"traffic.sidecar.istio.io/includeOutboundPorts":    strconv.Itoa(int(ports.OTLPGRPC)),
 		"traffic.sidecar.istio.io/excludeInboundPorts":     strconv.Itoa(int(ports.Metrics)),
 		"traffic.sidecar.istio.io/includeOutboundIPRanges": "",
+	}
+}
+
+func makeIstioCertVolume() corev1.Volume {
+	// emptyDir volume for Istio certificates
+	return corev1.Volume{
+		Name: istioCertVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+}
+
+func makeIstioCertVolumeMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      istioCertVolumeName,
+		MountPath: IstioCertPath,
+		ReadOnly:  true,
+	}
+}
+
+func makePodLogsVolume() corev1.Volume {
+	return corev1.Volume{
+		Name: "varlogpods",
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: "/var/log/pods",
+				Type: nil,
+			},
+		},
+	}
+}
+
+func makePodLogsVolumeMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      "varlogpods",
+		MountPath: "/var/log/pods",
+		ReadOnly:  true,
+	}
+}
+
+func makeFileLogCheckpointVolume() corev1.Volume {
+	return corev1.Volume{
+		Name: "varlibotelcol",
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: "/var/lib/otelcol",
+				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+			},
+		},
+	}
+}
+
+func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      "varlibotelcol",
+		MountPath: "/var/lib/otelcol",
+	}
+}
+
+func makeMetricAgentSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To(collectorUser),
+		RunAsNonRoot:             ptr.To(true),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		},
+	}
+}
+
+func makeLogAgentSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To(int64(0)),
+		RunAsNonRoot:             ptr.To(false),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		Capabilities: &corev1.Capabilities{
+			Add:  []corev1.Capability{"FOWNER"},
+			Drop: []corev1.Capability{"ALL"},
+		},
+	}
+}
+
+func makeMetricAgentPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		RunAsUser:    ptr.To(collectorUser),
+		RunAsNonRoot: ptr.To(true),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+}
+
+func makeLogAgentPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		RunAsNonRoot: ptr.To(false),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
 }

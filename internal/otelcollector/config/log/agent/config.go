@@ -2,6 +2,7 @@ package agent
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 )
 
 type Config struct {
@@ -41,11 +42,11 @@ type Operator struct {
 
 type Processors struct {
 	config.BaseProcessors          `yaml:",inline"`
-	SetInstrumentationScopeRuntime *config.TransformProcessorStatements `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	SetInstrumentationScopeRuntime *log.TransformProcessor `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
 }
 
 type Exporters struct {
-	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
+	OTLP *config.OTLPExporter `yaml:"otlp"`
 }
 
 type Extensions struct {
@@ -54,5 +55,7 @@ type Extensions struct {
 }
 
 type FileStorage struct {
+	// Create directory if it does not exist
+	//CreateDirectory bool   `yaml:"create_directory,omitempty"`
 	Directory string `yaml:"directory,omitempty"`
 }
