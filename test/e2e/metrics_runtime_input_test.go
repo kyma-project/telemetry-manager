@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"fmt"
+	"io"
 	"net/http"
 	"slices"
 
@@ -31,7 +33,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label("ttt"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
 	Context("When metric pipelines with runtime resources metrics enabled exist", Ordered, func() {
 		var (
 			mockNs = suite.ID()
@@ -207,6 +209,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label("ttt"), Ordered, f
 			It("Should deliver pod metrics with expected resource attributes and metric attributes", func() {
 				backendContainsMetricsDeliveredForResource(proxyClient, backendResourceMetricsEnabledURLA, runtime.PodMetricsNames)
 				backendContainsDesiredResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "k8s.pod.cpu.time", runtime.PodMetricsResourceAttributes)
+
+				backendContainsDesiredCloudResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "cloud.region", "kyma-local")
+				backendContainsDesiredCloudResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "cloud.availability_zone", "kyma-local")
+				backendContainsDesiredCloudResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "host.type", "local")
+				backendContainsDesiredCloudResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "host.arch", "amd64")
+				backendContainsDesiredCloudResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "k8s.cluster.name", "kyma-telemetry")
+				backendContainsDesiredCloudResourceAttributes(proxyClient, backendResourceMetricsEnabledURLA, "cloud.provider", "k3d")
 
 				podNetworkErrorsMetric := "k8s.pod.network.errors"
 				backendContainsDesiredMetricAttributes(proxyClient, backendResourceMetricsEnabledURLA, podNetworkErrorsMetric, runtime.PodMetricsAttributes[podNetworkErrorsMetric])
@@ -471,4 +480,21 @@ func backendContainsDesiredMetricAttributes(proxyClient *apiserverproxy.Client, 
 			)),
 		)))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metric %s with metric attributes %v", metricName, metricAttributes)
+}
+
+func backendContainsDesiredCloudResourceAttributes(proxyClient *apiserverproxy.Client, backendExportURL string, attribute string, attributeValue string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(backendExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+		bodyContent, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(bodyContent).To(HaveFlatMetrics(
+			ContainElement(SatisfyAll(
+				HaveResourceAttributes(HaveKeyWithValue(attribute, attributeValue)),
+			)),
+		))
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), fmt.Sprintf("could not find metrics matching resource attribute %s, value %s", attribute, attributeValue))
 }
