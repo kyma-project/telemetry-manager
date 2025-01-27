@@ -24,14 +24,12 @@ func (b *Builder) Build(opts BuildOptions) *Config {
 	// Overwrite the extension from default service name
 	logService.Extensions = []string{"health_check", "pprof", "file_storage"}
 	return &Config{
-		Base: config.Base{
-			Service: logService,
-		},
+		Service:    logService,
+		Extensions: makeExtensionsConfig(),
 
 		Receivers:  makeReceivers(),
 		Processors: makeProcessorsConfig(opts.InstrumentationScopeVersion),
 		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
-		Extensions: makeExtensionsConfig(),
 	}
 }
 

@@ -5,12 +5,12 @@ import (
 )
 
 type Config struct {
-	config.Base `yaml:",inline"`
+	Service    config.Service `yaml:"service"`
+	Extensions Extensions     `yaml:"extensions"`
 
 	Receivers  Receivers  `yaml:"receivers"`
 	Processors Processors `yaml:"processors"`
 	Exporters  Exporters  `yaml:"exporters"`
-	Extensions Extensions `yaml:"extensions"`
 }
 
 type Receivers struct {
@@ -49,8 +49,8 @@ type Exporters struct {
 }
 
 type Extensions struct {
-	config.Extensions `yaml:",inline"`
-	FileStorage       *FileStorage `yaml:"file_storage,omitempty"`
+	config.BaseExtensions `yaml:",inline"`
+	FileStorage           *FileStorage `yaml:"file_storage,omitempty"`
 }
 
 type FileStorage struct {
