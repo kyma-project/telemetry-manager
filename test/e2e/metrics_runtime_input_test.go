@@ -63,6 +63,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label("ttt"), Ordered, f
 			var objs []client.Object
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
+			objs = append(objs, kitk8s.NewConfigMap("shoot-info", "kube-system").WithData("shootName", "kyma-telemetry").WithData("provider", "k3d").K8sObject())
+
 			// PipelineA should deliver only pod, container, volume and node metrics
 			// PipelineB should deliver only deployment, daemonset, statefulset and job metrics
 			// PipelineC should deliver default resource metrics (currently all resource metrics are enabled by default)

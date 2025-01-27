@@ -37,6 +37,7 @@ var (
 		"cloud.availability_zone",
 		"host.type",
 		"host.arch",
+		"cloud.provider",
 	}
 
 	PodMetricsAttributes = map[string][]string{
