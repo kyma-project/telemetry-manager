@@ -12,3 +12,19 @@ registries:
     name: kyma
     hostPort: '5001'
 
+options:
+  k3s:
+    nodeLabels:
+      - label: topology.kubernetes.io/region=test_region
+        nodeFilters:
+          - server:*
+      - label: topology.kubernetes.io/zone=test_zone
+        nodeFilters:
+          - server:*
+      - label: node.kubernetes.io/instance-type=test_instance
+        nodeFilters:
+          - server:*
+      - label: kubernetes.io/arch=test_arch
+        nodeFilters:
+          - server:*
+
