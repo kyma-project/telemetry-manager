@@ -15,16 +15,12 @@ registries:
 options:
   k3s:
     nodeLabels:
-      - label: topology.kubernetes.io/region=test_region
+      - label: topology.kubernetes.io/region=kyma-local
         nodeFilters:
           - server:*
-      - label: topology.kubernetes.io/zone=test_zone
+      - label: topology.kubernetes.io/zone=kyma-local
         nodeFilters:
           - server:*
-      - label: node.kubernetes.io/instance-type=test_instance
+      - label: node.kubernetes.io/instance-type=local
         nodeFilters:
           - server:*
-      - label: kubernetes.io/arch=test_arch
-        nodeFilters:
-          - server:*
-
