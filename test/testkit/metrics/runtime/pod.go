@@ -33,6 +33,10 @@ var (
 		"k8s.pod.name",
 		"k8s.pod.uid",
 		"service.name",
+		"cloud.region",
+		"cloud.availability_zone",
+		"host.type",
+		"host.arch",
 	}
 
 	PodMetricsAttributes = map[string][]string{
