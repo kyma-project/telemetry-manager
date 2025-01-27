@@ -55,7 +55,5 @@ type Extensions struct {
 }
 
 type FileStorage struct {
-	// Create directory if it does not exist
-	//CreateDirectory bool   `yaml:"create_directory,omitempty"`
 	Directory string `yaml:"directory,omitempty"`
 }

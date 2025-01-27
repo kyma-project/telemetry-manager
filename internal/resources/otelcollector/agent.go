@@ -23,13 +23,17 @@ import (
 )
 
 const (
-	IstioCertPath   = "/etc/istio-output-certs"
-	MetricAgentName = "telemetry-metric-agent"
-	LogAgentName    = "telemetry-log-agent"
+	IstioCertPath        = "/etc/istio-output-certs"
+	MetricAgentName      = "telemetry-metric-agent"
+	LogAgentName         = "telemetry-log-agent"
+	CheckpointVolumePath = "/var/lib/otelcol"
 
 	istioCertVolumeName  = "istio-certs"
 	metricAgentScrapeKey = "telemetry.kyma-project.io/metric-scrape"
 	logAgentScrapeKey    = "telemetry.kyma-project.io/log-scrape"
+	checkpointVolumeName = "varlibotelcol"
+	logVolumeName        = "varlogpods"
+	logVolumePath        = "/var/log/pods"
 )
 
 var (
@@ -258,10 +262,10 @@ func makeIstioCertVolumeMount() corev1.VolumeMount {
 
 func makePodLogsVolume() corev1.Volume {
 	return corev1.Volume{
-		Name: "varlogpods",
+		Name: logVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/var/log/pods",
+				Path: logVolumePath,
 				Type: nil,
 			},
 		},
@@ -270,18 +274,18 @@ func makePodLogsVolume() corev1.Volume {
 
 func makePodLogsVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      "varlogpods",
-		MountPath: "/var/log/pods",
+		Name:      logVolumeName,
+		MountPath: logVolumePath,
 		ReadOnly:  true,
 	}
 }
 
 func makeFileLogCheckpointVolume() corev1.Volume {
 	return corev1.Volume{
-		Name: "varlibotelcol",
+		Name: checkpointVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/var/lib/otelcol",
+				Path: CheckpointVolumePath,
 				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 			},
 		},
@@ -290,8 +294,8 @@ func makeFileLogCheckpointVolume() corev1.Volume {
 
 func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      "varlibotelcol",
-		MountPath: "/var/lib/otelcol",
+		Name:      checkpointVolumeName,
+		MountPath: CheckpointVolumePath,
 	}
 }
 
