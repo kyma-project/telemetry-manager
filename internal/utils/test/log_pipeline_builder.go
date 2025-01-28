@@ -60,6 +60,15 @@ func (b *LogPipelineBuilder) WithApplicationInputDisabled() *LogPipelineBuilder 
 	return b
 }
 
+func (b *LogPipelineBuilder) WithApplicationInput(enabled bool) *LogPipelineBuilder {
+	if b.input.Application == nil {
+		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	}
+	b.input.Application.Enabled = ptr.To(enabled)
+
+	return b
+}
+
 func (b *LogPipelineBuilder) WithOTLPInput() *LogPipelineBuilder {
 	if b.input.OTLP == nil {
 		b.input.OTLP = &telemetryv1alpha1.OTLPInput{}

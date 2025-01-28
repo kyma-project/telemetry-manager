@@ -1,0 +1,97 @@
+service:
+    pipelines:
+        logs:
+            receivers:
+                - filelog
+            processors:
+                - memory_limiter
+                - transform/set-instrumentation-scope-runtime
+            exporters:
+                - otlp
+    telemetry:
+        metrics:
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
+        logs:
+            level: info
+            encoding: json
+    extensions:
+        - health_check
+        - pprof
+        - file_storage
+extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
+    file_storage:
+        directory: /var/lib/otelcol
+receivers:
+    filelog:
+        exclude:
+            - /var/log/pods/kyma-system_telemetry-log-agent*/*/*.log
+            - /var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log
+        include:
+            - /var/log/pods/*/*/*.log
+        include_file_path: true
+        start_at: beginning
+        storage: file_storage
+        operators:
+            - id: containerd-parser
+              type: container
+              add_metadata_from_file_path: true
+              format: containerd
+            - id: move-to-log-stream
+              type: move
+              add_metadata_from_file_path: null
+              from: attributes.stream
+              to: attributes["log.iostream"]
+              if: attributes.stream != nil
+            - id: json-parser
+              type: json_parser
+              add_metadata_from_file_path: null
+              if: body matches '^{(?:\\s*"(?:[^"\\]|\\.)*"\\s*:\\s*(?:null|true|false|\\d+|\\d*\\.\\d+|"(?:[^"\\]|\\.)*"|\\{[^{}]*\\}|\\[[^\\[\\]]*\\])\\s*,?)*\\s*}$'
+              parse_from: body
+              parse_to: attributes
+            - id: copy-body-to-attributes-original
+              type: copy
+              add_metadata_from_file_path: null
+              from: body
+              to: attributes.original
+            - id: move-message-to-body
+              type: move
+              add_metadata_from_file_path: null
+              from: attributes.message
+              to: body
+              if: attributes.message != nil
+            - id: severity-parser
+              type: severity_parser
+              add_metadata_from_file_path: null
+              if: attributes.level != nil
+              parse_from: attributes.level
+processors:
+    memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        log_statements:
+            - context: scope
+              statements:
+                - set(version, "")
+                - set(name, "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver")
+exporters:
+    otlp:
+        endpoint: logs.telemetry-system.svc.cluster.local:4317
+        tls:
+            insecure: true
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s

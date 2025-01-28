@@ -4,7 +4,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -76,6 +79,21 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["logs"].Exporters)
 
 		})
+
+	})
+	t.Run("marshaling", func(t *testing.T) {
+
+		goldenFileName := "config.yaml"
+
+		collectorConfig := sut.Build(BuildOptions{})
+		configYAML, err := yaml.Marshal(collectorConfig)
+		require.NoError(t, err, "failed to marshal config")
+
+		goldenFilePath := filepath.Join("testdata", goldenFileName)
+		goldenFile, err := os.ReadFile(goldenFilePath)
+		require.NoError(t, err, "failed to load golden file")
+
+		require.Equal(t, string(goldenFile), string(configYAML))
 
 	})
 }
