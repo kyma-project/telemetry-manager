@@ -14,17 +14,18 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
-type syncer struct {
+type Syncer struct {
 	client.Client
-	config Config
+	Config fluentbit.Config
 }
 
-func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
+func (s *Syncer) SyncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
 	if len(deployableLogPipelines) == 0 {
 		return nil
 	}
@@ -60,8 +61,8 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 	return nil
 }
 
-func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployablePipelines []telemetryv1alpha1.LogPipeline) error {
-	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.config.SectionsConfigMap)
+func (s *Syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployablePipelines []telemetryv1alpha1.LogPipeline) error {
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.Config.SectionsConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
@@ -72,8 +73,8 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		delete(cm.Data, cmKey)
 	} else {
 		builderConfig := builder.BuilderConfig{
-			PipelineDefaults: s.config.PipelineDefaults,
-			CollectAgentLogs: s.config.Overrides.Logging.CollectAgentLogs,
+			PipelineDefaults: s.Config.PipelineDefaults,
+			CollectAgentLogs: s.Config.Overrides.Logging.CollectAgentLogs,
 		}
 
 		newConfig, err := builder.BuildFluentBitConfig(pipeline, builderConfig)
@@ -99,8 +100,8 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 	return nil
 }
 
-func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.config.FilesConfigMap)
+func (s *Syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.Config.FilesConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get files configmap: %w", err)
 	}
@@ -131,8 +132,8 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 }
 
 // Copies HTTP-specific attributes and user-provided variables to a secret that is later used for providing environment variables to the Fluent Bit configuration.
-func (s *syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.EnvConfigSecret)
+func (s *Syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.Config.EnvConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
 	}
@@ -181,7 +182,7 @@ func (s *syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemet
 	return nil
 }
 
-func (s *syncer) copyConfigSecretData(ctx context.Context, prefix string, value *telemetryv1alpha1.ValueType, newSecret *corev1.Secret) error {
+func (s *Syncer) copyConfigSecretData(ctx context.Context, prefix string, value *telemetryv1alpha1.ValueType, newSecret *corev1.Secret) error {
 	if value.Value != "" || value.ValueFrom == nil || value.ValueFrom.SecretKeyRef == nil {
 		return nil
 	}
@@ -198,8 +199,8 @@ func (s *syncer) copyConfigSecretData(ctx context.Context, prefix string, value 
 
 // Copies TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
 // (since PEM-encoded strings exceed the maximum allowed length of environment variables on some Linux machines).
-func (s *syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.TLSFileConfigSecret)
+func (s *Syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.Config.TLSFileConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
 	}
@@ -256,7 +257,7 @@ func (s *syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []tel
 	return nil
 }
 
-func (s *syncer) copyFromValueOrSecret(ctx context.Context, value telemetryv1alpha1.ValueType, targetKey string, target map[string][]byte) error {
+func (s *Syncer) copyFromValueOrSecret(ctx context.Context, value telemetryv1alpha1.ValueType, targetKey string, target map[string][]byte) error {
 	if value.Value != "" {
 		target[targetKey] = []byte(value.Value)
 		return nil
@@ -269,7 +270,7 @@ func (s *syncer) copyFromValueOrSecret(ctx context.Context, value telemetryv1alp
 	return nil
 }
 
-func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
+func (s *Syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
 	var source corev1.Secret
 	if err := s.Get(ctx, types.NamespacedName{Name: sourceRef.Name, Namespace: sourceRef.Namespace}, &source); err != nil {
 		return fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", sourceRef.Name, sourceRef.Namespace, err)

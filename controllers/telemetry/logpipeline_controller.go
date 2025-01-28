@@ -39,9 +39,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
@@ -163,14 +163,6 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		EnvConfigSecret:     types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: config.TelemetryNamespace},
 		TLSFileConfigSecret: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: config.TelemetryNamespace},
 		DaemonSet:           types.NamespacedName{Name: fbDaemonSetName, Namespace: config.TelemetryNamespace},
-		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			FluentBitImage:    config.FluentBitImage,
-			ExporterImage:     config.ExporterImage,
-			PriorityClassName: config.FluentBitPriorityClassName,
-			MemoryLimit:       fbMemoryLimit,
-			CPURequest:        fbCPURequest,
-			MemoryRequest:     fbMemoryRequest,
-		},
 	}
 
 	pipelineValidator := &logpipelinefluentbit.Validator{
@@ -178,6 +170,8 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		TLSCertValidator:   tlscert.New(client),
 		SecretRefValidator: &secretref.Validator{Client: client},
 	}
+
+	agentApplierDeleter := fluentbit.NewAgentApplierDeleter()
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {

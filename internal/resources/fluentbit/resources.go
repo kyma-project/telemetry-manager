@@ -1,44 +1,234 @@
 package fluentbit
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const checksumAnnotationKey = "checksum/logpipeline-config"
 const istioExcludeInboundPorts = "traffic.sidecar.istio.io/excludeInboundPorts"
 const fluentbitExportSelector = "telemetry.kyma-project.io/log-export"
 
-type DaemonSetConfig struct {
-	FluentBitImage              string
-	FluentBitConfigPrepperImage string
-	ExporterImage               string
-	PriorityClassName           string
-	MemoryLimit                 resource.Quantity
-	CPURequest                  resource.Quantity
-	MemoryRequest               resource.Quantity
+type Syncer interface {
+	SyncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error
 }
 
-func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSetConfig) *appsv1.DaemonSet {
+type Config struct {
+	SectionsConfigMap   types.NamespacedName
+	FilesConfigMap      types.NamespacedName
+	LuaConfigMap        types.NamespacedName
+	ParsersConfigMap    types.NamespacedName
+	EnvConfigSecret     types.NamespacedName
+	TLSFileConfigSecret types.NamespacedName
+	PipelineDefaults    builder.PipelineDefaults
+	Overrides           overrides.Config
+	RestConfig          rest.Config
+}
+
+type AgentApplyOptions struct {
+	Config                 *Config
+	Syncer                 Syncer
+	AllowedPorts           []int32
+	Pipeline               *telemetryv1alpha1.LogPipeline
+	DeployableLogPipelines []telemetryv1alpha1.LogPipeline
+}
+
+type AgentApplierDeleter struct {
+	baseName          string
+	extraPodLabel     map[string]string
+	fluentBitImage    string
+	exporterImage     string
+	namespace         string
+	priorityClassName string
+
+	memoryLimit   resource.Quantity
+	cpuRequest    resource.Quantity
+	memoryRequest resource.Quantity
+}
+
+func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
+	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}
+
+	if err := opts.Syncer.SyncFluentBitConfig(ctx, opts.Pipeline, opts.DeployableLogPipelines); err != nil {
+		return fmt.Errorf("failed to sync fluent bit config maps: %w", err)
+	}
+
+	serviceAccount := commonresources.MakeServiceAccount(name)
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
+		return fmt.Errorf("failed to create fluent bit service account: %w", err)
+	}
+
+	clusterRole := MakeClusterRole(name)
+	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
+		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
+	}
+
+	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
+	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, clusterRoleBinding); err != nil {
+		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
+	}
+
+	exporterMetricsService := MakeExporterMetricsService(name)
+	if err := k8sutils.CreateOrUpdateService(ctx, c, exporterMetricsService); err != nil {
+		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
+	}
+
+	metricsService := MakeMetricsService(name)
+	if err := k8sutils.CreateOrUpdateService(ctx, c, metricsService); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
+	}
+
+	cm := MakeConfigMap(name)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, cm); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
+	}
+
+	luaCm := MakeLuaConfigMap(opts.Config.LuaConfigMap)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, luaCm); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit lua configmap: %w", err)
+	}
+
+	parsersCm := MakeParserConfigmap(opts.Config.ParsersConfigMap)
+	if err := k8sutils.CreateIfNotExistsConfigMap(ctx, c, parsersCm); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit parseopts.Config.ap: %w", err)
+	}
+
+	checksum, err := aad.calculateChecksum(ctx, c, opts)
+
+	if err != nil {
+		return fmt.Errorf("failed to calculate config checksum: %w", err)
+	}
+
+	daemonSet := aad.MakeDaemonSet(name, checksum)
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
+		return err
+	}
+
+	networkPolicy := commonresources.MakeNetworkPolicy(name, opts.AllowedPorts, Labels())
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
+		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
+	}
+
+	return nil
+}
+
+func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
+	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
+	var allErrors error = nil
+
+	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}
+
+	objectMeta := metav1.ObjectMeta{
+		Name:      name.Name,
+		Namespace: name.Namespace,
+	}
+
+	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete serviceaccount: %w", err))
+	}
+
+	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterole: %w", err))
+	}
+
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterolebinding: %w", err))
+	}
+
+	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", name.Name), Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, c, &exporterMetricsService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete exporter metric service: %w", err))
+	}
+
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", name.Name), Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metric service: %w", err))
+	}
+
+	cm := corev1.ConfigMap{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &cm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
+	}
+
+	luaCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      opts.Config.LuaConfigMap.Name,
+		Namespace: opts.Config.LuaConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, c, &luaCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete lua configmap: %w", err))
+	}
+
+	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      opts.Config.ParsersConfigMap.Name,
+		Namespace: opts.Config.ParsersConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, c, &parserCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete parseopts.Config.ap: %w", err))
+	}
+
+	sectionCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      opts.Config.SectionsConfigMap.Name,
+		Namespace: opts.Config.SectionsConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, c, &sectionCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete section configmap: %w", err))
+	}
+
+	filesCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name:      opts.Config.FilesConfigMap.Name,
+		Namespace: opts.Config.FilesConfigMap.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, c, &filesCm); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete files configmap: %w", err))
+	}
+
+	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &daemonSet); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
+	}
+
+	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
+	}
+
+	return allErrors
+}
+
+func (aad *AgentApplierDeleter) MakeDaemonSet(name types.NamespacedName, checksum string) *appsv1.DaemonSet {
 	resourcesFluentBit := corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    dsConfig.CPURequest,
-			corev1.ResourceMemory: dsConfig.MemoryRequest,
+			corev1.ResourceCPU:    aad.cpuRequest,
+			corev1.ResourceMemory: aad.memoryRequest,
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: dsConfig.MemoryLimit,
+			corev1.ResourceMemory: aad.memoryLimit,
 		},
 	}
 
@@ -79,7 +269,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: name.Name,
-					PriorityClassName:  dsConfig.PriorityClassName,
+					PriorityClassName:  aad.priorityClassName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot:   ptr.To(false),
 						SeccompProfile: &corev1.SeccompProfile{Type: "RuntimeDefault"},
@@ -96,7 +286,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 								Privileged:             ptr.To(false),
 								ReadOnlyRootFilesystem: ptr.To(true),
 							},
-							Image:           dsConfig.FluentBitImage,
+							Image:           aad.fluentBitImage,
 							ImagePullPolicy: "IfNotPresent",
 							EnvFrom: []corev1.EnvFromSource{
 								{
@@ -145,7 +335,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 						},
 						{
 							Name:      "exporter",
-							Image:     dsConfig.ExporterImage,
+							Image:     aad.exporterImage,
 							Resources: resourcesExporter,
 							Args: []string{
 								"--storage-path=/data/flb-storage/",
@@ -247,6 +437,45 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 			},
 		},
 	}
+}
+
+func (aad *AgentApplierDeleter) calculateChecksum(ctx context.Context, c client.Client, opts AgentApplyOptions) (string, error) {
+	var baseCm corev1.ConfigMap
+	if err := c.Get(ctx, types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}, &baseCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", aad.namespace, aad.baseName, err)
+	}
+
+	var parsersCm corev1.ConfigMap
+	if err := c.Get(ctx, opts.Config.ParsersConfigMap, &parsersCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", opts.Config.ParsersConfigMap.Namespace, opts.Config.ParsersConfigMap.Name, err)
+	}
+
+	var luaCm corev1.ConfigMap
+	if err := c.Get(ctx, opts.Config.LuaConfigMap, &luaCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", opts.Config.LuaConfigMap.Namespace, opts.Config.LuaConfigMap.Name, err)
+	}
+
+	var sectionsCm corev1.ConfigMap
+	if err := c.Get(ctx, opts.Config.SectionsConfigMap, &sectionsCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", opts.Config.SectionsConfigMap.Namespace, opts.Config.SectionsConfigMap.Name, err)
+	}
+
+	var filesCm corev1.ConfigMap
+	if err := c.Get(ctx, opts.Config.FilesConfigMap, &filesCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", opts.Config.FilesConfigMap.Namespace, opts.Config.FilesConfigMap.Name, err)
+	}
+
+	var envSecret corev1.Secret
+	if err := c.Get(ctx, opts.Config.EnvConfigSecret, &envSecret); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", opts.Config.EnvConfigSecret.Namespace, opts.Config.EnvConfigSecret.Name, err)
+	}
+
+	var tlsSecret corev1.Secret
+	if err := c.Get(ctx, opts.Config.TLSFileConfigSecret, &tlsSecret); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", opts.Config.TLSFileConfigSecret.Namespace, opts.Config.TLSFileConfigSecret.Name, err)
+	}
+
+	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil
 }
 
 func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
