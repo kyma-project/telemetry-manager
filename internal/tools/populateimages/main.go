@@ -14,15 +14,21 @@ import (
 )
 
 type secScanConfig struct {
-	ModuleName  string      `yaml:"module-name"`
-	Protecode   []string    `yaml:"protecode"`
-	WhiteSource whiteSource `yaml:"whitesource"`
+	ModuleName   string       `yaml:"module-name"`
+	Kind         string       `yaml:"kind"`
+	Protecode    []string     `yaml:"protecode"`
+	WhiteSource  whiteSource  `yaml:"whitesource"`
+	CheckmarxOne checkmarxOne `yaml:"checkmarx-one"`
 }
 
 type whiteSource struct {
-	Language    string   `yaml:"language"`
-	Subprojects bool     `yaml:"subprojects"`
-	Exclude     []string `yaml:"exclude"`
+	Language string   `yaml:"language"`
+	Exclude  []string `yaml:"exclude"`
+}
+
+type checkmarxOne struct {
+	Preset  string   `yaml:"preset"`
+	Exclude []string `yaml:"exclude"`
 }
 
 func main() {
@@ -176,11 +182,15 @@ func generateSecScanConfig(data map[string]string) error {
 	imgs := []string{data["ENV_IMG"], data["DEFAULT_FLUENTBIT_EXPORTER_IMAGE"], data["DEFAULT_FLUENTBIT_IMAGE"], data["DEFAULT_OTEL_COLLECTOR_IMAGE"], data["DEFAULT_SELFMONITOR_IMAGE"]}
 	secScanCfg := secScanConfig{
 		ModuleName: "telemetry",
+		Kind:       "kyma",
 		Protecode:  imgs,
 		WhiteSource: whiteSource{
-			Language:    "golang-mod",
-			Subprojects: false,
-			Exclude:     []string{"**/mocks/**", "**/stubs/**", "**/test/**", "**/*_test.go"},
+			Language: "golang-mod",
+			Exclude:  []string{"**/mocks/**", "**/stubs/**", "**/test/**", "**/*_test.go"},
+		},
+		CheckmarxOne: checkmarxOne{
+			Preset:  "go-default",
+			Exclude: []string{"**/mocks/**", "**/stubs/**", "**/test/**", "**/*_test.go"},
 		},
 	}
 

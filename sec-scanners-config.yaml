@@ -1,4 +1,5 @@
 module-name: telemetry
+kind: kyma
 protecode:
 - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
 - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20241212-e4adf27f
@@ -7,7 +8,13 @@ protecode:
 - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.1.0-98bf175
 whitesource:
   language: golang-mod
-  subprojects: false
+  exclude:
+  - '**/mocks/**'
+  - '**/stubs/**'
+  - '**/test/**'
+  - '**/*_test.go'
+checkmarx-one:
+  preset: go-default
   exclude:
   - '**/mocks/**'
   - '**/stubs/**'
