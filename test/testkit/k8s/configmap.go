@@ -11,6 +11,7 @@ type ConfigMap struct {
 	name      string
 	namespace string
 	data      map[string]string
+	labels    map[string]string
 }
 
 func NewConfigMap(cfName, ns string) *ConfigMap {
@@ -18,6 +19,7 @@ func NewConfigMap(cfName, ns string) *ConfigMap {
 		name:      cfName,
 		namespace: ns,
 		data:      make(map[string]string),
+		labels:    make(map[string]string),
 	}
 }
 
@@ -26,11 +28,17 @@ func (c *ConfigMap) WithData(key, value string) *ConfigMap {
 	return c
 }
 
+func (c *ConfigMap) WithLabel(key, value string) *ConfigMap {
+	c.labels[key] = value
+	return c
+}
+
 func (c *ConfigMap) K8sObject() *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      c.name,
 			Namespace: c.namespace,
+			Labels:    c.labels,
 		},
 		Data: c.data,
 	}
