@@ -10,7 +10,7 @@ func TestProcessorConfig(t *testing.T) {
 	require.Equal(t, "scope", processorsConfig.SetInstrumentationScopeRuntime.LogStatements[0].Context)
 	require.Len(t, processorsConfig.SetInstrumentationScopeRuntime.LogStatements[0].Statements, 2)
 	require.Equal(t, "set(version, \"v1.0.0\")", processorsConfig.SetInstrumentationScopeRuntime.LogStatements[0].Statements[0])
-	require.Equal(t, "set(name, \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver\")", processorsConfig.SetInstrumentationScopeRuntime.LogStatements[0].Statements[1])
+	require.Equal(t, "set(name, \"io.kyma-project.telemetry/runtime\")", processorsConfig.SetInstrumentationScopeRuntime.LogStatements[0].Statements[1])
 
 	require.Equal(t, "5s", processorsConfig.BaseProcessors.MemoryLimiter.CheckInterval)
 	require.Equal(t, 80, processorsConfig.BaseProcessors.MemoryLimiter.LimitPercentage)

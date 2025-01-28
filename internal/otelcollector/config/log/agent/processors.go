@@ -31,7 +31,7 @@ func makeInstrumentationScopeRuntime(instrumentationScopeVersion string) *log.Tr
 				Context: "scope",
 				Statements: []string{
 					fmt.Sprintf("set(version, \"%s\")", instrumentationScopeVersion),
-					fmt.Sprintf("set(name, \"%s\")", "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"),
+					fmt.Sprintf("set(name, \"%s\")", "io.kyma-project.telemetry/runtime"),
 				},
 			},
 		},

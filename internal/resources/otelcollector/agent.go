@@ -95,6 +95,7 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 		volumeMounts:       []corev1.VolumeMount{makeIstioCertVolumeMount()},
 		securityContext:    makeMetricAgentSecurityContext(),
 		podSecurityContext: makeMetricAgentPodSecurityContext(),
+		podSepcOptions:     []podSpecOption{},
 	}
 }
 
@@ -179,6 +180,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	opts := []podSpecOption{
 		commonresources.WithPriorityClass(aad.priorityClassName),
 		commonresources.WithResources(resources),
+		// metric agent specific
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
 		commonresources.WithGoMemLimitEnvVar(aad.memoryLimit),
