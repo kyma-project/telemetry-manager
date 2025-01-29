@@ -14,10 +14,9 @@ labels:
 - includeSelectors: false
   pairs:
     kyma-project.io/module: telemetry
-    app.kubernetes.io/component: manager
     app.kubernetes.io/part-of: telemetry
     app.kubernetes.io/name: telemetry-manager
-    app.kubernetes.io/instance: telemetry-manager
+
 resources:
 - ../crd
 - ../rbac

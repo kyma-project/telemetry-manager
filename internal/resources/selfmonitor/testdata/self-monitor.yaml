@@ -7,6 +7,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 ---
@@ -16,6 +18,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 spec:
@@ -36,6 +40,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 ---
@@ -45,6 +51,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 spec:
@@ -60,6 +68,8 @@ spec:
       creationTimestamp: null
       labels:
         app.kubernetes.io/name: my-self-monitor
+        app.kubernetes.io/part-of: telemetry
+        kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "false"
     spec:
       containers:
@@ -137,6 +147,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 spec:
@@ -168,6 +180,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 rules:
@@ -188,6 +202,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 roleRef:

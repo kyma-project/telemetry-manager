@@ -120,8 +120,6 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 }
 
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
-	selectorLabels := commonresources.MakeDefaultLabels(aad.baseName)
-
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
 
@@ -150,15 +148,17 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 
 	podSpec := makePodSpec(aad.baseName, aad.image, opts...)
 
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
+	labels := commonresources.MakeDefaultLabels(aad.baseName)
 	podLabels := make(map[string]string)
-	maps.Copy(podLabels, selectorLabels)
+	maps.Copy(podLabels, labels)
 	maps.Copy(podLabels, aad.extraPodLabel)
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      aad.baseName,
 			Namespace: aad.namespace,
-			Labels:    selectorLabels,
+			Labels:    labels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{

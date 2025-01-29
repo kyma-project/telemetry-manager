@@ -39,6 +39,8 @@ func TestMakeDaemonSet(t *testing.T) {
 	}, daemonSet.Spec.Selector.MatchLabels)
 	require.Equal(t, map[string]string{
 		"app.kubernetes.io/name":               "fluent-bit",
+		"kyma-project.io/module":               "telemetry",
+		"app.kubernetes.io/part-of":            "telemetry",
 		"app.kubernetes.io/instance":           "telemetry",
 		"sidecar.istio.io/inject":              "true",
 		"telemetry.kyma-project.io/log-export": "true",

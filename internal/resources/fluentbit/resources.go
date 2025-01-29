@@ -15,6 +15,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	"github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 const checksumAnnotationKey = "checksum/logpipeline-config"
@@ -70,7 +71,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: Labels(),
+				MatchLabels: SelectorLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -292,7 +293,7 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http"),
 				},
 			},
-			Selector: Labels(),
+			Selector: SelectorLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -322,7 +323,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},
-			Selector: Labels(),
+			Selector: SelectorLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -423,8 +424,13 @@ end
 }
 
 func Labels() map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name":     "fluent-bit",
-		"app.kubernetes.io/instance": "telemetry",
-	}
+	result := common.MakeDefaultLabels("fluent-bit")
+	result["app.kubernetes.io/instance"] = "telemetry"
+	return result
+}
+
+func SelectorLabels() map[string]string {
+	result := common.MakeDefaultSelectorLabels("fluent-bit")
+	result["app.kubernetes.io/instance"] = "telemetry"
+	return result
 }

@@ -181,7 +181,7 @@ func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 		},
 		Spec: networkingv1.NetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
-				MatchLabels: commonresources.MakeDefaultLabels(ad.Config.BaseName),
+				MatchLabels: commonresources.MakeDefaultSelectorLabels(ad.Config.BaseName),
 			},
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
@@ -249,8 +249,10 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 
-	selectorLabels := commonresources.MakeDefaultLabels(ad.Config.BaseName)
-	podLabels := maps.Clone(selectorLabels)
+	labels := commonresources.MakeDefaultLabels(ad.Config.BaseName)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(ad.Config.BaseName)
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, labels)
 	podLabels["sidecar.istio.io/inject"] = "false"
 
 	annotations := map[string]string{"checksum/Config": configChecksum}
@@ -265,7 +267,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    selectorLabels,
+			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(replicas),
@@ -408,7 +410,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 					TargetPort: intstr.FromInt32(port),
 				},
 			},
-			Selector: commonresources.MakeDefaultLabels(ad.Config.BaseName),
+			Selector: commonresources.MakeDefaultSelectorLabels(ad.Config.BaseName),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}

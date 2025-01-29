@@ -6,6 +6,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-trace-gateway
   namespace: kyma-system
 ---
@@ -17,6 +19,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-trace-gateway
   namespace: kyma-system
 ---
@@ -26,6 +30,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-otlp-traces
   namespace: kyma-system
 spec:
@@ -54,6 +60,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
     telemetry.kyma-project.io/self-monitor: enabled
   name: telemetry-trace-gateway-metrics
   namespace: kyma-system
@@ -75,6 +83,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-trace-gateway
   namespace: kyma-system
 ---
@@ -84,6 +94,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-trace-gateway
   namespace: kyma-system
 spec:
@@ -99,6 +111,8 @@ spec:
       creationTimestamp: null
       labels:
         app.kubernetes.io/name: telemetry-trace-gateway
+        app.kubernetes.io/part-of: telemetry
+        kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/trace-export: "true"
         telemetry.kyma-project.io/trace-ingest: "true"
@@ -190,6 +204,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-trace-gateway
   namespace: kyma-system
 spec:
@@ -223,6 +239,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-trace-gateway
   namespace: kyma-system
 rules:
@@ -250,6 +268,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-trace-gateway
   namespace: kyma-system
 roleRef:

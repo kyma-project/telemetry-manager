@@ -252,7 +252,11 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	selectorLabels := commonresources.MakeDefaultLabels(gad.baseName)
+	labels := commonresources.MakeDefaultLabels(gad.baseName)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, labels)
+	maps.Copy(podLabels, gad.extraPodLabels)
 
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
@@ -270,15 +274,11 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
-	podLabels := make(map[string]string)
-	maps.Copy(podLabels, selectorLabels)
-	maps.Copy(podLabels, gad.extraPodLabels)
-
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
 			Namespace: gad.namespace,
-			Labels:    selectorLabels,
+			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(opts.Replicas),
@@ -348,13 +348,14 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	labels := commonresources.MakeDefaultLabels(gad.baseName)
+	commonLabels := commonresources.MakeDefaultLabels(gad.baseName)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.otlpServiceName,
 			Namespace: gad.namespace,
-			Labels:    labels,
+			Labels:    commonLabels,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -371,23 +372,24 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
-			Selector: labels,
+			Selector: selectorLabels,
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	labels := commonresources.MakeDefaultLabels(gad.baseName)
+	commonLabels := commonresources.MakeDefaultLabels(gad.baseName)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
 			Namespace: gad.namespace,
-			Labels:    labels,
+			Labels:    commonLabels,
 		},
 		Spec: istiosecurityv1.PeerAuthentication{
-			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: labels},
+			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: selectorLabels},
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}

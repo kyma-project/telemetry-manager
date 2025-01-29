@@ -217,7 +217,7 @@ func (r *Reconciler) createOrUpdateFluentBitResources(ctx context.Context, pipel
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(r.config.DaemonSet, allowedPorts, fluentbit.Labels())
+	networkPolicy := commonresources.MakeNetworkPolicy(r.config.DaemonSet, allowedPorts, fluentbit.Labels(), fluentbit.SelectorLabels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, ownerRefSetter, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}
