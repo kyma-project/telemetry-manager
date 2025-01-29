@@ -36,3 +36,11 @@ func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.N
 
 	return arePodsReady(ctx, k8sClient, listOptions)
 }
+
+func DaemonSetNotDeployed(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
+	Consistently(func(g Gomega) {
+		_, err := isDaemonSetReady(ctx, k8sClient, name)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(err).To(ContainSubstring("failed to get daemonset:"))
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
