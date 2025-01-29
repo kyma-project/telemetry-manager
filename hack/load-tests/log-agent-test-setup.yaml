@@ -1,0 +1,108 @@
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: load-test-1
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: http://log-receiver.log-load-test:4317
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      protocol: grpc
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: log-load-test
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-receiver
+  namespace: log-load-test
+  labels:
+    app.kubernetes.io/name: log-receiver
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${MY_POD_IP}:4317
+          http:
+            endpoint: ${MY_POD_IP}:4318
+    exporters:
+      nop:
+    service:
+      pipelines:
+        logs:
+          receivers:
+            - otlp
+          exporters:
+            - nop
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: log-receiver
+  name: log-receiver
+  namespace: log-load-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: log-receiver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: log-receiver
+        sidecar.istio.io/inject: "true"
+    spec:
+      volumes:
+        - name: collector-config
+          configMap:
+            name: log-receiver
+      securityContext:
+        fsGroup: 101
+      containers:
+        - image: otel/opentelemetry-collector-contrib:0.114.0
+          name: otel-collector
+          resources:
+            limits:
+              memory: 2048Mi
+            requests:
+              memory: 2048Mi
+          volumeMounts:
+            - name: collector-config
+              mountPath: /etc/collector
+          args:
+            - --config=/etc/collector/config.yaml
+          env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: log-receiver
+  name: log-receiver
+  namespace: log-load-test
+spec:
+  ports:
+    - name: grpc-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-otlp
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+  selector:
+    app.kubernetes.io/name: log-receiver
