@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM --platform=$BUILDPLATFORM golang:1.23.5-alpine3.21 AS builder
+FROM golang:1.23.5-alpine3.21 AS builder
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
@@ -17,8 +17,7 @@ COPY internal/ internal/
 COPY webhook/ webhook/
 
 # Clean up unused (test) dependencies and build
-ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go mod tidy && go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager main.go
 
 FROM scratch
 
