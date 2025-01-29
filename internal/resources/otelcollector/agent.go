@@ -46,59 +46,6 @@ var (
 	logAgentMemoryRequest = resource.MustParse("50Mi")
 )
 
-func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
-	extraLabels := map[string]string{
-		logAgentScrapeKey:     "true",
-		istioSidecarInjectKey: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
-	}
-	return &AgentApplierDeleter{
-		baseName:          LogAgentName,
-		extraPodLabel:     extraLabels,
-		image:             image,
-		namespace:         namespace,
-		priorityClassName: priorityClassName,
-		memoryLimit:       logAgentMemoryLimit,
-		cpuRequest:        logAgentCPURequest,
-		memoryRequest:     logAgentMemoryRequest,
-		volumes: []corev1.Volume{
-			makeIstioCertVolume(),
-			makePodLogsVolume(),
-			makeFileLogCheckpointVolume(),
-		},
-		volumeMounts: []corev1.VolumeMount{
-			makeIstioCertVolumeMount(),
-			makePodLogsVolumeMount(),
-			makeFileLogCheckPointVolumeMount(),
-		},
-		securityContext:    makeLogAgentSecurityContext(),
-		podSecurityContext: makeLogAgentPodSecurityContext(),
-	}
-}
-
-func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
-	extraLabels := map[string]string{
-		metricAgentScrapeKey:  "true",
-		istioSidecarInjectKey: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
-	}
-
-	return &AgentApplierDeleter{
-		baseName:           MetricAgentName,
-		extraPodLabel:      extraLabels,
-		image:              image,
-		namespace:          namespace,
-		priorityClassName:  priorityClassName,
-		rbac:               makeMetricAgentRBAC(namespace),
-		memoryLimit:        metricAgentMemoryLimit,
-		cpuRequest:         metricAgentCPURequest,
-		memoryRequest:      metricAgentMemoryRequest,
-		volumes:            []corev1.Volume{makeIstioCertVolume()},
-		volumeMounts:       []corev1.VolumeMount{makeIstioCertVolumeMount()},
-		securityContext:    makeMetricAgentSecurityContext(),
-		podSecurityContext: makeMetricAgentPodSecurityContext(),
-		podSepcOptions:     []podSpecOption{},
-	}
-}
-
 type AgentApplierDeleter struct {
 	baseName          string
 	extraPodLabel     map[string]string
@@ -107,6 +54,7 @@ type AgentApplierDeleter struct {
 	priorityClassName string
 	rbac              rbac
 
+	podSpecOptions     []podSpecOption
 	volumes            []corev1.Volume
 	volumeMounts       []corev1.VolumeMount
 	securityContext    *corev1.SecurityContext
@@ -120,6 +68,66 @@ type AgentApplierDeleter struct {
 type AgentApplyOptions struct {
 	AllowedPorts        []int32
 	CollectorConfigYAML string
+}
+
+func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
+	extraLabels := map[string]string{
+		logAgentScrapeKey:     "true",
+		istioSidecarInjectKey: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+	}
+	volumes := []corev1.Volume{
+		makeIstioCertVolume(),
+		makePodLogsVolume(),
+		makeFileLogCheckpointVolume(),
+	}
+	volumeMounts := []corev1.VolumeMount{
+		makeIstioCertVolumeMount(),
+		makePodLogsVolumeMount(),
+		makeFileLogCheckPointVolumeMount(),
+	}
+	return &AgentApplierDeleter{
+		baseName:      LogAgentName,
+		extraPodLabel: extraLabels,
+		image:         image,
+		namespace:     namespace,
+
+		podSpecOptions: []podSpecOption{
+			commonresources.WithPriorityClass(priorityClassName),
+			commonresources.WithResources(makeAgentResourceRequirements(logAgentMemoryLimit, logAgentMemoryRequest, logAgentCPURequest)),
+			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
+			withVolumes(volumes),
+			withVolumeMounts(volumeMounts),
+			withSecurityContext(makeLogAgentSecurityContext()),
+			withPodSecurityContext(makeLogAgentPodSecurityContext()),
+		},
+	}
+}
+
+func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
+	extraLabels := map[string]string{
+		metricAgentScrapeKey:  "true",
+		istioSidecarInjectKey: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+	}
+
+	return &AgentApplierDeleter{
+		baseName:      MetricAgentName,
+		extraPodLabel: extraLabels,
+		image:         image,
+		namespace:     namespace,
+		rbac:          makeMetricAgentRBAC(namespace),
+
+		podSpecOptions: []podSpecOption{
+			commonresources.WithPriorityClass(priorityClassName),
+			commonresources.WithResources(makeAgentResourceRequirements(metricAgentMemoryLimit, metricAgentMemoryRequest, metricAgentCPURequest)),
+			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
+			withVolumes([]corev1.Volume{makeIstioCertVolume()}),
+			withVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
+			withSecurityContext(makeMetricAgentSecurityContext()),
+			withPodSecurityContext(makeMetricAgentPodSecurityContext()),
+		},
+	}
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
@@ -175,23 +183,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
 
-	resources := aad.makeAgentResourceRequirements()
-
-	opts := []podSpecOption{
-		commonresources.WithPriorityClass(aad.priorityClassName),
-		commonresources.WithResources(resources),
-		// metric agent specific
-		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-		commonresources.WithGoMemLimitEnvVar(aad.memoryLimit),
-
-		withVolumes(aad.volumes),
-		withVolumeMounts(aad.volumeMounts),
-		withSecurityContext(aad.securityContext),
-		withPodSecurityContext(aad.podSecurityContext),
-	}
-
-	podSpec := makePodSpec(aad.baseName, aad.image, opts...)
+	podSpec := makePodSpec(aad.baseName, aad.image, aad.podSpecOptions...)
 
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, selectorLabels)
@@ -218,14 +210,14 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	}
 }
 
-func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceRequirements {
+func makeAgentResourceRequirements(memoryLimit, memoryRequest, cpuRequest resource.Quantity) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: aad.memoryLimit,
+			corev1.ResourceMemory: memoryLimit,
 		},
 		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    aad.cpuRequest,
-			corev1.ResourceMemory: aad.memoryRequest,
+			corev1.ResourceCPU:    cpuRequest,
+			corev1.ResourceMemory: memoryRequest,
 		},
 	}
 }

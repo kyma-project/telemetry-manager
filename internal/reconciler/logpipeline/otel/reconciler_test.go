@@ -323,7 +323,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionTrue,
 			conditions.ReasonAgentReady,
-			"Metric agent DaemonSet is ready")
+			"Log agent DaemonSet is ready")
 
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)

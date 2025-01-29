@@ -84,7 +84,7 @@ processors:
             - context: scope
               statements:
                 - set(version, "")
-                - set(name, "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver")
+                - set(name, "io.kyma-project.telemetry/runtime")
 exporters:
     otlp:
         endpoint: logs.telemetry-system.svc.cluster.local:4317

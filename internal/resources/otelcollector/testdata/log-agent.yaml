@@ -77,16 +77,6 @@ spec:
       - args:
         - --config=/conf/relay.conf
         env:
-        - name: MY_POD_IP
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: status.podIP
-        - name: MY_NODE_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: spec.nodeName
         - name: GOMEMLIMIT
           value: "1006632960"
         envFrom:
