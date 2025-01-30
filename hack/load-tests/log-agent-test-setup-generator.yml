@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-load-generator
+  namespace: log-load-test
+spec:
+  replicas: 20
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: logs-load-generator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: logs-load-generator
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - logs-load-generator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+        - args:
+            - -f=json
+            - -l
+          image: mingrammer/flog
+          imagePullPolicy: Always
+          name: flog
+          resources:
+            limits:
+              cpu: 50m
+              memory: 200Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi

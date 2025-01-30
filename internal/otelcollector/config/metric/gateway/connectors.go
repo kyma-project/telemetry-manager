@@ -13,7 +13,6 @@ func makeRoutingConnectorConfig(pipelineName string) RoutingConnector {
 	return RoutingConnector{
 		DefaultPipelines: []string{attributesEnrichmentPipelineID},
 		ErrorMode:        "ignore",
-		MatchOnce:        true,
 		Table: []RoutingConnectorTableEntry{
 			{
 				Statement: fmt.Sprintf("route() where attributes[\"%s\"] == \"true\"", metric.SkipEnrichmentAttribute),
