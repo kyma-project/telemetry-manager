@@ -284,12 +284,12 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 
 	resources := gad.makeGatewayResourceRequirements(opts)
 
-	podSpecs := []podSpecOption{
+	podSpecs := gad.podSpecOptions
+	podSpecs = append(podSpecs,
 		commonresources.WithResources(resources),
 		commonresources.WithResources(resources),
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
-	}
-	podSpecs = append(podSpecs, gad.podSpecOptions...)
+	)
 
 	podSpec := makePodSpec(
 		gad.baseName,
