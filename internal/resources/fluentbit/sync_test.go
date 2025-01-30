@@ -30,7 +30,7 @@ func TestSyncSectionsConfigMap(t *testing.T) {
 	require.NoError(t, telemetryv1alpha1.AddToScheme(fakeClient.Scheme()))
 
 	t.Run("should add section during first sync", func(t *testing.T) {
-		sut := syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
+		sut := Syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
@@ -60,7 +60,7 @@ alias foo`,
 	})
 
 	t.Run("should update section during subsequent sync", func(t *testing.T) {
-		sut := syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
+		sut := Syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
 		require.NoError(t, telemetryv1alpha1.AddToScheme(fakeClient.Scheme()))
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
@@ -97,7 +97,7 @@ alias bar`
 	})
 
 	t.Run("should remove section if marked for deletion", func(t *testing.T) {
-		sut := syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
+		sut := Syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
 		require.NoError(t, telemetryv1alpha1.AddToScheme(fakeClient.Scheme()))
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
@@ -134,12 +134,82 @@ alias foo`,
 		badReqErr := apierrors.NewBadRequest("")
 		badReqClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 		badReqClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
-		sut := syncer{badReqClient, Config{}}
+		sut := Syncer{badReqClient, Config{}}
 
 		lp := telemetryv1alpha1.LogPipeline{}
 		err := sut.syncFilesConfigMap(context.Background(), &lp)
 
 		require.Error(t, err)
+	})
+
+	t.Run("should handle multiple pipelines and deletion properly", func(t *testing.T) {
+		sut := Syncer{
+			Client: fakeClient,
+			Config: Config{
+				SectionsConfigMap: sectionsCmName,
+			},
+		}
+
+		// Create pipeline1 with HTTP output
+		pipeline1 := &telemetryv1alpha1.LogPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pipeline1",
+			},
+			Spec: telemetryv1alpha1.LogPipelineSpec{
+				Output: telemetryv1alpha1.LogPipelineOutput{
+					HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						Host: telemetryv1alpha1.ValueType{Value: "host"},
+					},
+				},
+			},
+		}
+
+		// Create pipeline2 with HTTP output
+		pipeline2 := &telemetryv1alpha1.LogPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pipeline2",
+			},
+			Spec: telemetryv1alpha1.LogPipelineSpec{
+				Output: telemetryv1alpha1.LogPipelineOutput{
+					HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						Host: telemetryv1alpha1.ValueType{Value: "host"},
+					},
+				},
+			},
+		}
+
+		// Test adding both pipelines
+		deployablePipelines := []telemetryv1alpha1.LogPipeline{*pipeline1, *pipeline2}
+
+		err := sut.syncSectionsConfigMap(context.Background(), pipeline1, deployablePipelines)
+		require.NoError(t, err)
+		err = sut.syncSectionsConfigMap(context.Background(), pipeline2, deployablePipelines)
+		require.NoError(t, err)
+
+		// Verify both pipelines are in configmap
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), sectionsCmName, &cm)
+		require.NoError(t, err)
+		require.Contains(t, cm.Data, "pipeline1.conf")
+		require.Contains(t, cm.Data, "pipeline2.conf")
+		require.Contains(t, cm.Data["pipeline1.conf"], "pipeline1")
+		require.Contains(t, cm.Data["pipeline2.conf"], "pipeline2")
+
+		// Mark pipeline1 for deletion
+		now := metav1.Now()
+		pipeline1.DeletionTimestamp = &now
+
+		// Update configmap with pipeline1 deleted
+		deployablePipelineAfterDeletion := []telemetryv1alpha1.LogPipeline{*pipeline2}
+		err = sut.syncSectionsConfigMap(context.Background(), pipeline1, deployablePipelineAfterDeletion)
+		require.NoError(t, err)
+
+		// Verify pipeline1 is removed but pipeline2 remains
+		err = fakeClient.Get(context.Background(), sectionsCmName, &cm)
+		require.NoError(t, err)
+		require.NotContains(t, cm.Data, "pipeline1.conf")
+		require.Contains(t, cm.Data, "pipeline2.conf")
+		require.Contains(t, cm.Data["pipeline2.conf"], "pipeline2")
 	})
 }
 
@@ -154,7 +224,7 @@ func TestSyncFilesConfigMap(t *testing.T) {
 		}).Build()
 
 	t.Run("should add files during first sync", func(t *testing.T) {
-		sut := syncer{fakeClient, Config{FilesConfigMap: filesCmName}}
+		sut := Syncer{fakeClient, Config{FilesConfigMap: filesCmName}}
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
@@ -187,7 +257,7 @@ alias foo`,
 	})
 
 	t.Run("should update files during subsequent sync", func(t *testing.T) {
-		sut := syncer{fakeClient, Config{FilesConfigMap: filesCmName}}
+		sut := Syncer{fakeClient, Config{FilesConfigMap: filesCmName}}
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
@@ -220,7 +290,7 @@ alias foo`,
 	})
 
 	t.Run("should remove files if marked for deletion", func(t *testing.T) {
-		sut := syncer{fakeClient, Config{FilesConfigMap: filesCmName}}
+		sut := Syncer{fakeClient, Config{FilesConfigMap: filesCmName}}
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
@@ -257,13 +327,14 @@ alias foo`,
 		badReqErr := apierrors.NewBadRequest("")
 		badReqClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 		badReqClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
-		sut := syncer{badReqClient, Config{}}
+		sut := Syncer{badReqClient, Config{}}
 
 		lp := telemetryv1alpha1.LogPipeline{}
 		err := sut.syncFilesConfigMap(context.Background(), &lp)
 
 		require.Error(t, err)
 	})
+
 }
 
 func TestSyncEnvSecret(t *testing.T) {
@@ -303,7 +374,7 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&credsSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		sut := Syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
 		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
@@ -327,7 +398,7 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&passwordSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		sut := Syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
 		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
@@ -356,7 +427,7 @@ func TestSyncEnvSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&passwordSecret).Build()
 
 		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
-		sut := syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
+		sut := Syncer{fakeClient, Config{EnvConfigSecret: envSecretName}}
 		err := sut.syncEnvConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
@@ -424,7 +495,7 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		config := Config{
 			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
-		sut := syncer{fakeClient, config}
+		sut := Syncer{fakeClient, config}
 		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
@@ -454,7 +525,7 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		config := Config{
 			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
-		sut := syncer{fakeClient, config}
+		sut := Syncer{fakeClient, config}
 		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
@@ -489,7 +560,7 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 		config := Config{
 			TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		}
-		sut := syncer{fakeClient, config}
+		sut := Syncer{fakeClient, config}
 		err := sut.syncTLSFileConfigSecret(context.Background(), allPipelines.Items)
 		require.NoError(t, err)
 
