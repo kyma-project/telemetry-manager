@@ -215,7 +215,10 @@ func run() error {
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	// Initialize the metrics
-	initMetrics()
+	err = initMetrics()
+	if err != nil {
+		return fmt.Errorf("error initializing metrics: %w", err)
+	}
 
 	// Configure the HTTP server
 	http.DefaultClient.Timeout = 30 * time.Second
