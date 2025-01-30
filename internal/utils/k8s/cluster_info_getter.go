@@ -13,6 +13,8 @@ const (
 	defaultClusterName                 = "${KUBERNETES_SERVICE_HOST}"
 	gardenerShootNameAttributeName     = "shootName"
 	gardenerCloudProviderAttributeName = "provider"
+	CloudProviderOpenStack             = "openstack"
+	CloudProviderSAPConvergedCloud     = "sap-converged-cloud"
 )
 
 var defaultGardenerShootInfoCM = types.NamespacedName{
@@ -38,8 +40,15 @@ func GetGardenerShootInfo(ctx context.Context, client client.Client) ClusterInfo
 		return ClusterInfo{ClusterName: defaultClusterName}
 	}
 
+	// The provider `openstack` is used to represent the SAP Converged Cloud provider.
+	cloudProvider := shootInfo.Data[gardenerCloudProviderAttributeName]
+
+	if cloudProvider == CloudProviderOpenStack {
+		cloudProvider = CloudProviderSAPConvergedCloud
+	}
+
 	return ClusterInfo{
 		ClusterName:   shootInfo.Data[gardenerShootNameAttributeName],
-		CloudProvider: shootInfo.Data[gardenerCloudProviderAttributeName],
+		CloudProvider: cloudProvider,
 	}
 }

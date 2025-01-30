@@ -28,6 +28,23 @@ func TestClusterInfoGetter(t *testing.T) {
 		require.Equal(t, clusterInfo.CloudProvider, "test-provider")
 	})
 
+	t.Run("Gardener converged cloud", func(t *testing.T) {
+		shootInfo := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "shoot-info", Namespace: "kube-system"},
+			Data: map[string]string{
+				"shootName": "test-cluster",
+				"provider":  "openstack",
+			},
+		}
+
+		fakeClient := fake.NewClientBuilder().WithObjects(shootInfo).Build()
+
+		clusterInfo := GetGardenerShootInfo(context.Background(), fakeClient)
+
+		require.Equal(t, clusterInfo.ClusterName, "test-cluster")
+		require.Equal(t, clusterInfo.CloudProvider, "sap-converged-cloud")
+	})
+
 	t.Run("Non Gardener cluster", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects().Build()
 
