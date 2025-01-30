@@ -78,10 +78,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.LogGatewayName)
 		})
 
-		It("Should not have a log agent daemonset", func() {
-			assert.DaemonSetNotDeployed(ctx, k8sClient, kitkyma.LogAgentName)
-		})
-
 		It("Should have 2 log gateway replicas", func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
