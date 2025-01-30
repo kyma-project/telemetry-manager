@@ -42,11 +42,11 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-if-input-source-otlp",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -78,9 +78,9 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -112,10 +112,10 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -147,10 +147,10 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -182,9 +182,9 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -216,10 +216,10 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -251,10 +251,10 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-diagnostic-metrics-if-input-source-istio",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -286,10 +286,10 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -321,10 +321,10 @@ func TestService(t *testing.T) {
 
 			require.Equal(t, []string{"routing/test", "forward/test"}, collectorConfig.Service.Pipelines["metrics/test-output"].Receivers)
 			require.Equal(t, []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -369,10 +369,10 @@ func TestService(t *testing.T) {
 
 		require.Equal(t, []string{"routing/test-1", "forward/test-1"}, collectorConfig.Service.Pipelines["metrics/test-1-output"].Receivers)
 		require.Equal(t, []string{
+			"transform/set-instrumentation-scope-kyma",
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
 			"filter/test-1-filter-by-namespace-runtime-input",
-			"transform/set-instrumentation-scope-kyma",
 			"resource/insert-cluster-name",
 			"resource/delete-skip-enrichment-attribute",
 			"batch",
@@ -394,11 +394,11 @@ func TestService(t *testing.T) {
 
 		require.Equal(t, []string{"routing/test-2", "forward/test-2"}, collectorConfig.Service.Pipelines["metrics/test-2-output"].Receivers)
 		require.Equal(t, []string{
+			"transform/set-instrumentation-scope-kyma",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-istio",
 			"filter/test-2-filter-by-namespace-prometheus-input",
 			"filter/drop-diagnostic-metrics-if-input-source-prometheus",
-			"transform/set-instrumentation-scope-kyma",
 			"resource/insert-cluster-name",
 			"resource/delete-skip-enrichment-attribute",
 			"batch",
@@ -420,10 +420,10 @@ func TestService(t *testing.T) {
 
 		require.Equal(t, []string{"routing/test-3", "forward/test-3"}, collectorConfig.Service.Pipelines["metrics/test-3-output"].Receivers)
 		require.Equal(t, []string{
+			"transform/set-instrumentation-scope-kyma",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-diagnostic-metrics-if-input-source-istio",
-			"transform/set-instrumentation-scope-kyma",
 			"resource/insert-cluster-name",
 			"resource/delete-skip-enrichment-attribute",
 			"batch",
@@ -453,9 +453,9 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInput(true).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -469,10 +469,10 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputPodMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-pod-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -485,10 +485,10 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputContainerMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-container-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -501,10 +501,10 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputNodeMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-node-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -517,10 +517,10 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputVolumeMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-volume-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -533,10 +533,10 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputDeploymentMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-deployment-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -549,10 +549,10 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputDaemonSetMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-daemonset-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -565,10 +565,10 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputStatefulSetMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-statefulset-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -581,10 +581,10 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputJobMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-job-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",
@@ -604,6 +604,7 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				WithRuntimeInputJobMetrics(false).
 				Build(),
 			expectedProcessors: []string{
+				"transform/set-instrumentation-scope-kyma",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-runtime-pod-metrics",
@@ -614,7 +615,6 @@ func TestService_RuntimeResources_Enabled(t *testing.T) {
 				"filter/drop-runtime-daemonset-metrics",
 				"filter/drop-runtime-statefulset-metrics",
 				"filter/drop-runtime-job-metrics",
-				"transform/set-instrumentation-scope-kyma",
 				"resource/insert-cluster-name",
 				"resource/delete-skip-enrichment-attribute",
 				"batch",

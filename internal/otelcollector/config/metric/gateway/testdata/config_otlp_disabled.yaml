@@ -27,11 +27,11 @@ service:
                 - routing/test
                 - forward/test
             processors:
+                - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-runtime
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
                 - filter/drop-if-input-source-otlp
-                - transform/set-instrumentation-scope-kyma
                 - resource/insert-cluster-name
                 - resource/delete-skip-enrichment-attribute
                 - batch
@@ -138,7 +138,7 @@ processors:
     filter/drop-if-input-source-otlp:
         metrics:
             metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio")
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma")
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:
