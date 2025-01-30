@@ -2,15 +2,12 @@ package fluentbit
 
 import (
 	"context"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"os"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -18,6 +15,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
@@ -45,7 +45,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		scheme := runtime.NewScheme()
 		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 		utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
-		utilruntime.Must(v1alpha1.AddToScheme(scheme))
+		utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 			Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -91,7 +91,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 				AllowedPorts: []int32{5555, 6666},
 
 				Pipeline:               &logPipeline,
-				DeployableLogPipelines: []v1alpha1.LogPipeline{logPipeline},
+				DeployableLogPipelines: []telemetryv1alpha1.LogPipeline{logPipeline},
 			})
 			require.NoError(t, err)
 
@@ -120,7 +120,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(v1alpha1.AddToScheme(scheme))
+	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -140,9 +140,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-
 		t.Run(tt.name, func(t *testing.T) {
-
 			agentApplyOptions := AgentApplyOptions{
 				Config: Config{
 					DaemonSet:           types.NamespacedName{Name: "foo-daemonset", Namespace: "kyma-system"},
@@ -155,7 +153,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 				},
 				AllowedPorts:           []int32{5555, 6666},
 				Pipeline:               &logPipeline,
-				DeployableLogPipelines: []v1alpha1.LogPipeline{logPipeline},
+				DeployableLogPipelines: []telemetryv1alpha1.LogPipeline{logPipeline},
 			}
 
 			err := tt.sut.ApplyResources(context.Background(), fakeClient, agentApplyOptions)
@@ -173,7 +171,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}
 }
 
-//func TestMakeDaemonSet(t *testing.T) {
+// func TestMakeDaemonSet(t *testing.T) {
 //	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 //	checksum := "foo"
 //	ds := DaemonSetConfig{

@@ -22,7 +22,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -60,13 +59,6 @@ const (
 	fbEnvConfigSecretName     = fbBaseName + "-env"
 	fbTLSFileConfigSecretName = fbBaseName + "-output-tls-config"
 	fbDaemonSetName           = fbBaseName
-)
-
-var (
-	// FluentBit
-	fbMemoryLimit   = resource.MustParse("1Gi")
-	fbCPURequest    = resource.MustParse("100m")
-	fbMemoryRequest = resource.MustParse("50Mi")
 )
 
 // LogPipelineController reconciles a LogPipeline object

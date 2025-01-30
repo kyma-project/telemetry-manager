@@ -87,7 +87,6 @@ func NewFluentBitApplierDeleter(fbImage, exporterImage, priorityClassName string
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-
 	syncer := Syncer{
 		Client: c,
 		Config: opts.Config,

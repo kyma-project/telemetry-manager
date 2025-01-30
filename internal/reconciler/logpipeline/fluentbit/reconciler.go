@@ -58,7 +58,6 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 }
 
 func New(client client.Client, config fluentbit.Config, agentApplierDeleter AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
-
 	config.PipelineDefaults = builder.PipelineDefaults{
 		InputTag:          defaultInputTag,
 		MemoryBufferLimit: defaultMemoryBufferLimit,
@@ -116,7 +115,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, fluentbit.AgentApplyOptions{Config: r.config}); err != nil {
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
-
 	}
 
 	allowedPorts := getFluentBitPorts()
