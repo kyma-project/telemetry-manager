@@ -141,6 +141,76 @@ alias foo`,
 
 		require.Error(t, err)
 	})
+
+	t.Run("should handle multiple pipelines and deletion properly", func(t *testing.T) {
+		sut := Syncer{
+			Client: fakeClient,
+			Config: Config{
+				SectionsConfigMap: sectionsCmName,
+			},
+		}
+
+		// Create pipeline1 with HTTP output
+		pipeline1 := &telemetryv1alpha1.LogPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pipeline1",
+			},
+			Spec: telemetryv1alpha1.LogPipelineSpec{
+				Output: telemetryv1alpha1.LogPipelineOutput{
+					HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						Host: telemetryv1alpha1.ValueType{Value: "host"},
+					},
+				},
+			},
+		}
+
+		// Create pipeline2 with HTTP output
+		pipeline2 := &telemetryv1alpha1.LogPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pipeline2",
+			},
+			Spec: telemetryv1alpha1.LogPipelineSpec{
+				Output: telemetryv1alpha1.LogPipelineOutput{
+					HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						Host: telemetryv1alpha1.ValueType{Value: "host"},
+					},
+				},
+			},
+		}
+
+		// Test adding both pipelines
+		deployablePipelines := []telemetryv1alpha1.LogPipeline{*pipeline1, *pipeline2}
+
+		err := sut.syncSectionsConfigMap(context.Background(), pipeline1, deployablePipelines)
+		require.NoError(t, err)
+		err = sut.syncSectionsConfigMap(context.Background(), pipeline2, deployablePipelines)
+		require.NoError(t, err)
+
+		// Verify both pipelines are in configmap
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(context.Background(), sectionsCmName, &cm)
+		require.NoError(t, err)
+		require.Contains(t, cm.Data, "pipeline1.conf")
+		require.Contains(t, cm.Data, "pipeline2.conf")
+		require.Contains(t, cm.Data["pipeline1.conf"], "pipeline1")
+		require.Contains(t, cm.Data["pipeline2.conf"], "pipeline2")
+
+		// Mark pipeline1 for deletion
+		now := metav1.Now()
+		pipeline1.DeletionTimestamp = &now
+
+		// Update configmap with pipeline1 deleted
+		deployablePipelineAfterDeletion := []telemetryv1alpha1.LogPipeline{*pipeline2}
+		err = sut.syncSectionsConfigMap(context.Background(), pipeline1, deployablePipelineAfterDeletion)
+		require.NoError(t, err)
+
+		// Verify pipeline1 is removed but pipeline2 remains
+		err = fakeClient.Get(context.Background(), sectionsCmName, &cm)
+		require.NoError(t, err)
+		require.NotContains(t, cm.Data, "pipeline1.conf")
+		require.Contains(t, cm.Data, "pipeline2.conf")
+		require.Contains(t, cm.Data["pipeline2.conf"], "pipeline2")
+	})
 }
 
 func TestSyncFilesConfigMap(t *testing.T) {
@@ -264,6 +334,7 @@ alias foo`,
 
 		require.Error(t, err)
 	})
+
 }
 
 func TestSyncEnvSecret(t *testing.T) {
