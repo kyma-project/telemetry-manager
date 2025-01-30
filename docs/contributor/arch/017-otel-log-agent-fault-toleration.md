@@ -25,4 +25,25 @@ When setting up an OpenTelemetry (OTel) Log Agent using the Filelog Receiver, it
 * Logs not yet tailed before Collector Pod eviction.
 * Logs not yet tailed before being rotated.
 
+### Mechanisms for Enhanced Resiliency  
 
+#### Filelog Receiver Offset Tracking
+
+The Filelog Receiver can persist state information on storage (typically the node’s filesystem), allowing it to recover after crashes. It maintains the following data to ensure continuity:  
+
+- **Number of tracked files** (*knownFiles*).  
+- **For each tracked file:**  
+  - **File fingerprint** (*Fingerprint.first_bytes*) – a unique identifier for the file.  
+  - **Byte offset** (*Offset*) – the position from which the receiver resumes reading.  
+  - **File attributes** (*FileAttributes*) – metadata such as the file name.  
+
+#### Filelog Receiver Batching
+
+The Filelog Receiver does not forward log lines to the next consumer one by one. Instead, it batches them by resource. The batch size and send interval are fixed and cannot be configured—logs are sent in batches of 100 lines or every 100 milliseconds, whichever comes first.
+More info about internal details can be found [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/31074#issuecomment-2360284799).
+
+#### Batch Processor
+
+The Batch Processor accepts logs and places them into batches. Batching helps better compress the data and reduce the number of outgoing connections required to transmit the data. However, there are some problems:
+* The Batch Processor asynchronously handles the incoming requests and does not propagate errors to the Filelog Receiver
+* The Batch Processor doesn’t preserve its state in permanent storage, once the collector exits unexpectedly, the accumulated requests are lost. 
