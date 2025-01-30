@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
@@ -64,7 +63,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, commonresources.MakeDefaultLabels(name.Name))); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, commonresources.MakeDefaultLabels(name.Name), commonresources.MakeDefaultSelectorLabels(name.Name))); err != nil {
 		return fmt.Errorf("failed to create network policy: %w", err)
 	}
 
@@ -156,9 +155,9 @@ func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1
 
 func makeMetricsService(name types.NamespacedName) *corev1.Service {
 	labels := commonresources.MakeDefaultLabels(name.Name)
-	selectorLabels := make(map[string]string)
-	maps.Copy(selectorLabels, labels)
 	labels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(name.Name)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
