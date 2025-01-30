@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -15,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -31,12 +31,17 @@ import (
 const checksumAnnotationKey = "checksum/logpipeline-config"
 const istioExcludeInboundPorts = "traffic.sidecar.istio.io/excludeInboundPorts"
 const fluentbitExportSelector = "telemetry.kyma-project.io/log-export"
+const istioSidecarInjectKey = "sidecar.istio.io/inject"
 
-type Syncer interface {
-	SyncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error
-}
+var (
+	// FluentBit
+	fbMemoryLimit   = resource.MustParse("1Gi")
+	fbCPURequest    = resource.MustParse("100m")
+	fbMemoryRequest = resource.MustParse("50Mi")
+)
 
 type Config struct {
+	DaemonSet           types.NamespacedName
 	SectionsConfigMap   types.NamespacedName
 	FilesConfigMap      types.NamespacedName
 	LuaConfigMap        types.NamespacedName
@@ -45,23 +50,19 @@ type Config struct {
 	TLSFileConfigSecret types.NamespacedName
 	PipelineDefaults    builder.PipelineDefaults
 	Overrides           overrides.Config
-	RestConfig          rest.Config
 }
 
 type AgentApplyOptions struct {
-	Config                 *Config
-	Syncer                 Syncer
+	Config                 Config
 	AllowedPorts           []int32
 	Pipeline               *telemetryv1alpha1.LogPipeline
 	DeployableLogPipelines []telemetryv1alpha1.LogPipeline
 }
 
 type AgentApplierDeleter struct {
-	baseName          string
 	extraPodLabel     map[string]string
 	fluentBitImage    string
 	exporterImage     string
-	namespace         string
 	priorityClassName string
 
 	memoryLimit   resource.Quantity
@@ -69,39 +70,59 @@ type AgentApplierDeleter struct {
 	memoryRequest resource.Quantity
 }
 
-func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}
+func NewFluentBitApplierDeleter(fbImage, exporterImage, priorityClassName string) *AgentApplierDeleter {
+	return &AgentApplierDeleter{
+		extraPodLabel: map[string]string{
+			fluentbitExportSelector: "true",
+			istioSidecarInjectKey:   "true",
+		},
+		fluentBitImage:    fbImage,
+		exporterImage:     exporterImage,
+		priorityClassName: priorityClassName,
 
-	if err := opts.Syncer.SyncFluentBitConfig(ctx, opts.Pipeline, opts.DeployableLogPipelines); err != nil {
+		memoryLimit:   fbMemoryLimit,
+		cpuRequest:    fbCPURequest,
+		memoryRequest: fbMemoryRequest,
+	}
+}
+
+func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
+
+	syncer := Syncer{
+		Client: c,
+		Config: opts.Config,
+	}
+
+	if err := syncer.SyncFluentBitConfig(ctx, opts.Pipeline, opts.DeployableLogPipelines); err != nil {
 		return fmt.Errorf("failed to sync fluent bit config maps: %w", err)
 	}
 
-	serviceAccount := commonresources.MakeServiceAccount(name)
+	serviceAccount := commonresources.MakeServiceAccount(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
 
-	clusterRole := MakeClusterRole(name)
+	clusterRole := MakeClusterRole(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
 	}
 
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
+	clusterRoleBinding := commonresources.MakeClusterRoleBinding(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
-	exporterMetricsService := MakeExporterMetricsService(name)
+	exporterMetricsService := MakeExporterMetricsService(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateService(ctx, c, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
-	metricsService := MakeMetricsService(name)
+	metricsService := MakeMetricsService(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateService(ctx, c, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	cm := MakeConfigMap(name)
+	cm := MakeConfigMap(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
@@ -122,12 +143,12 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to calculate config checksum: %w", err)
 	}
 
-	daemonSet := aad.MakeDaemonSet(name, checksum)
+	daemonSet := aad.MakeDaemonSet(opts.Config.DaemonSet, checksum)
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
 		return err
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(name, opts.AllowedPorts, Labels())
+	networkPolicy := commonresources.MakeNetworkPolicy(opts.Config.DaemonSet, opts.AllowedPorts, Labels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}
@@ -139,11 +160,9 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}
-
 	objectMeta := metav1.ObjectMeta{
-		Name:      name.Name,
-		Namespace: name.Namespace,
+		Name:      opts.Config.DaemonSet.Name,
+		Namespace: opts.Config.DaemonSet.Namespace,
 	}
 
 	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
@@ -161,12 +180,12 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterolebinding: %w", err))
 	}
 
-	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", name.Name), Namespace: name.Namespace}}
+	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", opts.Config.DaemonSet.Name), Namespace: opts.Config.DaemonSet.Namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &exporterMetricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete exporter metric service: %w", err))
 	}
 
-	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", name.Name), Namespace: name.Namespace}}
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", opts.Config.DaemonSet.Name), Namespace: opts.Config.DaemonSet.Namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metric service: %w", err))
 	}
@@ -218,6 +237,22 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
 	}
 
+	envSecret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+		Name:      opts.Config.EnvConfigSecret.Name,
+		Namespace: opts.Config.EnvConfigSecret.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, c, &envSecret); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete env config secret: %w", err))
+	}
+
+	tlsSecret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+		Name:      opts.Config.TLSFileConfigSecret.Name,
+		Namespace: opts.Config.TLSFileConfigSecret.Namespace,
+	}}
+	if err := k8sutils.DeleteObject(ctx, c, &tlsSecret); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete tls file config secret: %w", err))
+	}
+
 	return allErrors
 }
 
@@ -248,8 +283,7 @@ func (aad *AgentApplierDeleter) MakeDaemonSet(name types.NamespacedName, checksu
 	annotations[istioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
 
 	podLabels := Labels()
-	podLabels["sidecar.istio.io/inject"] = "true"
-	podLabels[fluentbitExportSelector] = "true"
+	maps.Copy(podLabels, aad.extraPodLabel)
 
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
@@ -441,8 +475,8 @@ func (aad *AgentApplierDeleter) MakeDaemonSet(name types.NamespacedName, checksu
 
 func (aad *AgentApplierDeleter) calculateChecksum(ctx context.Context, c client.Client, opts AgentApplyOptions) (string, error) {
 	var baseCm corev1.ConfigMap
-	if err := c.Get(ctx, types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}, &baseCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", aad.namespace, aad.baseName, err)
+	if err := c.Get(ctx, opts.Config.DaemonSet, &baseCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", opts.Config.DaemonSet.Namespace, opts.Config.DaemonSet.Name, err)
 	}
 
 	var parsersCm corev1.ConfigMap

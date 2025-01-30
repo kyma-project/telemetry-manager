@@ -14,7 +14,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
@@ -22,7 +21,7 @@ import (
 
 type Syncer struct {
 	client.Client
-	Config fluentbit.Config
+	Config Config
 }
 
 func (s *Syncer) SyncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {

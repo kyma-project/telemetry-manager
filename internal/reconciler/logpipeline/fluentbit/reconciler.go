@@ -42,7 +42,6 @@ type Reconciler struct {
 	client.Client
 
 	config fluentbit.Config
-	syncer Syncer
 
 	agentApplierDeleter AgentApplierDeleter
 
@@ -76,10 +75,6 @@ func New(client client.Client, config fluentbit.Config, agentApplierDeleter Agen
 		istioStatusChecker:  checker,
 		pipelineValidator:   validator,
 		errToMsgConverter:   converter,
-		syncer: Syncer{
-			Client: client,
-			Config: config,
-		},
 	}
 }
 
@@ -118,7 +113,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
-		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, fluentbit.AgentApplyOptions{Config: &r.config}); err != nil {
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, fluentbit.AgentApplyOptions{Config: r.config}); err != nil {
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
 
@@ -133,9 +128,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		fluentbit.AgentApplyOptions{
-			Config:                 &r.config,
+			Config:                 r.config,
 			AllowedPorts:           allowedPorts,
-			Syncer:                 &r.syncer,
 			Pipeline:               pipeline,
 			DeployableLogPipelines: allPipelines,
 		},
