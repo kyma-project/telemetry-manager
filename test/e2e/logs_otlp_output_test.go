@@ -79,7 +79,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		})
 
 		It("Should not have a log agent daemonset", func() {
-			assert.DaemonSetNotDeployed(ctx, k8sClient, kitkyma.LogGatewayName)
+			assert.DaemonSetNotDeployed(ctx, k8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have 2 log gateway replicas", func() {

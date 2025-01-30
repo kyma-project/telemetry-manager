@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	logagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -76,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.LogGatewayName)
+			assert.DaemonSetReady(ctx, k8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have a log backend running", func() {
@@ -89,6 +90,24 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 		It("Should deliver loggen logs", func() {
 			assert.LogsFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
+		})
+
+		It("Ensures logs have expected scope name and scope version", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(
+					ContainElement(SatisfyAll(
+						HaveScopeName(Equal(logagent.InstrumentationScopeRuntime)),
+						HaveScopeVersion(SatisfyAny(
+							Equal("main"),
+							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
+						)),
+					)),
+				)))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should have Observed timestamp in the logs", func() {

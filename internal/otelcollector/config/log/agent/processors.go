@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	limitPercentage      = 80
-	spikeLimitPercentage = 25
+	limitPercentage             = 80
+	spikeLimitPercentage        = 25
+	InstrumentationScopeRuntime = "io.kyma-project.telemetry/runtime"
 )
 
 func makeProcessorsConfig(instrumentationScopeVersion string) Processors {
@@ -37,7 +38,7 @@ func makeInstrumentationScopeRuntime(instrumentationScopeVersion string) *log.Tr
 				Context: "scope",
 				Statements: []string{
 					fmt.Sprintf("set(version, \"%s\")", instrumentationScopeVersion),
-					fmt.Sprintf("set(name, \"%s\")", "io.kyma-project.telemetry/runtime"),
+					fmt.Sprintf("set(name, \"%s\")", InstrumentationScopeRuntime),
 				},
 			},
 		},
