@@ -64,6 +64,7 @@ func (b *LogPipelineBuilder) WithApplicationInput(enabled bool) *LogPipelineBuil
 	if b.input.Application == nil {
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
+
 	b.input.Application.Enabled = ptr.To(enabled)
 
 	return b

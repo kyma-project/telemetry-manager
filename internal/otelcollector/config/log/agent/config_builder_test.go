@@ -1,14 +1,16 @@
 package agent
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func TestBuildAgentConfig(t *testing.T) {
@@ -62,6 +64,7 @@ func TestBuildAgentConfig(t *testing.T) {
 				},
 			},
 		}
+
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
 		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
 		require.Equal(t, metricreaders, collectorConfig.Service.Telemetry.Metrics.Readers)
@@ -77,12 +80,9 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"filelog"}, collectorConfig.Service.Pipelines["logs"].Receivers)
 			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime"}, collectorConfig.Service.Pipelines["logs"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["logs"].Exporters)
-
 		})
-
 	})
 	t.Run("marshaling", func(t *testing.T) {
-
 		goldenFileName := "config.yaml"
 
 		collectorConfig := sut.Build(BuildOptions{})
@@ -94,6 +94,5 @@ func TestBuildAgentConfig(t *testing.T) {
 		require.NoError(t, err, "failed to load golden file")
 
 		require.Equal(t, string(goldenFile), string(configYAML))
-
 	})
 }

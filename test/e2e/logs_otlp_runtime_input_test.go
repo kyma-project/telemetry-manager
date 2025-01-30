@@ -3,7 +3,14 @@
 package e2e
 
 import (
-	"fmt"
+	"io"
+	"net/http"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -11,13 +18,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"io"
-	"k8s.io/apimachinery/pkg/types"
-	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -85,7 +85,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 		It("Should have a running pipeline", func() {
 			assert.LogPipelineOtelHealthy(ctx, k8sClient, pipelineName)
-			fmt.Printf("backendExportURL: %s\n", backendExportURL)
 		})
 
 		It("Should deliver loggen logs", func() {

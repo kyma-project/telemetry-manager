@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+
 	"k8s.io/utils/ptr"
 )
 
@@ -35,7 +36,7 @@ func makeOperators() []Operator {
 
 func makeContainerParser() Operator {
 	return Operator{
-		Id:                      "containerd-parser",
+		ID:                      "containerd-parser",
 		Type:                    "container",
 		AddMetadataFromFilePath: ptr.To(true),
 		Format:                  "containerd",
@@ -44,7 +45,7 @@ func makeContainerParser() Operator {
 
 func makeMoveToLogStream() Operator {
 	return Operator{
-		Id:     "move-to-log-stream",
+		ID:     "move-to-log-stream",
 		Type:   "move",
 		From:   "attributes.stream",
 		IfExpr: "attributes.stream != nil",
@@ -54,8 +55,9 @@ func makeMoveToLogStream() Operator {
 
 func makeJSONParser() Operator {
 	regexPattern := `^{(?:\\s*"(?:[^"\\]|\\.)*"\\s*:\\s*(?:null|true|false|\\d+|\\d*\\.\\d+|"(?:[^"\\]|\\.)*"|\\{[^{}]*\\}|\\[[^\\[\\]]*\\])\\s*,?)*\\s*}$`
+
 	return Operator{
-		Id:        "json-parser",
+		ID:        "json-parser",
 		Type:      "json_parser",
 		IfExpr:    fmt.Sprintf("body matches '%s'", regexPattern),
 		ParseFrom: "body",
@@ -65,7 +67,7 @@ func makeJSONParser() Operator {
 
 func makeCopyBodyToOriginal() Operator {
 	return Operator{
-		Id:   "copy-body-to-attributes-original",
+		ID:   "copy-body-to-attributes-original",
 		Type: "copy",
 		From: "body",
 		To:   "attributes.original",
@@ -74,7 +76,7 @@ func makeCopyBodyToOriginal() Operator {
 
 func makeMoveMessageToBody() Operator {
 	return Operator{
-		Id:     "move-message-to-body",
+		ID:     "move-message-to-body",
 		Type:   "move",
 		IfExpr: "attributes.message != nil",
 		From:   "attributes.message",
@@ -84,7 +86,7 @@ func makeMoveMessageToBody() Operator {
 
 func makeSeverityParser() Operator {
 	return Operator{
-		Id:        "severity-parser",
+		ID:        "severity-parser",
 		Type:      "severity_parser",
 		IfExpr:    "attributes.level != nil",
 		ParseFrom: "attributes.level",

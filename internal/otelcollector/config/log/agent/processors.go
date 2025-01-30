@@ -2,8 +2,14 @@ package agent
 
 import (
 	"fmt"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
+)
+
+const (
+	limitPercentage      = 80
+	spikeLimitPercentage = 25
 )
 
 func makeProcessorsConfig(instrumentationScopeVersion string) Processors {
@@ -18,8 +24,8 @@ func makeProcessorsConfig(instrumentationScopeVersion string) Processors {
 func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "5s",
-		LimitPercentage:      80,
-		SpikeLimitPercentage: 25,
+		LimitPercentage:      limitPercentage,
+		SpikeLimitPercentage: spikeLimitPercentage,
 	}
 }
 

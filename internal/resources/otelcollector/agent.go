@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"k8s.io/utils/ptr"
 	"maps"
 	"strconv"
 
@@ -13,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -47,22 +47,13 @@ var (
 )
 
 type AgentApplierDeleter struct {
-	baseName          string
-	extraPodLabel     map[string]string
-	image             string
-	namespace         string
-	priorityClassName string
-	rbac              rbac
+	baseName      string
+	extraPodLabel map[string]string
+	image         string
+	namespace     string
+	rbac          rbac
 
-	podSpecOptions     []podSpecOption
-	volumes            []corev1.Volume
-	volumeMounts       []corev1.VolumeMount
-	securityContext    *corev1.SecurityContext
-	podSecurityContext *corev1.PodSecurityContext
-
-	memoryLimit   resource.Quantity
-	cpuRequest    resource.Quantity
-	memoryRequest resource.Quantity
+	podSpecOptions []podSpecOption
 }
 
 type AgentApplyOptions struct {
@@ -85,6 +76,7 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 		makePodLogsVolumeMount(),
 		makeFileLogCheckPointVolumeMount(),
 	}
+
 	return &AgentApplierDeleter{
 		baseName:      LogAgentName,
 		extraPodLabel: extraLabels,

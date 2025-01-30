@@ -53,9 +53,7 @@ func withVolumeMounts(volumeMounts []corev1.VolumeMount) podSpecOption {
 
 func withVolumes(volumes []corev1.Volume) podSpecOption {
 	return func(pod *corev1.PodSpec) {
-		for _, v := range volumes {
-			pod.Volumes = append(pod.Volumes, v)
-		}
+		pod.Volumes = append(pod.Volumes, volumes...)
 	}
 }
 
@@ -70,7 +68,6 @@ func withSecurityContext(securityContext *corev1.SecurityContext) podSpecOption 
 func withPodSecurityContext(securityContext *corev1.PodSecurityContext) podSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.SecurityContext = securityContext
-
 	}
 }
 

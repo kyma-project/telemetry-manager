@@ -2,9 +2,11 @@ package agent
 
 import (
 	"fmt"
+
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type BuilderConfig struct {
@@ -23,6 +25,7 @@ func (b *Builder) Build(opts BuildOptions) *Config {
 	logService := config.DefaultService(makePipelinesConfig())
 	// Overwrite the extension from default service name
 	logService.Extensions = []string{"health_check", "pprof", "file_storage"}
+
 	return &Config{
 		Service:    logService,
 		Extensions: makeExtensionsConfig(),
@@ -40,6 +43,7 @@ func makePipelinesConfig() config.Pipelines {
 		Processors: []string{"memory_limiter", "transform/set-instrumentation-scope-runtime"},
 		Exporters:  []string{"otlp"},
 	}
+
 	return pipelinesConfig
 }
 

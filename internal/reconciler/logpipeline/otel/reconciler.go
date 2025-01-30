@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
+
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -12,6 +12,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -249,6 +250,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	allowedPorts := getAgentPorts()
+
 	if isIstioActive {
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}

@@ -1,8 +1,9 @@
 package agent
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestProcessorConfig(t *testing.T) {
@@ -15,5 +16,4 @@ func TestProcessorConfig(t *testing.T) {
 	require.Equal(t, "5s", processorsConfig.BaseProcessors.MemoryLimiter.CheckInterval)
 	require.Equal(t, 80, processorsConfig.BaseProcessors.MemoryLimiter.LimitPercentage)
 	require.Equal(t, 25, processorsConfig.BaseProcessors.MemoryLimiter.SpikeLimitPercentage)
-
 }

@@ -328,7 +328,6 @@ func TestReconcile(t *testing.T) {
 		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
-
 	// TODO: "referenced secret missing" (requires SecretRefValidator to be implemented)
 	// TODO: "referenced secret exists" (requires SecretRefValidator to be implemented)
 	// TODO: "flow healthy" (requires SelfMonitoring to be implemented)

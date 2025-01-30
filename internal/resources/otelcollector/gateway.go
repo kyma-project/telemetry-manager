@@ -70,13 +70,12 @@ var (
 )
 
 type GatewayApplierDeleter struct {
-	baseName          string
-	extraPodLabels    map[string]string
-	image             string
-	namespace         string
-	otlpServiceName   string
-	priorityClassName string
-	rbac              rbac
+	baseName        string
+	extraPodLabels  map[string]string
+	image           string
+	namespace       string
+	otlpServiceName string
+	rbac            rbac
 
 	baseMemoryLimit      resource.Quantity
 	dynamicMemoryLimit   resource.Quantity
@@ -102,6 +101,7 @@ type GatewayApplyOptions struct {
 	ResourceRequirementsMultiplier int
 }
 
+//nolint:dupl // repeating the code as we have three different signals
 func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		logGatewayIngestKey:   "true",
@@ -133,6 +133,7 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 	}
 }
 
+//nolint:dupl // repeating the code as we have three different signals
 func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		metricGatewayIngestKey: "true",
@@ -164,6 +165,7 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 	}
 }
 
+//nolint:dupl // repeating the code as we have three different signals
 func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		traceGatewayIngestKey: "true",
@@ -172,12 +174,11 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 	}
 
 	return &GatewayApplierDeleter{
-		baseName:        TraceGatewayName,
-		extraPodLabels:  extraLabels,
-		image:           image,
-		namespace:       namespace,
-		otlpServiceName: TraceOTLPServiceName,
-		//priorityClassName:    priorityClassName,
+		baseName:             TraceGatewayName,
+		extraPodLabels:       extraLabels,
+		image:                image,
+		namespace:            namespace,
+		otlpServiceName:      TraceOTLPServiceName,
 		rbac:                 makeTraceGatewayRBAC(namespace),
 		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
@@ -282,21 +283,18 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
 	resources := gad.makeGatewayResourceRequirements(opts)
-	//affinity := makePodAffinity(selectorLabels)
-	podSpecs := append(gad.podSpecOptions, commonresources.WithResources(resources),
+
+	podSpecs := []podSpecOption{
 		commonresources.WithResources(resources),
-		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]))
+		commonresources.WithResources(resources),
+		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
+	}
+	podSpecs = append(podSpecs, gad.podSpecOptions...)
 
 	podSpec := makePodSpec(
 		gad.baseName,
 		gad.image,
 		podSpecs...,
-	//commonresources.WithPriorityClass(gad.priorityClassName),
-	//commonresources.WithResources(resources),
-	//withAffinity(affinity),
-	//withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-	//withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-	//commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
 	podLabels := make(map[string]string)

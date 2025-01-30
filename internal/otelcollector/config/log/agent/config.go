@@ -29,7 +29,7 @@ type FileLog struct {
 }
 
 type Operator struct {
-	Id                      string `yaml:"id,omitempty"`
+	ID                      string `yaml:"id,omitempty"`
 	Type                    string `yaml:"type,omitempty"`
 	AddMetadataFromFilePath *bool  `yaml:"add_metadata_from_file_path"`
 	Format                  string `yaml:"format,omitempty"`

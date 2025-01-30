@@ -1,9 +1,10 @@
 package agent
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
-	"testing"
 )
 
 func TestReceiverCreator(t *testing.T) {
@@ -25,50 +26,48 @@ func TestReceiverCreator(t *testing.T) {
 	operators := receivers.FileLog.Operators
 	require.Len(t, operators, 6)
 	require.Equal(t, expectedOperators, operators)
-
 }
 
 func makeExpectedOperators() []Operator {
 	return []Operator{
 		{
-			Id:                      "containerd-parser",
+			ID:                      "containerd-parser",
 			Type:                    "container",
 			AddMetadataFromFilePath: ptr.To(true),
 			Format:                  "containerd",
 		},
 		{
-			Id:     "move-to-log-stream",
+			ID:     "move-to-log-stream",
 			Type:   "move",
 			From:   "attributes.stream",
 			To:     "attributes[\"log.iostream\"]",
 			IfExpr: "attributes.stream != nil",
 		},
 		{
-			Id:        "json-parser",
+			ID:        "json-parser",
 			Type:      "json_parser",
 			IfExpr:    "body matches '^{(?:\\\\s*\"(?:[^\"\\\\]|\\\\.)*\"\\\\s*:\\\\s*(?:null|true|false|\\\\d+|\\\\d*\\\\.\\\\d+|\"(?:[^\"\\\\]|\\\\.)*\"|\\\\{[^{}]*\\\\}|\\\\[[^\\\\[\\\\]]*\\\\])\\\\s*,?)*\\\\s*}$'",
 			ParseFrom: "body",
 			ParseTo:   "attributes",
 		},
 		{
-			Id:   "copy-body-to-attributes-original",
+			ID:   "copy-body-to-attributes-original",
 			Type: "copy",
 			From: "body",
 			To:   "attributes.original",
 		},
 		{
-			Id:     "move-message-to-body",
+			ID:     "move-message-to-body",
 			Type:   "move",
 			From:   "attributes.message",
 			To:     "body",
 			IfExpr: "attributes.message != nil",
 		},
 		{
-			Id:        "severity-parser",
+			ID:        "severity-parser",
 			Type:      "severity_parser",
 			IfExpr:    "attributes.level != nil",
 			ParseFrom: "attributes.level",
 		},
 	}
-
 }
