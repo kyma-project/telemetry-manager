@@ -240,9 +240,13 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
+	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		GatewayNamespace:            r.telemetryNamespace,
 		InstrumentationScopeVersion: r.moduleVersion,
+		ClusterName:                 shootInfo.ClusterName,
+		CloudProvider:               shootInfo.CloudProvider,
 	})
 
 	if err != nil {

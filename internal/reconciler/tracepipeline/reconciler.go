@@ -44,7 +44,7 @@ import (
 const defaultReplicaCount int32 = 2
 
 type GatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline) (*gateway.Config, otlpexporter.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)
 }
 
 type GatewayApplierDeleter interface {
@@ -217,7 +217,12 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 }
 
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
-	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines)
+	clusterInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
+
+	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
+		ClusterName:   clusterInfo.ClusterName,
+		CloudProvider: clusterInfo.CloudProvider,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
 	}

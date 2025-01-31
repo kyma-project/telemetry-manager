@@ -449,7 +449,7 @@ func backendContainsDesiredResourceAttributes(proxyClient *apiserverproxy.Client
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatMetrics(
 			ContainElement(SatisfyAll(
 				HaveName(Equal(metricName)),
-				HaveResourceAttributes(HaveKeys(ConsistOf(resourceAttributes))),
+				HaveResourceAttributes(HaveKeys(ContainElements(resourceAttributes))),
 			)),
 		)))
 	}, 3*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metric %s with resource attributes %v", metricName, resourceAttributes)

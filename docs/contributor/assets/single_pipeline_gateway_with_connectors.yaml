@@ -31,7 +31,7 @@ data:
                     - filter/drop-if-input-source-runtime
                     - filter/drop-if-input-source-prometheus
                     - filter/drop-if-input-source-istio
-                    - resource/insert-cluster-name
+                    - resource/insert-cluster-attributes
                     - batch
                 exporters:
                     - otlp/load-test-1
@@ -97,7 +97,7 @@ data:
                       name: k8s.pod.uid
                 - sources:
                     - from: connection
-        resource/insert-cluster-name:
+        resource/insert-cluster-attributes:
             attributes:
                 - action: insert
                   key: k8s.cluster.name

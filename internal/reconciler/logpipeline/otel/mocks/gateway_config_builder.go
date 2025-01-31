@@ -18,9 +18,9 @@ type GatewayConfigBuilder struct {
 	mock.Mock
 }
 
-// Build provides a mock function with given fields: ctx, pipelines
-func (_m *GatewayConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.LogPipeline) (*gateway.Config, otlpexporter.EnvVars, error) {
-	ret := _m.Called(ctx, pipelines)
+// Build provides a mock function with given fields: ctx, pipelines, opts
+func (_m *GatewayConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.LogPipeline, opts gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error) {
+	ret := _m.Called(ctx, pipelines, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
@@ -29,27 +29,27 @@ func (_m *GatewayConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.
 	var r0 *gateway.Config
 	var r1 otlpexporter.EnvVars
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline) (*gateway.Config, otlpexporter.EnvVars, error)); ok {
-		return rf(ctx, pipelines)
+	if rf, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, gateway.BuildOptions) (*gateway.Config, otlpexporter.EnvVars, error)); ok {
+		return rf(ctx, pipelines, opts)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline) *gateway.Config); ok {
-		r0 = rf(ctx, pipelines)
+	if rf, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, gateway.BuildOptions) *gateway.Config); ok {
+		r0 = rf(ctx, pipelines, opts)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*gateway.Config)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline) otlpexporter.EnvVars); ok {
-		r1 = rf(ctx, pipelines)
+	if rf, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline, gateway.BuildOptions) otlpexporter.EnvVars); ok {
+		r1 = rf(ctx, pipelines, opts)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(otlpexporter.EnvVars)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, []v1alpha1.LogPipeline) error); ok {
-		r2 = rf(ctx, pipelines)
+	if rf, ok := ret.Get(2).(func(context.Context, []v1alpha1.LogPipeline, gateway.BuildOptions) error); ok {
+		r2 = rf(ctx, pipelines, opts)
 	} else {
 		r2 = ret.Error(2)
 	}
