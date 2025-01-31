@@ -50,8 +50,8 @@ type Exporters struct {
 }
 
 type Extensions struct {
-	config.BaseExtensions `yaml:",inline"`
-	FileStorage           *FileStorage `yaml:"file_storage,omitempty"`
+	config.Extensions `yaml:",inline"`
+	FileStorage       *FileStorage `yaml:"file_storage,omitempty"`
 }
 
 type FileStorage struct {

@@ -7,7 +7,7 @@ import (
 
 func makeExtensionsConfig() Extensions {
 	return Extensions{
-		BaseExtensions: config.DefaultBaseExtensions(),
+		Extensions: config.DefaultExtensions(),
 		FileStorage: &FileStorage{
 			Directory: otelcollector.CheckpointVolumePath,
 		},

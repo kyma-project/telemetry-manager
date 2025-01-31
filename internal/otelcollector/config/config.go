@@ -11,10 +11,6 @@ type Base struct {
 	Service    Service    `yaml:"service"`
 }
 
-type BaseExtensions struct {
-	HealthCheck Endpoint `yaml:"health_check,omitempty"`
-	Pprof       Endpoint `yaml:"pprof,omitempty"`
-}
 type Extensions struct {
 	HealthCheck Endpoint `yaml:"health_check,omitempty"`
 	Pprof       Endpoint `yaml:"pprof,omitempty"`
@@ -100,17 +96,6 @@ func DefaultService(pipelines Pipelines) Service {
 
 func DefaultExtensions() Extensions {
 	return Extensions{
-		HealthCheck: Endpoint{
-			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),
-		},
-		Pprof: Endpoint{
-			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
-		},
-	}
-}
-
-func DefaultBaseExtensions() BaseExtensions {
-	return BaseExtensions{
 		HealthCheck: Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),
 		},
