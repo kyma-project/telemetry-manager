@@ -26,3 +26,36 @@ func HaveResourceAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
 		return fl.ResourceAttributes
 	}, matcher)
 }
+
+// HaveScopeName extracts scope name from FlatMetric and applies the matcher to it.
+func HaveScopeName(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) string {
+		return fl.ScopeName
+	}, matcher)
+}
+
+// HaveScopeVersion extracts scope version from FlatMetric and applies the matcher to it.
+func HaveScopeVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) string {
+		return fl.ScopeVersion
+	}, matcher)
+}
+
+// HaveAttributes extracts resource attributes from FlatLog and applies the matcher to them.
+func HaveAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) map[string]string {
+		return fl.Attributes
+	}, matcher)
+}
+
+func HaveLogRecordBody(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.LogRecordBody }, matcher)
+}
+
+func HaveObservedTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.ObservedTimestamp }, matcher)
+}
+
+func HaveOtelTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.Timestamp }, matcher)
+}

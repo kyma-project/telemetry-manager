@@ -43,6 +43,7 @@ const (
 	// LogPipeline reasons
 	ReasonAgentConfigured        = "AgentConfigured"
 	ReasonSelfMonNoLogsDelivered = "NoLogsDelivered"
+	ReasonLogAgentNotRequired    = "AgentNotRequired"
 
 	// MetricPipeline reasons
 	ReasonMetricAgentNotRequired = "AgentNotRequired"
@@ -65,9 +66,9 @@ var commonMessages = map[string]string{
 }
 
 var logPipelineMessages = map[string]string{
-	ReasonAgentConfigured:           "LogPipeline specification is successfully applied to the configuration of Fluent Bit agent",
-	ReasonAgentNotReady:             "Fluent Bit agent DaemonSet is not ready",
-	ReasonAgentReady:                "Fluent Bit agent DaemonSet is ready",
+	ReasonAgentConfigured:           "LogPipeline specification is successfully applied to the configuration of Log agent",
+	ReasonAgentNotReady:             "Log agent DaemonSet is not ready",
+	ReasonAgentReady:                "Log agent DaemonSet is ready",
 	ReasonComponentsRunning:         "All log components are running",
 	ReasonEndpointInvalid:           "HTTP output host invalid: %s",
 	ReasonGatewayConfigured:         "LogPipeline specification is successfully applied to the configuration of Log gateway",
@@ -75,7 +76,7 @@ var logPipelineMessages = map[string]string{
 	ReasonGatewayReady:              "Log gateway Deployment is ready",
 	ReasonSelfMonAllDataDropped:     "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
-	ReasonSelfMonConfigNotGenerated: "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonSelfMonConfigNotGenerated: "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonSelfMonNoLogsDelivered:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonSomeDataDropped:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
 }

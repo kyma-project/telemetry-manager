@@ -39,6 +39,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
+	r.setAgentHealthyCondition(ctx, &pipeline)
+
 	// r.setFlowHealthCondition(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
@@ -46,6 +48,26 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	}
 
 	return nil
+}
+
+func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+	condition := &metav1.Condition{
+		Type:    conditions.TypeAgentHealthy,
+		Status:  metav1.ConditionTrue,
+		Reason:  conditions.ReasonLogAgentNotRequired,
+		Message: conditions.MessageForLogPipeline(conditions.ReasonLogAgentNotRequired),
+	}
+
+	if isLogAgentRequired(pipeline) {
+		condition = commonstatus.GetAgentHealthyCondition(ctx,
+			r.agentProber,
+			types.NamespacedName{Name: otelcollector.LogAgentName, Namespace: r.telemetryNamespace},
+			r.errToMessageConverter,
+			commonstatus.SignalTypeLogs)
+	}
+
+	condition.ObservedGeneration = pipeline.Generation
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {

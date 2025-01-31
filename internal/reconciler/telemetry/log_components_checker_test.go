@@ -106,7 +106,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentNotReady",
-				Message: "Fluent Bit agent DaemonSet is not ready",
+				Message: "Log agent DaemonSet is not ready",
 			},
 		},
 		{

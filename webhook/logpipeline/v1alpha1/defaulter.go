@@ -16,6 +16,7 @@ var _ webhook.CustomDefaulter = &defaulter{}
 type defaulter struct {
 	ApplicationInputEnabled          bool
 	ApplicationInputKeepOriginalBody bool
+	DefaultOTLPProtocol              string
 }
 
 func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
@@ -30,13 +31,22 @@ func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
-	if pipeline.Spec.Input.Application != nil {
-		if pipeline.Spec.Input.Application.Enabled == nil {
-			pipeline.Spec.Input.Application.Enabled = &ld.ApplicationInputEnabled
+	if pipeline.Spec.Input.Application == nil {
+		pipeline.Spec.Input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{
+			Enabled:          &ld.ApplicationInputEnabled,
+			KeepOriginalBody: &ld.ApplicationInputKeepOriginalBody,
 		}
+	}
 
-		if *pipeline.Spec.Input.Application.Enabled && pipeline.Spec.Input.Application.KeepOriginalBody == nil {
-			pipeline.Spec.Input.Application.KeepOriginalBody = &ld.ApplicationInputKeepOriginalBody
-		}
+	if pipeline.Spec.Input.Application.Enabled == nil {
+		pipeline.Spec.Input.Application.Enabled = &ld.ApplicationInputEnabled
+	}
+
+	if pipeline.Spec.Input.Application.KeepOriginalBody == nil {
+		pipeline.Spec.Input.Application.KeepOriginalBody = &ld.ApplicationInputKeepOriginalBody
+	}
+
+	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
+		pipeline.Spec.Output.OTLP.Protocol = ld.DefaultOTLPProtocol
 	}
 }

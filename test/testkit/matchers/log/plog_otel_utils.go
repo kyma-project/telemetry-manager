@@ -13,9 +13,9 @@ import (
 // Introducing a go struct with a flat data structure by extracting necessary information from different levels of plogs makes accessing the information easier than using plog.
 // Logs directly and improves the readability of the test output logs.
 type FlatLogOtel struct {
-	Name               string
-	ResourceAttributes map[string]string
-	LogRecordBody      string
+	Name, ScopeName, ScopeVersion                   string
+	ResourceAttributes, ScopeAttributes, Attributes map[string]string
+	LogRecordBody, ObservedTimestamp, Timestamp     string
 }
 
 func unmarshalOtelLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
@@ -50,7 +50,12 @@ func flattenOtelLogs(ld plog.Logs) []FlatLogOtel {
 				lr := scopeLogs.LogRecords().At(k)
 				flatLogs = append(flatLogs, FlatLogOtel{
 					ResourceAttributes: attributeToMapOtel(resourceLogs.Resource().Attributes()),
+					ScopeName:          scopeLogs.Scope().Name(),
+					ScopeVersion:       scopeLogs.Scope().Version(),
 					LogRecordBody:      lr.Body().AsString(),
+					Attributes:         attributeToMapOtel(lr.Attributes()),
+					ObservedTimestamp:  lr.ObservedTimestamp().String(),
+					Timestamp:          lr.Timestamp().String(),
 				})
 			}
 		}

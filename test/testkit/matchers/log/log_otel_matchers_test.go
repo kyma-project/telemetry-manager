@@ -3,6 +3,7 @@ package log
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
@@ -14,6 +15,9 @@ var flsOtel = []FlatLogOtel{
 			"k8s.deployment.name": "backend",
 			"k8s.namespace.name":  "default",
 		},
+		ObservedTimestamp: "1970-01-01 00:00:01.23456789 +0000 UTC",
+		Timestamp:         "1970-01-01 00:00:01.23456789 +0000 UTC",
+		Attributes:        map[string]string{"foo": "bar"},
 	},
 }
 
@@ -47,6 +51,11 @@ var _ = Describe("HaveFlatOtelLogs", func() {
 
 		// set log body
 		lr.Body().SetStr("Test first log body")
+		testValTimestamp := pcommon.Timestamp(1234567890)
+		lr.SetObservedTimestamp(testValTimestamp)
+		lr.SetTimestamp(testValTimestamp)
+
+		lr.Attributes().PutStr("foo", "bar")
 
 		// set resource attributes
 		attrs := rl.Resource().Attributes()
