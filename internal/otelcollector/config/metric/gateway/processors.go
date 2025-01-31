@@ -243,10 +243,11 @@ func otlpInputSource() string {
 	// When instrumentation scope is not set to
 	// io.kyma-project.telemetry/runtime or io.kyma-project.telemetry/prometheus or io.kyma-project.telemetry/istio
 	// we assume the metric is being pushed directly to metrics gateway.
-	return fmt.Sprintf("not(%s or %s or %s)",
+	return fmt.Sprintf("not(%s or %s or %s or %s)",
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeKyma),
 	)
 }
 
