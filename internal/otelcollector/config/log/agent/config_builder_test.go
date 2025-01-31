@@ -1,6 +1,8 @@
 package agent
 
 import (
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"os"
 	"path/filepath"
 	"testing"
@@ -22,14 +24,16 @@ func TestBuildAgentConfig(t *testing.T) {
 	}
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig := sut.Build(BuildOptions{})
+		collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{})
 		actualExporterConfig := collectorConfig.Exporters.OTLP
 		require.Equal(t, "logs.telemetry-system.svc.cluster.local:4317", actualExporterConfig.Endpoint)
 	})
 
 	t.Run("insecure", func(t *testing.T) {
 		t.Run("otlp exporter endpoint", func(t *testing.T) {
-			collectorConfig := sut.Build(BuildOptions{})
+			collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{})
 
 			actualExporterConfig := collectorConfig.Exporters.OTLP
 			require.True(t, actualExporterConfig.TLS.Insecure)
@@ -37,7 +41,8 @@ func TestBuildAgentConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig := sut.Build(BuildOptions{})
+		collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{})
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
 		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
@@ -50,7 +55,8 @@ func TestBuildAgentConfig(t *testing.T) {
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig := sut.Build(BuildOptions{})
+		collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{})
 
 		metricreaders := []config.MetricReader{
 			{
@@ -72,7 +78,8 @@ func TestBuildAgentConfig(t *testing.T) {
 
 	t.Run("single pipeline topology", func(t *testing.T) {
 		t.Run("application log input enabled", func(t *testing.T) {
-			collectorConfig := sut.Build(BuildOptions{})
+			collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{})
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "logs")
@@ -85,7 +92,8 @@ func TestBuildAgentConfig(t *testing.T) {
 	t.Run("marshaling", func(t *testing.T) {
 		goldenFileName := "config.yaml"
 
-		collectorConfig := sut.Build(BuildOptions{})
+		collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{})
 		configYAML, err := yaml.Marshal(collectorConfig)
 		require.NoError(t, err, "failed to marshal config")
 

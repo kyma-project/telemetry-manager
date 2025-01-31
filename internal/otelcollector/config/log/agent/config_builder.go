@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -21,7 +22,7 @@ type BuildOptions struct {
 	AgentNamespace              string
 }
 
-func (b *Builder) Build(opts BuildOptions) *Config {
+func (b *Builder) Build(logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) *Config {
 	logService := config.DefaultService(makePipelinesConfig())
 	// Overwrite the extension from default service name
 	logService.Extensions = []string{"health_check", "pprof", "file_storage"}
@@ -30,7 +31,7 @@ func (b *Builder) Build(opts BuildOptions) *Config {
 		Service:    logService,
 		Extensions: makeExtensionsConfig(),
 
-		Receivers:  makeReceivers(),
+		Receivers:  makeReceivers(logPipelines),
 		Processors: makeProcessorsConfig(opts.InstrumentationScopeVersion),
 		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
 	}

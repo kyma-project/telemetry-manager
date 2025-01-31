@@ -45,7 +45,7 @@ type IstioStatusChecker interface {
 }
 
 type AgentConfigBuilder interface {
-	Build(options agent.BuildOptions) *agent.Config
+	Build(pipelines []telemetryv1alpha1.LogPipeline, options agent.BuildOptions) *agent.Config
 }
 
 type AgentApplierDeleter interface {
@@ -149,7 +149,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	if isLogAgentRequired(pipeline) {
-		if err := r.reconcileLogAgent(ctx, pipeline); err != nil {
+		if err := r.reconcileLogAgent(ctx, pipeline, allPipelines); err != nil {
 			return fmt.Errorf("failed to reconcile log agent: %w", err)
 		}
 	}
@@ -237,8 +237,8 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 	return nil
 }
 
-func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	agentConfig := r.agentConfigBuilder.Build(agent.BuildOptions{
+func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
+	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
 	})

@@ -2,11 +2,12 @@ package agent
 
 import (
 	"fmt"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 
 	"k8s.io/utils/ptr"
 )
 
-func makeReceivers() Receivers {
+func makeReceivers(logpipelines []telemetryv1alpha1.LogPipeline) Receivers {
 	return Receivers{
 		FileLog: &FileLog{
 			Exclude: []string{
@@ -18,17 +19,33 @@ func makeReceivers() Receivers {
 			IncludeFilePath: true,
 			StartAt:         "beginning",
 			Storage:         "file_storage",
-			Operators:       makeOperators(),
+			Operators:       makeOperators(logpipelines),
 		},
 	}
 }
 
-func makeOperators() []Operator {
+func makeOperators(logPipelines []telemetryv1alpha1.LogPipeline) []Operator {
+	keepOriginalBody := false
+	for _, logPipeline := range logPipelines {
+		if *logPipeline.Spec.Input.Application.KeepOriginalBody {
+			keepOriginalBody = true
+		}
+	}
+
+	if keepOriginalBody {
+		return []Operator{
+			makeContainerParser(),
+			makeMoveToLogStream(),
+			makeJSONParser(),
+			makeCopyBodyToOriginal(),
+			makeMoveMessageToBody(),
+			makeSeverityParser(),
+		}
+	}
 	return []Operator{
 		makeContainerParser(),
 		makeMoveToLogStream(),
 		makeJSONParser(),
-		makeCopyBodyToOriginal(),
 		makeMoveMessageToBody(),
 		makeSeverityParser(),
 	}

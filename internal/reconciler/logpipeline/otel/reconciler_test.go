@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
@@ -167,7 +167,7 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
@@ -225,7 +225,7 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
@@ -281,7 +281,7 @@ func TestReconcile(t *testing.T) {
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
 
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline)).Return(&gateway.Config{}, nil, nil).Times(1)
