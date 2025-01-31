@@ -1,8 +1,6 @@
 package agent
 
 import (
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,8 +9,10 @@ import (
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestBuildAgentConfig(t *testing.T) {

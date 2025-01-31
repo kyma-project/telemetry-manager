@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	logagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -100,7 +100,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(
 					ContainElement(SatisfyAll(
-						HaveScopeName(Equal(logagent.InstrumentationScopeRuntime)),
+						HaveScopeName(Equal(agent.InstrumentationScopeRuntime)),
 						HaveScopeVersion(SatisfyAny(
 							Equal("main"),
 							MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),

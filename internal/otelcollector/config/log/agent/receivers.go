@@ -2,9 +2,10 @@ package agent
 
 import (
 	"fmt"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 
 	"k8s.io/utils/ptr"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func makeReceivers(logpipelines []telemetryv1alpha1.LogPipeline) Receivers {
@@ -26,6 +27,7 @@ func makeReceivers(logpipelines []telemetryv1alpha1.LogPipeline) Receivers {
 
 func makeOperators(logPipelines []telemetryv1alpha1.LogPipeline) []Operator {
 	keepOriginalBody := false
+
 	for _, logPipeline := range logPipelines {
 		if *logPipeline.Spec.Input.Application.KeepOriginalBody {
 			keepOriginalBody = true
@@ -42,6 +44,7 @@ func makeOperators(logPipelines []telemetryv1alpha1.LogPipeline) []Operator {
 			makeSeverityParser(),
 		}
 	}
+
 	return []Operator{
 		makeContainerParser(),
 		makeMoveToLogStream(),

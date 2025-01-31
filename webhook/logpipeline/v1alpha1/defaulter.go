@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -30,7 +31,6 @@ func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
-
 	if pipeline.Spec.Input.Application == nil {
 		pipeline.Spec.Input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{
 			Enabled:          &ld.ApplicationInputEnabled,
