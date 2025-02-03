@@ -334,7 +334,6 @@ alias foo`,
 
 		require.Error(t, err)
 	})
-
 }
 
 func TestSyncEnvSecret(t *testing.T) {
