@@ -129,7 +129,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 			Config:                 r.config,
 			AllowedPorts:           allowedPorts,
 			Pipeline:               pipeline,
-			DeployableLogPipelines: allPipelines,
+			DeployableLogPipelines: reconcilablePipelines,
 		},
 	); err != nil {
 		return err
