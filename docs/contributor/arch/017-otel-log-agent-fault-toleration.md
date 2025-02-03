@@ -15,7 +15,6 @@ When setting up an OpenTelemetry (OTel) Log Agent using the Filelog Receiver, it
 
 #### Scenarios Where Data Loss Must Be Prevented:
 * Temporary OTLP backend issues (e.g., spikes in retriable errors, backpressure, temporary network failures).
-#### Scenarios Where Preventing Data Loss Is Beneficial:
 * Collector Pod restarts during normal operations (e.g., upgrades, rescheduling to another node).
 #### Scenarios Where Preventing Data Loss Is Nice-to-Have:
 * Collector Pod crashes that occur unexpectedly.
@@ -47,6 +46,8 @@ More info about internal details can be found [here](https://github.com/open-tel
 The Batch Processor accepts logs and places them into batches. Batching helps better compress the data and reduce the number of outgoing connections required to transmit the data. However, there are some problems:
 * The Batch Processor asynchronously handles the incoming requests and does not propagate errors to the Filelog Receiver
 * The Batch Processor doesn’t preserve its state in permanent storage, once the collector exits unexpectedly, the accumulated requests are lost. 
+
+![Batch Processor Flow](../assets/log-agent-batch-processor-flow.svg "Batch Processor Flow")
 
 #### Exporter Batcher
 
