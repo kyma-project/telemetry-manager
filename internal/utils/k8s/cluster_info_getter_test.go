@@ -15,8 +15,7 @@ func TestClusterInfoGetter(t *testing.T) {
 		shootInfo := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{Name: "shoot-info", Namespace: "kube-system"},
 			Data: map[string]string{
-				"shootName": "test-cluster",
-				"provider":  "test-provider",
+				"provider": "test-provider",
 			},
 		}
 
@@ -24,7 +23,7 @@ func TestClusterInfoGetter(t *testing.T) {
 
 		clusterInfo := GetGardenerShootInfo(context.Background(), fakeClient)
 
-		require.Equal(t, clusterInfo.ClusterName, "test-cluster")
+		require.Equal(t, clusterInfo.ClusterName, "${KUBERNETES_SERVICE_HOST}")
 		require.Equal(t, clusterInfo.CloudProvider, "test-provider")
 	})
 
@@ -32,8 +31,7 @@ func TestClusterInfoGetter(t *testing.T) {
 		shootInfo := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{Name: "shoot-info", Namespace: "kube-system"},
 			Data: map[string]string{
-				"shootName": "test-cluster",
-				"provider":  "openstack",
+				"provider": "openstack",
 			},
 		}
 
@@ -41,7 +39,7 @@ func TestClusterInfoGetter(t *testing.T) {
 
 		clusterInfo := GetGardenerShootInfo(context.Background(), fakeClient)
 
-		require.Equal(t, clusterInfo.ClusterName, "test-cluster")
+		require.Equal(t, clusterInfo.ClusterName, "${KUBERNETES_SERVICE_HOST}")
 		require.Equal(t, clusterInfo.CloudProvider, "sap")
 	})
 
