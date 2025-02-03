@@ -105,6 +105,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
+	logf.FromContext(ctx).V(1).Info("reconcilable pipelines: %s", len(reconcilablePipelines))
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
 	}
@@ -114,6 +115,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, fluentbit.AgentApplyOptions{Config: r.config}); err != nil {
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
+		}
+
+		if err = cleanupFinalizersIfNeeded(ctx, r.Client, pipeline); err != nil {
+			return err
 		}
 
 		return nil
@@ -134,10 +139,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 			DeployableLogPipelines: reconcilablePipelines,
 		},
 	); err != nil {
-		return err
-	}
-
-	if err = cleanupFinalizersIfNeeded(ctx, r.Client, pipeline); err != nil {
 		return err
 	}
 
