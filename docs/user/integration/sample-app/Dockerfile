@@ -17,7 +17,7 @@ COPY *.go .
 
 # Clean up unused (test) dependencies and build
 RUN go mod tidy
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o main ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o main ./...
 
 # Use the scratch image for a minimal image
 FROM scratch
