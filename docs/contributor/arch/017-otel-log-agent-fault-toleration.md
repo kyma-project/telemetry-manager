@@ -47,3 +47,9 @@ More info about internal details can be found [here](https://github.com/open-tel
 The Batch Processor accepts logs and places them into batches. Batching helps better compress the data and reduce the number of outgoing connections required to transmit the data. However, there are some problems:
 * The Batch Processor asynchronously handles the incoming requests and does not propagate errors to the Filelog Receiver
 * The Batch Processor doesn’t preserve its state in permanent storage, once the collector exits unexpectedly, the accumulated requests are lost. 
+
+#### Exporter Batcher
+
+Exporter batcher is a new (not yet delivered) feature that is meant to solve the limitations of the existing batch processor. It doesn’t introduce any asynchronous behavior itself but relies on the queue sender in front of it if needed. The most important is that by using a persistent queue, no data will be lost during the shutdown.
+
+#### Exporter Persistent Sending Queue
