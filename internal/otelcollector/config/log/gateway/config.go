@@ -19,9 +19,9 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	K8sAttributes      *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	InsertClusterName  *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
-	DropKymaAttributes *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
+	K8sAttributes           *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	InsertClusterAttributes *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
+	DropKymaAttributes      *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
 type Exporters map[string]Exporter
