@@ -48,6 +48,7 @@ The Batch Processor accepts logs and places them into batches. Batching helps be
 * The Batch Processor doesn’t preserve its state in permanent storage, once the collector exits unexpectedly, the accumulated requests are lost. 
 
 ![Batch Processor Flow](../assets/log-agent-batch-processor-flow.svg "Batch Processor Flow")
+![No Batch Processor Flow](../assets/log-agent-no-batch-processor-flow.svg "No Batch Processor Flow")
 
 #### Exporter Batcher
 
