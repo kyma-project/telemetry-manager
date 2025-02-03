@@ -115,6 +115,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, fluentbit.AgentApplyOptions{Config: r.config}); err != nil {
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
+
+		return nil
 	}
 
 	allowedPorts := getFluentBitPorts()
