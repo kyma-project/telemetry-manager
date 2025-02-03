@@ -1,6 +1,6 @@
 # 17. OTel Log Agent Fault Toleration 
 
-Date: TBD
+Date: 2025-02-04
 
 ## Status
 
@@ -53,3 +53,5 @@ The Batch Processor accepts logs and places them into batches. Batching helps be
 Exporter batcher is a new (not yet delivered) feature that is meant to solve the limitations of the existing batch processor. It doesn’t introduce any asynchronous behavior itself but relies on the queue sender in front of it if needed. The most important is that by using a persistent queue, no data will be lost during the shutdown.
 
 #### Exporter Persistent Sending Queue
+
+When persistent queue is enabled, the batches are being buffered using the provided storage extension - filestorage is a popular and safe choice. If the collector instance is killed while having some items in the persistent queue, on restart the items will be picked and the exporting is continued.
