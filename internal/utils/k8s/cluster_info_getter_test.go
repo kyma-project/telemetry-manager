@@ -42,7 +42,7 @@ func TestClusterInfoGetter(t *testing.T) {
 		clusterInfo := GetGardenerShootInfo(context.Background(), fakeClient)
 
 		require.Equal(t, clusterInfo.ClusterName, "test-cluster")
-		require.Equal(t, clusterInfo.CloudProvider, "sap-converged-cloud")
+		require.Equal(t, clusterInfo.CloudProvider, "sap")
 	})
 
 	t.Run("Non Gardener cluster", func(t *testing.T) {

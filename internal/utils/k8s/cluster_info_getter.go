@@ -14,7 +14,7 @@ const (
 	gardenerShootNameAttributeName     = "shootName"
 	gardenerCloudProviderAttributeName = "provider"
 	CloudProviderOpenStack             = "openstack"
-	CloudProviderSAPConvergedCloud     = "sap-converged-cloud"
+	CloudProviderSAPConvergedCloud     = "sap"
 )
 
 var defaultGardenerShootInfoCM = types.NamespacedName{
