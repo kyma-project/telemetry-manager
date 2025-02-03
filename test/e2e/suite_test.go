@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -81,18 +82,32 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+	fmt.Printf("Starting AfterSuite cleanup\n")
+
+	err := kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)
+	fmt.Printf("DeleteObjects result: %v\n", err)
+	Expect(err).Should(Succeed())
+
 	if !suite.IsOperational() {
+		fmt.Printf("Suite not operational, checking resources\n")
 		Eventually(func(g Gomega) {
-			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+			var validatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
 			var secret corev1.Secret
-			g.Expect(k8sClient.Get(ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+
+			webhookErr := k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhook)
+			fmt.Printf("Webhook check: %v\n", webhookErr)
+
+			secretErr := k8sClient.Get(ctx, kitkyma.WebhookCertSecret, &secret)
+			fmt.Printf("Secret check: %v\n", secretErr)
+
+			g.Expect(webhookErr).Should(Succeed())
+			g.Expect(secretErr).Should(Succeed())
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 	}
 
+	fmt.Printf("Cancelling context and stopping test environment\n")
 	cancel()
-	By("tearing down the test environment")
-	err := testEnv.Stop()
+	err = testEnv.Stop()
+	fmt.Printf("TestEnv stop result: %v\n", err)
 	Expect(err).NotTo(HaveOccurred())
 })
