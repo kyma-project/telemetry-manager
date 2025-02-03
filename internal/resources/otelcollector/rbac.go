@@ -220,7 +220,7 @@ func withK8sAttributeRules() ClusterRoleOption {
 	// policy rules needed for the k8sattributeprocessor component
 	k8sAttributeRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
-		Resources: []string{"namespaces", "pods"},
+		Resources: []string{"namespaces", "pods", "nodes"},
 		Verbs:     []string{"get", "list", "watch"},
 	}, {
 		APIGroups: []string{"apps"},

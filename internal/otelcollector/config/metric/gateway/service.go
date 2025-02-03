@@ -35,7 +35,7 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline)
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
 
-	processors = append(processors, "resource/insert-cluster-name", "resource/delete-skip-enrichment-attribute", "batch")
+	processors = append(processors, "resource/insert-cluster-attributes", "resource/delete-skip-enrichment-attribute", "batch")
 
 	return config.Pipeline{
 		Receivers:  []string{formatRoutingConnectorID(pipeline.Name), formatForwardConnectorID(pipeline.Name)},
