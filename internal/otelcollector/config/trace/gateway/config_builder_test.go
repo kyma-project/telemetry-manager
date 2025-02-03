@@ -27,7 +27,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("secure", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("insecure", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -72,7 +72,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -94,7 +94,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -114,7 +114,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "cert", "key")).Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -133,7 +133,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("extensions", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("telemetry", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("single pipeline queue size", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -183,7 +183,7 @@ func TestBuildConfig(t *testing.T) {
 			testutils.NewTracePipelineBuilder().WithName("test-1").Build(),
 			testutils.NewTracePipelineBuilder().WithName("test-2").Build(),
 			testutils.NewTracePipelineBuilder().WithName("test-3").Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 
@@ -197,7 +197,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("single pipeline topology", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -220,7 +220,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(context.Background(), []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-1").Build(),
 			testutils.NewTracePipelineBuilder().WithName("test-2").Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -258,7 +258,7 @@ func TestBuildConfig(t *testing.T) {
 		config, _, err := sut.Build(context.Background(), []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test").Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)

@@ -48,7 +48,7 @@ func GetGardenerShootInfo(ctx context.Context, client client.Client) ClusterInfo
 	}
 
 	return ClusterInfo{
-		ClusterName:   shootInfo.Data[gardenerShootNameAttributeName],
 		CloudProvider: cloudProvider,
+		ClusterName:   defaultClusterName,
 	}
 }

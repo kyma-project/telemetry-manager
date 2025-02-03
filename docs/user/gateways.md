@@ -39,7 +39,6 @@ The Telemetry gateways automatically enrich your data by adding the following at
   - Cluster name
 - Cloud provider attributes: The gateway automatically adds [cloud provider](https://opentelemetry.io/docs/specs/semconv/resource/cloud/) attributes to the telemetry data when data is available. The attribute values are mostly based on the well-known Kubernetes labels available on the nodes.
   - `cloud.provider`: The cloud provider name.
-  - `k8s.cluster.name`: The name of the cluster. When the information is not available, the value is the API-Server URL.
   - `cloud.region`: The region where the node runs. The value is retrieved from node label `topology.kubernetes.io/region`.
   - `cloud.availability_zone`: The zone where the node runs. The value is retrieved from node label `topology.kubernetes.io/zone`.
   - `host.type`: The machine type of the node. The value is retrieved from node label `node.kubernetes.io/instance-type`.
