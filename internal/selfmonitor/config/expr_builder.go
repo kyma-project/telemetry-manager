@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/prometheus/prometheus/promql/parser"
 )
 
 const defaultRateDuration = "5m"
@@ -87,7 +89,8 @@ func (eb *exprBuilder) equal(value float64) *exprBuilder {
 }
 
 func (eb *exprBuilder) build() string {
-	return eb.expr
+	expr, _ := parser.ParseExpr(eb.expr)
+	return expr.Pretty(0)
 }
 
 // Logical/set binary operators
