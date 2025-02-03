@@ -25,6 +25,8 @@ type Builder struct {
 type BuildOptions struct {
 	GatewayNamespace            string
 	InstrumentationScopeVersion string
+	ClusterName                 string
+	CloudProvider               string
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
@@ -34,7 +36,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),
-		Processors: makeProcessorsConfig(),
+		Processors: makeProcessorsConfig(opts),
 		Exporters:  make(Exporters),
 		Connectors: make(Connectors),
 	}

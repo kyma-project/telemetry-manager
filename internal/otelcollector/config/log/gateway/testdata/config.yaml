@@ -11,7 +11,7 @@ service:
             processors:
                 - memory_limiter
                 - k8sattributes
-                - resource/insert-cluster-name
+                - resource/insert-cluster-attributes
                 - batch
             exporters:
                 - otlp/test
@@ -65,6 +65,18 @@ processors:
                 - from: pod
                   key: app
                   tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
         pod_association:
             - sources:
                 - from: resource_attribute
@@ -74,11 +86,14 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
-    resource/insert-cluster-name:
+    resource/insert-cluster-attributes:
         attributes:
             - action: insert
               key: k8s.cluster.name
-              value: ${KUBERNETES_SERVICE_HOST}
+              value: test-cluster
+            - action: insert
+              key: cloud.provider
+              value: test-cloud-provider
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
