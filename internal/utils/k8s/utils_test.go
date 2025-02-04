@@ -21,7 +21,7 @@ func TestGetOrCreateConfigMapError(t *testing.T) {
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 
 	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	_, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName)
+	_, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
 
 	require.Error(t, err)
 	require.Equal(t, badReqErr, err)
@@ -32,11 +32,12 @@ func TestGetOrCreateConfigMapGetSuccess(t *testing.T) {
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	cm, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName)
+	cm, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
 
 	require.NoError(t, err)
 	require.Equal(t, "some-cm", cm.Name)
 	require.Equal(t, "cm-ns", cm.Namespace)
+	require.Equal(t, "myValue", cm.Labels["myLabel"])
 }
 
 func TestGetOrCreateConfigMapCreateSuccess(t *testing.T) {
@@ -46,11 +47,12 @@ func TestGetOrCreateConfigMapCreateSuccess(t *testing.T) {
 	mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
 
 	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	cm, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName)
+	cm, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
 
 	require.NoError(t, err)
 	require.Equal(t, "some-cm", cm.Name)
 	require.Equal(t, "cm-ns", cm.Namespace)
+	require.Equal(t, "myValue", cm.Labels["myLabel"])
 }
 
 func TestGetOrCreateSecretError(t *testing.T) {
@@ -59,7 +61,7 @@ func TestGetOrCreateSecretError(t *testing.T) {
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 
 	secretName := types.NamespacedName{Name: "some-secret", Namespace: "secret-ns"}
-	_, err := GetOrCreateSecret(context.Background(), mockClient, secretName)
+	_, err := GetOrCreateSecret(context.Background(), mockClient, secretName, map[string]string{"myLabel": "myValue"})
 
 	require.Error(t, err)
 	require.Equal(t, badReqErr, err)
@@ -72,11 +74,13 @@ func TestGetOrCreateSecretSuccess(t *testing.T) {
 	mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
 
 	secretName := types.NamespacedName{Name: "some-secret", Namespace: "secret-ns"}
-	secret, err := GetOrCreateSecret(context.Background(), mockClient, secretName)
+	secret, err := GetOrCreateSecret(context.Background(), mockClient, secretName, map[string]string{"myLabel": "myValue"})
 
 	require.NoError(t, err)
 	require.Equal(t, "some-secret", secret.Name)
 	require.Equal(t, "secret-ns", secret.Namespace)
+	require.Equal(t, "myValue", secret.Labels["myLabel"])
+
 }
 
 func TestMergePodAnnotations(t *testing.T) {

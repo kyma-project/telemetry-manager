@@ -5,6 +5,8 @@ kind: ConfigMap
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
@@ -20,6 +22,8 @@ metadata:
     prometheus.io/scrape: "true"
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
@@ -54,6 +58,8 @@ kind: DaemonSet
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
@@ -77,6 +83,8 @@ spec:
         traffic.sidecar.istio.io/includeOutboundPorts: "4317"
       creationTimestamp: null
       labels:
+        app.kubernetes.io/component: agent
+        app.kubernetes.io/managed-by: telemetry-manager
         app.kubernetes.io/name: telemetry-metric-agent
         app.kubernetes.io/part-of: telemetry
         kyma-project.io/module: telemetry
@@ -164,6 +172,8 @@ kind: NetworkPolicy
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
@@ -199,6 +209,8 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
@@ -294,6 +306,8 @@ kind: ClusterRoleBinding
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
@@ -313,6 +327,8 @@ kind: Role
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
@@ -337,6 +353,8 @@ kind: RoleBinding
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry

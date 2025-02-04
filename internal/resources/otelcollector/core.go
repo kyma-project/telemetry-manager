@@ -20,9 +20,9 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, rbac rbac, allowedPorts []int32) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, component string, rbac rbac, allowedPorts []int32) error {
 	// Create service account before RBAC resources
-	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name, component)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
 	}
 
@@ -59,11 +59,11 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		}
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name, component)); err != nil {
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, commonresources.MakeDefaultLabels(name.Name), commonresources.MakeDefaultSelectorLabels(name.Name))); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, commonresources.MakeDefaultLabels(name.Name, component), commonresources.MakeDefaultSelectorLabels(name.Name))); err != nil {
 		return fmt.Errorf("failed to create network policy: %w", err)
 	}
 
@@ -117,24 +117,24 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 	return allErrors
 }
 
-func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
+func makeServiceAccount(name types.NamespacedName, component string) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name),
+			Labels:    commonresources.MakeDefaultLabels(name.Name, component),
 		},
 	}
 
 	return &serviceAccount
 }
 
-func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev1.ConfigMap {
+func makeConfigMap(name types.NamespacedName, component string, collectorConfigYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name),
+			Labels:    commonresources.MakeDefaultLabels(name.Name, component),
 		},
 		Data: map[string]string{
 			configMapKey: collectorConfigYAML,
@@ -142,20 +142,20 @@ func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev
 	}
 }
 
-func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1.Secret {
+func makeSecret(name types.NamespacedName, component string, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name),
+			Labels:    commonresources.MakeDefaultLabels(name.Name, component),
 		},
 		Data: secretData,
 	}
 }
 
-func makeMetricsService(name types.NamespacedName) *corev1.Service {
-	labels := commonresources.MakeDefaultLabels(name.Name)
-	labels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+func makeMetricsService(name types.NamespacedName, component string) *corev1.Service {
+	labels := commonresources.MakeDefaultLabels(name.Name, component)
+	labels[commonresources.TelemetrySelfMonitorLabelKey] = commonresources.TelemetrySelfMonitorLabelValue
 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(name.Name)
 
@@ -165,9 +165,9 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Namespace: name.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(int(ports.Metrics)),
-				"prometheus.io/scheme": "http",
+				commonresources.PrometheusScrapeAnnotationKey: "true",
+				commonresources.PrometheusPortAnnotationKey:   strconv.Itoa(int(ports.Metrics)),
+				commonresources.PrometheusSchemeAnnotationKey: "http",
 			},
 		},
 		Spec: corev1.ServiceSpec{

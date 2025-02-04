@@ -25,7 +25,7 @@ func TestMakeDaemonSet(t *testing.T) {
 	}
 
 	expectedAnnotations := map[string]string{
-		"checksum/logpipeline-config":                  checksum,
+		"checksum/config": checksum,
 		"traffic.sidecar.istio.io/excludeInboundPorts": "2020,2021",
 	}
 	daemonSet := MakeDaemonSet(name, checksum, ds)
@@ -41,6 +41,8 @@ func TestMakeDaemonSet(t *testing.T) {
 		"app.kubernetes.io/name":               "fluent-bit",
 		"kyma-project.io/module":               "telemetry",
 		"app.kubernetes.io/part-of":            "telemetry",
+		"app.kubernetes.io/component":          "agent",
+		"app.kubernetes.io/managed-by":         "telemetry-manager",
 		"app.kubernetes.io/instance":           "telemetry",
 		"sidecar.istio.io/inject":              "true",
 		"telemetry.kyma-project.io/log-export": "true",

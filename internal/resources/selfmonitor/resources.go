@@ -126,7 +126,7 @@ func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName),
+			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName, ad.Config.ComponentType),
 		},
 	}
 
@@ -138,7 +138,7 @@ func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName),
+			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName, ad.Config.ComponentType),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -157,7 +157,7 @@ func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName),
+			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName, ad.Config.ComponentType),
 		},
 		Subjects: []rbacv1.Subject{{Name: ad.Config.BaseName, Namespace: ad.Config.Namespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
@@ -177,7 +177,7 @@ func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName),
+			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName, ad.Config.ComponentType),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
@@ -237,7 +237,7 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName),
+			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName, ad.Config.ComponentType),
 		},
 		Data: map[string]string{
 			prometheusConfigFileName: prometheusConfigYAML,
@@ -249,13 +249,13 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 
-	labels := commonresources.MakeDefaultLabels(ad.Config.BaseName)
+	labels := commonresources.MakeDefaultLabels(ad.Config.BaseName, ad.Config.ComponentType)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(ad.Config.BaseName)
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, labels)
-	podLabels["sidecar.istio.io/inject"] = "false"
+	podLabels[commonresources.IstioInjectLabelKey] = "false"
 
-	annotations := map[string]string{"checksum/Config": configChecksum}
+	annotations := map[string]string{commonresources.ChecksumConfigAnnotationKey: configChecksum}
 	resources := makeResourceRequirements()
 	podSpec := makePodSpec(ad.Config.BaseName, ad.Config.Deployment.Image, configPath, configFile,
 		commonresources.WithPriorityClass(ad.Config.Deployment.PriorityClassName),
@@ -399,7 +399,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ad.Config.BaseName,
 			Namespace: ad.Config.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName),
+			Labels:    commonresources.MakeDefaultLabels(ad.Config.BaseName, ad.Config.ComponentType),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
