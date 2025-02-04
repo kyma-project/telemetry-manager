@@ -144,7 +144,8 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t,
 			"not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or "+
 				"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or "+
-				"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\")",
+				"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or "+
+				"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\")",
 			collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric[0],
 		)
 	})
@@ -190,7 +191,8 @@ func TestProcessors(t *testing.T) {
 
 		expectedCondition = "not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or " +
-			"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\") and " +
+			"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or " +
+			"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\") and " +
 			"resource.attributes[\"k8s.namespace.name\"] != nil and " +
 			"not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[0])
@@ -237,7 +239,8 @@ func TestProcessors(t *testing.T) {
 
 		expectedCondition = "not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or " +
-			"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\") and " +
+			"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or " +
+			"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\") and " +
 			"(resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[0])
 	})
