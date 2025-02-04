@@ -11,7 +11,6 @@ import (
 
 const (
 	defaultClusterName                 = "${KUBERNETES_SERVICE_HOST}"
-	gardenerShootNameAttributeName     = "shootName"
 	gardenerCloudProviderAttributeName = "provider"
 	CloudProviderOpenStack             = "openstack"
 	CloudProviderSAPConvergedCloud     = "sap"
