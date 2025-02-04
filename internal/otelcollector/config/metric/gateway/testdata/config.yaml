@@ -133,7 +133,7 @@ processors:
         attributes:
             - action: insert
               key: k8s.cluster.name
-              value: test-cluster
+              value: ${KUBERNETES_SERVICE_HOST}
             - action: insert
               key: cloud.provider
               value: test-cloud-provider
