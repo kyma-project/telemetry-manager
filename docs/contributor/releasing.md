@@ -2,7 +2,9 @@
 
 ## Release Process
 
-This release process covers the steps to release new major and minor versions for the Kyma Telemetry module.
+This release process covers the steps to release new major and minor versions for the Kyma Telemetry module. 
+
+Together with the module release, prepare a new release of the [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components). You will need this later in the release process of the Telemetry Manager. The version of `opentelemetry-collector-components` will include the Telemetry Manager version as part of its version (`{CURRENT_OCC_VERSION}-{TELEMETRY_MANAGER_VERSION}`).
 
 1. Verify that all issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) related to the version are closed.
 
