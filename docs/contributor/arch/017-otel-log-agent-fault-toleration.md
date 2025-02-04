@@ -8,8 +8,6 @@ Proposed
 
 ## Context
 
-## Decision
-
 ### Classifying Log Loss Scenarios in an OTel Log Agent with Filelog Receiver
 When setting up an OpenTelemetry (OTel) Log Agent using the Filelog Receiver, it's important to identify situations where logs might be lost and how to mitigate them.
 
@@ -53,6 +51,14 @@ Exporter Batcher is a new (not yet delivered) feature that is meant to solve the
 
 When persistent queue is enabled, the batches are being buffered using the provided storage extension - filestorage is a popular and safe choice. If the collector instance is killed while having some items in the persistent queue, on restart the items will be picked and the exporting is continued.
 
+There are two types of file storage that can back a persistent queue: the node filesystem or a persistent volume (PV).
+
+Using the node filesystem carries some risks. Misconfigurations can lead to disk overflow, potentially crashing the node or even the entire cluster. Additionally, heavy disk I/O can degrade cluster performance—something we previously observed with Fluent Bit. Another limitation is that queue size can currently only be restricted by batch count, not by volume (MB), requiring some estimations. However, the upstream project is actively working on adding size-based limits.
+
+PV-based storage avoids these issues but cannot be used with a DaemonSet.
+
+Overall, we have had positive experiences using node filesystem-based buffering in Fluent Bit, making it a viable solution.
+
 #### Filelog Receiver Offset Tracking
 
 The Filelog Receiver can persist state information on storage (typically the node’s filesystem), allowing it to recover after crashes. It maintains the following data to ensure continuity:  
@@ -62,3 +68,14 @@ The Filelog Receiver can persist state information on storage (typically the nod
   - **File fingerprint** (*Fingerprint.first_bytes*) – a unique identifier for the file.  
   - **Byte offset** (*Offset*) – the position from which the receiver resumes reading.  
   - **File attributes** (*FileAttributes*) – metadata such as the file name.  
+
+## Decision
+
+Proposed solution for the OTel Log Agent setup:
+
+### Proposed Solution for the OTel Log Agent Setup:  
+
+**Filelog Receiver** for offset tracking  
+**No Batch Processor**, relying on Filelog Receiver for now  
+**Exporter Batcher** (once stable)  
+**Persistent Queue**, backed by the node filesystem  
