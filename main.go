@@ -183,7 +183,7 @@ func run() error {
 				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector()},
 				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
 				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
 				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
@@ -456,6 +456,15 @@ func ensureWebhookCert(mgr manager.Manager, webhookConfig telemetry.WebhookConfi
 
 func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
+}
+
+func setConfigMapNamespaceFieldSelector() map[string]cache.Config {
+	return map[string]cache.Config{
+		"kube-system": {
+			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
+		},
+		telemetryNamespace: {},
+	}
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {

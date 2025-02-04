@@ -27,11 +27,11 @@ service:
                 - routing/test
                 - forward/test
             processors:
+                - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-runtime
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
-                - transform/set-instrumentation-scope-kyma
-                - resource/insert-cluster-name
+                - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - batch
             exporters:
@@ -108,6 +108,18 @@ processors:
                 - from: pod
                   key: app
                   tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
         pod_association:
             - sources:
                 - from: resource_attribute
@@ -117,11 +129,14 @@ processors:
                   name: k8s.pod.uid
             - sources:
                 - from: connection
-    resource/insert-cluster-name:
+    resource/insert-cluster-attributes:
         attributes:
             - action: insert
               key: k8s.cluster.name
               value: ${KUBERNETES_SERVICE_HOST}
+            - action: insert
+              key: cloud.provider
+              value: test-cloud-provider
     filter/drop-if-input-source-runtime:
         metrics:
             metric:
@@ -179,7 +194,6 @@ connectors:
         default_pipelines:
             - metrics/test-attributes-enrichment
         error_mode: ignore
-        match_once: true
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:

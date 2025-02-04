@@ -49,7 +49,7 @@ type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
 	K8sAttributes                                *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	InsertClusterName                            *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
+	InsertClusterAttributes                      *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
 	DropDiagnosticMetricsIfInputSourcePrometheus *FilterProcessor               `yaml:"filter/drop-diagnostic-metrics-if-input-source-prometheus,omitempty"`
 	DropDiagnosticMetricsIfInputSourceIstio      *FilterProcessor               `yaml:"filter/drop-diagnostic-metrics-if-input-source-istio,omitempty"`
 	DropIfInputSourceRuntime                     *FilterProcessor               `yaml:"filter/drop-if-input-source-runtime,omitempty"`
@@ -97,7 +97,6 @@ type Connectors map[string]any
 type RoutingConnector struct {
 	DefaultPipelines []string                     `yaml:"default_pipelines"`
 	ErrorMode        string                       `yaml:"error_mode"`
-	MatchOnce        bool                         `yaml:"match_once"`
 	Table            []RoutingConnectorTableEntry `yaml:"table"`
 }
 
