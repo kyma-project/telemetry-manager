@@ -74,7 +74,7 @@ The Filelog Receiver can persist state information on storage (typically the nod
 Let's compare the following architectures Agent-to-Backend and Agent-to-Gateway-to-Backend. Each has its own trade-offs.
 
 #### Agent-to-Backend
-Direct communication between the agent and the backend.
+Direct communication between the agent and the backend. Gateway is optional and only handles OTel logs.
 
 Pros:
 
@@ -82,20 +82,23 @@ Pros:
 * Direct communication ensures minimal failure points.
 * If the backend enforces per-connection rate limiting, only high-volume agents get throttled. It can be beneficial since often most workloads in a cluster generate minimal logs, while a few may produce a large volume.
 
-Cons:
+Cons:  
 
-* Every gateway encrichment feature has to be mirrored in the agent and tested separately.
-* In case of credentials rotation we have to rollout restart the whole DaemonSet.
+* Every gateway enrichment feature must be duplicated in the agent and tested separately.  
+* Credential rotations require a full DaemonSet rollout and restart.
+* Potentially higher costs, as each agent must implement the full telemetry pipeline.  
 
 #### Agent-to-Gateway-To-Backend
 
 Pros:
 
+* Separation of concerns (agents collect node-affine data, gateway is responsible for filtering, enrichment, credential management, exporting to backend).
 * Lighter agents, as all enrichment is handled in the gateway (for both file-based and OTel logs).
 * Persistent queue can leverage PV-based storage for improved reliability.
 
 Cons:
 
+* It’s one more thing to maintain and that can fail (complexity).
 * The gateway can become a bottleneck for all agents if a few have a high export rate.
 * Lacks auto-scaling; manual scaling may not be sufficient.
 * Introduces an additional network hop, increasing latency.
