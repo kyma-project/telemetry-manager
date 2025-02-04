@@ -80,7 +80,6 @@ func TestGetOrCreateSecretSuccess(t *testing.T) {
 	require.Equal(t, "some-secret", secret.Name)
 	require.Equal(t, "secret-ns", secret.Namespace)
 	require.Equal(t, "myValue", secret.Labels["myLabel"])
-
 }
 
 func TestMergePodAnnotations(t *testing.T) {

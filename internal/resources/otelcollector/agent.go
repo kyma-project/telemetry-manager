@@ -17,7 +17,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/internal/resources/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
@@ -149,7 +148,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	podSpec := makePodSpec(aad.baseName, aad.image, opts...)
 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
-	labels := commonresources.MakeDefaultLabels(aad.baseName, common.LabelValueK8sComponentAgent)
+	labels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, labels)
 	maps.Copy(podLabels, aad.extraPodLabel)
@@ -190,13 +189,13 @@ func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceR
 func makeIstioAnnotations(istioCertPath string) map[string]string {
 	// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume. However, the sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
 	return map[string]string{
-		common.AnnotationKeyIstioProxyConfig: fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
+		commonresources.AnnotationKeyIstioProxyConfig: fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
   OUTPUT_CERTS: %s
 `, istioCertPath),
-		common.AnnotationKeyIstioUserVolumeMount:         fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		common.AnnotationKeyIstioIncludeOutboundPorts:    strconv.Itoa(int(ports.OTLPGRPC)),
-		common.AnnotationKeyIstioExcludeInboundPorts:     strconv.Itoa(int(ports.Metrics)),
-		common.AnnotationKeyIstioIncludeOutboundIPRanges: "",
+		commonresources.AnnotationKeyIstioUserVolumeMount:         fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
+		commonresources.AnnotationKeyIstioIncludeOutboundPorts:    strconv.Itoa(int(ports.OTLPGRPC)),
+		commonresources.AnnotationKeyIstioExcludeInboundPorts:     strconv.Itoa(int(ports.Metrics)),
+		commonresources.AnnotationKeyIstioIncludeOutboundIPRanges: "",
 	}
 }

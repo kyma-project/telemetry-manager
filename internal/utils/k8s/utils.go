@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,6 +15,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.ClusterRoleBinding) error {
