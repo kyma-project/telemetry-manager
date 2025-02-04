@@ -166,8 +166,15 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
 
-	if len(reconcilablePipelines) == 0 {
-		logf.FromContext(ctx).V(1).Info("cleaning up metric pipeline resources: all metric pipelines are non-reconcilable")
+	var reconcilablePipelinesWithAgentRequired []telemetryv1alpha1.MetricPipeline
+	for _, p := range reconcilablePipelines {
+		if isMetricAgentRequired(&p) {
+			reconcilablePipelinesWithAgentRequired = append(reconcilablePipelinesWithAgentRequired, p)
+		}
+	}
+
+	if len(reconcilablePipelinesWithAgentRequired) == 0 {
+		logf.FromContext(ctx).V(1).Info("cleaning up metric pipeline resources: all metric pipelines are non-reconcilable or do not require an agent")
 
 		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
