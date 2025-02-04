@@ -87,12 +87,12 @@ func NewFluentBitApplierDeleter(fbImage, exporterImage, priorityClassName string
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	syncer := Syncer{
+	syncer := syncer{
 		Client: c,
 		Config: opts.Config,
 	}
 
-	if err := syncer.SyncFluentBitConfig(ctx, opts.Pipeline, opts.DeployableLogPipelines); err != nil {
+	if err := syncer.syncFluentBitConfig(ctx, opts.Pipeline, opts.DeployableLogPipelines); err != nil {
 		return fmt.Errorf("failed to sync fluent bit config maps: %w", err)
 	}
 
@@ -101,7 +101,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
 
-	clusterRole := MakeClusterRole(opts.Config.DaemonSet)
+	clusterRole := makeClusterRole(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
 	}
@@ -111,27 +111,27 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
-	exporterMetricsService := MakeExporterMetricsService(opts.Config.DaemonSet)
+	exporterMetricsService := makeExporterMetricsService(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateService(ctx, c, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
-	metricsService := MakeMetricsService(opts.Config.DaemonSet)
+	metricsService := makeMetricsService(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateService(ctx, c, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	cm := MakeConfigMap(opts.Config.DaemonSet)
+	cm := makeConfigMap(opts.Config.DaemonSet)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
 
-	luaCm := MakeLuaConfigMap(opts.Config.LuaConfigMap)
+	luaCm := makeLuaConfigMap(opts.Config.LuaConfigMap)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, luaCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit lua configmap: %w", err)
 	}
 
-	parsersCm := MakeParserConfigmap(opts.Config.ParsersConfigMap)
+	parsersCm := makeParserConfigmap(opts.Config.ParsersConfigMap)
 	if err := k8sutils.CreateIfNotExistsConfigMap(ctx, c, parsersCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit parseopts.Config.ap: %w", err)
 	}
@@ -142,12 +142,12 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to calculate config checksum: %w", err)
 	}
 
-	daemonSet := aad.MakeDaemonSet(opts.Config.DaemonSet, checksum)
+	daemonSet := aad.makeDaemonSet(opts.Config.DaemonSet, checksum)
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
 		return err
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(opts.Config.DaemonSet, opts.AllowedPorts, Labels())
+	networkPolicy := commonresources.MakeNetworkPolicy(opts.Config.DaemonSet, opts.AllowedPorts, labels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}
@@ -255,7 +255,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	return allErrors
 }
 
-func (aad *AgentApplierDeleter) MakeDaemonSet(name types.NamespacedName, checksum string) *appsv1.DaemonSet {
+func (aad *AgentApplierDeleter) makeDaemonSet(name types.NamespacedName, checksum string) *appsv1.DaemonSet {
 	resourcesFluentBit := corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    aad.cpuRequest,
@@ -281,7 +281,7 @@ func (aad *AgentApplierDeleter) MakeDaemonSet(name types.NamespacedName, checksu
 	annotations[checksumAnnotationKey] = checksum
 	annotations[istioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
 
-	podLabels := Labels()
+	podLabels := labels()
 	maps.Copy(podLabels, aad.extraPodLabel)
 
 	return &appsv1.DaemonSet{
@@ -289,11 +289,11 @@ func (aad *AgentApplierDeleter) MakeDaemonSet(name types.NamespacedName, checksu
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    Labels(),
+			Labels:    labels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: Labels(),
+				MatchLabels: labels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -511,7 +511,7 @@ func (aad *AgentApplierDeleter) calculateChecksum(ctx context.Context, c client.
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil
 }
 
-func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -529,8 +529,8 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func MakeMetricsService(name types.NamespacedName) *corev1.Service {
-	serviceLabels := Labels()
+func makeMetricsService(name types.NamespacedName) *corev1.Service {
+	serviceLabels := labels()
 	serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
 
 	return &corev1.Service{
@@ -554,14 +554,14 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http"),
 				},
 			},
-			Selector: Labels(),
+			Selector: labels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
 
-func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
-	serviceLabels := Labels()
+func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
+	serviceLabels := labels()
 	serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
 
 	return &corev1.Service{
@@ -584,13 +584,13 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},
-			Selector: Labels(),
+			Selector: labels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
 
-func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
+func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	parserConfig := `
 [PARSER]
     Name docker_no_time
@@ -621,7 +621,7 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    Labels(),
+			Labels:    labels(),
 		},
 		Data: map[string]string{
 			"custom_parsers.conf": parserConfig,
@@ -630,18 +630,18 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	}
 }
 
-func MakeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
+func makeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    Labels(),
+			Labels:    labels(),
 		},
 		Data: map[string]string{"parsers.conf": ""},
 	}
 }
 
-func MakeLuaConfigMap(name types.NamespacedName) *corev1.ConfigMap {
+func makeLuaConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	//nolint:dupword // Ignore lua syntax code duplications.
 	luaFilter := `
 function kubernetes_map_keys(tag, timestamp, record)
@@ -678,13 +678,13 @@ end
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    Labels(),
+			Labels:    labels(),
 		},
 		Data: map[string]string{"filter-script.lua": luaFilter},
 	}
 }
 
-func Labels() map[string]string {
+func labels() map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":     "fluent-bit",
 		"app.kubernetes.io/instance": "telemetry",
