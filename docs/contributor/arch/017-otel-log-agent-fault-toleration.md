@@ -75,7 +75,7 @@ Proposed solution for the OTel Log Agent setup:
 
 ### Proposed Solution for the OTel Log Agent Setup:  
 
-**Filelog Receiver** for offset tracking  
+**Filelog Receiver** offset tracking  
 **No Batch Processor**, relying on Filelog Receiver for now  
 **Exporter Batcher** (once stable)  
 **Persistent Queue**, backed by the node filesystem  
