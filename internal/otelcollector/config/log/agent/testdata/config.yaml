@@ -50,11 +50,9 @@ receivers:
               add_metadata_from_file_path: null
               from: attributes.stream
               to: attributes["log.iostream"]
-              if: attributes.stream != nil
             - id: json-parser
               type: json_parser
               add_metadata_from_file_path: null
-              if: body matches '^{(?:\\s*"(?:[^"\\]|\\.)*"\\s*:\\s*(?:null|true|false|\\d+|\\d*\\.\\d+|"(?:[^"\\]|\\.)*"|\\{[^{}]*\\}|\\[[^\\[\\]]*\\])\\s*,?)*\\s*}$'
               parse_from: body
               parse_to: attributes
             - id: copy-body-to-attributes-original
@@ -67,11 +65,9 @@ receivers:
               add_metadata_from_file_path: null
               from: attributes.message
               to: body
-              if: attributes.message != nil
             - id: severity-parser
               type: severity_parser
               add_metadata_from_file_path: null
-              if: attributes.level != nil
               parse_from: attributes.level
 processors:
     memory_limiter:
@@ -83,7 +79,7 @@ processors:
         log_statements:
             - context: scope
               statements:
-                - set(version, "")
+                - set(version, "main")
                 - set(name, "io.kyma-project.telemetry/runtime")
 exporters:
     otlp:

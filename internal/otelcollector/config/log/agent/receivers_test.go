@@ -35,7 +35,7 @@ func TestReceiverCreator(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			receivers := makeReceivers(tc.pipelines)
+			receivers := makeReceivers(tc.pipelines, BuildOptions{AgentNamespace: "kyma-system"})
 			require.Equal(t, expectedExcludePaths, receivers.FileLog.Exclude)
 			require.Equal(t, expectedIncludePaths, receivers.FileLog.Include)
 			require.Equal(t, false, receivers.FileLog.IncludeFileName)
@@ -54,16 +54,14 @@ func makeExpectedOperators() []Operator {
 			Format:                  "containerd",
 		},
 		{
-			ID:     "move-to-log-stream",
-			Type:   "move",
-			From:   "attributes.stream",
-			To:     "attributes[\"log.iostream\"]",
-			IfExpr: "attributes.stream != nil",
+			ID:   "move-to-log-stream",
+			Type: "move",
+			From: "attributes.stream",
+			To:   "attributes[\"log.iostream\"]",
 		},
 		{
 			ID:        "json-parser",
 			Type:      "json_parser",
-			IfExpr:    "body matches '^{(?:\\\\s*\"(?:[^\"\\\\]|\\\\.)*\"\\\\s*:\\\\s*(?:null|true|false|\\\\d+|\\\\d*\\\\.\\\\d+|\"(?:[^\"\\\\]|\\\\.)*\"|\\\\{[^{}]*\\\\}|\\\\[[^\\\\[\\\\]]*\\\\])\\\\s*,?)*\\\\s*}$'",
 			ParseFrom: "body",
 			ParseTo:   "attributes",
 		},
@@ -74,16 +72,14 @@ func makeExpectedOperators() []Operator {
 			To:   "attributes.original",
 		},
 		{
-			ID:     "move-message-to-body",
-			Type:   "move",
-			From:   "attributes.message",
-			To:     "body",
-			IfExpr: "attributes.message != nil",
+			ID:   "move-message-to-body",
+			Type: "move",
+			From: "attributes.message",
+			To:   "body",
 		},
 		{
 			ID:        "severity-parser",
 			Type:      "severity_parser",
-			IfExpr:    "attributes.level != nil",
 			ParseFrom: "attributes.level",
 		},
 	}
@@ -98,31 +94,27 @@ func makeExpectedOperatorsWithoutKeepOringinalBody() []Operator {
 			Format:                  "containerd",
 		},
 		{
-			ID:     "move-to-log-stream",
-			Type:   "move",
-			From:   "attributes.stream",
-			To:     "attributes[\"log.iostream\"]",
-			IfExpr: "attributes.stream != nil",
+			ID:   "move-to-log-stream",
+			Type: "move",
+			From: "attributes.stream",
+			To:   "attributes[\"log.iostream\"]",
 		},
 		{
 			ID:        "json-parser",
 			Type:      "json_parser",
-			IfExpr:    "body matches '^{(?:\\\\s*\"(?:[^\"\\\\]|\\\\.)*\"\\\\s*:\\\\s*(?:null|true|false|\\\\d+|\\\\d*\\\\.\\\\d+|\"(?:[^\"\\\\]|\\\\.)*\"|\\\\{[^{}]*\\\\}|\\\\[[^\\\\[\\\\]]*\\\\])\\\\s*,?)*\\\\s*}$'",
 			ParseFrom: "body",
 			ParseTo:   "attributes",
 		},
 
 		{
-			ID:     "move-message-to-body",
-			Type:   "move",
-			From:   "attributes.message",
-			To:     "body",
-			IfExpr: "attributes.message != nil",
+			ID:   "move-message-to-body",
+			Type: "move",
+			From: "attributes.message",
+			To:   "body",
 		},
 		{
 			ID:        "severity-parser",
 			Type:      "severity_parser",
-			IfExpr:    "attributes.level != nil",
 			ParseFrom: "attributes.level",
 		},
 	}

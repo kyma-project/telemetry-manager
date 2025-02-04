@@ -94,7 +94,7 @@ var (
 const (
 	cacheSyncPeriod           = 1 * time.Minute
 	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
-	telemetryNamespaceDefault = "default"
+	telemetryNamespaceDefault = "kyma-system"
 	selfMonitorName           = "telemetry-self-monitor"
 	webhookServiceName        = "telemetry-manager-webhook"
 
@@ -351,6 +351,7 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			OTelCollectorImage:          otelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,
+			LogAgentPriorityClassName:   highPriorityClassName,
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,

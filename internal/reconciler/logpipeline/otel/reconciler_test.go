@@ -58,14 +58,7 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			// EndpointValidator:  stubs.NewEndpointValidator(nil),
-			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			// SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
+		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -118,14 +111,7 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-			// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
+		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -178,14 +164,7 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			// EndpointValidator:  stubs.NewEndpointValidator(nil),
-			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			// SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
+		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -236,11 +215,7 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
 
-		pipelineValidatorWithStubs := &Validator{
-			// EndpointValidator:  stubs.NewEndpointValidator(nil),
-			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			// SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
+		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
@@ -292,11 +267,7 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		pipelineValidatorWithStubs := &Validator{
-			// EndpointValidator:  stubs.NewEndpointValidator(nil),
-			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			// SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
+		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 

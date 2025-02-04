@@ -37,8 +37,8 @@ func makeInstrumentationScopeRuntime(instrumentationScopeVersion string) *log.Tr
 			{
 				Context: "scope",
 				Statements: []string{
-					fmt.Sprintf("set(version, \"%s\")", instrumentationScopeVersion),
-					fmt.Sprintf("set(name, \"%s\")", InstrumentationScopeRuntime),
+					fmt.Sprintf("set(version, %q)", instrumentationScopeVersion),
+					fmt.Sprintf("set(name, %q)", InstrumentationScopeRuntime),
 				},
 			},
 		},

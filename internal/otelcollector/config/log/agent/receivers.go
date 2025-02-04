@@ -2,18 +2,21 @@ package agent
 
 import (
 	"fmt"
-
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func makeReceivers(logpipelines []telemetryv1alpha1.LogPipeline) Receivers {
+func makeReceivers(logpipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) Receivers {
+	excludeLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, otelcollector.LogAgentName)
+	excludeFluentBitLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, fluentbit.LogAgentName)
 	return Receivers{
 		FileLog: &FileLog{
 			Exclude: []string{
-				"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
-				"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
+				excludeLogAgentLogs,
+				excludeFluentBitLogs,
 			},
 			Include:         []string{"/var/log/pods/*/*/*.log"},
 			IncludeFileName: false,
@@ -65,21 +68,18 @@ func makeContainerParser() Operator {
 
 func makeMoveToLogStream() Operator {
 	return Operator{
-		ID:     "move-to-log-stream",
-		Type:   "move",
-		From:   "attributes.stream",
-		IfExpr: "attributes.stream != nil",
-		To:     "attributes[\"log.iostream\"]",
+		ID:   "move-to-log-stream",
+		Type: "move",
+		From: "attributes.stream",
+		To:   "attributes[\"log.iostream\"]",
 	}
 }
 
 func makeJSONParser() Operator {
-	regexPattern := `^{(?:\\s*"(?:[^"\\]|\\.)*"\\s*:\\s*(?:null|true|false|\\d+|\\d*\\.\\d+|"(?:[^"\\]|\\.)*"|\\{[^{}]*\\}|\\[[^\\[\\]]*\\])\\s*,?)*\\s*}$`
 
 	return Operator{
 		ID:        "json-parser",
 		Type:      "json_parser",
-		IfExpr:    fmt.Sprintf("body matches '%s'", regexPattern),
 		ParseFrom: "body",
 		ParseTo:   "attributes",
 	}
@@ -96,11 +96,10 @@ func makeCopyBodyToOriginal() Operator {
 
 func makeMoveMessageToBody() Operator {
 	return Operator{
-		ID:     "move-message-to-body",
-		Type:   "move",
-		IfExpr: "attributes.message != nil",
-		From:   "attributes.message",
-		To:     "body",
+		ID:   "move-message-to-body",
+		Type: "move",
+		From: "attributes.message",
+		To:   "body",
 	}
 }
 
@@ -108,7 +107,6 @@ func makeSeverityParser() Operator {
 	return Operator{
 		ID:        "severity-parser",
 		Type:      "severity_parser",
-		IfExpr:    "attributes.level != nil",
 		ParseFrom: "attributes.level",
 	}
 }

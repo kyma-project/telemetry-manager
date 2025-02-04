@@ -93,7 +93,7 @@ func TestBuildAgentConfig(t *testing.T) {
 		goldenFileName := "config.yaml"
 
 		collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{})
+			testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{InstrumentationScopeVersion: "main", AgentNamespace: "kyma-system"})
 		configYAML, err := yaml.Marshal(collectorConfig)
 		require.NoError(t, err, "failed to marshal config")
 

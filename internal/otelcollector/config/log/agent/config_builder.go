@@ -31,7 +31,7 @@ func (b *Builder) Build(logPipelines []telemetryv1alpha1.LogPipeline, opts Build
 		Service:    logService,
 		Extensions: makeExtensionsConfig(),
 
-		Receivers:  makeReceivers(logPipelines),
+		Receivers:  makeReceivers(logPipelines, opts),
 		Processors: makeProcessorsConfig(opts.InstrumentationScopeVersion),
 		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
 	}
