@@ -105,7 +105,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
-	logf.FromContext(ctx).V(1).Info("reconcilable pipelines: %s", len(reconcilablePipelines))
+
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
 	}
