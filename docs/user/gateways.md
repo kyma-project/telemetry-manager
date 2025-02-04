@@ -43,7 +43,7 @@ The Telemetry gateways automatically enrich your data by adding the following at
   - `cloud.availability_zone`: The zone where the node runs. The value is retrieved from node label `topology.kubernetes.io/zone`.
 - Host attributes: The gateway automatically adds [host](https://opentelemetry.io/docs/specs/semconv/resource/host/) attributes to the telemetry data when data is available. The attribute values are based on the well-known Kubernetes labels available on the nodes.
   - `host.type`: The machine type of the node. The value is retrieved from node label `node.kubernetes.io/instance-type`.
-  - `host.arch`: The architecture of the node. The value is retrieved from node label `kubernetes.io/arch`.
+  - `host.arch`: The CPU architecture of the system the node is running on. The value is retrieved from node label `kubernetes.io/arch`.
 
 ## Istio Support
 
