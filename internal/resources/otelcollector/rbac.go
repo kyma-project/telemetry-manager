@@ -110,7 +110,7 @@ func withRoleBinding() RBACOption {
 func makeTraceGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: TraceGatewayName, Namespace: namespace},
-		commonresources.K8sComponentLabelValueGateway,
+		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
 	)
@@ -119,7 +119,7 @@ func makeTraceGatewayRBAC(namespace string) rbac {
 func makeMetricAgentRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: MetricAgentName, Namespace: namespace},
-		commonresources.K8sComponentLabelValueAgent,
+		commonresources.LabelValueK8sComponentAgent,
 		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
 		withClusterRoleBinding(),
 		withRole(withSingletonCreatorRules()),
@@ -130,7 +130,7 @@ func makeMetricAgentRBAC(namespace string) rbac {
 func makeMetricGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: MetricGatewayName, Namespace: namespace},
-		commonresources.K8sComponentLabelValueGateway,
+		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
 		withRole(withSingletonCreatorRules()),
@@ -141,7 +141,7 @@ func makeMetricGatewayRBAC(namespace string) rbac {
 func makeLogGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: LogGatewayName, Namespace: namespace},
-		commonresources.K8sComponentLabelValueGateway,
+		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
 	)

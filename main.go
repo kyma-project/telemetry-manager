@@ -471,7 +471,7 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 		Config: selfmonitor.Config{
 			BaseName:      selfMonitorName,
 			Namespace:     telemetryNamespace,
-			ComponentType: commonresources.K8sComponentLabelValueMonitor,
+			ComponentType: commonresources.LabelValueK8sComponentMonitor,
 			Deployment: selfmonitor.DeploymentConfig{
 				Image:             selfMonitorImage,
 				PriorityClassName: normalPriorityClassName,

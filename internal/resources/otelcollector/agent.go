@@ -37,8 +37,8 @@ var (
 
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.TelemetryMetricScrapeLabelKey: "true",
-		commonresources.IstioInjectLabelKey:           "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+		commonresources.LabelKeyTelemetryMetricScrape: "true",
+		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
 	}
 
 	return &AgentApplierDeleter{
@@ -75,11 +75,11 @@ type AgentApplyOptions struct {
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
 
-	if err := applyCommonResources(ctx, c, name, commonresources.K8sComponentLabelValueAgent, aad.rbac, opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	configMap := makeConfigMap(name, commonresources.K8sComponentLabelValueAgent, opts.CollectorConfigYAML)
+	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorConfigYAML)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
@@ -120,7 +120,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 }
 
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
-	annotations := map[string]string{commonresources.ChecksumConfigAnnotationKey: configChecksum}
+	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
 
 	resources := aad.makeAgentResourceRequirements()
@@ -149,7 +149,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	podSpec := makePodSpec(aad.baseName, aad.image, opts...)
 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
-	labels := commonresources.MakeDefaultLabels(aad.baseName, common.K8sComponentLabelValueAgent)
+	labels := commonresources.MakeDefaultLabels(aad.baseName, common.LabelValueK8sComponentAgent)
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, labels)
 	maps.Copy(podLabels, aad.extraPodLabel)
@@ -190,13 +190,13 @@ func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceR
 func makeIstioAnnotations(istioCertPath string) map[string]string {
 	// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume. However, the sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
 	return map[string]string{
-		common.IstioProxyConfigAnnotationKey: fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
+		common.AnnotationKeyIstioProxyConfig: fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
   OUTPUT_CERTS: %s
 `, istioCertPath),
-		common.IstioUserVolumeMountAnnotationKey:         fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		common.IstioIncludeOutboundPortsAnnotationKey:    strconv.Itoa(int(ports.OTLPGRPC)),
-		common.IstioExcludeInboundPortsAnnotationKey:     strconv.Itoa(int(ports.Metrics)),
-		common.IstioIncludeOutboundIPRangesAnnotationKey: "",
+		common.AnnotationKeyIstioUserVolumeMount:         fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
+		common.AnnotationKeyIstioIncludeOutboundPorts:    strconv.Itoa(int(ports.OTLPGRPC)),
+		common.AnnotationKeyIstioExcludeInboundPorts:     strconv.Itoa(int(ports.Metrics)),
+		common.AnnotationKeyIstioIncludeOutboundIPRanges: "",
 	}
 }

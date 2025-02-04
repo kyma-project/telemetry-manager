@@ -113,21 +113,18 @@ func TestMergePodAnnotations(t *testing.T) {
 		{
 			name: "should preserve existing checksum annotations",
 			existing: map[string]string{
-				"checksum/1": "1",
-				"checksum/2": "2",
-				"checksum/3": "3",
-				"unrelated":  "foo",
+				"checksum/config":   "1",
+				"checksum/config-a": "2",
+				"checksum/Config":   "3",
+				"unrelated":         "foo",
 			},
 			desired: map[string]string{
-				"checksum/2": "b",
-				"checksum/3": "3",
-				"checksum/4": "4",
+				"checksum/cOnfig": "6",
 			},
 			expectedMerged: map[string]string{
-				"checksum/1": "1",
-				"checksum/2": "b",
-				"checksum/3": "3",
-				"checksum/4": "4",
+				"checksum/config":   "1",
+				"checksum/config-a": "2",
+				"checksum/cOnfig":   "6",
 			},
 		},
 		{

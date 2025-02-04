@@ -339,7 +339,7 @@ func mergeMaps(newMap map[string]string, oldMap map[string]string) map[string]st
 
 func mergePodAnnotations(newMeta *metav1.ObjectMeta, oldMeta metav1.ObjectMeta) {
 	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, "kubectl.kubernetes.io/"))
-	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, commonresources.ChecksumConfigAnnotationKey))
+	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, commonresources.AnnotationKeyChecksumConfig))
 	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, "istio-operator.kyma-project.io/restartedAt"))
 }
 

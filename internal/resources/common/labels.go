@@ -1,49 +1,49 @@
 package common
 
 const (
-	KymaModuleLabelKey   = "kyma-project.io/module"
-	KymaModuleLabelValue = "telemetry"
+	LabelKeyKymaModule   = "kyma-project.io/module"
+	LabelValueKymaModule = "telemetry"
 
-	K8sNameLabelKey                  = "app.kubernetes.io/name"
-	K8sPartOfLabelKey                = "app.kubernetes.io/part-of"
-	K8sPartOfLabelValue              = "telemetry"
-	K8sManagedByLabelKey             = "app.kubernetes.io/managed-by"
-	K8sManagedByLabelValue           = "telemetry-manager"
-	K8sComponentLabelKey             = "app.kubernetes.io/component"
-	K8sComponentLabelValueController = "controller"
-	K8sComponentLabelValueAgent      = "agent"
-	K8sComponentLabelValueGateway    = "gateway"
-	K8sComponentLabelValueMonitor    = "monitor"
-	K8sInstanceLabelKey              = "app.kubernetes.io/instance"
-	K8sInstanceLabelValue            = "telemetry"
-	K8sHostnameLabelKey              = "kubernetes.io/hostname"
-	K8sZoneLabelKey                  = "topology.kubernetes.io/zone"
+	LabelKeyK8sName                  = "app.kubernetes.io/name"
+	LabelKeyK8sPartOf                = "app.kubernetes.io/part-of"
+	LabelValueK8sPartOf              = "telemetry"
+	LabelKeyK8sManagedBy             = "app.kubernetes.io/managed-by"
+	LabelValueK8sManagedBy           = "telemetry-manager"
+	LabelKeyK8sComponent             = "app.kubernetes.io/component"
+	LabelValueK8sComponentController = "controller"
+	LabelValueK8sComponentAgent      = "agent"
+	LabelValueK8sComponentGateway    = "gateway"
+	LabelValueK8sComponentMonitor    = "monitor"
+	LabelKeyK8sInstance              = "app.kubernetes.io/instance"
+	LabelValueK8sInstance            = "telemetry"
+	LabelKeyK8sHostname              = "kubernetes.io/hostname"
+	LabelKeyK8sZone                  = "topology.kubernetes.io/zone"
 
-	IstioInjectLabelKey = "sidecar.istio.io/inject"
+	LabelKeyIstioInject = "sidecar.istio.io/inject"
 
-	TelemetryLogIngestLabelKey     = "telemetry.kyma-project.io/log-ingest"
-	TelemetryLogExportLabelKey     = "telemetry.kyma-project.io/log-export"
-	TelemetryTraceIngestLabelKey   = "telemetry.kyma-project.io/trace-ingest"
-	TelemetryTraceExportLabelKey   = "telemetry.kyma-project.io/trace-export"
-	TelemetryMetricIngestLabelKey  = "telemetry.kyma-project.io/metric-ingest"
-	TelemetryMetricExportLabelKey  = "telemetry.kyma-project.io/metric-export"
-	TelemetryMetricScrapeLabelKey  = "telemetry.kyma-project.io/metric-scrape"
-	TelemetrySelfMonitorLabelKey   = "telemetry.kyma-project.io/self-monitor"
-	TelemetrySelfMonitorLabelValue = "enabled"
+	LabelKeyTelemetryLogIngest     = "telemetry.kyma-project.io/log-ingest"
+	LabelKeyTelemetryLogExport     = "telemetry.kyma-project.io/log-export"
+	LabelKeyTelemetryTraceIngest   = "telemetry.kyma-project.io/trace-ingest"
+	LabelKeyTelemetryTraceExport   = "telemetry.kyma-project.io/trace-export"
+	LabelKeyTelemetryMetricIngest  = "telemetry.kyma-project.io/metric-ingest"
+	LabelKeyTelemetryMetricExport  = "telemetry.kyma-project.io/metric-export"
+	LabelKeyTelemetryMetricScrape  = "telemetry.kyma-project.io/metric-scrape"
+	LabelKeyTelemetrySelfMonitor   = "telemetry.kyma-project.io/self-monitor"
+	LabelValueTelemetrySelfMonitor = "enabled"
 )
 
 func MakeDefaultLabels(baseName string, componentLabelValue string) map[string]string {
 	return map[string]string{
-		K8sNameLabelKey:      baseName,
-		KymaModuleLabelKey:   KymaModuleLabelValue,
-		K8sPartOfLabelKey:    K8sPartOfLabelValue,
-		K8sManagedByLabelKey: K8sManagedByLabelValue,
-		K8sComponentLabelKey: componentLabelValue,
+		LabelKeyK8sName:      baseName,
+		LabelKeyKymaModule:   LabelValueKymaModule,
+		LabelKeyK8sPartOf:    LabelValueK8sPartOf,
+		LabelKeyK8sManagedBy: LabelValueK8sManagedBy,
+		LabelKeyK8sComponent: componentLabelValue,
 	}
 }
 
 func MakeDefaultSelectorLabels(baseName string) map[string]string {
 	return map[string]string{
-		K8sNameLabelKey: baseName,
+		LabelKeyK8sName: baseName,
 	}
 }

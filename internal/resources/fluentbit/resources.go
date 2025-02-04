@@ -51,12 +51,12 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 	}
 
 	annotations := make(map[string]string)
-	annotations[commonresources.ChecksumConfigAnnotationKey] = checksum
-	annotations[commonresources.IstioExcludeInboundPortsAnnotationKey] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
+	annotations[commonresources.AnnotationKeyChecksumConfig] = checksum
+	annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
 
 	podLabels := Labels()
-	podLabels[commonresources.IstioInjectLabelKey] = "true"
-	podLabels[commonresources.TelemetryLogExportLabelKey] = "true"
+	podLabels[commonresources.LabelKeyIstioInject] = "true"
+	podLabels[commonresources.LabelKeyTelemetryLogExport] = "true"
 
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
@@ -267,7 +267,7 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 
 func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 	serviceLabels := Labels()
-	serviceLabels[commonresources.TelemetrySelfMonitorLabelKey] = commonresources.TelemetrySelfMonitorLabelValue
+	serviceLabels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -275,10 +275,10 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 			Namespace: name.Namespace,
 			Labels:    serviceLabels,
 			Annotations: map[string]string{
-				commonresources.PrometheusScrapeAnnotationKey: "true",
-				commonresources.PrometheusPortAnnotationKey:   strconv.Itoa(ports.HTTP),
-				commonresources.PrometheusSchemeAnnotationKey: "http",
-				commonresources.PrometheusPathAnnotationKey:   "/api/v2/metrics/prometheus",
+				commonresources.AnnotationKeyPrometheusScrape: "true",
+				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(ports.HTTP),
+				commonresources.AnnotationKeyPrometheusScheme: "http",
+				commonresources.AnnotationKeyPrometheusPath:   "/api/v2/metrics/prometheus",
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -298,7 +298,7 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 
 func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 	serviceLabels := Labels()
-	serviceLabels[commonresources.TelemetrySelfMonitorLabelKey] = commonresources.TelemetrySelfMonitorLabelValue
+	serviceLabels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -306,9 +306,9 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 			Namespace: name.Namespace,
 			Labels:    serviceLabels,
 			Annotations: map[string]string{
-				commonresources.PrometheusScrapeAnnotationKey: "true",
-				commonresources.PrometheusPortAnnotationKey:   strconv.Itoa(ports.ExporterMetrics),
-				commonresources.PrometheusSchemeAnnotationKey: "http",
+				commonresources.AnnotationKeyPrometheusScrape: "true",
+				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(ports.ExporterMetrics),
+				commonresources.AnnotationKeyPrometheusScheme: "http",
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -421,15 +421,15 @@ end
 }
 
 func Labels() map[string]string {
-	result := commonresources.MakeDefaultLabels("fluent-bit", commonresources.K8sComponentLabelValueAgent)
-	result[commonresources.K8sInstanceLabelKey] = commonresources.K8sInstanceLabelValue
+	result := commonresources.MakeDefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
+	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
 }
 
 func SelectorLabels() map[string]string {
 	result := commonresources.MakeDefaultSelectorLabels("fluent-bit")
-	result[commonresources.K8sInstanceLabelKey] = commonresources.K8sInstanceLabelValue
+	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
 }

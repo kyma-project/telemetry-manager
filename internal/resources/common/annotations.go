@@ -1,18 +1,18 @@
 package common
 
 const (
-	ChecksumConfigAnnotationKey = "checksum/config"
+	AnnotationKeyChecksumConfig = "checksum/config"
 
-	IstioExcludeInboundPortsAnnotationKey     = "traffic.sidecar.istio.io/excludeInboundPorts"
-	IstioIncludeOutboundPortsAnnotationKey    = "traffic.sidecar.istio.io/includeOutboundPorts"
-	IstioIncludeOutboundIPRangesAnnotationKey = "traffic.sidecar.istio.io/includeOutboundIPRanges"
-	IstioUserVolumeMountAnnotationKey         = "sidecar.istio.io/userVolumeMount"
-	IstioInterceptionModeAnnotationKey        = "sidecar.istio.io/interceptionMode"
-	IstioInterceptionModeAnnotationValue      = "TPROXY"
-	IstioProxyConfigAnnotationKey             = "proxy.istio.io/config"
+	AnnotationKeyIstioExcludeInboundPorts      = "traffic.sidecar.istio.io/excludeInboundPorts"
+	AnnotationKeyIstioIncludeOutboundPorts     = "traffic.sidecar.istio.io/includeOutboundPorts"
+	AnnotationKeyIstioIncludeOutboundIPRanges  = "traffic.sidecar.istio.io/includeOutboundIPRanges"
+	AnnotationKeyIstioUserVolumeMount          = "sidecar.istio.io/userVolumeMount"
+	AnnotationKeyIstioInterceptionMode         = "sidecar.istio.io/interceptionMode"
+	AnnotationValueIstioInterceptionModeTProxy = "TPROXY"
+	AnnotationKeyIstioProxyConfig              = "proxy.istio.io/config"
 
-	PrometheusScrapeAnnotationKey = "prometheus.io/scrape"
-	PrometheusPortAnnotationKey   = "prometheus.io/port"
-	PrometheusSchemeAnnotationKey = "prometheus.io/scheme"
-	PrometheusPathAnnotationKey   = "prometheus.io/path"
+	AnnotationKeyPrometheusScrape = "prometheus.io/scrape"
+	AnnotationKeyPrometheusPort   = "prometheus.io/port"
+	AnnotationKeyPrometheusScheme = "prometheus.io/scheme"
+	AnnotationKeyPrometheusPath   = "prometheus.io/path"
 )

@@ -155,7 +155,7 @@ func makeSecret(name types.NamespacedName, component string, secretData map[stri
 
 func makeMetricsService(name types.NamespacedName, component string) *corev1.Service {
 	labels := commonresources.MakeDefaultLabels(name.Name, component)
-	labels[commonresources.TelemetrySelfMonitorLabelKey] = commonresources.TelemetrySelfMonitorLabelValue
+	labels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(name.Name)
 
@@ -165,9 +165,9 @@ func makeMetricsService(name types.NamespacedName, component string) *corev1.Ser
 			Namespace: name.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
-				commonresources.PrometheusScrapeAnnotationKey: "true",
-				commonresources.PrometheusPortAnnotationKey:   strconv.Itoa(int(ports.Metrics)),
-				commonresources.PrometheusSchemeAnnotationKey: "http",
+				commonresources.AnnotationKeyPrometheusScrape: "true",
+				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(int(ports.Metrics)),
+				commonresources.AnnotationKeyPrometheusScheme: "http",
 			},
 		},
 		Spec: corev1.ServiceSpec{
