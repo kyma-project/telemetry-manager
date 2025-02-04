@@ -69,6 +69,37 @@ The Filelog Receiver can persist state information on storage (typically the nod
   - **Byte offset** (*Offset*) – the position from which the receiver resumes reading.  
   - **File attributes** (*FileAttributes*) – metadata such as the file name.  
 
+### Agent-to-Backend vs Agent-to-Gateway-to-Backend
+
+Let's compare the following architectures Agent-to-Backend and Agent-to-Gateway-to-Backend. Each has its own trade-offs.
+
+#### Agent-to-Backend
+Direct communication between the agent and the backend.
+
+Pros:
+
+* Lower operational overhead and reduced latency.
+* Direct communication ensures minimal failure points.
+* If the backend enforces per-connection rate limiting, only high-volume agents get throttled. It can be beneficial since often most workloads in a cluster generate minimal logs, while a few may produce a large volume.
+
+Cons:
+
+* Every gateway encrichment feature has to be mirrored in the agent and tested separately.
+* In case of credentials rotation we have to rollout restart the whole DaemonSet.
+
+#### Agent-to-Gateway-To-Backend
+
+Pros:
+
+* Lighter agents, as all enrichment is handled in the gateway (for both file-based and OTel logs).
+* Persistent queue can leverage PV-based storage for improved reliability.
+
+Cons:
+
+* The gateway can become a bottleneck for all agents if a few have a high export rate.
+* Lacks auto-scaling; manual scaling may not be sufficient.
+* Introduces an additional network hop, increasing latency.
+
 ## Decision
 
 Proposed solution for the OTel Log Agent setup:
@@ -79,3 +110,4 @@ Proposed solution for the OTel Log Agent setup:
 **No Batch Processor**, relying on Filelog Receiver for now  
 **Exporter Batcher** (once stable)  
 **Persistent Queue**, backed by the node filesystem  
+**Agent-to-Backend** communication
