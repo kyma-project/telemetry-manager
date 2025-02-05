@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -47,86 +48,98 @@ func TestReceiverCreator(t *testing.T) {
 
 func makeExpectedOperators() []Operator {
 	return []Operator{
-		{
-			ID:                      "containerd-parser",
-			Type:                    "container",
-			AddMetadataFromFilePath: ptr.To(true),
-			Format:                  "containerd",
-		},
-		{
-			ID:   "move-to-log-stream",
-			Type: "move",
-			From: "attributes.stream",
-			To:   "attributes[\"log.iostream\"]",
-		},
-		{
-			ID:        "json-parser",
-			Type:      "json_parser",
-			ParseFrom: "body",
-			ParseTo:   "attributes",
-		},
-		{
-			ID:   "copy-body-to-attributes-original",
-			Type: "copy",
-			From: "body",
-			To:   "attributes.original",
-		},
-		{
-			ID:   "move-message-to-body",
-			Type: "move",
-			From: "attributes.message",
-			To:   "body",
-		},
-		{
-			ID:   "move-msg-to-body",
-			Type: "move",
-			From: "attributes.msg",
-			To:   "body",
-		},
-		{
-			ID:        "severity-parser",
-			Type:      "severity_parser",
-			ParseFrom: "attributes.level",
-		},
+		expectedMakeContainerParser(),
+		expectedMakeMoveToLogStream(),
+		expectedMakeJSONParser(),
+		expectedMakeCopyBodyToOriginal(),
+		expectedMakeMoveMessageToBody(),
+		expectedMakeMoveMsgToBody(),
+		expectedMakeSeverityParser(),
 	}
 }
 
 func makeExpectedOperatorsWithoutKeepOringinalBody() []Operator {
 	return []Operator{
-		{
-			ID:                      "containerd-parser",
-			Type:                    "container",
-			AddMetadataFromFilePath: ptr.To(true),
-			Format:                  "containerd",
-		},
-		{
-			ID:   "move-to-log-stream",
-			Type: "move",
-			From: "attributes.stream",
-			To:   "attributes[\"log.iostream\"]",
-		},
-		{
-			ID:        "json-parser",
-			Type:      "json_parser",
-			ParseFrom: "body",
-			ParseTo:   "attributes",
-		},
-		{
-			ID:   "move-message-to-body",
-			Type: "move",
-			From: "attributes.message",
-			To:   "body",
-		},
-		{
-			ID:   "move-msg-to-body",
-			Type: "move",
-			From: "attributes.msg",
-			To:   "body",
-		},
-		{
-			ID:        "severity-parser",
-			Type:      "severity_parser",
-			ParseFrom: "attributes.level",
-		},
+		expectedMakeContainerParser(),
+		expectedMakeMoveToLogStream(),
+		expectedMakeJSONParser(),
+		expectedMakeMoveMessageToBody(),
+		expectedMakeMoveMsgToBody(),
+		expectedMakeSeverityParser(),
+	}
+}
+
+// parse the log with containerd parser
+func expectedMakeContainerParser() Operator {
+	return Operator{
+		ID:                      "containerd-parser",
+		Type:                    "container",
+		AddMetadataFromFilePath: ptr.To(true),
+		Format:                  "containerd",
+	}
+}
+
+// move the stream to log.iostream
+func expectedMakeMoveToLogStream() Operator {
+	return Operator{
+		ID:     "move-to-log-stream",
+		Type:   "move",
+		From:   "attributes.stream",
+		To:     "attributes[\"log.iostream\"]",
+		IfExpr: "attributes.stream != nil",
+	}
+}
+
+// parse body as json and move it to attributes
+func expectedMakeJSONParser() Operator {
+	regexPattern := `^{.*}$`
+	return Operator{
+		ID:        "json-parser",
+		Type:      "json_parser",
+		ParseFrom: "body",
+		ParseTo:   "attributes",
+		IfExpr:    fmt.Sprintf("body matches '%s'", regexPattern),
+	}
+}
+
+// copy logs present in body to attributes.original
+func expectedMakeCopyBodyToOriginal() Operator {
+	return Operator{
+		ID:   "copy-body-to-attributes-original",
+		Type: "copy",
+		From: "body",
+		To:   "attributes.original",
+	}
+}
+
+// look for message in attributes then move it to body
+func expectedMakeMoveMessageToBody() Operator {
+	return Operator{
+		ID:     "move-message-to-body",
+		Type:   "move",
+		From:   "attributes.message",
+		To:     "body",
+		IfExpr: "attributes.message != nil",
+	}
+}
+
+// look for msg if present then move it to body
+func expectedMakeMoveMsgToBody() Operator {
+	return Operator{
+		ID:     "move-msg-to-body",
+		Type:   "move",
+		From:   "attributes.msg",
+		To:     "body",
+		IfExpr: "attributes.msg != nil",
+	}
+}
+
+// set the severity level
+func expectedMakeSeverityParser() Operator {
+	return Operator{
+		ID:        "severity-parser",
+		Type:      "severity_parser",
+		ParseFrom: "attributes.level",
+		IfExpr:    "attributes.level != nil",
 	}
 }

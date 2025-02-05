@@ -54,8 +54,10 @@ receivers:
               type: move
               from: attributes.stream
               to: attributes["log.iostream"]
+              if: attributes.stream != nil
             - id: json-parser
               type: json_parser
+              if: body matches '^{.*}$'
               parse_from: body
               parse_to: attributes
             - id: copy-body-to-attributes-original
@@ -66,12 +68,15 @@ receivers:
               type: move
               from: attributes.message
               to: body
+              if: attributes.message != nil
             - id: move-msg-to-body
               type: move
               from: attributes.msg
               to: body
+              if: attributes.msg != nil
             - id: severity-parser
               type: severity_parser
+              if: attributes.level != nil
               parse_from: attributes.level
 processors:
     memory_limiter:

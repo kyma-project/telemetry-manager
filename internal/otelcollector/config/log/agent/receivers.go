@@ -104,7 +104,7 @@ func makeJSONParser() Operator {
 		Type:      "json_parser",
 		ParseFrom: "body",
 		ParseTo:   "attributes",
-		IfExpr:    fmt.Sprintf("body matchs '%s'", regexPattern),
+		IfExpr:    fmt.Sprintf("body matches '%s'", regexPattern),
 	}
 }
 
