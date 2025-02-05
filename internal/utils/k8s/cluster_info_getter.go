@@ -11,10 +11,9 @@ import (
 
 const (
 	defaultClusterName                 = "${KUBERNETES_SERVICE_HOST}"
-	gardenerShootNameAttributeName     = "shootName"
 	gardenerCloudProviderAttributeName = "provider"
 	CloudProviderOpenStack             = "openstack"
-	CloudProviderSAPConvergedCloud     = "sap-converged-cloud"
+	CloudProviderSAPConvergedCloud     = "sap"
 )
 
 var defaultGardenerShootInfoCM = types.NamespacedName{
@@ -48,7 +47,7 @@ func GetGardenerShootInfo(ctx context.Context, client client.Client) ClusterInfo
 	}
 
 	return ClusterInfo{
-		ClusterName:   shootInfo.Data[gardenerShootNameAttributeName],
 		CloudProvider: cloudProvider,
+		ClusterName:   defaultClusterName,
 	}
 }

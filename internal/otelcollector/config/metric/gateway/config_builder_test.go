@@ -30,7 +30,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -54,7 +54,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -72,7 +72,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -90,7 +90,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -116,7 +116,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -140,7 +140,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "cert", "key")).Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -165,7 +165,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -184,7 +184,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -215,7 +215,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test").Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -232,7 +232,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-3").Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -254,7 +254,7 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-3").Build(),
 			},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -293,7 +293,7 @@ func TestMakeConfig(t *testing.T) {
 							WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 					},
 					BuildOptions{
-						ClusterName:   "test-cluster",
+						ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 						CloudProvider: "test-cloud-provider",
 					},
 				)

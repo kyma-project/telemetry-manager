@@ -28,7 +28,7 @@ func TestBuildConfig(t *testing.T) {
 			testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 		},
 			BuildOptions{
-				ClusterName:   "test-cluster",
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 				CloudProvider: "test-cloud-provider",
 			},
 		)
@@ -48,7 +48,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("secure", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestBuildConfig(t *testing.T) {
 	t.Run("insecure", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "cert", "key")).Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -136,7 +136,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("extensions", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("telemetry", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -174,7 +174,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("single pipeline queue size", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -186,7 +186,7 @@ func TestBuildConfig(t *testing.T) {
 			testutils.NewLogPipelineBuilder().WithName("test-1").WithOTLPOutput().Build(),
 			testutils.NewLogPipelineBuilder().WithName("test-2").WithOTLPOutput().Build(),
 			testutils.NewLogPipelineBuilder().WithName("test-3").WithOTLPOutput().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 
@@ -200,7 +200,7 @@ func TestBuildConfig(t *testing.T) {
 
 	t.Run("single pipeline topology", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -220,7 +220,7 @@ func TestBuildConfig(t *testing.T) {
 		collectorConfig, envVars, err := sut.Build(context.Background(), []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-1").WithOTLPOutput().Build(),
 			testutils.NewLogPipelineBuilder().WithName("test-2").WithOTLPOutput().Build()}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -252,7 +252,7 @@ func TestBuildConfig(t *testing.T) {
 		config, _, err := sut.Build(context.Background(), []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test").WithOTLPOutput().Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.NoError(t, err)
@@ -272,7 +272,7 @@ func TestBuildConfig(t *testing.T) {
 		_, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().WithName("test-fail").WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("nonexistent-secret", "default", "user", "password")).Build(),
 		}, BuildOptions{
-			ClusterName:   "test-cluster",
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 			CloudProvider: "test-cloud-provider",
 		})
 		require.Error(t, err)
