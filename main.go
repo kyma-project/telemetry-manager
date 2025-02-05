@@ -53,6 +53,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/images"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
@@ -468,8 +469,9 @@ func setConfigMapNamespaceFieldSelector() map[string]cache.Config {
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
 		Config: selfmonitor.Config{
-			BaseName:  selfMonitorName,
-			Namespace: telemetryNamespace,
+			BaseName:      selfMonitorName,
+			Namespace:     telemetryNamespace,
+			ComponentType: commonresources.LabelValueK8sComponentMonitor,
 			Deployment: selfmonitor.DeploymentConfig{
 				Image:             selfMonitorImage,
 				PriorityClassName: normalPriorityClassName,
