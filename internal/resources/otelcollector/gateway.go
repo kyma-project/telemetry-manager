@@ -34,15 +34,6 @@ const (
 	MetricOTLPServiceName = "telemetry-otlp-metrics"
 	TraceOTLPServiceName  = "telemetry-otlp-traces"
 	LogOTLPServiceName    = "telemetry-otlp-logs"
-
-	// label keys
-	logGatewayIngestKey    = "telemetry.kyma-project.io/log-ingest"
-	logGatewayExportKey    = "telemetry.kyma-project.io/log-export"
-	traceGatewayIngestKey  = "telemetry.kyma-project.io/trace-ingest"
-	traceGatewayExportKey  = "telemetry.kyma-project.io/trace-export"
-	metricGatewayIngestKey = "telemetry.kyma-project.io/metric-ingest"
-	metricGatewayExportKey = "telemetry.kyma-project.io/metric-export"
-	istioSidecarInjectKey  = "sidecar.istio.io/inject"
 )
 
 var (
@@ -71,9 +62,9 @@ var (
 
 func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		logGatewayIngestKey:   "true",
-		logGatewayExportKey:   "true",
-		istioSidecarInjectKey: "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryLogIngest: "true",
+		commonresources.LabelKeyTelemetryLogExport: "true",
+		commonresources.LabelKeyIstioInject:        "true", // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
@@ -95,9 +86,9 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 
 func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		metricGatewayIngestKey: "true",
-		metricGatewayExportKey: "true",
-		istioSidecarInjectKey:  "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryMetricIngest: "true",
+		commonresources.LabelKeyTelemetryMetricExport: "true",
+		commonresources.LabelKeyIstioInject:           "true", // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
@@ -119,9 +110,9 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 
 func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		traceGatewayIngestKey: "true",
-		traceGatewayExportKey: "true",
-		istioSidecarInjectKey: "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryTraceIngest: "true",
+		commonresources.LabelKeyTelemetryTraceExport: "true",
+		commonresources.LabelKeyIstioInject:          "true", // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
@@ -175,16 +166,16 @@ type GatewayApplyOptions struct {
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
 	name := types.NamespacedName{Namespace: gad.namespace, Name: gad.baseName}
 
-	if err := applyCommonResources(ctx, c, name, gad.rbac, opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	secret := makeSecret(name, opts.CollectorEnvVars)
+	secret := makeSecret(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorEnvVars)
 	if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
-	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
+	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorConfigYAML)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
@@ -252,7 +243,11 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	selectorLabels := commonresources.MakeDefaultLabels(gad.baseName)
+	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, labels)
+	maps.Copy(podLabels, gad.extraPodLabels)
 
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
@@ -270,15 +265,11 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
-	podLabels := make(map[string]string)
-	maps.Copy(podLabels, selectorLabels)
-	maps.Copy(podLabels, gad.extraPodLabels)
-
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
 			Namespace: gad.namespace,
-			Labels:    selectorLabels,
+			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(opts.Replicas),
@@ -327,7 +318,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 				{
 					Weight: 100, //nolint:mnd // 100% weight
 					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "kubernetes.io/hostname",
+						TopologyKey: commonresources.LabelKeyK8sHostname,
 						LabelSelector: &metav1.LabelSelector{
 							MatchLabels: labels,
 						},
@@ -336,7 +327,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 				{
 					Weight: 100, //nolint:mnd // 100% weight
 					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "topology.kubernetes.io/zone",
+						TopologyKey: commonresources.LabelKeyK8sZone,
 						LabelSelector: &metav1.LabelSelector{
 							MatchLabels: labels,
 						},
@@ -348,13 +339,14 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	labels := commonresources.MakeDefaultLabels(gad.baseName)
+	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.otlpServiceName,
 			Namespace: gad.namespace,
-			Labels:    labels,
+			Labels:    commonLabels,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -371,30 +363,31 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
-			Selector: labels,
+			Selector: selectorLabels,
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	labels := commonresources.MakeDefaultLabels(gad.baseName)
+	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
 			Namespace: gad.namespace,
-			Labels:    labels,
+			Labels:    commonLabels,
 		},
 		Spec: istiosecurityv1.PeerAuthentication{
-			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: labels},
+			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: selectorLabels},
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
 }
 
 func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts GatewayApplyOptions) map[string]string {
-	annotations := map[string]string{"checksum/config": configChecksum}
+	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
 		var excludeInboundPorts []string
@@ -402,11 +395,11 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 			excludeInboundPorts = append(excludeInboundPorts, fmt.Sprintf("%d", p))
 		}
 
-		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = strings.Join(excludeInboundPorts, ", ")
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strings.Join(excludeInboundPorts, ", ")
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
-		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
+		annotations[commonresources.AnnotationKeyIstioInterceptionMode] = commonresources.AnnotationValueIstioInterceptionModeTProxy
 	}
 
 	return annotations

@@ -1,13 +1,30 @@
-FROM golang:1.23 AS builder
-RUN mkdir /app
-ADD . /app
+# Build the app binary
+FROM golang:1.23.5 AS builder
+
+# Copy the project
 WORKDIR /app
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./...
 
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
+
+# Copy the go source
+COPY *.go .
+
+# Clean up unused (test) dependencies and build
+RUN go mod tidy
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o main ./...
+
+# Use the scratch image for a minimal image
 FROM scratch
-LABEL source=git@github.com:kyma-project/telemetry-manager.git
+LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
 
-COPY --from=builder /app .
+# Copy the binary, no further dependencies
+COPY --from=builder /app/main .
 EXPOSE 8080
 
 CMD ["./main"]

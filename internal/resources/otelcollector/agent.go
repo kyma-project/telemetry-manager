@@ -25,8 +25,7 @@ const (
 	IstioCertPath   = "/etc/istio-output-certs"
 	MetricAgentName = "telemetry-metric-agent"
 
-	istioCertVolumeName  = "istio-certs"
-	metricAgentScrapeKey = "telemetry.kyma-project.io/metric-scrape"
+	istioCertVolumeName = "istio-certs"
 )
 
 var (
@@ -37,8 +36,8 @@ var (
 
 func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		metricAgentScrapeKey:  "true",
-		istioSidecarInjectKey: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+		commonresources.LabelKeyTelemetryMetricScrape: "true",
+		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
 	}
 
 	return &AgentApplierDeleter{
@@ -75,11 +74,11 @@ type AgentApplyOptions struct {
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
 
-	if err := applyCommonResources(ctx, c, name, aad.rbac, opts.AllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
+	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorConfigYAML)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
@@ -120,9 +119,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 }
 
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv1.DaemonSet {
-	selectorLabels := commonresources.MakeDefaultLabels(aad.baseName)
-
-	annotations := map[string]string{"checksum/config": configChecksum}
+	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
 
 	resources := aad.makeAgentResourceRequirements()
@@ -150,15 +147,17 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 
 	podSpec := makePodSpec(aad.baseName, aad.image, opts...)
 
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
+	labels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)
 	podLabels := make(map[string]string)
-	maps.Copy(podLabels, selectorLabels)
+	maps.Copy(podLabels, labels)
 	maps.Copy(podLabels, aad.extraPodLabel)
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      aad.baseName,
 			Namespace: aad.namespace,
-			Labels:    selectorLabels,
+			Labels:    labels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -190,13 +189,13 @@ func (aad *AgentApplierDeleter) makeAgentResourceRequirements() corev1.ResourceR
 func makeIstioAnnotations(istioCertPath string) map[string]string {
 	// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume. However, the sidecar should not intercept scraping requests  because Prometheus’s model of direct endpoint access is incompatible with Istio’s sidecar proxy model.
 	return map[string]string{
-		"proxy.istio.io/config": fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
+		commonresources.AnnotationKeyIstioProxyConfig: fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
   OUTPUT_CERTS: %s
 `, istioCertPath),
-		"sidecar.istio.io/userVolumeMount":                 fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		"traffic.sidecar.istio.io/includeOutboundPorts":    strconv.Itoa(int(ports.OTLPGRPC)),
-		"traffic.sidecar.istio.io/excludeInboundPorts":     strconv.Itoa(int(ports.Metrics)),
-		"traffic.sidecar.istio.io/includeOutboundIPRanges": "",
+		commonresources.AnnotationKeyIstioUserVolumeMount:         fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
+		commonresources.AnnotationKeyIstioIncludeOutboundPorts:    strconv.Itoa(int(ports.OTLPGRPC)),
+		commonresources.AnnotationKeyIstioExcludeInboundPorts:     strconv.Itoa(int(ports.Metrics)),
+		commonresources.AnnotationKeyIstioIncludeOutboundIPRanges: "",
 	}
 }

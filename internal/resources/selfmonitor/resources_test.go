@@ -20,6 +20,7 @@ import (
 const (
 	namespace            = "my-namespace"
 	name                 = "my-self-monitor"
+	componentType        = "my-monitor"
 	prometheusConfigYAML = "dummy prometheus Config"
 	alertRulesYAML       = "dummy alert rules"
 	configPath           = "/dummy/"
@@ -41,8 +42,9 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	}).Build()
 	sut := ApplierDeleter{
 		Config: Config{
-			BaseName:  name,
-			Namespace: namespace,
+			BaseName:      name,
+			Namespace:     namespace,
+			ComponentType: componentType,
 		},
 	}
 
