@@ -19,19 +19,20 @@ type Receivers struct {
 }
 
 type FileLog struct {
-	Exclude         []string   `yaml:"exclude,omitempty"`
-	Include         []string   `yaml:"include,omitempty"`
-	IncludeFileName bool       `yaml:"include_file_name,omitempty"`
-	IncludeFilePath bool       `yaml:"include_file_path,omitempty"`
-	StartAt         string     `yaml:"start_at,omitempty"`
-	Storage         string     `yaml:"storage,omitempty"`
-	Operators       []Operator `yaml:"operators,omitempty"`
+	Exclude         []string              `yaml:"exclude,omitempty"`
+	Include         []string              `yaml:"include,omitempty"`
+	IncludeFileName bool                  `yaml:"include_file_name,omitempty"`
+	IncludeFilePath bool                  `yaml:"include_file_path,omitempty"`
+	StartAt         string                `yaml:"start_at,omitempty"`
+	Storage         string                `yaml:"storage,omitempty"`
+	RetryOnFailure  config.RetryOnFailure `yaml:"retry_on_failure,omitempty"`
+	Operators       []Operator            `yaml:"operators,omitempty"`
 }
 
 type Operator struct {
 	ID                      string `yaml:"id,omitempty"`
 	Type                    string `yaml:"type,omitempty"`
-	AddMetadataFromFilePath *bool  `yaml:"add_metadata_from_file_path"`
+	AddMetadataFromFilePath *bool  `yaml:"add_metadata_from_file_path,omitempty"`
 	Format                  string `yaml:"format,omitempty"`
 	From                    string `yaml:"from,omitempty"`
 	To                      string `yaml:"to,omitempty"`

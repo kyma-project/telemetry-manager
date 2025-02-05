@@ -40,6 +40,11 @@ receivers:
         include_file_path: true
         start_at: beginning
         storage: file_storage
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
         operators:
             - id: containerd-parser
               type: container
@@ -47,27 +52,26 @@ receivers:
               format: containerd
             - id: move-to-log-stream
               type: move
-              add_metadata_from_file_path: null
               from: attributes.stream
               to: attributes["log.iostream"]
             - id: json-parser
               type: json_parser
-              add_metadata_from_file_path: null
               parse_from: body
               parse_to: attributes
             - id: copy-body-to-attributes-original
               type: copy
-              add_metadata_from_file_path: null
               from: body
               to: attributes.original
             - id: move-message-to-body
               type: move
-              add_metadata_from_file_path: null
               from: attributes.message
+              to: body
+            - id: move-msg-to-body
+              type: move
+              from: attributes.msg
               to: body
             - id: severity-parser
               type: severity_parser
-              add_metadata_from_file_path: null
               parse_from: attributes.level
 processors:
     memory_limiter:

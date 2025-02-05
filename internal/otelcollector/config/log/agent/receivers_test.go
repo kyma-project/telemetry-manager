@@ -78,6 +78,12 @@ func makeExpectedOperators() []Operator {
 			To:   "body",
 		},
 		{
+			ID:   "move-msg-to-body",
+			Type: "move",
+			From: "attributes.msg",
+			To:   "body",
+		},
+		{
 			ID:        "severity-parser",
 			Type:      "severity_parser",
 			ParseFrom: "attributes.level",
@@ -105,11 +111,16 @@ func makeExpectedOperatorsWithoutKeepOringinalBody() []Operator {
 			ParseFrom: "body",
 			ParseTo:   "attributes",
 		},
-
 		{
 			ID:   "move-message-to-body",
 			Type: "move",
 			From: "attributes.message",
+			To:   "body",
+		},
+		{
+			ID:   "move-msg-to-body",
+			Type: "move",
+			From: "attributes.msg",
 			To:   "body",
 		},
 		{
