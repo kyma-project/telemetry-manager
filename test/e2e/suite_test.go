@@ -67,7 +67,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(suite.IsOperational()).K8sObject()
+	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(suite.IsUpgrade()).K8sObject()
 	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
 	k8sObjects = []client.Object{
 		telemetryK8sObject,
@@ -82,7 +82,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-	if !suite.IsOperational() {
+	if !suite.IsUpgrade() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())

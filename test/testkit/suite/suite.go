@@ -63,13 +63,13 @@ const (
 	// Istio test label
 	LabelIntegration = "integration"
 
-	// Operational tests preserve K8s objects between test runs.
-	LabelOperational = "operational"
+	// Upgrade tests preserve K8s objects between test runs.
+	LabelUpgrade = "upgrade"
 )
 
-// IsOperational returns true if the test is invoked with an "operational" tag.
-func IsOperational() bool {
+// IsUpgrade returns true if the test is invoked with an "upgrade" tag.
+func IsUpgrade() bool {
 	labelsFilter := GinkgoLabelFilter()
 
-	return labelsFilter != "" && Label(LabelOperational).MatchesLabelFilter(labelsFilter)
+	return labelsFilter != "" && Label(LabelUpgrade).MatchesLabelFilter(labelsFilter)
 }
