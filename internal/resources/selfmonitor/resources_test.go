@@ -20,7 +20,7 @@ import (
 const (
 	namespace            = "my-namespace"
 	name                 = "my-self-monitor"
-	component            = "my-monitor"
+	componentType        = "my-monitor"
 	prometheusConfigYAML = "dummy prometheus Config"
 	alertRulesYAML       = "dummy alert rules"
 	configPath           = "/dummy/"
@@ -44,7 +44,7 @@ func TestApplySelfMonitorResources(t *testing.T) {
 		Config: Config{
 			BaseName:      name,
 			Namespace:     namespace,
-			ComponentType: component,
+			ComponentType: componentType,
 		},
 	}
 

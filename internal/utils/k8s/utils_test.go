@@ -118,11 +118,12 @@ func TestMergePodAnnotations(t *testing.T) {
 				"unrelated":         "foo",
 			},
 			desired: map[string]string{
-				"checksum/cOnfig": "6",
+				"checksum/config-a": "5",
+				"checksum/cOnfig":   "6",
 			},
 			expectedMerged: map[string]string{
 				"checksum/config":   "1",
-				"checksum/config-a": "2",
+				"checksum/config-a": "5",
 				"checksum/cOnfig":   "6",
 			},
 		},

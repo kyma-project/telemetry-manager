@@ -18,8 +18,8 @@ type rbac struct {
 
 type RBACOption func(*rbac, types.NamespacedName)
 
-func newRBAC(name types.NamespacedName, component string, options ...RBACOption) *rbac {
-	rbac := &rbac{component: component}
+func newRBAC(name types.NamespacedName, componentType string, options ...RBACOption) *rbac {
+	rbac := &rbac{component: componentType}
 
 	for _, option := range options {
 		option(rbac, name)
