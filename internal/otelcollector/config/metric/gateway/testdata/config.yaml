@@ -27,10 +27,10 @@ service:
                 - routing/test
                 - forward/test
             processors:
+                - transform/set-instrumentation-scope-kyma
                 - filter/drop-if-input-source-runtime
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
-                - transform/set-instrumentation-scope-kyma
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - batch
@@ -133,7 +133,7 @@ processors:
         attributes:
             - action: insert
               key: k8s.cluster.name
-              value: test-cluster
+              value: ${KUBERNETES_SERVICE_HOST}
             - action: insert
               key: cloud.provider
               value: test-cloud-provider

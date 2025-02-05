@@ -240,13 +240,14 @@ func inputSourceEquals(inputSourceType metric.InputSourceType) string {
 }
 
 func otlpInputSource() string {
-	// When instrumentation scope is not set to
-	// io.kyma-project.telemetry/runtime or io.kyma-project.telemetry/prometheus or io.kyma-project.telemetry/istio
+	// When instrumentation scope is not set to any of the following values
+	// io.kyma-project.telemetry/runtime, io.kyma-project.telemetry/prometheus, io.kyma-project.telemetry/istio, and io.kyma-project.telemetry/kyma
 	// we assume the metric is being pushed directly to metrics gateway.
-	return fmt.Sprintf("not(%s or %s or %s)",
+	return fmt.Sprintf("not(%s or %s or %s or %s)",
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeKyma),
 	)
 }
 
