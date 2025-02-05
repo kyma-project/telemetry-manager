@@ -88,20 +88,23 @@ func makeContainerParser() Operator {
 // move the stream to log.iostream
 func makeMoveToLogStream() Operator {
 	return Operator{
-		ID:   "move-to-log-stream",
-		Type: "move",
-		From: "attributes.stream",
-		To:   "attributes[\"log.iostream\"]",
+		ID:     "move-to-log-stream",
+		Type:   "move",
+		From:   "attributes.stream",
+		To:     "attributes[\"log.iostream\"]",
+		IfExpr: "attributes.stream != nil",
 	}
 }
 
 // parse body as json and move it to attributes
 func makeJSONParser() Operator {
+	regexPattern := `^{.*}$`
 	return Operator{
 		ID:        "json-parser",
 		Type:      "json_parser",
 		ParseFrom: "body",
 		ParseTo:   "attributes",
+		IfExpr:    fmt.Sprintf("body matchs '%s'", regexPattern),
 	}
 }
 
@@ -118,20 +121,22 @@ func makeCopyBodyToOriginal() Operator {
 // look for message in attributes then move it to body
 func makeMoveMessageToBody() Operator {
 	return Operator{
-		ID:   "move-message-to-body",
-		Type: "move",
-		From: "attributes.message",
-		To:   "body",
+		ID:     "move-message-to-body",
+		Type:   "move",
+		From:   "attributes.message",
+		To:     "body",
+		IfExpr: "attributes.message != nil",
 	}
 }
 
 // look for msg if present then move it to body
 func makeMoveMsgToBody() Operator {
 	return Operator{
-		ID:   "move-msg-to-body",
-		Type: "move",
-		From: "attributes.msg",
-		To:   "body",
+		ID:     "move-msg-to-body",
+		Type:   "move",
+		From:   "attributes.msg",
+		To:     "body",
+		IfExpr: "attributes.msg != nil",
 	}
 }
 
@@ -141,5 +146,6 @@ func makeSeverityParser() Operator {
 		ID:        "severity-parser",
 		Type:      "severity_parser",
 		ParseFrom: "attributes.level",
+		IfExpr:    "attributes.level != nil",
 	}
 }
