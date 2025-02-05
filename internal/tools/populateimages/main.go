@@ -16,8 +16,8 @@ import (
 type secScanConfig struct {
 	ModuleName   string       `yaml:"module-name"`
 	Kind         string       `yaml:"kind"`
-	Protecode    []string     `yaml:"protecode"`
-	WhiteSource  whiteSource  `yaml:"whitesource"`
+	Protecode    []string     `yaml:"bdba"`
+	WhiteSource  whiteSource  `yaml:"mend"`
 	CheckmarxOne checkmarxOne `yaml:"checkmarx-one"`
 }
 
