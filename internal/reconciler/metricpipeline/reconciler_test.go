@@ -56,6 +56,9 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
 
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
+
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -82,7 +85,7 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
-			&mocks.AgentApplierDeleter{},
+			agentApplierDeleterMock,
 			&mocks.AgentConfigBuilder{},
 			agentProberStub,
 			flowHealthProberStub,
@@ -108,6 +111,7 @@ func TestReconcile(t *testing.T) {
 			"Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.")
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
+		agentApplierDeleterMock.AssertExpectations(t)
 	})
 
 	t.Run("metric gateway prober fails", func(t *testing.T) {
@@ -1139,6 +1143,66 @@ func TestReconcile(t *testing.T) {
 			EndpointValidator:  stubs.NewEndpointValidator(nil),
 			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
 			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
+			PipelineLock:       pipelineLockStub,
+		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			agentApplierDeleterMock,
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
+		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		require.NoError(t, err)
+
+		agentApplierDeleterMock.AssertExpectations(t)
+		gatewayApplierDeleterMock.AssertExpectations(t)
+	})
+
+	t.Run("all metric pipelines do not require agents", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().
+			WithRuntimeInput(false).
+			WithIstioInput(false).
+			WithPrometheusInput(false).
+			Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 			PipelineLock:       pipelineLockStub,
 		}
 
