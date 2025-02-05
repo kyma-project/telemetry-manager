@@ -167,6 +167,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	var reconcilablePipelinesWithAgentRequired []telemetryv1alpha1.MetricPipeline
+
 	for _, p := range reconcilablePipelines {
 		if isMetricAgentRequired(&p) {
 			reconcilablePipelinesWithAgentRequired = append(reconcilablePipelinesWithAgentRequired, p)
