@@ -40,3 +40,9 @@ groups:
         - alert: LogAgentNoLogsDelivered
           expr: (sum by (pipeline_name) (rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0) and (sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) == 0)
           for: 1m0s
+        - alert: LogGatewayAllDataDropped
+          expr: (sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_logs{service="telemetry-log-gateway-metrics"}[5m])) > 0) unless (sum by (pipeline_name) (rate(otelcol_exporter_sent_logs{service="telemetry-log-gateway-metrics"}[5m)) > 0)
+          for: 1m0s
+        - alert: LogGatewaySomeDataDropped
+          expr: (sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_logs{service="telemetry-log-gateway-metrics"}[5m])) > 0) and (sum by (pipeline_name) (rate(otelcol_exporter_sent_logs{service="telemetry-log-gateway-metrics"}[5m)) > 0)
+          for: 1m0s

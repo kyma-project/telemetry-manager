@@ -57,5 +57,5 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 }
 
 func (p *LogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
-	return isFiringWithMatcher(alerts, ruleName, pipelineName, config.MatchesLogPipelineRule)
+	return isFiringWithMatcher(alerts, ruleName, pipelineName, config.MatchesFluentBitLogPipelineRule)
 }

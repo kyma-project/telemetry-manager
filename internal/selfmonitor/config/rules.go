@@ -72,10 +72,19 @@ func MakeRules() RuleGroups {
 		serviceName: "telemetry-trace-gateway-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
+
 	rules = append(rules, traceRuleBuilder.rules()...)
 
-	logRuleBuilder := fluentBitRuleBuilder{}
+	logRuleBuilder := otelCollectorRuleBuilder{
+		dataType:    "log_records",
+		serviceName: "telemetry-log-gateway-metrics",
+		namePrefix:  ruleNamePrefix(typeLogPipeline),
+	}
+
 	rules = append(rules, logRuleBuilder.rules()...)
+
+	FluentBitLogRuleBuilder := fluentBitRuleBuilder{}
+	rules = append(rules, FluentBitLogRuleBuilder.rules()...)
 
 	return RuleGroups{
 		Groups: []RuleGroup{
@@ -104,10 +113,10 @@ const (
 	RulesAny = "any"
 )
 
-// MatchesLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
+// MatchesFluentBitLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
 // If the alert does not have a name label, it should be matched by all pipelines.
 // RulesAny can be used to match any LogPipeline rule name.
-func MatchesLogPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
+func MatchesFluentBitLogPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
 	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline)
 }
 
@@ -115,6 +124,12 @@ func MatchesLogPipelineRule(labelSet map[string]string, unprefixedRuleName strin
 // If the alert does not have an exporter label, it should be matched by all pipelines.
 func MatchesMetricPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
 	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeMetricPipeline)
+}
+
+// MatchesTracePipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a trace pipeline.
+// If the alert does not have an exporter label, it should be matched by all pipelines.
+func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
+	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeTracePipeline)
 }
 
 // MatchesTracePipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a trace pipeline.
