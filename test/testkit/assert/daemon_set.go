@@ -22,10 +22,10 @@ func DaemonSetReady(ctx context.Context, k8sClient client.Client, name types.Nam
 }
 
 func DaemonSetNotFound(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
-	Consistently(func(g Gomega) {
+	Eventually(func(g Gomega) {
 		_, err := isDaemonSetReady(ctx, k8sClient, name)
 		g.Expect(err).To(HaveOccurred())
-	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
 func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {

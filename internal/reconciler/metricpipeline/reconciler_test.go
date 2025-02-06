@@ -1192,7 +1192,7 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock.AssertExpectations(t)
 	})
 
-	t.Run("all metric pipelines do not require agents", func(t *testing.T) {
+	t.Run("one metric pipeline does not require an agent", func(t *testing.T) {
 		pipeline := testutils.NewMetricPipelineBuilder().
 			WithRuntimeInput(false).
 			WithIstioInput(false).
@@ -1247,6 +1247,155 @@ func TestReconcile(t *testing.T) {
 		)
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
+
+		agentApplierDeleterMock.AssertExpectations(t)
+		gatewayApplierDeleterMock.AssertExpectations(t)
+	})
+
+	t.Run("some metric pipelines do not require an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewMetricPipelineBuilder().
+			WithRuntimeInput(false).
+			WithIstioInput(false).
+			WithPrometheusInput(false).
+			Build()
+		pipeline2 := testutils.NewMetricPipelineBuilder().
+			WithRuntimeInput(true).
+			WithIstioInput(true).
+			WithPrometheusInput(true).
+			Build()
+		fakeClient := fake.NewClientBuilder().
+			WithScheme(scheme).
+			WithObjects(&pipeline1, &pipeline2).
+			WithStatusSubresource(&pipeline1, &pipeline2).
+			Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}), mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}), mock.Anything).Return(&agent.Config{}, nil, nil)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
+		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			agentApplierDeleterMock,
+			agentConfigBuilderMock,
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
+		_, err1 := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline1.Name}})
+		_, err2 := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline2.Name}})
+
+		require.NoError(t, err1)
+		require.NoError(t, err2)
+
+		agentApplierDeleterMock.AssertExpectations(t)
+		gatewayApplierDeleterMock.AssertExpectations(t)
+	})
+
+	t.Run("all metric pipelines do not require an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewMetricPipelineBuilder().
+			WithRuntimeInput(false).
+			WithIstioInput(false).
+			WithPrometheusInput(false).
+			Build()
+		pipeline2 := testutils.NewMetricPipelineBuilder().
+			WithRuntimeInput(false).
+			WithIstioInput(false).
+			WithPrometheusInput(false).
+			Build()
+		fakeClient := fake.NewClientBuilder().
+			WithScheme(scheme).
+			WithObjects(&pipeline1, &pipeline2).
+			WithStatusSubresource(&pipeline1, &pipeline2).
+			Build()
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}), mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(2)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		pipelineLockStub := &mocks.PipelineLock{}
+		pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
+		pipelineLockStub.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		pipelineValidatorWithStubs := &Validator{
+			EndpointValidator:  stubs.NewEndpointValidator(nil),
+			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
+			SecretRefValidator: stubs.NewSecretRefValidator(nil),
+			PipelineLock:       pipelineLockStub,
+		}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			agentApplierDeleterMock,
+			&mocks.AgentConfigBuilder{},
+			agentProberStub,
+			flowHealthProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			overridesHandlerStub,
+			pipelineLockStub,
+			pipelineValidatorWithStubs,
+			errToMsg,
+		)
+		_, err1 := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline1.Name}})
+		_, err2 := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline2.Name}})
+
+		require.NoError(t, err1)
+		require.NoError(t, err2)
 
 		agentApplierDeleterMock.AssertExpectations(t)
 		gatewayApplierDeleterMock.AssertExpectations(t)
@@ -1408,5 +1557,26 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.MetricPi
 func containsPipeline(p telemetryv1alpha1.MetricPipeline) any {
 	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 		return len(pipelines) == 1 && pipelines[0].Name == p.Name
+	})
+}
+
+func containsPipelines(pp []telemetryv1alpha1.MetricPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+		if len(pipelines) != len(pp) {
+			return false
+		}
+
+		pipelineMap := make(map[string]bool)
+		for _, p := range pipelines {
+			pipelineMap[p.Name] = true
+		}
+
+		for _, p := range pp {
+			if !pipelineMap[p.Name] {
+				return false
+			}
+		}
+
+		return true
 	})
 }
