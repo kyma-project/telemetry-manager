@@ -93,6 +93,7 @@ func expectedMakeMoveToLogStream() Operator {
 // parse body as json and move it to attributes
 func expectedMakeJSONParser() Operator {
 	regexPattern := `^{.*}$`
+
 	return Operator{
 		ID:        "json-parser",
 		Type:      "json_parser",

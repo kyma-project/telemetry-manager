@@ -29,9 +29,6 @@ const (
 	MetricAgentName = "telemetry-metric-agent"
 	LogAgentName    = "telemetry-log-agent"
 
-	metricAgentScrapeKey = "telemetry.kyma-project.io/metric-scrape"
-	logAgentScrapeKey    = "telemetry.kyma-project.io/log-scrape"
-
 	checkpointVolumeName = "varlibotelcol"
 	CheckpointVolumePath = "/var/lib/otelcol"
 	logVolumeName        = "varlogpods"
@@ -65,8 +62,7 @@ type AgentApplyOptions struct {
 
 func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryMetricScrape: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
+		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
 	}
 	volumes := []corev1.Volume{
 		makeIstioCertVolume(),

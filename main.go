@@ -95,7 +95,7 @@ var (
 const (
 	cacheSyncPeriod           = 1 * time.Minute
 	telemetryNamespaceEnvVar  = "MANAGER_NAMESPACE"
-	telemetryNamespaceDefault = "kyma-system"
+	telemetryNamespaceDefault = "default"
 	selfMonitorName           = "telemetry-self-monitor"
 	webhookServiceName        = "telemetry-manager-webhook"
 
