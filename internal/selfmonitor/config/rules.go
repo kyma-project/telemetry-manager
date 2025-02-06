@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"strings"
 	"time"
 
@@ -62,14 +63,14 @@ func MakeRules() RuleGroups {
 
 	metricRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "metric_points",
-		serviceName: "telemetry-metric-gateway-metrics",
+		serviceName: otelcollector.MetricGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricRuleBuilder.rules()...)
 
 	traceRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "spans",
-		serviceName: "telemetry-trace-gateway-metrics",
+		serviceName: otelcollector.TraceGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 
@@ -77,7 +78,7 @@ func MakeRules() RuleGroups {
 
 	logRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "log_records",
-		serviceName: "telemetry-log-gateway-metrics",
+		serviceName: otelcollector.LogGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 
@@ -132,10 +133,10 @@ func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName str
 	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeTracePipeline)
 }
 
-// MatchesTracePipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a trace pipeline.
+// MatchesLogPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a log pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
-func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
-	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeTracePipeline)
+func MatchesLogPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
+	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline)
 }
 
 func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string, t pipelineType) bool {

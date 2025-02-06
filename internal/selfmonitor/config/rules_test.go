@@ -259,7 +259,7 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname":     "TraceGatewayExporterSentData",
+				"alertname":     "LogGatewayExporterSentData",
 				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "GatewayExporterSentData",
@@ -269,7 +269,7 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name does not match",
 			labelSet: map[string]string{
-				"alertname":     "TraceGatewayExporterSentData",
+				"alertname":     "LogGatewayExporterSentData",
 				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "GatewayExporterSentData",
@@ -282,14 +282,14 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 				"alertname":     "LogAgentBufferFull",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "TraceGatewayExporterSentData",
+			unprefixedRuleName: "GatewayExporterSentData",
 			pipelineName:       "testPipeline",
 			expectedResult:     false,
 		},
 		{
 			name: "rule name matches and name label is missing",
 			labelSet: map[string]string{
-				"alertname": "TraceGatewayExporterSentData",
+				"alertname": "LogGatewayExporterSentData",
 			},
 			unprefixedRuleName: "GatewayExporterSentData",
 			pipelineName:       "testPipeline",
@@ -298,7 +298,7 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name is RulesAny and name label is missing",
 			labelSet: map[string]string{
-				"alertname": "TraceGatewayExporterSentData",
+				"alertname": "LogGatewayExporterSentData",
 			},
 			unprefixedRuleName: RulesAny,
 			pipelineName:       "testPipeline",
@@ -307,7 +307,7 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name is RulesAny and name label is present but doesn't match prefix",
 			labelSet: map[string]string{
-				"alertname":     "TraceGatewayExporterSentData",
+				"alertname":     "LogGatewayExporterSentData",
 				"pipeline_name": "otherPipeline",
 			},
 			unprefixedRuleName: RulesAny,
@@ -318,7 +318,7 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := MatchesTracePipelineRule(test.labelSet, test.unprefixedRuleName, test.pipelineName)
+			result := MatchesLogPipelineRule(test.labelSet, test.unprefixedRuleName, test.pipelineName)
 			require.Equal(t, test.expectedResult, result)
 		})
 	}
