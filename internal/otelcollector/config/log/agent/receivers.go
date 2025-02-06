@@ -53,26 +53,20 @@ func makeOperators(logPipelines []telemetryv1alpha1.LogPipeline) []Operator {
 		}
 	}
 
-	if keepOriginalBody {
-		return []Operator{
-			makeContainerParser(),
-			makeMoveToLogStream(),
-			makeJSONParser(),
-			makeCopyBodyToOriginal(),
-			makeMoveMessageToBody(),
-			makeMoveMsgToBody(),
-			makeSeverityParser(),
-		}
-	}
-
-	return []Operator{
+	operators := []Operator{
 		makeContainerParser(),
 		makeMoveToLogStream(),
 		makeJSONParser(),
+	}
+	if keepOriginalBody {
+		operators = append(operators, makeCopyBodyToOriginal())
+	}
+	operators = append(operators,
 		makeMoveMessageToBody(),
 		makeMoveMsgToBody(),
 		makeSeverityParser(),
-	}
+	)
+	return operators
 }
 
 // parse the log with containerd parser
