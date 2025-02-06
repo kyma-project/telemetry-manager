@@ -35,6 +35,18 @@
             "datasourceTemplate": "github-releases",
             "versioningTemplate": "semver",
             "depNameTemplate": "kyma-project/istio"
-        }
+        },
+        {
+            "customType": "regex",
+            "fileMatch": [
+                "^\\.env$"
+            ],
+            "matchStrings": [
+                "ENV_K3D_VERSION=(?<currentValue>\\d+?\\.\\d+?\\.\\d+?)"
+            ],
+            "datasourceTemplate": "github-releases",
+            "versioningTemplate": "semver",
+            "depNameTemplate": "k3d-io/k3d"
+        },
     ]
 }
