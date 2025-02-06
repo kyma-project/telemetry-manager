@@ -67,10 +67,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		// TODO: Pipeline should have AgentRunning condition
-		// TODO: DaemonSet is running
-		// TODO: Disable inputs
-
 		It("Pipeline should have AgentNotRequired condition", Label(suite.LabelUpgrade), func() {
 			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeAgentHealthy,
