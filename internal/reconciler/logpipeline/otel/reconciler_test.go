@@ -15,6 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
@@ -36,10 +37,17 @@ func TestReconcile(t *testing.T) {
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
 	telemetryNamespace := "default"
+	moduleVersion := "1.0.0"
 
 	t.Run("log gateway probing failed", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -48,21 +56,19 @@ func TestReconcile(t *testing.T) {
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
 
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			// EndpointValidator:  stubs.NewEndpointValidator(nil),
-			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			// SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
+		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
+			moduleVersion,
+			agentConfigBuilderMock,
+			agentApplierDeleterMock,
+			agentProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -90,6 +96,12 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
 
@@ -97,21 +109,19 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			// 	EndpointValidator:  stubs.NewEndpointValidator(nil),
-			// 	TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			// 	SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
+		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
+			moduleVersion,
+			agentConfigBuilderMock,
+			agentApplierDeleterMock,
+			agentProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -139,6 +149,12 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+
 		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
 		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
 
@@ -146,21 +162,19 @@ func TestReconcile(t *testing.T) {
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
-		// flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		// 		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			// EndpointValidator:  stubs.NewEndpointValidator(nil),
-			// TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			// SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
+		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
+			moduleVersion,
+			agentConfigBuilderMock,
+			agentApplierDeleterMock,
+			agentProberStub,
 			gatewayApplierDeleterMock,
 			gatewayConfigBuilderMock,
 			gatewayProberStub,
@@ -180,6 +194,109 @@ func TestReconcile(t *testing.T) {
 			"Log gateway Deployment is ready",
 		)
 
+		gatewayConfigBuilderMock.AssertExpectations(t)
+	})
+	t.Run("log agent daemonset is not ready", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(true).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
+
+		pipelineValidatorWithStubs := &Validator{}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			agentConfigBuilderMock,
+			agentApplierDeleterMock,
+			agentProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			pipelineValidatorWithStubs,
+			errToMsg)
+		err := sut.Reconcile(context.Background(), &pipeline)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionFalse,
+			conditions.ReasonAgentNotReady,
+			"Pod is in the pending state because container:  is not running due to: Error. Please check the container:  logs.")
+
+		agentConfigBuilderMock.AssertExpectations(t)
+		gatewayConfigBuilderMock.AssertExpectations(t)
+	})
+
+	t.Run("log agent daemonset is ready", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(true).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		pipelineValidatorWithStubs := &Validator{}
+
+		errToMsg := &conditions.ErrorToMessageConverter{}
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			agentConfigBuilderMock,
+			agentApplierDeleterMock,
+			agentProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			pipelineValidatorWithStubs,
+			errToMsg)
+		err := sut.Reconcile(context.Background(), &pipeline)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonAgentReady,
+			"Log agent DaemonSet is ready")
+
+		agentConfigBuilderMock.AssertExpectations(t)
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
 	// TODO: "referenced secret missing" (requires SecretRefValidator to be implemented)
