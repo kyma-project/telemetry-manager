@@ -228,7 +228,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeAgentHealthy,
 			metav1.ConditionTrue,
 			conditions.ReasonAgentReady,
-			"Fluent Bit agent DaemonSet is ready",
+			"Log agent DaemonSet is ready",
 		)
 
 		var cm corev1.ConfigMap
@@ -320,7 +320,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeFlowHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonSelfMonConfigNotGenerated,
-			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 		)
 
 		name := types.NamespacedName{Name: testConfig.DaemonSet.Name, Namespace: testConfig.DaemonSet.Namespace}
@@ -402,7 +402,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
 			conditions.ReasonAgentConfigured,
-			"LogPipeline specification is successfully applied to the configuration of Fluent Bit agent",
+			"LogPipeline specification is successfully applied to the configuration of Log agent",
 		)
 
 		var cm corev1.ConfigMap
@@ -671,7 +671,7 @@ func TestReconcile(t *testing.T) {
 						conditions.TypeFlowHealthy,
 						metav1.ConditionFalse,
 						conditions.ReasonSelfMonConfigNotGenerated,
-						"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+						"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 					)
 				}
 
@@ -809,7 +809,7 @@ func TestReconcile(t *testing.T) {
 			conditions.TypeFlowHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonSelfMonConfigNotGenerated,
-			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Fluent Bit agent. Check the 'ConfigurationGenerated' condition for more details",
+			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 		)
 
 		var cm corev1.ConfigMap

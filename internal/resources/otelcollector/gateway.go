@@ -60,86 +60,13 @@ var (
 	traceGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
-func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
-	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryLogIngest: "true",
-		commonresources.LabelKeyTelemetryLogExport: "true",
-		commonresources.LabelKeyIstioInject:        "true", // inject istio sidecar
-	}
-
-	return &GatewayApplierDeleter{
-		baseName:             LogGatewayName,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		namespace:            namespace,
-		otlpServiceName:      LogOTLPServiceName,
-		priorityClassName:    priorityClassName,
-		rbac:                 makeLogGatewayRBAC(namespace),
-		baseMemoryLimit:      logGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
-		baseCPURequest:       logGatewayBaseCPURequest,
-		dynamicCPURequest:    logGatewayDynamicCPURequest,
-		baseMemoryRequest:    logGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
-	}
-}
-
-func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
-	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryMetricIngest: "true",
-		commonresources.LabelKeyTelemetryMetricExport: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject istio sidecar
-	}
-
-	return &GatewayApplierDeleter{
-		baseName:             MetricGatewayName,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		namespace:            namespace,
-		otlpServiceName:      MetricOTLPServiceName,
-		priorityClassName:    priorityClassName,
-		rbac:                 makeMetricGatewayRBAC(namespace),
-		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
-		baseCPURequest:       metricGatewayBaseCPURequest,
-		dynamicCPURequest:    metricGatewayDynamicCPURequest,
-		baseMemoryRequest:    metricGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
-	}
-}
-
-func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
-	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryTraceIngest: "true",
-		commonresources.LabelKeyTelemetryTraceExport: "true",
-		commonresources.LabelKeyIstioInject:          "true", // inject istio sidecar
-	}
-
-	return &GatewayApplierDeleter{
-		baseName:             TraceGatewayName,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		namespace:            namespace,
-		otlpServiceName:      TraceOTLPServiceName,
-		priorityClassName:    priorityClassName,
-		rbac:                 makeTraceGatewayRBAC(namespace),
-		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
-		baseCPURequest:       traceGatewayBaseCPURequest,
-		dynamicCPURequest:    traceGatewayDynamicCPURequest,
-		baseMemoryRequest:    traceGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
-	}
-}
-
 type GatewayApplierDeleter struct {
-	baseName          string
-	extraPodLabels    map[string]string
-	image             string
-	namespace         string
-	otlpServiceName   string
-	priorityClassName string
-	rbac              rbac
+	baseName        string
+	extraPodLabels  map[string]string
+	image           string
+	namespace       string
+	otlpServiceName string
+	rbac            rbac
 
 	baseMemoryLimit      resource.Quantity
 	dynamicMemoryLimit   resource.Quantity
@@ -147,6 +74,8 @@ type GatewayApplierDeleter struct {
 	dynamicCPURequest    resource.Quantity
 	baseMemoryRequest    resource.Quantity
 	dynamicMemoryRequest resource.Quantity
+
+	podSpecOptions []podSpecOption
 }
 
 type GatewayApplyOptions struct {
@@ -161,6 +90,103 @@ type GatewayApplyOptions struct {
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
+}
+
+//nolint:dupl // repeating the code as we have three different signals
+func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		commonresources.LabelKeyTelemetryLogIngest: "true",
+		commonresources.LabelKeyTelemetryLogExport: "true",
+		commonresources.LabelKeyIstioInject:        "true", // inject istio sidecar
+	}
+
+	return &GatewayApplierDeleter{
+		baseName:             LogGatewayName,
+		extraPodLabels:       extraLabels,
+		image:                image,
+		namespace:            namespace,
+		otlpServiceName:      LogOTLPServiceName,
+		rbac:                 makeLogGatewayRBAC(namespace),
+		baseMemoryLimit:      logGatewayBaseMemoryLimit,
+		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
+		baseCPURequest:       logGatewayBaseCPURequest,
+		dynamicCPURequest:    logGatewayDynamicCPURequest,
+		baseMemoryRequest:    logGatewayBaseMemoryRequest,
+		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
+		podSpecOptions: []podSpecOption{
+			commonresources.WithPriorityClass(priorityClassName),
+			withAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
+			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			withSecurityContext(makeLogGatewaySecurityContext()),
+			withPodSecurityContext(makeLogGatewayPodSecurityContext()),
+		},
+	}
+}
+
+//nolint:dupl // repeating the code as we have three different signals
+func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		commonresources.LabelKeyTelemetryMetricIngest: "true",
+		commonresources.LabelKeyTelemetryMetricExport: "true",
+		commonresources.LabelKeyIstioInject:           "true", // inject istio sidecar
+	}
+
+	return &GatewayApplierDeleter{
+		baseName:             MetricGatewayName,
+		extraPodLabels:       extraLabels,
+		image:                image,
+		namespace:            namespace,
+		otlpServiceName:      MetricOTLPServiceName,
+		rbac:                 makeMetricGatewayRBAC(namespace),
+		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
+		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
+		baseCPURequest:       metricGatewayBaseCPURequest,
+		dynamicCPURequest:    metricGatewayDynamicCPURequest,
+		baseMemoryRequest:    metricGatewayBaseMemoryRequest,
+		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
+		podSpecOptions: []podSpecOption{
+			commonresources.WithPriorityClass(priorityClassName),
+			withAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(MetricGatewayName))),
+			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			withSecurityContext(makeMetricGatewaySecurityContext()),
+			withPodSecurityContext(makeMetricGatewayPodSecurityContext()),
+		},
+	}
+}
+
+//nolint:dupl // repeating the code as we have three different signals
+func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *GatewayApplierDeleter {
+	extraLabels := map[string]string{
+		commonresources.LabelKeyTelemetryTraceIngest: "true",
+		commonresources.LabelKeyTelemetryTraceExport: "true",
+		commonresources.LabelKeyIstioInject:          "true", // inject istio sidecar
+	}
+
+	return &GatewayApplierDeleter{
+		baseName:             TraceGatewayName,
+		extraPodLabels:       extraLabels,
+		image:                image,
+		namespace:            namespace,
+		otlpServiceName:      TraceOTLPServiceName,
+		rbac:                 makeTraceGatewayRBAC(namespace),
+		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
+		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
+		baseCPURequest:       traceGatewayBaseCPURequest,
+		dynamicCPURequest:    traceGatewayDynamicCPURequest,
+		baseMemoryRequest:    traceGatewayBaseMemoryRequest,
+		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
+
+		podSpecOptions: []podSpecOption{
+			commonresources.WithPriorityClass(priorityClassName),
+			withAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(TraceGatewayName))),
+			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			withSecurityContext(makeTraceGatewaySecurityContext()),
+			withPodSecurityContext(makeTraceGatewayPodSecurityContext()),
+		},
+	}
 }
 
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
@@ -252,17 +278,18 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
 	resources := gad.makeGatewayResourceRequirements(opts)
-	affinity := makePodAffinity(selectorLabels)
+
+	podSpecs := gad.podSpecOptions
+	podSpecs = append(podSpecs,
+		commonresources.WithResources(resources),
+		commonresources.WithResources(resources),
+		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
+	)
 
 	podSpec := makePodSpec(
 		gad.baseName,
 		gad.image,
-		commonresources.WithPriorityClass(gad.priorityClassName),
-		commonresources.WithResources(resources),
-		withAffinity(affinity),
-		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
+		podSpecs...,
 	)
 
 	return &appsv1.Deployment{
@@ -403,4 +430,82 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	}
 
 	return annotations
+}
+
+func makeMetricGatewaySecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To(collectorUser),
+		RunAsNonRoot:             ptr.To(true),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		},
+	}
+}
+
+func makeMetricGatewayPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		RunAsUser:    ptr.To(collectorUser),
+		RunAsNonRoot: ptr.To(true),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+}
+
+func makeLogGatewaySecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To(collectorUser),
+		RunAsNonRoot:             ptr.To(true),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		},
+	}
+}
+
+func makeLogGatewayPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		RunAsNonRoot: ptr.To(true),
+		RunAsUser:    ptr.To(collectorUser),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+}
+
+func makeTraceGatewaySecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To(collectorUser),
+		RunAsNonRoot:             ptr.To(true),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		},
+	}
+}
+
+func makeTraceGatewayPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		RunAsUser:    ptr.To(collectorUser),
+		RunAsNonRoot: ptr.To(true),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
 }
