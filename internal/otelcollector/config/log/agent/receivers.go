@@ -61,11 +61,13 @@ func makeOperators(logPipelines []telemetryv1alpha1.LogPipeline) []Operator {
 	if keepOriginalBody {
 		operators = append(operators, makeCopyBodyToOriginal())
 	}
+
 	operators = append(operators,
 		makeMoveMessageToBody(),
 		makeMoveMsgToBody(),
 		makeSeverityParser(),
 	)
+
 	return operators
 }
 
