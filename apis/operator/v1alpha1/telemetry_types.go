@@ -69,6 +69,7 @@ type TraceGatewaySpec struct {
 // LogSpec defines the behavior of the log gateway
 type LogSpec struct {
 	Gateway LogGatewaySpec `json:"gateway,omitempty"`
+	Presets *Presets       `json:"presets,omitempty"`
 }
 
 type LogGatewaySpec struct {
@@ -169,4 +170,16 @@ type Status struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Deleting;Ready;Warning
 	State State `json:"state"`
+}
+
+type Presets struct {
+	Enabled   bool       `json:"enabled,omitempty"`
+	PodLabels []PodLabel `json:"podLabels,omitempty"`
+}
+
+// +kubebuilder:validation:XValidation:rule="(has(self.key) || has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
+// +kubebuilder:validation:XValidation:rule="!(has(self.key) && has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
+type PodLabel struct {
+	Key       string `json:"key,omitempty"`
+	KeyPrefix string `json:"keyPrefix,omitempty"`
 }

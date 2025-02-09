@@ -54,6 +54,8 @@ type LogPipeline struct {
 
 // LogPipelineSpec defines the desired state of LogPipeline
 // +kubebuilder:validation:XValidation:rule="!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))", message="otlp input is only supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.input.application.dropLabels))", message="input.application.dropLabels is not supported with otlp output"
+// +kubebuilder:validation:XValidation:rule="!(has(self.output.otlp) && has(self.input.application.keepAnnotations))", message="input.application.keepAnnotations is not supported with otlp output"
 type LogPipelineSpec struct {
 	// Defines where to collect logs, including selector mechanisms.
 	Input   LogPipelineInput    `json:"input,omitempty"`
@@ -83,8 +85,10 @@ type LogPipelineApplicationInput struct {
 	// Describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	Containers LogPipelineContainerSelector `json:"containers,omitempty"`
 	// Defines whether to keep all Kubernetes annotations. The default is `false`.
+	// +optional
 	KeepAnnotations bool `json:"keepAnnotations,omitempty"`
 	// Defines whether to drop all Kubernetes labels. The default is `false`.
+	// +optional
 	DropLabels bool `json:"dropLabels,omitempty"`
 	// If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `KeepOriginalBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. The default is `true`.
 	// +optional

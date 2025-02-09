@@ -12,6 +12,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -175,6 +176,7 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		ClusterName:   clusterInfo.ClusterName,
 		CloudProvider: clusterInfo.CloudProvider,
+		Presets:       r.getPresetsFromTelemetry(ctx),
 	})
 
 	if err != nil {
@@ -239,6 +241,46 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	return defaultReplicaCount
+}
+
+func (r *Reconciler) getPresetsFromTelemetry(ctx context.Context) gatewayprocs.Presets {
+	var telemetries operatorv1alpha1.TelemetryList
+	if err := r.List(ctx, &telemetries); err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default presets")
+		return gatewayprocs.Presets{}
+	}
+
+	for i := range telemetries.Items {
+		telemetrySpec := telemetries.Items[i].Spec
+		if telemetrySpec.Log == nil {
+			continue
+		}
+
+		if telemetrySpec.Log.Presets == nil {
+			continue
+		}
+
+		mapPodLabels := func(values []operatorv1alpha1.PodLabel, fn func(operatorv1alpha1.PodLabel) gatewayprocs.PodLabel) []gatewayprocs.PodLabel {
+			var result []gatewayprocs.PodLabel
+			for i := range values {
+				result = append(result, fn(values[i]))
+			}
+
+			return result
+		}
+
+		return gatewayprocs.Presets{
+			Enabled: telemetrySpec.Log.Presets.Enabled,
+			PodLabels: mapPodLabels(telemetrySpec.Log.Presets.PodLabels, func(value operatorv1alpha1.PodLabel) gatewayprocs.PodLabel {
+				return gatewayprocs.PodLabel{
+					Key:       value.Key,
+					KeyPrefix: value.KeyPrefix,
+				}
+			}),
+		}
+	}
+
+	return gatewayprocs.Presets{}
 }
 
 func getGatewayPorts() []int32 {

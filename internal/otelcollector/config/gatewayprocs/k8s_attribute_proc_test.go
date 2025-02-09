@@ -63,9 +63,25 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 			Key:     "kubernetes.io/arch",
 			TagName: "host.arch",
 		},
+		{
+			From:     "pod",
+			KeyRegex: "(app.kubernetes.io/name.*)",
+			TagName:  "k8s.pod.label.$0",
+		},
+		{
+			From:     "pod",
+			KeyRegex: "(^app$)",
+			TagName:  "k8s.pod.label.$0",
+		},
 	}
 
-	config := K8sAttributesProcessorConfig()
+	config := K8sAttributesProcessorConfig(Presets{
+		Enabled: true,
+		PodLabels: []PodLabel{
+			{Key: "", KeyPrefix: "app.kubernetes.io/name"},
+			{Key: "app", KeyPrefix: ""},
+		},
+	})
 
 	require.Equal("serviceAccount", config.AuthType)
 	require.Equal(false, config.Passthrough)

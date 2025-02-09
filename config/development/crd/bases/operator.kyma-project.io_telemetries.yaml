@@ -75,6 +75,25 @@ spec:
                             type: string
                         type: object
                     type: object
+                  presets:
+                    properties:
+                      enabled:
+                        type: boolean
+                      podLabels:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            keyPrefix:
+                              type: string
+                          type: object
+                          x-kubernetes-validations:
+                          - message: Either 'key' or 'keyPrefix' must be specified
+                            rule: (has(self.key) || has(self.keyPrefix))
+                          - message: Either 'key' or 'keyPrefix' must be specified
+                            rule: '!(has(self.key) && has(self.keyPrefix))'
+                        type: array
+                    type: object
                 type: object
               metric:
                 description: MetricSpec defines the behavior of the metric gateway

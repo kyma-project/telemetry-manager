@@ -4,7 +4,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-func K8sAttributesProcessorConfig() *config.K8sAttributesProcessor {
+func K8sAttributesProcessorConfig(presets Presets) *config.K8sAttributesProcessor {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -33,7 +33,7 @@ func K8sAttributesProcessorConfig() *config.K8sAttributesProcessor {
 		Passthrough: false,
 		Extract: config.ExtractK8sMetadata{
 			Metadata: k8sAttributes,
-			Labels:   extractLabels(),
+			Labels:   append(extractLabels(), buildPodLabelPresets(presets)...),
 		},
 		PodAssociation: podAssociations,
 	}
