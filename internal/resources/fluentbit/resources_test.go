@@ -28,7 +28,7 @@ func TestMakeDaemonSet(t *testing.T) {
 		"checksum/config": checksum,
 		"traffic.sidecar.istio.io/excludeInboundPorts": "2020,2021",
 	}
-	daemonSet := MakeDaemonSet(name, checksum, ds)
+	daemonSet := MakeDaemonSet(name.Namespace, checksum, ds)
 
 	require.NotNil(t, daemonSet)
 	require.Equal(t, daemonSet.Name, name.Name)
