@@ -80,20 +80,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineNameWithInput)
 		})
 
+		It("Pipeline with no input should have AgentNotRequired condition", Label(suite.LabelUpgrade), func() {
+			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameNoInput, metav1.Condition{
+				Type:   conditions.TypeAgentHealthy,
+				Status: metav1.ConditionTrue,
+				Reason: conditions.ReasonMetricAgentNotRequired,
+			})
+		})
+
 		It("Ensures the metric agent DaemonSet is running", func() {
 			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Should delete the pipeline with input", func() {
 			Expect(kitk8s.DeleteObjects(ctx, k8sClient, &metricPipelineWithInput)).Should(Succeed())
-		})
-
-		It("Remaining pipeline should have AgentNotRequired condition", Label(suite.LabelUpgrade), func() {
-			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameNoInput, metav1.Condition{
-				Type:   conditions.TypeAgentHealthy,
-				Status: metav1.ConditionTrue,
-				Reason: conditions.ReasonMetricAgentNotRequired,
-			})
 		})
 
 		It("Ensures the metric agent DaemonSet is no longer running", func() {
