@@ -22,7 +22,7 @@ type LogPipelineProbeResult struct {
 }
 
 func NewOtelLogPipelineProber(selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
-	return newOTelPipelineProber(selfMonitorName, config.MatchesMetricPipelineRule)
+	return newOTelPipelineProber(selfMonitorName, config.MatchesLogPipelineRule)
 }
 
 func NewLogPipelineProber(selfMonitorName types.NamespacedName) (*LogPipelineProber, error) {
