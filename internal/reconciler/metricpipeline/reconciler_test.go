@@ -1248,6 +1248,15 @@ func TestReconcile(t *testing.T) {
 		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonMetricAgentNotRequired,
+			"")
+
 		agentApplierDeleterMock.AssertExpectations(t)
 		gatewayApplierDeleterMock.AssertExpectations(t)
 	})
@@ -1276,7 +1285,7 @@ func TestReconcile(t *testing.T) {
 		agentConfigBuilderMock.On("Build", containsPipelines([]telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}), mock.Anything).Return(&agent.Config{}, nil, nil)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
 		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -1324,6 +1333,16 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err1)
 		require.NoError(t, err2)
 
+		var updatedPipeline1 telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
+
+		requireHasStatusCondition(t, updatedPipeline1,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonMetricAgentNotRequired,
+			"")
+
+		agentConfigBuilderMock.AssertExpectations(t)
 		agentApplierDeleterMock.AssertExpectations(t)
 		gatewayApplierDeleterMock.AssertExpectations(t)
 	})
@@ -1396,6 +1415,22 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err1)
 		require.NoError(t, err2)
+
+		var updatedPipeline1 telemetryv1alpha1.MetricPipeline
+		var updatedPipeline2 telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline2.Name}, &updatedPipeline2)
+
+		requireHasStatusCondition(t, updatedPipeline1,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonMetricAgentNotRequired,
+			"")
+		requireHasStatusCondition(t, updatedPipeline2,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonMetricAgentNotRequired,
+			"")
 
 		agentApplierDeleterMock.AssertExpectations(t)
 		gatewayApplierDeleterMock.AssertExpectations(t)
