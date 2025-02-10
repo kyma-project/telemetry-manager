@@ -166,15 +166,21 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
 
+	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
+
+	if len(reconcilablePipelinesRequiringAgents) == 0 {
+		logf.FromContext(ctx).V(1).Info("cleaning up metric agent resources: no metric pipelines require an agent")
+
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
+			return fmt.Errorf("failed to delete agent resources: %w", err)
+		}
+	}
+
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up metric pipeline resources: all metric pipelines are non-reconcilable")
 
 		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
-		}
-
-		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
-			return fmt.Errorf("failed to delete agent resources: %w", err)
 		}
 
 		return nil
@@ -231,6 +237,18 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	}
 
 	return false, nil
+}
+
+func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
+	var pipelinesRequiringAgents []telemetryv1alpha1.MetricPipeline
+
+	for i := range allPipelines {
+		if isMetricAgentRequired(&allPipelines[i]) {
+			pipelinesRequiringAgents = append(pipelinesRequiringAgents, allPipelines[i])
+		}
+	}
+
+	return pipelinesRequiringAgents
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
