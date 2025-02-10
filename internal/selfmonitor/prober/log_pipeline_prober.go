@@ -21,6 +21,10 @@ type LogPipelineProbeResult struct {
 	BufferFillingUp bool
 }
 
+func NewOtelLogPipelineProber(selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
+	return newOTelPipelineProber(selfMonitorName, config.MatchesMetricPipelineRule)
+}
+
 func NewLogPipelineProber(selfMonitorName types.NamespacedName) (*LogPipelineProber, error) {
 	promClient, err := newPrometheusClient(selfMonitorName)
 	if err != nil {

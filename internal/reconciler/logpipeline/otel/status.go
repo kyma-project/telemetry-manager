@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -41,13 +42,69 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
 	r.setAgentHealthyCondition(ctx, &pipeline)
 
-	// r.setFlowHealthCondition(ctx, &pipeline)
+	r.setFlowHealthCondition(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update LogPipeline status: %w", err)
 	}
 
 	return nil
+}
+
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
+
+	condition := metav1.Condition{
+		Type:               conditions.TypeFlowHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (metav1.ConditionStatus, string) {
+	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
+	if configGeneratedStatus == metav1.ConditionFalse {
+		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
+	}
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonProbingFailed
+	}
+
+	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
+	reason := flowHealthReasonFor(probeResult)
+	if probeResult.Healthy {
+		return metav1.ConditionTrue, reason
+	}
+
+	return metav1.ConditionFalse, reason
+}
+
+func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
+	if probeResult.AllDataDropped {
+		return conditions.ReasonSelfMonAllDataDropped
+	}
+
+	if probeResult.SomeDataDropped {
+		return conditions.ReasonSelfMonSomeDataDropped
+	}
+
+	if probeResult.QueueAlmostFull {
+		return conditions.ReasonSelfMonBufferFillingUp
+	}
+
+	if probeResult.Throttling {
+		return conditions.ReasonSelfMonGatewayThrottling
+	}
+
+	return conditions.ReasonSelfMonFlowHealthy
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
