@@ -22,6 +22,7 @@ import (
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
@@ -58,6 +59,9 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -66,6 +70,7 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -111,6 +116,9 @@ func TestReconcile(t *testing.T) {
 		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
 		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		pipelineValidatorWithStubs := &Validator{}
 
 		errToMsg := &conditions.ErrorToMessageConverter{}
@@ -119,6 +127,7 @@ func TestReconcile(t *testing.T) {
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -166,12 +175,16 @@ func TestReconcile(t *testing.T) {
 
 		pipelineValidatorWithStubs := &Validator{}
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -217,12 +230,16 @@ func TestReconcile(t *testing.T) {
 
 		pipelineValidatorWithStubs := &Validator{}
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,
@@ -269,12 +286,16 @@ func TestReconcile(t *testing.T) {
 
 		pipelineValidatorWithStubs := &Validator{}
 
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
 		errToMsg := &conditions.ErrorToMessageConverter{}
 
 		sut := New(
 			fakeClient,
 			telemetryNamespace,
 			moduleVersion,
+			flowHealthProberStub,
 			agentConfigBuilderMock,
 			agentApplierDeleterMock,
 			agentProberStub,

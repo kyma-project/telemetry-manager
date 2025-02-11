@@ -98,6 +98,9 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 	}
 
 	otelFlowHealthProber, err := prober.NewOtelLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	if err != nil {
+		return nil, err
+	}
 
 	fbReconciler, err := configureFluentBitReconciler(client, config, flowHealthProber)
 	if err != nil {

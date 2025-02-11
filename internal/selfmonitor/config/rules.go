@@ -1,11 +1,12 @@
 package config
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"strings"
 	"time"
 
 	"github.com/prometheus/common/model"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 const (
