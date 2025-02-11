@@ -125,6 +125,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	syncer := syncer{
 		Client: c,
 		Config: opts.Config,
+		Names:  names,
 	}
 
 	if err := syncer.syncFluentBitConfig(ctx, opts.Pipeline, opts.DeployableLogPipelines); err != nil {

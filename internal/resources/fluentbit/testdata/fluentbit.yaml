@@ -2,8 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: foo-filescm
-  namespace: kyma-system
+  name: telemetry-fluent-bit-files
   ownerReferences:
   - apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -48,8 +47,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: telemetry
     app.kubernetes.io/name: fluent-bit
-  name: foo-luacm
-  namespace: kyma-system
+  name: telemetry-fluent-bit-luascripts
 ---
 apiVersion: v1
 data:
@@ -72,8 +70,7 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: foo-sectionscm
-  namespace: kyma-system
+  name: telemetry-fluent-bit-sections
   ownerReferences:
   - apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -84,8 +81,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   creationTimestamp: null
-  name: foo-evnconfigsecret
-  namespace: kyma-system
+  name: telemetry-fluent-bit-env
   ownerReferences:
   - apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -96,8 +92,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   creationTimestamp: null
-  name: foo-tlsfileconfigsecret
-  namespace: kyma-system
+  name: telemetry-fluent-bit-output-tls-config
   ownerReferences:
   - apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -116,8 +111,7 @@ metadata:
     app.kubernetes.io/instance: telemetry
     app.kubernetes.io/name: fluent-bit
     telemetry.kyma-project.io/self-monitor: enabled
-  name: foo-daemonset-exporter-metrics
-  namespace: kyma-system
+  name: telemetry-fluent-bit-exporter-metrics
 spec:
   ports:
   - name: http-metrics
@@ -144,8 +138,7 @@ metadata:
     app.kubernetes.io/instance: telemetry
     app.kubernetes.io/name: fluent-bit
     telemetry.kyma-project.io/self-monitor: enabled
-  name: foo-daemonset-metrics
-  namespace: kyma-system
+  name: telemetry-fluent-bit-metrics
 spec:
   ports:
   - name: http
@@ -166,8 +159,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: telemetry
     app.kubernetes.io/name: fluent-bit
-  name: foo-daemonset
-  namespace: kyma-system
+  name: telemetry-fluent-bit
 spec:
   egress:
   - to:

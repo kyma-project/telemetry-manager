@@ -22,6 +22,7 @@ import (
 type syncer struct {
 	client.Client
 	Config Config
+	Names  ResourceNames
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
@@ -61,7 +62,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 }
 
 func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployablePipelines []telemetryv1alpha1.LogPipeline) error {
-	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.Config.SectionsConfigMap)
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.Names.SectionsConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
@@ -100,7 +101,7 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 }
 
 func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.Config.FilesConfigMap)
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.Names.FilesConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get files configmap: %w", err)
 	}
@@ -132,7 +133,7 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 
 // Copies HTTP-specific attributes and user-provided variables to a secret that is later used for providing environment variables to the Fluent Bit configuration.
 func (s *syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.Config.EnvConfigSecret)
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.Names.EnvConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
 	}
@@ -199,7 +200,7 @@ func (s *syncer) copyConfigSecretData(ctx context.Context, prefix string, value 
 // Copies TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
 // (since PEM-encoded strings exceed the maximum allowed length of environment variables on some Linux machines).
 func (s *syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.Config.TLSFileConfigSecret)
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.Names.TLSFileConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
 	}
