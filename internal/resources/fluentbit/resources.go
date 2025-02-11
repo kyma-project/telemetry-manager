@@ -29,19 +29,14 @@ import (
 )
 
 const (
-	istioExcludeInboundPorts = "traffic.sidecar.istio.io/excludeInboundPorts"
-	LogAgentName             = "telemetry-fluent-bit"
-)
-
-const (
-	fbBaseName                = "telemetry-fluent-bit"
-	fbSectionsConfigMapName   = fbBaseName + "-sections"
-	fbFilesConfigMapName      = fbBaseName + "-files"
-	fbLuaConfigMapName        = fbBaseName + "-luascripts"
-	fbParsersConfigMapName    = fbBaseName + "-parsers"
-	fbEnvConfigSecretName     = fbBaseName + "-env"
-	fbTLSFileConfigSecretName = fbBaseName + "-output-tls-config"
-	fbDaemonSetName           = fbBaseName
+	LogAgentName              = "telemetry-fluent-bit"
+	fbSectionsConfigMapName   = LogAgentName + "-sections"
+	fbFilesConfigMapName      = LogAgentName + "-files"
+	fbLuaConfigMapName        = LogAgentName + "-luascripts"
+	fbParsersConfigMapName    = LogAgentName + "-parsers"
+	fbEnvConfigSecretName     = LogAgentName + "-env"
+	fbTLSFileConfigSecretName = LogAgentName + "-output-tls-config"
+	fbDaemonSetName           = LogAgentName
 )
 
 var (
@@ -52,15 +47,8 @@ var (
 )
 
 type Config struct {
-	DaemonSet           types.NamespacedName
-	SectionsConfigMap   types.NamespacedName
-	FilesConfigMap      types.NamespacedName
-	LuaConfigMap        types.NamespacedName
-	ParsersConfigMap    types.NamespacedName
-	EnvConfigSecret     types.NamespacedName
-	TLSFileConfigSecret types.NamespacedName
-	PipelineDefaults    builder.PipelineDefaults
-	Overrides           overrides.Config
+	PipelineDefaults builder.PipelineDefaults
+	Overrides        overrides.Config
 }
 
 type ResourceNames struct {
@@ -92,10 +80,11 @@ type AgentApplierDeleter struct {
 	memoryRequest resource.Quantity
 }
 
-func NewFluentBitApplierDeleter(fbImage, exporterImage, priorityClassName string) *AgentApplierDeleter {
+func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, priorityClassName string) *AgentApplierDeleter {
 	return &AgentApplierDeleter{
+		namespace: namespace,
 		extraPodLabel: map[string]string{
-			commonresources.LabelKeyIstioInject: "true",
+			commonresources.LabelKeyIstioInject:        "true",
 			commonresources.LabelKeyTelemetryLogExport: "true",
 		},
 		fluentBitImage:    fbImage,
@@ -176,12 +165,12 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to calculate config checksum: %w", err)
 	}
 
-	daemonSet := aad.makeDaemonSet(names.DaemonSet, checksum)
+	daemonSet := aad.makeDaemonSet(names.DaemonSet.Namespace, checksum)
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
 		return err
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(names.DaemonSet, opts.AllowedPorts, labels())
+	networkPolicy := commonresources.MakeNetworkPolicy(names.DaemonSet, opts.AllowedPorts, Labels(), selectorLabels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}
@@ -315,7 +304,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	annotations[commonresources.AnnotationKeyChecksumConfig] = checksum
 	annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
 
-	podLabels := labels()
+	podLabels := Labels()
 	maps.Copy(podLabels, aad.extraPodLabel)
 
 	return &appsv1.DaemonSet{
@@ -327,7 +316,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(),
+				MatchLabels: selectorLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -336,7 +325,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: LogAgentName,
-					PriorityClassName:  dsConfig.PriorityClassName,
+					PriorityClassName:  aad.priorityClassName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot:   ptr.To(false),
 						SeccompProfile: &corev1.SeccompProfile{Type: "RuntimeDefault"},
@@ -564,8 +553,8 @@ func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func MakeMetricsService(name types.NamespacedName) *corev1.Service {
-	serviceLabels := labels()
+func makeMetricsService(name types.NamespacedName) *corev1.Service {
+	serviceLabels := Labels()
 	serviceLabels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
 
 	return &corev1.Service{
@@ -589,14 +578,14 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http"),
 				},
 			},
-			Selector: SelectorLabels(),
+			Selector: selectorLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
 
-func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
-	serviceLabels := labels()
+func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
+	serviceLabels := Labels()
 	serviceLabels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
 
 	return &corev1.Service{
@@ -619,7 +608,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},
-			Selector: SelectorLabels(),
+			Selector: selectorLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -656,7 +645,7 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{
 			"custom_parsers.conf": parserConfig,
@@ -670,7 +659,7 @@ func makeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{"parsers.conf": ""},
 	}
@@ -713,20 +702,20 @@ end
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{"filter-script.lua": luaFilter},
 	}
 }
 
-func labels() map[string]string {
+func Labels() map[string]string {
 	result := commonresources.MakeDefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
 }
 
-func SelectorLabels() map[string]string {
+func selectorLabels() map[string]string {
 	result := commonresources.MakeDefaultSelectorLabels("fluent-bit")
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 

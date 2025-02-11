@@ -27,6 +27,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 	exporterImage := "foo-exporter"
 	priorityClassName := "foo-prio-class"
 	logPipeline := testutils.NewLogPipelineBuilder().WithName("foo-logpipeline").Build()
+	namespace := "kyma-system"
 
 	tests := []struct {
 		name           string
@@ -36,7 +37,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 	}{
 		{
 			name:           "fluentbit",
-			sut:            NewFluentBitApplierDeleter(image, exporterImage, priorityClassName),
+			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, priorityClassName),
 			goldenFilePath: "testdata/fluentbit.yaml",
 		},
 	}
@@ -108,6 +109,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	exporterImage := "foo-exporter"
 	priorityClassName := "foo-prio-class"
 	logPipeline := testutils.NewLogPipelineBuilder().WithName("foo-logpipeline").Build()
+	namespace := "kyma-system"
 
 	var created []client.Object
 
@@ -128,7 +130,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut:  NewFluentBitApplierDeleter(image, exporterImage, priorityClassName),
+			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, priorityClassName),
 		},
 	}
 

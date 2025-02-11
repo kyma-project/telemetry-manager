@@ -147,6 +147,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 	}
 
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
+		config.TelemetryNamespace,
 		config.FluentBitImage,
 		config.ExporterImage,
 		config.FluentBitPriorityClassName,
@@ -159,6 +160,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 
 	fbReconciler := logpipelinefluentbit.New(
 		client,
+		config.TelemetryNamespace,
 		fluentBitApplierDeleter,
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,

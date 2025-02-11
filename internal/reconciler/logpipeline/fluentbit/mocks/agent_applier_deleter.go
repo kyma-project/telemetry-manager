@@ -35,17 +35,17 @@ func (_m *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Clie
 	return r0
 }
 
-// DeleteResources provides a mock function with given fields: ctx, c, opts
-func (_m *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client, opts fluentbit.AgentApplyOptions) error {
-	ret := _m.Called(ctx, c, opts)
+// DeleteResources provides a mock function with given fields: ctx, c
+func (_m *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
+	ret := _m.Called(ctx, c)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteResources")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, client.Client, fluentbit.AgentApplyOptions) error); ok {
-		r0 = rf(ctx, c, opts)
+	if rf, ok := ret.Get(0).(func(context.Context, client.Client) error); ok {
+		r0 = rf(ctx, c)
 	} else {
 		r0 = ret.Error(0)
 	}

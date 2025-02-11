@@ -2,7 +2,15 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-fluent-bit-files
+  namespace: kyma-system
   ownerReferences:
   - apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -45,9 +53,14 @@ kind: ConfigMap
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-fluent-bit-luascripts
+  namespace: kyma-system
 ---
 apiVersion: v1
 data:
@@ -70,7 +83,15 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-fluent-bit-sections
+  namespace: kyma-system
   ownerReferences:
   - apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -81,7 +102,15 @@ apiVersion: v1
 kind: Secret
 metadata:
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-fluent-bit-env
+  namespace: kyma-system
   ownerReferences:
   - apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -92,7 +121,15 @@ apiVersion: v1
 kind: Secret
 metadata:
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-fluent-bit-output-tls-config
+  namespace: kyma-system
   ownerReferences:
   - apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -108,10 +145,15 @@ metadata:
     prometheus.io/scrape: "true"
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
     telemetry.kyma-project.io/self-monitor: enabled
   name: telemetry-fluent-bit-exporter-metrics
+  namespace: kyma-system
 spec:
   ports:
   - name: http-metrics
@@ -135,10 +177,15 @@ metadata:
     prometheus.io/scrape: "true"
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
     telemetry.kyma-project.io/self-monitor: enabled
   name: telemetry-fluent-bit-metrics
+  namespace: kyma-system
 spec:
   ports:
   - name: http
@@ -157,9 +204,14 @@ kind: NetworkPolicy
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-fluent-bit
+  namespace: kyma-system
 spec:
   egress:
   - to:

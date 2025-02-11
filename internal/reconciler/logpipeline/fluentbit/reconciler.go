@@ -40,7 +40,7 @@ var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
-
+	telemetryNamespace  string
 	agentApplierDeleter AgentApplierDeleter
 	config              fluentbit.Config
 
@@ -56,7 +56,7 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, agentApplierDeleter *fluentbit.AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+func New(client client.Client, telemetryNamespace string, agentApplierDeleter *fluentbit.AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
 
 	config := fluentbit.Config{
 		PipelineDefaults: builder.PipelineDefaults{
@@ -69,6 +69,7 @@ func New(client client.Client, agentApplierDeleter *fluentbit.AgentApplierDelete
 
 	return &Reconciler{
 		Client:              client,
+		telemetryNamespace:  telemetryNamespace,
 		agentApplierDeleter: agentApplierDeleter,
 		config:              config,
 		agentProber:         prober,
