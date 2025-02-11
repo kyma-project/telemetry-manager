@@ -360,7 +360,7 @@ func TestReconcile(t *testing.T) {
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
 		agentConfigBuilderMock.On("Build", containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
-		
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
 
@@ -388,7 +388,7 @@ func TestReconcile(t *testing.T) {
 			&conditions.ErrorToMessageConverter{})
 		err1 := sut.Reconcile(context.Background(), &pipeline1)
 		err2 := sut.Reconcile(context.Background(), &pipeline2)
-		
+
 		require.NoError(t, err1)
 		require.NoError(t, err2)
 
@@ -438,12 +438,14 @@ func TestReconcile(t *testing.T) {
 			&conditions.ErrorToMessageConverter{})
 		err1 := sut.Reconcile(context.Background(), &pipeline1)
 		err2 := sut.Reconcile(context.Background(), &pipeline2)
-		
+
 		require.NoError(t, err1)
 		require.NoError(t, err2)
 
 		var updatedPipeline1 telemetryv1alpha1.LogPipeline
+
 		var updatedPipeline2 telemetryv1alpha1.LogPipeline
+
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline2)
 

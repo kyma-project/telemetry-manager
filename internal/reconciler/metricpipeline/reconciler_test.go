@@ -1417,7 +1417,9 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err2)
 
 		var updatedPipeline1 telemetryv1alpha1.MetricPipeline
+
 		var updatedPipeline2 telemetryv1alpha1.MetricPipeline
+
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline2.Name}, &updatedPipeline2)
 
