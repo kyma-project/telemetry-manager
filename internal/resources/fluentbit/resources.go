@@ -98,7 +98,6 @@ func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, priorityClass
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-
 	names := ResourceNames{
 		DaemonSet:           types.NamespacedName{Name: fbDaemonSetName, Namespace: aad.namespace},
 		LuaConfigMap:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: aad.namespace},

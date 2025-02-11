@@ -57,7 +57,6 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 }
 
 func New(client client.Client, telemetryNamespace string, agentApplierDeleter AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
-
 	config := fluentbit.Config{
 		PipelineDefaults: builder.PipelineDefaults{
 			InputTag:          defaultInputTag,

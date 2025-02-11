@@ -65,6 +65,7 @@ alias foo`,
 		sut := syncer{fakeClient, Config{}, ResourceNames{
 			SectionsConfigMap: sectionsCmName,
 		}}
+
 		require.NoError(t, telemetryv1alpha1.AddToScheme(fakeClient.Scheme()))
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
@@ -104,6 +105,7 @@ alias bar`
 		sut := syncer{fakeClient, Config{}, ResourceNames{
 			SectionsConfigMap: sectionsCmName,
 		}}
+
 		require.NoError(t, telemetryv1alpha1.AddToScheme(fakeClient.Scheme()))
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
