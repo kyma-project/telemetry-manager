@@ -465,6 +465,36 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
+func TestGetPipelinesRequiringAgents(t *testing.T) {
+	r := Reconciler{}
+
+	t.Run("no pipelines", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{}
+		require.Empty(t, r.getPipelinesRequiringAgents(pipelines))
+	})
+
+	t.Run("no pipeline requires an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
+		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
+		require.Empty(t, r.getPipelinesRequiringAgents(pipelines))
+	})
+
+	t.Run("some pipelines require an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
+		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
+		require.ElementsMatch(t, []telemetryv1alpha1.LogPipeline{pipeline1}, r.getPipelinesRequiringAgents(pipelines))
+	})
+
+	t.Run("all pipelines require an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
+		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
+		require.ElementsMatch(t, []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}, r.getPipelinesRequiringAgents(pipelines))
+	})
+}
+
 func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
 	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 	require.NotNil(t, cond, "could not find condition of type %s", condType)
