@@ -50,17 +50,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-const (
-	fbBaseName                = "telemetry-fluent-bit"
-	fbSectionsConfigMapName   = fbBaseName + "-sections"
-	fbFilesConfigMapName      = fbBaseName + "-files"
-	fbLuaConfigMapName        = fbBaseName + "-luascripts"
-	fbParsersConfigMapName    = fbBaseName + "-parsers"
-	fbEnvConfigSecretName     = fbBaseName + "-env"
-	fbTLSFileConfigSecretName = fbBaseName + "-output-tls-config"
-	fbDaemonSetName           = fbBaseName
-)
-
 // LogPipelineController reconciles a LogPipeline object
 type LogPipelineController struct {
 	client.Client
@@ -147,15 +136,6 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.LogPipelineProber) (*logpipelinefluentbit.Reconciler, error) {
-	fbConfig := fluentbit.Config{
-		DaemonSet:           types.NamespacedName{Name: fbDaemonSetName, Namespace: config.TelemetryNamespace},
-		SectionsConfigMap:   types.NamespacedName{Name: fbSectionsConfigMapName, Namespace: config.TelemetryNamespace},
-		FilesConfigMap:      types.NamespacedName{Name: fbFilesConfigMapName, Namespace: config.TelemetryNamespace},
-		LuaConfigMap:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: config.TelemetryNamespace},
-		ParsersConfigMap:    types.NamespacedName{Name: fbParsersConfigMapName, Namespace: config.TelemetryNamespace},
-		EnvConfigSecret:     types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: config.TelemetryNamespace},
-		TLSFileConfigSecret: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: config.TelemetryNamespace},
-	}
 
 	pipelineValidator := &logpipelinefluentbit.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
@@ -176,7 +156,6 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 
 	fbReconciler := logpipelinefluentbit.New(
 		client,
-		fbConfig,
 		fluentBitApplierDeleter,
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,

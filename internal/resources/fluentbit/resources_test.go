@@ -81,15 +81,6 @@ func TestAgent_ApplyResources(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.sut.ApplyResources(context.Background(), fakeClient, AgentApplyOptions{
-				Config: Config{
-					DaemonSet:           types.NamespacedName{Name: "foo-daemonset", Namespace: "kyma-system"},
-					SectionsConfigMap:   types.NamespacedName{Name: "foo-sectionscm", Namespace: "kyma-system"},
-					FilesConfigMap:      types.NamespacedName{Name: "foo-filescm", Namespace: "kyma-system"},
-					LuaConfigMap:        types.NamespacedName{Name: "foo-luacm", Namespace: "kyma-system"},
-					ParsersConfigMap:    types.NamespacedName{Name: "foo-parserscm", Namespace: "kyma-system"},
-					EnvConfigSecret:     types.NamespacedName{Name: "foo-evnconfigsecret", Namespace: "kyma-system"},
-					TLSFileConfigSecret: types.NamespacedName{Name: "foo-tlsfileconfigsecret", Namespace: "kyma-system"},
-				},
 				AllowedPorts: []int32{5555, 6666},
 
 				Pipeline:               &logPipeline,
@@ -144,15 +135,6 @@ func TestAgent_DeleteResources(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			agentApplyOptions := AgentApplyOptions{
-				Config: Config{
-					DaemonSet:           types.NamespacedName{Name: "foo-daemonset", Namespace: "kyma-system"},
-					SectionsConfigMap:   types.NamespacedName{Name: "foo-sectionscm", Namespace: "kyma-system"},
-					FilesConfigMap:      types.NamespacedName{Name: "foo-filescm", Namespace: "kyma-system"},
-					LuaConfigMap:        types.NamespacedName{Name: "foo-luacm", Namespace: "kyma-system"},
-					ParsersConfigMap:    types.NamespacedName{Name: "foo-parserscm", Namespace: "kyma-system"},
-					EnvConfigSecret:     types.NamespacedName{Name: "foo-evnconfigsecret", Namespace: "kyma-system"},
-					TLSFileConfigSecret: types.NamespacedName{Name: "foo-tlsfileconfigsecret", Namespace: "kyma-system"},
-				},
 				AllowedPorts:           []int32{5555, 6666},
 				Pipeline:               &logPipeline,
 				DeployableLogPipelines: []telemetryv1alpha1.LogPipeline{logPipeline},
@@ -161,7 +143,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 			err := tt.sut.ApplyResources(context.Background(), fakeClient, agentApplyOptions)
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(context.Background(), fakeClient, agentApplyOptions)
+			err = tt.sut.DeleteResources(context.Background(), fakeClient)
 			require.NoError(t, err)
 
 			for i := range created {
@@ -174,7 +156,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 }
 
 func TestCalculateChecksum(t *testing.T) {
-	config := Config{
+	names := ResourceNames{
 		DaemonSet: types.NamespacedName{
 			Namespace: "default",
 			Name:      "daemonset",
@@ -206,8 +188,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	dsConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.DaemonSet.Name,
-			Namespace: config.DaemonSet.Namespace,
+			Name:      names.DaemonSet.Name,
+			Namespace: names.DaemonSet.Namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -215,8 +197,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	sectionsConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.SectionsConfigMap.Name,
-			Namespace: config.SectionsConfigMap.Namespace,
+			Name:      names.SectionsConfigMap.Name,
+			Namespace: names.SectionsConfigMap.Namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -224,8 +206,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	filesConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.FilesConfigMap.Name,
-			Namespace: config.FilesConfigMap.Namespace,
+			Name:      names.FilesConfigMap.Name,
+			Namespace: names.FilesConfigMap.Namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -233,8 +215,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	luaConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.LuaConfigMap.Name,
-			Namespace: config.LuaConfigMap.Namespace,
+			Name:      names.LuaConfigMap.Name,
+			Namespace: names.LuaConfigMap.Namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -242,8 +224,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	parsersConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.ParsersConfigMap.Name,
-			Namespace: config.ParsersConfigMap.Namespace,
+			Name:      names.ParsersConfigMap.Name,
+			Namespace: names.ParsersConfigMap.Namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -251,8 +233,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	envSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.EnvConfigSecret.Name,
-			Namespace: config.EnvConfigSecret.Namespace,
+			Name:      names.EnvConfigSecret.Name,
+			Namespace: names.EnvConfigSecret.Namespace,
 		},
 		Data: map[string][]byte{
 			"a": []byte("b"),
@@ -260,29 +242,19 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	certSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.TLSFileConfigSecret.Name,
-			Namespace: config.TLSFileConfigSecret.Namespace,
+			Name:      names.TLSFileConfigSecret.Name,
+			Namespace: names.TLSFileConfigSecret.Namespace,
 		},
 		Data: map[string][]byte{
 			"a": []byte("b"),
 		},
 	}
 
-	image := "foo-fluentbit"
-	exporterImage := "foo-exporter"
-	priorityClassName := "foo-prio-class"
-
-	aad := NewFluentBitApplierDeleter(image, exporterImage, priorityClassName)
-
-	opts := AgentApplyOptions{
-		Config: config,
-	}
-
 	client := fake.NewClientBuilder().WithObjects(&dsConfig, &sectionsConfig, &filesConfig, &luaConfig, &parsersConfig, &envSecret, &certSecret).Build()
 
 	ctx := context.Background()
 
-	checksum, err := aad.calculateChecksum(ctx, client, opts)
+	checksum, err := calculateChecksum(ctx, client, names)
 
 	t.Run("Initial checksum should not be empty", func(t *testing.T) {
 		require.NoError(t, err)
@@ -294,7 +266,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &dsConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := aad.calculateChecksum(ctx, client, opts)
+		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating static config")
 		checksum = newChecksum
@@ -305,7 +277,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &sectionsConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := aad.calculateChecksum(ctx, client, opts)
+		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating sections config")
 		checksum = newChecksum
@@ -316,7 +288,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &filesConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := aad.calculateChecksum(ctx, client, opts)
+		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating files config")
 		checksum = newChecksum
@@ -327,7 +299,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &luaConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := aad.calculateChecksum(ctx, client, opts)
+		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating LUA config")
 		checksum = newChecksum
@@ -338,7 +310,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &parsersConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := aad.calculateChecksum(ctx, client, opts)
+		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating parsers config")
 		checksum = newChecksum
@@ -349,7 +321,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &envSecret)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := aad.calculateChecksum(ctx, client, opts)
+		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating env secret")
 		checksum = newChecksum
@@ -360,7 +332,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &certSecret)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := aad.calculateChecksum(ctx, client, opts)
+		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating certificate secret")
 	})

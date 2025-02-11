@@ -29,7 +29,7 @@ const (
 
 type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts fluentbit.AgentApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client, opts fluentbit.AgentApplyOptions) error
+	DeleteResources(ctx context.Context, c client.Client) error
 }
 
 type IstioStatusChecker interface {
@@ -41,9 +41,8 @@ var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 type Reconciler struct {
 	client.Client
 
-	config fluentbit.Config
-
 	agentApplierDeleter AgentApplierDeleter
+	config              fluentbit.Config
 
 	// Dependencies
 	agentProber        commonstatus.Prober
@@ -57,12 +56,15 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, config fluentbit.Config, agentApplierDeleter AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
-	config.PipelineDefaults = builder.PipelineDefaults{
-		InputTag:          defaultInputTag,
-		MemoryBufferLimit: defaultMemoryBufferLimit,
-		StorageType:       defaultStorageType,
-		FsBufferLimit:     defaultFsBufferLimit,
+func New(client client.Client, agentApplierDeleter *fluentbit.AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
+
+	config := fluentbit.Config{
+		PipelineDefaults: builder.PipelineDefaults{
+			InputTag:          defaultInputTag,
+			MemoryBufferLimit: defaultMemoryBufferLimit,
+			StorageType:       defaultStorageType,
+			FsBufferLimit:     defaultFsBufferLimit,
+		},
 	}
 
 	return &Reconciler{
@@ -113,7 +115,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
-		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, fluentbit.AgentApplyOptions{Config: r.config}); err != nil {
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
 
