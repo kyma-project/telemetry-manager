@@ -19,6 +19,8 @@ packages:
     interfaces:
       GatewayApplierDeleter:
       GatewayConfigBuilder:
+      AgentApplierDeleter:
+      AgentConfigBuilder:
   github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline:
     interfaces:
       FlowHealthProber:

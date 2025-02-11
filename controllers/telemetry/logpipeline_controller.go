@@ -35,6 +35,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -64,9 +65,11 @@ type LogPipelineControllerConfig struct {
 	OTelCollectorImage          string
 	FluentBitPriorityClassName  string
 	LogGatewayPriorityClassName string
+	LogAgentPriorityClassName   string
 	RestConfig                  *rest.Config
 	SelfMonitorName             string
 	TelemetryNamespace          string
+	ModuleVersion               string
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
@@ -177,9 +180,19 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		return nil, err
 	}
 
+	agentConfigBuilder := &agent.Builder{
+		Config: agent.BuilderConfig{
+			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.LogOTLPServiceName},
+		},
+	}
+
 	otelReconciler := logpipelineotel.New(
 		client,
 		config.TelemetryNamespace,
+		config.ModuleVersion,
+		agentConfigBuilder,
+		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
+		&workloadstatus.DaemonSetProber{Client: client},
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
