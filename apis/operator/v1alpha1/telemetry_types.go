@@ -67,7 +67,7 @@ type TraceGatewaySpec struct {
 }
 
 // LogSpec defines the behavior of the log gateway
-// LogSpec contains the configuration for the log gateway, including the gateway settings and optional enrichments.
+// LogSpec contains the configuration for the log gateway, including the gateway settings and optional log data enrichments.
 type LogSpec struct {
 	// Gateway specifies the settings for the log gateway.
 	Gateway LogGatewaySpec `json:"gateway,omitempty"`
