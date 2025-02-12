@@ -135,6 +135,16 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
 	}
 
+	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
+
+	if len(reconcilablePipelinesRequiringAgents) == 0 {
+		logf.FromContext(ctx).V(1).Info("cleaning up log agent resources: no log pipelines require an agent")
+
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
+			return fmt.Errorf("failed to delete agent resources: %w", err)
+		}
+	}
+
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
@@ -357,6 +367,18 @@ func getAgentPorts() []int32 {
 		ports.Metrics,
 		ports.HealthCheck,
 	}
+}
+
+func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
+	var pipelinesRequiringAgents []telemetryv1alpha1.LogPipeline
+
+	for i := range allPipelines {
+		if isLogAgentRequired(&allPipelines[i]) {
+			pipelinesRequiringAgents = append(pipelinesRequiringAgents, allPipelines[i])
+		}
+	}
+
+	return pipelinesRequiringAgents
 }
 
 func isLogAgentRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
