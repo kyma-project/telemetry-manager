@@ -174,7 +174,7 @@ func TestLogsGetHealthCondition(t *testing.T) {
 				Type:    conditions.TypeAgentHealthy,
 				Status:  metav1.ConditionTrue,
 				Reason:  conditions.ReasonAgentReady,
-				Message: conditions.MessageForLogPipeline(conditions.ReasonAgentReady),
+				Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentReady),
 			},
 		},
 		{

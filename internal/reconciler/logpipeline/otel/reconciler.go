@@ -62,6 +62,7 @@ type Reconciler struct {
 	moduleVersion      string
 
 	// Dependencies
+	flowHealthProber      FlowHealthProber
 	agentConfigBuilder    AgentConfigBuilder
 	agentProber           commonstatus.Prober
 	agentApplierDeleter   AgentApplierDeleter
@@ -77,6 +78,7 @@ func New(
 	client client.Client,
 	telemetryNamespace string,
 	moduleVersion string,
+	flowHeathProber FlowHealthProber,
 	agentConfigBuilder AgentConfigBuilder,
 	agentApplierDeleter AgentApplierDeleter,
 	agentProber commonstatus.Prober,
@@ -91,6 +93,7 @@ func New(
 		Client:                client,
 		telemetryNamespace:    telemetryNamespace,
 		moduleVersion:         moduleVersion,
+		flowHealthProber:      flowHeathProber,
 		agentConfigBuilder:    agentConfigBuilder,
 		agentApplierDeleter:   agentApplierDeleter,
 		agentProber:           agentProber,

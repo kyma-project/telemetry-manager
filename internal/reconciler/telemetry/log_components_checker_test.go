@@ -96,7 +96,7 @@ func TestLogComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeAgentHealthy,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonAgentNotReady,
-						Message: conditions.MessageForLogPipeline(conditions.ReasonAgentNotReady),
+						Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentNotReady),
 					}).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
@@ -238,7 +238,7 @@ func TestLogComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeFlowHealthy,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonSelfMonNoLogsDelivered,
-						Message: conditions.MessageForLogPipeline(conditions.ReasonSelfMonNoLogsDelivered),
+						Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonSelfMonNoLogsDelivered),
 					}).
 					Build(),
 			},
