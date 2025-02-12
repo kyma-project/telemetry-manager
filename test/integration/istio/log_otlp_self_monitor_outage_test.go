@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonitoringLogsOutage), Ordered, func() {
 	var (
 		mockNs       = suite.ID()
 		pipelineName = suite.ID()

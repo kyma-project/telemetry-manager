@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsBackpressure), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonitoringLogsBackpressure), Ordered, func() {
 	var (
 		mockNs       = "istio-permissive-mtls"
 		pipelineName = suite.ID()
