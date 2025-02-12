@@ -18,6 +18,13 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
+const (
+	checksumAnnotationKey    = "checksum/logpipeline-config"
+	istioExcludeInboundPorts = "traffic.sidecar.istio.io/excludeInboundPorts"
+	fluentbitExportSelector  = "telemetry.kyma-project.io/log-export"
+	LogAgentName             = "telemetry-fluent-bit"
+)
+
 type DaemonSetConfig struct {
 	FluentBitImage              string
 	FluentBitConfigPrepperImage string
@@ -28,7 +35,7 @@ type DaemonSetConfig struct {
 	MemoryRequest               resource.Quantity
 }
 
-func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSetConfig) *appsv1.DaemonSet {
+func MakeDaemonSet(namespace string, checksum string, dsConfig DaemonSetConfig) *appsv1.DaemonSet {
 	resourcesFluentBit := corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    dsConfig.CPURequest,
@@ -61,8 +68,8 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
+			Name:      LogAgentName,
+			Namespace: namespace,
 			Labels:    Labels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -75,7 +82,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: name.Name,
+					ServiceAccountName: LogAgentName,
 					PriorityClassName:  dsConfig.PriorityClassName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot:   ptr.To(false),
@@ -98,7 +105,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									SecretRef: &corev1.SecretEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-env", name.Name)},
+										LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-env", LogAgentName)},
 										Optional:             ptr.To(true),
 									},
 								},
@@ -174,7 +181,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "config",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: name.Name},
+									LocalObjectReference: corev1.LocalObjectReference{Name: LogAgentName},
 								},
 							},
 						},
@@ -182,7 +189,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "luascripts",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-luascripts", name.Name)},
+									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-luascripts", LogAgentName)},
 								},
 							},
 						},
@@ -202,7 +209,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "dynamic-config",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", name.Name)},
+									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", LogAgentName)},
 									Optional:             ptr.To(true),
 								},
 							},
@@ -211,7 +218,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "dynamic-parsers-config",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", name.Name)},
+									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", LogAgentName)},
 									Optional:             ptr.To(true),
 								},
 							},
@@ -220,7 +227,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "dynamic-files",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", name.Name)},
+									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", LogAgentName)},
 									Optional:             ptr.To(true),
 								},
 							},
@@ -228,14 +235,14 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 						{
 							Name: "varfluentbit",
 							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", name.Name)},
+								HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", LogAgentName)},
 							},
 						},
 						{
 							Name: "output-tls-config",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: fmt.Sprintf("%s-output-tls-config", name.Name),
+									SecretName: fmt.Sprintf("%s-output-tls-config", LogAgentName),
 								},
 							},
 						},

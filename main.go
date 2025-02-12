@@ -352,9 +352,11 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			OTelCollectorImage:          otelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,
+			LogAgentPriorityClassName:   highPriorityClassName,
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,
+			ModuleVersion:               version,
 		},
 	)
 	if err != nil {
