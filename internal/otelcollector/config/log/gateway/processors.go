@@ -11,7 +11,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:           gatewayprocs.K8sAttributesProcessorConfig(),
+		K8sAttributes:           gatewayprocs.K8sAttributesProcessorConfig(opts.Presets),
 		InsertClusterAttributes: gatewayprocs.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 	}
 }

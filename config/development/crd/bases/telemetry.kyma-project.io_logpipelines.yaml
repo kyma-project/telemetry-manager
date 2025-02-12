@@ -654,6 +654,10 @@ spec:
             x-kubernetes-validations:
             - message: otlp input is only supported with otlp output
               rule: '!((has(self.output.http) || has(self.output.custom))  && has(self.input.otlp))'
+            - message: input.application.dropLabels is not supported with otlp output
+              rule: '!(has(self.output.otlp) && has(self.input.application.dropLabels))'
+            - message: input.application.keepAnnotations is not supported with otlp output
+              rule: '!(has(self.output.otlp) && has(self.input.application.keepAnnotations))'
           status:
             description: Shows the observed state of the LogPipeline
             properties:
@@ -1352,6 +1356,11 @@ spec:
                   type: object
                 type: array
             type: object
+            x-kubernetes-validations:
+            - message: input.runtime.dropLabels is not supported with otlp output
+              rule: '!(has(self.output.otlp) && has(self.input.runtime.dropLabels))'
+            - message: input.runtime.keepAnnotations is not supported with otlp output
+              rule: '!(has(self.output.otlp) && has(self.input.runtime.keepAnnotations))'
           status:
             description: Shows the observed state of the LogPipeline
             properties:
