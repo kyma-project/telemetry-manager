@@ -5,17 +5,17 @@ go 1.23.0
 require (
 	github.com/bombsimon/wsl/v4 v4.5.0
 	github.com/golangci/golangci-lint v1.64.0
-	github.com/google/yamlfmt v0.15.0
+	github.com/google/yamlfmt v0.16.0
 	github.com/joho/godotenv v1.5.1
 	github.com/k3d-io/k3d/v5 v5.8.1
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
 	github.com/mikefarah/yq/v4 v4.45.1
 	github.com/onsi/ginkgo/v2 v2.22.2
-	github.com/vektra/mockery/v2 v2.51.1
+	github.com/vektra/mockery/v2 v2.52.1
 	github.com/vladopajic/go-test-coverage/v2 v2.11.4
 	golang.org/x/tools v0.30.0
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/controller-tools v0.17.1
+	sigs.k8s.io/controller-tools v0.17.2
 	sigs.k8s.io/kustomize/kustomize/v5 v5.6.0
 )
 
@@ -53,7 +53,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blizzy78/varnamelen v0.8.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.7.1 // indirect
-	github.com/braydonk/yaml v0.7.0 // indirect
+	github.com/braydonk/yaml v0.9.0 // indirect
 	github.com/breml/bidichk v0.3.2 // indirect
 	github.com/breml/errchkjson v0.4.0 // indirect
 	github.com/butuzov/ireturn v0.3.1 // indirect
@@ -225,7 +225,7 @@ require (
 	github.com/rancher/wharfie v0.6.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	github.com/rs/zerolog v1.29.0 // indirect
+	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/ryancurrah/gomodguard v1.3.5 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.5.1 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
@@ -314,10 +314,10 @@ require (
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.5.1 // indirect
-	k8s.io/api v0.32.0 // indirect
-	k8s.io/apiextensions-apiserver v0.32.0 // indirect
-	k8s.io/apimachinery v0.32.0 // indirect
-	k8s.io/client-go v0.32.0 // indirect
+	k8s.io/api v0.32.1 // indirect
+	k8s.io/apiextensions-apiserver v0.32.1 // indirect
+	k8s.io/apimachinery v0.32.1 // indirect
+	k8s.io/client-go v0.32.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 // indirect
