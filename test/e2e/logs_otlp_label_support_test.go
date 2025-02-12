@@ -88,7 +88,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 				g.Expect(err).NotTo(HaveOccurred())
 
 				telemetry.Spec.Log = &operatorv1alpha1.LogSpec{
-					Presets: &operatorv1alpha1.Presets{
+					Enrichments: &operatorv1alpha1.EnrichmentSpec{
 						Enabled: true,
 						PodLabels: []operatorv1alpha1.PodLabel{
 							{
@@ -102,7 +102,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 				}
 				err = k8sClient.Update(ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
-				return len(telemetry.Spec.Log.Presets.PodLabels)
+				return len(telemetry.Spec.Log.Enrichments.PodLabels)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 		})
 

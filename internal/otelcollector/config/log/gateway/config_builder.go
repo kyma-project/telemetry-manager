@@ -26,7 +26,7 @@ type Builder struct {
 type BuildOptions struct {
 	ClusterName   string
 	CloudProvider string
-	Presets       gatewayprocs.Presets
+	Presets       gatewayprocs.EnrichmentOpts
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {

@@ -11,20 +11,20 @@ import (
 func TestBuildPodLabelPresets(t *testing.T) {
 	tests := []struct {
 		name     string
-		presets  Presets
+		presets  EnrichmentOpts
 		expected []config.ExtractLabel
 	}{
 		{
-			name: "Presets disabled",
-			presets: Presets{
+			name: "Enrichments disabled",
+			presets: EnrichmentOpts{
 				Enabled:   false,
 				PodLabels: []PodLabel{},
 			},
 			expected: []config.ExtractLabel{},
 		},
 		{
-			name: "Presets enabled with key",
-			presets: Presets{
+			name: "Enrichments enabled with key",
+			presets: EnrichmentOpts{
 				Enabled: true,
 				PodLabels: []PodLabel{
 					{Key: "app"},
@@ -39,8 +39,8 @@ func TestBuildPodLabelPresets(t *testing.T) {
 			},
 		},
 		{
-			name: "Presets enabled with key prefix",
-			presets: Presets{
+			name: "Enrichments enabled with key prefix",
+			presets: EnrichmentOpts{
 				Enabled: true,
 				PodLabels: []PodLabel{
 					{KeyPrefix: "app.kubernetes.io"},
@@ -55,8 +55,8 @@ func TestBuildPodLabelPresets(t *testing.T) {
 			},
 		},
 		{
-			name: "Presets enabled with multiple labels",
-			presets: Presets{
+			name: "Enrichments enabled with multiple labels",
+			presets: EnrichmentOpts{
 				Enabled: true,
 				PodLabels: []PodLabel{
 					{Key: "app"},

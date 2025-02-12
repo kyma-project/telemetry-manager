@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-type Presets struct {
+type EnrichmentOpts struct {
 	Enabled   bool
 	PodLabels []PodLabel
 }
@@ -16,7 +16,7 @@ type PodLabel struct {
 	KeyPrefix string
 }
 
-func buildPodLabelPresets(presets Presets) []config.ExtractLabel {
+func buildPodLabelPresets(presets EnrichmentOpts) []config.ExtractLabel {
 	podLabelPresets := make([]config.ExtractLabel, 0)
 
 	if presets.Enabled {

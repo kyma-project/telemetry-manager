@@ -75,7 +75,7 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := K8sAttributesProcessorConfig(Presets{
+	config := K8sAttributesProcessorConfig(EnrichmentOpts{
 		Enabled: true,
 		PodLabels: []PodLabel{
 			{Key: "", KeyPrefix: "app.kubernetes.io/name"},

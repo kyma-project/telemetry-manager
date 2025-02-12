@@ -67,9 +67,14 @@ type TraceGatewaySpec struct {
 }
 
 // LogSpec defines the behavior of the log gateway
+// LogSpec contains the configuration for the log gateway, including the gateway settings and optional enrichments.
 type LogSpec struct {
+	// Gateway specifies the settings for the log gateway.
 	Gateway LogGatewaySpec `json:"gateway,omitempty"`
-	Presets *Presets       `json:"presets,omitempty"`
+
+	// Enrichments specifies optional enrichments for the log data.
+	// This field is optional.
+	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
 }
 
 type LogGatewaySpec struct {
@@ -172,14 +177,28 @@ type Status struct {
 	State State `json:"state"`
 }
 
-type Presets struct {
-	Enabled   bool       `json:"enabled,omitempty"`
+// EnrichmentSpec defines the configuration for telemetry data enrichment.
+// EnrichmentSpec contains settings to enable enrichment and specify pod labels for enrichment.
+type EnrichmentSpec struct {
+	// Enabled indicates whether enrichment is enabled.
+	// This field is optional.
+	Enabled bool `json:"enabled,omitempty"`
+
+	// PodLabels specifies the list of pod labels to be used for enrichment.
+	// This field is optional.
 	PodLabels []PodLabel `json:"podLabels,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="(has(self.key) || has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
 // +kubebuilder:validation:XValidation:rule="!(has(self.key) && has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
+// PodLabel defines a label for a pod, which can be specified either by a key or a key prefix.
+// Either 'key' or 'keyPrefix' must be specified, but not both.
 type PodLabel struct {
-	Key       string `json:"key,omitempty"`
+	// Key specifies the exact label key to be used.
+	// This field is optional.
+	Key string `json:"key,omitempty"`
+
+	// KeyPrefix specifies a prefix for label keys to be used.
+	// This field is optional.
 	KeyPrefix string `json:"keyPrefix,omitempty"`
 }

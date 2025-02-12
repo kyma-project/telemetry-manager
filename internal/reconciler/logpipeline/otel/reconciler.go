@@ -313,11 +313,11 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	return defaultReplicaCount
 }
 
-func (r *Reconciler) getPresetsFromTelemetry(ctx context.Context) gatewayprocs.Presets {
+func (r *Reconciler) getPresetsFromTelemetry(ctx context.Context) gatewayprocs.EnrichmentOpts {
 	var telemetries operatorv1alpha1.TelemetryList
 	if err := r.List(ctx, &telemetries); err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default presets")
-		return gatewayprocs.Presets{}
+		return gatewayprocs.EnrichmentOpts{}
 	}
 
 	for i := range telemetries.Items {
@@ -326,7 +326,7 @@ func (r *Reconciler) getPresetsFromTelemetry(ctx context.Context) gatewayprocs.P
 			continue
 		}
 
-		if telemetrySpec.Log.Presets == nil {
+		if telemetrySpec.Log.Enrichments == nil {
 			continue
 		}
 
@@ -339,9 +339,9 @@ func (r *Reconciler) getPresetsFromTelemetry(ctx context.Context) gatewayprocs.P
 			return result
 		}
 
-		return gatewayprocs.Presets{
-			Enabled: telemetrySpec.Log.Presets.Enabled,
-			PodLabels: mapPodLabels(telemetrySpec.Log.Presets.PodLabels, func(value operatorv1alpha1.PodLabel) gatewayprocs.PodLabel {
+		return gatewayprocs.EnrichmentOpts{
+			Enabled: telemetrySpec.Log.Enrichments.Enabled,
+			PodLabels: mapPodLabels(telemetrySpec.Log.Enrichments.PodLabels, func(value operatorv1alpha1.PodLabel) gatewayprocs.PodLabel {
 				return gatewayprocs.PodLabel{
 					Key:       value.Key,
 					KeyPrefix: value.KeyPrefix,
@@ -350,7 +350,7 @@ func (r *Reconciler) getPresetsFromTelemetry(ctx context.Context) gatewayprocs.P
 		}
 	}
 
-	return gatewayprocs.Presets{}
+	return gatewayprocs.EnrichmentOpts{}
 }
 
 func getGatewayPorts() []int32 {
