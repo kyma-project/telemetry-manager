@@ -2,8 +2,9 @@ package otel
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -46,7 +47,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
 		agentConfigBuilderMock.On("Build", mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
@@ -103,7 +104,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
 		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
@@ -160,7 +161,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
 		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
@@ -210,6 +211,7 @@ func TestReconcile(t *testing.T) {
 
 		gatewayConfigBuilderMock.AssertExpectations(t)
 	})
+
 	t.Run("log agent daemonset is not ready", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(true).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
@@ -479,6 +481,204 @@ func TestReconcile(t *testing.T) {
 	// TODO: "tls conditions" (requires TLSCertValidator to be implemented)
 	// TODO: "all log pipelines are non-reconcilable" (requires SecretRefValidator to be implemented)
 	// TODO: "Check different Pod Error Conditions" (requires SecretRefValidator to be implemented)
+
+	t.Run("one log pipeline does not require an agent", func(t *testing.T) {
+		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(false).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&gateway.Config{}, nil, nil).Times(1)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			flowHealthProberStub,
+			&mocks.AgentConfigBuilder{},
+			agentApplierDeleterMock,
+			agentProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			&Validator{},
+			&conditions.ErrorToMessageConverter{})
+		err := sut.Reconcile(context.Background(), &pipeline)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		requireHasStatusCondition(t, updatedPipeline,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonLogAgentNotRequired,
+			"")
+
+		agentApplierDeleterMock.AssertExpectations(t)
+		gatewayConfigBuilderMock.AssertExpectations(t)
+	})
+
+	t.Run("some log pipelines do not require an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().WithName("pipeline1").WithOTLPOutput().WithApplicationInput(false).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithName("pipeline2").WithOTLPOutput().WithApplicationInput(true).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
+
+		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
+		agentConfigBuilderMock.On("Build", containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&agent.Config{}, nil, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			flowHealthProberStub,
+			agentConfigBuilderMock,
+			agentApplierDeleterMock,
+			agentProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			&Validator{},
+			&conditions.ErrorToMessageConverter{})
+		err1 := sut.Reconcile(context.Background(), &pipeline1)
+		err2 := sut.Reconcile(context.Background(), &pipeline2)
+
+		require.NoError(t, err1)
+		require.NoError(t, err2)
+
+		var updatedPipeline1 telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
+
+		requireHasStatusCondition(t, updatedPipeline1,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonLogAgentNotRequired,
+			"")
+
+		agentConfigBuilderMock.AssertExpectations(t)
+		agentApplierDeleterMock.AssertExpectations(t)
+		gatewayConfigBuilderMock.AssertExpectations(t)
+	})
+
+	t.Run("all log pipelines do not require an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().WithName("pipeline1").WithOTLPOutput().WithApplicationInput(false).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithName("pipeline2").WithOTLPOutput().WithApplicationInput(false).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(2)
+
+		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
+		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&gateway.Config{}, nil, nil)
+
+		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
+		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+
+		flowHealthProberStub := &mocks.FlowHealthProber{}
+		flowHealthProberStub.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelPipelineProbeResult{}, nil)
+
+		sut := New(
+			fakeClient,
+			telemetryNamespace,
+			moduleVersion,
+			flowHealthProberStub,
+			&mocks.AgentConfigBuilder{},
+			agentApplierDeleterMock,
+			agentProberStub,
+			gatewayApplierDeleterMock,
+			gatewayConfigBuilderMock,
+			gatewayProberStub,
+			istioStatusCheckerStub,
+			&Validator{},
+			&conditions.ErrorToMessageConverter{})
+		err1 := sut.Reconcile(context.Background(), &pipeline1)
+		err2 := sut.Reconcile(context.Background(), &pipeline2)
+
+		require.NoError(t, err1)
+		require.NoError(t, err2)
+
+		var updatedPipeline1 telemetryv1alpha1.LogPipeline
+
+		var updatedPipeline2 telemetryv1alpha1.LogPipeline
+
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline2)
+
+		requireHasStatusCondition(t, updatedPipeline1,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonLogAgentNotRequired,
+			"")
+		requireHasStatusCondition(t, updatedPipeline2,
+			conditions.TypeAgentHealthy,
+			metav1.ConditionTrue,
+			conditions.ReasonLogAgentNotRequired,
+			"")
+
+		agentApplierDeleterMock.AssertExpectations(t)
+		gatewayConfigBuilderMock.AssertExpectations(t)
+	})
+}
+
+func TestGetPipelinesRequiringAgents(t *testing.T) {
+	r := Reconciler{}
+
+	t.Run("no pipelines", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{}
+		require.Empty(t, r.getPipelinesRequiringAgents(pipelines))
+	})
+
+	t.Run("no pipeline requires an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
+		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
+		require.Empty(t, r.getPipelinesRequiringAgents(pipelines))
+	})
+
+	t.Run("some pipelines require an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
+		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
+		require.ElementsMatch(t, []telemetryv1alpha1.LogPipeline{pipeline1}, r.getPipelinesRequiringAgents(pipelines))
+	})
+
+	t.Run("all pipelines require an agent", func(t *testing.T) {
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
+		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
+		require.ElementsMatch(t, []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}, r.getPipelinesRequiringAgents(pipelines))
+	})
 }
 
 func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
@@ -494,5 +694,26 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipel
 func containsPipeline(p telemetryv1alpha1.LogPipeline) any {
 	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
 		return len(pipelines) == 1 && pipelines[0].Name == p.Name
+	})
+}
+
+func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
+		if len(pipelines) != len(pp) {
+			return false
+		}
+
+		pipelineMap := make(map[string]bool)
+		for _, p := range pipelines {
+			pipelineMap[p.Name] = true
+		}
+
+		for _, p := range pp {
+			if !pipelineMap[p.Name] {
+				return false
+			}
+		}
+
+		return true
 	})
 }
