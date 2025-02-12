@@ -58,7 +58,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 		Type:               conditions.TypeFlowHealthy,
 		Status:             status,
 		Reason:             reason,
-		Message:            conditions.MessageForLogPipeline(reason),
+		Message:            conditions.MessageForOtelLogPipeline(reason),
 		ObservedGeneration: pipeline.Generation,
 	}
 
@@ -112,7 +112,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 		Type:    conditions.TypeAgentHealthy,
 		Status:  metav1.ConditionTrue,
 		Reason:  conditions.ReasonLogAgentNotRequired,
-		Message: conditions.MessageForLogPipeline(conditions.ReasonLogAgentNotRequired),
+		Message: conditions.MessageForOtelLogPipeline(conditions.ReasonLogAgentNotRequired),
 	}
 
 	if isLogAgentRequired(pipeline) {
@@ -131,7 +131,7 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
 		r.gatewayProber, types.NamespacedName{Name: otelcollector.LogGatewayName, Namespace: r.telemetryNamespace},
 		r.errToMessageConverter,
-		commonstatus.SignalTypeLogs)
+		commonstatus.SignalTypeOtelLogs)
 	condition.ObservedGeneration = pipeline.Generation
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
@@ -153,7 +153,7 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
 	err := r.pipelineValidator.validate(ctx, pipeline)
 	if err == nil {
-		return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForLogPipeline(conditions.ReasonGatewayConfigured)
+		return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForOtelLogPipeline(conditions.ReasonGatewayConfigured)
 	}
 
 	if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
@@ -167,12 +167,12 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	if endpoint.IsEndpointInvalidError(err) {
 		return metav1.ConditionFalse,
 			conditions.ReasonEndpointInvalid,
-			fmt.Sprintf(conditions.MessageForLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
+			fmt.Sprintf(conditions.MessageForOtelLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError
 	if errors.As(err, &APIRequestFailed) {
-		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForLogPipeline(conditions.ReasonValidationFailed)
+		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForOtelLogPipeline(conditions.ReasonValidationFailed)
 	}
 
 	return conditions.EvaluateTLSCertCondition(err)
