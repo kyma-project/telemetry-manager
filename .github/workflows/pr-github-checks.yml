@@ -16,6 +16,7 @@ on:
   workflow_dispatch:
 
 env:
+  PROJECT_NAME: "Huskies"
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_REPO: ${{ github.repository }}
   NUMBER: ${{ github.event.number }}
@@ -24,7 +25,7 @@ env:
 permissions: write-all
 
 jobs:
-  pr-milestone-check:
+  pr-milestone-project-check:
     runs-on: ubuntu-latest
     steps:
       - name: Set milestone
@@ -41,6 +42,11 @@ jobs:
             exit 1
           fi
           gh pr edit ${{ github.event.number }} --milestone "${latest_milestone}"
+
+      - name: add to project
+        if: always()
+        run: |
+          gh pr edit ${{ github.event.number }} --add-project ${PROJECT_NAME}
 
   pr-label-check:
     runs-on: ubuntu-latest
