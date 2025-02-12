@@ -6,6 +6,8 @@ set -o errexit  # exit immediately when a command fails.
 set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
 
+source .env
+
 PROMETHEUS_NAMESPACE="prometheus"
 HELM_PROM_RELEASE="prometheus"
 TRACE_NAMESPACE="trace-load-test"
@@ -17,8 +19,8 @@ BACKPRESSURE_TEST="false"
 TEST_TARGET="traces"
 TEST_NAME="No Name"
 TEST_DURATION=1200
-OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.115.0-main"
-TELEMETRY_GEN_IMAGE="ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.115.0"
+OTEL_IMAGE=$DEFAULT_OTEL_COLLECTOR_IMAGE
+TELEMETRY_GEN_IMAGE=$DEFAULT_TEST_TELEMETRYGEN_IMAGE
 LOG_SIZE=2000
 LOG_RATE=1000
 PROMAPI=""
@@ -383,9 +385,9 @@ function get_result_and_cleanup_metricagent() {
 
 function get_result_and_cleanup_log_otel() {
   RESULT_TYPE="log"
-  QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_log_records{service="log-gateway-metrics"}[20m])))'
+  QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_log_records{service=~"log-gateway-metrics"}[20m])))'
   QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_log_records{service=~"log-gateway-metrics"}[20m])))'
-  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="log-gateway-metrics"}))'
+  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service=~"log-gateway-metrics"}))'
   QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="log-load-test", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="log-load-test", workload="log-gateway"}[20m])) by (pod) / 1024 / 1024)'
   QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="log-load-test"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="log-load-test", workload="log-gateway"}[20m])) by (pod), 0.1)'
 
@@ -414,12 +416,16 @@ function get_result_and_cleanup_fluentbit() {
 
   QUERY_RECEIVED='query=round(sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])) / 1024)'
   QUERY_EXPORTED='query=round(sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])) / 1024)'
+  QUERY_RECEIVED_RECORDS='query=round(sum(rate(fluentbit_input_records_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])))'
+  QUERY_EXPORTED_RECORDS='query=round(sum(rate(fluentbit_output_proc_records_total{service="telemetry-fluent-bit-metrics", name=~"load-test-.*"}[20m])))'
   QUERY_QUEUE='query=round(sum(avg_over_time(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[20m])) / 1024)'
   QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="fluent-bit"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}[20m])) by (pod) / 1024 / 1024)'
   QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}[20m])) by (pod), 0.1)'
 
   RESULT_RECEIVED=$(curl -fs --data-urlencode "$QUERY_RECEIVED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_EXPORTED=$(curl -fs --data-urlencode "$QUERY_EXPORTED" $PROMAPI | jq -r '.data.result[] | .value[1]')
+  RESULT_RECEIVED_RECORDS=$(curl -fs --data-urlencode "$QUERY_RECEIVED_RECORDS" $PROMAPI | jq -r '.data.result[] | .value[1]')
+  RESULT_EXPORTED_RECORDS=$(curl -fs --data-urlencode "$QUERY_EXPORTED_RECORDS" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]'  | tr '\n' ',')
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')

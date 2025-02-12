@@ -35,6 +35,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
+          repository: ${{ github.repository }}
       - id: set-matrix
         run: |
           image=${{ github.event.inputs.image }}
@@ -117,6 +120,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
+          repository: ${{ github.repository }}
       - name: Download Results
         uses: actions/download-artifact@v4
       - name: Print Results

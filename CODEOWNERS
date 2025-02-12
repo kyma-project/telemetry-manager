@@ -2,6 +2,7 @@
 
 # All files and subdirectories in /docs
 /docs/ @kyma-project/technical-writers
+/docs/user/integration/sample-app @kyma-project/observability
 
 # All .md files
 *.md @kyma-project/technical-writers

@@ -1,4 +1,4 @@
-name: PR Lifecycle
+name: PR Upgrade
 
 on:
   merge_group:
@@ -39,7 +39,7 @@ jobs:
           GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
           GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
           echo "Deploying Manager using image europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}"
-          IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
+          IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-experimental
 
       - name: Wait for manager readiness
         shell: bash
@@ -48,7 +48,7 @@ jobs:
       - name: Run test on latest tag
         shell: bash
         run: |
-          bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
+          bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade || operational" -v test/e2e
 
       - name: Switch back to current revision
         uses: actions/checkout@v4
@@ -82,7 +82,7 @@ jobs:
         shell: bash
         run: |
           make install-tools # delete after the tools via go modules are released
-          bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
+          bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade" -v test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"

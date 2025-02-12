@@ -1,18 +1,6 @@
 # https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 version: 2
 updates:
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    commit-message:
-      prefix: "chore"
-    labels:
-      - "area/dependency"
-      - "kind/chore"
-    ignore:
-      - dependency-name: "kyma-project/prod/tpi/fluent-bit"
-
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
@@ -41,4 +29,18 @@ updates:
       prefix: "chore"
     labels:
       - "area/ci"
+      - "kind/chore"
+
+  - package-ecosystem: "gomod"
+    directory: "/docs/user/integration/sample-app"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "chore"
+    groups:
+      otel:
+        patterns:
+          - "go.opentelemetry.io/otel/*"
+    labels:
+      - "area/dependency"
       - "kind/chore"

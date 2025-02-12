@@ -50,11 +50,11 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 
 ## Dynatrace Setup
 
-There are different ways to deploy Dynatrace on Kubernetes. All [deployment options](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/deployment-options-k8s) are based on the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator).
+There are different ways to deploy Dynatrace on Kubernetes. All [deployment options](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/deployment) are based on the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator).
 
 1. Install Dynatrace with the namespace you prepared earlier.
    > [!NOTE]
-   > By default, Dynatrace uses the classic full-stack injection. However, for better stability, we recommend using the [cloud-native fullstack injection](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation/cloud-native-fullstack).
+   > By default, Dynatrace used the classic full-stack injection. However, for better stability, we recommend using the [cloud-native fullstack injection](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/operation/migration/classic-to-cloud-native).
 
 2. In the DynaKube resource, configure the correct `apiurl` of your environment.
 
@@ -76,7 +76,7 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
 
 5. In the Dynatrace Hub, enable the **Istio Service Mesh** extension and annotate your services as outlined in the description.
 
-6. If you have a workload exposing metrics in the Prometheus format, you can collect custom metrics in Prometheus format by [annotating the workload](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics). If the workload has an Istio sidecar, you must either weaken the mTLS setting for the metrics port by defining an [Istio PeerAuthentication](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication) or exclude the port from interception by the Istio proxy by placing an `traffic.sidecar.istio.io/excludeInboundPorts` annotaion on your Pod that lists the metrics port.
+6. If you have a workload exposing metrics in the Prometheus format, you can collect custom metrics in Prometheus format by [annotating the workload](https://docs.dynatrace.com/docs/observe/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics#annotate-kubernetes-services). If the workload has an Istio sidecar, you must either weaken the mTLS setting for the metrics port by defining an [Istio PeerAuthentication](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication) or exclude the port from interception by the Istio proxy by placing an `traffic.sidecar.istio.io/excludeInboundPorts` annotaion on your Pod that lists the metrics port.
 
 As a result, you see data arriving in your environment, advanced Kubernetes monitoring is possible, and Istio metrics are available.
 
@@ -86,14 +86,14 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
 
 ### Create Secret
 
-1. To push custom metrics and spans to Dynatrace, set up a [dataIngestToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
+1. To push custom metrics and spans to Dynatrace, set up a [dataIngestToken](https://docs.dynatrace.com/docs/manage/identity-access-management/access-tokens-and-oauth-clients/access-tokens/personal-access-token).
 
-   Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens#create-api-token) and select the following scopes:
+   Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/identity-access-management/access-tokens-and-oauth-clients/access-tokens/personal-access-token#generate-personal-access-tokens) and select the following scopes:
 
    - **Ingest metrics**
    - **Ingest OpenTelemetry traces**
 
-2. Create an [apiToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens) by selecting the template `Kubernetes: Dynatrace Operator`.
+2. Create an [apiToken](https://docs.dynatrace.com/docs/manage/identity-access-management/access-tokens-and-oauth-clients/access-tokens/personal-access-token) by selecting the template `Kubernetes: Dynatrace Operator`.
 
 3. To create a new Secret containing your access tokens, replace the `<API_TOKEN>` and `<DATA_INGEST_TOKEN>` placeholder with the `apiToken` and `dataIngestToken` you created, replace the `<API_URL>` placeholder with the Dynatrace endpoint, and run the following command:
 
@@ -169,7 +169,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
 - Use a MetricPipeline to push metrics directly.
    
   > [!NOTE]
-  > The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration) the full OTLP specification and needs custom transformation. A MetricPipeline does not support these transformation features, so that only metrics can be ingested that don't hit the limitations. At the moment, metrics of type "Histogram" and "Summary" are not supported. Furthermore, "Sum"s must use "delta" aggregation temporality. 
+  > The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/shortlink/opentelemetry-metrics-limitations#limitations) the full OTLP specification and needs custom transformation. A MetricPipeline does not support these transformation features, so that only metrics can be ingested that don't hit the limitations. At the moment, metrics of type "Histogram" and "Summary" are not supported. Furthermore, "Sum"s must use "delta" aggregation temporality. 
 
   Use this setup when your application pushes metrics to the telemetry metric service natively with OTLP, and if you have explicitly enabled "delta" aggregation temporality. You cannot enable additional inputs for the MetricPipeline.
 
@@ -202,7 +202,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
         EOF
         ```
 
-  1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/limitations#aggregation-temporality)
+  1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/limitations#aggregation-temporality)
 
   1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
 
@@ -240,7 +240,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
 
 - Use the Dynatrace metric ingestion with Prometheus exporters.
 
-  Use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), where the Dynatrace ActiveGate component running in your cluster scrapes workloads that are annotated with Dynatrace-specific annotations. 
+  Use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/observe/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), where the Dynatrace ActiveGate component running in your cluster scrapes workloads that are annotated with Dynatrace-specific annotations. 
    
   This approach works well with workloads that expose metrics in the typical Prometheus format when not running with Istio.
   If you use Istio, you must disable Istio interception for the relevant metric port with the [traffic.istio.io/excludeInboundPorts](https://istio.io/latest/docs/reference/config/annotations/#TrafficExcludeInboundPorts) annotation. To collect Istio metrics from the envoys themselves, you need additional Dynatrace annotations for every workload. 

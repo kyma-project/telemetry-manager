@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.4-alpine3.21 AS builder
+FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.6-alpine3.21 AS builder
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
@@ -23,6 +23,8 @@ RUN apk add git
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -ldflags="-X main.version=$(git rev-parse --short HEAD)" -a -o manager main.go
 
 FROM scratch
+
+LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
 
 WORKDIR /
 
