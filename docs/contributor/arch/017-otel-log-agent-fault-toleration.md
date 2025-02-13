@@ -12,23 +12,23 @@ Proposed
 When setting up an OpenTelemetry (OTel) Log Agent using the Filelog Receiver, it's important to identify situations where logs might be lost and how to mitigate them.
 
 #### Scenarios Where Data Loss Must Be Prevented:
-* Temporary OTLP backend issues (e.g., spikes in retriable errors, backpressure, temporary network failures).
-* Collector Pod restarts during normal operations (e.g., upgrades, rescheduling to another node).
+- Temporary OTLP backend issues (e.g., spikes in retriable errors, backpressure, temporary network failures).
+- Collector Pod restarts during normal operations (e.g., upgrades, rescheduling to another node).
 #### Scenarios Where Preventing Data Loss Is Nice-to-Have:
-* Collector Pod crashes that occur unexpectedly.
+- Collector Pod crashes that occur unexpectedly.
 #### Scenarios Where Data Loss Is Unavoidable:
-* Permanent OTLP backend failures.
-* Node-level failures.
-* Logs not yet tailed before Collector Pod eviction.
-* Logs not yet tailed before being rotated.
+- Permanent OTLP backend failures.
+- Node-level failures.
+- Logs not yet tailed before Collector Pod eviction.
+- Logs not yet tailed before being rotated.
 
 ### Mechanisms for Enhanced Resiliency  
 
 #### Batch Processor
 
 The Batch Processor accepts logs and places them into batches. Batching helps better compress the data and reduce the number of outgoing connections required to transmit the data. However, there are some problems:
-* The Batch Processor asynchronously handles the incoming requests and does not propagate errors to the Filelog Receiver
-* The Batch Processor doesn’t preserve its state in permanent storage, once the collector exits unexpectedly, the accumulated requests are lost. 
+- The Batch Processor asynchronously handles the incoming requests and does not propagate errors to the Filelog Receiver
+- The Batch Processor doesn’t preserve its state in permanent storage, once the collector exits unexpectedly, the accumulated requests are lost. 
 
 ![Batch Processor Flow](../assets/log-agent-batch-processor-flow.svg "Batch Processor Flow")
 
@@ -74,34 +74,36 @@ The Filelog Receiver can persist state information on storage (typically the nod
 Let's compare the following architectures Agent-to-Backend and Agent-to-Gateway-to-Backend. Each has its own trade-offs.
 
 #### Agent-to-Backend
+
 Direct communication between the agent and the backend. Gateway is optional and only handles OTel logs.
 
 Pros:
 
-* Lower operational overhead and reduced latency.
-* Direct communication ensures minimal failure points.
-* If the backend enforces per-connection rate limiting, only high-volume agents get throttled. It can be beneficial since often most workloads in a cluster generate minimal logs, while a few may produce a large volume.
+- Lower operational overhead and reduced latency.
+- Direct communication ensures minimal failure points.
+- If the backend enforces per-connection rate limiting, only high-volume agents get throttled. It can be beneficial since often most workloads in a cluster generate minimal logs, while a few may produce a large volume.
+- A multi-pipeline setup in the agent can be implemented more naturally, with a single [OTel pipeline](https://opentelemetry.io/docs/collector/architecture/#pipelines) per LogPipeline.
 
 Cons:  
 
-* Every gateway enrichment feature must be duplicated in the agent and tested separately.  
-* Credential rotations require a full DaemonSet rollout and restart.
-* Potentially higher costs, as each agent must implement the full telemetry pipeline.  
+- Every gateway enrichment feature must be duplicated in the agent and tested separately.  
+- Credential rotations require a full DaemonSet rollout and restart.
+- Potentially higher costs, as each agent must implement the full telemetry pipeline.  
 
 #### Agent-to-Gateway-To-Backend
 
 Pros:
 
-* Separation of concerns (agents collect node-affine data, gateway is responsible for filtering, enrichment, credential management, exporting to backend).
-* Lighter agents, as all enrichment is handled in the gateway (for both file-based and OTel logs).
-* Persistent queue can leverage PV-based storage for improved reliability.
+- Separation of concerns (agents collect node-affine data, gateway is responsible for filtering, enrichment, credential management, exporting to backend).
+- Lighter agents, as all enrichment is handled in the gateway (for both file-based and OTel logs).
+- Persistent queue can leverage PV-based storage for improved reliability.
 
 Cons:
 
-* It’s one more thing to maintain and that can fail (complexity).
-* The gateway can become a bottleneck for all agents if a few have a high export rate.
-* Lacks auto-scaling; manual scaling may not be sufficient.
-* Introduces an additional network hop, increasing latency.
+- It’s one more thing to maintain and that can fail (complexity).
+- The gateway can become a bottleneck for all agents if a few have a high export rate.
+- Lacks auto-scaling; manual scaling may not be sufficient.
+- Introduces an additional network hop, increasing latency.
 
 ## Decision
 
