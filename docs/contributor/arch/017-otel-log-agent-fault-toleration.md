@@ -100,12 +100,13 @@ Cons:
 Proposed solution for the OTel Log Agent setup:
 
 ### Proposed Solution for the OTel Log Agent Setup:  
-**Filelog Receiver** offset tracking  
-**No Batch Processor**, relying on Filelog Receiver for now  
-**Exporter Batcher** (optional, since there is prebatching)
-**Persistent Queue**, backed by the node filesystem  
-**Agent-to-Backend** communication
+- Filelog Receiver offset tracking.
+- No Batch Processor.
+- Exporter Batcher (optional, since there is pre-batching).
+- Persistent Queue (backed by the node filesystem).
+- Agent-to-Backend communication.
 
 Note that while the main focus of this ADR is the log agent, the following reasoning applies to the log gateway:
-- Exporter Batcher: Necessary because there is no pre-batching.
-- No Persistent Queue: For the gateway, only a PV-based persistent queue is possible, but our experience shows it to be somewhat unstable. Therefore, an in-memory queue is used instead.
+- No Batch Processor.
+- Exporter Batcher is necessary because there is no pre-batching.
+- No Persistent Queue. For the gateway, only a PV-based persistent queue is possible, but our experience shows it to be somewhat unstable. Therefore, an in-memory queue is used instead.
