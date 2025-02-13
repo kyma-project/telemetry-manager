@@ -187,7 +187,6 @@ jobs:
       - name: Prepare Test
         uses: "./.github/template/prepare-test"
         with:
-          release: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests without Istio
