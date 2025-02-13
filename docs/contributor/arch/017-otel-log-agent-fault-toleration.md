@@ -97,9 +97,7 @@ Cons:
 - Introduces an additional network hop, increasing latency.
 
 ## Decision
-Proposed solution for the OTel Log Agent setup:
-
-### Proposed Solution for the OTel Log Agent Setup:  
+Proposed solution for the OTel log agent setup:
 - Filelog Receiver offset tracking.
 - No Batch Processor.
 - Exporter Batcher (optional, since there is pre-batching).
