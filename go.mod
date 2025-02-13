@@ -15,10 +15,10 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/pdata v1.23.0
 	go.uber.org/zap v1.27.0
-	google.golang.org/protobuf v1.36.4
+	google.golang.org/protobuf v1.36.5
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.24.2
-	istio.io/client-go v1.24.2
+	istio.io/api v1.24.3
+	istio.io/client-go v1.24.3
 	k8s.io/api v0.32.1
 	k8s.io/apiextensions-apiserver v0.32.1
 	k8s.io/apimachinery v0.32.1
