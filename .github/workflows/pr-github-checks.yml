@@ -21,6 +21,7 @@ env:
   GH_REPO: ${{ github.repository }}
   NUMBER: ${{ github.event.number }}
   TITLE: ${{ github.event.pull_request.title }}
+  GH_HOST: github.com
 
 permissions: write-all
 
@@ -51,6 +52,9 @@ jobs:
   pr-label-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Add kind label based on PR title prefix
         if: always()
         run: |
