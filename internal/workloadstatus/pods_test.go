@@ -1,7 +1,6 @@
 package workloadstatus
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -61,7 +60,7 @@ func TestPodStatus(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
 
-			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
+			err := checkPodStatus(t.Context(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 			if test.expectedErrorCheckFunc != nil {
 				require.True(t, test.expectedErrorCheckFunc(err))
 			} else {
@@ -73,7 +72,7 @@ func TestPodStatus(t *testing.T) {
 
 func TestNoPods(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
+	err := checkPodStatus(t.Context(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 	require.Equal(t, err, ErrNoPodsDeployed)
 }
 
@@ -124,7 +123,7 @@ func TestPodPendingStatus(t *testing.T) {
 			test.pod.Status.Phase = corev1.PodPending
 			fakeClient := fake.NewClientBuilder().WithObjects(&test.pod).Build()
 
-			err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
+			err := checkPodStatus(t.Context(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 			if test.expectedErrorFunc != nil {
 				require.True(t, test.expectedErrorFunc(err))
 			} else {
@@ -148,6 +147,6 @@ func TestPodWaitingStatus(t *testing.T) {
 	pod.Status.ContainerStatuses = containerStatus
 	pod.Status.Phase = corev1.PodRunning
 	fakeClient := fake.NewClientBuilder().WithObjects(&pod).Build()
-	err := checkPodStatus(context.Background(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
+	err := checkPodStatus(t.Context(), fakeClient, "default", &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}})
 	require.True(t, IsPodIsPendingError(err))
 }

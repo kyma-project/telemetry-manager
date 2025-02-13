@@ -1,7 +1,6 @@
 package resourcelock
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -38,7 +37,7 @@ func TestTryAcquireLock(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
 	l := New(fakeClient, lockName, 2)
 
@@ -72,7 +71,7 @@ func TestIsLockHolder(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
 	l := New(fakeClient, lockName, 2)
 

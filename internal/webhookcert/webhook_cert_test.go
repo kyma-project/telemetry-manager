@@ -1,7 +1,6 @@
 package webhookcert
 
 import (
-	"context"
 	"os"
 	"path"
 	"testing"
@@ -245,7 +244,7 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
-	err := EnsureCertificate(context.TODO(), client, config)
+	err := EnsureCertificate(t.Context(), client, config)
 	require.NoError(t, err)
 
 	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -253,7 +252,7 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 
 	var crd apiextensionsv1.CustomResourceDefinition
 
-	require.NoError(t, client.Get(context.Background(), types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &crd))
+	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, &crd))
 
 	require.Equal(t, apiextensionsv1.WebhookConverter, crd.Spec.Conversion.Strategy)
 	require.Equal(t, webhookService.Name, crd.Spec.Conversion.Webhook.ClientConfig.Service.Name)
@@ -265,7 +264,7 @@ func TestUpdateLogPipelineWithWebhookConfig(t *testing.T) {
 	require.NotEmpty(t, crdCABundle)
 
 	var chainChecker certChainCheckerImpl
-	certValid, err := chainChecker.checkRoot(context.Background(), serverCert, crdCABundle)
+	certValid, err := chainChecker.checkRoot(t.Context(), serverCert, crdCABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 }
@@ -292,7 +291,7 @@ func TestUpdateWebhookConfig(t *testing.T) {
 		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
-	err := EnsureCertificate(context.TODO(), client, config)
+	err := EnsureCertificate(t.Context(), client, config)
 	require.NoError(t, err)
 
 	newServerCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -300,32 +299,32 @@ func TestUpdateWebhookConfig(t *testing.T) {
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 
-	err = client.Get(context.Background(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
+	err = client.Get(t.Context(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	var chainChecker certChainCheckerImpl
-	certValid, err := chainChecker.checkRoot(context.Background(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	certValid, err := chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 
-	certValid, err = chainChecker.checkRoot(context.Background(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	certValid, err = chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 
 	var updatedMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
 
-	err = client.Get(context.Background(), config.MutatingWebhookName, &updatedMutatingWebhookConfiguration)
+	err = client.Get(t.Context(), config.MutatingWebhookName, &updatedMutatingWebhookConfiguration)
 	require.NoError(t, err)
 
-	mutatingCertValid, err := chainChecker.checkRoot(context.Background(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.NoError(t, err)
-	require.True(t, mutatingCertValid)
-
-	mutatingCertValid, err = chainChecker.checkRoot(context.Background(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	mutatingCertValid, err := chainChecker.checkRoot(t.Context(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, mutatingCertValid)
 
-	mutatingCertValid, err = chainChecker.checkRoot(context.Background(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[2].ClientConfig.CABundle)
+	mutatingCertValid, err = chainChecker.checkRoot(t.Context(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.NoError(t, err)
+	require.True(t, mutatingCertValid)
+
+	mutatingCertValid, err = chainChecker.checkRoot(t.Context(), newServerCert, updatedMutatingWebhookConfiguration.Webhooks[2].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, mutatingCertValid)
 }
@@ -351,11 +350,11 @@ func TestCreateSecret(t *testing.T) {
 		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
-	err := EnsureCertificate(context.TODO(), client, config)
+	err := EnsureCertificate(t.Context(), client, config)
 	require.NoError(t, err)
 
 	var secret corev1.Secret
-	err = client.Get(context.Background(), config.CASecretName, &secret)
+	err = client.Get(t.Context(), config.CASecretName, &secret)
 	require.NoError(t, err)
 
 	require.Contains(t, secret.Data, "ca.crt")
@@ -383,22 +382,22 @@ func TestReuseExistingCertificate(t *testing.T) {
 		MutatingWebhookName:   mutatingWebhookNamespacedName,
 	}
 
-	err := EnsureCertificate(context.TODO(), client, config)
+	err := EnsureCertificate(t.Context(), client, config)
 	require.NoError(t, err)
 
 	var newValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	err = client.Get(context.Background(), config.ValidatingWebhookName, &newValidatingWebhookConfiguration)
+	err = client.Get(t.Context(), config.ValidatingWebhookName, &newValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	var newMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
-	err = client.Get(context.Background(), config.MutatingWebhookName, &newMutatingWebhookConfiguration)
+	err = client.Get(t.Context(), config.MutatingWebhookName, &newMutatingWebhookConfiguration)
 	require.NoError(t, err)
 
-	err = EnsureCertificate(context.TODO(), client, config)
+	err = EnsureCertificate(t.Context(), client, config)
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	err = client.Get(context.Background(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
+	err = client.Get(t.Context(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
@@ -407,7 +406,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 		updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 
 	var updatedMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
-	err = client.Get(context.Background(), config.MutatingWebhookName, &updatedMutatingWebhookConfiguration)
+	err = client.Get(t.Context(), config.MutatingWebhookName, &updatedMutatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	require.Equal(t, newMutatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
