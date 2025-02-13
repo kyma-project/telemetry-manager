@@ -41,7 +41,7 @@ This hidden feature eliminates the need for the Batch Processor, enabling a full
 ![No Batch Processor Flow](../assets/log-agent-no-batch-processor-flow.svg "No Batch Processor Flow")
 
 #### Exporter Batcher
-Exporter Batcher is a new (not yet delivered) feature that is meant to solve the limitations of the existing batch processor. It doesn’t introduce any asynchronous behavior itself but relies on the queue sender in front of it if needed. The most important is that by using a persistent queue, no data will be lost during the shutdown. It's important to note that the Exporter Batcher will not be a standalone component but rather part of the exporterhelper package, requiring integration into each exporter. However, both the Exporter Batcher and the new exporter design are still works in progress, with no clear ETA: [GitHub Issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). 
+Exporter Batcher is a new (not yet delivered) feature that is meant to solve the limitations of the existing batch processor. It doesn’t introduce any asynchronous behavior itself but relies on the queue sender in front of it if needed. The most important is that by using a persistent queue, no data will be lost during the shutdown. It's important to note that the Exporter Batcher will not be a standalone component but rather part of the exporterhelper package, requiring integration into each exporter. Both the Exporter Batcher and the new exporter design are still works in progress, with no clear ETA: [GitHub Issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). However, our tests show that is already works as expected.
 
 ![Exporter Batcher Flow](../assets/log-agent-exporter-batcher-flow.svg "Exporter Batcher Flow")
 
@@ -73,7 +73,7 @@ Direct communication between the agent and the backend. Gateway is optional and 
 
 Pros:
 
-- Lower operational overhead and reduced latency.
+- Reduced latency.
 - Direct communication ensures minimal failure points.
 - If the backend enforces per-connection rate limiting, only high-volume agents get throttled. It can be beneficial since often most workloads in a cluster generate minimal logs, while a few may produce a large volume.
 - A multi-pipeline setup in the agent can be implemented more naturally, with a single [OTel pipeline](https://opentelemetry.io/docs/collector/architecture/#pipelines) per LogPipeline.
@@ -89,11 +89,9 @@ Pros:
 
 - Separation of concerns (agents collect node-affine data, gateway is responsible for filtering, enrichment, credential management, exporting to backend).
 - Lighter agents, as all enrichment is handled in the gateway (for both file-based and OTel logs).
-- Persistent queue can leverage PV-based storage for improved reliability.
 
 Cons:
 
-- It’s one more thing to maintain and that can fail (complexity).
 - The gateway can become a bottleneck for all agents if a few have a high export rate.
 - Lacks auto-scaling; manual scaling may not be sufficient.
 - Introduces an additional network hop, increasing latency.
@@ -104,6 +102,10 @@ Proposed solution for the OTel Log Agent setup:
 ### Proposed Solution for the OTel Log Agent Setup:  
 **Filelog Receiver** offset tracking  
 **No Batch Processor**, relying on Filelog Receiver for now  
-**Exporter Batcher** (once stable)  
+**Exporter Batcher** (optional, since there is prebatching)
 **Persistent Queue**, backed by the node filesystem  
 **Agent-to-Backend** communication
+
+Note that while the main focus of this ADR is the log agent, the following reasoning applies to the log gateway:
+- Exporter Batcher: Necessary because there is no pre-batching.
+- No Persistent Queue: For the gateway, only a PV-based persistent queue is possible, but our experience shows it to be somewhat unstable. Therefore, an in-memory queue is used instead.
