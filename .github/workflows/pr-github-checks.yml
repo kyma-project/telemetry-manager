@@ -35,18 +35,13 @@ jobs:
           latest_milestone=$(gh api \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            /repos/kyma/consumption-reporter/milestones --hostname ${GH_HOST} | jq -r '.[].title' | sort -r | head -n 1)
+            /repos/kyma/consumption-reporter/milestones --hostname ${GH_HOST} | jq -r '.[]|.title' | sort -r | head -n 1)
           # fail if there is no open milestone
           if [ -z "$latest_milestone" ]; then
             echo "No open milestone found"
             exit 1
           fi
           gh pr edit ${{ github.event.number }} --milestone "${latest_milestone}"
-
-      - name: add to project
-        if: always()
-        run: |
-          gh pr edit ${{ github.event.number }} --add-project ${PROJECT_NAME}
 
   pr-label-check:
     runs-on: ubuntu-latest
