@@ -93,7 +93,7 @@ Pros:
 Cons:
 
 - The gateway can become a bottleneck for all agents if a few have a high export rate.
-- Lacks auto-scaling; manual scaling may not be sufficient.
+- The gateway lacks auto-scaling; manual scaling may not be sufficient.
 - Introduces an additional network hop, increasing latency.
 
 ## Decision
