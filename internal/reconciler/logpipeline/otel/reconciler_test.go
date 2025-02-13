@@ -1,7 +1,6 @@
 package otel
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -32,7 +31,7 @@ func TestReconcile(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
-	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
@@ -75,11 +74,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 		require.NoError(t, err)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -128,11 +127,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 		require.NoError(t, err)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -181,11 +180,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeGatewayHealthy,
@@ -233,11 +232,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -285,11 +284,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -337,11 +336,11 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			&Validator{},
 			&conditions.ErrorToMessageConverter{})
-		err := sut.Reconcile(context.Background(), &pipeline)
+		err := sut.Reconcile(t.Context(), &pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -386,14 +385,14 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			&Validator{},
 			&conditions.ErrorToMessageConverter{})
-		err1 := sut.Reconcile(context.Background(), &pipeline1)
-		err2 := sut.Reconcile(context.Background(), &pipeline2)
+		err1 := sut.Reconcile(t.Context(), &pipeline1)
+		err2 := sut.Reconcile(t.Context(), &pipeline2)
 
 		require.NoError(t, err1)
 		require.NoError(t, err2)
 
 		var updatedPipeline1 telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
 
 		requireHasStatusCondition(t, updatedPipeline1,
 			conditions.TypeAgentHealthy,
@@ -436,8 +435,8 @@ func TestReconcile(t *testing.T) {
 			istioStatusCheckerStub,
 			&Validator{},
 			&conditions.ErrorToMessageConverter{})
-		err1 := sut.Reconcile(context.Background(), &pipeline1)
-		err2 := sut.Reconcile(context.Background(), &pipeline2)
+		err1 := sut.Reconcile(t.Context(), &pipeline1)
+		err2 := sut.Reconcile(t.Context(), &pipeline2)
 
 		require.NoError(t, err1)
 		require.NoError(t, err2)
@@ -446,8 +445,8 @@ func TestReconcile(t *testing.T) {
 
 		var updatedPipeline2 telemetryv1alpha1.LogPipeline
 
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline2)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline2)
 
 		requireHasStatusCondition(t, updatedPipeline1,
 			conditions.TypeAgentHealthy,

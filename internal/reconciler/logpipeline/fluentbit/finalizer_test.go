@@ -1,7 +1,6 @@
 package fluentbit
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,11 +20,11 @@ func TestEnsureFinalizers(t *testing.T) {
 		pipeline := &telemetryv1alpha1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "pipeline"}}
 		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
 
-		err := ensureFinalizers(context.Background(), client, pipeline)
+		err := ensureFinalizers(t.Context(), client, pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = client.Get(context.TODO(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, filesFinalizer))
@@ -48,11 +47,11 @@ func TestEnsureFinalizers(t *testing.T) {
 		_ = telemetryv1alpha1.AddToScheme(scheme)
 		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
 
-		err := ensureFinalizers(context.Background(), client, pipeline)
+		err := ensureFinalizers(t.Context(), client, pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = client.Get(context.TODO(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
 		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, filesFinalizer))
@@ -74,11 +73,11 @@ func TestCleanupFinalizers(t *testing.T) {
 		_ = telemetryv1alpha1.AddToScheme(scheme)
 		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
 
-		err := cleanupFinalizersIfNeeded(context.Background(), client, pipeline)
+		err := cleanupFinalizersIfNeeded(t.Context(), client, pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = client.Get(context.TODO(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
 	})
@@ -97,11 +96,11 @@ func TestCleanupFinalizers(t *testing.T) {
 		_ = telemetryv1alpha1.AddToScheme(scheme)
 		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
 
-		err := cleanupFinalizersIfNeeded(context.Background(), client, pipeline)
+		err := cleanupFinalizersIfNeeded(t.Context(), client, pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = client.Get(context.TODO(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, filesFinalizer))

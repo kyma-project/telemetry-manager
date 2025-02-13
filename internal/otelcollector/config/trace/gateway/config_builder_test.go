@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -19,7 +18,7 @@ import (
 )
 
 func TestBuildConfig(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 
@@ -217,7 +216,7 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
-		collectorConfig, envVars, err := sut.Build(context.Background(), []telemetryv1alpha1.TracePipeline{
+		collectorConfig, envVars, err := sut.Build(t.Context(), []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test-1").Build(),
 			testutils.NewTracePipelineBuilder().WithName("test-2").Build()}, BuildOptions{
 			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
@@ -255,7 +254,7 @@ func TestBuildConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		config, _, err := sut.Build(context.Background(), []telemetryv1alpha1.TracePipeline{
+		config, _, err := sut.Build(t.Context(), []telemetryv1alpha1.TracePipeline{
 			testutils.NewTracePipelineBuilder().WithName("test").Build(),
 		}, BuildOptions{
 			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
