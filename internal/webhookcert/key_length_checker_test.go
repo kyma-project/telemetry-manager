@@ -1,7 +1,6 @@
 package webhookcert
 
 import (
-	"context"
 	crand "crypto/rand"
 	"crypto/rsa"
 	"testing"
@@ -28,7 +27,7 @@ func TestCheckKeyLength(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			checker := &keyLengthCheckerImpl{}
-			result, err := checker.checkKeyLength(context.TODO(), tc.key)
+			result, err := checker.checkKeyLength(t.Context(), tc.key)
 			require.NoError(t, err, "failed to check key length")
 			require.Equal(t, tc.expected, result)
 		})

@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"testing"
@@ -27,7 +26,7 @@ func TestValidateFirstPipeline(t *testing.T) {
 
 	newPipeline := testutils.NewLogPipelineBuilder().Build()
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, newPipeline))
 
 	require.True(t, response.Allowed)
 }
@@ -50,7 +49,7 @@ func TestValidateLimitNotExceeded(t *testing.T) {
 
 	newPipeline := testutils.NewLogPipelineBuilder().Build()
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, newPipeline))
 
 	require.True(t, response.Allowed)
 }
@@ -73,7 +72,7 @@ func TestValidateLimitExceeded(t *testing.T) {
 
 	newPipeline := testutils.NewLogPipelineBuilder().Build()
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
 	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
@@ -91,7 +90,7 @@ func TestValidateUpdate(t *testing.T) {
 
 	sut := newValidateHandler(fakeClient, scheme)
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, existingPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, existingPipeline))
 
 	require.True(t, response.Allowed)
 }

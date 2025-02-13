@@ -1,7 +1,6 @@
 package fluentbit
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -43,7 +42,7 @@ func TestReconcile(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
-	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
@@ -82,12 +81,12 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.True(t, *updatedPipeline.Status.UnsupportedMode)
 	})
@@ -113,12 +112,12 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.False(t, *updatedPipeline.Status.UnsupportedMode)
 	})
@@ -144,13 +143,13 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		// check Fluent Bit sections configmap as an indicator of resources generation
 		cm := &corev1.ConfigMap{}
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, cm)
 		require.True(t, apierrors.IsNotFound(err), "sections configmap should not exist")
 	})
 
@@ -176,12 +175,12 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -191,7 +190,7 @@ func TestReconcile(t *testing.T) {
 		)
 
 		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
 		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
@@ -217,12 +216,12 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -232,7 +231,7 @@ func TestReconcile(t *testing.T) {
 		)
 
 		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
 		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
@@ -258,12 +257,12 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeAgentHealthy,
@@ -273,7 +272,7 @@ func TestReconcile(t *testing.T) {
 		)
 
 		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
 		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
@@ -302,12 +301,12 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
@@ -326,35 +325,35 @@ func TestReconcile(t *testing.T) {
 		name := types.NamespacedName{Name: testConfig.DaemonSet.Name, Namespace: testConfig.DaemonSet.Namespace}
 
 		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 		require.Error(t, err, "sections configmap should not exist")
 
 		var cmLua corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.LuaConfigMap, &cmLua)
+		err = fakeClient.Get(t.Context(), testConfig.LuaConfigMap, &cmLua)
 		require.Error(t, err, "lua configmap should not exist")
 
 		var cmParser corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.ParsersConfigMap, &cmParser)
+		err = fakeClient.Get(t.Context(), testConfig.ParsersConfigMap, &cmParser)
 		require.Error(t, err, "parser configmap should not exist")
 
 		var serviceAccount corev1.ServiceAccount
-		err = fakeClient.Get(context.Background(), name, &serviceAccount)
+		err = fakeClient.Get(t.Context(), name, &serviceAccount)
 		require.Error(t, err, "service account should not exist")
 
 		var clusterRole rbacv1.ClusterRole
-		err = fakeClient.Get(context.Background(), name, &clusterRole)
+		err = fakeClient.Get(t.Context(), name, &clusterRole)
 		require.Error(t, err, "clusterrole should not exist")
 
 		var clusterRoleBinding rbacv1.ClusterRoleBinding
-		err = fakeClient.Get(context.Background(), name, &clusterRoleBinding)
+		err = fakeClient.Get(t.Context(), name, &clusterRoleBinding)
 		require.Error(t, err, "clusterrolebinding should not exist")
 
 		var daemonSet appsv1.DaemonSet
-		err = fakeClient.Get(context.Background(), name, &daemonSet)
+		err = fakeClient.Get(t.Context(), name, &daemonSet)
 		require.Error(t, err, "daemonset should not exist")
 
 		var networkPolicy networkingv1.NetworkPolicy
-		err = fakeClient.Get(context.Background(), name, &networkPolicy)
+		err = fakeClient.Get(t.Context(), name, &networkPolicy)
 		require.Error(t, err, "network policy should not exist")
 	})
 
@@ -391,12 +390,12 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
@@ -406,7 +405,7 @@ func TestReconcile(t *testing.T) {
 		)
 
 		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 		require.NoError(t, err, "sections configmap must exist")
 		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
@@ -529,12 +528,12 @@ func TestReconcile(t *testing.T) {
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
-				require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-				err := sut.Reconcile(context.Background(), &pl1)
+				require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+				err := sut.Reconcile(t.Context(), &pl1)
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.LogPipeline
-				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				requireHasStatusCondition(t, updatedPipeline,
 					conditions.TypeFlowHealthy,
@@ -544,7 +543,7 @@ func TestReconcile(t *testing.T) {
 				)
 
 				var cm corev1.ConfigMap
-				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+				err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 				require.NoError(t, err, "sections configmap must exist")
 				require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 			})
@@ -652,12 +651,12 @@ func TestReconcile(t *testing.T) {
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
-				require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-				err := sut.Reconcile(context.Background(), &pl1)
+				require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+				err := sut.Reconcile(t.Context(), &pl1)
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.LogPipeline
-				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				requireHasStatusCondition(t, updatedPipeline,
 					conditions.TypeConfigurationGenerated,
@@ -677,7 +676,7 @@ func TestReconcile(t *testing.T) {
 
 				var cm corev1.ConfigMap
 
-				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+				err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 				if !tt.expectAgentConfigured {
 					require.Error(t, err, "sections configmap should not exist")
 				} else {
@@ -747,12 +746,12 @@ func TestReconcile(t *testing.T) {
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
-				require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-				err := sut.Reconcile(context.Background(), &pl1)
+				require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+				err := sut.Reconcile(t.Context(), &pl1)
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.LogPipeline
-				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
 				require.Equal(t, tt.expectedStatus, cond.Status)
 				require.Equal(t, tt.expectedReason, cond.Reason)
@@ -760,7 +759,7 @@ func TestReconcile(t *testing.T) {
 				require.Equal(t, tt.expectedMessage, cond.Message)
 
 				var cm corev1.ConfigMap
-				err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+				err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 				require.NoError(t, err, "sections configmap must exist")
 				require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 			})
@@ -791,12 +790,12 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.True(t, errors.Is(err, serverErr))
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
@@ -813,7 +812,7 @@ func TestReconcile(t *testing.T) {
 		)
 
 		var cm corev1.ConfigMap
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, &cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
 		require.Error(t, err, "sections configmap should not exist")
 	})
 
@@ -847,18 +846,18 @@ func TestReconcile(t *testing.T) {
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
-		err := sut.Reconcile(context.Background(), &pl1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
+		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		var pl2 telemetryv1alpha1.LogPipeline
 
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline2.Name}, &pl2))
-		err = sut.Reconcile(context.Background(), &pl2)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline2.Name}, &pl2))
+		err = sut.Reconcile(t.Context(), &pl2)
 		require.NoError(t, err)
 
 		cm := &corev1.ConfigMap{}
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, cm)
 		require.NoError(t, err, "sections configmap must exist")
 		require.Contains(t, cm.Data[pipeline1.Name+".conf"], pipeline1.Name, "sections configmap must contain pipeline1 name")
 		require.Contains(t, cm.Data[pipeline2.Name+".conf"], pipeline2.Name, "sections configmap must contain pipeline2 name")
@@ -870,13 +869,13 @@ func TestReconcile(t *testing.T) {
 			WithDeletionTimeStamp(metav1.Now()).
 			Build()
 
-		fakeClient.Delete(context.Background(), &pipeline1)
-		require.NoError(t, fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
-		err = sut.Reconcile(context.Background(), &pl1)
+		fakeClient.Delete(t.Context(), &pipeline1)
+		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
+		err = sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
 
 		pipeline1 = pipeline1Deleted
-		err = fakeClient.Get(context.Background(), testConfig.SectionsConfigMap, cm)
+		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, cm)
 		require.NoError(t, err, "sections configmap must exist")
 		require.NotContains(t, cm.Data[pipeline1.Name+".conf"], pipeline1.Name, "sections configmap must not contain pipeline1")
 		require.Contains(t, cm.Data[pipeline2.Name+".conf"], pipeline2.Name, "sections configmap must contain pipeline2 name")
@@ -991,7 +990,7 @@ func TestCalculateChecksum(t *testing.T) {
 	client := fake.NewClientBuilder().WithObjects(&dsConfig, &sectionsConfig, &filesConfig, &luaConfig, &parsersConfig, &envSecret, &certSecret).Build()
 
 	r := New(client, config, nil, nil, nil, nil, nil)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	checksum, err := r.calculateChecksum(ctx)
 

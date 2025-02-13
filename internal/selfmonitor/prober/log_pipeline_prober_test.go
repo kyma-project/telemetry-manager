@@ -1,7 +1,6 @@
 package prober
 
 import (
-	"context"
 	"testing"
 
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -250,7 +249,7 @@ func TestLogPipelineProber(t *testing.T) {
 
 			sut.getter = alertGetterMock
 
-			result, err := sut.Probe(context.Background(), tc.pipelineName)
+			result, err := sut.Probe(t.Context(), tc.pipelineName)
 
 			if tc.expectErr {
 				require.Error(t, err)

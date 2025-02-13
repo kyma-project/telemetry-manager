@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -19,7 +18,7 @@ import (
 )
 
 func TestMakeConfig(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 
@@ -285,7 +284,7 @@ func TestMakeConfig(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				config, _, err := sut.Build(
-					context.Background(),
+					t.Context(),
 					[]telemetryv1alpha1.MetricPipeline{
 						testutils.NewMetricPipelineBuilder().
 							WithName("test").

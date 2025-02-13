@@ -69,7 +69,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 				},
 			}).Build()
 
-			err := tt.sut.ApplyResources(context.Background(), client, GatewayApplyOptions{
+			err := tt.sut.ApplyResources(t.Context(), client, GatewayApplyOptions{
 				AllowedPorts:        []int32{5555, 6666},
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars: map[string][]byte{
@@ -139,19 +139,19 @@ func TestGateway_DeleteResources(t *testing.T) {
 				},
 			}).Build()
 
-			err := tt.sut.ApplyResources(context.Background(), fakeClient, GatewayApplyOptions{
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, GatewayApplyOptions{
 				AllowedPorts:        []int32{5555, 6666},
 				CollectorConfigYAML: "dummy",
 				IstioEnabled:        tt.istioEnabled,
 			})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(context.Background(), fakeClient, tt.istioEnabled)
+			err = tt.sut.DeleteResources(t.Context(), fakeClient, tt.istioEnabled)
 			require.NoError(t, err)
 
 			for i := range created {
 				// an update operation on a non-existent object should return a NotFound error
-				err = fakeClient.Get(context.Background(), client.ObjectKeyFromObject(created[i]), created[i])
+				err = fakeClient.Get(t.Context(), client.ObjectKeyFromObject(created[i]), created[i])
 				require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
 			}
 		})
