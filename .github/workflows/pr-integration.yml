@@ -165,3 +165,49 @@ jobs:
         with:
           failure: failure()
           job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
+
+  e2e-experimental-self-mon:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        signal-type:
+          - logs
+          - metrics
+          - traces
+        scenario:
+          - healthy
+          - backpressure
+          - outage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests without Istio
+        if: ${{ matrix.scenario == 'healthy' }}
+        run: |
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && experimental" test/e2e
+
+        # we need Istio for fault injection to simulate backpressure and outages
+      - name: Deploy Istio Module
+        if: ${{ matrix.scenario != 'healthy' }}
+        run: hack/deploy-istio.sh
+
+      - name: Run tests with Istio
+        if: ${{ matrix.scenario != 'healthy' }}
+        run: |
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && experimental" test/integration/istio
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+          job-name: ${{ github.job }}-${{ matrix.signal-type }}-${{ matrix.scenario }}
