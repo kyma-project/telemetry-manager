@@ -1,4 +1,4 @@
-# 17. OTel Log Agent Fault Toleration 
+# 17. Fault Tolerant OTel Logging Setup
 
 Date: 2025-02-04
 
@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-### Classifying Log Loss Scenarios in an OTel Log Agent with Filelog Receiver
+### Classifying Log Loss Scenarios
 When setting up an OpenTelemetry (OTel) Log Agent using the Filelog Receiver, it's important to identify situations where logs might be lost and how to mitigate them.
 
 #### Scenarios Where Data Loss Must Be Prevented:
@@ -52,16 +52,39 @@ This hidden feature eliminates the need for the Batch Processor, enabling a full
 
 Overall, `Exporter Batcher` is a future-proof solution that appears to work reliably, despite still being experimental. Enabling it for all three gateway types and possibly the metric agent makes sense. However, it is not needed for the log agent, as the Filelog Receiver already handles pre-batching.  
 
-#### Exporter Persistent Sending Queue
-When persistent queue is enabled, the batches are being buffered using the provided storage extension - filestorage is a popular and safe choice. If the collector instance is killed while having some items in the persistent queue, on restart the items will be picked and the exporting is continued.
+#### Queueing  
 
-There are two types of file storage that can back a persistent queue: the node filesystem or a persistent volume (PV).
+The OTLP exporter can buffer telemetry items before sending them to the backend, using either a persistent or in-memory queue.  
 
-Using the node filesystem carries some risks. Misconfigurations can lead to disk overflow, potentially crashing the node or even the entire cluster. Additionally, heavy disk I/O can degrade cluster performance—something we previously observed with Fluent Bit. Another limitation is that queue size can currently only be restricted by batch count, not by volume (MB), requiring some estimations. However, the upstream project is actively working on adding size-based limits.
+##### Memory Queue  
 
-PV-based storage avoids these issues but cannot be used with a DaemonSet.
+With an in-memory queue enabled, batches do not persist across restarts. The collector implements graceful termination, meaning that the queue is drained on shutdown. However, only a single retry is attempted for each item, regardless of the `retry_sender` configuration. If that retry fails, the data is dropped.  
 
-Overall, we have had positive experiences using node filesystem-based buffering in Fluent Bit, making it a viable solution.
+##### Persistent Queue  
+
+When a persistent queue is enabled, batches are buffered using the configured storage extension—`filestorage` being a popular and reliable choice. If the collector instance is killed while holding items in the persistent queue, those items will be retained and exported upon restart.  
+
+A persistent queue can be backed by two types of file storage: the node’s filesystem or a persistent volume (PV).  
+
+###### Node Filesystem-Based Storage  
+
+We have had positive experiences with node filesystem-based buffering in Fluent Bit, but there are several limitations:  
+- The node’s filesystem has limited storage capacity.  
+- Misconfigurations can lead to disk overflows, potentially crashing the node or even the entire cluster.  
+- Heavy disk I/O can degrade cluster performance—an issue we previously observed with Fluent Bit.  
+- Queue size can currently only be limited by batch count, not by volume (MB), requiring rough estimations. However, the upstream project is actively working on adding size-based limits: [opentelemetry-collector#9462](https://github.com/open-telemetry/opentelemetry-collector/issues/9462).  
+
+###### Persistent Volume (PV)-Based Storage  
+
+Using PV-based storage mitigates these issues but introduces other constraints:  
+- It cannot be used with a DaemonSet, only a StatefulSet.  
+- Disk reattachment is unstable on Azure, causing simple operations like rolling upgrades to take excessively long or get stuck.  
+
+#### Conclusion  
+
+An in-memory queue poses a risk of data loss if the backend struggles, as data is retried only once during draining. A PV-based persistent queue is not a viable option due to operational challenges on Azure. While node filesystem-based storage can be used on Azure clusters, it is very limited and only suitable for the log agent, not the gateway.
+
+Given these constraints, the proposal is to use an in-memory queue for the log gateway, while for the log agent, we may consider disabling it entirely
 
 #### Filelog Receiver Offset Tracking
 The Filelog Receiver can persist state information on storage (typically the node’s filesystem), allowing it to recover after crashes. It maintains the following data to ensure continuity:  
@@ -107,11 +130,10 @@ Cons:
 Proposed solution for the OTel log agent setup:
 - Filelog Receiver offset tracking.
 - No Batch Processor.
-- Exporter Batcher (optional, since there is pre-batching).
-- Persistent Queue backed by the node filesystem (can be enabled later).
+- No sending queue/in-memory sending queue/node filesystem sending queue.
 - Agent-to-Backend communication.
 
-Note that while the main focus of this ADR is the log agent, the following reasoning applies to the log gateway:
+Proposed solution for the OTel log gateway setup:
 - No Batch Processor.
 - Exporter Batcher is necessary because there is no pre-batching.
-- In-memory Queue. Node filesystem-based persistent queue is not an option for a gateway and we had quite a bad experience with operating a collector as a stateful sets (PV-based persistent queue).
+- In-memory sending queue.
