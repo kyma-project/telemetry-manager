@@ -184,15 +184,16 @@ type EnrichmentSpec struct {
 	// This field is optional.
 	Enabled bool `json:"enabled,omitempty"`
 
-	// PodLabels specifies the list of pod labels to be used for enrichment.
+	// ExtractPodLabels specifies the list of pod labels to be used for enrichment.
 	// This field is optional.
-	PodLabels []PodLabel `json:"podLabels,omitempty"`
+	ExtractPodLabels []PodLabel `json:"ExtractPodLabels,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="(has(self.key) || has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
 // +kubebuilder:validation:XValidation:rule="!(has(self.key) && has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
-// PodLabel defines a label for a pod, which can be specified either by a key or a key prefix.
+// PodLabel defines labels from a pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
 // Either 'key' or 'keyPrefix' must be specified, but not both.
+// The enriched telemetry data will contains resource attributes with key k8s.pod.label.<label_key>.
 type PodLabel struct {
 	// Key specifies the exact label key to be used.
 	// This field is optional.

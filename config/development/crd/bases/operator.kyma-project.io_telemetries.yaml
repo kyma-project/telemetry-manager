@@ -59,19 +59,15 @@ spec:
                       Enrichments specifies optional enrichments for the log data.
                       This field is optional.
                     properties:
-                      enabled:
+                      ExtractPodLabels:
                         description: |-
-                          Enabled indicates whether enrichment is enabled.
-                          This field is optional.
-                        type: boolean
-                      podLabels:
-                        description: |-
-                          PodLabels specifies the list of pod labels to be used for enrichment.
+                          ExtractPodLabels specifies the list of pod labels to be used for enrichment.
                           This field is optional.
                         items:
                           description: |-
-                            PodLabel defines a label for a pod, which can be specified either by a key or a key prefix.
+                            PodLabel defines labels from a pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
                             Either 'key' or 'keyPrefix' must be specified, but not both.
+                            The enriched telemetry data will contains resource attributes with key k8s.pod.label.<label_key>.
                           properties:
                             key:
                               description: |-
@@ -90,6 +86,11 @@ spec:
                           - message: Either 'key' or 'keyPrefix' must be specified
                             rule: '!(has(self.key) && has(self.keyPrefix))'
                         type: array
+                      enabled:
+                        description: |-
+                          Enabled indicates whether enrichment is enabled.
+                          This field is optional.
+                        type: boolean
                     type: object
                   gateway:
                     description: Gateway specifies the settings for the log gateway.

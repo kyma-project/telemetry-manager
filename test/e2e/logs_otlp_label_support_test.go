@@ -90,7 +90,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 				telemetry.Spec.Log = &operatorv1alpha1.LogSpec{
 					Enrichments: &operatorv1alpha1.EnrichmentSpec{
 						Enabled: true,
-						PodLabels: []operatorv1alpha1.PodLabel{
+						ExtractPodLabels: []operatorv1alpha1.PodLabel{
 							{
 								Key: "log.test.exact.should.match",
 							},
@@ -102,7 +102,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 				}
 				err = k8sClient.Update(ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
-				return len(telemetry.Spec.Log.Enrichments.PodLabels)
+				return len(telemetry.Spec.Log.Enrichments.ExtractPodLabels)
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
 		})
 

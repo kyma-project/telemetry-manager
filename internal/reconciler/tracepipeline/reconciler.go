@@ -36,6 +36,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -267,27 +268,17 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	var telemetries operatorv1alpha1.TelemetryList
-	if err := r.List(ctx, &telemetries); err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+	telemetry, err := telemetry.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return defaultReplicaCount
 	}
 
-	for i := range telemetries.Items {
-		telemetrySpec := telemetries.Items[i].Spec
-		if telemetrySpec.Trace == nil {
-			continue
-		}
-
-		scaling := telemetrySpec.Trace.Gateway.Scaling
-		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
-			continue
-		}
-
-		static := scaling.Static
-		if static != nil && static.Replicas > 0 {
-			return static.Replicas
-		}
+	if telemetry.Spec.Trace != nil &&
+		telemetry.Spec.Trace.Gateway.Scaling.Type == operatorv1alpha1.StaticScalingStrategyType &&
+		telemetry.Spec.Trace.Gateway.Scaling.Static != nil &&
+		telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas > 0 {
+		return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas
 	}
 
 	return defaultReplicaCount
