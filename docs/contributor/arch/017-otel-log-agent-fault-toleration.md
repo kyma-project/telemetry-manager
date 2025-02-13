@@ -33,7 +33,7 @@ The Batch Processor accepts logs and places them into batches. Batching helps be
 ![Batch Processor Flow](../assets/log-agent-batch-processor-flow.svg "Batch Processor Flow")
 
 #### Filelog Receiver Batching
-The Filelog Receiver does not forward log lines to the next consumer one by one. Instead, it batches them by resource. The batch size and send interval are fixed and cannot be configured—logs are sent in batches of 100 lines or every 100 milliseconds, whichever comes first.
+The Filelog Receiver does not forward log lines to the next consumer one by one. Instead, it batches them by resource. The batch size and send interval are fixed and cannot be configured - logs are sent in batches of 100 lines or every 100 milliseconds, whichever comes first.
 More info about internal details can be found [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/31074#issuecomment-2360284799).
 
 This hidden feature eliminates the need for the Batch Processor, enabling a fully synchronous pipeline.
