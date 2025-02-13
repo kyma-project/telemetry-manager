@@ -21,8 +21,8 @@ import (
 
 type syncer struct {
 	client.Client
-	Config Config
-	Names  ResourceNames
+	Config    Config
+	namespace string
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
@@ -62,7 +62,9 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 }
 
 func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployablePipelines []telemetryv1alpha1.LogPipeline) error {
-	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.Names.SectionsConfigMap, Labels())
+	sectionsConfigMapName := types.NamespacedName{Name: fbSectionsConfigMapName, Namespace: s.namespace}
+
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, sectionsConfigMapName, Labels())
 	if err != nil {
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
@@ -101,7 +103,9 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 }
 
 func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.Names.FilesConfigMap, Labels())
+	filesConfigMapName := types.NamespacedName{Name: fbFilesConfigMapName, Namespace: s.namespace}
+
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, filesConfigMapName, Labels())
 	if err != nil {
 		return fmt.Errorf("unable to get files configmap: %w", err)
 	}
@@ -133,7 +137,9 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 
 // Copies HTTP-specific attributes and user-provided variables to a secret that is later used for providing environment variables to the Fluent Bit configuration.
 func (s *syncer) syncEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.Names.EnvConfigSecret, Labels())
+	envConfigSecretName := types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: s.namespace}
+
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, envConfigSecretName, Labels())
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
 	}
@@ -200,7 +206,9 @@ func (s *syncer) copyConfigSecretData(ctx context.Context, prefix string, value 
 // Copies TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
 // (since PEM-encoded strings exceed the maximum allowed length of environment variables on some Linux machines).
 func (s *syncer) syncTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.Names.TLSFileConfigSecret, Labels())
+	tlsFileConfigSecretName := types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: s.namespace}
+
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, tlsFileConfigSecretName, Labels())
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
 	}

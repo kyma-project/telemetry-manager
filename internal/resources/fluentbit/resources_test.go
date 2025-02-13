@@ -11,7 +11,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -158,40 +157,14 @@ func TestAgent_DeleteResources(t *testing.T) {
 }
 
 func TestCalculateChecksum(t *testing.T) {
-	names := ResourceNames{
-		DaemonSet: types.NamespacedName{
-			Namespace: "default",
-			Name:      "daemonset",
-		},
-		SectionsConfigMap: types.NamespacedName{
-			Namespace: "default",
-			Name:      "sections",
-		},
-		FilesConfigMap: types.NamespacedName{
-			Namespace: "default",
-			Name:      "files",
-		},
-		LuaConfigMap: types.NamespacedName{
-			Namespace: "default",
-			Name:      "lua",
-		},
-		ParsersConfigMap: types.NamespacedName{
-			Namespace: "default",
-			Name:      "parsers",
-		},
-		EnvConfigSecret: types.NamespacedName{
-			Namespace: "default",
-			Name:      "env",
-		},
-		TLSFileConfigSecret: types.NamespacedName{
-			Namespace: "default",
-			Name:      "tls",
-		},
+	aad := AgentApplierDeleter{
+		namespace: "kyma-system",
 	}
+
 	dsConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.DaemonSet.Name,
-			Namespace: names.DaemonSet.Namespace,
+			Name:      fbDaemonSetName,
+			Namespace: aad.namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -199,8 +172,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	sectionsConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SectionsConfigMap.Name,
-			Namespace: names.SectionsConfigMap.Namespace,
+			Name:      fbSectionsConfigMapName,
+			Namespace: aad.namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -208,8 +181,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	filesConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.FilesConfigMap.Name,
-			Namespace: names.FilesConfigMap.Namespace,
+			Name:      fbFilesConfigMapName,
+			Namespace: aad.namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -217,8 +190,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	luaConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.LuaConfigMap.Name,
-			Namespace: names.LuaConfigMap.Namespace,
+			Name:      fbLuaConfigMapName,
+			Namespace: aad.namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -226,8 +199,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	parsersConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.ParsersConfigMap.Name,
-			Namespace: names.ParsersConfigMap.Namespace,
+			Name:      fbParsersConfigMapName,
+			Namespace: aad.namespace,
 		},
 		Data: map[string]string{
 			"a": "b",
@@ -235,8 +208,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	envSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.EnvConfigSecret.Name,
-			Namespace: names.EnvConfigSecret.Namespace,
+			Name:      fbEnvConfigSecretName,
+			Namespace: aad.namespace,
 		},
 		Data: map[string][]byte{
 			"a": []byte("b"),
@@ -244,8 +217,8 @@ func TestCalculateChecksum(t *testing.T) {
 	}
 	certSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.TLSFileConfigSecret.Name,
-			Namespace: names.TLSFileConfigSecret.Namespace,
+			Name:      fbTLSFileConfigSecretName,
+			Namespace: aad.namespace,
 		},
 		Data: map[string][]byte{
 			"a": []byte("b"),
@@ -256,7 +229,7 @@ func TestCalculateChecksum(t *testing.T) {
 
 	ctx := context.Background()
 
-	checksum, err := calculateChecksum(ctx, client, names)
+	checksum, err := aad.calculateChecksum(ctx, client)
 
 	t.Run("Initial checksum should not be empty", func(t *testing.T) {
 		require.NoError(t, err)
@@ -268,7 +241,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &dsConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating static config")
 		checksum = newChecksum
@@ -279,7 +252,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &sectionsConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating sections config")
 		checksum = newChecksum
@@ -290,7 +263,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &filesConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating files config")
 		checksum = newChecksum
@@ -301,7 +274,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &luaConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating LUA config")
 		checksum = newChecksum
@@ -312,7 +285,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &parsersConfig)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating parsers config")
 		checksum = newChecksum
@@ -323,7 +296,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &envSecret)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating env secret")
 		checksum = newChecksum
@@ -334,7 +307,7 @@ func TestCalculateChecksum(t *testing.T) {
 		updateErr := client.Update(ctx, &certSecret)
 		require.NoError(t, updateErr)
 
-		newChecksum, checksumErr := calculateChecksum(ctx, client, names)
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
 		require.NoError(t, checksumErr)
 		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating certificate secret")
 	})
