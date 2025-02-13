@@ -29,7 +29,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 
@@ -50,7 +53,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -65,7 +71,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
@@ -80,7 +89,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithOTLPOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
@@ -103,7 +115,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-custom-header").WithOTLPOutput(testutils.OTLPCustomHeader("Authorization", "TOKEN_VALUE", "Api-Token")).Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-custom-header")
@@ -124,7 +139,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-mtls").WithOTLPOutput(testutils.OTLPClientTLSFromString("ca", "cert", "key")).Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-mtls")
@@ -146,7 +164,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 
@@ -162,7 +183,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 
@@ -190,7 +214,10 @@ func TestMakeConfig(t *testing.T) {
 			[]telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 		require.Equal(t, maxQueueSize, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
@@ -204,7 +231,10 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-2").Build(),
 				testutils.NewMetricPipelineBuilder().WithName("test-3").Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 
 		require.NoError(t, err)
@@ -223,7 +253,10 @@ func TestMakeConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithName("test-2").Build(),
 				testutils.NewMetricPipelineBuilder().WithName("test-3").Build(),
 			},
-			BuildOptions{},
+			BuildOptions{
+				ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+				CloudProvider: "test-cloud-provider",
+			},
 		)
 		require.NoError(t, err)
 
@@ -259,7 +292,10 @@ func TestMakeConfig(t *testing.T) {
 							WithOTLPInput(tt.withOTLPInput).
 							WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 					},
-					BuildOptions{},
+					BuildOptions{
+						ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+						CloudProvider: "test-cloud-provider",
+					},
 				)
 				require.NoError(t, err)
 

@@ -53,6 +53,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/images"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
@@ -183,7 +184,7 @@ func run() error {
 				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector()},
 				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
 				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
 				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
@@ -351,9 +352,11 @@ func setupLogPipelineController(mgr manager.Manager, reconcileTriggerChan <-chan
 			OTelCollectorImage:          otelCollectorImage,
 			FluentBitPriorityClassName:  highPriorityClassName,
 			LogGatewayPriorityClassName: normalPriorityClassName,
+			LogAgentPriorityClassName:   highPriorityClassName,
 			RestConfig:                  mgr.GetConfig(),
 			SelfMonitorName:             selfMonitorName,
 			TelemetryNamespace:          telemetryNamespace,
+			ModuleVersion:               version,
 		},
 	)
 	if err != nil {
@@ -456,11 +459,21 @@ func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
 
+func setConfigMapNamespaceFieldSelector() map[string]cache.Config {
+	return map[string]cache.Config{
+		"kube-system": {
+			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
+		},
+		telemetryNamespace: {},
+	}
+}
+
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
 		Config: selfmonitor.Config{
-			BaseName:  selfMonitorName,
-			Namespace: telemetryNamespace,
+			BaseName:      selfMonitorName,
+			Namespace:     telemetryNamespace,
+			ComponentType: commonresources.LabelValueK8sComponentMonitor,
 			Deployment: selfmonitor.DeploymentConfig{
 				Image:             selfMonitorImage,
 				PriorityClassName: normalPriorityClassName,

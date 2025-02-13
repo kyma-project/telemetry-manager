@@ -34,6 +34,11 @@ func TestAgent_ApplyResources(t *testing.T) {
 			sut:            NewMetricAgentApplierDeleter(image, namespace, priorityClassName),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
+		{
+			name:           "log agent",
+			sut:            NewLogAgentApplierDeleter(image, namespace, priorityClassName),
+			goldenFilePath: "testdata/log-agent.yaml",
+		},
 	}
 
 	for _, tt := range tests {
