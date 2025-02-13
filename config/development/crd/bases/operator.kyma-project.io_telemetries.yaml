@@ -59,7 +59,12 @@ spec:
                       Enrichments specifies optional enrichments for the log data.
                       This field is optional.
                     properties:
-                      ExtractPodLabels:
+                      enabled:
+                        description: |-
+                          Enabled indicates whether enrichment is enabled.
+                          This field is optional.
+                        type: boolean
+                      extractPodLabels:
                         description: |-
                           ExtractPodLabels specifies the list of pod labels to be used for enrichment.
                           This field is optional.
@@ -86,11 +91,6 @@ spec:
                           - message: Either 'key' or 'keyPrefix' must be specified
                             rule: '!(has(self.key) && has(self.keyPrefix))'
                         type: array
-                      enabled:
-                        description: |-
-                          Enabled indicates whether enrichment is enabled.
-                          This field is optional.
-                        type: boolean
                     type: object
                   gateway:
                     description: Gateway specifies the settings for the log gateway.

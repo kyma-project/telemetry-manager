@@ -186,7 +186,7 @@ type EnrichmentSpec struct {
 
 	// ExtractPodLabels specifies the list of pod labels to be used for enrichment.
 	// This field is optional.
-	ExtractPodLabels []PodLabel `json:"ExtractPodLabels,omitempty"`
+	ExtractPodLabels []PodLabel `json:"extractPodLabels,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:rule="(has(self.key) || has(self.keyPrefix))", message="Either 'key' or 'keyPrefix' must be specified"
