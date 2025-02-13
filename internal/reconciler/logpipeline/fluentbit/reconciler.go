@@ -207,7 +207,7 @@ func (r *Reconciler) createOrUpdateFluentBitResources(ctx context.Context, pipel
 		return fmt.Errorf("failed to calculate config checksum: %w", err)
 	}
 
-	daemonSet := fluentbit.MakeDaemonSet(r.config.DaemonSet, checksum, r.config.DaemonSetConfig)
+	daemonSet := fluentbit.MakeDaemonSet(r.config.DaemonSet.Namespace, checksum, r.config.DaemonSetConfig)
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, ownerRefSetter, daemonSet); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit daemonset: %w", err)
 	}
@@ -217,7 +217,7 @@ func (r *Reconciler) createOrUpdateFluentBitResources(ctx context.Context, pipel
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(r.config.DaemonSet, allowedPorts, fluentbit.Labels())
+	networkPolicy := commonresources.MakeNetworkPolicy(r.config.DaemonSet, allowedPorts, fluentbit.Labels(), fluentbit.SelectorLabels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, ownerRefSetter, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}

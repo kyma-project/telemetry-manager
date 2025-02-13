@@ -14,6 +14,7 @@ const (
 	MetricGatewayBaseName = "telemetry-metric-gateway"
 	MetricAgentBaseName   = "telemetry-metric-agent"
 	TraceGatewayBaseName  = "telemetry-trace-gateway"
+	LogAgentBaseName      = "telemetry-log-agent"
 	LogGatewayBaseName    = "telemetry-log-gateway"
 	FluentBitBaseName     = "telemetry-fluent-bit"
 	SelfMonitorBaseName   = "telemetry-self-monitor"
@@ -58,6 +59,8 @@ var (
 	TraceGatewayClusterRole        = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayConfigMap          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+
+	LogAgentName = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
 
 	LogGatewayName               = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
 	LogGatewayMetricsService     = types.NamespacedName{Name: LogGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}

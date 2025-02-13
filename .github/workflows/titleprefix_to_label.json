@@ -1,0 +1,7 @@
+{
+  "fix": "kind/bug",
+  "feat": "kind/feature",
+  "docs": "kind/docs",
+  "chore": "kind/chore",
+  "test": "kind/test"
+}

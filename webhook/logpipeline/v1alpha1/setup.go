@@ -12,6 +12,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		WithDefaulter(&defaulter{
 			ApplicationInputEnabled:          true,
 			ApplicationInputKeepOriginalBody: true,
+			DefaultOTLPProtocol:              telemetryv1alpha1.OTLPProtocolGRPC,
 		}).
 		Complete(); err != nil {
 		return err

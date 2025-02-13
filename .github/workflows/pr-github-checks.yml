@@ -15,19 +15,65 @@ on:
       - milestoned
   workflow_dispatch:
 
+env:
+  PROJECT_NAME: "Huskies"
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_REPO: ${{ github.repository }}
+  NUMBER: ${{ github.event.number }}
+  TITLE: ${{ github.event.pull_request.title }}
+  GH_HOST: github.com
+
+permissions: write-all
+
 jobs:
-  pr-milestone-check:
+  pr-milestone-project-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Check for milestone
-        env:
-          MILESTONE: ${{ toJSON(github.event.pull_request.milestone) }}
+      - name: Set milestone
+        if: github.event.pull_request.milestone == null
         run: |
-          echo "${MILESTONE}" | jq -e '.!=null' || (echo "Milestone is not set"; exit 1)
+          # set milestone to the latest open milestone
+          latest_milestone=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${GH_REPO}/milestones --hostname ${GH_HOST} | jq -r '.[]|.title' | sort -r | head -n 1)
+          # fail if there is no open milestone
+          if [ -z "$latest_milestone" ]; then
+            echo "No open milestone found"
+            exit 1
+          fi
+          gh pr edit ${{ github.event.number }} --milestone "${latest_milestone}"
 
   pr-label-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Add kind label based on PR title prefix
+        if: always()
+        run: |
+          # get title prefix
+          # get kind label
+          # check if kind label is the same as title prefix
+          # check if there is a kind label for the title prefix based on the mapping
+          # if label is missing, add the correct one
+          # if label is incorrect, remove it and add the correct one
+          #
+          prefix=$(echo "$TITLE" | grep -o '^[a-z]*')
+          kind_label=$( gh pr view "$NUMBER" --json labels -q '.labels[]|.name' | grep '^kind/' || true )
+          prefix_to_label_file=.github/workflows/titleprefix_to_label.json
+          correct_kind_label=$(cat $prefix_to_label_file | jq -r ".\"$prefix\"")
+          if [ -z "$kind_label" ]; then
+            echo "Adding $correct_kind_label label"
+            gh pr edit "$NUMBER" --add-label $correct_kind_label
+          elif [ "$kind_label" != "$correct_kind_label" ]; then
+            echo "Removing $kind_label label"
+            gh pr edit "$NUMBER" --remove-label $kind_label
+            echo "Adding $correct_kind_label label"
+            gh pr edit "$NUMBER" --add-label $correct_kind_label
+          fi
+
       - name: Check for area label
         if: always()
         run: |
@@ -35,29 +81,6 @@ jobs:
           grep -q '^area\/' || (echo "area label missing"; exit 1)
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.number }}
-
-      - name: Check for kind label
-        if: always()
-        run: |
-          gh api --jq '.labels.[].name' /repos/${REPO}/pulls/${NUMBER} | \
-          grep -q '^kind\/' || (echo "kind label missing"; exit 1)
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.number }}
-
-      - name: Check if kind label matches pr title prefix
-        if: always()
-        run: |
-          kind_label=$( gh api --jq '.labels.[].name' /repos/${REPO}/pulls/${NUMBER} | grep '^kind/')
-          kind_label_to_pr_title_prefix='{"kind/bug":"fix","kind/feature":"feat","kind/docs":"docs","kind/chore":"chore","kind/flaky-test":"test","kind/missing-test":"test","kind/failing-test":"test","kind/deps":"deps"}'
-          prefix=$(echo $kind_label_to_pr_title_prefix | jq -r ".\"$kind_label\"")
-          echo "$TITLE" | grep '^'$prefix || (echo "PR title should start with $prefix"; exit 1)
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TITLE: ${{ github.event.pull_request.title }}
           REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.number }}
 
@@ -89,7 +112,6 @@ jobs:
             fix
             test
           requireScope: false
-          subjectPattern: ^([A-Z].*[^.]|bump .*)$
 
   pr-prevent-kustomization:
     runs-on: ubuntu-latest

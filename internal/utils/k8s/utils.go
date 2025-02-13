@@ -15,6 +15,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.ClusterRoleBinding) error {
@@ -338,7 +340,7 @@ func mergeMaps(newMap map[string]string, oldMap map[string]string) map[string]st
 
 func mergePodAnnotations(newMeta *metav1.ObjectMeta, oldMeta metav1.ObjectMeta) {
 	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, "kubectl.kubernetes.io/"))
-	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, "checksum/"))
+	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, commonresources.AnnotationKeyChecksumConfig))
 	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, "istio-operator.kyma-project.io/restartedAt"))
 }
 
@@ -361,8 +363,8 @@ func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefi
 	return newMap
 }
 
-func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.ConfigMap, error) {
-	cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace}}
+func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName, labels map[string]string) (corev1.ConfigMap, error) {
+	cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace, Labels: labels}}
 	err := c.Get(ctx, client.ObjectKeyFromObject(&cm), &cm)
 
 	if err == nil {
@@ -379,8 +381,8 @@ func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.Names
 	return corev1.ConfigMap{}, err
 }
 
-func GetOrCreateSecret(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.Secret, error) {
-	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace}}
+func GetOrCreateSecret(ctx context.Context, c client.Client, name types.NamespacedName, labels map[string]string) (corev1.Secret, error) {
+	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace, Labels: labels}}
 	err := c.Get(ctx, client.ObjectKeyFromObject(&secret), &secret)
 
 	if err == nil {

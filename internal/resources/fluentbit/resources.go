@@ -15,11 +15,15 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
-const checksumAnnotationKey = "checksum/logpipeline-config"
-const istioExcludeInboundPorts = "traffic.sidecar.istio.io/excludeInboundPorts"
-const fluentbitExportSelector = "telemetry.kyma-project.io/log-export"
+const (
+	checksumAnnotationKey    = "checksum/logpipeline-config"
+	istioExcludeInboundPorts = "traffic.sidecar.istio.io/excludeInboundPorts"
+	fluentbitExportSelector  = "telemetry.kyma-project.io/log-export"
+	LogAgentName             = "telemetry-fluent-bit"
+)
 
 type DaemonSetConfig struct {
 	FluentBitImage              string
@@ -31,7 +35,7 @@ type DaemonSetConfig struct {
 	MemoryRequest               resource.Quantity
 }
 
-func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSetConfig) *appsv1.DaemonSet {
+func MakeDaemonSet(namespace string, checksum string, dsConfig DaemonSetConfig) *appsv1.DaemonSet {
 	resourcesFluentBit := corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    dsConfig.CPURequest,
@@ -54,23 +58,23 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 	}
 
 	annotations := make(map[string]string)
-	annotations[checksumAnnotationKey] = checksum
-	annotations[istioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
+	annotations[commonresources.AnnotationKeyChecksumConfig] = checksum
+	annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
 
 	podLabels := Labels()
-	podLabels["sidecar.istio.io/inject"] = "true"
-	podLabels[fluentbitExportSelector] = "true"
+	podLabels[commonresources.LabelKeyIstioInject] = "true"
+	podLabels[commonresources.LabelKeyTelemetryLogExport] = "true"
 
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
+			Name:      LogAgentName,
+			Namespace: namespace,
 			Labels:    Labels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: Labels(),
+				MatchLabels: SelectorLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -78,7 +82,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: name.Name,
+					ServiceAccountName: LogAgentName,
 					PriorityClassName:  dsConfig.PriorityClassName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot:   ptr.To(false),
@@ -101,7 +105,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									SecretRef: &corev1.SecretEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-env", name.Name)},
+										LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-env", LogAgentName)},
 										Optional:             ptr.To(true),
 									},
 								},
@@ -177,7 +181,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "config",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: name.Name},
+									LocalObjectReference: corev1.LocalObjectReference{Name: LogAgentName},
 								},
 							},
 						},
@@ -185,7 +189,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "luascripts",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-luascripts", name.Name)},
+									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-luascripts", LogAgentName)},
 								},
 							},
 						},
@@ -205,7 +209,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "dynamic-config",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", name.Name)},
+									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", LogAgentName)},
 									Optional:             ptr.To(true),
 								},
 							},
@@ -214,7 +218,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "dynamic-parsers-config",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", name.Name)},
+									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", LogAgentName)},
 									Optional:             ptr.To(true),
 								},
 							},
@@ -223,7 +227,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "dynamic-files",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", name.Name)},
+									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", LogAgentName)},
 									Optional:             ptr.To(true),
 								},
 							},
@@ -231,14 +235,14 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 						{
 							Name: "varfluentbit",
 							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", name.Name)},
+								HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", LogAgentName)},
 							},
 						},
 						{
 							Name: "output-tls-config",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: fmt.Sprintf("%s-output-tls-config", name.Name),
+									SecretName: fmt.Sprintf("%s-output-tls-config", LogAgentName),
 								},
 							},
 						},
@@ -254,6 +258,7 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
+			Labels:    Labels(),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -269,7 +274,7 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 
 func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 	serviceLabels := Labels()
-	serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+	serviceLabels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -277,10 +282,10 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 			Namespace: name.Namespace,
 			Labels:    serviceLabels,
 			Annotations: map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(ports.HTTP),
-				"prometheus.io/scheme": "http",
-				"prometheus.io/path":   "/api/v2/metrics/prometheus",
+				commonresources.AnnotationKeyPrometheusScrape: "true",
+				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(ports.HTTP),
+				commonresources.AnnotationKeyPrometheusScheme: "http",
+				commonresources.AnnotationKeyPrometheusPath:   "/api/v2/metrics/prometheus",
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -292,7 +297,7 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http"),
 				},
 			},
-			Selector: Labels(),
+			Selector: SelectorLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -300,7 +305,7 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 
 func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 	serviceLabels := Labels()
-	serviceLabels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+	serviceLabels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -308,9 +313,9 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 			Namespace: name.Namespace,
 			Labels:    serviceLabels,
 			Annotations: map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(ports.ExporterMetrics),
-				"prometheus.io/scheme": "http",
+				commonresources.AnnotationKeyPrometheusScrape: "true",
+				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(ports.ExporterMetrics),
+				commonresources.AnnotationKeyPrometheusScheme: "http",
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -322,7 +327,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},
-			Selector: Labels(),
+			Selector: SelectorLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -423,8 +428,15 @@ end
 }
 
 func Labels() map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name":     "fluent-bit",
-		"app.kubernetes.io/instance": "telemetry",
-	}
+	result := commonresources.MakeDefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
+	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
+
+	return result
+}
+
+func SelectorLabels() map[string]string {
+	result := commonresources.MakeDefaultSelectorLabels("fluent-bit")
+	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
+
+	return result
 }

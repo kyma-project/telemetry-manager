@@ -13,15 +13,16 @@ type rbac struct {
 	clusterRoleBinding *rbacv1.ClusterRoleBinding
 	role               *rbacv1.Role
 	roleBinding        *rbacv1.RoleBinding
+	component          string
 }
 
 type RBACOption func(*rbac, types.NamespacedName)
 
-func newRBAC(name types.NamespacedName, options ...RBACOption) *rbac {
-	rbac := &rbac{}
+func newRBAC(name types.NamespacedName, componentType string, options ...RBACOption) *rbac {
+	rbac := &rbac{component: componentType}
 
-	for _, o := range options {
-		o(rbac, name)
+	for _, option := range options {
+		option(rbac, name)
 	}
 
 	return rbac
@@ -33,7 +34,7 @@ func withClusterRole(options ...ClusterRoleOption) RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name),
+				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Rules: []rbacv1.PolicyRule{},
 		}
@@ -51,7 +52,7 @@ func withClusterRoleBinding() RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name),
+				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 			RoleRef: rbacv1.RoleRef{
@@ -69,7 +70,7 @@ func withRole(options ...RoleOption) RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name),
+				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Rules: []rbacv1.PolicyRule{},
 		}
@@ -88,7 +89,7 @@ func withRoleBinding() RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name),
+				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Subjects: []rbacv1.Subject{
 				{
@@ -109,6 +110,7 @@ func withRoleBinding() RBACOption {
 func makeTraceGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: TraceGatewayName, Namespace: namespace},
+		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
 	)
@@ -117,6 +119,7 @@ func makeTraceGatewayRBAC(namespace string) rbac {
 func makeMetricAgentRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: MetricAgentName, Namespace: namespace},
+		commonresources.LabelValueK8sComponentAgent,
 		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
 		withClusterRoleBinding(),
 		withRole(withSingletonCreatorRules()),
@@ -127,6 +130,7 @@ func makeMetricAgentRBAC(namespace string) rbac {
 func makeMetricGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: MetricGatewayName, Namespace: namespace},
+		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
 		withRole(withSingletonCreatorRules()),
@@ -137,6 +141,7 @@ func makeMetricGatewayRBAC(namespace string) rbac {
 func makeLogGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: LogGatewayName, Namespace: namespace},
+		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
 	)
@@ -220,7 +225,7 @@ func withK8sAttributeRules() ClusterRoleOption {
 	// policy rules needed for the k8sattributeprocessor component
 	k8sAttributeRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
-		Resources: []string{"namespaces", "pods"},
+		Resources: []string{"namespaces", "pods", "nodes"},
 		Verbs:     []string{"get", "list", "watch"},
 	}, {
 		APIGroups: []string{"apps"},
