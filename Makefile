@@ -56,6 +56,7 @@ WSL				 := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
 POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
 
+.PHONY: $(POPULATE_IMAGES)
 $(POPULATE_IMAGES):
 	cd $(TOOLS_MOD_DIR)/populateimages && go build -o $(POPULATE_IMAGES) main.go
 
