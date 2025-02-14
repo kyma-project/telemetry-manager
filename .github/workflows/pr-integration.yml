@@ -39,6 +39,7 @@ jobs:
           - logs
           - "metrics && set_a"
           - "metrics && set_b"
+          - "metrics && set_c"
           - traces
           - telemetry
           - max-pipeline

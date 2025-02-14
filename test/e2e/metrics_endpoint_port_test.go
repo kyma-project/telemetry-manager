@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), func() {
 	const (
 		invalidPortEndpoint = "http://example.com:9abc8"
 		missingPortEndpoint = "http://example.com:/"
