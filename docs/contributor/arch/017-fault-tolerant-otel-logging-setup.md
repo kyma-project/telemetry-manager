@@ -1,6 +1,6 @@
 # 17. Fault Tolerant OTel Logging Setup
 
-Date: 2025-02-04
+Date: 2025-02-14
 
 ## Status
 
