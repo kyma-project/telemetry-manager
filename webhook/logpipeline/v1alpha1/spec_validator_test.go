@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -183,7 +182,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 
 			sut := newValidateHandler(fakeClient, scheme)
 
-			response := sut.Handle(context.Background(), admissionRequestFrom(t, *tt.logPipeline))
+			response := sut.Handle(t.Context(), admissionRequestFrom(t, *tt.logPipeline))
 
 			if tt.expectError {
 				require.False(t, response.Allowed)

@@ -55,7 +55,7 @@ var _ = BeforeSuite(func() {
 
 	_, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
-	ctx, cancel = context.WithCancel(context.TODO())
+	ctx, cancel = context.WithCancel(context.Background())
 
 	By("bootstrapping test environment")
 

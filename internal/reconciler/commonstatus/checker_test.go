@@ -1,7 +1,6 @@
 package commonstatus
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -64,7 +63,7 @@ func TestTracesGetHealthCondition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.proberErr)
-			actualCondition := GetGatewayHealthyCondition(context.TODO(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeTraces)
+			actualCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeTraces)
 			require.True(t, validateCondition(t, tt.expectedCondition, actualCondition))
 		})
 	}
@@ -152,8 +151,8 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 			agentProberStub := commonStatusStubs.NewDaemonSetProber(tt.proberAgentErr)
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.preberGatewayErr)
 
-			actualAgentCondition := GetAgentHealthyCondition(context.TODO(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
-			actualGatewayCondition := GetGatewayHealthyCondition(context.TODO(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
+			actualAgentCondition := GetAgentHealthyCondition(t.Context(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
+			actualGatewayCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
 
 			require.True(t, validateCondition(t, tt.expectedAgentCondition, actualAgentCondition))
 			require.True(t, validateCondition(t, tt.expectedGatewayCondition, actualGatewayCondition))
@@ -211,7 +210,7 @@ func TestLogsGetHealthCondition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			agentProberStub := commonStatusStubs.NewDaemonSetProber(tt.proberErr)
-			actualCondition := GetAgentHealthyCondition(context.TODO(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeLogs)
+			actualCondition := GetAgentHealthyCondition(t.Context(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeLogs)
 			require.True(t, validateCondition(t, tt.expectedCondition, actualCondition))
 		})
 	}
