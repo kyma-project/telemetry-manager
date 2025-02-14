@@ -1,7 +1,6 @@
 package secretref
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -78,7 +77,7 @@ func TestValidate(t *testing.T) {
 			secretRefValidator := Validator{
 				Client: client,
 			}
-			err := secretRefValidator.validate(context.TODO(), test.refs)
+			err := secretRefValidator.validate(t.Context(), test.refs)
 			require.ErrorIs(t, err, test.expectError)
 		})
 	}
@@ -163,7 +162,7 @@ func TestGetValue(t *testing.T) {
 
 			client := fake.NewClientBuilder().WithObjects(&existingSecret1).Build()
 
-			result, err := GetValue(context.TODO(), client, test.refs)
+			result, err := GetValue(t.Context(), client, test.refs)
 
 			require.Equal(t, test.expectedValue, string(result))
 			require.ErrorIs(t, err, test.expectError)

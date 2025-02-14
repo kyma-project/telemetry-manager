@@ -55,7 +55,7 @@ var _ = BeforeSuite(func() {
 
 	_, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
-	ctx, cancel = context.WithCancel(context.TODO()) //nolint:fatcontext // context is used in tests
+	ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
 	By("bootstrapping test environment")
 
