@@ -1,5 +1,5 @@
 # Build the app binary
-FROM golang:1.23.6 AS builder
+FROM golang:1.24.0-alpine3.21 AS builder
 
 # Copy the project
 WORKDIR /app

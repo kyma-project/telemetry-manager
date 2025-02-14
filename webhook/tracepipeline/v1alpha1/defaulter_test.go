@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,7 +62,7 @@ func TestDefault(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := sut.Default(context.Background(), tt.input)
+			err := sut.Default(t.Context(), tt.input)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, tt.input)
 		})

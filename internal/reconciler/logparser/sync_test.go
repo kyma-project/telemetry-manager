@@ -31,7 +31,7 @@ func TestSyncParsersConfigMapErrorClientErrorReturnsError(t *testing.T) {
 	mockClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 	sut := syncer{mockClient, testConfig}
 
-	err := sut.syncFluentBitConfig(context.Background())
+	err := sut.syncFluentBitConfig(t.Context())
 
 	require.Error(t, err)
 }
@@ -51,7 +51,7 @@ Format regex`},
 	mockClient := fake.NewClientBuilder().WithScheme(s).WithObjects(lp).Build()
 	sut := syncer{mockClient, testConfig}
 
-	err = sut.syncFluentBitConfig(context.Background())
+	err = sut.syncFluentBitConfig(t.Context())
 
 	require.NoError(t, err)
 
