@@ -47,8 +47,8 @@ const (
 	LabelExperimental         = "experimental"
 	LabelTelemetryLogAnalysis = "telemetry-log-analysis"
 	LabelMaxPipeline          = "max-pipeline"
-	LabelSetA                 = "set_a" // max. 10 tests/set, DO NOT ADD MORE TESTS TO THIS SET
-	LabelSetB                 = "set_b" // max. 10 tests/set, DO NOT ADD MORE TESTS TO THIS SET
+	LabelSetA                 = "set_a"
+	LabelSetB                 = "set_b"
 	LabelSetC                 = "set_c"
 
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
