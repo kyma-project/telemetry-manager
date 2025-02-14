@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestDefaultTelemetryInstanceFound(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	scheme := runtime.NewScheme()
 	_ = operatorv1alpha1.AddToScheme(scheme)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&operatorv1alpha1.Telemetry{
@@ -30,7 +29,7 @@ func TestDefaultTelemetryInstanceFound(t *testing.T) {
 }
 
 func TestDefaultTelemetryInstanceNotFound(t *testing.T) {
-	ctx := context.TODO()
+	ctx := t.Context()
 	client := fake.NewClientBuilder().Build()
 
 	_, err := GetDefaultTelemetryInstance(ctx, client, "default")
