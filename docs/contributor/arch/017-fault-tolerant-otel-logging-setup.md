@@ -12,8 +12,8 @@ Proposed
 When setting up an OpenTelemetry (OTel) Log Agent using the Filelog Receiver, it's important to identify situations where logs might be lost and how to mitigate them.
 
 #### Scenarios Where Data Loss Must Be Prevented:
-- Temporary OTLP backend issues (e.g., spikes in retriable errors, backpressure, temporary network failures).
-- Collector Pod restarts during normal operations (e.g., upgrades, rescheduling to another node).
+- Temporary OTLP backend issues (for example, spikes in retriable errors, backpressure, temporary network failures).
+- Collector Pod restarts during normal operations (for example, upgrades, rescheduling to another node).
 
 #### Scenarios Where Preventing Data Loss Is Nice-to-Have:
 - Collector Pod crashes that occur unexpectedly.
@@ -31,26 +31,29 @@ When setting up an OpenTelemetry (OTel) Log Agent using the Filelog Receiver, it
 ##### Batch Processor
 The Batch Processor accepts logs and places them into batches. Batching helps better compress the data and reduce the number of outgoing connections required to transmit the data. However, there are some problems:
 - The Batch Processor asynchronously handles the incoming requests and does not propagate errors to the Filelog Receiver
-- The Batch Processor doesn’t preserve its state in permanent storage, once the collector exits unexpectedly, the accumulated requests are lost. 
+- The Batch Processor doesn’t preserve its state in permanent storage. Once the collector exits unexpectedly, the accumulated requests are lost. 
 
 ![Batch Processor Flow](../assets/log-agent-batch-processor-flow.svg "Batch Processor Flow")
 
 ##### Filelog Receiver Batching
 The Filelog Receiver does not forward log lines to the next consumer one by one. Instead, it batches them by resource. The batch size and send interval are fixed and cannot be configured - logs are sent in batches of 100 lines or every 100 milliseconds, whichever comes first.
-More info about internal details can be found [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/31074#issuecomment-2360284799).
+For more information about internal details, see  [this comment](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/31074#issuecomment-2360284799).
 
 This hidden feature eliminates the need for the Batch Processor, enabling a fully synchronous pipeline.
 
 ![No Batch Processor Flow](../assets/log-agent-no-batch-processor-flow.svg "No Batch Processor Flow")
 
 ##### Exporter Batcher
-`Exporter Batcher` is a new (not yet delivered) feature that is meant to solve the limitations of the existing batch processor. It doesn’t introduce any asynchronous behavior itself but relies on the queue sender in front of it if needed. The most important feature is that by using a persistent queue, no data will be lost during the shutdown. It's important to note that the Exporter Batcher will not be a standalone component but rather part of the `exporterhelper` package, requiring integration into each exporter. Both the `Exporter Batcher` and the new exporter design are still works in progress, with no clear ETA: [GitHub Issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). However, our tests show that it already works as expected.
+> [!NOTE]
+> Both the Exporter Batcher and the new exporter design are still works in progress, with no clear ETA: [GitHub Issue #8122](https://github.com/open-telemetry/opentelemetry-collector/issues/8122). However, our tests show that it already works as expected.
+
+Exporter Batcher is a new feature that solves the limitations of the existing batch processor. It doesn’t introduce any asynchronous behavior itself but relies on the queue sender in front of it if needed. The most important feature is that by using a persistent queue, no data is lost during the shutdown. It's important to note that the Exporter Batcher is not a standalone component but part of the `exporterhelper` package, requiring integration into each exporter.
 
 ![Exporter Batcher Flow](../assets/log-agent-exporter-batcher-flow.svg "Exporter Batcher Flow")
 
 ##### Conclusion  
 
-Overall, `Exporter Batcher` is a future-proof solution that appears to work reliably, despite still being experimental. Enabling it for all three gateway types and possibly the metric agent makes sense. However, it is not needed for the log agent, as the Filelog Receiver already handles pre-batching.  
+Overall, `Exporter Batcher` is a future-proof solution that works reliably despite being experimental. Enabling it for all three gateway types and possibly the metric agent makes sense. However, it is not needed for the log agent, as the Filelog Receiver already handles pre-batching.  
 
 #### Queueing  
 
@@ -62,7 +65,7 @@ With an in-memory queue enabled, batches do not persist across restarts. The col
 
 ##### Persistent Queue  
 
-When a persistent queue is enabled, batches are buffered using the configured storage extension—`filestorage` being a popular and reliable choice. If the collector instance is killed while holding items in the persistent queue, those items will be retained and exported upon restart.  
+When a persistent queue is enabled, batches are buffered using the configured storage extension —`filestorage` being a popular and reliable choice. If the collector instance is killed while holding items in the persistent queue, those items are retained and exported upon restart.  
 
 A persistent queue can be backed by two types of file storage: the node’s filesystem or a persistent volume (PV).  
 
@@ -72,7 +75,7 @@ We have had positive experiences with node filesystem-based buffering in Fluent 
 - The node’s filesystem has limited storage capacity.  
 - Misconfigurations can lead to disk overflows, potentially crashing the node or even the entire cluster.  
 - Heavy disk I/O can degrade cluster performance—an issue we previously observed with Fluent Bit.  
-- Queue size can currently only be limited by batch count, not by volume (MB), requiring rough estimations. However, the upstream project is actively working on adding size-based limits: [opentelemetry-collector#9462](https://github.com/open-telemetry/opentelemetry-collector/issues/9462).  
+- Queue size can currently only be limited by batch count, not by volume (MB), requiring rough estimations. However, the upstream project is actively working on adding size-based limits. See [opentelemetry-collector#9462](https://github.com/open-telemetry/opentelemetry-collector/issues/9462).
 
 ###### Persistent Volume (PV)-Based Storage  
 
@@ -84,7 +87,7 @@ Using PV-based storage mitigates these issues but introduces other constraints:
 
 An in-memory queue poses a risk of data loss if the backend struggles, as data is retried only once during draining. A PV-based persistent queue is not a viable option due to operational challenges on Azure. While node filesystem-based storage can be used on Azure clusters, it is very limited and only suitable for the log agent, not the gateway.
 
-Given these constraints, the proposal is to use an in-memory queue for the log gateway, while for the log agent, we may consider disabling it entirely
+Given these constraints, the proposal is to use an in-memory queue for the log gateway, while for the log agent, we may consider disabling it entirely.
 
 #### Filelog Receiver Offset Tracking
 The Filelog Receiver can persist state information on storage (typically the node’s filesystem), allowing it to recover after crashes. It maintains the following data to ensure continuity:  
