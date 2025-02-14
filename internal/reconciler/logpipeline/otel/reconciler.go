@@ -12,6 +12,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
@@ -22,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -213,6 +215,7 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
 		ClusterName:   clusterInfo.ClusterName,
 		CloudProvider: clusterInfo.CloudProvider,
+		Enrichments:   r.getEnrichmentsFromTelemetry(ctx),
 	})
 
 	if err != nil {
@@ -285,30 +288,51 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	var telemetries operatorv1alpha1.TelemetryList
-	if err := r.List(ctx, &telemetries); err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return defaultReplicaCount
 	}
 
-	for i := range telemetries.Items {
-		telemetrySpec := telemetries.Items[i].Spec
-		if telemetrySpec.Log == nil {
-			continue
-		}
-
-		scaling := telemetrySpec.Log.Gateway.Scaling
-		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
-			continue
-		}
-
-		static := scaling.Static
-		if static != nil && static.Replicas > 0 {
-			return static.Replicas
-		}
+	if telemetry.Spec.Log != nil &&
+		telemetry.Spec.Log.Gateway.Scaling.Type == operatorv1alpha1.StaticScalingStrategyType &&
+		telemetry.Spec.Log.Gateway.Scaling.Static != nil && telemetry.Spec.Log.Gateway.Scaling.Static.Replicas > 0 {
+		return telemetry.Spec.Log.Gateway.Scaling.Static.Replicas
 	}
 
 	return defaultReplicaCount
+}
+
+func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) gatewayprocs.Enrichments {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default enrichments configuration")
+		return gatewayprocs.Enrichments{}
+	}
+
+	if telemetry.Spec.Log != nil &&
+		telemetry.Spec.Log.Enrichments != nil {
+		mapPodLabels := func(values []operatorv1alpha1.PodLabel, fn func(operatorv1alpha1.PodLabel) gatewayprocs.PodLabel) []gatewayprocs.PodLabel {
+			var result []gatewayprocs.PodLabel
+			for i := range values {
+				result = append(result, fn(values[i]))
+			}
+
+			return result
+		}
+
+		return gatewayprocs.Enrichments{
+			Enabled: telemetry.Spec.Log.Enrichments.Enabled,
+			PodLabels: mapPodLabels(telemetry.Spec.Log.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) gatewayprocs.PodLabel {
+				return gatewayprocs.PodLabel{
+					Key:       value.Key,
+					KeyPrefix: value.KeyPrefix,
+				}
+			}),
+		}
+	}
+
+	return gatewayprocs.Enrichments{}
 }
 
 func getGatewayPorts() []int32 {
