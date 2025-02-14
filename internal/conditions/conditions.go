@@ -65,20 +65,33 @@ var commonMessages = map[string]string{
 	ReasonValidationFailed:        "Pipeline validation failed due to an error from the Kubernetes API server",
 }
 
-var logPipelineMessages = map[string]string{
-	ReasonAgentConfigured:           "LogPipeline specification is successfully applied to the configuration of Log agent",
-	ReasonAgentNotReady:             "Log agent DaemonSet is not ready",
-	ReasonAgentReady:                "Log agent DaemonSet is ready",
-	ReasonComponentsRunning:         "All log components are running",
-	ReasonEndpointInvalid:           "HTTP output host invalid: %s",
-	ReasonGatewayConfigured:         "LogPipeline specification is successfully applied to the configuration of Log gateway",
-	ReasonGatewayNotReady:           "Log gateway Deployment is not ready",
-	ReasonGatewayReady:              "Log gateway Deployment is ready",
+var commonLogPipelineMessages = map[string]string{
+	ReasonAgentConfigured:   "LogPipeline specification is successfully applied to the configuration of Log agent",
+	ReasonAgentNotReady:     "Log agent DaemonSet is not ready",
+	ReasonAgentReady:        "Log agent DaemonSet is ready",
+	ReasonComponentsRunning: "All log components are running",
+}
+
+var fluentBitLogPipelineMessages = map[string]string{
+	ReasonEndpointInvalid: "HTTP output host invalid: %s",
+
 	ReasonSelfMonAllDataDropped:     "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up",
 	ReasonSelfMonConfigNotGenerated: "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonSelfMonNoLogsDelivered:    "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend",
 	ReasonSelfMonSomeDataDropped:    "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend",
+}
+
+var otelLogPipelineMessages = map[string]string{
+	ReasonGatewayConfigured: "LogPipeline specification is successfully applied to the configuration of Log gateway",
+	ReasonGatewayNotReady:   "Log gateway Deployment is not ready",
+	ReasonGatewayReady:      "Log gateway Deployment is ready",
+
+	ReasonSelfMonAllDataDropped:     "Backend is not reachable or rejecting logs. All logs are dropped.",
+	ReasonSelfMonBufferFillingUp:    "Buffer nearing capacity. Incoming log rate exceeds export rate.",
+	ReasonSelfMonConfigNotGenerated: "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonSelfMonGatewayThrottling:  "Log gateway is unable to receive logs at current rate.",
+	ReasonSelfMonSomeDataDropped:    "Backend is reachable, but rejecting logs. Some logs are dropped.",
 }
 
 var tracePipelineMessages = map[string]string{
@@ -109,8 +122,28 @@ var metricPipelineMessages = map[string]string{
 	ReasonSelfMonSomeDataDropped:    "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=metrics-not-arriving-at-the-destination",
 }
 
-func MessageForLogPipeline(reason string) string {
-	return message(reason, logPipelineMessages)
+func MessageForOtelLogPipeline(reason string) string {
+	return messageForLogPipelines(reason, otelLogPipelineMessages)
+}
+
+func MessageForFluentBitLogPipeline(reason string) string {
+	return messageForLogPipelines(reason, fluentBitLogPipelineMessages)
+}
+
+func messageForLogPipelines(reason string, specializedMessages map[string]string) string {
+	if condMessage, found := commonMessages[reason]; found {
+		return condMessage
+	}
+
+	if condMessage, found := commonLogPipelineMessages[reason]; found {
+		return condMessage
+	}
+
+	if condMessage, found := specializedMessages[reason]; found {
+		return condMessage
+	}
+
+	return ""
 }
 
 func MessageForTracePipeline(reason string) string {
