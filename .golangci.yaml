@@ -7,8 +7,8 @@ run:
 linters:
   enable-all: true
   disable:
-    # Depreacted linters
-    - exportloopref
+    # Deprecated linters
+    - tenv
     # Linters to be enabled after fixing the issues
     - cyclop
     - depguard
@@ -149,6 +149,8 @@ linters-settings:
         alias: testutils
       - pkg: github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline
         alias: metricpipelineutils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/telemetry
+        alias: telemetryutils
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.

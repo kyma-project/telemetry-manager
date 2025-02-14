@@ -1,7 +1,6 @@
 package endpoint
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -359,7 +358,7 @@ func TestOTLPGRPCEndpoints(t *testing.T) {
 			}
 
 			err := validator.Validate(
-				context.Background(),
+				t.Context(),
 				&telemetryv1alpha1.ValueType{Value: test.endpoint},
 				OTLPProtocolGRPC)
 
@@ -386,7 +385,7 @@ func TestOTLPHttpEndpoints(t *testing.T) {
 			}
 
 			err := validator.Validate(
-				context.Background(),
+				t.Context(),
 				&telemetryv1alpha1.ValueType{Value: test.endpoint},
 				OTLPProtocolHTTP)
 
@@ -414,7 +413,7 @@ func TestFluentdHttpEndpoints(t *testing.T) {
 			}
 
 			err := validator.Validate(
-				context.Background(),
+				t.Context(),
 				&telemetryv1alpha1.ValueType{Value: test.endpoint},
 				FluentdProtocolHTTP)
 
@@ -439,8 +438,8 @@ func TestMissingEndpoint(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	errNil := validator.Validate(context.Background(), nil, OTLPProtocolGRPC)
-	errNoValue := validator.Validate(context.Background(), &telemetryv1alpha1.ValueType{}, OTLPProtocolGRPC)
+	errNil := validator.Validate(t.Context(), nil, OTLPProtocolGRPC)
+	errNoValue := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{}, OTLPProtocolGRPC)
 
 	require.True(t, errors.Is(errNil, ErrValueResolveFailed))
 	require.EqualError(t, errNil, errMsgEndpointResolveFailed)
@@ -465,19 +464,19 @@ func TestEndpointValueFromValid(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	errGRPC := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errGRPC := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, OTLPProtocolGRPC)
-	errHTTP := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errHTTP := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, OTLPProtocolHTTP)
-	errFluentd := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errFluentd := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
@@ -506,19 +505,19 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	errGRPC := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errGRPC := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, OTLPProtocolGRPC)
-	errHTTP := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errHTTP := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, OTLPProtocolGRPC)
-	errFluentd := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errFluentd := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
@@ -550,19 +549,19 @@ func TestEndpointValueFromMissing(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	errGRPC := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errGRPC := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "unknown",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, OTLPProtocolGRPC)
-	errHTTP := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errHTTP := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "unknown",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, OTLPProtocolHTTP)
-	errFluentd := validator.Validate(context.TODO(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+	errFluentd := validator.Validate(t.Context(), &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
 		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 			Name:      "unknown",
 			Namespace: "default",

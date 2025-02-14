@@ -40,7 +40,7 @@ func TestProvideCACert(t *testing.T) {
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
-		certPEM, keyPEM, err := sut.provideCert(context.Background(), secretName)
+		certPEM, keyPEM, err := sut.provideCert(t.Context(), secretName)
 		require.NoError(t, err)
 		require.Equal(t, certPEM, fakeCertPEM)
 		require.Equal(t, keyPEM, fakeKeyPEM)
@@ -56,12 +56,12 @@ func TestProvideCACert(t *testing.T) {
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
-		_, _, err := sut.provideCert(context.Background(), secretName)
+		_, _, err := sut.provideCert(t.Context(), secretName)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
-		fakeClient.Get(context.Background(), secretName, &secret)
+		fakeClient.Get(t.Context(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
 		require.Contains(t, secret.Data, "ca.key")
@@ -88,12 +88,12 @@ func TestProvideCACert(t *testing.T) {
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
-		_, _, err := sut.provideCert(context.Background(), secretName)
+		_, _, err := sut.provideCert(t.Context(), secretName)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
-		fakeClient.Get(context.Background(), secretName, &secret)
+		fakeClient.Get(t.Context(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
 		require.Contains(t, secret.Data, "ca.key")
@@ -122,14 +122,14 @@ func TestProvideCACert(t *testing.T) {
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
-		certPEM, keyPEM, err := sut.provideCert(context.Background(), secretName)
+		certPEM, keyPEM, err := sut.provideCert(t.Context(), secretName)
 		require.NoError(t, err)
 		require.Equal(t, fakeNewCertPEM, certPEM)
 		require.Equal(t, fakeNewKeyPEM, keyPEM)
 
 		var secret corev1.Secret
 
-		fakeClient.Get(context.Background(), secretName, &secret)
+		fakeClient.Get(t.Context(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
 		require.Contains(t, secret.Data, "ca.key")
@@ -158,14 +158,14 @@ func TestProvideCACert(t *testing.T) {
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
-		certPEM, keyPEM, err := sut.provideCert(context.Background(), secretName)
+		certPEM, keyPEM, err := sut.provideCert(t.Context(), secretName)
 		require.NoError(t, err)
 		require.Equal(t, fakeNewCertPEM, certPEM)
 		require.Equal(t, fakeNewKeyPEM, keyPEM)
 
 		var secret corev1.Secret
 
-		fakeClient.Get(context.Background(), secretName, &secret)
+		fakeClient.Get(t.Context(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
 		require.Contains(t, secret.Data, "ca.key")
@@ -194,12 +194,12 @@ func TestProvideCACert(t *testing.T) {
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
-		_, _, err := sut.provideCert(context.Background(), secretName)
+		_, _, err := sut.provideCert(t.Context(), secretName)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
-		fakeClient.Get(context.Background(), secretName, &secret)
+		fakeClient.Get(t.Context(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
 		require.Contains(t, secret.Data, "ca.key")
@@ -228,12 +228,12 @@ func TestProvideCACert(t *testing.T) {
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
-		_, _, err := sut.provideCert(context.Background(), secretName)
+		_, _, err := sut.provideCert(t.Context(), secretName)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
-		fakeClient.Get(context.Background(), secretName, &secret)
+		fakeClient.Get(t.Context(), secretName, &secret)
 		require.NotNil(t, secret.Data)
 		require.Contains(t, secret.Data, "ca.crt")
 		require.Contains(t, secret.Data, "ca.key")

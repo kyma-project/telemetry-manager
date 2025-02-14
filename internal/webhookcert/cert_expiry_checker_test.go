@@ -1,7 +1,6 @@
 package webhookcert
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -55,7 +54,7 @@ func TestCheckExpiry(t *testing.T) {
 				clock:            mockClock{t: tc.now},
 				softExpiryOffset: tc.softExpiryOffset,
 			}
-			valid, err := sut.checkExpiry(context.Background(), tc.certPEM)
+			valid, err := sut.checkExpiry(t.Context(), tc.certPEM)
 			require.Equal(t, tc.expectValid, valid)
 
 			if tc.expectError {

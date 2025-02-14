@@ -50,9 +50,50 @@ spec:
             description: TelemetrySpec defines the desired state of Telemetry
             properties:
               log:
-                description: LogSpec defines the behavior of the log gateway
+                description: |-
+                  LogSpec defines the behavior of the log gateway
+                  LogSpec contains the configuration for the log gateway, including the gateway settings and optional log data enrichments.
                 properties:
+                  enrichments:
+                    description: |-
+                      Enrichments specifies optional enrichments for the log data.
+                      This field is optional.
+                    properties:
+                      enabled:
+                        description: |-
+                          Enabled indicates whether enrichment is enabled.
+                          This field is optional.
+                        type: boolean
+                      extractPodLabels:
+                        description: |-
+                          ExtractPodLabels specifies the list of pod labels to be used for enrichment.
+                          This field is optional.
+                        items:
+                          description: |-
+                            PodLabel defines labels from a pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
+                            Either 'key' or 'keyPrefix' must be specified, but not both.
+                            The enriched telemetry data will contains resource attributes with key k8s.pod.label.<label_key>.
+                          properties:
+                            key:
+                              description: |-
+                                Key specifies the exact label key to be used.
+                                This field is optional.
+                              type: string
+                            keyPrefix:
+                              description: |-
+                                KeyPrefix specifies a prefix for label keys to be used.
+                                This field is optional.
+                              type: string
+                          type: object
+                          x-kubernetes-validations:
+                          - message: Either 'key' or 'keyPrefix' must be specified
+                            rule: (has(self.key) || has(self.keyPrefix))
+                          - message: Either 'key' or 'keyPrefix' must be specified
+                            rule: '!(has(self.key) && has(self.keyPrefix))'
+                        type: array
+                    type: object
                   gateway:
+                    description: Gateway specifies the settings for the log gateway.
                     properties:
                       scaling:
                         description: Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
