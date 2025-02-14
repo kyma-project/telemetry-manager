@@ -36,9 +36,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/resources/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -268,7 +268,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	telemetry, err := telemetry.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return defaultReplicaCount

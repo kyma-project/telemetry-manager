@@ -20,10 +20,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/resources/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -288,7 +288,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	telemetry, err := telemetry.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return defaultReplicaCount
@@ -303,11 +303,11 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	return defaultReplicaCount
 }
 
-func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) gatewayprocs.EnrichmentOpts {
-	telemetry, err := telemetry.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
+func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) gatewayprocs.Enrichments {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default enrichments configuration")
-		return gatewayprocs.EnrichmentOpts{}
+		return gatewayprocs.Enrichments{}
 	}
 
 	if telemetry.Spec.Log != nil &&
@@ -321,7 +321,7 @@ func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) gatewaypro
 			return result
 		}
 
-		return gatewayprocs.EnrichmentOpts{
+		return gatewayprocs.Enrichments{
 			Enabled: telemetry.Spec.Log.Enrichments.Enabled,
 			PodLabels: mapPodLabels(telemetry.Spec.Log.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) gatewayprocs.PodLabel {
 				return gatewayprocs.PodLabel{
@@ -332,7 +332,7 @@ func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) gatewaypro
 		}
 	}
 
-	return gatewayprocs.EnrichmentOpts{}
+	return gatewayprocs.Enrichments{}
 }
 
 func getGatewayPorts() []int32 {

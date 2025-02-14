@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-type EnrichmentOpts struct {
+type Enrichments struct {
 	Enabled   bool
 	PodLabels []PodLabel
 }
@@ -16,7 +16,7 @@ type PodLabel struct {
 	KeyPrefix string
 }
 
-func K8sAttributesProcessorConfig(presets EnrichmentOpts) *config.K8sAttributesProcessor {
+func K8sAttributesProcessorConfig(enrichments Enrichments) *config.K8sAttributesProcessor {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -45,7 +45,7 @@ func K8sAttributesProcessorConfig(presets EnrichmentOpts) *config.K8sAttributesP
 		Passthrough: false,
 		Extract: config.ExtractK8sMetadata{
 			Metadata: k8sAttributes,
-			Labels:   append(extractLabels(), buildPodLabelPresets(presets)...),
+			Labels:   append(extractLabels(), buildExtractPodLabels(enrichments)...),
 		},
 		PodAssociation: podAssociations,
 	}
@@ -86,11 +86,11 @@ func extractLabels() []config.ExtractLabel {
 	}
 }
 
-func buildPodLabelPresets(presets EnrichmentOpts) []config.ExtractLabel {
-	podLabelPresets := make([]config.ExtractLabel, 0)
+func buildExtractPodLabels(enrichments Enrichments) []config.ExtractLabel {
+	extractPodLabels := make([]config.ExtractLabel, 0)
 
-	if presets.Enabled {
-		for _, label := range presets.PodLabels {
+	if enrichments.Enabled {
+		for _, label := range enrichments.PodLabels {
 			labelConfig := config.ExtractLabel{
 				From:    "pod",
 				TagName: "k8s.pod.label.$0",
@@ -102,9 +102,9 @@ func buildPodLabelPresets(presets EnrichmentOpts) []config.ExtractLabel {
 				labelConfig.KeyRegex = fmt.Sprintf("(^%s$)", label.Key)
 			}
 
-			podLabelPresets = append(podLabelPresets, labelConfig)
+			extractPodLabels = append(extractPodLabels, labelConfig)
 		}
 	}
 
-	return podLabelPresets
+	return extractPodLabels
 }
