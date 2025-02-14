@@ -455,11 +455,11 @@ func TestReconcile(t *testing.T) {
 					istioStatusCheckerStub,
 					pipelineValidatorWithStubs,
 					errToMsg)
-				err := sut.Reconcile(context.Background(), &pipeline)
+				err := sut.Reconcile(t.Context(), &pipeline)
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.LogPipeline
-				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				requireHasStatusCondition(t, updatedPipeline,
 					conditions.TypeFlowHealthy,
