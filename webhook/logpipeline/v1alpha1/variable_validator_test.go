@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -34,7 +33,7 @@ func TestVariableNotGloballyUnique(t *testing.T) {
 		WithVariable("foo2", "fooN", "fooNs", "foo").
 		Build()
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
 	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)
@@ -55,7 +54,7 @@ func TestVariableValidator(t *testing.T) {
 		WithVariable("foo2", "", "", "").
 		Build()
 
-	response := sut.Handle(context.Background(), admissionRequestFrom(t, newPipeline))
+	response := sut.Handle(t.Context(), admissionRequestFrom(t, newPipeline))
 
 	require.False(t, response.Allowed)
 	require.EqualValues(t, response.Result.Code, http.StatusBadRequest)

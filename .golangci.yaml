@@ -7,8 +7,8 @@ run:
 linters:
   enable-all: true
   disable:
-    # Depreacted linters
-    - exportloopref
+    # Deprecated linters
+    - tenv
     # Linters to be enabled after fixing the issues
     - cyclop
     - depguard
