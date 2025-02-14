@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.24.0-alpine AS builder
+FROM golang:1.24.0-alpine3.21 AS builder
 
 WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
