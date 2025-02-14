@@ -63,9 +63,25 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 			Key:     "kubernetes.io/arch",
 			TagName: "host.arch",
 		},
+		{
+			From:     "pod",
+			KeyRegex: "(app.kubernetes.io/name.*)",
+			TagName:  "k8s.pod.label.$0",
+		},
+		{
+			From:     "pod",
+			KeyRegex: "(^app$)",
+			TagName:  "k8s.pod.label.$0",
+		},
 	}
 
-	config := K8sAttributesProcessorConfig()
+	config := K8sAttributesProcessorConfig(Enrichments{
+		Enabled: true,
+		PodLabels: []PodLabel{
+			{Key: "", KeyPrefix: "app.kubernetes.io/name"},
+			{Key: "app", KeyPrefix: ""},
+		},
+	})
 
 	require.Equal("serviceAccount", config.AuthType)
 	require.Equal(false, config.Passthrough)
@@ -73,4 +89,83 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 
 	require.ElementsMatch(expectedK8sAttributes, config.Extract.Metadata, "Metadata should match")
 	require.ElementsMatch(expectedExtractLabels, config.Extract.Labels, "Labels should match")
+}
+
+func TestBuildPodLabelEnrichments(t *testing.T) {
+	tests := []struct {
+		name     string
+		presets  Enrichments
+		expected []config.ExtractLabel
+	}{
+		{
+			name: "Enrichments disabled",
+			presets: Enrichments{
+				Enabled:   false,
+				PodLabels: []PodLabel{},
+			},
+			expected: []config.ExtractLabel{},
+		},
+		{
+			name: "Enrichments enabled with key",
+			presets: Enrichments{
+				Enabled: true,
+				PodLabels: []PodLabel{
+					{Key: "app"},
+				},
+			},
+			expected: []config.ExtractLabel{
+				{
+					From:     "pod",
+					KeyRegex: "(^app$)",
+					TagName:  "k8s.pod.label.$0",
+				},
+			},
+		},
+		{
+			name: "Enrichments enabled with key prefix",
+			presets: Enrichments{
+				Enabled: true,
+				PodLabels: []PodLabel{
+					{KeyPrefix: "app.kubernetes.io"},
+				},
+			},
+			expected: []config.ExtractLabel{
+				{
+					From:     "pod",
+					KeyRegex: "(app.kubernetes.io.*)",
+					TagName:  "k8s.pod.label.$0",
+				},
+			},
+		},
+		{
+			name: "Enrichments enabled with multiple labels",
+			presets: Enrichments{
+				Enabled: true,
+				PodLabels: []PodLabel{
+					{Key: "app"},
+					{KeyPrefix: "app.kubernetes.io"},
+				},
+			},
+			expected: []config.ExtractLabel{
+				{
+					From:     "pod",
+					KeyRegex: "(^app$)",
+					TagName:  "k8s.pod.label.$0",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(app.kubernetes.io.*)",
+					TagName:  "k8s.pod.label.$0",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+			result := buildExtractPodLabels(tt.presets)
+			require.ElementsMatch(tt.expected, result)
+		})
+	}
 }
