@@ -123,7 +123,7 @@ jobs:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Check kustomization.yaml changes
-        uses: tj-actions/changed-files@6b2903bdce6310cfbddd87c418f253cf29b2dec9
+        uses: tj-actions/changed-files@251f07ed5250f0c01a1745b77a54289a678b3928
         id: changed-kustomization
         with:
           files: "config/manager/kustomization.yaml"
