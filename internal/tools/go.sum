@@ -410,8 +410,8 @@ github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8/go.mod h1:vgyd7OREkbtVE
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/julz/importas v0.2.0 h1:y+MJN/UdL63QbFJHws9BVC5RpA2iq0kpjrFajTGivjQ=
 github.com/julz/importas v0.2.0/go.mod h1:pThlt589EnCYtMnmhmRYY/qn9lCf/frPOK+WMx3xiJY=
-github.com/k3d-io/k3d/v5 v5.8.2 h1:cknyqAa7EnigZ5zazgXDhJl+LS0eeWETAhgtaJGgnf0=
-github.com/k3d-io/k3d/v5 v5.8.2/go.mod h1:bFlhRV/R1cPT42ZZzQAHPHUF33CbCT8VSbjtjTr3J1Y=
+github.com/k3d-io/k3d/v5 v5.8.3 h1:TRgPQNEV48b2PYXfus2F7fPepE7BKub4erNkY17K8Zs=
+github.com/k3d-io/k3d/v5 v5.8.3/go.mod h1:bFlhRV/R1cPT42ZZzQAHPHUF33CbCT8VSbjtjTr3J1Y=
 github.com/karamaru-alpha/copyloopvar v1.2.1 h1:wmZaZYIjnJ0b5UoKDjUHrikcV0zuPyyxI4SVplLd2CI=
 github.com/karamaru-alpha/copyloopvar v1.2.1/go.mod h1:nFmMlFNlClC2BPvNaHMdkirmTJxVCY0lhxBtlfOypMM=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
@@ -747,8 +747,8 @@ github.com/vbatts/tar-split v0.11.3 h1:hLFqsOLQ1SsppQNTMpkpPXClLDfC2A3Zgy9OUU+RV
 github.com/vbatts/tar-split v0.11.3/go.mod h1:9QlHN18E+fEH7RdG+QAJJcuya3rqT7eXSTY7wGrAokY=
 github.com/vektra/mockery/v2 v2.52.2 h1:8QfPKUIrq8P3Cs7G79Iu4Byd5wdhGCE0quIS27x7rQo=
 github.com/vektra/mockery/v2 v2.52.2/go.mod h1:zGDY/f6bip0Yh13GQ5j7xa43fuEoYBa4ICHEaihisHw=
-github.com/vladopajic/go-test-coverage/v2 v2.11.4 h1:5wNZhy1c1eXofx8jzKsn8v/AHD5fjrSiEe2qNds1E/E=
-github.com/vladopajic/go-test-coverage/v2 v2.11.4/go.mod h1:zvE/+qGOTE5PL9KliZ10sRHT74P9Ghn5y0X0k/+0KnI=
+github.com/vladopajic/go-test-coverage/v2 v2.12.0 h1:xXmX6yVUZvvSFbJ+RQpSZBlZtcGuOUAuggQBsNDVJe4=
+github.com/vladopajic/go-test-coverage/v2 v2.12.0/go.mod h1:AZLllT+cLaTCiGktSnjw27yWddyNuGhRSrznzXFL3ZQ=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=

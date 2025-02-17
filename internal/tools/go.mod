@@ -7,12 +7,12 @@ require (
 	github.com/golangci/golangci-lint v1.64.5
 	github.com/google/yamlfmt v0.16.0
 	github.com/joho/godotenv v1.5.1
-	github.com/k3d-io/k3d/v5 v5.8.2
+	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
 	github.com/mikefarah/yq/v4 v4.45.1
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/vektra/mockery/v2 v2.52.2
-	github.com/vladopajic/go-test-coverage/v2 v2.11.4
+	github.com/vladopajic/go-test-coverage/v2 v2.12.0
 	golang.org/x/tools v0.30.0
 	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/controller-tools v0.17.2

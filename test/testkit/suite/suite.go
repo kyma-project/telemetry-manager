@@ -49,6 +49,7 @@ const (
 	LabelMaxPipeline          = "max-pipeline"
 	LabelSetA                 = "set_a"
 	LabelSetB                 = "set_b"
+	LabelSetC                 = "set_c"
 
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
 	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"

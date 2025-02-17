@@ -22,7 +22,7 @@ import (
 var _ = Describe(suite.ID(), Ordered, func() {
 	const ownerReferenceKind = "MetricPipeline"
 
-	Context("When a MetricPipeline exists", Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
+	Context("When a MetricPipeline exists", Label(suite.LabelMetrics), Label(suite.LabelSetC), Ordered, func() {
 		var pipelineName = suite.ID()
 		endpointKey := "metrics-endpoint"
 		secret := kitk8s.NewOpaqueSecret("metrics-resources", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, "http://localhost:4317"))
