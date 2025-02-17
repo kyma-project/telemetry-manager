@@ -10,7 +10,7 @@ Proposed
 
 The current architecture defines a set of central Gateways with the single purpose of enriching the data and dispatching it to the backend. That approach had good reasons in the past but a situation is reached were the drawbacks seem to overweight benefits.
 
-![./../assets/otlp-gateway-old.drawio.svg]
+![arch](./../assets/otlp-gateway-old.drawio.svg)
 
 The benefits of Gateways are:
 - persistent buffering via PV
@@ -44,7 +44,7 @@ The drawback of Gateways are:
 
 Most of the drawbacks can be solved by running the gateway logic node-local only. Every instance always processes only data of the local node. With that a natural scalability is given and can be extended by vertical scaling capabilities. The "old" gateways will be running in agent mode but still called "OTLP Gateway"
 
-![./../assets/otlp-gateway-new.drawio.svg]
+![arch](./../assets/otlp-gateway-new.drawio.svg)
 
 The left drawbacks of the agent approach are:
 - coupling of signal types
