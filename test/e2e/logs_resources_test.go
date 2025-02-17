@@ -3,7 +3,12 @@
 package e2e
 
 import (
-	"fmt"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -11,14 +16,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
@@ -74,13 +71,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		})
 
 		It("Should have a telemetry-fluent-bit-parsers ConfigMap owned by the LogPipeline", func() {
-
-			var cmList corev1.ConfigMapList
-			Expect(k8sClient.List(ctx, &cmList, client.InNamespace(kitkyma.SystemNamespaceName))).To(Succeed())
-			for _, cm := range cmList.Items {
-				fmt.Printf("ConfigMap: %s\nOwnerRefs: %v\n", cm.Name, cm.OwnerReferences)
-			}
-
 			var configMap corev1.ConfigMap
 			assert.HasOwnerReference(ctx, k8sClient, &configMap, kitkyma.FluentBitParserConfigMap, ownerReferenceKind, pipelineName)
 		})
