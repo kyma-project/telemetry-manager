@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -264,7 +263,7 @@ func TestUpdateStatus(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.telemetry).WithStatusSubresource(tt.telemetry).Build()
 			for _, res := range tt.resources {
-				require.NoError(t, fakeClient.Create(context.Background(), res))
+				require.NoError(t, fakeClient.Create(t.Context(), res))
 			}
 
 			mockLogsChecker := &mocks.ComponentHealthChecker{}
@@ -289,7 +288,7 @@ func TestUpdateStatus(t *testing.T) {
 			}
 
 			// Act
-			err := r.updateStatus(context.Background(), tt.telemetry)
+			err := r.updateStatus(t.Context(), tt.telemetry)
 
 			// Assert
 			if tt.expectError {

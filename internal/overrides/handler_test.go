@@ -1,7 +1,6 @@
 package overrides
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -92,13 +91,13 @@ tracing:
 					Data: tt.configMapData,
 				}
 
-				err := fakeClient.Create(context.Background(), configMap)
+				err := fakeClient.Create(t.Context(), configMap)
 				require.NoError(t, err)
 			}
 
 			atomicLevel := zap.NewAtomicLevelAt(tt.defaultLevel)
 			handler := New(fakeClient, HandlerConfig{SystemNamespace: "test-namespace"}, WithAtomicLevel(atomicLevel))
-			overrides, err := handler.LoadOverrides(context.Background())
+			overrides, err := handler.LoadOverrides(t.Context())
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -126,7 +125,7 @@ tracing:
   paused: true`,
 		},
 	}
-	err := fakeClient.Create(context.Background(), configMap)
+	err := fakeClient.Create(t.Context(), configMap)
 	require.NoError(t, err)
 
 	atomicLevel := zap.NewAtomicLevelAt(zapcore.InfoLevel)
@@ -134,12 +133,12 @@ tracing:
 
 	require.Equal(t, atomicLevel.Level(), zapcore.InfoLevel)
 
-	_, err = handler.LoadOverrides(context.Background())
+	_, err = handler.LoadOverrides(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, atomicLevel.Level(), zapcore.DebugLevel, "Should set log level to debug after loading the overrides")
 
-	fakeClient.Delete(context.Background(), configMap)
-	_, err = handler.LoadOverrides(context.Background())
+	fakeClient.Delete(t.Context(), configMap)
+	_, err = handler.LoadOverrides(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, atomicLevel.Level(), zapcore.InfoLevel, "Should reset log level back to info after loading empty overrides")
 }
