@@ -32,11 +32,10 @@ func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedNa
 	reason := conditions.ReasonGatewayReady
 	msg := conditions.MessageForTracePipeline(reason)
 
-	if signalType == SignalTypeMetrics {
+	switch signalType {
+	case SignalTypeMetrics:
 		msg = conditions.MessageForMetricPipeline(reason)
-	}
-
-	if signalType == SignalTypeOtelLogs {
+	case SignalTypeOtelLogs:
 		msg = conditions.MessageForOtelLogPipeline(reason)
 	}
 
@@ -69,11 +68,10 @@ func GetAgentHealthyCondition(ctx context.Context, prober Prober, namespacedName
 	reason := conditions.ReasonAgentReady
 	msg := conditions.MessageForFluentBitLogPipeline(reason)
 
-	if signalType == SignalTypeMetrics {
+	switch signalType {
+	case SignalTypeMetrics:
 		msg = conditions.MessageForMetricPipeline(reason)
-	}
-
-	if signalType == SignalTypeOtelLogs {
+	case SignalTypeOtelLogs:
 		msg = conditions.MessageForOtelLogPipeline(reason)
 	}
 

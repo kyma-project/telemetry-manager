@@ -88,23 +88,18 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 }
 
 func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
-	if probeResult.AllDataDropped {
+	switch {
+	case probeResult.AllDataDropped:
 		return conditions.ReasonSelfMonAllDataDropped
-	}
-
-	if probeResult.SomeDataDropped {
+	case probeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonSomeDataDropped
-	}
-
-	if probeResult.QueueAlmostFull {
+	case probeResult.QueueAlmostFull:
 		return conditions.ReasonSelfMonBufferFillingUp
-	}
-
-	if probeResult.Throttling {
+	case probeResult.Throttling:
 		return conditions.ReasonSelfMonGatewayThrottling
+	default:
+		return conditions.ReasonSelfMonFlowHealthy
 	}
-
-	return conditions.ReasonSelfMonFlowHealthy
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
