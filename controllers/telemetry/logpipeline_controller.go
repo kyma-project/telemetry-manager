@@ -18,6 +18,10 @@ limitations under the License.
 
 import (
 	"context"
+	"fmt"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -154,7 +158,26 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		)
 	}
 
-	return b.Complete(r)
+	return b.Watches(
+		&operatorv1alpha1.Telemetry{},
+		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+	).Complete(r)
+}
+
+func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	_, ok := object.(*operatorv1alpha1.Telemetry)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
 }
 
 func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.LogPipelineProber) (*logpipelinefluentbit.Reconciler, error) {
@@ -231,4 +254,22 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		&conditions.ErrorToMessageConverter{})
 
 	return otelReconciler, nil
+}
+
+func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
+	var pipelines telemetryv1alpha1.LogPipelineList
+
+	var requests []reconcile.Request
+
+	err := r.List(ctx, &pipelines)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list LogPipelines: %w", err)
+	}
+
+	for i := range pipelines.Items {
+		var pipeline = pipelines.Items[i]
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+	}
+
+	return requests, nil
 }
