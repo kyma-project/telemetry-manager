@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -73,12 +72,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-				// Wait for LogPipelines to be deleted
-				Eventually(func(g Gomega) {
-					var pipelines telemetryv1alpha1.LogPipelineList
-					g.Expect(k8sClient.List(ctx, &pipelines)).To(Succeed())
-					g.Expect(pipelines.Items).To(BeEmpty())
-				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
