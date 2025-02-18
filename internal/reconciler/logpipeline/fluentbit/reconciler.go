@@ -135,6 +135,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		fluentbit.AgentApplyOptions{
+			SyncerClient:           r.Client,
 			Config:                 r.config,
 			AllowedPorts:           allowedPorts,
 			Pipeline:               pipeline,

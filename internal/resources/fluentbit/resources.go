@@ -51,7 +51,10 @@ type Config struct {
 	Overrides        overrides.Config
 }
 
+// AgentApplyOptions expects a syncerClient which is a client with no ownerReference setter since it handles its
+// own resource deletion with finalizers and will be removed once the ConfigBuilder implementation is done.
 type AgentApplyOptions struct {
+	SyncerClient           client.Client
 	Config                 Config
 	AllowedPorts           []int32
 	Pipeline               *telemetryv1alpha1.LogPipeline
@@ -95,7 +98,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	)
 
 	syncer := syncer{
-		Client:    c,
+		Client:    opts.SyncerClient,
 		Config:    opts.Config,
 		namespace: aad.namespace,
 	}

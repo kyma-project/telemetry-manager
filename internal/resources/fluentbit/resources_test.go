@@ -81,8 +81,8 @@ func TestAgent_ApplyResources(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
-				AllowedPorts: []int32{5555, 6666},
-
+				AllowedPorts:           []int32{5555, 6666},
+				SyncerClient:           fakeClient,
 				Pipeline:               &logPipeline,
 				DeployableLogPipelines: []telemetryv1alpha1.LogPipeline{logPipeline},
 			})
@@ -136,6 +136,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			agentApplyOptions := AgentApplyOptions{
+				SyncerClient:           fakeClient,
 				AllowedPorts:           []int32{5555, 6666},
 				Pipeline:               &logPipeline,
 				DeployableLogPipelines: []telemetryv1alpha1.LogPipeline{logPipeline},
