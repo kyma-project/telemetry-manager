@@ -1,9 +1,10 @@
-# 13. Leader Receiver Creator as Extension
+# 12b. Leader Receiver Creator as Extension
 
 Date: 2024-11-08
 
 ## Status
-Proposed
+
+Accepted
 
 ## Context
 

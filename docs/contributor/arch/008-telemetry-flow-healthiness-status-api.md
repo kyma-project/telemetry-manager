@@ -4,7 +4,7 @@ Date: 2024-15-02
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context: Key Events in the Telemetry Flow
 
