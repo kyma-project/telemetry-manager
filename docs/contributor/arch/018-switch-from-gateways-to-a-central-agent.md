@@ -12,38 +12,50 @@ The current architecture defines a set of central Gateways to enrich the data an
 
 ![arch](./../assets/otlp-gateway-old.drawio.svg)
 
-The benefits of gateways are:
-- persistent buffering via PV
+### Gateways Benefits
 
-  The experience showed that persistent buffering on the node filesystem has drawbacks like increased IO and limited space. We always envisioned a configurable persistent size per pipeline which is only possible in a central StatefulSet having PVs attached. However, experience now shows that operating a StatefulSets with PVs is not trivial, and especially on Azure, re-attaching disks can be a very long procedure resulting in long downtimes. Also, persistent buffering might be even a pre-mature optimization with limited gains, see also [ADR-017](./017-fault-tolerant-otel-logging-setup.md).
-- separation of concerns
+- Persistent buffering via PV
 
+  The experience showed that persistent buffering on the node filesystem has drawbacks like increased IO and limited space. We always envisioned a configurable persistent size per pipeline which is only possible in a central StatefulSet having PVs attached. However, experience now shows that operating StatefulSets with PVs is not trivial, and especially on Azure, re-attaching disks can be a very long procedure resulting in long downtimes. Also, persistent buffering might be even a pre-mature optimization with limited gains, see also [ADR-017](./017-fault-tolerant-otel-logging-setup.md).
+
+- Separation of concerns
+  
   It is always good to have clear responsibilities to keep code better maintainable. Therefore, gateways deal with enrichment and dispatching, while agents are responsible for data collection.
-- decoupling of signal types
+
+- Decoupling of signal types
 
   Processing the signal types in separate processes keeps the processing tolerant to failures. An overload of metrics keeps the log delivery stable.
-- tail-based sampling
+
+- Tail-based sampling
 
   Scenarios like trace sampling require processing all spans of a trace at one instance, requiring a StatefulSet with sticky trace routing. However, that scenario might not be relevant as this isn't usually done on the backend.
 
-The drawbacks of gateways are:
-- no uniform push endpoint
+### Gateways Drawbacks
+
+- No uniform push endpoint
 
   By design, there is one gateway for each signal type that the application must communicate with. Consequently, you must always configure a separate OTLP endpoint for each signal type. Using a uniform URL requires an additional component to route the requests.
-- autoscaling is tricky
+
+- Autoscaling is tricky
 
   The gateway should provide autoscaling capabilities which are tricky to realize. It must be detected very fast if a scale-out is needed and situations where the backend is overloaded must be excluded from the scale-out.
-- every instance caches the whole cluster state
+
+- Every instance caches the whole cluster state
 
   Every instance of a gateway must be able to enrich the data of every Pod and with that need to cache all Pod metadata.
+
 - Istio mandatory for load balancing
 
   Pushing OTLP data from an application to the gateway running with replicas requires load balancing. Unfortunately, a Kubernetes service is acting on L4 while GRPC/HTTP2 is on L7, so an additional load balancer is needed. That can be easily solved by using Istio, which becomes a requirement for applications. However, some applications don't use Istio (StatefulSets often don't) but want to provide OTLP data.
+
 - Istio is mandatory for mTLS
+
   App to Gateway communication is across nodes and with that should use mTLS, so Istio needs to be used which sometimes is not possible. Also, Istio causes additional overhead like noise filtering and collecting observability data about the service mesh should not rely on the service mesh.
-- cumulativetodelta transformation not supported
+
+- Cumulativetodelta transformation not supported
 
   This transformation is mandatory for Dynatrace support and requires that data from a Pod gets processed always by the same instance.
+
 - General misconception
 
   Gateways are usually running outside the cluster as a first entry point. The cluster should get rid of the data as fast as possible as persistence cannot be provided here (things like Kafka would again run outside). Try to compensate for short-lived hiccups. Otherwise, point back the backpressure to the client and do not try to solve the big picture.
@@ -55,17 +67,22 @@ Most of the drawbacks can be solved by running the gateway logic node-local only
 ![arch](./../assets/otlp-gateway-new.drawio.svg)
 
 The remaining drawbacks of the agent approach are:
-- coupling of signal types
+
+- Coupling of signal types
 
   The decoupling of the signal types will be lost, potentially leading to situations where the agent drops logs caused by metrics overload. However, with the right hardening that should not be a problem.
-- downtimes on updates
+
+- Downtimes on updates
+
   A rollout of the agent cannot happen in a rolling way as for deployments. So there will be a downtime always which should be compensated by the retry mechanism in the otel-sdk
 
 Additional benefits not outlined yet:
-- persistent queue everywhere
+
+- Persistent queue everywhere
 
   A small persistent buffer could be used in all components based on the node file system.
-- no Istio dependency
+
+- No Istio dependency
 
   Neither the App nor the components have any Istio dependency anymore. However, the metric agent should still support the scraping of istiofied endpoints.
 
