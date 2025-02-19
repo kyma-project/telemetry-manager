@@ -315,7 +315,7 @@ The Metric agent is configured with a generic scrape configuration, which uses a
 
 For metrics ingestion to start automatically, use the annotations of the following table.
 If an Istio sidecar is present, apply them to a Service that resolves your metrics port.
-By annotating the Service, all endpoints targeted by the service will be resolved and scraped by the Metric agent bypassing the service itself.
+By annotating the Service, all endpoints targeted by the Service are resolved and scraped by the Metric agent bypassing the Service itself.
 Only if Istio sidecar is not present, you can alternatively apply the annotations directly to the Pod.
 
 | Annotation Key                                                   | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
