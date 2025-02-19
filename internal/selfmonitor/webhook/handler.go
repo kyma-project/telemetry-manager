@@ -87,7 +87,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alertsYAML, err := io.ReadAll(r.Body)
+	alertsYAML, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20)) // Limit body size read to 1MB (avoid "prone to resource exhaustion" security warning)
 	if err != nil {
 		h.logger.Error(err, "Failed to read request body")
 		w.WriteHeader(http.StatusInternalServerError)
