@@ -29,7 +29,7 @@ extensions:
     pprof:
         endpoint: 127.0.0.1:1777
     file_storage:
-        directory: /var/lib/otelcol
+        directory: /var/lib/telemetry-log-agent
 receivers:
     filelog:
         exclude:
