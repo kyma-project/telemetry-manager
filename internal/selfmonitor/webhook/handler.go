@@ -29,7 +29,6 @@ const (
 	subscriberMetricPipeline subscriberType = iota
 	subscriberTracePipeline
 	subscriberLogPipeline
-	maxBytesToRead = 1 << 20
 )
 
 func WithMetricPipelineSubscriber(subscriber chan<- event.GenericEvent) Option {
@@ -88,6 +87,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	const maxBytesToRead = 1 << 20 // 1 MB
 	alertsYAML, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxBytesToRead)) // Limit max bytes read (avoid "prone to resource exhaustion" security warning)
 	if err != nil {
 		h.logger.Error(err, "Failed to read request body")
