@@ -10,7 +10,7 @@ Accepted
 
 The Telemetry OTel Collector collects metrics exposed by the Kubernetes API server using [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver), 
 and custom resource metrics are collected using [kymastatsreceiver](https://github.com/kyma-project/opentelemetry-collector-components/tree/main/receiver/kymastatsreceiver). 
-To run these receivers in high availability mode and prevent sending duplicate metrics, we've implemented [Singleton Receiver Creator](https://github.com/kyma-project/opentelemetry-collector-components/tree/main/receiver/singletonreceivercreator) based on [Leader Receiver Creator](./012-leader-receiver-creator.md).
+To run these receivers in high availability mode and prevent sending duplicate metrics, we've implemented [Singleton Receiver Creator](https://github.com/kyma-project/opentelemetry-collector-components/tree/main/receiver/singletonreceivercreator) based on [Leader Receiver Creator](./012a-leader-receiver-creator.md).
 
 ## Decision
 However, after feedback from community and careful deliberation, we realize the `singleonreceivercreator` would be better suited to be used as an extension.
