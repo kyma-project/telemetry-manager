@@ -29,8 +29,8 @@ const (
 	MetricAgentName = "telemetry-metric-agent"
 	LogAgentName    = "telemetry-log-agent"
 
-	checkpointVolumeName = "varlibtelemetrylogagent"
-	CheckpointVolumePath = "/var/lib/telemetry-log-agent"
+	checkpointVolumeName = "varlibfilelogreceiver"
+	CheckpointVolumePath = "/var/lib/telemetry-log-agent/file-log-receiver"
 	logVolumeName        = "varlogpods"
 	logVolumePath        = "/var/log/pods"
 )
@@ -67,6 +67,7 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 	volumes := []corev1.Volume{
 		makeIstioCertVolume(),
 		makePodLogsVolume(),
+		// HostPath Should be unique for each application using it
 		makeFileLogCheckpointVolume(),
 	}
 	volumeMounts := []corev1.VolumeMount{
