@@ -180,7 +180,7 @@ func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Ale
 	for i := range logPipelines.Items {
 		pipelineName := logPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if config.MatchesLogPipelineRule(alert.Labels, config.RulesAny, pipelineName) {
+			if config.MatchesFluentBitLogPipelineRule(alert.Labels, config.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &logPipelines.Items[i]})
 			}
 		}
