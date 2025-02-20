@@ -6,7 +6,9 @@ Date: 2025-02-18
 Proposed
 
 ## Context
-The actual configuration of the agent. Following points will be consider:
+This document builds upon the previous ADR [17. Fault Tolerant OTel Logging Setup](./017-fault-tolerant-otel-logging-setup.md).
+
+The goal of this document is to have an implementation-ready log agent configuration. Following points will be consider:
 1. Given that every LogPipeline gets its own OTelPipeline; How will the namespace filtering actually happen? (dedicated vs shared tail receiver).
 2. Agent will have no explicit batching mechanism configured.
 3. Agent will have no sending queue mechanism configured.
