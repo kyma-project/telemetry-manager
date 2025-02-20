@@ -48,8 +48,8 @@ type Processors struct {
 	InsertClusterAttributes        *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
 	DropKymaAttributes             *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
-
-type Exporters struct {
+type Exporters map[string]Exporter
+type Exporter struct {
 	OTLP *config.OTLPExporter `yaml:"otlp"`
 }
 

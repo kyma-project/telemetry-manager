@@ -7,7 +7,7 @@ import (
 )
 
 func TestProcessorConfig(t *testing.T) {
-	processorsConfig := makeProcessorsConfig("v1.0.0")
+	processorsConfig := makeProcessorsConfig(BuildOptions{InstrumentationScopeVersion: "v1.0.0", ClusterName: "cluster", CloudProvider: "provider"})
 	require.Equal(t, "scope", processorsConfig.SetInstrumentationScopeRuntime.LogStatements[0].Context)
 	require.Len(t, processorsConfig.SetInstrumentationScopeRuntime.LogStatements[0].Statements, 2)
 	require.Equal(t, "set(version, \"v1.0.0\")", processorsConfig.SetInstrumentationScopeRuntime.LogStatements[0].Statements[0])
