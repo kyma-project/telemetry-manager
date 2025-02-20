@@ -12,10 +12,10 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -306,17 +306,17 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	return defaultReplicaCount
 }
 
-func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) gatewayprocs.Enrichments {
+func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) processors.Enrichments {
 	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.telemetryNamespace)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default enrichments configuration")
-		return gatewayprocs.Enrichments{}
+		return processors.Enrichments{}
 	}
 
 	if telemetry.Spec.Log != nil &&
 		telemetry.Spec.Log.Enrichments != nil {
-		mapPodLabels := func(values []operatorv1alpha1.PodLabel, fn func(operatorv1alpha1.PodLabel) gatewayprocs.PodLabel) []gatewayprocs.PodLabel {
-			var result []gatewayprocs.PodLabel
+		mapPodLabels := func(values []operatorv1alpha1.PodLabel, fn func(operatorv1alpha1.PodLabel) processors.PodLabel) []processors.PodLabel {
+			var result []processors.PodLabel
 			for i := range values {
 				result = append(result, fn(values[i]))
 			}
@@ -324,10 +324,10 @@ func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) gatewaypro
 			return result
 		}
 
-		return gatewayprocs.Enrichments{
+		return processors.Enrichments{
 			Enabled: telemetry.Spec.Log.Enrichments.Enabled,
-			PodLabels: mapPodLabels(telemetry.Spec.Log.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) gatewayprocs.PodLabel {
-				return gatewayprocs.PodLabel{
+			PodLabels: mapPodLabels(telemetry.Spec.Log.Enrichments.ExtractPodLabels, func(value operatorv1alpha1.PodLabel) processors.PodLabel {
+				return processors.PodLabel{
 					Key:       value.Key,
 					KeyPrefix: value.KeyPrefix,
 				}
@@ -335,7 +335,7 @@ func (r *Reconciler) getEnrichmentsFromTelemetry(ctx context.Context) gatewaypro
 		}
 	}
 
-	return gatewayprocs.Enrichments{}
+	return processors.Enrichments{}
 }
 
 func getGatewayPorts() []int32 {

@@ -2,7 +2,7 @@ package agent
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
@@ -20,9 +20,9 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
 		SetInstrumentationScopeRuntime: makeInstrumentationScopeRuntime(opts.InstrumentationScopeVersion),
-		K8sAttributes:                  gatewayprocs.K8sAttributesProcessorConfig(opts.Enrichments),
-		InsertClusterAttributes:        gatewayprocs.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
-		DropKymaAttributes:             gatewayprocs.DropKymaAttributesProcessorConfig(),
+		K8sAttributes:                  processors.K8sAttributesProcessorConfig(opts.Enrichments),
+		InsertClusterAttributes:        processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		DropKymaAttributes:             processors.DropKymaAttributesProcessorConfig(),
 	}
 }
 

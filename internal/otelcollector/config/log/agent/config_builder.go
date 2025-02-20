@@ -2,7 +2,7 @@ package agent
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -23,7 +23,7 @@ type BuildOptions struct {
 	AgentNamespace              string
 	ClusterName                 string
 	CloudProvider               string
-	Enrichments                 gatewayprocs.Enrichments
+	Enrichments                 processors.Enrichments
 }
 
 func (b *Builder) Build(logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) *Config {
