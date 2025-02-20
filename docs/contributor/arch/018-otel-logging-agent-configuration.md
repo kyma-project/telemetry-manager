@@ -68,7 +68,7 @@ processors:
               statements:
               - set(version, "main")
               - set(name, "io.kyma-project.telemetry/runtime")
-    k8sattributes:
+    k8sattributes: # previous gateway processor
           auth_type: serviceAccount
           passthrough: false
           extract:
@@ -97,11 +97,11 @@ processors:
                     name: k8s.pod.uid
               - sources:
                   - from: connection
-    resource/insert-cluster-name:
+    resource/insert-cluster-name: # previous gateway processor
         attributes:
-        - action: insert
-        key: k8s.cluster.name
-        value: <CLUSTER_NAME>
+            - action: insert
+            key: k8s.cluster.name
+            value: <CLUSTER_NAME> # cluster name
 
 receivers:
     filelog/pipeline1:
