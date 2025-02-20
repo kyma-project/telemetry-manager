@@ -87,13 +87,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alertsYAML, err := io.ReadAll(r.Body)
+	const maxBytesToRead = 1 << 20 // 1 MB
+
+	alertsYAML, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxBytesToRead)) // Limit max bytes read (avoid "prone to resource exhaustion" security warning)
 	if err != nil {
 		h.logger.Error(err, "Failed to read request body")
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
+
 	defer r.Body.Close()
 
 	var alerts []Alert
@@ -180,7 +183,7 @@ func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Ale
 	for i := range logPipelines.Items {
 		pipelineName := logPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if config.MatchesLogPipelineRule(alert.Labels, config.RulesAny, pipelineName) {
+			if config.MatchesFluentBitLogPipelineRule(alert.Labels, config.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &logPipelines.Items[i]})
 			}
 		}
