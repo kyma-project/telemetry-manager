@@ -1,0 +1,211 @@
+apiVersion: v1
+data:
+  file1: dummy-file-content
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit-files
+  namespace: kyma-system
+---
+apiVersion: v1
+data:
+  filter-script.lua: |2
+
+    function kubernetes_map_keys(tag, timestamp, record)
+      if record.kubernetes == nil then
+        return 0
+      end
+      map_keys(record.kubernetes.annotations)
+      map_keys(record.kubernetes.labels)
+      return 1, timestamp, record
+    end
+    function map_keys(table)
+      if table == nil then
+        return
+      end
+      local new_table = {}
+      local changed_keys = {}
+      for key, val in pairs(table) do
+        local mapped_key = string.gsub(key, "[%/%.]", "_")
+        if mapped_key ~= key then
+          new_table[mapped_key] = val
+          changed_keys[key] = true
+        end
+      end
+      for key in pairs(changed_keys) do
+        table[key] = nil
+      end
+      for key, val in pairs(new_table) do
+        table[key] = val
+      end
+    end
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit-luascripts
+  namespace: kyma-system
+---
+apiVersion: v1
+data:
+  pipeline1.conf: dummy-value
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit-sections
+  namespace: kyma-system
+---
+apiVersion: v1
+data:
+  env-config-secret1: ZHVtbXktdmFsdWU=
+kind: Secret
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit-env
+  namespace: kyma-system
+---
+apiVersion: v1
+data:
+  tls-config-secret1: ZHVtbXktdmFsdWU=
+kind: Secret
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit-output-tls-config
+  namespace: kyma-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "2021"
+    prometheus.io/scheme: http
+    prometheus.io/scrape: "true"
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    telemetry.kyma-project.io/self-monitor: enabled
+  name: telemetry-fluent-bit-exporter-metrics
+  namespace: kyma-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 2021
+    protocol: TCP
+    targetPort: http-metrics
+  selector:
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/name: fluent-bit
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: /api/v2/metrics/prometheus
+    prometheus.io/port: "2020"
+    prometheus.io/scheme: http
+    prometheus.io/scrape: "true"
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    telemetry.kyma-project.io/self-monitor: enabled
+  name: telemetry-fluent-bit-metrics
+  namespace: kyma-system
+spec:
+  ports:
+  - name: http
+    port: 2020
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/name: fluent-bit
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit
+  namespace: kyma-system
+spec:
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+    ports:
+    - port: 5555
+      protocol: TCP
+    - port: 6666
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: telemetry
+      app.kubernetes.io/name: fluent-bit
+  policyTypes:
+  - Ingress
+  - Egress
+---

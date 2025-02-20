@@ -3,17 +3,14 @@ package fluentbit
 import (
 	"errors"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,9 +23,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -41,28 +38,22 @@ func TestReconcile(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
+	telemetryNamespace := "kyma-system"
 	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
 	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
-	testConfig := Config{
-		DaemonSet:           types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
-		SectionsConfigMap:   types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
-		FilesConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
-		LuaConfigMap:        types.NamespacedName{Name: "test-telemetry-fluent-bit-lua", Namespace: "default"},
-		ParsersConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
-		EnvConfigSecret:     types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
-		TLSFileConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
-		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			FluentBitImage: "fluent/bit:dummy",
-			ExporterImage:  "exporter:dummy",
-		},
-	}
-
 	t.Run("should set status UnsupportedMode true if contains custom plugin", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithCustomFilter("Name grep").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -77,7 +68,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -95,6 +86,13 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
@@ -108,7 +106,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -126,6 +124,13 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithApplicationInputDisabled().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
@@ -139,23 +144,25 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
 		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &pl1))
 		err := sut.Reconcile(t.Context(), &pl1)
 		require.NoError(t, err)
-
-		// check Fluent Bit sections configmap as an indicator of resources generation
-		cm := &corev1.ConfigMap{}
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, cm)
-		require.True(t, apierrors.IsNotFound(err), "sections configmap should not exist")
 	})
 
 	t.Run("log agent is not ready", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetNotFound)
 
@@ -171,7 +178,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -188,16 +195,18 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentNotReady,
 			workloadstatus.ErrDaemonSetNotFound.Error(),
 		)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
 
 	t.Run("log agent is ready", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -212,7 +221,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -229,16 +238,18 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentReady,
 			"Log agent DaemonSet is ready",
 		)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
 
 	t.Run("log agent prober fails", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		proberStub := commonStatusStubs.NewDaemonSetProber(workloadstatus.ErrDaemonSetFetching)
 
@@ -253,7 +264,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -270,11 +281,6 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentNotReady,
 			"Failed to get DaemonSet",
 		)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
@@ -282,6 +288,13 @@ func TestReconcile(t *testing.T) {
 			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -297,7 +310,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -321,40 +334,6 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonSelfMonConfigNotGenerated,
 			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 		)
-
-		name := types.NamespacedName{Name: testConfig.DaemonSet.Name, Namespace: testConfig.DaemonSet.Namespace}
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-		require.Error(t, err, "sections configmap should not exist")
-
-		var cmLua corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), testConfig.LuaConfigMap, &cmLua)
-		require.Error(t, err, "lua configmap should not exist")
-
-		var cmParser corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), testConfig.ParsersConfigMap, &cmParser)
-		require.Error(t, err, "parser configmap should not exist")
-
-		var serviceAccount corev1.ServiceAccount
-		err = fakeClient.Get(t.Context(), name, &serviceAccount)
-		require.Error(t, err, "service account should not exist")
-
-		var clusterRole rbacv1.ClusterRole
-		err = fakeClient.Get(t.Context(), name, &clusterRole)
-		require.Error(t, err, "clusterrole should not exist")
-
-		var clusterRoleBinding rbacv1.ClusterRoleBinding
-		err = fakeClient.Get(t.Context(), name, &clusterRoleBinding)
-		require.Error(t, err, "clusterrolebinding should not exist")
-
-		var daemonSet appsv1.DaemonSet
-		err = fakeClient.Get(t.Context(), name, &daemonSet)
-		require.Error(t, err, "daemonset should not exist")
-
-		var networkPolicy networkingv1.NetworkPolicy
-		err = fakeClient.Get(t.Context(), name, &networkPolicy)
-		require.Error(t, err, "network policy should not exist")
 	})
 
 	t.Run("referenced secret exists", func(t *testing.T) {
@@ -372,6 +351,13 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
@@ -386,7 +372,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -403,11 +389,6 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonAgentConfigured,
 			"LogPipeline specification is successfully applied to the configuration of Log agent",
 		)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 	})
 
 	t.Run("flow healthy", func(t *testing.T) {
@@ -510,6 +491,13 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
@@ -524,7 +512,7 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -541,11 +529,6 @@ func TestReconcile(t *testing.T) {
 					tt.expectedReason,
 					tt.expectedMessage,
 				)
-
-				var cm corev1.ConfigMap
-				err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-				require.NoError(t, err, "sections configmap must exist")
-				require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 			})
 		}
 	})
@@ -633,6 +616,13 @@ func TestReconcile(t *testing.T) {
 					Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 				proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
@@ -647,7 +637,7 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -672,16 +662,6 @@ func TestReconcile(t *testing.T) {
 						conditions.ReasonSelfMonConfigNotGenerated,
 						"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 					)
-				}
-
-				var cm corev1.ConfigMap
-
-				err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-				if !tt.expectAgentConfigured {
-					require.Error(t, err, "sections configmap should not exist")
-				} else {
-					require.NoError(t, err, "sections configmap must exist")
-					require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 				}
 			})
 		}
@@ -729,6 +709,13 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 				proberStub := commonStatusStubs.NewDaemonSetProber(tt.probeErr)
 
 				flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
@@ -742,7 +729,7 @@ func TestReconcile(t *testing.T) {
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-				sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -757,11 +744,6 @@ func TestReconcile(t *testing.T) {
 				require.Equal(t, tt.expectedReason, cond.Reason)
 
 				require.Equal(t, tt.expectedMessage, cond.Message)
-
-				var cm corev1.ConfigMap
-				err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-				require.NoError(t, err, "sections configmap must exist")
-				require.Contains(t, cm.Data[pipeline.Name+".conf"], pipeline.Name, "sections configmap must contain pipeline name")
 			})
 		}
 	})
@@ -771,6 +753,13 @@ func TestReconcile(t *testing.T) {
 			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
@@ -786,7 +775,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -810,75 +799,6 @@ func TestReconcile(t *testing.T) {
 			conditions.ReasonSelfMonConfigNotGenerated,
 			"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
 		)
-
-		var cm corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, &cm)
-		require.Error(t, err, "sections configmap should not exist")
-	})
-
-	t.Run("create 2 pipelines and delete 1 should update sections configmap properly", func(t *testing.T) {
-		pipeline1 := testutils.NewLogPipelineBuilder().
-			WithName("pipeline1").
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			WithHTTPOutput(testutils.HTTPHost("host")).
-			Build()
-		pipeline2 := testutils.NewLogPipelineBuilder().
-			WithName("pipeline2").
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			WithHTTPOutput(testutils.HTTPHost("host")).
-			Build()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
-		proberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		flowHealthProberStub := &logpipelinemocks.FlowHealthProber{}
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline1.Name).Return(prober.LogPipelineProbeResult{}, nil)
-		flowHealthProberStub.On("Probe", mock.Anything, pipeline2.Name).Return(prober.LogPipelineProbeResult{}, nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
-		}
-
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
-
-		sut := New(fakeClient, testConfig, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
-
-		var pl1 telemetryv1alpha1.LogPipeline
-
-		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
-		err := sut.Reconcile(t.Context(), &pl1)
-		require.NoError(t, err)
-
-		var pl2 telemetryv1alpha1.LogPipeline
-
-		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline2.Name}, &pl2))
-		err = sut.Reconcile(t.Context(), &pl2)
-		require.NoError(t, err)
-
-		cm := &corev1.ConfigMap{}
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.Contains(t, cm.Data[pipeline1.Name+".conf"], pipeline1.Name, "sections configmap must contain pipeline1 name")
-		require.Contains(t, cm.Data[pipeline2.Name+".conf"], pipeline2.Name, "sections configmap must contain pipeline2 name")
-
-		pipeline1Deleted := testutils.NewLogPipelineBuilder().
-			WithName("pipeline1").
-			WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
-			WithHTTPOutput(testutils.HTTPHost("host")).
-			WithDeletionTimeStamp(metav1.Now()).
-			Build()
-
-		fakeClient.Delete(t.Context(), &pipeline1)
-		require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &pl1))
-		err = sut.Reconcile(t.Context(), &pl1)
-		require.NoError(t, err)
-
-		pipeline1 = pipeline1Deleted
-		err = fakeClient.Get(t.Context(), testConfig.SectionsConfigMap, cm)
-		require.NoError(t, err, "sections configmap must exist")
-		require.NotContains(t, cm.Data[pipeline1.Name+".conf"], pipeline1.Name, "sections configmap must not contain pipeline1")
-		require.Contains(t, cm.Data[pipeline2.Name+".conf"], pipeline2.Name, "sections configmap must contain pipeline2 name")
 	})
 }
 
@@ -892,186 +812,29 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipel
 	require.NotEmpty(t, cond.LastTransitionTime)
 }
 
-func TestCalculateChecksum(t *testing.T) {
-	config := Config{
-		DaemonSet: types.NamespacedName{
-			Namespace: "default",
-			Name:      "daemonset",
-		},
-		SectionsConfigMap: types.NamespacedName{
-			Namespace: "default",
-			Name:      "sections",
-		},
-		FilesConfigMap: types.NamespacedName{
-			Namespace: "default",
-			Name:      "files",
-		},
-		LuaConfigMap: types.NamespacedName{
-			Namespace: "default",
-			Name:      "lua",
-		},
-		ParsersConfigMap: types.NamespacedName{
-			Namespace: "default",
-			Name:      "parsers",
-		},
-		EnvConfigSecret: types.NamespacedName{
-			Namespace: "default",
-			Name:      "env",
-		},
-		TLSFileConfigSecret: types.NamespacedName{
-			Namespace: "default",
-			Name:      "tls",
-		},
-	}
-	dsConfig := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.DaemonSet.Name,
-			Namespace: config.DaemonSet.Namespace,
-		},
-		Data: map[string]string{
-			"a": "b",
-		},
-	}
-	sectionsConfig := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.SectionsConfigMap.Name,
-			Namespace: config.SectionsConfigMap.Namespace,
-		},
-		Data: map[string]string{
-			"a": "b",
-		},
-	}
-	filesConfig := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.FilesConfigMap.Name,
-			Namespace: config.FilesConfigMap.Namespace,
-		},
-		Data: map[string]string{
-			"a": "b",
-		},
-	}
-	luaConfig := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.LuaConfigMap.Name,
-			Namespace: config.LuaConfigMap.Namespace,
-		},
-		Data: map[string]string{
-			"a": "b",
-		},
-	}
-	parsersConfig := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.ParsersConfigMap.Name,
-			Namespace: config.ParsersConfigMap.Namespace,
-		},
-		Data: map[string]string{
-			"a": "b",
-		},
-	}
-	envSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.EnvConfigSecret.Name,
-			Namespace: config.EnvConfigSecret.Namespace,
-		},
-		Data: map[string][]byte{
-			"a": []byte("b"),
-		},
-	}
-	certSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.TLSFileConfigSecret.Name,
-			Namespace: config.TLSFileConfigSecret.Namespace,
-		},
-		Data: map[string][]byte{
-			"a": []byte("b"),
-		},
-	}
-
-	client := fake.NewClientBuilder().WithObjects(&dsConfig, &sectionsConfig, &filesConfig, &luaConfig, &parsersConfig, &envSecret, &certSecret).Build()
-
-	r := New(client, config, nil, nil, nil, nil, nil)
-	ctx := t.Context()
-
-	checksum, err := r.calculateChecksum(ctx)
-
-	t.Run("Initial checksum should not be empty", func(t *testing.T) {
-		require.NoError(t, err)
-		require.NotEmpty(t, checksum)
+func containsPipeline(p telemetryv1alpha1.LogPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
+		return len(pipelines) == 1 && pipelines[0].Name == p.Name
 	})
+}
 
-	t.Run("Changing static config should update checksum", func(t *testing.T) {
-		dsConfig.Data["a"] = "c"
-		updateErr := client.Update(ctx, &dsConfig)
-		require.NoError(t, updateErr)
+func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
+		if len(pipelines) != len(pp) {
+			return false
+		}
 
-		newChecksum, checksumErr := r.calculateChecksum(ctx)
-		require.NoError(t, checksumErr)
-		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating static config")
-		checksum = newChecksum
-	})
+		pipelineMap := make(map[string]bool)
+		for _, p := range pipelines {
+			pipelineMap[p.Name] = true
+		}
 
-	t.Run("Changing sections config should update checksum", func(t *testing.T) {
-		sectionsConfig.Data["a"] = "c"
-		updateErr := client.Update(ctx, &sectionsConfig)
-		require.NoError(t, updateErr)
+		for _, p := range pp {
+			if !pipelineMap[p.Name] {
+				return false
+			}
+		}
 
-		newChecksum, checksumErr := r.calculateChecksum(ctx)
-		require.NoError(t, checksumErr)
-		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating sections config")
-		checksum = newChecksum
-	})
-
-	t.Run("Changing files config should update checksum", func(t *testing.T) {
-		filesConfig.Data["a"] = "c"
-		updateErr := client.Update(ctx, &filesConfig)
-		require.NoError(t, updateErr)
-
-		newChecksum, checksumErr := r.calculateChecksum(ctx)
-		require.NoError(t, checksumErr)
-		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating files config")
-		checksum = newChecksum
-	})
-
-	t.Run("Changing LUA config should update checksum", func(t *testing.T) {
-		luaConfig.Data["a"] = "c"
-		updateErr := client.Update(ctx, &luaConfig)
-		require.NoError(t, updateErr)
-
-		newChecksum, checksumErr := r.calculateChecksum(ctx)
-		require.NoError(t, checksumErr)
-		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating LUA config")
-		checksum = newChecksum
-	})
-
-	t.Run("Changing parsers config should update checksum", func(t *testing.T) {
-		parsersConfig.Data["a"] = "c"
-		updateErr := client.Update(ctx, &parsersConfig)
-		require.NoError(t, updateErr)
-
-		newChecksum, checksumErr := r.calculateChecksum(ctx)
-		require.NoError(t, checksumErr)
-		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating parsers config")
-		checksum = newChecksum
-	})
-
-	t.Run("Changing env Secret should update checksum", func(t *testing.T) {
-		envSecret.Data["a"] = []byte("c")
-		updateErr := client.Update(ctx, &envSecret)
-		require.NoError(t, updateErr)
-
-		newChecksum, checksumErr := r.calculateChecksum(ctx)
-		require.NoError(t, checksumErr)
-		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating env secret")
-		checksum = newChecksum
-	})
-
-	t.Run("Changing certificate Secret should update checksum", func(t *testing.T) {
-		certSecret.Data["a"] = []byte("c")
-		updateErr := client.Update(ctx, &certSecret)
-		require.NoError(t, updateErr)
-
-		newChecksum, checksumErr := r.calculateChecksum(ctx)
-		require.NoError(t, checksumErr)
-		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating certificate secret")
+		return true
 	})
 }

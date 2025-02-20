@@ -1,151 +1,314 @@
 package fluentbit
 
 import (
-	"strconv"
+	"context"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/types"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-func TestMakeDaemonSet(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	checksum := "foo"
-	ds := DaemonSetConfig{
-		FluentBitImage:              "foo-fluenbit",
-		FluentBitConfigPrepperImage: "foo-configprepper",
-		ExporterImage:               "foo-exporter",
-		PriorityClassName:           "foo-prio-class",
-		MemoryLimit:                 resource.MustParse("400Mi"),
-		CPURequest:                  resource.MustParse(".1"),
-		MemoryRequest:               resource.MustParse("100Mi"),
-	}
+func TestAgent_ApplyResources(t *testing.T) {
+	image := "foo-fluentbit"
+	exporterImage := "foo-exporter"
+	priorityClassName := "foo-prio-class"
+	namespace := "kyma-system"
 
-	expectedAnnotations := map[string]string{
-		"checksum/config": checksum,
-		"traffic.sidecar.istio.io/excludeInboundPorts": "2020,2021",
-	}
-	daemonSet := MakeDaemonSet(name.Namespace, checksum, ds)
-
-	require.NotNil(t, daemonSet)
-	require.Equal(t, daemonSet.Name, name.Name)
-	require.Equal(t, daemonSet.Namespace, name.Namespace)
-	require.Equal(t, map[string]string{
-		"app.kubernetes.io/name":     "fluent-bit",
-		"app.kubernetes.io/instance": "telemetry",
-	}, daemonSet.Spec.Selector.MatchLabels)
-	require.Equal(t, map[string]string{
-		"app.kubernetes.io/name":               "fluent-bit",
-		"kyma-project.io/module":               "telemetry",
-		"app.kubernetes.io/part-of":            "telemetry",
-		"app.kubernetes.io/component":          "agent",
-		"app.kubernetes.io/managed-by":         "telemetry-manager",
-		"app.kubernetes.io/instance":           "telemetry",
-		"sidecar.istio.io/inject":              "true",
-		"telemetry.kyma-project.io/log-export": "true",
-	}, daemonSet.Spec.Template.ObjectMeta.Labels)
-	require.NotEmpty(t, daemonSet.Spec.Template.Spec.Containers[0].EnvFrom)
-	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")
-	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].ReadinessProbe, "readiness probe must be defined")
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Annotations, expectedAnnotations, "annotations should contain istio port exclusion of 2020 and 2021")
-	podSecurityContext := daemonSet.Spec.Template.Spec.SecurityContext
-	require.NotNil(t, podSecurityContext, "pod security context must be defined")
-	require.False(t, *podSecurityContext.RunAsNonRoot, "must not run as non-root")
-
-	resources := daemonSet.Spec.Template.Spec.Containers[0].Resources
-	require.Equal(t, ds.CPURequest, *resources.Requests.Cpu(), "cpu requests should be defined")
-	require.Equal(t, ds.MemoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
-	require.Equal(t, ds.MemoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
-
-	containerSecurityContext := daemonSet.Spec.Template.Spec.Containers[0].SecurityContext
-	require.NotNil(t, containerSecurityContext, "container security context must be defined")
-	require.False(t, *containerSecurityContext.Privileged, "must not be privileged")
-	require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
-	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
-
-	volMounts := daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts
-	require.Equal(t, 10, len(volMounts), "volume mounts do not match")
-}
-
-func TestMakeClusterRole(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	clusterRole := MakeClusterRole(name)
-	expectedRules := []rbacv1.PolicyRule{
+	tests := []struct {
+		name           string
+		sut            *AgentApplierDeleter
+		goldenFilePath string
+		saveGoldenFile bool
+	}{
 		{
-			APIGroups: []string{""},
-			Resources: []string{"namespaces", "pods"},
-			Verbs:     []string{"get", "list", "watch"},
+			name:           "fluentbit",
+			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, priorityClassName),
+			goldenFilePath: "testdata/fluentbit.yaml",
 		},
 	}
 
-	require.NotNil(t, clusterRole)
-	require.Equal(t, clusterRole.Name, name.Name)
-	require.Equal(t, clusterRole.Rules, expectedRules)
+	for _, tt := range tests {
+		var objects []client.Object
+
+		scheme := runtime.NewScheme()
+		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+		utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+		utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
+
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
+				objects = append(objects, obj)
+				// Nothing has to be created, just add created object to the list
+				return nil
+			},
+			// Update interceptor is needed for syncSectionsConfigMap operation
+			Update: func(_ context.Context, c client.WithWatch, obj client.Object, option ...client.UpdateOption) error {
+				// For updates, we'll either update the existing object in our slice
+				// or append it if it doesn't exist
+				found := false
+				for i, existingObj := range objects {
+					if existingObj.GetName() == obj.GetName() && existingObj.GetNamespace() == obj.GetNamespace() {
+						objects[i] = obj
+						found = true
+						break
+					}
+				}
+				if !found {
+					objects = append(objects, obj)
+				}
+				return nil
+			},
+			Get: func(_ context.Context, _ client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				// Simulate that the object exists but is empty
+				// This is needed for GetOrCreate operations
+				return nil
+			},
+		}).Build()
+
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
+				AllowedPorts: []int32{5555, 6666},
+				FluentBitConfig: &builder.FluentBitConfig{
+					SectionsConfig:  builder.SectionsConfig{Key: "pipeline1.conf", Value: "dummy-value"},
+					FilesConfig:     map[string]string{"file1": "dummy-file-content"},
+					EnvConfigSecret: map[string][]byte{"env-config-secret1": []byte("dummy-value")},
+					TLSConfigSecret: map[string][]byte{"tls-config-secret1": []byte("dummy-value")},
+				},
+			})
+			require.NoError(t, err)
+
+			if tt.saveGoldenFile {
+				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
+			}
+
+			bytes, err := testutils.MarshalYAML(scheme, objects)
+			require.NoError(t, err)
+
+			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)
+			require.NoError(t, err)
+
+			require.Equal(t, string(goldenFileBytes), string(bytes))
+		})
+	}
 }
 
-func TestMakeMetricsService(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	service := MakeMetricsService(name)
+func TestAgent_DeleteResources(t *testing.T) {
+	image := "foo-fluentbit"
+	exporterImage := "foo-exporter"
+	priorityClassName := "foo-prio-class"
+	namespace := "kyma-system"
 
-	require.NotNil(t, service)
-	require.Equal(t, service.Name, "telemetry-fluent-bit-metrics")
-	require.Equal(t, service.Namespace, name.Namespace)
-	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
-	require.Len(t, service.Spec.Ports, 1)
+	var created []client.Object
 
-	require.Contains(t, service.Labels, "telemetry.kyma-project.io/self-monitor")
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	require.Contains(t, service.Annotations, "prometheus.io/scrape")
-	require.Contains(t, service.Annotations, "prometheus.io/port")
-	require.Contains(t, service.Annotations, "prometheus.io/scheme")
-	require.Contains(t, service.Annotations, "prometheus.io/path")
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
+		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
+			created = append(created, obj)
+			return c.Create(ctx, obj)
+		},
+	}).Build()
 
-	port, err := strconv.ParseInt(service.Annotations["prometheus.io/port"], 10, 16)
-	require.NoError(t, err)
-	require.Equal(t, int32(port), service.Spec.Ports[0].Port) //nolint:gosec // parseInt returns int64.  This is a testfile so not part of binary
+	tests := []struct {
+		name string
+		sut  *AgentApplierDeleter
+	}{
+		{
+			name: "fluentbit",
+			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, priorityClassName),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			agentApplyOptions := AgentApplyOptions{
+				AllowedPorts:    []int32{5555, 6666},
+				FluentBitConfig: &builder.FluentBitConfig{},
+			}
+
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, agentApplyOptions)
+			require.NoError(t, err)
+
+			err = tt.sut.DeleteResources(t.Context(), fakeClient)
+			require.NoError(t, err)
+
+			for i := range created {
+				// an update operation on a non-existent object should return a NotFound error
+				err = fakeClient.Get(t.Context(), client.ObjectKeyFromObject(created[i]), created[i])
+				require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
+			}
+		})
+	}
 }
 
-func TestMakeExporterMetricsService(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	service := MakeExporterMetricsService(name)
+func TestCalculateChecksum(t *testing.T) {
+	aad := AgentApplierDeleter{
+		namespace: "kyma-system",
+	}
 
-	require.NotNil(t, service)
-	require.Equal(t, service.Name, "telemetry-fluent-bit-exporter-metrics")
-	require.Equal(t, service.Namespace, name.Namespace)
-	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
-	require.Len(t, service.Spec.Ports, 1)
+	dsConfig := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fbDaemonSetName,
+			Namespace: aad.namespace,
+		},
+		Data: map[string]string{
+			"a": "b",
+		},
+	}
+	sectionsConfig := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fbSectionsConfigMapName,
+			Namespace: aad.namespace,
+		},
+		Data: map[string]string{
+			"a": "b",
+		},
+	}
+	filesConfig := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fbFilesConfigMapName,
+			Namespace: aad.namespace,
+		},
+		Data: map[string]string{
+			"a": "b",
+		},
+	}
+	luaConfig := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fbLuaConfigMapName,
+			Namespace: aad.namespace,
+		},
+		Data: map[string]string{
+			"a": "b",
+		},
+	}
+	parsersConfig := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fbParsersConfigMapName,
+			Namespace: aad.namespace,
+		},
+		Data: map[string]string{
+			"a": "b",
+		},
+	}
+	envSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fbEnvConfigSecretName,
+			Namespace: aad.namespace,
+		},
+		Data: map[string][]byte{
+			"a": []byte("b"),
+		},
+	}
+	certSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fbTLSFileConfigSecretName,
+			Namespace: aad.namespace,
+		},
+		Data: map[string][]byte{
+			"a": []byte("b"),
+		},
+	}
 
-	require.Contains(t, service.Labels, "telemetry.kyma-project.io/self-monitor")
+	client := fake.NewClientBuilder().WithObjects(&dsConfig, &sectionsConfig, &filesConfig, &luaConfig, &parsersConfig, &envSecret, &certSecret).Build()
 
-	require.Contains(t, service.Annotations, "prometheus.io/scrape")
-	require.Contains(t, service.Annotations, "prometheus.io/port")
-	require.Contains(t, service.Annotations, "prometheus.io/scheme")
+	ctx := t.Context()
 
-	port, err := strconv.ParseInt(service.Annotations["prometheus.io/port"], 10, 16)
-	require.NoError(t, err)
-	require.Equal(t, int32(port), service.Spec.Ports[0].Port) //nolint:gosec // parseInt returns int64.  This is a testfile so not part of binary
-}
+	checksum, err := aad.calculateChecksum(ctx, client)
 
-func TestMakeConfigMap(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	cm := MakeConfigMap(name)
+	t.Run("Initial checksum should not be empty", func(t *testing.T) {
+		require.NoError(t, err)
+		require.NotEmpty(t, checksum)
+	})
 
-	require.NotNil(t, cm)
-	require.Equal(t, cm.Name, name.Name)
-	require.Equal(t, cm.Namespace, name.Namespace)
-	require.NotEmpty(t, cm.Data["custom_parsers.conf"])
-	require.NotEmpty(t, cm.Data["fluent-bit.conf"])
-}
+	t.Run("Changing static config should update checksum", func(t *testing.T) {
+		dsConfig.Data["a"] = "c"
+		updateErr := client.Update(ctx, &dsConfig)
+		require.NoError(t, updateErr)
 
-func TestMakeLuaConfigMap(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: "telemetry-system"}
-	cm := MakeLuaConfigMap(name)
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
+		require.NoError(t, checksumErr)
+		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating static config")
+		checksum = newChecksum
+	})
 
-	require.NotNil(t, cm)
-	require.Equal(t, cm.Name, name.Name)
-	require.Equal(t, cm.Namespace, name.Namespace)
-	require.NotEmpty(t, cm.Data["filter-script.lua"])
+	t.Run("Changing sections config should update checksum", func(t *testing.T) {
+		sectionsConfig.Data["a"] = "c"
+		updateErr := client.Update(ctx, &sectionsConfig)
+		require.NoError(t, updateErr)
+
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
+		require.NoError(t, checksumErr)
+		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating sections config")
+		checksum = newChecksum
+	})
+
+	t.Run("Changing files config should update checksum", func(t *testing.T) {
+		filesConfig.Data["a"] = "c"
+		updateErr := client.Update(ctx, &filesConfig)
+		require.NoError(t, updateErr)
+
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
+		require.NoError(t, checksumErr)
+		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating files config")
+		checksum = newChecksum
+	})
+
+	t.Run("Changing LUA config should update checksum", func(t *testing.T) {
+		luaConfig.Data["a"] = "c"
+		updateErr := client.Update(ctx, &luaConfig)
+		require.NoError(t, updateErr)
+
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
+		require.NoError(t, checksumErr)
+		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating LUA config")
+		checksum = newChecksum
+	})
+
+	t.Run("Changing parsers config should update checksum", func(t *testing.T) {
+		parsersConfig.Data["a"] = "c"
+		updateErr := client.Update(ctx, &parsersConfig)
+		require.NoError(t, updateErr)
+
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
+		require.NoError(t, checksumErr)
+		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating parsers config")
+		checksum = newChecksum
+	})
+
+	t.Run("Changing env Secret should update checksum", func(t *testing.T) {
+		envSecret.Data["a"] = []byte("c")
+		updateErr := client.Update(ctx, &envSecret)
+		require.NoError(t, updateErr)
+
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
+		require.NoError(t, checksumErr)
+		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating env secret")
+		checksum = newChecksum
+	})
+
+	t.Run("Changing certificate Secret should update checksum", func(t *testing.T) {
+		certSecret.Data["a"] = []byte("c")
+		updateErr := client.Update(ctx, &certSecret)
+		require.NoError(t, updateErr)
+
+		newChecksum, checksumErr := aad.calculateChecksum(ctx, client)
+		require.NoError(t, checksumErr)
+		require.NotEqualf(t, checksum, newChecksum, "Checksum not changed by updating certificate secret")
+	})
 }

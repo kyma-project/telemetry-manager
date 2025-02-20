@@ -27,8 +27,8 @@ type BuilderConfig struct {
 	CollectAgentLogs bool
 }
 
-// BuildFluentBitConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
-func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
+// BuildFluentBitSectionsConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
+func BuildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
 	pm := logpipelineutils.PipelineMode(pipeline)
 	if pm != logpipelineutils.FluentBit {
 		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", ErrInvalidPipelineDefinition, pm.String())

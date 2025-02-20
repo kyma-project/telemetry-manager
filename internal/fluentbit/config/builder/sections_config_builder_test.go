@@ -186,7 +186,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
+	actual, err := BuildFluentBitSectionsConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -259,7 +259,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		CollectAgentLogs: true,
 	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, builderConfig)
+	actual, err := BuildFluentBitSectionsConfig(logPipeline, builderConfig)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -274,7 +274,7 @@ func TestMergeSectionsConfigWithMissingOutput(t *testing.T) {
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
+	actual, err := BuildFluentBitSectionsConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
 	require.Error(t, err)
 	require.Empty(t, actual)
 }
@@ -328,7 +328,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := BuildFluentBitConfig(tt.args.pipeline, tt.args.config)
+			got, err := BuildFluentBitSectionsConfig(tt.args.pipeline, tt.args.config)
 			if tt.wantErr == nil {
 				assert.NoError(t, err)
 			}
@@ -338,7 +338,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 			}
 
 			if got != tt.want {
-				t.Errorf("BuildFluentBitConfig() got = %v, want %v", got, tt.want)
+				t.Errorf("BuildFluentBitSectionsConfig() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

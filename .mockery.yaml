@@ -12,6 +12,10 @@ packages:
       OverridesHandler:
       ErrorToMessageConverter:
       FlowHealthProber:
+  github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit:
+    interfaces:
+      AgentApplierDeleter:
+      AgentConfigBuilder:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel:
     interfaces:
       GatewayApplierDeleter:
