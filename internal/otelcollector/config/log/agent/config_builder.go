@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -20,6 +21,9 @@ type Builder struct {
 type BuildOptions struct {
 	InstrumentationScopeVersion string
 	AgentNamespace              string
+	ClusterName                 string
+	CloudProvider               string
+	Enrichments                 gatewayprocs.Enrichments
 }
 
 func (b *Builder) Build(logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) *Config {
@@ -31,9 +35,12 @@ func (b *Builder) Build(logPipelines []telemetryv1alpha1.LogPipeline, opts Build
 		Service:    logService,
 		Extensions: makeExtensionsConfig(),
 
-		Receivers:  makeReceivers(logPipelines, opts),
-		Processors: makeProcessorsConfig(opts.InstrumentationScopeVersion),
-		Exporters:  makeExportersConfig(b.Config.GatewayOTLPServiceName),
+		// have filelog receiver for each log pipeline
+		Receivers: makeReceivers(logPipelines, opts),
+		// Add k8s attributes and resource/insert clustername
+		Processors: makeProcessorsConfig(opts),
+		// Push to endpoint directly
+		Exporters: makeExportersConfig(b.Config.GatewayOTLPServiceName),
 	}
 }
 

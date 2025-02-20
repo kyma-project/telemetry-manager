@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
@@ -13,12 +14,15 @@ const (
 	InstrumentationScopeRuntime = "io.kyma-project.telemetry/runtime"
 )
 
-func makeProcessorsConfig(instrumentationScopeVersion string) Processors {
+func makeProcessorsConfig(opts BuildOptions) Processors {
 	return Processors{
 		BaseProcessors: config.BaseProcessors{
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		SetInstrumentationScopeRuntime: makeInstrumentationScopeRuntime(instrumentationScopeVersion),
+		SetInstrumentationScopeRuntime: makeInstrumentationScopeRuntime(opts.InstrumentationScopeVersion),
+		K8sAttributes:                  gatewayprocs.K8sAttributesProcessorConfig(opts.Enrichments),
+		InsertClusterAttributes:        gatewayprocs.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		DropKymaAttributes:             gatewayprocs.DropKymaAttributesProcessorConfig(),
 	}
 }
 
