@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	SignalTypeTraces  = "traces"
-	SignalTypeMetrics = "metrics"
-	SignalTypeLogs    = "logs"
+	SignalTypeTraces   = "traces"
+	SignalTypeMetrics  = "metrics"
+	SignalTypeLogs     = "logs"
+	SignalTypeOtelLogs = "otel-logs"
 )
 
 type Prober interface {
@@ -31,12 +32,11 @@ func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedNa
 	reason := conditions.ReasonGatewayReady
 	msg := conditions.MessageForTracePipeline(reason)
 
-	if signalType == SignalTypeMetrics {
+	switch signalType {
+	case SignalTypeMetrics:
 		msg = conditions.MessageForMetricPipeline(reason)
-	}
-
-	if signalType == SignalTypeLogs {
-		msg = conditions.MessageForLogPipeline(reason)
+	case SignalTypeOtelLogs:
+		msg = conditions.MessageForOtelLogPipeline(reason)
 	}
 
 	err := prober.IsReady(ctx, namespacedName)
@@ -66,10 +66,13 @@ func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedNa
 func GetAgentHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonAgentReady
-	msg := conditions.MessageForLogPipeline(reason)
+	msg := conditions.MessageForFluentBitLogPipeline(reason)
 
-	if signalType == SignalTypeMetrics {
+	switch signalType {
+	case SignalTypeMetrics:
 		msg = conditions.MessageForMetricPipeline(reason)
+	case SignalTypeOtelLogs:
+		msg = conditions.MessageForOtelLogPipeline(reason)
 	}
 
 	err := prober.IsReady(ctx, namespacedName)
