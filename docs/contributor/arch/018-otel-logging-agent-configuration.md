@@ -11,7 +11,7 @@ This document builds upon the previous ADR [17. Fault Tolerant OTel Logging Setu
 The goal of this document is to have an implementation-ready log agent configuration. The following points are considered:
 1. Given that every LogPipeline gets its own OTelPipeline, what mechanism will be used for the namespace filtering? Dedicated vs shared tail receiver.
 2. The agent will have no explicit batching mechanism configured.
-3. Agent will have no sending queue mechanism configured.
+3. The agent will have no sending queue mechanism configured.
 4. Agent will send logs directly to the OTLP exporter (no gateway involved).
 5. Relevant gateway logic will be copied to the agent
 
