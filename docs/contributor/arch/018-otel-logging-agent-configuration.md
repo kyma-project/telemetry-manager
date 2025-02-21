@@ -38,7 +38,7 @@ Leading to the following results for the production environment (as of this writ
 |         4          |   13   | 4.6%  |
 |         5          |   1    | 0.4%  |
 
-This means that some performance drawbacks due to duplicated tailing can still be expected, in going with **solution 2**. But this is however highly dependent on the pipelines' configuration. With this information at hand, we know what to optimize for, given that the vast majority of clusters (i.e. 91.8%) have 2 or fewer LogPipelines configured. This results in the same log files being tailed a maximum of two times (in the worst case scenario) for >90% of the clusters.
+This means that some performance drawbacks due to duplicated tailing can still be expected, in going with **solution 2**. But this is however highly dependent on the pipelines' configuration. With this information at hand, we know what to optimize for, given that the vast majority of clusters (i.e. 91.8%) have 2 or fewer LogPipelines configured. This results in the same log files being tailed a maximum of two times (in the worst-case scenario) for >90% of the clusters.
 
 ## Decision
 
