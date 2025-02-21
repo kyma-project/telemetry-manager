@@ -47,7 +47,7 @@ type IstioStatusChecker interface {
 }
 
 type AgentConfigBuilder interface {
-	Build(pipelines []telemetryv1alpha1.LogPipeline, options agent.BuildOptions) *agent.Config
+	Build(ctx context.Context, pipelines []telemetryv1alpha1.LogPipeline, options agent.BuildOptions) (*agent.Config, otlpexporter.EnvVars, error)
 }
 
 type AgentApplierDeleter interface {
@@ -259,10 +259,15 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 }
 
 func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
-	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
+	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, agent.BuildOptions{
 		InstrumentationScopeVersion: r.moduleVersion,
 		AgentNamespace:              r.telemetryNamespace,
+		ClusterName:                 k8sutils.GetGardenerShootInfo(ctx, r.Client).ClusterName,
+		CloudProvider:               k8sutils.GetGardenerShootInfo(ctx, r.Client).CloudProvider,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to build agent config: %w", err)
+	}
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
 	if err != nil {
@@ -282,6 +287,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		otelcollector.AgentApplyOptions{
 			AllowedPorts:        allowedPorts,
 			CollectorConfigYAML: string(agentConfigYAML),
+			CollectorEnvVars:    envVars,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)

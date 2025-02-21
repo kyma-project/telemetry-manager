@@ -3,8 +3,13 @@
 package mocks
 
 import (
+	context "context"
+
 	agent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
+
 	mock "github.com/stretchr/testify/mock"
+
+	otlpexporter "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 
 	v1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -14,24 +19,43 @@ type AgentConfigBuilder struct {
 	mock.Mock
 }
 
-// Build provides a mock function with given fields: pipelines, options
-func (_m *AgentConfigBuilder) Build(pipelines []v1alpha1.LogPipeline, options agent.BuildOptions) *agent.Config {
-	ret := _m.Called(pipelines, options)
+// Build provides a mock function with given fields: ctx, pipelines, options
+func (_m *AgentConfigBuilder) Build(ctx context.Context, pipelines []v1alpha1.LogPipeline, options agent.BuildOptions) (*agent.Config, otlpexporter.EnvVars, error) {
+	ret := _m.Called(ctx, pipelines, options)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
 	}
 
 	var r0 *agent.Config
-	if rf, ok := ret.Get(0).(func([]v1alpha1.LogPipeline, agent.BuildOptions) *agent.Config); ok {
-		r0 = rf(pipelines, options)
+	var r1 otlpexporter.EnvVars
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, agent.BuildOptions) (*agent.Config, otlpexporter.EnvVars, error)); ok {
+		return rf(ctx, pipelines, options)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline, agent.BuildOptions) *agent.Config); ok {
+		r0 = rf(ctx, pipelines, options)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*agent.Config)
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline, agent.BuildOptions) otlpexporter.EnvVars); ok {
+		r1 = rf(ctx, pipelines, options)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(otlpexporter.EnvVars)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, []v1alpha1.LogPipeline, agent.BuildOptions) error); ok {
+		r2 = rf(ctx, pipelines, options)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // NewAgentConfigBuilder creates a new instance of AgentConfigBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
