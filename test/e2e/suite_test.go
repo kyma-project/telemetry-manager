@@ -24,17 +24,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-)
-
-var (
-	ctx                context.Context
-	cancel             context.CancelFunc
-	k8sClient          client.Client
-	proxyClient        *apiserverproxy.Client
-	testEnv            *envtest.Environment
-	telemetryK8sObject client.Object
-	k8sObjects         []client.Object
+	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 func TestE2E(t *testing.T) {
@@ -49,13 +39,13 @@ var _ = BeforeSuite(func() {
 	var err error
 	logf.SetLogger(logzap.New(logzap.WriteTo(GinkgoWriter), logzap.UseDevMode(true)))
 	useExistingCluster := true
-	testEnv = &envtest.Environment{
+	TestEnv = &envtest.Environment{
 		UseExistingCluster: &useExistingCluster,
 	}
 
-	_, err = testEnv.Start()
+	_, err = TestEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
-	ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
+	Ctx, Cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
 	By("bootstrapping test environment")
 
@@ -63,36 +53,36 @@ var _ = BeforeSuite(func() {
 	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(telemetryv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(operatorv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	k8sClient, err = client.New(testEnv.Config, client.Options{Scheme: scheme})
+	K8sClient, err = client.New(TestEnv.Config, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
-	Expect(k8sClient).NotTo(BeNil())
+	Expect(K8sClient).NotTo(BeNil())
 
-	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(suite.IsUpgrade()).K8sObject()
+	TelemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(IsUpgrade()).K8sObject()
 	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
-	k8sObjects = []client.Object{
-		telemetryK8sObject,
+	K8sObjects = []client.Object{
+		TelemetryK8sObject,
 		denyAllNetworkPolicyK8sObject,
 	}
 
-	Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).To(Succeed())
 
-	proxyClient, err = apiserverproxy.NewClient(testEnv.Config)
+	ProxyClient, err = apiserverproxy.NewClient(TestEnv.Config)
 	Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
-	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-	if !suite.IsUpgrade() {
+	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+	if !IsUpgrade() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+			g.Expect(K8sClient.Get(Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
-			g.Expect(k8sClient.Get(ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+			g.Expect(K8sClient.Get(Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 	}
 
-	cancel()
+	Cancel()
 	By("tearing down the test environment")
-	err := testEnv.Stop()
+	err := TestEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

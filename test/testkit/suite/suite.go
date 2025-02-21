@@ -1,11 +1,25 @@
 package suite
 
 import (
+	"context"
 	"path"
 	"runtime"
 	"strings"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/onsi/ginkgo/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+)
+
+var (
+	Ctx                context.Context
+	Cancel             context.CancelFunc
+	K8sClient          client.Client
+	ProxyClient        *apiserverproxy.Client
+	TestEnv            *envtest.Environment
+	TelemetryK8sObject client.Object
+	K8sObjects         []client.Object
 )
 
 // ID returns the current test suite ID.
