@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
+	"k8s.io/apimachinery/pkg/types"
 	"maps"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sort"
-
-	"k8s.io/apimachinery/pkg/types"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 type BuilderConfig struct {
@@ -35,19 +32,13 @@ type BuildOptions struct {
 // Currently the queue is disabled. So set the size to 0
 const queueSize = 0
 
-func (b *Builder) Build(logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
-	logService := config.DefaultService(makePipelinesConfig())
-	// Overwrite the extension from default service name
-	logService.Extensions = []string{"health_check", "pprof", "file_storage"}
-
+func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
-		Service:    logService,
+		Service:    config.DefaultService(make(config.Pipelines)),
 		Extensions: makeExtensionsConfig(),
-
-		// have filelog receiver for each log pipeline
-		Receivers: makeReceivers(logPipelines, opts),
-		// Add k8s attributes and resource/insert clustername
+		Receivers:  make(Receivers),
 		Processors: makeProcessorsConfig(opts),
+		Exporters:  make(Exporters),
 	}
 
 	envVars := make(otlpexporter.EnvVars)
@@ -65,49 +56,42 @@ func (b *Builder) Build(logPipelines []telemetryv1alpha1.LogPipeline, opts Build
 			queueSize,
 			otlpexporter.SignalTypeLog,
 		)
-		if err := addComponentsForLogPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
+		if err := addComponentsForLogPipeline(ctx, opts, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
 			return nil, nil, err
 		}
 	}
 	return cfg, envVars, nil
 }
 
-func makePipelinesConfig() config.Pipelines {
-	pipelinesConfig := make(config.Pipelines)
-	pipelinesConfig["logs"] = config.Pipeline{
-		Receivers:  []string{"filelog"},
-		Processors: []string{"memory_limiter", "transform/set-instrumentation-scope-runtime"},
-		Exporters:  []string{"otlp"},
-	}
-
-	return pipelinesConfig
-}
-
 // addComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
-func addComponentsForLogPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+func addComponentsForLogPipeline(ctx context.Context, opts BuildOptions, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
 
-	receiver := makeReciver(pipeline.Name, opts)
+	receiver := makeFileLogReceiver(*pipeline, opts)
 
 	maps.Copy(envVars, otlpExporterEnvVars)
 
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
+	otlpReceiverID := fmt.Sprintf("filelog/%s", pipeline.Name)
+	cfg.Receivers[otlpReceiverID] = Receiver{FileLog: receiver}
+
 	pipelineID := fmt.Sprintf("logs/%s", pipeline.Name)
-	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID)
+	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpReceiverID, otlpExporterID)
+
+	cfg.Service.Extensions = []string{"health_check", "pprof", "file_storage"}
 
 	return nil
 }
 
-func makePipelineConfig(exporterIDs ...string) config.Pipeline {
-	sort.Strings(exporterIDs)
-
+// Each pipeline will have one receiver and one exporter
+func makePipelineConfig(receiverIDs, exporterIDs string) config.Pipeline {
 	return config.Pipeline{
-		Receivers: []string{"otlp"},
+		Receivers: []string{receiverIDs},
 		Processors: []string{
 			"memory_limiter",
 			"transform/set-instrumentation-scope-runtime",
@@ -115,6 +99,6 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 			"resource/insert-cluster-attributes",
 			"resource/drop-kyma-attributes",
 		},
-		Exporters: exporterIDs,
+		Exporters: []string{exporterIDs},
 	}
 }

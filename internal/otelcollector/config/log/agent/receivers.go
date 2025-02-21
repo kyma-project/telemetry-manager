@@ -18,39 +18,34 @@ const (
 	maxElapsedTime = "300s"
 )
 
-func makeReceivers(logpipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) Receivers {
+func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOptions) *FileLog {
 	excludeLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, otelcollector.LogAgentName)
 	excludeFluentBitLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, fluentbit.LogAgentName)
-
-	return Receivers{
-		FileLog: &FileLog{
-			Exclude: []string{
-				excludeLogAgentLogs,
-				excludeFluentBitLogs,
-			},
-			Include:         []string{"/var/log/pods/*/*/*.log"},
-			IncludeFileName: false,
-			IncludeFilePath: true,
-			StartAt:         "beginning",
-			Storage:         "file_storage",
-			RetryOnFailure: config.RetryOnFailure{
-				Enabled:         true,
-				InitialInterval: initialInterval,
-				MaxInterval:     maxInterval,
-				MaxElapsedTime:  maxElapsedTime,
-			},
-			Operators: makeOperators(logpipelines),
+	return &FileLog{
+		Exclude: []string{
+			excludeLogAgentLogs,
+			excludeFluentBitLogs,
 		},
+		Include:         []string{"/var/log/pods/*/*/*.log"},
+		IncludeFileName: false,
+		IncludeFilePath: true,
+		StartAt:         "beginning",
+		Storage:         "file_storage",
+		RetryOnFailure: config.RetryOnFailure{
+			Enabled:         true,
+			InitialInterval: initialInterval,
+			MaxInterval:     maxInterval,
+			MaxElapsedTime:  maxElapsedTime,
+		},
+		Operators: makeOperators(logpipeline),
 	}
 }
 
-func makeOperators(logPipelines []telemetryv1alpha1.LogPipeline) []Operator {
+func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 	keepOriginalBody := false
 
-	for _, logPipeline := range logPipelines {
-		if *logPipeline.Spec.Input.Application.KeepOriginalBody {
-			keepOriginalBody = true
-		}
+	if *logPipeline.Spec.Input.Application.KeepOriginalBody {
+		keepOriginalBody = true
 	}
 
 	operators := []Operator{

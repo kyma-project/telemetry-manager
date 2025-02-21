@@ -13,9 +13,9 @@ type Config struct {
 	Processors Processors `yaml:"processors"`
 	Exporters  Exporters  `yaml:"exporters"`
 }
-
-type Receivers struct {
-	FileLog *FileLog `yaml:"filelog"`
+type Receivers map[string]Receiver
+type Receiver struct {
+	FileLog *FileLog `yaml:",inline,omitempty"`
 }
 
 type FileLog struct {
@@ -48,9 +48,10 @@ type Processors struct {
 	InsertClusterAttributes        *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
 	DropKymaAttributes             *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
+
 type Exporters map[string]Exporter
 type Exporter struct {
-	OTLP *config.OTLPExporter `yaml:"otlp"`
+	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
 }
 
 type Extensions struct {

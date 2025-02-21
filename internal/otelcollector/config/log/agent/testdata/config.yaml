@@ -1,13 +1,16 @@
 service:
     pipelines:
-        logs:
+        logs/test:
             receivers:
-                - filelog
+                - filelog/test
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
+                - k8sattributes
+                - resource/insert-cluster-attributes
+                - resource/drop-kyma-attributes
             exporters:
-                - otlp
+                - otlp/test
     telemetry:
         metrics:
             readers:
@@ -31,7 +34,7 @@ extensions:
     file_storage:
         directory: /var/lib/telemetry-log-agent/file-log-receiver
 receivers:
-    filelog:
+    filelog/test:
         exclude:
             - /var/log/pods/kyma-system_telemetry-log-agent*/*/*.log
             - /var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log
@@ -90,9 +93,62 @@ processors:
               statements:
                 - set(version, "main")
                 - set(name, "io.kyma-project.telemetry/runtime")
+    k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+            labels:
+                - from: pod
+                  key: app.kubernetes.io/name
+                  tag_name: kyma.kubernetes_io_app_name
+                - from: pod
+                  key: app
+                  tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
+    resource/insert-cluster-attributes:
+        attributes:
+            - action: insert
+              key: k8s.cluster.name
+              value: test-cluster
+            - action: insert
+              key: cloud.provider
+              value: azure
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
 exporters:
-    otlp:
-        endpoint: logs.telemetry-system.svc.cluster.local:4317
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
         retry_on_failure:
