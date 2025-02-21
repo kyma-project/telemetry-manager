@@ -12,7 +12,7 @@ The goal of this document is to have an implementation-ready log agent configura
 1. Given that every LogPipeline gets its own OTelPipeline, what mechanism will be used for the namespace filtering? Dedicated vs shared tail receiver.
 2. The agent will have no explicit batching mechanism configured.
 3. The agent will have no sending queue mechanism configured.
-4. Agent will send logs directly to the OTLP exporter (no gateway involved).
+4. The agent will send logs directly to the OTLP exporter (no gateway is involved).
 5. Relevant gateway logic will be copied to the agent
 
 ### Explored solutions to the namespace filtering problem:
