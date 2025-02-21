@@ -56,7 +56,12 @@ exporters:
             enabled: false
 
 extensions:
-    # ...
+    file_storage:
+        directory: /var/lib/otelcol
+    health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
 
 processors:
     memory_limiter:
@@ -152,7 +157,9 @@ receivers:
 
 service:
     extensions:
-    # ...
+        - health_check
+        - pprof
+        - file_storage
     pipelines:
         logs/pipeline1:
             exporters:
