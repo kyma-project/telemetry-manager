@@ -15,7 +15,7 @@ The goal of this document is to have an implementation-ready log agent configura
 4. The agent will send logs directly to the OTLP exporter (no gateway is involved).
 5. Relevant gateway logic will be copied to the agent.
 
-### Explored solutions to the namespace filtering problem:
+### Explored Solutions to the Namespace Filtering Problem
 
 The following solutions have been explored and proposed for the namespace filtering issue:
 
