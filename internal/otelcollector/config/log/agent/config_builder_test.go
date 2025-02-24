@@ -144,7 +144,36 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Receivers, "filelog/test")
 			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["logs"].Exporters)
+			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["logs/test"].Exporters)
+		})
+	})
+
+	t.Run("multiple pipelines topology", func(t *testing.T) {
+		t.Run("two logpipelines defined", func(t *testing.T) {
+			pipleine1 := testutils.NewLogPipelineBuilder().WithName("test1").
+				WithApplicationInput(true).WithKeepOriginalBody(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()
+
+			pipleine2 := testutils.NewLogPipelineBuilder().WithName("test2").
+				WithApplicationInput(true).WithKeepOriginalBody(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build()
+
+			collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{pipleine1, pipleine2}, BuildOptions{})
+			require.NoError(t, err)
+
+			require.Len(t, collectorConfig.Service.Pipelines, 2)
+			require.Contains(t, collectorConfig.Service.Pipelines, "logs/test1")
+			require.Contains(t, collectorConfig.Service.Pipelines, "logs/test2")
+
+			require.Contains(t, collectorConfig.Service.Pipelines["logs/test1"].Receivers, "filelog/test1")
+			require.Contains(t, collectorConfig.Service.Pipelines["logs/test2"].Receivers, "filelog/test2")
+
+			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test1"].Processors)
+			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test2"].Processors)
+
+			require.Contains(t, collectorConfig.Service.Pipelines["logs/test1"].Exporters, "otlp/test1")
+			require.Contains(t, collectorConfig.Service.Pipelines["logs/test2"].Exporters, "otlp/test2")
+
 		})
 	})
 	t.Run("marshaling", func(t *testing.T) {

@@ -21,12 +21,15 @@ const (
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOptions) *FileLog {
 	excludeLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, otelcollector.LogAgentName)
 	excludeFluentBitLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, fluentbit.LogAgentName)
+
+	excludePath := createExcludePath(logpipeline.Spec.Input.Application)
+	excludePath = append(excludePath, excludeLogAgentLogs, excludeFluentBitLogs)
+
+	includePath := createIncludePath(logpipeline.Spec.Input.Application)
+
 	return &FileLog{
-		Exclude: []string{
-			excludeLogAgentLogs,
-			excludeFluentBitLogs,
-		},
-		Include:         []string{"/var/log/pods/*/*/*.log"},
+		Exclude:         excludePath,
+		Include:         includePath,
 		IncludeFileName: false,
 		IncludeFilePath: true,
 		StartAt:         "beginning",
@@ -39,6 +42,28 @@ func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOp
 		},
 		Operators: makeOperators(logpipeline),
 	}
+}
+
+func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
+	if application.Namespaces.Include == nil {
+		return []string{"/var/log/pods/*/*/*.log"}
+	}
+	includeNamespacePath := []string{}
+	for _, ns := range application.Namespaces.Include {
+		includeNamespacePath = append(includeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+	}
+	return includeNamespacePath
+}
+
+func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
+	if application.Namespaces.Exclude == nil {
+		return []string{}
+	}
+	excludeNamespacePath := []string{}
+	for _, ns := range application.Namespaces.Exclude {
+		excludeNamespacePath = append(excludeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+	}
+	return excludeNamespacePath
 }
 
 func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
