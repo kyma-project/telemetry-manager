@@ -174,10 +174,9 @@ processors:
     transform/set-instrumentation-scope-kyma:
         error_mode: ignore
         metric_statements:
-            - context: scope
-              statements:
-                - set(version, "") where name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
-                - set(name, "io.kyma-project.telemetry/kyma") where name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+            - statements:
+                - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
     resource/delete-skip-enrichment-attribute:
         attributes:
             - action: delete
