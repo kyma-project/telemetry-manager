@@ -264,6 +264,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		AgentNamespace:              r.telemetryNamespace,
 		ClusterName:                 k8sutils.GetGardenerShootInfo(ctx, r.Client).ClusterName,
 		CloudProvider:               k8sutils.GetGardenerShootInfo(ctx, r.Client).CloudProvider,
+		Enrichments:                 r.getEnrichmentsFromTelemetry(ctx),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)
