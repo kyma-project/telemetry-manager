@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,6 +127,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sSucceedingObjects...)).Should(Succeed())
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sFailingObjects...)).
 					Should(MatchError(ContainSubstring(notFoundError)))
+
+				// Wait for succeeding objects to be deleted
+				Eventually(func(g Gomega) {
+					for _, obj := range k8sSucceedingObjects {
+						g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(obj), obj)).ShouldNot(Succeed())
+					}
+				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sSucceedingObjects...)).Should(Succeed())
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sFailingObjects...)).
