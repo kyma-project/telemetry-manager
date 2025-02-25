@@ -27,7 +27,6 @@ func ResolveServiceNameStatements() []config.TransformProcessorStatements {
 
 	return []config.TransformProcessorStatements{
 		{
-			Context:    "resource",
 			Statements: statements,
 		},
 	}
@@ -35,7 +34,7 @@ func ResolveServiceNameStatements() []config.TransformProcessorStatements {
 
 // serviceNameNotDefinedBasicCondition specifies the cases for which the service.name attribute is not defined
 // without considering the "unknown_service" and the "unknown_service:<process.executable.name>" cases
-const serviceNameNotDefinedBasicCondition = "attributes[\"service.name\"] == nil or attributes[\"service.name\"] == \"\""
+const serviceNameNotDefinedBasicCondition = "resource.attributes[\"service.name\"] == nil or resource.attributes[\"service.name\"] == \"\""
 
 func inferServiceNameFromAttr(attrKey string) string {
 	// serviceNameNotDefinedCondition builds up on the serviceNameNotDefinedBasicCondition
@@ -43,11 +42,11 @@ func inferServiceNameFromAttr(attrKey string) string {
 	serviceNameNotDefinedCondition := fmt.Sprintf(
 		"%s or %s",
 		serviceNameNotDefinedBasicCondition,
-		ottlexpr.IsMatch("attributes[\"service.name\"]", "^unknown_service(:.+)?$"),
+		ottlexpr.IsMatch("resource.attributes[\"service.name\"]", "^unknown_service(:.+)?$"),
 	)
 
 	return fmt.Sprintf(
-		"set(attributes[\"service.name\"], attributes[\"%s\"]) where %s",
+		"set(resource.attributes[\"service.name\"], resource.attributes[\"%s\"]) where %s",
 		attrKey,
 		serviceNameNotDefinedCondition,
 	)
@@ -55,7 +54,7 @@ func inferServiceNameFromAttr(attrKey string) string {
 
 func setDefaultServiceName() string {
 	return fmt.Sprintf(
-		"set(attributes[\"service.name\"], \"unknown_service\") where %s",
+		"set(resource.attributes[\"service.name\"], \"unknown_service\") where %s",
 		serviceNameNotDefinedBasicCondition,
 	)
 }
