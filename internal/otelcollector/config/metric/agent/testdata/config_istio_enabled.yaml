@@ -333,26 +333,23 @@ processors:
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         metric_statements:
-            - context: scope
-              statements:
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-                - set(name, "io.kyma-project.telemetry/runtime") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
-                - set(name, "io.kyma-project.telemetry/runtime") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
     transform/set-instrumentation-scope-prometheus:
         error_mode: ignore
         metric_statements:
-            - context: scope
-              statements:
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-                - set(name, "io.kyma-project.telemetry/prometheus") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/prometheus") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
     transform/set-instrumentation-scope-istio:
         error_mode: ignore
         metric_statements:
-            - context: scope
-              statements:
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-                - set(name, "io.kyma-project.telemetry/istio") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/istio") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:

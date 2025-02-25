@@ -24,7 +24,6 @@ func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, input
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
 			{
-				Context:    "scope",
 				Statements: statements,
 			},
 		},
@@ -33,7 +32,7 @@ func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, input
 
 func makeInstrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {
 	return []string{
-		fmt.Sprintf("set(version, \"%s\") where name == \"%s\"", instrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
-		fmt.Sprintf("set(name, \"%s\") where name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
+		fmt.Sprintf("set(scope.version, \"%s\") where scope.name == \"%s\"", instrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
+		fmt.Sprintf("set(scope.name, \"%s\") where scope.name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
 	}
 }

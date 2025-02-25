@@ -57,7 +57,7 @@ type AttributeAction struct {
 }
 
 type TransformProcessorStatements struct {
-	Context    string   `yaml:"context"`
+	Context    string   `yaml:"context,omitempty"`
 	Statements []string `yaml:"statements"`
 	Conditions []string `yaml:"conditions,omitempty"`
 }
