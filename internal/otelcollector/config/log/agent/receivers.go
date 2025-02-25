@@ -48,10 +48,12 @@ func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 	if application.Namespaces.Include == nil {
 		return []string{"/var/log/pods/*/*/*.log"}
 	}
+
 	includeNamespacePath := []string{}
 	for _, ns := range application.Namespaces.Include {
 		includeNamespacePath = append(includeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
 	}
+
 	return includeNamespacePath
 }
 
@@ -59,10 +61,12 @@ func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 	if application.Namespaces.Exclude == nil {
 		return []string{}
 	}
+
 	excludeNamespacePath := []string{}
 	for _, ns := range application.Namespaces.Exclude {
 		excludeNamespacePath = append(excludeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
 	}
+
 	return excludeNamespacePath
 }
 

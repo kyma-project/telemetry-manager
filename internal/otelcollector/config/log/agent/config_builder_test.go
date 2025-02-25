@@ -2,17 +2,17 @@ package agent
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -36,7 +36,7 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Receivers, "filelog/test")
 
 			fileLogReceiver := collectorConfig.Receivers["filelog/test"]
-			require.Equal(t, []string{fmt.Sprintf("/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log"), fmt.Sprintf("/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log")}, fileLogReceiver.FileLog.Exclude)
+			require.Equal(t, []string{"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log", "/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log"}, fileLogReceiver.FileLog.Exclude)
 			require.Equal(t, []string{"/var/log/pods/*/*/*.log"}, fileLogReceiver.FileLog.Include)
 			require.False(t, fileLogReceiver.FileLog.IncludeFileName)
 			require.True(t, fileLogReceiver.FileLog.IncludeFilePath)
@@ -69,7 +69,6 @@ func TestBuildAgentConfig(t *testing.T) {
 
 		require.Contains(t, envVars, endpointEnvVar)
 		require.Equal(t, "http://localhost", string(envVars[endpointEnvVar]))
-
 	})
 
 	t.Run("insecure", func(t *testing.T) {
@@ -173,7 +172,6 @@ func TestBuildAgentConfig(t *testing.T) {
 
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test1"].Exporters, "otlp/test1")
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test2"].Exporters, "otlp/test2")
-
 		})
 	})
 	t.Run("marshaling", func(t *testing.T) {
@@ -184,6 +182,7 @@ func TestBuildAgentConfig(t *testing.T) {
 				WithApplicationInput(true).WithKeepOriginalBody(true).
 				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
 		}, BuildOptions{InstrumentationScopeVersion: "main", AgentNamespace: "kyma-system", CloudProvider: "azure", ClusterName: "test-cluster"})
+		require.NoError(t, err)
 		configYAML, err := yaml.Marshal(collectorConfig)
 		require.NoError(t, err, "failed to marshal config")
 

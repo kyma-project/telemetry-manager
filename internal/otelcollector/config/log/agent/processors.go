@@ -2,10 +2,10 @@ package agent
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
 const (
