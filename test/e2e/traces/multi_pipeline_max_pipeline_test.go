@@ -47,15 +47,15 @@ var _ = Describe(ID(), Label(LabelMaxPipeline), Ordered, func() {
 		}
 
 		BeforeAll(func() {
-			K8sObjects := makeResources()
+			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				k8sObjectsToDelete := slices.DeleteFunc(K8sObjects, func(obj client.Object) bool {
+				k8sObjectsToDelete := slices.DeleteFunc(k8sObjects, func(obj client.Object) bool {
 					return obj.GetName() == pipelineCreatedFirst.GetName() // first pipeline is deleted separately in one of the specs
 				})
 				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
 				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjectsToDelete...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have only running pipelines", func() {

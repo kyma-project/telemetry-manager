@@ -57,12 +57,12 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 
 	Context("When a metricpipeline with TLS activated exists", Ordered, func() {
 		BeforeAll(func() {
-			K8sObjects := makeResources()
+			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {

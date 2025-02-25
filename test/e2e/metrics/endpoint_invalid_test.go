@@ -66,12 +66,12 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), func() {
 
 	Context("When metric pipelines with an invalid Endpoint are created", Ordered, func() {
 		BeforeAll(func() {
-			K8sObjects := makeResources()
+			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {

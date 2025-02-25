@@ -69,11 +69,11 @@ var _ = Describe(ID(), Label(LabelLogs), Ordered, func() {
 
 	Context("When 2 logpipelines that keep and drop original log body exist", Ordered, func() {
 		BeforeAll(func() {
-			K8sObjects := makeResources()
+			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running logpipelines", func() {

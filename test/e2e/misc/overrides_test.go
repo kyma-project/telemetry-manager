@@ -91,15 +91,15 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 	BeforeAll(func() {
 		now = time.Now().UTC()
-		K8sObjects := makeResources()
+		k8sObjects := makeResources()
 		DeferCleanup(func() {
 			if overrides != nil {
-				K8sObjects = append(K8sObjects, overrides)
+				k8sObjects = append(k8sObjects, overrides)
 			}
 
-			Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 		})
-		Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+		Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 	})
 
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {

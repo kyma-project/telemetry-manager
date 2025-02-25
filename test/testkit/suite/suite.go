@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -20,6 +19,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -37,12 +37,13 @@ var (
 	ProxyClient        *apiserverproxy.Client
 	TestEnv            *envtest.Environment
 	TelemetryK8sObject client.Object
-	K8sObjects         []client.Object
+	k8sObjects         []client.Object
 )
 
 // Function to be executed before each e2e suite
 func BeforeSuiteFunc() {
 	var err error
+
 	logf.SetLogger(logzap.New(logzap.WriteTo(GinkgoWriter), logzap.UseDevMode(true)))
 	useExistingCluster := true
 	TestEnv = &envtest.Environment{
@@ -51,6 +52,7 @@ func BeforeSuiteFunc() {
 
 	_, err = TestEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
+
 	Ctx, Cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
 	By("bootstrapping test environment")
@@ -65,12 +67,12 @@ func BeforeSuiteFunc() {
 
 	TelemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(IsUpgrade()).K8sObject()
 	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
-	K8sObjects = []client.Object{
+	k8sObjects = []client.Object{
 		TelemetryK8sObject,
 		denyAllNetworkPolicyK8sObject,
 	}
 
-	Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).To(Succeed())
 
 	ProxyClient, err = apiserverproxy.NewClient(TestEnv.Config)
 	Expect(err).NotTo(HaveOccurred())
@@ -78,7 +80,8 @@ func BeforeSuiteFunc() {
 
 // Function to be executed after each e2e suite
 func AfterSuiteFunc() {
-	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+
 	if !IsUpgrade() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
@@ -90,6 +93,7 @@ func AfterSuiteFunc() {
 
 	Cancel()
 	By("tearing down the test environment")
+
 	err := TestEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 }

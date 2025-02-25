@@ -56,13 +56,13 @@ var _ = Describe(ID(), Label(LabelMetrics, LabelSetA), Ordered, func() {
 
 	Context("When a metricpipeline with no input enabled exists", Ordered, func() {
 		BeforeAll(func() {
-			K8sObjects := makeResources()
+			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 			})
 
-			k8sObjectsToCreate := append(K8sObjects, &metricPipelineWithInput)
+			k8sObjectsToCreate := append(k8sObjects, &metricPipelineWithInput)
 			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjectsToCreate...)).Should(Succeed())
 		})
 

@@ -5,10 +5,11 @@ package logs
 import (
 	"testing"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
+
+	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 func TestMisc(t *testing.T) {

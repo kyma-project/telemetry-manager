@@ -137,12 +137,12 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetA), Ordered, func() {
 		}
 
 		BeforeAll(func() {
-			K8sObjects := makeResources()
+			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have healthy pipelines", func() {
@@ -412,9 +412,9 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 }
 
 // Check for `ContainElements` for metrics present in the backend
-func backendContainsMetricsDeliveredForResource(ProxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
+func backendContainsMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
 	Eventually(func(g Gomega) {
-		resp, err := ProxyClient.Get(backendExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		defer resp.Body.Close()
@@ -426,9 +426,9 @@ func backendContainsMetricsDeliveredForResource(ProxyClient *apiserverproxy.Clie
 }
 
 // Check with `ConsistsOf` for metrics present in the backend
-func backendConsistsOfMetricsDeliveredForResource(ProxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
+func backendConsistsOfMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
 	Eventually(func(g Gomega) {
-		resp, err := ProxyClient.Get(backendExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		defer resp.Body.Close()
@@ -439,9 +439,9 @@ func backendConsistsOfMetricsDeliveredForResource(ProxyClient *apiserverproxy.Cl
 	}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metrics using consistsOf %v", resourceMetrics)
 }
 
-func backendContainsDesiredResourceAttributes(ProxyClient *apiserverproxy.Client, backendExportURL string, metricName string, resourceAttributes []string) {
+func backendContainsDesiredResourceAttributes(proxyClient *apiserverproxy.Client, backendExportURL string, metricName string, resourceAttributes []string) {
 	Eventually(func(g Gomega) {
-		resp, err := ProxyClient.Get(backendExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		defer resp.Body.Close()
@@ -455,9 +455,9 @@ func backendContainsDesiredResourceAttributes(ProxyClient *apiserverproxy.Client
 	}, 3*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metric %s with resource attributes %v", metricName, resourceAttributes)
 }
 
-func backendContainsDesiredMetricAttributes(ProxyClient *apiserverproxy.Client, backendExportURL string, metricName string, metricAttributes []string) {
+func backendContainsDesiredMetricAttributes(proxyClient *apiserverproxy.Client, backendExportURL string, metricName string, metricAttributes []string) {
 	Eventually(func(g Gomega) {
-		resp, err := ProxyClient.Get(backendExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		defer resp.Body.Close()
