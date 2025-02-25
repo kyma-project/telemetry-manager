@@ -239,6 +239,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 	}
 
 	agentConfigBuilder := &agent.Builder{
+		Reader: client,
 		Config: agent.BuilderConfig{
 			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.LogOTLPServiceName},
 		},
