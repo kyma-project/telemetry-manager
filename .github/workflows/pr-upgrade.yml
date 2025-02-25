@@ -48,7 +48,7 @@ jobs:
       - name: Run test on latest tag
         shell: bash
         run: |
-          bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade || operational" -v test/e2e
+          bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade || operational" -v -r test/e2e
 
       - name: Switch back to current revision
         uses: actions/checkout@v4
@@ -82,7 +82,7 @@ jobs:
         shell: bash
         run: |
           make install-tools # delete after the tools via go modules are released
-          bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade" -v test/e2e
+          bin/ginkgo run --junit-report=junit-report-current-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade" -v -r test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
