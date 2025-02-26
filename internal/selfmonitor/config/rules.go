@@ -17,11 +17,11 @@ const (
 	RuleNameGatewayThrottling      = "GatewayThrottling"
 
 	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
-	RuleNameLogAgentAllDataDropped  = "AgentAllDataDropped"
-	RuleNameLogAgentSomeDataDropped = "AgentSomeDataDropped"
-	RuleNameLogAgentBufferInUse     = "AgentBufferInUse"
-	RuleNameLogAgentBufferFull      = "AgentBufferFull"
-	RuleNameLogAgentNoLogsDelivered = "AgentNoLogsDelivered"
+	RuleNameLogFluentBitAgentAllDataDropped  = "FluentBitAgentAllDataDropped"
+	RuleNameLogFluentBitAgentSomeDataDropped = "FluentBitAgentSomeDataDropped"
+	RuleNameLogFluentBitAgentBufferInUse     = "FluentBitAgentBufferInUse"
+	RuleNameLogFluentBitAgentBufferFull      = "FluentBitAgentBufferFull"
+	RuleNameLogFluentBitAgentNoLogsDelivered = "FluentBitAgentNoLogsDelivered"
 
 	// Common rule labels
 	labelService      = "service"

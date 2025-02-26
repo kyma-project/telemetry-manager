@@ -43,10 +43,10 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 		return LogPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	allDropped := p.isFiring(alerts, config.RuleNameLogAgentAllDataDropped, pipelineName)
-	someDropped := p.isFiring(alerts, config.RuleNameLogAgentSomeDataDropped, pipelineName)
-	bufferFillingUp := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
-	noLogs := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
+	allDropped := p.isFiring(alerts, config.RuleNameLogFluentBitAgentAllDataDropped, pipelineName)
+	someDropped := p.isFiring(alerts, config.RuleNameLogFluentBitAgentSomeDataDropped, pipelineName)
+	bufferFillingUp := p.isFiring(alerts, config.RuleNameLogFluentBitAgentBufferInUse, pipelineName)
+	noLogs := p.isFiring(alerts, config.RuleNameLogFluentBitAgentNoLogsDelivered, pipelineName)
 	healthy := !(allDropped || someDropped || bufferFillingUp || noLogs)
 
 	return LogPipelineProbeResult{

@@ -112,7 +112,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:          "alert matches all log pipelines",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogAgentBufferFull"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogFluentBitAgentBufferFull"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
 				ptr.To(testutils.NewLogPipelineBuilder().WithName("dynatrace").Build()),

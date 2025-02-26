@@ -26,11 +26,11 @@ type fluentBitRuleBuilder struct {
 
 func (rb fluentBitRuleBuilder) rules() []Rule {
 	return []Rule{
-		rb.makeRule(RuleNameLogAgentAllDataDropped, rb.allDataDroppedExpr()),
-		rb.makeRule(RuleNameLogAgentSomeDataDropped, rb.someDataDroppedExpr()),
-		rb.makeRule(RuleNameLogAgentBufferInUse, rb.bufferInUseExpr()),
-		rb.makeRule(RuleNameLogAgentBufferFull, rb.bufferFullExpr()),
-		rb.makeRule(RuleNameLogAgentNoLogsDelivered, rb.noLogsDeliveredExpr()),
+		rb.makeRule(RuleNameLogFluentBitAgentAllDataDropped, rb.allDataDroppedExpr()),
+		rb.makeRule(RuleNameLogFluentBitAgentSomeDataDropped, rb.someDataDroppedExpr()),
+		rb.makeRule(RuleNameLogFluentBitAgentBufferInUse, rb.bufferInUseExpr()),
+		rb.makeRule(RuleNameLogFluentBitAgentBufferFull, rb.bufferFullExpr()),
+		rb.makeRule(RuleNameLogFluentBitAgentNoLogsDelivered, rb.noLogsDeliveredExpr()),
 	}
 }
 

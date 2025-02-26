@@ -152,7 +152,7 @@ func TestOTelPipelineProber(t *testing.T) {
 					},
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentBufferFull",
+							"alertname":     "LogFluentBitAgentBufferFull",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,

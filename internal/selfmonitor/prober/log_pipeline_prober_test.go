@@ -67,7 +67,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentAllDataDropped",
+							"alertname": "LogFluentBitAgentAllDataDropped",
 						},
 						State: promv1.AlertStatePending,
 					},
@@ -86,7 +86,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentAllDataDropped",
+							"alertname": "LogFluentBitAgentAllDataDropped",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -105,7 +105,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentBufferFull",
+							"alertname":     "LogFluentBitAgentBufferFull",
 							"pipeline_name": "dynatrace",
 						},
 						State: promv1.AlertStateFiring,
@@ -152,7 +152,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentAllDataDropped",
+							"alertname":     "LogFluentBitAgentAllDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -172,7 +172,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentSomeDataDropped",
+							"alertname":     "LogFluentBitAgentSomeDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -192,7 +192,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentNoLogsDelivered",
+							"alertname":     "LogFluentBitAgentNoLogsDelivered",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -210,7 +210,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogAgentBufferInUse",
+							"alertname":     "LogFluentBitAgentBufferInUse",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
