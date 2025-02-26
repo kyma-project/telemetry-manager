@@ -10,20 +10,18 @@ import (
 )
 
 const (
-	// OTEL Collector rule names. Note that the actual full names will be prefixed with:
-	// -  Metric/Trace/Log
+	// Rule names (both OTel and FluentBit). Note that the actual full names will be prefixed with:
+	// -  Metric/Trace/Log/FluentBitLog
 	// -  Gateway/Agent
 	RuleNameAllDataDropped  = "AllDataDropped"
 	RuleNameSomeDataDropped = "SomeDataDropped"
 	RuleNameQueueAlmostFull = "QueueAlmostFull"
 	RuleNameThrottling      = "Throttling"
 
-	// Fluent Bit rule names. Note that the actual full names will be prefixed with FluentBitLogAgent
-	RuleNameFluentBitLogAgentAllDataDropped  = "AllDataDropped"
-	RuleNameFluentBitLogAgentSomeDataDropped = "SomeDataDropped"
-	RuleNameFluentBitLogAgentBufferInUse     = "BufferInUse"
-	RuleNameFluentBitLogAgentBufferFull      = "BufferFull"
-	RuleNameFluentBitLogAgentNoLogsDelivered = "NoLogsDelivered"
+	// FluentBit-specific rule names. Note that the actual full names will be prefixed with FluentBitLogAgent
+	RuleNameFluentBitBufferInUse     = "BufferInUse"
+	RuleNameFluentBitBufferFull      = "BufferFull"
+	RuleNameFluentBitNoLogsDelivered = "NoLogsDelivered"
 
 	// Common rule labels
 	labelService      = "service"
