@@ -21,17 +21,53 @@ const (
 )
 
 type otelCollectorRuleBuilder struct {
-	serviceName string
-	dataType    string
-	namePrefix  string
+	serviceName  string
+	dataType     string
+	namePrefix   string
+	excludeRules []string
 }
 
 func (rb otelCollectorRuleBuilder) rules() []Rule {
-	return []Rule{
-		rb.makeRule(RuleNameGatewayAllDataDropped, rb.allDataDroppedExpr()),
-		rb.makeRule(RuleNameGatewaySomeDataDropped, rb.someDataDroppedExpr()),
-		rb.makeRule(RuleNameGatewayQueueAlmostFull, rb.queueAlmostFullExpr()),
-		rb.makeRule(RuleNameGatewayThrottling, rb.throttlingExpr()),
+	var rules []Rule
+
+	var ruleNames = []string{
+		RuleNameAllDataDropped,
+		RuleNameSomeDataDropped,
+		RuleNameQueueAlmostFull,
+		RuleNameThrottling,
+	}
+
+	for _, ruleName := range ruleNames {
+		// Exclude rules (if specified) from the list of rules to be generated
+		exclude := false
+
+		for _, excludeRule := range rb.excludeRules {
+			if ruleName == excludeRule {
+				exclude = true
+			}
+		}
+
+		if !exclude {
+			rules = append(rules, rb.makeRule(ruleName, rb.getExprForRule(ruleName)))
+		}
+	}
+
+	return rules
+}
+
+// Get the expression for the given rule name.
+func (rb otelCollectorRuleBuilder) getExprForRule(ruleName string) string {
+	switch ruleName {
+	case RuleNameAllDataDropped:
+		return rb.allDataDroppedExpr()
+	case RuleNameSomeDataDropped:
+		return rb.someDataDroppedExpr()
+	case RuleNameQueueAlmostFull:
+		return rb.queueAlmostFullExpr()
+	case RuleNameThrottling:
+		return rb.throttlingExpr()
+	default:
+		return ""
 	}
 }
 

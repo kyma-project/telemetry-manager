@@ -62,7 +62,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:          "alert matches log pipeline with same name",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogAgentExporterDroppedLogs","pipeline_name":"cls"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"FluentBitLogAgentExporterDroppedLogs","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
 			},
@@ -112,7 +112,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:          "alert matches all log pipelines",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogFluentBitAgentBufferFull"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"FluentBitLogAgentBufferFull"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
 				ptr.To(testutils.NewLogPipelineBuilder().WithName("dynatrace").Build()),

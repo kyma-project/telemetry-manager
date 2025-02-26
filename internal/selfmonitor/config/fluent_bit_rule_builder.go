@@ -26,11 +26,11 @@ type fluentBitRuleBuilder struct {
 
 func (rb fluentBitRuleBuilder) rules() []Rule {
 	return []Rule{
-		rb.makeRule(RuleNameLogFluentBitAgentAllDataDropped, rb.allDataDroppedExpr()),
-		rb.makeRule(RuleNameLogFluentBitAgentSomeDataDropped, rb.someDataDroppedExpr()),
-		rb.makeRule(RuleNameLogFluentBitAgentBufferInUse, rb.bufferInUseExpr()),
-		rb.makeRule(RuleNameLogFluentBitAgentBufferFull, rb.bufferFullExpr()),
-		rb.makeRule(RuleNameLogFluentBitAgentNoLogsDelivered, rb.noLogsDeliveredExpr()),
+		rb.makeRule(RuleNameFluentBitLogAgentAllDataDropped, rb.allDataDroppedExpr()),
+		rb.makeRule(RuleNameFluentBitLogAgentSomeDataDropped, rb.someDataDroppedExpr()),
+		rb.makeRule(RuleNameFluentBitLogAgentBufferInUse, rb.bufferInUseExpr()),
+		rb.makeRule(RuleNameFluentBitLogAgentBufferFull, rb.bufferFullExpr()),
+		rb.makeRule(RuleNameFluentBitLogAgentNoLogsDelivered, rb.noLogsDeliveredExpr()),
 	}
 }
 
@@ -91,7 +91,7 @@ func (rb fluentBitRuleBuilder) noLogsDeliveredExpr() string {
 
 func (rb fluentBitRuleBuilder) makeRule(baseName, expr string) Rule {
 	return Rule{
-		Alert: ruleNamePrefix(typeLogPipeline) + baseName,
+		Alert: ruleNamePrefix(typeFluentBitLogPipeline, componentAgent) + baseName,
 		Expr:  expr,
 		For:   alertWaitTime,
 	}

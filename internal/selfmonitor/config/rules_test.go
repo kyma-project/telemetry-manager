@@ -31,17 +31,17 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname":     "LogFluentBitAgentBufferFull",
+				"alertname":     "FluentBitLogAgentBufferFull",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "FluentBitAgentBufferFull",
+			unprefixedRuleName: "BufferFull",
 			pipelineName:       "testPipeline",
 			expectedResult:     true,
 		},
 		{
 			name: "rule name matches and pipeline name does not match",
 			labelSet: map[string]string{
-				"alertname":     "LogFluentBitAgentBufferFull",
+				"alertname":     "FluentBitLogAgentBufferFull",
 				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "testAlert",
@@ -61,16 +61,16 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and name label is missing",
 			labelSet: map[string]string{
-				"alertname": "LogFluentBitAgentBufferFull",
+				"alertname": "FluentBitLogAgentBufferFull",
 			},
-			unprefixedRuleName: "FluentBitAgentBufferFull",
+			unprefixedRuleName: "BufferFull",
 			pipelineName:       "testPipeline",
 			expectedResult:     true,
 		},
 		{
 			name: "rule name is RulesAny and name label is missing",
 			labelSet: map[string]string{
-				"alertname": "LogFluentBitAgentBufferFull",
+				"alertname": "FluentBitLogAgentBufferFull",
 			},
 			unprefixedRuleName: RulesAny,
 			pipelineName:       "testPipeline",
@@ -79,7 +79,7 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name is RulesAny and name label is present but doesn't match prefix",
 			labelSet: map[string]string{
-				"alertname":     "LogFluentBitAgentBufferFull",
+				"alertname":     "FluentBitLogAgentBufferFull",
 				"pipeline_name": "otherPipeline",
 			},
 			unprefixedRuleName: RulesAny,
@@ -110,7 +110,7 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 				"alertname":     "MetricGatewayExporterSentData",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "testPipeline",
 			expectedResult:     true,
 		},
@@ -120,14 +120,14 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 				"alertname":     "MetricGatewayExporterSentData",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "otherPipeline",
 			expectedResult:     false,
 		},
 		{
 			name: "rule name does not match and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname":     "LogFluentBitAgentBufferFull",
+				"alertname":     "FluentBitLogAgentBufferFull",
 				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "MetricGatewayExporterSentData",
@@ -139,7 +139,7 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 			labelSet: map[string]string{
 				"alertname": "MetricGatewayExporterSentData",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "testPipeline",
 			expectedResult:     true,
 		},
@@ -186,7 +186,7 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 				"alertname":     "TraceGatewayExporterSentData",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "testPipeline",
 			expectedResult:     true,
 		},
@@ -196,14 +196,14 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 				"alertname":     "TraceGatewayExporterSentData",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "otherPipeline",
 			expectedResult:     false,
 		},
 		{
 			name: "rule name does not match and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname":     "LogFluentBitAgentBufferFull",
+				"alertname":     "FluentBitLogAgentBufferFull",
 				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "TraceGatewayExporterSentData",
@@ -215,7 +215,7 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 			labelSet: map[string]string{
 				"alertname": "TraceGatewayExporterSentData",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "testPipeline",
 			expectedResult:     true,
 		},
@@ -262,7 +262,7 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 				"alertname":     "LogGatewayExporterSentData",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "testPipeline",
 			expectedResult:     true,
 		},
@@ -272,17 +272,17 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 				"alertname":     "LogGatewayExporterSentData",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "otherPipeline",
 			expectedResult:     false,
 		},
 		{
 			name: "rule name does not match and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname":     "LogFluentBitAgentBufferFull",
+				"alertname":     "FluentBitLogAgentBufferFull",
 				"pipeline_name": "testPipeline",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "testPipeline",
 			expectedResult:     false,
 		},
@@ -291,7 +291,7 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 			labelSet: map[string]string{
 				"alertname": "LogGatewayExporterSentData",
 			},
-			unprefixedRuleName: "GatewayExporterSentData",
+			unprefixedRuleName: "ExporterSentData",
 			pipelineName:       "testPipeline",
 			expectedResult:     true,
 		},

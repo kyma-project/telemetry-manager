@@ -67,7 +67,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogFluentBitAgentAllDataDropped",
+							"alertname": "FluentBitLogAgentAllDataDropped",
 						},
 						State: promv1.AlertStatePending,
 					},
@@ -86,7 +86,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogFluentBitAgentAllDataDropped",
+							"alertname": "FluentBitLogAgentAllDataDropped",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -105,7 +105,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogFluentBitAgentBufferFull",
+							"alertname":     "FluentBitLogAgentBufferFull",
 							"pipeline_name": "dynatrace",
 						},
 						State: promv1.AlertStateFiring,
@@ -152,7 +152,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogFluentBitAgentAllDataDropped",
+							"alertname":     "FluentBitLogAgentAllDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -172,7 +172,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogFluentBitAgentSomeDataDropped",
+							"alertname":     "FluentBitLogAgentSomeDataDropped",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -192,7 +192,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogFluentBitAgentNoLogsDelivered",
+							"alertname":     "FluentBitLogAgentNoLogsDelivered",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -210,7 +210,7 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname":     "LogFluentBitAgentBufferInUse",
+							"alertname":     "FluentBitLogAgentBufferInUse",
 							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -237,7 +237,7 @@ func TestLogPipelineProber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sut, err := NewLogPipelineProber(types.NamespacedName{})
+			sut, err := NewFluentBitLogPipelineProber(types.NamespacedName{})
 			require.NoError(t, err)
 
 			alertGetterMock := &mocks.AlertGetter{}

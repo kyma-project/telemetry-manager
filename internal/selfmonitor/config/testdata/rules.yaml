@@ -37,18 +37,27 @@ groups:
         - alert: LogGatewayThrottling
           expr: sum by (receiver) (rate(otelcol_receiver_refused_log_records{service="telemetry-log-gateway-metrics"}[5m])) > 0
           for: 1m0s
-        - alert: LogFluentBitAgentAllDataDropped
+        - alert: LogAgentAllDataDropped
+          expr: ((sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_log_records{service="telemetry-log-agent-metrics"}[5m])) > 0) or (sum by (pipeline_name) (rate(otelcol_exporter_send_failed_log_records{service="telemetry-log-agent-metrics"}[5m])) > 0)) unless (sum by (pipeline_name) (rate(otelcol_exporter_sent_log_records{service="telemetry-log-agent-metrics"}[5m])) > 0)
+          for: 1m0s
+        - alert: LogAgentSomeDataDropped
+          expr: ((sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_log_records{service="telemetry-log-agent-metrics"}[5m])) > 0) or (sum by (pipeline_name) (rate(otelcol_exporter_send_failed_log_records{service="telemetry-log-agent-metrics"}[5m])) > 0)) and (sum by (pipeline_name) (rate(otelcol_exporter_sent_log_records{service="telemetry-log-agent-metrics"}[5m])) > 0)
+          for: 1m0s
+        - alert: LogAgentThrottling
+          expr: sum by (receiver) (rate(otelcol_receiver_refused_log_records{service="telemetry-log-agent-metrics"}[5m])) > 0
+          for: 1m0s
+        - alert: FluentBitLogAgentAllDataDropped
           expr: (sum by (pipeline_name) (rate(fluentbit_output_dropped_records_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0) unless (sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0)
           for: 1m0s
-        - alert: LogFluentBitAgentSomeDataDropped
+        - alert: FluentBitLogAgentSomeDataDropped
           expr: (sum by (pipeline_name) (rate(fluentbit_output_dropped_records_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0) and (sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0)
           for: 1m0s
-        - alert: LogFluentBitAgentBufferInUse
+        - alert: FluentBitLogAgentBufferInUse
           expr: telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"} > 300000000
           for: 1m0s
-        - alert: LogFluentBitAgentBufferFull
+        - alert: FluentBitLogAgentBufferFull
           expr: telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"} > 900000000
           for: 1m0s
-        - alert: LogFluentBitAgentNoLogsDelivered
+        - alert: FluentBitLogAgentNoLogsDelivered
           expr: (sum by (pipeline_name) (rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0) and (sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) == 0)
           for: 1m0s
