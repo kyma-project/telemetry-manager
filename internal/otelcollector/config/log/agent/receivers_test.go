@@ -153,6 +153,10 @@ func TestExcludePath(t *testing.T) {
 			name:     "should return excluded path if namespace is present",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).WithExcludeNamespaces("foo", "bar").Build(),
 			expected: []string{
+				"/var/log/pods/kyma-system_*/*/*.log",
+				"/var/log/pods/kube-system_*/*/*.log",
+				"/var/log/pods/istio-system_*/*/*.log",
+				"/var/log/pods/compass-system_*/*/*.log",
 				"/var/log/pods/foo_*/*/*.log",
 				"/var/log/pods/bar_*/*/*.log",
 			},
@@ -160,7 +164,12 @@ func TestExcludePath(t *testing.T) {
 		{
 			name:     "should return empty excluded path if namespace is not present",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
-			expected: []string{},
+			expected: []string{
+				"/var/log/pods/kyma-system_*/*/*.log",
+				"/var/log/pods/kube-system_*/*/*.log",
+				"/var/log/pods/istio-system_*/*/*.log",
+				"/var/log/pods/compass-system_*/*/*.log",
+			},
 		},
 	}
 
@@ -190,6 +199,16 @@ func TestIncludePath(t *testing.T) {
 			name:     "should return default included path if namespace is not present",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
 			expected: []string{"/var/log/pods/*/*/*.log"},
+		},
+		{
+			name:     "should return system namespaces included path if system is true",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).WithSystemNamespaces(true).Build(),
+			expected: []string{
+				"/var/log/pods/kyma-system_*/*/*.log",
+				"/var/log/pods/kube-system_*/*/*.log",
+				"/var/log/pods/istio-system_*/*/*.log",
+				"/var/log/pods/compass-system_*/*/*.log",
+			},
 		},
 	}
 

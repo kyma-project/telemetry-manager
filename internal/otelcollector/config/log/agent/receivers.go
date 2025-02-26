@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 
 	"k8s.io/utils/ptr"
 
@@ -45,7 +46,7 @@ func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOp
 }
 
 func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
-	if application.Namespaces.Include == nil {
+	if application == nil || application.Namespaces.Include == nil && !application.Namespaces.System {
 		return []string{"/var/log/pods/*/*/*.log"}
 	}
 
@@ -54,20 +55,36 @@ func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 		includeNamespacePath = append(includeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
 	}
 
+	if application.Namespaces.System {
+		return makeSystemLogPath()
+	}
+
 	return includeNamespacePath
 }
 
 func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
-	if application.Namespaces.Exclude == nil {
-		return []string{}
+	if application == nil || application.Namespaces.Exclude == nil && !application.Namespaces.System {
+		return makeSystemLogPath()
 	}
 
 	excludeNamespacePath := []string{}
+	if !application.Namespaces.System {
+		excludeNamespacePath = append(excludeNamespacePath, makeSystemLogPath()...)
+	}
+
 	for _, ns := range application.Namespaces.Exclude {
 		excludeNamespacePath = append(excludeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
 	}
 
 	return excludeNamespacePath
+}
+
+func makeSystemLogPath() []string {
+	systemLogPath := []string{}
+	for _, ns := range namespaces.System() {
+		systemLogPath = append(systemLogPath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+	}
+	return systemLogPath
 }
 
 func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
