@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
@@ -178,7 +179,7 @@ func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Co
 
 	if metricpipelineutils.IsPrometheusInputEnabled(input) && shouldFilterByNamespace(input.Prometheus.Namespaces) {
 		processorID := formatNamespaceFilterID(pipeline.Name, metric.InputSourcePrometheus)
-		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Prometheus.Namespaces, inputSourceEquals(metric.InputSourcePrometheus))
+		cfg.Processors.NamespaceFilters[processorID] = makeFilterByNamespaceConfig(pipeline.Spec.Input.Prometheus.Namespaces, ottlexpr.ResourceAttributeEquals("kyma.input.name", "prometheus"))
 	}
 
 	if metricpipelineutils.IsIstioInputEnabled(input) && shouldFilterByNamespace(input.Istio.Namespaces) {

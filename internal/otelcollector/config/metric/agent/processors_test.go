@@ -87,9 +87,10 @@ func TestProcessors(t *testing.T) {
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopePrometheus.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements, 1)
-		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements, 2)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements, 3)
 		require.Equal(t, "set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(scope.name, \"io.kyma-project.telemetry/prometheus\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[1])
+		require.Equal(t, "set(resource.attributes[\"kyma.input.name\"], \"prometheus\")", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[2])
 	})
 
 	t.Run("set instrumentation scope istio", func(t *testing.T) {

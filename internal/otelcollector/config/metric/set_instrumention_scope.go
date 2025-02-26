@@ -18,6 +18,9 @@ func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, input
 	statements := []string{}
 	for _, i := range inputSource {
 		statements = append(statements, makeInstrumentationStatement(i, instrumentationScopeVersion)...)
+		if i == InputSourcePrometheus {
+			statements = append(statements, []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", "kyma.input.name", "prometheus")}...)
+		}
 	}
 
 	return &TransformProcessor{

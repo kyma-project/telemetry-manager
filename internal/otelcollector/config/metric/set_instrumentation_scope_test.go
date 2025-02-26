@@ -33,6 +33,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 					Statements: []string{
 						"set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
 						"set(scope.name, \"io.kyma-project.telemetry/prometheus\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
+						"set(resource.attributes[\"kyma.input.name\"], \"prometheus\")",
 					},
 				}},
 			},

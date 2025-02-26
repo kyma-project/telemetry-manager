@@ -176,7 +176,7 @@ func TestProcessors(t *testing.T) {
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-prometheus-input")
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric, 1)
 
-		expectedCondition = "instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" and resource.attributes[\"k8s.namespace.name\"] != nil and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+		expectedCondition = "resource.attributes[\"kyma.input.name\"] == \"prometheus\" and resource.attributes[\"k8s.namespace.name\"] != nil and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric[0])
 
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-istio-input")
@@ -224,7 +224,7 @@ func TestProcessors(t *testing.T) {
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-prometheus-input")
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric, 1)
 
-		expectedCondition = "instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
+		expectedCondition = "resource.attributes[\"kyma.input.name\"] == \"prometheus\" and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric[0])
 
 		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-istio-input")
