@@ -35,6 +35,8 @@ override:
     path: ^internal/reconciler/telemetry$
   - threshold: 74
     path: ^internal/reconciler/tracepipeline$
+  - threshold: 74
+    path: ^internal/resources/fluentbit$
   - threshold: 83
     path: ^internal/resources/otelcollector$
   - threshold: 78
