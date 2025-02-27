@@ -83,6 +83,7 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
 			{
+				Context: "metric",
 				Statements: []string{
 					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
 				},
