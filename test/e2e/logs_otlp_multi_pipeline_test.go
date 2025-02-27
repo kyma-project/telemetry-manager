@@ -17,7 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
 	Context("When multiple logpipelines exist", Ordered, func() {
 		var (
 			mockNs            = suite.ID()
@@ -33,7 +33,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			var objs []client.Object
 			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-			backend1 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend1Name))
+			backend1 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend1Name))
 			objs = append(objs, backend1.K8sObjects()...)
 			backend1ExportURL = backend1.ExportURL(proxyClient)
 
@@ -44,7 +44,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				Build()
 			objs = append(objs, &logPipeline1)
 
-			backend2 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend2Name))
+			backend2 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend2Name))
 			objs = append(objs, backend2.K8sObjects()...)
 			backend2ExportURL = backend2.ExportURL(proxyClient)
 
@@ -86,7 +86,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
-		// FIXME
 		It("Should verify logs from telemetrygen are delivered", func() {
 			assert.LogsFromNamespaceDelivered(proxyClient, backend1ExportURL, mockNs)
 			assert.LogsFromNamespaceDelivered(proxyClient, backend2ExportURL, mockNs)

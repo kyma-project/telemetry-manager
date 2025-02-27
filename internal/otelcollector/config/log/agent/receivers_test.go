@@ -13,6 +13,10 @@ import (
 
 func TestReceiverCreator(t *testing.T) {
 	expectedExcludePaths := []string{
+		"/var/log/pods/kyma-system_*/*/*.log",
+		"/var/log/pods/kube-system_*/*/*.log",
+		"/var/log/pods/istio-system_*/*/*.log",
+		"/var/log/pods/compass-system_*/*/*.log",
 		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
 		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
 	}
