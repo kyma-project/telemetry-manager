@@ -423,10 +423,10 @@ A TracePipeline runs several OTel Collector instances in your cluster. This Depl
 
 The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop traces, or cannot handle the trace load.
 
-To detect and fix such situations, check the [pipeline status](./resources/04-tracepipeline.md#tracepipeline-status) and check out [Troubleshooting](#troubleshooting). The pipeline status is exposed via dedicated [metrics](./04-metrics.md#5-monitor-pipeline-health) of a MetricPipeline which can be alerted and reported on in an integrated backend like [SAP CloudLogging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
+To detect and fix such situations, check the [pipeline status](./resources/04-tracepipeline.md#tracepipeline-status) and check out [Troubleshooting](#troubleshooting). If you have set up [pipeline health monitoring](./04-metrics.md#5-monitor-pipeline-health), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
 
 > [! WARNING]
-> Don't access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such.
+> It's not recommended to access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such.
 > Instead, use the [pipeline status](./resources/04-tracepipeline.md#tracepipeline-status).
 
 ## Limitations
