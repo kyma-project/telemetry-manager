@@ -50,10 +50,10 @@ func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OT
 		return OTelPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	allDropped := p.isFiring(alerts, config.RuleNameGatewayAllDataDropped, pipelineName)
-	someDropped := p.isFiring(alerts, config.RuleNameGatewaySomeDataDropped, pipelineName)
-	queueAlmostFull := p.isFiring(alerts, config.RuleNameGatewayQueueAlmostFull, pipelineName)
-	throttling := p.isFiring(alerts, config.RuleNameGatewayThrottling, pipelineName)
+	allDropped := p.isFiring(alerts, config.RuleNameAllDataDropped, pipelineName)
+	someDropped := p.isFiring(alerts, config.RuleNameSomeDataDropped, pipelineName)
+	queueAlmostFull := p.isFiring(alerts, config.RuleNameQueueAlmostFull, pipelineName)
+	throttling := p.isFiring(alerts, config.RuleNameThrottling, pipelineName)
 	healthy := !(allDropped || someDropped || queueAlmostFull || throttling)
 
 	return OTelPipelineProbeResult{

@@ -13,9 +13,9 @@ type Config struct {
 	Processors Processors `yaml:"processors"`
 	Exporters  Exporters  `yaml:"exporters"`
 }
-
-type Receivers struct {
-	FileLog *FileLog `yaml:"filelog"`
+type Receivers map[string]Receiver
+type Receiver struct {
+	FileLog *FileLog `yaml:",inline,omitempty"`
 }
 
 type FileLog struct {
@@ -43,11 +43,15 @@ type Operator struct {
 
 type Processors struct {
 	config.BaseProcessors          `yaml:",inline"`
-	SetInstrumentationScopeRuntime *log.TransformProcessor `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	SetInstrumentationScopeRuntime *log.TransformProcessor        `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	K8sAttributes                  *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	InsertClusterAttributes        *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
+	DropKymaAttributes             *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
-type Exporters struct {
-	OTLP *config.OTLPExporter `yaml:"otlp"`
+type Exporters map[string]Exporter
+type Exporter struct {
+	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
 }
 
 type Extensions struct {
