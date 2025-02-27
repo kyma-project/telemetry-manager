@@ -13,12 +13,12 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
-	Context("When multiple logpipelines exist", Ordered, func() {
+	Context("When multiple otlp logpipelines exist", Ordered, func() {
 		var (
 			mockNs            = suite.ID()
 			backend1Name      = suite.IDWithSuffix("backend-1")
@@ -55,7 +55,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 				Build()
 			objs = append(objs, &logPipeline2)
 
-			objs = append(objs, telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeLogs).K8sObject())
+			logProducer := loggen.New(mockNs)
+
+			objs = append(objs,
+				logProducer.K8sObject(),
+			)
 			return objs
 		}
 

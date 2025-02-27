@@ -13,11 +13,11 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs), Label(suite.LabelSetC), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs            = suite.ID()
 		app1Ns            = "app-1"
@@ -34,7 +34,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Label(suite.LabelSetC), Ord
 			kitk8s.NewNamespace(app1Ns).K8sObject(),
 			kitk8s.NewNamespace(app2Ns).K8sObject())
 
-		backend1 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend1Name))
+		backend1 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend1Name))
 		backend1ExportURL = backend1.ExportURL(proxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
@@ -45,7 +45,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Label(suite.LabelSetC), Ord
 			Build()
 		objs = append(objs, &pipelineIncludeApp1Ns)
 
-		backend2 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend2Name))
+		backend2 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend2Name))
 		backend2ExportURL = backend2.ExportURL(proxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
@@ -56,10 +56,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Label(suite.LabelSetC), Ord
 			Build()
 		objs = append(objs, &pipelineExcludeApp1Ns)
 
+		logProducer1 := loggen.New(app1Ns)
+		logProducer2 := loggen.New(app2Ns)
+
 		objs = append(objs,
-			telemetrygen.NewPod(app1Ns, telemetrygen.SignalTypeLogs).K8sObject(),
-			telemetrygen.NewPod(app2Ns, telemetrygen.SignalTypeLogs).K8sObject(),
-			telemetrygen.NewPod(kitkyma.SystemNamespaceName, telemetrygen.SignalTypeLogs).K8sObject(),
+			logProducer1.K8sObject(),
+			logProducer2.K8sObject(),
 		)
 
 		return objs
@@ -91,13 +93,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Label(suite.LabelSetC), Ord
 			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
-		// FIXME
 		// verify logs from apps1Ns delivered to backend1
 		It("Should deliver Runtime logs from app1Ns to backend1", func() {
-			assert.LogsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns)
-		})
-
-		It("Should deliver OTLP logs from app1Ns to backend1", func() {
 			assert.LogsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns)
 		})
 
@@ -105,13 +102,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Label(suite.LabelSetC), Ord
 			assert.LogsFromNamespaceNotDelivered(proxyClient, backend1ExportURL, app2Ns)
 		})
 
-		// FIXME
 		// verify logs from apps2Ns delivered to backend2
 		It("Should deliver Runtime logs from app2Ns to backend2", func() {
-			assert.LogsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns)
-		})
-
-		It("Should deliver OTLP logs from app2Ns to backend2", func() {
 			assert.LogsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns)
 		})
 
