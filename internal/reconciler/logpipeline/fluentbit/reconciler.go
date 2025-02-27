@@ -145,6 +145,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
+	if err = cleanupFinalizersIfNeeded(ctx, r.Client, pipeline); err != nil {
+		return err
+	}
+
 	return nil
 }
 
