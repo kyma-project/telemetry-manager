@@ -24,16 +24,17 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	GatewayNamespace            string
-	InstrumentationScopeVersion string
-	ClusterName                 string
-	CloudProvider               string
+	GatewayNamespace                string
+	InstrumentationScopeVersion     string
+	ClusterName                     string
+	CloudProvider                   string
+	InternalMetricCompatibilityMode bool
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
-			Service:    config.DefaultService(make(config.Pipelines)),
+			Service:    config.DefaultService(make(config.Pipelines), opts.InternalMetricCompatibilityMode),
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),

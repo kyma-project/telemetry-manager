@@ -28,6 +28,60 @@ func TestDefaultTelemetryInstanceFound(t *testing.T) {
 	assert.Equal(t, DefaultTelemetryInstanceName, telemetry.Name)
 }
 
+func TestGetCompatibilityModeFromTelemetryNoAnnotation(t *testing.T) {
+	ctx := t.Context()
+	scheme := runtime.NewScheme()
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&operatorv1alpha1.Telemetry{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      DefaultTelemetryInstanceName,
+			Namespace: "default",
+		},
+	}).Build()
+
+	compatibilityMode := GetCompatibilityModeFromTelemetry(ctx, client, "default")
+
+	assert.False(t, compatibilityMode)
+}
+
+func TestGetCompatibilityModeFromTelemetryEnabled(t *testing.T) {
+	ctx := t.Context()
+	scheme := runtime.NewScheme()
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&operatorv1alpha1.Telemetry{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      DefaultTelemetryInstanceName,
+			Namespace: "default",
+			Annotations: map[string]string{
+				TelemetryCompatibilityModeAnnotationName: "true",
+			},
+		},
+	}).Build()
+
+	compatibilityMode := GetCompatibilityModeFromTelemetry(ctx, client, "default")
+
+	assert.True(t, compatibilityMode)
+}
+
+func TestGetCompatibilityModeFromTelemetryDisabled(t *testing.T) {
+	ctx := t.Context()
+	scheme := runtime.NewScheme()
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&operatorv1alpha1.Telemetry{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      DefaultTelemetryInstanceName,
+			Namespace: "default",
+			Annotations: map[string]string{
+				TelemetryCompatibilityModeAnnotationName: "false",
+			},
+		},
+	}).Build()
+
+	compatibilityMode := GetCompatibilityModeFromTelemetry(ctx, client, "default")
+
+	assert.False(t, compatibilityMode)
+}
+
 func TestDefaultTelemetryInstanceNotFound(t *testing.T) {
 	ctx := t.Context()
 	client := fake.NewClientBuilder().Build()

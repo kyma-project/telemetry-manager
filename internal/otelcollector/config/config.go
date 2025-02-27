@@ -68,7 +68,7 @@ type Logs struct {
 	Encoding string `yaml:"encoding"`
 }
 
-func DefaultService(pipelines Pipelines) Service {
+func DefaultService(pipelines Pipelines, compatibilityMode bool) Service {
 	telemetry := Telemetry{
 		Metrics: Metrics{
 			Readers: []MetricReader{
@@ -76,8 +76,11 @@ func DefaultService(pipelines Pipelines) Service {
 					Pull: PullMetricReader{
 						Exporter: MetricExporter{
 							Prometheus: PrometheusMetricExporter{
-								Host: fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
-								Port: ports.Metrics,
+								Host:              fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
+								Port:              ports.Metrics,
+								WithoutScopeInfo:  compatibilityMode,
+								WithoutTypeSuffix: compatibilityMode,
+								WithoutUnits:      compatibilityMode,
 							},
 						},
 					},

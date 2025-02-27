@@ -59,28 +59,41 @@ const (
 	typeLogPipeline
 )
 
-func MakeRules() RuleGroups {
+func MakeRules(compatibilityMode bool) RuleGroups {
 	var rules []Rule
 
 	metricRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    "metric_points",
+		dataType:    "metric_points_total",
 		serviceName: otelcollector.MetricGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
+
+	if compatibilityMode {
+		metricRuleBuilder.dataType = "metric_points"
+	}
+
 	rules = append(rules, metricRuleBuilder.rules()...)
 
 	traceRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    "spans",
+		dataType:    "spans_total",
 		serviceName: otelcollector.TraceGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
+	}
+
+	if compatibilityMode {
+		traceRuleBuilder.dataType = "spans"
 	}
 
 	rules = append(rules, traceRuleBuilder.rules()...)
 
 	logRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    "log_records",
+		dataType:    "log_records_total",
 		serviceName: otelcollector.LogGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
+	}
+
+	if compatibilityMode {
+		logRuleBuilder.dataType = "log_records"
 	}
 
 	rules = append(rules, logRuleBuilder.rules()...)
