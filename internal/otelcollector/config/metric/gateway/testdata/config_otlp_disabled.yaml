@@ -11,7 +11,6 @@ service:
             processors:
                 - k8sattributes
                 - transform/resolve-service-name
-                - resource/drop-kyma-attributes
             exporters:
                 - forward/test
         metrics/test-input:
@@ -34,6 +33,7 @@ service:
                 - filter/drop-if-input-source-otlp
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
+                - resource/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/test
