@@ -86,10 +86,9 @@ processors:
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         log_statements:
-            - context: scope
-              statements:
-                - set(version, "main")
-                - set(name, "io.kyma-project.telemetry/runtime")
+            - statements:
+                - set(scope.version, "main")
+                - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
     otlp:
         endpoint: logs.telemetry-system.svc.cluster.local:4317

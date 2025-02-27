@@ -117,7 +117,6 @@ func TestProcessors(t *testing.T) {
 			ErrorMode: "ignore",
 			MetricStatements: []config.TransformProcessorStatements{
 				{
-					Context:    "metric",
 					Statements: []string{"set(resource.attributes[\"io.kyma-project.telemetry.skip_enrichment\"], \"true\")"},
 					Conditions: []string{
 						"IsMatch(name, \"^k8s.node.*\")",

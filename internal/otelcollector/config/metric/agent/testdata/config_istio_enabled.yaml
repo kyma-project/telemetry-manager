@@ -355,8 +355,7 @@ processors:
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:
-            - context: metric
-              statements:
+            - statements:
                 - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
               conditions:
                 - IsMatch(name, "^k8s.node.*")

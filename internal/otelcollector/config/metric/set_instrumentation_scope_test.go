@@ -100,9 +100,6 @@ func compareTransformProcessor(got, want *TransformProcessor) bool {
 	}
 
 	for i, statement := range got.MetricStatements {
-		if statement.Context != want.MetricStatements[i].Context {
-			return false
-		}
 
 		if len(statement.Statements) != len(want.MetricStatements[i].Statements) {
 			return false
