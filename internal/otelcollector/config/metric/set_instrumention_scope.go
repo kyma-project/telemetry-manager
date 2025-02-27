@@ -16,20 +16,25 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 
 func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
 	statements := []string{}
+	transformProcessorStatements := []config.TransformProcessorStatements{}
+
 	for _, i := range inputSource {
 		statements = append(statements, makeInstrumentationStatement(i, instrumentationScopeVersion)...)
+
 		if i == InputSourcePrometheus {
-			statements = append(statements, []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", "kyma.input.name", "prometheus")}...)
+			transformProcessorStatements = append(transformProcessorStatements, config.TransformProcessorStatements{
+				Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", "kyma.input.name", "prometheus")},
+			})
 		}
 	}
 
+	transformProcessorStatements = append(transformProcessorStatements, config.TransformProcessorStatements{
+		Statements: statements,
+	})
+
 	return &TransformProcessor{
-		ErrorMode: "ignore",
-		MetricStatements: []config.TransformProcessorStatements{
-			{
-				Statements: statements,
-			},
-		},
+		ErrorMode:        "ignore",
+		MetricStatements: transformProcessorStatements,
 	}
 }
 
