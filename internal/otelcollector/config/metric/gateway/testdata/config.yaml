@@ -144,7 +144,7 @@ processors:
     filter/drop-if-input-source-prometheus:
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/prometheus"
+                - resource.attributes["kyma.input.name"] == "prometheus"
     filter/drop-if-input-source-istio:
         metrics:
             metric:

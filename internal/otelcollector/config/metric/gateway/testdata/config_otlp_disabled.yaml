@@ -145,7 +145,7 @@ processors:
     filter/drop-if-input-source-prometheus:
         metrics:
             metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/prometheus"
+                - resource.attributes["kyma.input.name"] == "prometheus"
     filter/drop-if-input-source-istio:
         metrics:
             metric:
@@ -153,7 +153,7 @@ processors:
     filter/drop-if-input-source-otlp:
         metrics:
             metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or instrumentation_scope.name == "io.kyma-project.telemetry/prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma")
+                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma")
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:

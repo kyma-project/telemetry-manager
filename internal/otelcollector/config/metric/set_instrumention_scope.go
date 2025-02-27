@@ -23,7 +23,7 @@ func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, input
 
 		if i == InputSourcePrometheus {
 			transformProcessorStatements = append(transformProcessorStatements, config.TransformProcessorStatements{
-				Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", "kyma.input.name", "prometheus")},
+				Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, KymaInputPrometheus)},
 			})
 		}
 	}

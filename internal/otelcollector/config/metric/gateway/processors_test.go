@@ -132,7 +132,7 @@ func TestProcessors(t *testing.T) {
 
 		require.NotNil(t, collectorConfig.Processors.DropIfInputSourcePrometheus)
 		require.Len(t, collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric, 1)
-		require.Equal(t, "instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\"", collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric[0])
+		require.Equal(t, "resource.attributes[\"kyma.input.name\"] == \"prometheus\"", collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric[0])
 
 		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceIstio)
 		require.Len(t, collectorConfig.Processors.DropIfInputSourceIstio.Metrics.Metric, 1)
@@ -142,7 +142,7 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric, 1)
 		require.Equal(t,
 			"not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or "+
-				"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or "+
+				"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or "+
 				"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or "+
 				"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\")",
 			collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric[0],
@@ -189,7 +189,7 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric, 1)
 
 		expectedCondition = "not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or " +
-			"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or " +
+			"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\") and " +
 			"resource.attributes[\"k8s.namespace.name\"] != nil and " +
@@ -237,7 +237,7 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric, 1)
 
 		expectedCondition = "not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or " +
-			"instrumentation_scope.name == \"io.kyma-project.telemetry/prometheus\" or " +
+			"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or " +
 			"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\") and " +
 			"(resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
