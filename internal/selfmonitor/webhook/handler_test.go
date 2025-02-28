@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -21,12 +20,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
-
-type errReader struct{}
-
-func (errReader) Read(p []byte) (n int, err error) {
-	return 0, assert.AnError
-}
 
 // hugeJSONFake is a fake reader that generates a huge JSON `file`. It starts like a JSON array and fills it with `a` to `z` characters, but it never ends the array.
 type hugeJSONFake struct {
