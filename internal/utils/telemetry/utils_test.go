@@ -53,7 +53,7 @@ func TestGetCompatibilityModeFromTelemetryEnabled(t *testing.T) {
 			Name:      DefaultTelemetryInstanceName,
 			Namespace: "default",
 			Annotations: map[string]string{
-				TelemetryCompatibilityModeAnnotationName: "true",
+				CompatibilityModeAnnotationName: "true",
 			},
 		},
 	}).Build()
@@ -72,7 +72,7 @@ func TestGetCompatibilityModeFromTelemetryDisabled(t *testing.T) {
 			Name:      DefaultTelemetryInstanceName,
 			Namespace: "default",
 			Annotations: map[string]string{
-				TelemetryCompatibilityModeAnnotationName: "false",
+				CompatibilityModeAnnotationName: "false",
 			},
 		},
 	}).Build()

@@ -11,7 +11,7 @@ import (
 )
 
 const DefaultTelemetryInstanceName = "default"
-const TelemetryCompatibilityModeAnnotationName = "telemetry.kyma-project.io/internal-metrics-compatibility-mode"
+const CompatibilityModeAnnotationName = "telemetry.kyma-project.io/internal-metrics-compatibility-mode"
 
 func GetDefaultTelemetryInstance(ctx context.Context, client client.Client, namespace string) (operatorv1alpha1.Telemetry, error) {
 	var telemetry operatorv1alpha1.Telemetry
@@ -35,7 +35,7 @@ func GetCompatibilityModeFromTelemetry(ctx context.Context, client client.Client
 		return false
 	}
 
-	if value, exists := telemetry.Annotations[TelemetryCompatibilityModeAnnotationName]; exists {
+	if value, exists := telemetry.Annotations[CompatibilityModeAnnotationName]; exists {
 		return value == "true"
 	}
 

@@ -355,15 +355,14 @@ processors:
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:
-            - context: metric
-              statements:
-                - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
+            - statements:
+                - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true") where metric.name != ""
               conditions:
-                - IsMatch(name, "^k8s.node.*")
-                - IsMatch(name, "^k8s.statefulset.*")
-                - IsMatch(name, "^k8s.daemonset.*")
-                - IsMatch(name, "^k8s.deployment.*")
-                - IsMatch(name, "^k8s.job.*")
+                - IsMatch(metric.name, "^k8s.node.*")
+                - IsMatch(metric.name, "^k8s.statefulset.*")
+                - IsMatch(metric.name, "^k8s.daemonset.*")
+                - IsMatch(metric.name, "^k8s.deployment.*")
+                - IsMatch(metric.name, "^k8s.job.*")
     filter/drop-non-pvc-volumes-metrics:
         metrics:
             metric:

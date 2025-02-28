@@ -83,11 +83,10 @@ func makeInsertSkipEnrichmentAttributeProcessor() *metric.TransformProcessor {
 		ErrorMode: "ignore",
 		MetricStatements: []config.TransformProcessorStatements{
 			{
-				Context: "metric",
 				Statements: []string{
-					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\")", metric.SkipEnrichmentAttribute),
+					fmt.Sprintf("set(resource.attributes[\"%s\"], \"true\") where metric.name != \"\"", metric.SkipEnrichmentAttribute),
 				},
-				Conditions: makeConditionsWithIsMatch(metricsToSkipEnrichment),
+				Conditions: makeMetricNameConditionsWithIsMatch(metricsToSkipEnrichment),
 			},
 		},
 	}
@@ -107,11 +106,11 @@ func makeDropNonPVCVolumesMetricsProcessor() *FilterProcessor {
 	}
 }
 
-func makeConditionsWithIsMatch(metrics []string) []string {
+func makeMetricNameConditionsWithIsMatch(metrics []string) []string {
 	var conditions []string
 
 	for _, m := range metrics {
-		condition := ottlexpr.IsMatch("name", fmt.Sprintf("^k8s.%s.*", m))
+		condition := ottlexpr.IsMatch("metric.name", fmt.Sprintf("^k8s.%s.*", m))
 		conditions = append(conditions, condition)
 	}
 

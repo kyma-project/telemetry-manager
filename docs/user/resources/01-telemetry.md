@@ -66,6 +66,24 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 For details, see the [Telemetry specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/operator/v1alpha1/telemetry_types.go).
 
+### Annotations
+
+The OpenTelemetry internal metric backward compatibility:
+The recent version of OpenTelemetry Collector 0.120.0 introduced a new suffix for internal metrics exposed through the Prometheus endpoint and breaks the stability of internal metrics.
+To maintain backward compatibility, the Telemetry Manager introduces new annotations `telemetry.kyma-project.io/internal-metrics-compatibility-mode` to control the internal metrics suffix.
+To enable the backward compatibility mode, set the annotation `telemetry.kyma-project.io/internal-metrics-compatibility-mode: true` in the Telemetry CR.
+```yaml
+apiVersion: operator.kyma-project.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+  annotations:
+    telemetry.kyma-project.io/internal-metrics-compatibility-mode: "true"
+```
+
+> [! WARNING]
+> The backward compatibility mode is disabled by default. This annotation will be removed in the future.
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
 <!-- The content between "TABLE-START" and "TABLE-END" will be replaced -->
