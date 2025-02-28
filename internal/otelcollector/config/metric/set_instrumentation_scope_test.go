@@ -18,10 +18,9 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
-					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(scope.name, \"io.kyma-project.telemetry/runtime\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
 					},
 				}},
 			},
@@ -30,13 +29,17 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			name: "InputSourcePrometheus",
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
-				MetricStatements: []config.TransformProcessorStatements{{
-					Context: "scope",
-					Statements: []string{
-						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
+				MetricStatements: []config.TransformProcessorStatements{
+					{
+						Statements: []string{"set(resource.attributes[\"kyma.input.name\"], \"prometheus\")"},
 					},
-				}},
+					{
+						Statements: []string{
+							"set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
+							"set(scope.name, \"io.kyma-project.telemetry/prometheus\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
+						},
+					},
+				},
 			},
 			inputSource: InputSourcePrometheus,
 		}, {
@@ -44,10 +47,9 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
-					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/istio\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
+						"set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
+						"set(scope.name, \"io.kyma-project.telemetry/istio\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"",
 					},
 				}},
 			},
@@ -57,10 +59,9 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
-					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/kyma\") where name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"",
+						"set(scope.version, \"main\") where scope.name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"",
+						"set(scope.name, \"io.kyma-project.telemetry/kyma\") where scope.name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"",
 					},
 				}},
 			},
@@ -70,10 +71,9 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			want: &TransformProcessor{
 				ErrorMode: "ignore",
 				MetricStatements: []config.TransformProcessorStatements{{
-					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+						"set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+						"set(scope.name, \"io.kyma-project.telemetry/runtime\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
 					},
 				}},
 			},
@@ -100,10 +100,6 @@ func compareTransformProcessor(got, want *TransformProcessor) bool {
 	}
 
 	for i, statement := range got.MetricStatements {
-		if statement.Context != want.MetricStatements[i].Context {
-			return false
-		}
-
 		if len(statement.Statements) != len(want.MetricStatements[i].Statements) {
 			return false
 		}

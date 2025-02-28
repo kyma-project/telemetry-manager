@@ -66,6 +66,28 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 For details, see the [Telemetry specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/operator/v1alpha1/telemetry_types.go).
 
+### Annotations
+
+Backward compatibility for internal metrics in OpenTelemetry:
+The recent version of OpenTelemetry Collector 0.119.0 introduced breaking changes for internal metrics exposed through the Prometheus endpoint and breaks the stability of internal metrics.
+- The metric name, for example, the counter metrics will be appending a `_total` suffix
+- The metric unit will be appended to the metric name, for example, a counter metric `request_duration` with unit `milliseconds` will be exposed as `request_duration_milliseconds_total`
+- The internal metric exporter will create a `otel_scope_info` metric containing the metrics Instrumentation Scope, and also add labels about Instrumentation Scope to all metric points.
+
+To maintain backward compatibility, the Telemetry Manager introduces new annotations `telemetry.kyma-project.io/internal-metrics-compatibility-mode` to control the internal metrics suffix.
+To enable the backward compatibility mode, set the annotation `telemetry.kyma-project.io/internal-metrics-compatibility-mode: true` in the Telemetry CR.
+```yaml
+apiVersion: operator.kyma-project.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+  annotations:
+    telemetry.kyma-project.io/internal-metrics-compatibility-mode: "true"
+```
+
+> [! WARNING]
+> The backward compatibility mode is disabled by default. This annotation will be removed in version 1.41.0.
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
 <!-- The content between "TABLE-START" and "TABLE-END" will be replaced -->

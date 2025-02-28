@@ -26,4 +26,8 @@ var InstrumentationScope = map[InputSourceType]string{
 	InputSourceK8sCluster: InstrumentationScopeRuntime,
 }
 
-const SkipEnrichmentAttribute = "io.kyma-project.telemetry.skip_enrichment"
+const (
+	SkipEnrichmentAttribute = "io.kyma-project.telemetry.skip_enrichment"
+	KymaInputNameAttribute  = "kyma.input.name"
+	KymaInputPrometheus     = "prometheus"
+)

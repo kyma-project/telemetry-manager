@@ -221,8 +221,9 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	clusterInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		ClusterName:   clusterInfo.ClusterName,
-		CloudProvider: clusterInfo.CloudProvider,
+		ClusterName:                     clusterInfo.ClusterName,
+		CloudProvider:                   clusterInfo.CloudProvider,
+		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)

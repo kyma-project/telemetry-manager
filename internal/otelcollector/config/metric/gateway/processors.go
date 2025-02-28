@@ -76,7 +76,7 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
-				ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
+				ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus),
 			},
 		},
 	}
@@ -247,7 +247,7 @@ func otlpInputSource() string {
 	// we assume the metric is being pushed directly to metrics gateway.
 	return fmt.Sprintf("not(%s or %s or %s or %s)",
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
-		ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
+		ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeKyma),
 	)

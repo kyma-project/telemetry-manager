@@ -18,12 +18,13 @@ type Builder struct {
 }
 
 type BuildOptions struct {
-	InstrumentationScopeVersion string
-	AgentNamespace              string
+	InstrumentationScopeVersion     string
+	AgentNamespace                  string
+	InternalMetricCompatibilityMode bool
 }
 
 func (b *Builder) Build(logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) *Config {
-	logService := config.DefaultService(makePipelinesConfig())
+	logService := config.DefaultService(makePipelinesConfig(), opts.InternalMetricCompatibilityMode)
 	// Overwrite the extension from default service name
 	logService.Extensions = []string{"health_check", "pprof", "file_storage"}
 

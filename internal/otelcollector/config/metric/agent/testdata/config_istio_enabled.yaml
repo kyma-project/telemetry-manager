@@ -333,38 +333,36 @@ processors:
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         metric_statements:
-            - context: scope
-              statements:
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-                - set(name, "io.kyma-project.telemetry/runtime") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
-                - set(name, "io.kyma-project.telemetry/runtime") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
     transform/set-instrumentation-scope-prometheus:
         error_mode: ignore
         metric_statements:
-            - context: scope
-              statements:
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-                - set(name, "io.kyma-project.telemetry/prometheus") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "prometheus")
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/prometheus") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
     transform/set-instrumentation-scope-istio:
         error_mode: ignore
         metric_statements:
-            - context: scope
-              statements:
-                - set(version, "main") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-                - set(name, "io.kyma-project.telemetry/istio") where name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/istio") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:
-            - context: metric
-              statements:
-                - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
+            - statements:
+                - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true") where metric.name != ""
               conditions:
-                - IsMatch(name, "^k8s.node.*")
-                - IsMatch(name, "^k8s.statefulset.*")
-                - IsMatch(name, "^k8s.daemonset.*")
-                - IsMatch(name, "^k8s.deployment.*")
-                - IsMatch(name, "^k8s.job.*")
+                - IsMatch(metric.name, "^k8s.node.*")
+                - IsMatch(metric.name, "^k8s.statefulset.*")
+                - IsMatch(metric.name, "^k8s.daemonset.*")
+                - IsMatch(metric.name, "^k8s.deployment.*")
+                - IsMatch(metric.name, "^k8s.job.*")
     filter/drop-non-pvc-volumes-metrics:
         metrics:
             metric:

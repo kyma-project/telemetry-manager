@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -176,7 +177,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
 
-	alertRules := config.MakeRules()
+	alertRules := config.MakeRules(telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, telemetry.Namespace))
 
 	alertRulesYAML, err := yaml.Marshal(alertRules)
 	if err != nil {

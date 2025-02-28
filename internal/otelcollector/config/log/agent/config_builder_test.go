@@ -90,17 +90,42 @@ func TestBuildAgentConfig(t *testing.T) {
 		})
 	})
 	t.Run("marshaling", func(t *testing.T) {
-		goldenFileName := "config.yaml"
+		tests := []struct {
+			name              string
+			goldenFileName    string
+			withOTLPInput     bool
+			compatibilityMode bool
+		}{
+			{
+				name:              "Compatibility mode disabled",
+				goldenFileName:    "config.yaml",
+				compatibilityMode: false,
+			},
+			{
+				name:              "Compatibility mode enabled",
+				goldenFileName:    "config_compatibility_enabled.yaml",
+				compatibilityMode: true,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				goldenFileName := tt.goldenFileName
 
-		collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{InstrumentationScopeVersion: "main", AgentNamespace: "kyma-system"})
-		configYAML, err := yaml.Marshal(collectorConfig)
-		require.NoError(t, err, "failed to marshal config")
+				collectorConfig := sut.Build([]telemetryv1alpha1.LogPipeline{
+					testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()}, BuildOptions{
+					InstrumentationScopeVersion:     "main",
+					AgentNamespace:                  "kyma-system",
+					InternalMetricCompatibilityMode: tt.compatibilityMode,
+				})
+				configYAML, err := yaml.Marshal(collectorConfig)
+				require.NoError(t, err, "failed to marshal config")
 
-		goldenFilePath := filepath.Join("testdata", goldenFileName)
-		goldenFile, err := os.ReadFile(goldenFilePath)
-		require.NoError(t, err, "failed to load golden file")
+				goldenFilePath := filepath.Join("testdata", goldenFileName)
+				goldenFile, err := os.ReadFile(goldenFilePath)
+				require.NoError(t, err, "failed to load golden file")
 
-		require.Equal(t, string(goldenFile), string(configYAML))
+				require.Equal(t, string(goldenFile), string(configYAML))
+			})
+		}
 	})
 }
