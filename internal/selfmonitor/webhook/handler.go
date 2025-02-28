@@ -92,6 +92,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var alerts []Alert
+
 	decoder := json.NewDecoder(io.LimitReader(r.Body, 1*MB))
 	if err := decoder.Decode(&alerts); err != nil {
 		h.logger.Error(err, "Failed to unmarshal request body")

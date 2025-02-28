@@ -38,10 +38,13 @@ func (f *hugeJSONFake) Read(p []byte) (n int, err error) {
 	if f.Bytes < 2 {
 		return 0, io.EOF
 	}
+
 	if f.Bytes == f.offset {
 		return 0, io.EOF
 	}
+
 	header := []byte(`["`)
+
 	bytesLeft := len(p)
 	if (f.Bytes - f.offset) < bytesLeft {
 		bytesLeft = f.Bytes - f.offset
@@ -49,20 +52,24 @@ func (f *hugeJSONFake) Read(p []byte) (n int, err error) {
 	// If this is the first read, copy the header and fill the rest with characters
 	if f.offset == 0 {
 		copy(p, header)
+
 		remainder := bytesLeft - len(header)
-		for i := 0; i < remainder; i++ {
+		for i := range remainder {
 			p[i+len(header)] = byte('a' + (f.offset+i)%26)
 		}
+
 		f.offset += bytesLeft
+
 		return bytesLeft, nil
 	}
 
 	// Fill the rest with characters
-	for i := 0; i < bytesLeft; i++ {
+	for i := range bytesLeft {
 		p[i] = byte('a' + (f.offset+i)%26)
 	}
 
 	f.offset += bytesLeft
+
 	return bytesLeft, nil
 }
 
