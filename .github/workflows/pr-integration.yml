@@ -10,15 +10,23 @@ on:
     branches:
       - "main"
       - "release-*"
-    paths-ignore:
-      - 'docs/**'
-      - 'dependencies/**'
-      - '**/*.md'
-      - 'OWNERS'
-      - 'CODEOWNERS'
-      - 'external-images.yaml'
-  workflow_dispatch:
+    # only include PRs that change:
+    # go files
+    # go mod files
+    # test files in the test/e2e directory
+    # exclude go files that end with _test.go
+    # include the workflow definition itself
+    # include dependencies of the workflow definition
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "!**_test.go"
+      - "test/e2e/*.go"
+      - ".github/workflows/pr-integration.yml"
+      - ".github/template/**"
 
+  workflow_dispatch:
 
 jobs:
   setup:
