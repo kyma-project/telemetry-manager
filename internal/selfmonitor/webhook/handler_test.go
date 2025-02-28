@@ -28,6 +28,44 @@ func (errReader) Read(p []byte) (n int, err error) {
 	return 0, assert.AnError
 }
 
+// hugeJSONFake is a fake reader that generates a huge JSON `file`. It starts like a JSON array and fills it with `a` to `z` characters, but it never ends the array.
+type hugeJSONFake struct {
+	Bytes  int
+	offset int
+}
+
+func (f *hugeJSONFake) Read(p []byte) (n int, err error) {
+	if f.Bytes < 2 {
+		return 0, io.EOF
+	}
+	if f.Bytes == f.offset {
+		return 0, io.EOF
+	}
+	header := []byte(`["`)
+	bytesLeft := len(p)
+	if (f.Bytes - f.offset) < bytesLeft {
+		bytesLeft = f.Bytes - f.offset
+	}
+	// If this is the first read, copy the header and fill the rest with characters
+	if f.offset == 0 {
+		copy(p, header)
+		remainder := bytesLeft - len(header)
+		for i := 0; i < remainder; i++ {
+			p[i+len(header)] = byte('a' + (f.offset+i)%26)
+		}
+		f.offset += bytesLeft
+		return bytesLeft, nil
+	}
+
+	// Fill the rest with characters
+	for i := 0; i < bytesLeft; i++ {
+		p[i] = byte('a' + (f.offset+i)%26)
+	}
+
+	f.offset += bytesLeft
+	return bytesLeft, nil
+}
+
 func TestHandler(t *testing.T) {
 	tests := []struct {
 		name                       string
@@ -126,10 +164,11 @@ func TestHandler(t *testing.T) {
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
 		{
-			name:           "failed to read request body",
+			name:           "failed to read huge request body",
 			requestMethod:  http.MethodPost,
-			requestBody:    errReader{},
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus: http.StatusBadRequest,
+			// generate a json file with more than 1MB of data
+			requestBody: &hugeJSONFake{Bytes: 1 << 21},
 		},
 		{
 			name:           "failed to unmarshal request body",
