@@ -87,7 +87,7 @@ metadata:
 ```
 
 > [! WARNING]
-> The backward compatibility mode is disabled by default. This annotation will be removed in the future.
+> The backward compatibility mode is disabled by default. This annotation will be removed in version 1.41.0.
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
 <!-- The content between "TABLE-START" and "TABLE-END" will be replaced -->
