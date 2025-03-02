@@ -10,18 +10,18 @@ import (
 )
 
 const (
-	// Rule names (both OTel and FluentBit). Note that the actual full names will be prefixed with:
-	// -  Metric/Trace/Log/FluentBitLog
-	// -  Gateway/Agent
-	RuleNameAllDataDropped  = "AllDataDropped"
-	RuleNameSomeDataDropped = "SomeDataDropped"
-	RuleNameQueueAlmostFull = "QueueAlmostFull"
-	RuleNameThrottling      = "Throttling"
+	// OTEL Collector rule names. Note that the actual full names will be prefixed with Metric or Trace
+	RuleNameGatewayAllDataDropped  = "GatewayAllDataDropped"
+	RuleNameGatewaySomeDataDropped = "GatewaySomeDataDropped"
+	RuleNameGatewayQueueAlmostFull = "GatewayQueueAlmostFull"
+	RuleNameGatewayThrottling      = "GatewayThrottling"
 
-	// FluentBit-specific rule names. Note that the actual full names will be prefixed with FluentBitLogAgent
-	RuleNameFluentBitBufferInUse     = "BufferInUse"
-	RuleNameFluentBitBufferFull      = "BufferFull"
-	RuleNameFluentBitNoLogsDelivered = "NoLogsDelivered"
+	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
+	RuleNameLogAgentAllDataDropped  = "AgentAllDataDropped"
+	RuleNameLogAgentSomeDataDropped = "AgentSomeDataDropped"
+	RuleNameLogAgentBufferInUse     = "AgentBufferInUse"
+	RuleNameLogAgentBufferFull      = "AgentBufferFull"
+	RuleNameLogAgentNoLogsDelivered = "AgentNoLogsDelivered"
 
 	// Common rule labels
 	labelService      = "service"
@@ -57,14 +57,6 @@ const (
 	typeMetricPipeline pipelineType = iota
 	typeTracePipeline
 	typeLogPipeline
-	typeFluentBitLogPipeline
-)
-
-type componentType int
-
-const (
-	componentGateway componentType = iota
-	componentAgent
 )
 
 func MakeRules() RuleGroups {
@@ -73,31 +65,24 @@ func MakeRules() RuleGroups {
 	metricRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "metric_points",
 		serviceName: otelcollector.MetricGatewayName + "-metrics",
-		namePrefix:  ruleNamePrefix(typeMetricPipeline, componentGateway),
+		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricRuleBuilder.rules()...)
 
 	traceRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "spans",
 		serviceName: otelcollector.TraceGatewayName + "-metrics",
-		namePrefix:  ruleNamePrefix(typeTracePipeline, componentGateway),
+		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 	rules = append(rules, traceRuleBuilder.rules()...)
 
-	logRuleBuilderGateway := otelCollectorRuleBuilder{
+	logRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "log_records",
 		serviceName: otelcollector.LogGatewayName + "-metrics",
-		namePrefix:  ruleNamePrefix(typeLogPipeline, componentGateway),
-	}
-	logRuleBuilderAgent := otelCollectorRuleBuilder{
-		dataType:     "log_records",
-		serviceName:  otelcollector.LogAgentName + "-metrics",
-		namePrefix:   ruleNamePrefix(typeLogPipeline, componentAgent),
-		excludeRules: []string{RuleNameQueueAlmostFull},
+		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 
-	rules = append(rules, logRuleBuilderGateway.rules()...)
-	rules = append(rules, logRuleBuilderAgent.rules()...)
+	rules = append(rules, logRuleBuilder.rules()...)
 
 	FluentBitLogRuleBuilder := fluentBitRuleBuilder{}
 	rules = append(rules, FluentBitLogRuleBuilder.rules()...)
@@ -112,66 +97,49 @@ func MakeRules() RuleGroups {
 	}
 }
 
-func ruleNamePrefix(pt pipelineType, ct componentType) string {
-	ptPrefix := ""
-
-	switch pt {
+func ruleNamePrefix(t pipelineType) string {
+	switch t {
 	case typeMetricPipeline:
-		ptPrefix += "Metric"
+		return "Metric"
 	case typeTracePipeline:
-		ptPrefix += "Trace"
+		return "Trace"
 	case typeLogPipeline:
-		ptPrefix += "Log"
-	case typeFluentBitLogPipeline:
-		ptPrefix += "FluentBitLog"
+		return "Log"
 	}
-
-	ctPrefix := ""
-
-	switch ct {
-	case componentGateway:
-		ctPrefix += "Gateway"
-	case componentAgent:
-		ctPrefix += "Agent"
-	}
-
-	return ptPrefix + ctPrefix
+	return ""
 }
 
 const (
 	RulesAny = "any"
 )
 
-// MatchesFluentBitLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a FluentBit log pipeline.
+// MatchesFluentBitLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
 // If the alert does not have a name label, it should be matched by all pipelines.
 // RulesAny can be used to match any LogPipeline rule name.
 func MatchesFluentBitLogPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
-	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeFluentBitLogPipeline, componentAgent)
+	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline)
 }
 
 // MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a metric pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
 func MatchesMetricPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
-	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeMetricPipeline, componentGateway)
+	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeMetricPipeline)
 }
 
 // MatchesTracePipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a trace pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
 func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
-	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeTracePipeline, componentGateway)
+	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeTracePipeline)
 }
 
 // MatchesLogPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a log pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
 func MatchesLogPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
-	matchesAgentRule := matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline, componentAgent)
-	matchesGatewayRule := matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline, componentGateway)
-
-	return matchesAgentRule || matchesGatewayRule
+	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline)
 }
 
-func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string, pt pipelineType, ct componentType) bool {
-	if !matchesRuleName(labelSet, unprefixedRuleName, pt, ct) {
+func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string, t pipelineType) bool {
+	if !matchesRuleName(labelSet, unprefixedRuleName, t) {
 		return false
 	}
 
@@ -184,18 +152,18 @@ func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipeline
 	return pipelineNameLabel == pipelineName
 }
 
-func matchesRuleName(labelSet map[string]string, unprefixedRuleName string, pt pipelineType, ct componentType) bool {
+func matchesRuleName(labelSet map[string]string, unprefixedRuleName string, t pipelineType) bool {
 	ruleName, hasRuleName := labelSet[model.AlertNameLabel]
 	if !hasRuleName {
 		return false
 	}
 
-	if !strings.HasPrefix(ruleName, ruleNamePrefix(pt, ct)) {
+	if !strings.HasPrefix(ruleName, ruleNamePrefix(t)) {
 		return false
 	}
 
 	if unprefixedRuleName != RulesAny {
-		if ruleName != ruleNamePrefix(pt, ct)+unprefixedRuleName {
+		if ruleName != ruleNamePrefix(t)+unprefixedRuleName {
 			return false
 		}
 	}
