@@ -1,0 +1,79 @@
+//go:build e2e
+
+package fluentbit
+
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+)
+
+var _ = Describe(ID(), Label(LabelLogs), func() {
+	const (
+		invalidEndpoint = "'http://example.com'"
+	)
+
+	var (
+		mockNs                = ID()
+		pipelineNameValue     = IDWithSuffix("value")
+		pipelineNameValueFrom = IDWithSuffix("value-from")
+	)
+
+	makeResources := func() ([]client.Object, []client.Object) {
+		var objsSuccess, objsFailure []client.Object
+		objsSuccess = append(objsSuccess, kitk8s.NewNamespace(mockNs).K8sObject())
+
+		logPipelineInvalidEndpointValue := testutils.NewLogPipelineBuilder().
+			WithName(pipelineNameValue).
+			WithHTTPOutput(
+				testutils.HTTPHost(invalidEndpoint),
+			).
+			Build()
+
+		endpointKey := "endpoint"
+		secret := kitk8s.NewOpaqueSecret("test", kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
+		logPipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
+			WithName(pipelineNameValueFrom).
+			WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+			Build()
+
+		objsSuccess = append(objsSuccess,
+			secret.K8sObject(),
+			&logPipelineInvalidEndpointValueFrom,
+		)
+
+		objsFailure = append(objsFailure,
+			&logPipelineInvalidEndpointValue,
+		)
+
+		return objsSuccess, objsFailure
+	}
+
+	Context("When log pipelines with an invalid Endpoint are created", Ordered, func() {
+		BeforeAll(func() {
+			k8sObjectsSuccess, k8sObjectsFailure := makeResources()
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjectsSuccess...)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjectsSuccess...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjectsFailure...)).Should(MatchError(ContainSubstring("invalid hostname")))
+		})
+
+		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
+			assert.LogPipelineHasCondition(Ctx, K8sClient, pipelineNameValueFrom, metav1.Condition{
+				Type:   conditions.TypeConfigurationGenerated,
+				Status: metav1.ConditionFalse,
+				Reason: conditions.ReasonEndpointInvalid,
+			})
+		})
+	})
+})
