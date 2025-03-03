@@ -87,9 +87,8 @@ metadata:
 ```
 
 > [! WARNING]
-> By default, the backward compatibility mode is disabled.```
+> By default, the backward compatibility mode is disabled.
 
-We don't announce future plans in our docs. That's what release notes and deprecation notes are for.
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
 <!-- The content between "TABLE-START" and "TABLE-END" will be replaced -->
