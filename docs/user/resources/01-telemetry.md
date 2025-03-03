@@ -69,12 +69,12 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 ### Annotations
 
 Backward compatibility for internal metrics in OpenTelemetry:
-The recent version of OpenTelemetry Collector 0.119.0 introduced breaking changes for internal metrics exposed through the Prometheus endpoint and breaks the stability of internal metrics.
-- The metric name, for example, the counter metrics will be appending a `_total` suffix
-- The metric unit will be appended to the metric name, for example, a counter metric `request_duration` with unit `milliseconds` will be exposed as `request_duration_milliseconds_total`
-- The internal metric exporter will create a `otel_scope_info` metric containing the metrics Instrumentation Scope, and also add labels about Instrumentation Scope to all metric points.
+OpenTelemetry Collector 0.119.0 introduces breaking changes for internal metrics exposed through the Prometheus endpoint and breaks the stability of internal metrics. This affects Kyma Telemetry in the following ways:
+- The metric name changes. For example, the counter metrics append a `_total` suffix.
+- The metric unit is appended to the metric name. For example, a counter metric `request_duration` with unit `milliseconds` is exposed as `request_duration_milliseconds_total`.
+- The internal metric exporter creates an `otel_scope_info` metric containing the metrics instrumentation scope, and also add labels about instrumentation scope to all metric points.
 
-To maintain backward compatibility, the Telemetry Manager introduces new annotations `telemetry.kyma-project.io/internal-metrics-compatibility-mode` to control the internal metrics suffix.
+To maintain backward compatibility, the Telemetry Manager introduces the annotation `telemetry.kyma-project.io/internal-metrics-compatibility-mode` to control the internal metrics suffix.
 To enable the backward compatibility mode, set the annotation `telemetry.kyma-project.io/internal-metrics-compatibility-mode: true` in the Telemetry CR.
 ```yaml
 apiVersion: operator.kyma-project.io/v1alpha1
