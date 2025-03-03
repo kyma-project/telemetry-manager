@@ -44,6 +44,7 @@ jobs:
           - telemetry
           - max-pipeline
           - telemetry-log-analysis
+          - self-mon-metrics-healthy-compatibility-mode
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

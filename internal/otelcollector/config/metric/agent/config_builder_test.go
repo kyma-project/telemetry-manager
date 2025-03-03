@@ -335,16 +335,25 @@ func TestBuildAgentConfig(t *testing.T) {
 			goldenFileName      string
 			istioEnabled        bool
 			overwriteGoldenFile bool
+			compatibilityMode   bool
 		}{
 			{
-				name:           "istio not enabled",
-				goldenFileName: "config_istio_not_enabled.yaml",
-				istioEnabled:   false,
+				name:              "istio not enabled",
+				goldenFileName:    "config_istio_not_enabled.yaml",
+				istioEnabled:      false,
+				compatibilityMode: false,
 			},
 			{
-				name:           "istio enabled",
-				goldenFileName: "config_istio_enabled.yaml",
-				istioEnabled:   true,
+				name:              "istio enabled",
+				goldenFileName:    "config_istio_enabled.yaml",
+				istioEnabled:      true,
+				compatibilityMode: false,
+			},
+			{
+				name:              "compatibility enabled",
+				goldenFileName:    "config_compatibility_enabled.yaml",
+				istioEnabled:      false,
+				compatibilityMode: true,
 			},
 		}
 
@@ -354,9 +363,10 @@ func TestBuildAgentConfig(t *testing.T) {
 					testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithPrometheusInput(true).WithIstioInput(tt.istioEnabled).Build(),
 				}
 				config := sut.Build(pipelines, BuildOptions{
-					IstioEnabled:                tt.istioEnabled,
-					IstioCertPath:               "/etc/istio-output-certs",
-					InstrumentationScopeVersion: "main",
+					IstioEnabled:                    tt.istioEnabled,
+					IstioCertPath:                   "/etc/istio-output-certs",
+					InstrumentationScopeVersion:     "main",
+					InternalMetricCompatibilityMode: tt.compatibilityMode,
 				})
 				configYAML, err := yaml.Marshal(config)
 				require.NoError(t, err, "failed to marshal config")
