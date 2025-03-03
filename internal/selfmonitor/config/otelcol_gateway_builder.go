@@ -33,23 +33,6 @@ func (rb otelCollectorRuleBuilder) rules() []Rule {
 		rb.makeRule(RuleNameGatewayQueueAlmostFull, rb.queueAlmostFullExpr()),
 		rb.makeRule(RuleNameGatewayThrottling, rb.throttlingExpr()),
 	}
-	
-}
-
-// Get the expression for the given rule name.
-func (rb otelCollectorRuleBuilder) getExprForRule(ruleName string) string {
-	switch ruleName {
-	case RuleNameAllDataDropped:
-		return rb.allDataDroppedExpr()
-	case RuleNameSomeDataDropped:
-		return rb.someDataDroppedExpr()
-	case RuleNameQueueAlmostFull:
-		return rb.queueAlmostFullExpr()
-	case RuleNameThrottling:
-		return rb.throttlingExpr()
-	default:
-		return ""
-	}
 }
 
 // Checks if all data is dropped due to a full buffer or exporter issues, with nothing successfully sent.
