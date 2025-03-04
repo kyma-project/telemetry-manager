@@ -126,6 +126,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sSucceedingObjects...)).Should(Succeed())
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sFailingObjects...)).
 					Should(MatchError(ContainSubstring(notFoundError)))
+
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sSucceedingObjects...)).Should(Succeed())
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sFailingObjects...)).
