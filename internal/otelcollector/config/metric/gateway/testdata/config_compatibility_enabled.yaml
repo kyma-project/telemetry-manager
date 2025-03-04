@@ -30,7 +30,6 @@ service:
                 - filter/drop-if-input-source-runtime
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
-                - filter/drop-if-input-source-otlp
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes
@@ -45,6 +44,9 @@ service:
                         prometheus:
                             host: ${MY_POD_IP}
                             port: 8888
+                            without_scope_info: true
+                            without_type_suffix: true
+                            without_units: true
         logs:
             level: info
             encoding: json
@@ -150,10 +152,6 @@ processors:
         metrics:
             metric:
                 - instrumentation_scope.name == "io.kyma-project.telemetry/istio"
-    filter/drop-if-input-source-otlp:
-        metrics:
-            metric:
-                - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma")
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:
