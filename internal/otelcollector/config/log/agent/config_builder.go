@@ -22,20 +22,22 @@ type Builder struct {
 	Config BuilderConfig
 }
 
+// Currently the queue is disabled. So set the size to 0
+const queueSize = 0
+
 type BuildOptions struct {
 	InstrumentationScopeVersion string
 	AgentNamespace              string
 	ClusterName                 string
 	CloudProvider               string
 	Enrichments                 processors.Enrichments
-}
 
-// Currently the queue is disabled. So set the size to 0
-const queueSize = 0
+	InternalMetricCompatibilityMode bool
+}
 
 func (b *Builder) Build(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
-		Service:    config.DefaultService(make(config.Pipelines)),
+		Service:    config.DefaultService(make(config.Pipelines), opts.InternalMetricCompatibilityMode),
 		Extensions: makeExtensionsConfig(),
 		Receivers:  make(Receivers),
 		Processors: makeProcessorsConfig(opts),

@@ -183,21 +183,42 @@ func TestBuildAgentConfig(t *testing.T) {
 		})
 	})
 	t.Run("marshaling", func(t *testing.T) {
-		goldenFileName := "config.yaml"
+		tests := []struct {
+			name              string
+			goldenFileName    string
+			withOTLPInput     bool
+			compatibilityMode bool
+		}{
+			{
+				name:              "Compatibility mode disabled",
+				goldenFileName:    "config.yaml",
+				compatibilityMode: false,
+			},
+			{
+				name:              "Compatibility mode enabled",
+				goldenFileName:    "config_compatibility_enabled.yaml",
+				compatibilityMode: true,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				goldenFileName := tt.goldenFileName
 
-		collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().WithName("test").
-				WithApplicationInput(true).WithKeepOriginalBody(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
-		}, BuildOptions{InstrumentationScopeVersion: "main", AgentNamespace: "kyma-system", CloudProvider: "azure", ClusterName: "test-cluster"})
-		require.NoError(t, err)
-		configYAML, err := yaml.Marshal(collectorConfig)
-		require.NoError(t, err, "failed to marshal config")
+				collectorConfig, _, err := sut.Build(t.Context(), []telemetryv1alpha1.LogPipeline{
+					testutils.NewLogPipelineBuilder().WithName("test").
+						WithApplicationInput(true).WithKeepOriginalBody(true).
+						WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).Build(),
+				}, BuildOptions{InstrumentationScopeVersion: "main", AgentNamespace: "kyma-system", CloudProvider: "azure", ClusterName: "test-cluster", InternalMetricCompatibilityMode: tt.compatibilityMode})
+				require.NoError(t, err)
+				configYAML, err := yaml.Marshal(collectorConfig)
+				require.NoError(t, err, "failed to marshal config")
 
-		goldenFilePath := filepath.Join("testdata", goldenFileName)
-		goldenFile, err := os.ReadFile(goldenFilePath)
-		require.NoError(t, err, "failed to load golden file")
+				goldenFilePath := filepath.Join("testdata", goldenFileName)
+				goldenFile, err := os.ReadFile(goldenFilePath)
+				require.NoError(t, err, "failed to load golden file")
 
-		require.Equal(t, string(goldenFile), string(configYAML))
+				require.Equal(t, string(goldenFile), string(configYAML))
+			})
+		}
 	})
 }

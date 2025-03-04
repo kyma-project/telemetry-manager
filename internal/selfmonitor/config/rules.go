@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -59,25 +60,26 @@ const (
 	typeLogPipeline
 )
 
-func MakeRules() RuleGroups {
+func MakeRules(compatibilityMode bool) RuleGroups {
 	var rules []Rule
 
 	metricRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    "metric_points",
+		dataType:    ruleDataType(typeMetricPipeline, compatibilityMode),
 		serviceName: otelcollector.MetricGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
+
 	rules = append(rules, metricRuleBuilder.rules()...)
 
 	traceRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    "spans",
+		dataType:    ruleDataType(typeTracePipeline, compatibilityMode),
 		serviceName: otelcollector.TraceGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 	rules = append(rules, traceRuleBuilder.rules()...)
 
 	logRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    "log_records",
+		dataType:    ruleDataType(typeLogPipeline, compatibilityMode),
 		serviceName: otelcollector.LogGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
@@ -95,6 +97,25 @@ func MakeRules() RuleGroups {
 			},
 		},
 	}
+}
+
+func ruleDataType(t pipelineType, compatibilityMode bool) string {
+	var dataTypeSuffix string
+
+	switch t {
+	case typeMetricPipeline:
+		dataTypeSuffix = "metric_points"
+	case typeTracePipeline:
+		dataTypeSuffix = "spans"
+	case typeLogPipeline:
+		dataTypeSuffix = "log_records"
+	}
+
+	if !compatibilityMode {
+		return fmt.Sprintf("%s_total", dataTypeSuffix)
+	}
+
+	return dataTypeSuffix
 }
 
 func ruleNamePrefix(t pipelineType) string {
