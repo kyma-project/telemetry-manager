@@ -93,11 +93,9 @@ processors:
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         log_statements:
-<<<<<<< HEAD
-            - context: scope
-              statements:
-                - set(version, "main")
-                - set(name, "io.kyma-project.telemetry/runtime")
+            - statements:
+                - set(scope.version, "main")
+                - set(scope.name, "io.kyma-project.telemetry/runtime")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -151,11 +149,6 @@ processors:
         attributes:
             - action: delete
               pattern: kyma.*
-=======
-            - statements:
-                - set(scope.version, "main")
-                - set(scope.name, "io.kyma-project.telemetry/runtime")
->>>>>>> main
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

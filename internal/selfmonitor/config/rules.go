@@ -127,6 +127,7 @@ func ruleNamePrefix(t pipelineType) string {
 	case typeLogPipeline:
 		return "Log"
 	}
+
 	return ""
 }
 
