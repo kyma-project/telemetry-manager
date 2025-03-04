@@ -12,7 +12,7 @@ require (
 	github.com/mikefarah/yq/v4 v4.45.1
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/vektra/mockery/v2 v2.52.2
-	github.com/vladopajic/go-test-coverage/v2 v2.12.0
+	github.com/vladopajic/go-test-coverage/v2 v2.12.1
 	golang.org/x/tools v0.30.0
 	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/controller-tools v0.17.2
