@@ -8,7 +8,7 @@ kubectl get crd telemetry.operator.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following Telemetry object defines a module`:
+The following Telemetry object defines a module:
 
 ```yaml
 apiVersion: operator.kyma-project.io/v1alpha1
