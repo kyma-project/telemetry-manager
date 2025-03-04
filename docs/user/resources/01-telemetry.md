@@ -86,10 +86,8 @@ metadata:
     telemetry.kyma-project.io/internal-metrics-compatibility-mode: "true"
 ```
 
-> [! WARNING]
-> By default, the backward compatibility mode is disabled. 
-> It is recommended to keep backward compatibility mode disabled, as old metrics have been deprecated. 
-> This mode is scheduled for removal in a future update.
+> [!CAUTION]
+> By default, the backward compatibility mode is disabled. It is recommended to keep backward compatibility mode disabled, as old metrics have been deprecated. This mode is scheduled for removal in a future update.
 
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
