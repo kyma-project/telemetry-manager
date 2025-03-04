@@ -55,14 +55,19 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OTLPOutput, pipelineName 
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
 	tlsConfig := makeTLSConfig(otlpOutput, otlpEndpointValue, pipelineName)
 
+	sendingQueue := config.SendingQueue{
+		Enabled: false,
+	}
+	if queueSize != 0 {
+		sendingQueue.QueueSize = queueSize
+		sendingQueue.Enabled = true
+	}
+
 	otlpExporterConfig := config.OTLPExporter{
-		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
-		Headers:  headers,
-		TLS:      tlsConfig,
-		SendingQueue: config.SendingQueue{
-			Enabled:   true,
-			QueueSize: queueSize,
-		},
+		Endpoint:     fmt.Sprintf("${%s}", otlpEndpointVariable),
+		Headers:      headers,
+		TLS:          tlsConfig,
+		SendingQueue: sendingQueue,
 		RetryOnFailure: config.RetryOnFailure{
 			Enabled:         true,
 			InitialInterval: "5s",

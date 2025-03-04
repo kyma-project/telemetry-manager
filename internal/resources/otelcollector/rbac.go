@@ -138,6 +138,14 @@ func makeMetricGatewayRBAC(namespace string) rbac {
 	)
 }
 
+func makeLogAgentRBAC(namespace string) rbac {
+	return *newRBAC(
+		types.NamespacedName{Name: LogAgentName, Namespace: namespace},
+		commonresources.LabelValueK8sComponentAgent,
+		withClusterRole(withK8sAttributeRules()),
+		withClusterRoleBinding(),
+	)
+}
 func makeLogGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: LogGatewayName, Namespace: namespace},
