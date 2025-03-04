@@ -35,10 +35,9 @@ func makeInstrumentationScopeRuntime(instrumentationScopeVersion string) *log.Tr
 		ErrorMode: "ignore",
 		LogStatements: []config.TransformProcessorStatements{
 			{
-				Context: "scope",
 				Statements: []string{
-					fmt.Sprintf("set(version, %q)", instrumentationScopeVersion),
-					fmt.Sprintf("set(name, %q)", InstrumentationScopeRuntime),
+					fmt.Sprintf("set(scope.version, %q)", instrumentationScopeVersion),
+					fmt.Sprintf("set(scope.name, %q)", InstrumentationScopeRuntime),
 				},
 			},
 		},

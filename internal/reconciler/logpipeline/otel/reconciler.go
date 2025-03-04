@@ -216,9 +216,10 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
 	clusterInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, gateway.BuildOptions{
-		ClusterName:   clusterInfo.ClusterName,
-		CloudProvider: clusterInfo.CloudProvider,
-		Enrichments:   r.getEnrichmentsFromTelemetry(ctx),
+		ClusterName:                     clusterInfo.ClusterName,
+		CloudProvider:                   clusterInfo.CloudProvider,
+		Enrichments:                     r.getEnrichmentsFromTelemetry(ctx),
+		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 
 	if err != nil {
@@ -260,8 +261,9 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 
 func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) error {
 	agentConfig := r.agentConfigBuilder.Build(allPipelines, agent.BuildOptions{
-		InstrumentationScopeVersion: r.moduleVersion,
-		AgentNamespace:              r.telemetryNamespace,
+		InstrumentationScopeVersion:     r.moduleVersion,
+		AgentNamespace:                  r.telemetryNamespace,
+		InternalMetricCompatibilityMode: telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, r.telemetryNamespace),
 	})
 
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
