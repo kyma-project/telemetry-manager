@@ -88,7 +88,7 @@ metadata:
 
 > [! WARNING]
 > By default, the backward compatibility mode is disabled. 
-> It is recommended to keep backward compatibility mode disabled, as older metrics have been deprecated. 
+> It is recommended to keep backward compatibility mode disabled, as old metrics have been deprecated. 
 > This mode is scheduled for removal in a future update.
 
 <!-- The table below was generated automatically -->
