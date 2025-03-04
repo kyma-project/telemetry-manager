@@ -747,8 +747,8 @@ github.com/vbatts/tar-split v0.11.3 h1:hLFqsOLQ1SsppQNTMpkpPXClLDfC2A3Zgy9OUU+RV
 github.com/vbatts/tar-split v0.11.3/go.mod h1:9QlHN18E+fEH7RdG+QAJJcuya3rqT7eXSTY7wGrAokY=
 github.com/vektra/mockery/v2 v2.52.2 h1:8QfPKUIrq8P3Cs7G79Iu4Byd5wdhGCE0quIS27x7rQo=
 github.com/vektra/mockery/v2 v2.52.2/go.mod h1:zGDY/f6bip0Yh13GQ5j7xa43fuEoYBa4ICHEaihisHw=
-github.com/vladopajic/go-test-coverage/v2 v2.12.0 h1:xXmX6yVUZvvSFbJ+RQpSZBlZtcGuOUAuggQBsNDVJe4=
-github.com/vladopajic/go-test-coverage/v2 v2.12.0/go.mod h1:AZLllT+cLaTCiGktSnjw27yWddyNuGhRSrznzXFL3ZQ=
+github.com/vladopajic/go-test-coverage/v2 v2.12.1 h1:z8hgKOvcTLufwCOrKI44//sRy7kqIfQqnFsRelEoVi4=
+github.com/vladopajic/go-test-coverage/v2 v2.12.1/go.mod h1:vSqZ6vIbK4eZZ7bGIrxNr9w/sDkN3Y7iA3uANZ8w6sk=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
