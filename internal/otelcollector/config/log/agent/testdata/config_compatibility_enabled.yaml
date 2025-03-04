@@ -47,6 +47,7 @@ receivers:
             - /var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log
         include:
             - /var/log/pods/*/*/*.log
+        include_file_name: false
         include_file_path: true
         start_at: beginning
         storage: file_storage

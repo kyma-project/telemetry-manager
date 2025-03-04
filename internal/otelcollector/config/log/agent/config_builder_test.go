@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"k8s.io/utils/ptr"
 	"os"
 	"path/filepath"
 	"testing"
@@ -46,8 +47,8 @@ func TestBuildAgentConfig(t *testing.T) {
 			}
 			require.Equal(t, expectedExcludeFilePath, fileLogReceiver.FileLog.Exclude)
 			require.Equal(t, []string{"/var/log/pods/*/*/*.log"}, fileLogReceiver.FileLog.Include)
-			require.False(t, fileLogReceiver.FileLog.IncludeFileName)
-			require.True(t, fileLogReceiver.FileLog.IncludeFilePath)
+			require.Equal(t, ptr.To(false), fileLogReceiver.FileLog.IncludeFileName)
+			require.Equal(t, ptr.To(true), fileLogReceiver.FileLog.IncludeFilePath)
 			require.Equal(t, "beginning", fileLogReceiver.FileLog.StartAt)
 			require.Equal(t, "file_storage", fileLogReceiver.FileLog.Storage)
 			require.Equal(t, config.RetryOnFailure{

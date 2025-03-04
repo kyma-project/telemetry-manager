@@ -58,8 +58,8 @@ func TestReceiverCreator(t *testing.T) {
 			fileLogReceiver := makeFileLogReceiver(tc.pipeline, BuildOptions{AgentNamespace: "kyma-system"})
 			require.Equal(t, expectedExcludePaths, fileLogReceiver.Exclude)
 			require.Equal(t, expectedIncludePaths, fileLogReceiver.Include)
-			require.Equal(t, false, fileLogReceiver.IncludeFileName)
-			require.Equal(t, true, fileLogReceiver.IncludeFilePath)
+			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
+			require.Equal(t, ptr.To(true), fileLogReceiver.IncludeFilePath)
 			require.Equal(t, tc.expectedOperators, fileLogReceiver.Operators)
 		})
 	}

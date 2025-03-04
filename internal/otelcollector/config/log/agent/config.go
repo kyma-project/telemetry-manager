@@ -21,8 +21,8 @@ type Receiver struct {
 type FileLog struct {
 	Exclude         []string              `yaml:"exclude,omitempty"`
 	Include         []string              `yaml:"include,omitempty"`
-	IncludeFileName bool                  `yaml:"include_file_name,omitempty"`
-	IncludeFilePath bool                  `yaml:"include_file_path,omitempty"`
+	IncludeFileName *bool                 `yaml:"include_file_name,omitempty"`
+	IncludeFilePath *bool                 `yaml:"include_file_path,omitempty"`
 	StartAt         string                `yaml:"start_at,omitempty"`
 	Storage         string                `yaml:"storage,omitempty"`
 	RetryOnFailure  config.RetryOnFailure `yaml:"retry_on_failure,omitempty"`

@@ -31,8 +31,8 @@ func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOp
 	return &FileLog{
 		Exclude:         excludePath,
 		Include:         includePath,
-		IncludeFileName: false,
-		IncludeFilePath: true,
+		IncludeFileName: ptr.To(false),
+		IncludeFilePath: ptr.To(true),
 		StartAt:         "beginning",
 		Storage:         "file_storage",
 		RetryOnFailure: config.RetryOnFailure{
