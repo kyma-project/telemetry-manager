@@ -34,6 +34,7 @@ func TestReceiverCreator(t *testing.T) {
 			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
+				makeDropAttributeLogTag(),
 				makeJSONParser(),
 				makeCopyBodyToOriginal(),
 				makeMoveMessageToBody(),
@@ -47,6 +48,7 @@ func TestReceiverCreator(t *testing.T) {
 			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
+				makeDropAttributeLogTag(),
 				makeJSONParser(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
@@ -111,6 +113,16 @@ func TestMakeCopyBodyToOriginal(t *testing.T) {
 		To:   "attributes.original",
 	}
 	assert.Equal(t, expectedCBTO, cbto)
+}
+
+func TestMakeDropAttributeLogTag(t *testing.T) {
+	dalt := makeDropAttributeLogTag()
+	expectedDALT := Operator{
+		ID:    "drop-attribute-log-tag",
+		Type:  "remove",
+		Field: "attributes[\"logtag\"]",
+	}
+	assert.Equal(t, expectedDALT, dalt)
 }
 
 func TestMakeMoveMessageToBody(t *testing.T) {

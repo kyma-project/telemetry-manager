@@ -39,6 +39,7 @@ type Operator struct {
 	IfExpr                  string `yaml:"if,omitempty"`
 	ParseFrom               string `yaml:"parse_from,omitempty"`
 	ParseTo                 string `yaml:"parse_to,omitempty"`
+	Field                   string `yaml:"field,omitempty"`
 }
 
 type Processors struct {

@@ -105,6 +105,7 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 	operators := []Operator{
 		makeContainerParser(),
 		makeMoveToLogStream(),
+		makeDropAttributeLogTag(),
 		makeJSONParser(),
 	}
 	if keepOriginalBody {
@@ -138,6 +139,14 @@ func makeMoveToLogStream() Operator {
 		From:   "attributes.stream",
 		To:     "attributes[\"log.iostream\"]",
 		IfExpr: "attributes.stream != nil",
+	}
+}
+
+func makeDropAttributeLogTag() Operator {
+	return Operator{
+		ID:    "drop-attribute-log-tag",
+		Type:  "remove",
+		Field: "attributes[\"logtag\"]",
 	}
 }
 

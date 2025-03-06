@@ -65,6 +65,9 @@ receivers:
               from: attributes.stream
               to: attributes["log.iostream"]
               if: attributes.stream != nil
+            - id: drop-attribute-log-tag
+              type: remove
+              field: attributes["logtag"]
             - id: json-parser
               type: json_parser
               if: body matches '^{.*}$'
