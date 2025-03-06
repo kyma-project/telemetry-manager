@@ -8,6 +8,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
@@ -22,9 +23,15 @@ const (
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOptions) *FileLog {
 	excludeLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, otelcollector.LogAgentName)
 	excludeFluentBitLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, fluentbit.LogAgentName)
+	excludeSystemLogCollectorLogs := fmt.Sprintf("/var/log/pods/%s_*%s*/*/*.log", opts.AgentNamespace, common.SystemLogCollectorName)
+	excludeSystemLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_*%s*/*/*.log", opts.AgentNamespace, common.SystemLogAgentName)
 
 	excludePath := createExcludePath(logpipeline.Spec.Input.Application)
-	excludePath = append(excludePath, excludeLogAgentLogs, excludeFluentBitLogs)
+	excludePath = append(excludePath,
+		excludeLogAgentLogs,
+		excludeFluentBitLogs,
+		excludeSystemLogCollectorLogs,
+		excludeSystemLogAgentLogs)
 
 	includePath := createIncludePath(logpipeline.Spec.Input.Application)
 

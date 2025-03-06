@@ -19,6 +19,8 @@ func TestReceiverCreator(t *testing.T) {
 		"/var/log/pods/compass-system_*/*/*.log",
 		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
 		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
 	}
 	expectedIncludePaths := []string{"/var/log/pods/*/*/*.log"}
 	tt := []struct {

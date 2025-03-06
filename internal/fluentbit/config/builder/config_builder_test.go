@@ -1,6 +1,8 @@
 package builder
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -79,11 +81,19 @@ func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 }
 
 func TestMergeSectionsConfig(t *testing.T) {
-	expected := `[INPUT]
+	excludePath := strings.Join([]string{
+		"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+		"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+		"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
+		"/var/log/containers/*_*_container1-*.log",
+		"/var/log/containers/*_*_container2-*.log",
+	}, ",")
+	expected := fmt.Sprintf(`[INPUT]
     name             tail
     alias            foo
     db               /data/flb_foo.db
-    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log,/var/log/containers/*_*_container1-*.log,/var/log/containers/*_*_container2-*.log
+    exclude_path     %s
     mem_buf_limit    5MB
     multiline.parser cri
     path             /var/log/containers/*_*_*-*.log
@@ -138,7 +148,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     tls                      on
     tls.verify               on
 
-`
+`, excludePath)
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.LogPipelineInput{
@@ -192,10 +202,16 @@ func TestMergeSectionsConfig(t *testing.T) {
 }
 
 func TestMergeSectionsConfigCustomOutput(t *testing.T) {
-	expected := `[INPUT]
+	excludePath := strings.Join([]string{
+		"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
+		"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
+		"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
+	}, ",")
+	expected := fmt.Sprintf(`[INPUT]
     name             tail
     alias            foo
     db               /data/flb_foo.db
+    exclude_path     %s
     mem_buf_limit    5MB
     multiline.parser cri
     path             /var/log/containers/*_*_*-*.log
@@ -228,7 +244,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     retry_limit              300
     storage.total_limit_size 1G
 
-`
+`, excludePath)
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.LogPipelineInput{

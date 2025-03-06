@@ -45,6 +45,8 @@ receivers:
             - /var/log/pods/compass-system_*/*/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent*/*/*.log
             - /var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log
+            - /var/log/pods/kyma-system_*system-logs-collector*/*/*.log
+            - /var/log/pods/kyma-system_*system-logs-agent*/*/*.log
         include:
             - /var/log/pods/*/*/*.log
         include_file_name: false
