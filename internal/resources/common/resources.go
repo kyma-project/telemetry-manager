@@ -14,6 +14,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
+const (
+	SystemLogCollectorName = "system-logs-collector"
+	SystemLogAgentName     = "system-logs-agent"
+)
+
 func MakeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{

@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
 const (
@@ -13,12 +14,15 @@ const (
 	InstrumentationScopeRuntime = "io.kyma-project.telemetry/runtime"
 )
 
-func makeProcessorsConfig(instrumentationScopeVersion string) Processors {
+func makeProcessorsConfig(opts BuildOptions) Processors {
 	return Processors{
 		BaseProcessors: config.BaseProcessors{
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		SetInstrumentationScopeRuntime: makeInstrumentationScopeRuntime(instrumentationScopeVersion),
+		SetInstrumentationScopeRuntime: makeInstrumentationScopeRuntime(opts.InstrumentationScopeVersion),
+		K8sAttributes:                  processors.K8sAttributesProcessorConfig(opts.Enrichments),
+		InsertClusterAttributes:        processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		DropKymaAttributes:             processors.DropKymaAttributesProcessorConfig(),
 	}
 }
 
