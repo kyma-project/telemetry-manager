@@ -5,9 +5,9 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
 func makeProcessorsConfig(opts BuildOptions) Processors {
@@ -16,12 +16,12 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes: gatewayprocs.K8sAttributesProcessorConfig(gatewayprocs.Enrichments{
+		K8sAttributes: processors.K8sAttributesProcessorConfig(processors.Enrichments{
 			Enabled: false,
 		}),
-		InsertClusterAttributes:       gatewayprocs.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		InsertClusterAttributes:       processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 		ResolveServiceName:            makeResolveServiceNameConfig(),
-		DropKymaAttributes:            gatewayprocs.DropKymaAttributesProcessorConfig(),
+		DropKymaAttributes:            processors.DropKymaAttributesProcessorConfig(),
 		DeleteSkipEnrichmentAttribute: makeDeleteSkipEnrichmentAttributeConfig(),
 	}
 }
@@ -47,7 +47,7 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 func makeResolveServiceNameConfig() *metric.TransformProcessor {
 	return &metric.TransformProcessor{
 		ErrorMode:        "ignore",
-		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
+		MetricStatements: processors.ResolveServiceNameStatements(),
 	}
 }
 

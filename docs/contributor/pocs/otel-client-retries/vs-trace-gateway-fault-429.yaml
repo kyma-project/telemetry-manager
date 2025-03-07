@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: telemetry-otlp-traces-fault
+  namespace: kyma-system
+spec:
+  hosts:
+    - telemetry-otlp-traces.kyma-system.svc.cluster.local
+  http:
+    - fault:
+        abort:
+          httpStatus: 429
+          percentage:
+            value: 100
+      route:
+        - destination:
+            host: telemetry-otlp-traces.kyma-system.svc.cluster.local

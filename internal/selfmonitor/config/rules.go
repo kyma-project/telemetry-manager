@@ -76,7 +76,6 @@ func MakeRules(compatibilityMode bool) RuleGroups {
 		serviceName: otelcollector.TraceGatewayName + "-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
-
 	rules = append(rules, traceRuleBuilder.rules()...)
 
 	logRuleBuilder := otelCollectorRuleBuilder{
