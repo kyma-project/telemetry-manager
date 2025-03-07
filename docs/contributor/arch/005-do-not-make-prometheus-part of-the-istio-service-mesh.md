@@ -1,4 +1,4 @@
-# 4. Do Not Make Prometheus Part of Istio Service Mesh
+# 5. Do Not Make Prometheus Part of Istio Service Mesh
 
 Date: 30.01.2024
 
