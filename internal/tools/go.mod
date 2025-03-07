@@ -3,7 +3,7 @@ module github.com/kyma-project/telemetry-manager/internal/tools
 go 1.24.0
 
 require (
-	github.com/bombsimon/wsl/v4 v4.5.0
+	github.com/bombsimon/wsl/v4 v4.6.0
 	github.com/golangci/golangci-lint v1.64.5
 	github.com/google/yamlfmt v0.16.0
 	github.com/joho/godotenv v1.5.1
