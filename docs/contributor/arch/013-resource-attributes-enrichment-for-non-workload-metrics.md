@@ -1,4 +1,4 @@
-# 2. Resource Attributes Enrichment for Non-Workload Metrics
+# 13. Resource Attributes Enrichment for Non-Workload Metrics
 
 Date: 2024-09-10
 
