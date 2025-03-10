@@ -19,35 +19,35 @@ type FluentBitConfig struct {
 	TLSConfigSecret map[string][]byte
 }
 
-func NewFluentBitConfigBuilder(client client.Reader, builderConfig BuilderConfig) *AgentConfigBuilder {
-	return &AgentConfigBuilder{client, builderConfig}
+func NewFluentBitConfigBuilder(client client.Reader, builderConfig BuilderConfig) *ConfigBuilder {
+	return &ConfigBuilder{client, builderConfig}
 }
 
-type AgentConfigBuilder struct {
+type ConfigBuilder struct {
 	client.Reader
 	BuilderConfig
 }
 
-func (b *AgentConfigBuilder) Build(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, reconcilablePipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
-	sectionsConfigMapKey := pipeline.Name + ".conf"
-	sectionsConfigMapContent, err := BuildFluentBitSectionsConfig(pipeline, b.BuilderConfig)
+func (b *ConfigBuilder) Build(ctx context.Context, currentPipeline *telemetryv1alpha1.LogPipeline, allPipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
+	sectionsConfigMapKey := currentPipeline.Name + ".conf"
+	sectionsConfigMapContent, err := BuildFluentBitSectionsConfig(currentPipeline, b.BuilderConfig)
 	if err != nil {
 		return &FluentBitConfig{}, fmt.Errorf("unable to build section: %w", err)
 	}
 
-	envConfigSecret, err := b.BuildEnvConfigSecret(ctx, reconcilablePipelines)
+	envConfigSecret, err := b.BuildEnvConfigSecret(ctx, allPipelines)
 	if err != nil {
 		return &FluentBitConfig{}, fmt.Errorf("unable to build env config: %w", err)
 	}
 
-	tlsConfigSecret, err := b.BuildTLSFileConfigSecret(ctx, reconcilablePipelines)
+	tlsConfigSecret, err := b.BuildTLSFileConfigSecret(ctx, allPipelines)
 	if err != nil {
 		return &FluentBitConfig{}, fmt.Errorf("unable to build tls secret: %w", err)
 	}
 
 	return &FluentBitConfig{
 		SectionsConfig:  SectionsConfig{sectionsConfigMapKey, sectionsConfigMapContent},
-		FilesConfig:     BuildFluentBitFilesConfig(pipeline),
+		FilesConfig:     BuildFluentBitFilesConfig(currentPipeline),
 		EnvConfigSecret: envConfigSecret,
 		TLSConfigSecret: tlsConfigSecret,
 	}, nil

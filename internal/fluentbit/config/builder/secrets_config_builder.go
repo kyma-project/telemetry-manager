@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (b *AgentConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
+func (b *ConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
 	var envSecretConfig map[string][]byte
 	for i := range logPipelines {
 		if !logPipelines[i].DeletionTimestamp.IsZero() {
@@ -59,7 +59,7 @@ func (b *AgentConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipeli
 	return envSecretConfig, nil
 }
 
-func (b *AgentConfigBuilder) BuildTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
+func (b *ConfigBuilder) BuildTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
 	var tlsSecretConfig map[string][]byte
 
 	for i := range logPipelines {
