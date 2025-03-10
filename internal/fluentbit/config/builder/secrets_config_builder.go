@@ -16,60 +16,28 @@ import (
 )
 
 func (b *ConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
-	var envSecretConfig map[string][]byte
+	envConfigSecret := make(map[string][]byte)
 
 	for i := range logPipelines {
 		if !logPipelines[i].DeletionTimestamp.IsZero() {
 			continue
 		}
 
-		var httpOutput = logPipelines[i].Spec.Output.HTTP
-		if httpOutput != nil {
-			if shouldCopySecret(httpOutput.Host) {
-				hostSecret, err := getEnvConfigSecret(ctx, b.Reader, logPipelines[i].Name, &httpOutput.Host)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get host secret: %w", err)
-				}
-
-				maps.Copy(envSecretConfig, hostSecret)
-			}
-
-			if shouldCopySecret(httpOutput.User) {
-				userSecret, err := getEnvConfigSecret(ctx, b.Reader, logPipelines[i].Name, &httpOutput.User)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get user secret: %w", err)
-				}
-
-				maps.Copy(envSecretConfig, userSecret)
-			}
-
-			if shouldCopySecret(httpOutput.Password) {
-				passwordSecret, err := getEnvConfigSecret(ctx, b.Reader, logPipelines[i].Name, &httpOutput.Password)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get password secret: %w", err)
-				}
-
-				maps.Copy(envSecretConfig, passwordSecret)
-			}
+		if err := b.extractHTTPSecrets(ctx, &logPipelines[i], envConfigSecret); err != nil {
+			return nil, err
 		}
 
-		for _, ref := range logPipelines[i].Spec.Variables {
-			if ref.ValueFrom.SecretKeyRef != nil {
-				variableSecret, err := getSecretData(ctx, b.Reader, *ref.ValueFrom.SecretKeyRef, ref.Name)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get variable secret: %w", err)
-				}
-
-				maps.Copy(envSecretConfig, variableSecret)
-			}
+		// Extract variable secrets
+		if err := b.extractVariableSecrets(ctx, &logPipelines[i], envConfigSecret); err != nil {
+			return nil, err
 		}
 	}
 
-	return envSecretConfig, nil
+	return envConfigSecret, nil
 }
 
 func (b *ConfigBuilder) BuildTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
-	var tlsSecretConfig map[string][]byte
+	tlsSecretConfig := make(map[string][]byte)
 
 	for i := range logPipelines {
 		if !logPipelines[i].DeletionTimestamp.IsZero() {
@@ -118,6 +86,64 @@ func (b *ConfigBuilder) BuildTLSFileConfigSecret(ctx context.Context, logPipelin
 	}
 
 	return tlsSecretConfig, nil
+}
+
+// extractHTTPSecrets handles the extraction of secrets from HTTP output
+func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, envSecretConfig map[string][]byte) error {
+	httpOutput := pipeline.Spec.Output.HTTP
+	if httpOutput == nil {
+		return nil
+	}
+
+	// Extract host secret if needed
+	if shouldCopySecret(httpOutput.Host) {
+		hostSecret, err := getEnvConfigSecret(ctx, b.Reader, pipeline.Name, &httpOutput.Host)
+		if err != nil {
+			return fmt.Errorf("failed to get host secret: %w", err)
+		}
+
+		maps.Copy(envSecretConfig, hostSecret)
+	}
+
+	// Extract user secret if needed
+	if shouldCopySecret(httpOutput.User) {
+		userSecret, err := getEnvConfigSecret(ctx, b.Reader, pipeline.Name, &httpOutput.User)
+		if err != nil {
+			return fmt.Errorf("failed to get user secret: %w", err)
+		}
+
+		maps.Copy(envSecretConfig, userSecret)
+	}
+
+	// Extract password secret if needed
+	if shouldCopySecret(httpOutput.Password) {
+		passwordSecret, err := getEnvConfigSecret(ctx, b.Reader, pipeline.Name, &httpOutput.Password)
+		if err != nil {
+			return fmt.Errorf("failed to get password secret: %w", err)
+		}
+
+		maps.Copy(envSecretConfig, passwordSecret)
+	}
+
+	return nil
+}
+
+// extractVariableSecrets handles the extraction of secrets from variables
+func (b *ConfigBuilder) extractVariableSecrets(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, envConfigSecret map[string][]byte) error {
+	for _, ref := range pipeline.Spec.Variables {
+		if ref.ValueFrom.SecretKeyRef == nil {
+			continue
+		}
+
+		variableSecret, err := getSecretData(ctx, b.Reader, *ref.ValueFrom.SecretKeyRef, ref.Name)
+		if err != nil {
+			return fmt.Errorf("failed to get variable secret: %w", err)
+		}
+
+		maps.Copy(envConfigSecret, variableSecret)
+	}
+
+	return nil
 }
 
 func getEnvConfigSecret(ctx context.Context, client client.Reader, prefix string, value *telemetryv1alpha1.ValueType) (map[string][]byte, error) {

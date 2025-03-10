@@ -103,7 +103,6 @@ func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, priorityClass
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-
 	serviceAccount := commonresources.MakeServiceAccount(aad.daemonSetName)
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
@@ -500,7 +499,6 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 }
 
 func (aad *AgentApplierDeleter) calculateChecksum(ctx context.Context, c client.Client) (string, error) {
-
 	var baseCm corev1.ConfigMap
 	if err := c.Get(ctx, aad.daemonSetName, &baseCm); err != nil {
 		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", aad.daemonSetName.Namespace, aad.daemonSetName.Name, err)
