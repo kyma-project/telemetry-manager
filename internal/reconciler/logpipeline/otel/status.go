@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
@@ -41,7 +42,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
 	r.setAgentHealthyCondition(ctx, &pipeline)
 
-	// r.setFlowHealthCondition(ctx, &pipeline)
+	r.setFlowHealthCondition(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update LogPipeline status: %w", err)
@@ -50,12 +51,63 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	return nil
 }
 
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
+
+	condition := metav1.Condition{
+		Type:               conditions.TypeFlowHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForOtelLogPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (metav1.ConditionStatus, string) {
+	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
+	if configGeneratedStatus == metav1.ConditionFalse {
+		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
+	}
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonProbingFailed
+	}
+
+	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
+	reason := flowHealthReasonFor(probeResult)
+	if probeResult.Healthy {
+		return metav1.ConditionTrue, reason
+	}
+
+	return metav1.ConditionFalse, reason
+}
+
+func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
+	switch {
+	case probeResult.AllDataDropped:
+		return conditions.ReasonSelfMonAllDataDropped
+	case probeResult.SomeDataDropped:
+		return conditions.ReasonSelfMonSomeDataDropped
+	case probeResult.QueueAlmostFull:
+		return conditions.ReasonSelfMonBufferFillingUp
+	case probeResult.Throttling:
+		return conditions.ReasonSelfMonGatewayThrottling
+	default:
+		return conditions.ReasonSelfMonFlowHealthy
+	}
+}
+
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	condition := &metav1.Condition{
 		Type:    conditions.TypeAgentHealthy,
 		Status:  metav1.ConditionTrue,
 		Reason:  conditions.ReasonLogAgentNotRequired,
-		Message: conditions.MessageForLogPipeline(conditions.ReasonLogAgentNotRequired),
+		Message: conditions.MessageForOtelLogPipeline(conditions.ReasonLogAgentNotRequired),
 	}
 
 	if isLogAgentRequired(pipeline) {
@@ -74,7 +126,7 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
 		r.gatewayProber, types.NamespacedName{Name: otelcollector.LogGatewayName, Namespace: r.telemetryNamespace},
 		r.errToMessageConverter,
-		commonstatus.SignalTypeLogs)
+		commonstatus.SignalTypeOtelLogs)
 	condition.ObservedGeneration = pipeline.Generation
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
@@ -96,7 +148,7 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
 	err := r.pipelineValidator.validate(ctx, pipeline)
 	if err == nil {
-		return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForLogPipeline(conditions.ReasonGatewayConfigured)
+		return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForOtelLogPipeline(conditions.ReasonGatewayConfigured)
 	}
 
 	if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
@@ -110,12 +162,12 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	if endpoint.IsEndpointInvalidError(err) {
 		return metav1.ConditionFalse,
 			conditions.ReasonEndpointInvalid,
-			fmt.Sprintf(conditions.MessageForLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
+			fmt.Sprintf(conditions.MessageForOtelLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError
 	if errors.As(err, &APIRequestFailed) {
-		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForLogPipeline(conditions.ReasonValidationFailed)
+		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForOtelLogPipeline(conditions.ReasonValidationFailed)
 	}
 
 	return conditions.EvaluateTLSCertCondition(err)

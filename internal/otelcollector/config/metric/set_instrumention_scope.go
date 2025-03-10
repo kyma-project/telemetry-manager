@@ -16,24 +16,31 @@ var upstreamInstrumentationScopeName = map[InputSourceType]string{
 
 func MakeInstrumentationScopeProcessor(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
 	statements := []string{}
+	transformProcessorStatements := []config.TransformProcessorStatements{}
+
 	for _, i := range inputSource {
 		statements = append(statements, makeInstrumentationStatement(i, instrumentationScopeVersion)...)
+
+		if i == InputSourcePrometheus {
+			transformProcessorStatements = append(transformProcessorStatements, config.TransformProcessorStatements{
+				Statements: []string{fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, KymaInputPrometheus)},
+			})
+		}
 	}
 
+	transformProcessorStatements = append(transformProcessorStatements, config.TransformProcessorStatements{
+		Statements: statements,
+	})
+
 	return &TransformProcessor{
-		ErrorMode: "ignore",
-		MetricStatements: []config.TransformProcessorStatements{
-			{
-				Context:    "scope",
-				Statements: statements,
-			},
-		},
+		ErrorMode:        "ignore",
+		MetricStatements: transformProcessorStatements,
 	}
 }
 
 func makeInstrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {
 	return []string{
-		fmt.Sprintf("set(version, \"%s\") where name == \"%s\"", instrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
-		fmt.Sprintf("set(name, \"%s\") where name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
+		fmt.Sprintf("set(scope.version, \"%s\") where scope.name == \"%s\"", instrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
+		fmt.Sprintf("set(scope.name, \"%s\") where scope.name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
 	}
 }

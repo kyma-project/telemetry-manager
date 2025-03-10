@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: log-sink-otlp
+  name: log-sink-otel
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: log-sink-config
-  namespace: log-sink-otlp
+  namespace: log-sink-otel
 data:
   config.yaml: |
     receivers:
@@ -33,7 +33,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: log-sink
-  namespace: log-sink-otlp
+  namespace: log-sink-otel
 spec:
   replicas: 1
   selector:
@@ -64,7 +64,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: log-sink
-  namespace: log-sink-otlp
+  namespace: log-sink-otel
 spec:
   ports:
   - name: grpc-otlp
@@ -81,13 +81,13 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: log-gen-otlp
+  name: log-gen-otel
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: log-gen
-  namespace: log-gen-otlp
+  namespace: log-gen-otel
 spec:
   replicas: 1
   selector:
@@ -116,11 +116,11 @@ spec:
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogPipeline
 metadata:
-  name: sample
+  name: sample-otel
 spec:
   output:
     otlp:
       endpoint:
-        value: http://log-sink.log-sink-otlp:4317
+        value: http://log-sink.log-sink-otel:4317
       protocol: grpc
 

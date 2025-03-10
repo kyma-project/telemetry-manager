@@ -38,10 +38,11 @@ type runtimeResourcesEnabled struct {
 }
 
 type BuildOptions struct {
-	IstioEnabled                bool
-	IstioCertPath               string
-	InstrumentationScopeVersion string
-	AgentNamespace              string
+	IstioEnabled                    bool
+	IstioCertPath                   string
+	InstrumentationScopeVersion     string
+	AgentNamespace                  string
+	InternalMetricCompatibilityMode bool
 }
 
 func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts BuildOptions) *Config {
@@ -54,7 +55,7 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 
 	return &Config{
 		Base: config.Base{
-			Service:    config.DefaultService(makePipelinesConfig(inputs)),
+			Service:    config.DefaultService(makePipelinesConfig(inputs), opts.InternalMetricCompatibilityMode),
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(inputs, opts),

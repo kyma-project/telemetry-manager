@@ -16,6 +16,7 @@ The Telemetry module includes Telemetry Manager, a Kubernetes [operator](https:/
 ### Self Monitor
 
 The Telemetry module contains a self monitor, based on [Prometheus](https://prometheus.io/), to collect and evaluate metrics from the managed gateways and agents. Telemetry Manager retrieves the current pipeline health from the self monitor and adjusts the status of the pipeline resources and the module status.
+Additionally, you can monitor the health of your pipelines in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts): To set up alerts and reports in the backend, use the [pipeline health metrics](./04-metrics.md#5-monitor-pipeline-health) emitted by your MetricPipeline.
 
 ![Self-Monitor](assets/manager-arch.drawio.svg)
 

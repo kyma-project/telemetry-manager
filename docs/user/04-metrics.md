@@ -315,6 +315,7 @@ The Metric agent is configured with a generic scrape configuration, which uses a
 
 For metrics ingestion to start automatically, use the annotations of the following table.
 If an Istio sidecar is present, apply them to a Service that resolves your metrics port.
+By annotating the Service, all endpoints targeted by the Service are resolved and scraped by the Metric agent bypassing the Service itself.
 Only if Istio sidecar is not present, you can alternatively apply the annotations directly to the Pod.
 
 | Annotation Key                                                   | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
@@ -691,7 +692,11 @@ A MetricPipeline runs several OTel Collector instances in your cluster. This Dep
 
 The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop metrics, or cannot handle the metric load.
 
-To detect and fix such situations, check the pipeline status and check out [Troubleshooting](#troubleshooting).
+To detect and fix such situations, check the [pipeline status](./resources/05-metricpipeline.md#metricpipeline-status) and check out [Troubleshooting](#troubleshooting).  If you have set up [pipeline health monitoring](./04-metrics.md#5-monitor-pipeline-health), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
+
+> [! WARNING]
+> It's not recommended to access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such.
+> Instead, use the [pipeline status](./resources/05-metricpipeline.md#metricpipeline-status).
 
 ## Limitations
 

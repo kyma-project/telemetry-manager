@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelSetA), Ordered, func() {
 	var (
 		mockNs                = suite.ID()
 		pipelineNameNoInput   = suite.ID() + "-no-input"
@@ -70,17 +70,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should have a metrics backend running", Label(suite.LabelUpgrade), func() {
+		It("Should have a metrics backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should have running pipelines", Label(suite.LabelUpgrade), func() {
+		It("Should have running pipelines", func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineNameNoInput)
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineNameWithInput)
 		})
 
-		It("Pipeline with no input should have AgentNotRequired condition", Label(suite.LabelUpgrade), func() {
+		It("Pipeline with no input should have AgentNotRequired condition", func() {
 			assert.MetricPipelineHasCondition(ctx, k8sClient, pipelineNameNoInput, metav1.Condition{
 				Type:   conditions.TypeAgentHealthy,
 				Status: metav1.ConditionTrue,

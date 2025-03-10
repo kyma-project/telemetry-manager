@@ -66,17 +66,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.LogGatewayName)
 		})
 
-		It("Should have a logs backend running", Label(suite.LabelUpgrade), func() {
+		It("Should have a logs backend running", func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should have running pipelines", Label(suite.LabelUpgrade), func() {
+		It("Should have running pipelines", func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineNameNoInput)
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineNameWithInput)
 		})
 
-		It("Pipeline with no input should have AgentNotRequired condition", Label(suite.LabelUpgrade), func() {
+		It("Pipeline with no input should have AgentNotRequired condition", func() {
 			assert.LogPipelineHasCondition(ctx, k8sClient, pipelineNameNoInput, metav1.Condition{
 				Type:   conditions.TypeAgentHealthy,
 				Status: metav1.ConditionTrue,

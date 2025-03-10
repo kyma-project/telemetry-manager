@@ -90,12 +90,17 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		return nil, err
 	}
 
+	otelFlowHealthProber, err := prober.NewOtelLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	if err != nil {
+		return nil, err
+	}
+
 	fbReconciler, err := configureFluentBitReconciler(client, config, flowHealthProber)
 	if err != nil {
 		return nil, err
 	}
 
-	otelReconciler, err := configureOtelReconciler(client, config, flowHealthProber)
+	otelReconciler, err := configureOtelReconciler(client, config, otelFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +219,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, _ *prober.LogPipelineProber) (*logpipelineotel.Reconciler, error) {
+func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.OTelPipelineProber) (*logpipelineotel.Reconciler, error) {
 	pipelineValidator := &logpipelineotel.Validator{
 		// TODO: Add validators
 	}
@@ -225,6 +230,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 	}
 
 	agentConfigBuilder := &agent.Builder{
+		Reader: client,
 		Config: agent.BuilderConfig{
 			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.LogOTLPServiceName},
 		},
@@ -234,6 +240,7 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		client,
 		config.TelemetryNamespace,
 		config.ModuleVersion,
+		flowHealthProber,
 		agentConfigBuilder,
 		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
 		&workloadstatus.DaemonSetProber{Client: client},

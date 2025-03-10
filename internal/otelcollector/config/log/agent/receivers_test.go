@@ -13,21 +13,28 @@ import (
 
 func TestReceiverCreator(t *testing.T) {
 	expectedExcludePaths := []string{
+		"/var/log/pods/kyma-system_*/*/*.log",
+		"/var/log/pods/kube-system_*/*/*.log",
+		"/var/log/pods/istio-system_*/*/*.log",
+		"/var/log/pods/compass-system_*/*/*.log",
 		"/var/log/pods/kyma-system_telemetry-log-agent*/*/*.log",
 		"/var/log/pods/kyma-system_telemetry-fluent-bit*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector*/*/*.log",
+		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
 	}
 	expectedIncludePaths := []string{"/var/log/pods/*/*/*.log"}
 	tt := []struct {
 		name              string
-		pipelines         []telemetryv1alpha1.LogPipeline
+		pipeline          telemetryv1alpha1.LogPipeline
 		expectedOperators []Operator
 	}{
 		{
-			name:      "should create receiver with keepOriginalBody true",
-			pipelines: []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build()},
+			name:     "should create receiver with keepOriginalBody true",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build(),
 			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
+				makeDropAttributeLogTag(),
 				makeJSONParser(),
 				makeCopyBodyToOriginal(),
 				makeMoveMessageToBody(),
@@ -36,11 +43,12 @@ func TestReceiverCreator(t *testing.T) {
 			},
 		},
 		{
-			name:      "should create receiver with keepOriginalBody false",
-			pipelines: []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build()},
+			name:     "should create receiver with keepOriginalBody false",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
 			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
+				makeDropAttributeLogTag(),
 				makeJSONParser(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
@@ -51,12 +59,12 @@ func TestReceiverCreator(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			receivers := makeReceivers(tc.pipelines, BuildOptions{AgentNamespace: "kyma-system"})
-			require.Equal(t, expectedExcludePaths, receivers.FileLog.Exclude)
-			require.Equal(t, expectedIncludePaths, receivers.FileLog.Include)
-			require.Equal(t, false, receivers.FileLog.IncludeFileName)
-			require.Equal(t, true, receivers.FileLog.IncludeFilePath)
-			require.Equal(t, tc.expectedOperators, receivers.FileLog.Operators)
+			fileLogReceiver := makeFileLogReceiver(tc.pipeline, BuildOptions{AgentNamespace: "kyma-system"})
+			require.Equal(t, expectedExcludePaths, fileLogReceiver.Exclude)
+			require.Equal(t, expectedIncludePaths, fileLogReceiver.Include)
+			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
+			require.Equal(t, ptr.To(true), fileLogReceiver.IncludeFilePath)
+			require.Equal(t, tc.expectedOperators, fileLogReceiver.Operators)
 		})
 	}
 }
@@ -107,6 +115,16 @@ func TestMakeCopyBodyToOriginal(t *testing.T) {
 	assert.Equal(t, expectedCBTO, cbto)
 }
 
+func TestMakeDropAttributeLogTag(t *testing.T) {
+	dalt := makeDropAttributeLogTag()
+	expectedDALT := Operator{
+		ID:    "drop-attribute-log-tag",
+		Type:  "remove",
+		Field: "attributes[\"logtag\"]",
+	}
+	assert.Equal(t, expectedDALT, dalt)
+}
+
 func TestMakeMoveMessageToBody(t *testing.T) {
 	mmtb := makeMoveMessageToBody()
 	expectedMMTB := Operator{
@@ -141,4 +159,81 @@ func TestMakeSeverityParser(t *testing.T) {
 		IfExpr:    "attributes.level != nil",
 	}
 	assert.Equal(t, expectedSP, sp)
+}
+
+func TestExcludePath(t *testing.T) {
+	tt := []struct {
+		name     string
+		pipeline telemetryv1alpha1.LogPipeline
+		expected []string
+	}{
+		{
+			name:     "should return excluded path if namespace is present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).WithExcludeNamespaces("foo", "bar").Build(),
+			expected: []string{
+				"/var/log/pods/kyma-system_*/*/*.log",
+				"/var/log/pods/kube-system_*/*/*.log",
+				"/var/log/pods/istio-system_*/*/*.log",
+				"/var/log/pods/compass-system_*/*/*.log",
+				"/var/log/pods/foo_*/*/*.log",
+				"/var/log/pods/bar_*/*/*.log",
+			},
+		},
+		{
+			name:     "should return empty excluded path if namespace is not present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
+			expected: []string{
+				"/var/log/pods/kyma-system_*/*/*.log",
+				"/var/log/pods/kube-system_*/*/*.log",
+				"/var/log/pods/istio-system_*/*/*.log",
+				"/var/log/pods/compass-system_*/*/*.log",
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			excludePaths := createExcludePath(tc.pipeline.Spec.Input.Application)
+			require.Equal(t, tc.expected, excludePaths)
+		})
+	}
+}
+
+func TestIncludePath(t *testing.T) {
+	tt := []struct {
+		name     string
+		pipeline telemetryv1alpha1.LogPipeline
+		expected []string
+	}{
+		{
+			name:     "should return included path if namespace is present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).WithIncludeNamespaces("foo", "bar").Build(),
+			expected: []string{
+				"/var/log/pods/foo_*/*/*.log",
+				"/var/log/pods/bar_*/*/*.log",
+			},
+		},
+		{
+			name:     "should return default included path if namespace is not present",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
+			expected: []string{"/var/log/pods/*/*/*.log"},
+		},
+		{
+			name:     "should return system namespaces included path if system is true",
+			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).WithSystemNamespaces(true).Build(),
+			expected: []string{
+				"/var/log/pods/kyma-system_*/*/*.log",
+				"/var/log/pods/kube-system_*/*/*.log",
+				"/var/log/pods/istio-system_*/*/*.log",
+				"/var/log/pods/compass-system_*/*/*.log",
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			includePaths := createIncludePath(tc.pipeline.Spec.Input.Application)
+			require.Equal(t, tc.expected, includePaths)
+		})
+	}
 }

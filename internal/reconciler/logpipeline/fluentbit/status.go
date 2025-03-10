@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -67,7 +68,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	condition := commonstatus.GetAgentHealthyCondition(ctx,
 		r.agentProber,
-		types.NamespacedName{Name: r.config.DaemonSet.Name, Namespace: r.config.DaemonSet.Namespace},
+		types.NamespacedName{Name: fluentbit.LogAgentName, Namespace: r.telemetryNamespace},
 		r.errToMsgConverter,
 		commonstatus.SignalTypeLogs)
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
@@ -90,7 +91,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
 	err := r.pipelineValidator.validate(ctx, pipeline)
 	if err == nil {
-		return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForLogPipeline(conditions.ReasonAgentConfigured)
+		return metav1.ConditionTrue, conditions.ReasonAgentConfigured, conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentConfigured)
 	}
 
 	if errors.Is(err, secretref.ErrSecretRefNotFound) || errors.Is(err, secretref.ErrSecretKeyNotFound) || errors.Is(err, secretref.ErrSecretRefMissingFields) {
@@ -100,12 +101,12 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	if endpoint.IsEndpointInvalidError(err) {
 		return metav1.ConditionFalse,
 			conditions.ReasonEndpointInvalid,
-			fmt.Sprintf(conditions.MessageForLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
+			fmt.Sprintf(conditions.MessageForFluentBitLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError
 	if errors.As(err, &APIRequestFailed) {
-		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForLogPipeline(conditions.ReasonValidationFailed)
+		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForFluentBitLogPipeline(conditions.ReasonValidationFailed)
 	}
 
 	return conditions.EvaluateTLSCertCondition(err)
@@ -118,7 +119,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 		Type:               conditions.TypeFlowHealthy,
 		Status:             status,
 		Reason:             reason,
-		Message:            conditions.MessageForLogPipeline(reason),
+		Message:            conditions.MessageForFluentBitLogPipeline(reason),
 		ObservedGeneration: pipeline.Generation,
 	}
 

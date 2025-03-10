@@ -4,13 +4,17 @@ on:
   pull_request_target:
     paths:
       - "dependencies/telemetry-self-monitor/**"
-    types: [ opened, edited, synchronize, reopened, ready_for_review ]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
     paths:
       - "dependencies/telemetry-self-monitor/**"
   workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   envs:
@@ -33,7 +37,7 @@ jobs:
         id: prepare-envs
         run: |
           {
-          # this creates a multiline string with the envs. 
+          # this creates a multiline string with the envs.
           # Everything between `build-args<<BUILD_ARGS` and BUILD_ARGS will be content of the build-args variable.
           echo 'build-args<<BUILD_ARGS'
           cat dependencies/telemetry-self-monitor/envs

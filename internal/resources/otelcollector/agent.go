@@ -29,8 +29,8 @@ const (
 	MetricAgentName = "telemetry-metric-agent"
 	LogAgentName    = "telemetry-log-agent"
 
-	checkpointVolumeName = "varlibotelcol"
-	CheckpointVolumePath = "/var/lib/otelcol"
+	checkpointVolumeName = "varlibfilelogreceiver"
+	CheckpointVolumePath = "/var/lib/telemetry-log-agent/file-log-receiver"
 	logVolumeName        = "varlogpods"
 	logVolumePath        = "/var/log/pods"
 )
@@ -58,6 +58,7 @@ type AgentApplierDeleter struct {
 type AgentApplyOptions struct {
 	AllowedPorts        []int32
 	CollectorConfigYAML string
+	CollectorEnvVars    map[string][]byte
 }
 
 func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *AgentApplierDeleter {
@@ -67,6 +68,7 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 	volumes := []corev1.Volume{
 		makeIstioCertVolume(),
 		makePodLogsVolume(),
+		// HostPath Should be unique for each application using it
 		makeFileLogCheckpointVolume(),
 	}
 	volumeMounts := []corev1.VolumeMount{
@@ -80,6 +82,7 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 		extraPodLabel: extraLabels,
 		image:         image,
 		namespace:     namespace,
+		rbac:          makeLogAgentRBAC(namespace),
 
 		podSpecOptions: []podSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
@@ -126,6 +129,13 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 
 	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, opts.AllowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
+	}
+
+	if opts.CollectorEnvVars != nil {
+		secret := makeSecret(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorEnvVars)
+		if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+			return fmt.Errorf("failed to create env secret: %w", err)
+		}
 	}
 
 	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorConfigYAML)

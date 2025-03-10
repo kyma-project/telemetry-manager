@@ -9,13 +9,16 @@ import (
 
 func TestMessageFor(t *testing.T) {
 	t.Run("should return correct message which is common to all pipelines", func(t *testing.T) {
-		message := MessageForLogPipeline(ReasonReferencedSecretMissing)
+		message := MessageForFluentBitLogPipeline(ReasonReferencedSecretMissing)
 		require.Equal(t, commonMessages[ReasonReferencedSecretMissing], message)
 	})
 
 	t.Run("should return correct message which is unique to each pipeline", func(t *testing.T) {
-		logsDaemonSetNotReadyMessage := MessageForLogPipeline(ReasonAgentNotReady)
-		require.Equal(t, logPipelineMessages[ReasonAgentNotReady], logsDaemonSetNotReadyMessage)
+		logsDaemonSetNotReadyMessage := MessageForFluentBitLogPipeline(ReasonEndpointInvalid)
+		require.Equal(t, fluentBitLogPipelineMessages[ReasonEndpointInvalid], logsDaemonSetNotReadyMessage)
+
+		logDeploymentNotReadyMessage := MessageForOtelLogPipeline(ReasonGatewayNotReady)
+		require.Equal(t, otelLogPipelineMessages[ReasonGatewayNotReady], logDeploymentNotReadyMessage)
 
 		tracesDeploymentNotReadyMessage := MessageForTracePipeline(ReasonGatewayNotReady)
 		require.Equal(t, tracePipelineMessages[ReasonGatewayNotReady], tracesDeploymentNotReadyMessage)
