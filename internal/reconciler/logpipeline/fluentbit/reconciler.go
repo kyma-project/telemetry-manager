@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -53,7 +54,6 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 }
 
 func New(client client.Client, telemetryNamespace string, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
-
 	return &Reconciler{
 		Client:              client,
 		telemetryNamespace:  telemetryNamespace,

@@ -3,9 +3,11 @@ package builder
 import (
 	"context"
 	"fmt"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"maps"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type FluentBitConfig struct {
@@ -41,14 +43,15 @@ type ConfigBuilder struct {
 }
 
 func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
-
 	config := FluentBitConfig{}
 
 	for _, pipeline := range allPipelines {
 		if !isLogPipelineReconcilable(allPipelines, &pipeline) || !pipeline.DeletionTimestamp.IsZero() {
 			continue
 		}
+
 		sectionsConfigMapKey := pipeline.Name + ".conf"
+
 		sectionsConfigMapContent, err := BuildFluentBitSectionsConfig(&pipeline, b.BuilderConfig)
 		if err != nil {
 			return nil, fmt.Errorf("unable to build section: %w", err)

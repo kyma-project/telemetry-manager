@@ -4,17 +4,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"maps"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (b *ConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
 	var envSecretConfig map[string][]byte
+
 	for i := range logPipelines {
 		if !logPipelines[i].DeletionTimestamp.IsZero() {
 			continue
@@ -27,20 +30,25 @@ func (b *ConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipelines [
 				if err != nil {
 					return nil, fmt.Errorf("failed to get host secret: %w", err)
 				}
+
 				maps.Copy(envSecretConfig, hostSecret)
 			}
+
 			if shouldCopySecret(httpOutput.User) {
 				userSecret, err := getEnvConfigSecret(ctx, b.Reader, logPipelines[i].Name, &httpOutput.User)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get user secret: %w", err)
 				}
+
 				maps.Copy(envSecretConfig, userSecret)
 			}
+
 			if shouldCopySecret(httpOutput.Password) {
 				passwordSecret, err := getEnvConfigSecret(ctx, b.Reader, logPipelines[i].Name, &httpOutput.Password)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get password secret: %w", err)
 				}
+
 				maps.Copy(envSecretConfig, passwordSecret)
 			}
 		}
@@ -51,6 +59,7 @@ func (b *ConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipelines [
 				if err != nil {
 					return nil, fmt.Errorf("failed to get variable secret: %w", err)
 				}
+
 				maps.Copy(envSecretConfig, variableSecret)
 			}
 		}
@@ -75,21 +84,25 @@ func (b *ConfigBuilder) BuildTLSFileConfigSecret(ctx context.Context, logPipelin
 		tlsConfig := output.HTTP.TLS
 		if sharedtypesutils.IsValid(tlsConfig.CA) {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
+
 			caSecretData, err := getFromValueOrSecret(ctx, b.Reader, *tlsConfig.CA, targetKey)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get CA secret data: %w", err)
 			}
+
 			maps.Copy(tlsSecretConfig, caSecretData)
 		}
 
 		if sharedtypesutils.IsValid(tlsConfig.Cert) && sharedtypesutils.IsValid(tlsConfig.Key) {
 			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
+
 			certSecretData, err := getFromValueOrSecret(ctx, b.Reader, *tlsConfig.Cert, targetCertVariable)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get cert secret data: %w", err)
 			}
 
 			targetKeyVariable := fmt.Sprintf("%s-key.key", logPipelines[i].Name)
+
 			keySecretData, err := getFromValueOrSecret(ctx, b.Reader, *tlsConfig.Key, targetKeyVariable)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get key secret data: %w", err)
@@ -103,6 +116,7 @@ func (b *ConfigBuilder) BuildTLSFileConfigSecret(ctx context.Context, logPipelin
 			maps.Copy(tlsSecretConfig, keySecretData)
 		}
 	}
+
 	return tlsSecretConfig, nil
 }
 
@@ -115,8 +129,8 @@ func getEnvConfigSecret(ctx context.Context, client client.Reader, prefix string
 	if err != nil {
 		return nil, err
 	}
-	return secretData, nil
 
+	return secretData, nil
 }
 
 func getFromValueOrSecret(ctx context.Context, client client.Reader, value telemetryv1alpha1.ValueType, targetKey string) (map[string][]byte, error) {

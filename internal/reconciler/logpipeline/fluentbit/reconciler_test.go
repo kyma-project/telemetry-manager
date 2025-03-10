@@ -3,7 +3,6 @@ package fluentbit
 import (
 	"errors"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"testing"
 	"time"
 
@@ -21,6 +20,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
