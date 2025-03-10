@@ -38,6 +38,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
@@ -180,6 +181,8 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		config.FluentBitPriorityClassName,
 	)
 
+	fluentBitConfigBuilder := builder.NewFluentBitConfigBuilder(client)
+
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
 		return nil, err
@@ -188,6 +191,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 	fbReconciler := logpipelinefluentbit.New(
 		client,
 		config.TelemetryNamespace,
+		fluentBitConfigBuilder,
 		fluentBitApplierDeleter,
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,

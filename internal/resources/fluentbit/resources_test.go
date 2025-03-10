@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -25,7 +26,6 @@ func TestAgent_ApplyResources(t *testing.T) {
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	priorityClassName := "foo-prio-class"
-	logPipeline := testutils.NewLogPipelineBuilder().WithName("foo-logpipeline").Build()
 	namespace := "kyma-system"
 
 	tests := []struct {
@@ -81,10 +81,13 @@ func TestAgent_ApplyResources(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
-				AllowedPorts:           []int32{5555, 6666},
-				SyncerClient:           fakeClient,
-				Pipeline:               &logPipeline,
-				DeployableLogPipelines: []telemetryv1alpha1.LogPipeline{logPipeline},
+				AllowedPorts: []int32{5555, 6666},
+				FluentBitConfig: &builder.FluentBitConfig{
+					SectionsConfig:  map[string]string{"pipeline1.conf": "dummy-sections-content"},
+					FilesConfig:     map[string]string{"file1": "dummy-file-content"},
+					EnvConfigSecret: map[string][]byte{"env-config-secret1": []byte("dummy-value")},
+					TLSConfigSecret: map[string][]byte{"tls-config-secret1": []byte("dummy-value")},
+				},
 			})
 			require.NoError(t, err)
 
@@ -107,14 +110,12 @@ func TestAgent_DeleteResources(t *testing.T) {
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	priorityClassName := "foo-prio-class"
-	logPipeline := testutils.NewLogPipelineBuilder().WithName("foo-logpipeline").Build()
 	namespace := "kyma-system"
 
 	var created []client.Object
 
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -136,10 +137,8 @@ func TestAgent_DeleteResources(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			agentApplyOptions := AgentApplyOptions{
-				SyncerClient:           fakeClient,
-				AllowedPorts:           []int32{5555, 6666},
-				Pipeline:               &logPipeline,
-				DeployableLogPipelines: []telemetryv1alpha1.LogPipeline{logPipeline},
+				AllowedPorts:    []int32{5555, 6666},
+				FluentBitConfig: &builder.FluentBitConfig{},
 			}
 
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, agentApplyOptions)
@@ -158,9 +157,12 @@ func TestAgent_DeleteResources(t *testing.T) {
 }
 
 func TestCalculateChecksum(t *testing.T) {
-	aad := AgentApplierDeleter{
-		namespace: "kyma-system",
-	}
+	image := "foo-fluentbit"
+	exporterImage := "foo-exporter"
+	priorityClassName := "foo-prio-class"
+	namespace := "kyma-system"
+
+	aad := NewFluentBitApplierDeleter(namespace, image, exporterImage, priorityClassName)
 
 	dsConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
