@@ -87,17 +87,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alertsYAML, err := io.ReadAll(r.Body)
-	if err != nil {
-		h.logger.Error(err, "Failed to read request body")
-		w.WriteHeader(http.StatusInternalServerError)
+	const MB = 1 << 20 // 1 MB
 
-		return
-	}
 	defer r.Body.Close()
 
 	var alerts []Alert
-	if unmarshallErr := json.Unmarshal(alertsYAML, &alerts); unmarshallErr != nil {
+
+	decoder := json.NewDecoder(io.LimitReader(r.Body, 1*MB))
+	if err := decoder.Decode(&alerts); err != nil {
 		h.logger.Error(err, "Failed to unmarshal request body")
 		w.WriteHeader(http.StatusBadRequest)
 
