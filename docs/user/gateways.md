@@ -39,7 +39,7 @@ The Telemetry gateways automatically enrich your data by adding the following at
   - Cluster name
 - Cloud provider attributes: If data is available, the gateway automatically adds [cloud provider](https://opentelemetry.io/docs/specs/semconv/resource/cloud/) attributes to the telemetry data.
   - `cloud.provider`: Cloud provider name
-  - `cloud.region`: Region where the Node runs (from on Node label `topology.kubernetes.io/region`)
+  - `cloud.region`: Region where the Node runs (from Node label `topology.kubernetes.io/region`)
   - `cloud.availability_zone`: Zone where the Node runs (from Node label `topology.kubernetes.io/zone`)
 - Host attributes: If data is available, the gateway automatically adds [host](https://opentelemetry.io/docs/specs/semconv/resource/host/) attributes to the telemetry data:
   - `host.type`: Machine type of the Node (from Node label `node.kubernetes.io/instance-type`)
