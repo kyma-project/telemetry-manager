@@ -17,7 +17,7 @@ The gateways are based on the [OTel Collector](https://opentelemetry.io/docs/col
 - Compatibility: An abstraction layer supports compatibility when underlying features change.
 - Migratability: Smooth migration experiences when switching underlying technologies or architectures.
 - Native Kubernetes support: API provided by Kyma supports an easy integration with Secrets, for example, served by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator#readme). Telemetry Manager takes care of the full lifecycle.
-- Focus: The user doesn't need to understand underlying concepts.
+- Focus: The user doesn't need to understand the underlying concepts.
 
 The Telemetry module focuses on full configurability of backends integrated by OTLP. If you need more features than provided by the Kyma MetricPipeline, bring your own collector setup.
 
