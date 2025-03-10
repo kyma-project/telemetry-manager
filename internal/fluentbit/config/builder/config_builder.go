@@ -10,6 +10,13 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
+const (
+	defaultInputTag          = "tele"
+	defaultMemoryBufferLimit = "10M"
+	defaultStorageType       = "filesystem"
+	defaultFsBufferLimit     = "1G"
+)
+
 type FluentBitConfig struct {
 	SectionsConfig  map[string]string
 	FilesConfig     map[string]string
@@ -33,8 +40,18 @@ func (f *FluentBitConfig) addTLSConfigSecret(tlsConfigSecret map[string][]byte) 
 	maps.Copy(f.TLSConfigSecret, tlsConfigSecret)
 }
 
-func NewFluentBitConfigBuilder(client client.Reader, builderConfig BuilderConfig) *ConfigBuilder {
-	return &ConfigBuilder{client, builderConfig}
+func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
+	return &ConfigBuilder{
+		Reader: client,
+		BuilderConfig: BuilderConfig{
+			PipelineDefaults: PipelineDefaults{
+				InputTag:          defaultInputTag,
+				MemoryBufferLimit: defaultMemoryBufferLimit,
+				StorageType:       defaultStorageType,
+				FsBufferLimit:     defaultFsBufferLimit,
+			},
+		},
+	}
 }
 
 type ConfigBuilder struct {
@@ -43,7 +60,12 @@ type ConfigBuilder struct {
 }
 
 func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
-	config := FluentBitConfig{}
+	config := FluentBitConfig{
+		SectionsConfig:  make(map[string]string),
+		FilesConfig:     make(map[string]string),
+		EnvConfigSecret: make(map[string][]byte),
+		TLSConfigSecret: make(map[string][]byte),
+	}
 
 	for _, pipeline := range allPipelines {
 		if !isLogPipelineReconcilable(allPipelines, &pipeline) || !pipeline.DeletionTimestamp.IsZero() {

@@ -179,8 +179,7 @@ func getSecretData(ctx context.Context, client client.Reader, ref telemetryv1alp
 	if err := client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, &source); err != nil {
 		return nil, fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", ref.Name, ref.Namespace, err)
 	}
-
-	if val, found := source.Data[targetKey]; found {
+	if val, found := source.Data[ref.Key]; found {
 		return map[string][]byte{
 			targetKey: val,
 		}, nil
@@ -193,7 +192,7 @@ func getSecretData(ctx context.Context, client client.Reader, ref telemetryv1alp
 }
 
 func shouldCopySecret(value telemetryv1alpha1.ValueType) bool {
-	return value.Value != "" ||
-		value.ValueFrom == nil ||
-		value.ValueFrom.SecretKeyRef == nil
+	return value.Value == "" &&
+		value.ValueFrom != nil &&
+		value.ValueFrom.SecretKeyRef != nil
 }

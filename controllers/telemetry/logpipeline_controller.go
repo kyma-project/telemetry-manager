@@ -56,13 +56,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-const (
-	defaultInputTag          = "tele"
-	defaultMemoryBufferLimit = "10M"
-	defaultStorageType       = "filesystem"
-	defaultFsBufferLimit     = "1G"
-)
-
 // LogPipelineController reconciles a LogPipeline object
 type LogPipelineController struct {
 	client.Client
@@ -188,16 +181,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 		config.FluentBitPriorityClassName,
 	)
 
-	fluentBitConfigBuilder := builder.NewFluentBitConfigBuilder(
-		client,
-		builder.BuilderConfig{
-			PipelineDefaults: builder.PipelineDefaults{
-				InputTag:          defaultInputTag,
-				MemoryBufferLimit: defaultMemoryBufferLimit,
-				FsBufferLimit:     defaultFsBufferLimit,
-				StorageType:       defaultStorageType,
-			},
-		})
+	fluentBitConfigBuilder := builder.NewFluentBitConfigBuilder(client)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {

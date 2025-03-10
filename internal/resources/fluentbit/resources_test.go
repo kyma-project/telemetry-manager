@@ -157,9 +157,12 @@ func TestAgent_DeleteResources(t *testing.T) {
 }
 
 func TestCalculateChecksum(t *testing.T) {
-	aad := AgentApplierDeleter{
-		namespace: "kyma-system",
-	}
+	image := "foo-fluentbit"
+	exporterImage := "foo-exporter"
+	priorityClassName := "foo-prio-class"
+	namespace := "kyma-system"
+
+	aad := NewFluentBitApplierDeleter(namespace, image, exporterImage, priorityClassName)
 
 	dsConfig := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
