@@ -83,7 +83,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
 				AllowedPorts: []int32{5555, 6666},
 				FluentBitConfig: &builder.FluentBitConfig{
-					SectionsConfig:  builder.SectionsConfig{Key: "pipeline1.conf", Value: "dummy-value"},
+					SectionsConfig:  map[string]string{"pipeline1.conf": "dummy-sections-content"},
 					FilesConfig:     map[string]string{"file1": "dummy-file-content"},
 					EnvConfigSecret: map[string][]byte{"env-config-secret1": []byte("dummy-value")},
 					TLSConfigSecret: map[string][]byte{"tls-config-secret1": []byte("dummy-value")},

@@ -17,9 +17,9 @@ type AgentConfigBuilder struct {
 	mock.Mock
 }
 
-// Build provides a mock function with given fields: ctx, pipeline, reconcilablePipelines
-func (_m *AgentConfigBuilder) Build(ctx context.Context, pipeline *v1alpha1.LogPipeline, reconcilablePipelines []v1alpha1.LogPipeline) (*builder.FluentBitConfig, error) {
-	ret := _m.Called(ctx, pipeline, reconcilablePipelines)
+// Build provides a mock function with given fields: ctx, reconcilablePipelines
+func (_m *AgentConfigBuilder) Build(ctx context.Context, reconcilablePipelines []v1alpha1.LogPipeline) (*builder.FluentBitConfig, error) {
+	ret := _m.Called(ctx, reconcilablePipelines)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
@@ -27,19 +27,19 @@ func (_m *AgentConfigBuilder) Build(ctx context.Context, pipeline *v1alpha1.LogP
 
 	var r0 *builder.FluentBitConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.LogPipeline, []v1alpha1.LogPipeline) (*builder.FluentBitConfig, error)); ok {
-		return rf(ctx, pipeline, reconcilablePipelines)
+	if rf, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline) (*builder.FluentBitConfig, error)); ok {
+		return rf(ctx, reconcilablePipelines)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.LogPipeline, []v1alpha1.LogPipeline) *builder.FluentBitConfig); ok {
-		r0 = rf(ctx, pipeline, reconcilablePipelines)
+	if rf, ok := ret.Get(0).(func(context.Context, []v1alpha1.LogPipeline) *builder.FluentBitConfig); ok {
+		r0 = rf(ctx, reconcilablePipelines)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*builder.FluentBitConfig)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *v1alpha1.LogPipeline, []v1alpha1.LogPipeline) error); ok {
-		r1 = rf(ctx, pipeline, reconcilablePipelines)
+	if rf, ok := ret.Get(1).(func(context.Context, []v1alpha1.LogPipeline) error); ok {
+		r1 = rf(ctx, reconcilablePipelines)
 	} else {
 		r1 = ret.Error(1)
 	}

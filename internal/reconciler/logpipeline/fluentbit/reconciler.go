@@ -20,7 +20,7 @@ import (
 )
 
 type AgentConfigBuilder interface {
-	Build(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, reconcilablePipelines []telemetryv1alpha1.LogPipeline) (*builder.FluentBitConfig, error)
+	Build(ctx context.Context, reconcilablePipelines []telemetryv1alpha1.LogPipeline) (*builder.FluentBitConfig, error)
 }
 
 type AgentApplierDeleter interface {
@@ -114,7 +114,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return nil
 	}
 
-	config, err := r.agentConfigBuilder.Build(ctx, pipeline, reconcilablePipelines)
+	config, err := r.agentConfigBuilder.Build(ctx, reconcilablePipelines)
 	if err != nil {
 		return fmt.Errorf("failed to build fluentbit config: %w", err)
 	}

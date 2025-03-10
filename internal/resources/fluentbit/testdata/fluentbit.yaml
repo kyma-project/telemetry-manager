@@ -61,7 +61,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  pipeline1.conf: dummy-value
+  pipeline1.conf: dummy-sections-content
 kind: ConfigMap
 metadata:
   creationTimestamp: null

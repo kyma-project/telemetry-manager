@@ -88,20 +88,14 @@ func NewFluentBitApplierDeleter(namespace, fbImage, exporterImage, priorityClass
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	var (
-		daemonSetName        = types.NamespacedName{Name: fbDaemonSetName, Namespace: aad.namespace}
-		luaConfigMapName     = types.NamespacedName{Name: fbLuaConfigMapName, Namespace: aad.namespace}
-		parsersConfigMapName = types.NamespacedName{Name: fbParsersConfigMapName, Namespace: aad.namespace}
+		daemonSetName           = types.NamespacedName{Name: fbDaemonSetName, Namespace: aad.namespace}
+		luaConfigMapName        = types.NamespacedName{Name: fbLuaConfigMapName, Namespace: aad.namespace}
+		parsersConfigMapName    = types.NamespacedName{Name: fbParsersConfigMapName, Namespace: aad.namespace}
+		filesConfigMapName      = types.NamespacedName{Name: fbFilesConfigMapName, Namespace: aad.namespace}
+		sectionsConfigMapName   = types.NamespacedName{Name: fbSectionsConfigMapName, Namespace: aad.namespace}
+		envConfigSecretName     = types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: aad.namespace}
+		tlsFileConfigSecretName = types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: aad.namespace}
 	)
-
-	syncer := syncer{
-		Client:    c,
-		Config:    opts.FluentBitConfig,
-		namespace: aad.namespace,
-	}
-
-	if err := syncer.syncFluentBitConfig(ctx); err != nil {
-		return fmt.Errorf("failed to sync fluent bit config maps: %w", err)
-	}
 
 	serviceAccount := commonresources.MakeServiceAccount(daemonSetName)
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
@@ -140,7 +134,27 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 
 	parsersCm := makeParserConfigmap(parsersConfigMapName)
 	if err := k8sutils.CreateIfNotExistsConfigMap(ctx, c, parsersCm); err != nil {
-		return fmt.Errorf("failed to reconcile fluent bit parseopts.Config.ap: %w", err)
+		return fmt.Errorf("failed to reconcile fluent bit parsers configmap: %w", err)
+	}
+
+	sectionsCm := makeSectionsConfigMap(sectionsConfigMapName, opts.FluentBitConfig.SectionsConfig)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, sectionsCm); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit sections configmap: %w", err)
+	}
+
+	filesCm := makeFilesConfigMap(filesConfigMapName, opts.FluentBitConfig.FilesConfig)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, filesCm); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit files configmap: %w", err)
+	}
+
+	envConfigSecret := makeEnvConfigSecret(envConfigSecretName, opts.FluentBitConfig.EnvConfigSecret)
+	if err := k8sutils.CreateOrUpdateSecret(ctx, c, envConfigSecret); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit env config secret: %w", err)
+	}
+
+	tlsFileConfigSecret := makeTLSFileConfigSecret(tlsFileConfigSecretName, opts.FluentBitConfig.TLSConfigSecret)
+	if err := k8sutils.CreateOrUpdateSecret(ctx, c, tlsFileConfigSecret); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit tls config secret: %w", err)
 	}
 
 	checksum, err := aad.calculateChecksum(ctx, c)
@@ -647,6 +661,28 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	}
 }
 
+func makeSectionsConfigMap(name types.NamespacedName, sectionsConfig map[string]string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    Labels(),
+		},
+		Data: sectionsConfig,
+	}
+}
+
+func makeFilesConfigMap(name types.NamespacedName, filesConfig map[string]string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    Labels(),
+		},
+		Data: filesConfig,
+	}
+}
+
 func makeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -698,6 +734,28 @@ end
 			Labels:    Labels(),
 		},
 		Data: map[string]string{"filter-script.lua": luaFilter},
+	}
+}
+
+func makeEnvConfigSecret(name types.NamespacedName, envConfigSecret map[string][]byte) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    Labels(),
+		},
+		Data: envConfigSecret,
+	}
+}
+
+func makeTLSFileConfigSecret(name types.NamespacedName, tlsFileConfigSecret map[string][]byte) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    Labels(),
+		},
+		Data: tlsFileConfigSecret,
 	}
 }
 
