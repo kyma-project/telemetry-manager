@@ -27,23 +27,23 @@ The Telemetry gateways automatically enrich your data by adding the following at
 
 - `service.name`: The logical name of the service that emits the telemetry data. The gateway ensures that this attribute always has a valid value.
   If not provided by the user, or if its value follows the pattern `unknown_service:<process.executable.name>` as described in the [specification](https://opentelemetry.io/docs/specs/semconv/resource/#service), then it is generated from Kubernetes metadata. The gateway determines the service name based on the following hierarchy of labels and names:
-  1. `app.kubernetes.io/name` Pod label value.
-  2. `app` Pod label value.
-  3. Deployment/DaemonSet/StatefulSet/Job name.
-  4. Pod name.
-  5. If none of the above is available, the value is `unknown_service`.
+  1. `app.kubernetes.io/name` Pod label value
+  2. `app` Pod label value
+  3. Deployment/DaemonSet/StatefulSet/Job name
+  4. Pod name
+  5. If none of the above is available, the value is `unknown_service`
 - `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including but not limited to:
   - Pod name
   - Deployment/DaemonSet/StatefulSet/Job name
   - Namespace
   - Cluster name
-- Cloud provider attributes: The gateway automatically adds [cloud provider](https://opentelemetry.io/docs/specs/semconv/resource/cloud/) attributes to the telemetry data when data is available. The attribute values are mostly based on the well-known Kubernetes labels available on the nodes.
-  - `cloud.provider`: The cloud provider name.
-  - `cloud.region`: The region where the node runs. The value is retrieved from node label `topology.kubernetes.io/region`.
-  - `cloud.availability_zone`: The zone where the node runs. The value is retrieved from node label `topology.kubernetes.io/zone`.
-- Host attributes: The gateway automatically adds [host](https://opentelemetry.io/docs/specs/semconv/resource/host/) attributes to the telemetry data when data is available. The attribute values are based on the well-known Kubernetes labels available on the nodes.
-  - `host.type`: The machine type of the node. The value is retrieved from node label `node.kubernetes.io/instance-type`.
-  - `host.arch`: The CPU architecture of the system the node is running on. The value is retrieved from node label `kubernetes.io/arch`.
+- Cloud provider attributes: If data is available, the gateway automatically adds [cloud provider](https://opentelemetry.io/docs/specs/semconv/resource/cloud/) attributes to the telemetry data.
+  - `cloud.provider`: The cloud provider name
+  - `cloud.region`: The region where the Node runs (from on Node label `topology.kubernetes.io/region`)
+  - `cloud.availability_zone`: The zone where the Node runs (from Node label `topology.kubernetes.io/zone`)
+- Host attributes: If data is available, the gateway automatically adds [host](https://opentelemetry.io/docs/specs/semconv/resource/host/) attributes to the telemetry data:
+  - `host.type`: The machine type of the Node (from Node label `node.kubernetes.io/instance-type`)
+  - `host.arch`: The CPU architecture of the system the Node is running on (from Node label `kubernetes.io/arch`)
 
 ## Istio Support
 
