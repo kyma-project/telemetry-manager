@@ -13,6 +13,7 @@ Most clients sending data to an OTel Collector are applications instrumented wit
 For example, regarding trace exports:
 > Concurrent requests and retry logic are the responsibility of the exporter. The default SDK’s Span Processors SHOULD NOT implement retry logic, as the required logic is likely to depend heavily on the specific protocol and backend the spans are being sent to. For example, the OpenTelemetry Protocol (OTLP) specification defines logic for both sending concurrent requests and retrying requests.
 
+
 ## How to Test
 
 ### 1. Set Up Environment
@@ -67,3 +68,39 @@ To clean up, delete the deployment:
 ```bash
 kubectl delete -f ./telemetrygen_otlphttp.yaml
 ```
+
+### 4. OTLP gRPC with Istio
+
+Install Istio:
+
+```bash
+./hacks/deploy-istio.sh
+```
+
+The results are similar to **OTLP gRPC Testing**, but with a different log message:
+
+```bash
+2025/03/11 10:53:38 traces export: context deadline exceeded: rpc error: code = Unavailable desc = no healthy upstream
+```
+
+### 5. OTLP HTTP with Istio
+
+Install Istio:
+
+```bash
+./hacks/deploy-istio.sh
+```
+
+Unlike in **OTLP HTTP Testing**, retry behavior is observed, as evidenced by log messages appearing at a significantly lower rate (approximately 1–2 times per minute):
+
+```bash
+2025/03/11 10:57:40 traces export: context deadline exceeded: retry-able request failure: body: no healthy upstream
+```
+
+## Summary
+
+- **OTLP gRPC without Istio**: Retries occur as expected, following the OTLP specification, when encountering an `Unavailable` error.
+- **OTLP HTTP without Istio**: No retry mechanism is observed; data loss occurs when the collector is unavailable.
+- **OTLP gRPC with Istio**: Similar behavior to gRPC without Istio
+- **OTLP HTTP with Istio**: Unlike standard OTLP HTTP behavior, retries occur with Istio
+
