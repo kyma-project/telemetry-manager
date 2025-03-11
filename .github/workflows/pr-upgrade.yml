@@ -6,13 +6,24 @@ on:
     branches:
       - "main"
       - "release-*"
-    paths-ignore:
-      - 'docs/**'
-      - 'dependencies/**'
-      - '**/*.md'
-      - 'OWNERS'
-      - 'CODEOWNERS'
-      - 'external-images.yaml'
+    # only include PRs that change:
+    # go files
+    # go mod files
+    # test files in the test/e2e directory
+    # test files in the istio directory
+    # exclude go files that end with _test.go
+    # include the workflow definition itself
+    # include dependencies of the workflow definition
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "config/**"
+      - "!**_test.go"
+      - "test/e2e/*.go"
+      - "test/integration/istio/*.go"
+      - ".github/workflows/pr-upgrade.yml"
+      - ".github/template/**"
   workflow_dispatch:
 
 jobs:
