@@ -6,7 +6,9 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
@@ -18,44 +20,92 @@ const (
 	maxElapsedTime = "300s"
 )
 
-func makeReceivers(logpipelines []telemetryv1alpha1.LogPipeline, opts BuildOptions) Receivers {
+func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOptions) *FileLog {
 	excludeLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, otelcollector.LogAgentName)
 	excludeFluentBitLogs := fmt.Sprintf("/var/log/pods/%s_%s*/*/*.log", opts.AgentNamespace, fluentbit.LogAgentName)
+	excludeSystemLogCollectorLogs := fmt.Sprintf("/var/log/pods/%s_*%s*/*/*.log", opts.AgentNamespace, commonresources.SystemLogCollectorName)
+	excludeSystemLogAgentLogs := fmt.Sprintf("/var/log/pods/%s_*%s*/*/*.log", opts.AgentNamespace, commonresources.SystemLogAgentName)
 
-	return Receivers{
-		FileLog: &FileLog{
-			Exclude: []string{
-				excludeLogAgentLogs,
-				excludeFluentBitLogs,
-			},
-			Include:         []string{"/var/log/pods/*/*/*.log"},
-			IncludeFileName: false,
-			IncludeFilePath: true,
-			StartAt:         "beginning",
-			Storage:         "file_storage",
-			RetryOnFailure: config.RetryOnFailure{
-				Enabled:         true,
-				InitialInterval: initialInterval,
-				MaxInterval:     maxInterval,
-				MaxElapsedTime:  maxElapsedTime,
-			},
-			Operators: makeOperators(logpipelines),
+	excludePath := createExcludePath(logpipeline.Spec.Input.Application)
+	excludePath = append(excludePath,
+		excludeLogAgentLogs,
+		excludeFluentBitLogs,
+		excludeSystemLogCollectorLogs,
+		excludeSystemLogAgentLogs)
+
+	includePath := createIncludePath(logpipeline.Spec.Input.Application)
+
+	return &FileLog{
+		Exclude:         excludePath,
+		Include:         includePath,
+		IncludeFileName: ptr.To(false),
+		IncludeFilePath: ptr.To(true),
+		StartAt:         "beginning",
+		Storage:         "file_storage",
+		RetryOnFailure: config.RetryOnFailure{
+			Enabled:         true,
+			InitialInterval: initialInterval,
+			MaxInterval:     maxInterval,
+			MaxElapsedTime:  maxElapsedTime,
 		},
+		Operators: makeOperators(logpipeline),
 	}
 }
 
-func makeOperators(logPipelines []telemetryv1alpha1.LogPipeline) []Operator {
+func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
+	if application == nil || application.Namespaces.Include == nil && !application.Namespaces.System {
+		return []string{"/var/log/pods/*/*/*.log"}
+	}
+
+	includeNamespacePath := []string{}
+	for _, ns := range application.Namespaces.Include {
+		includeNamespacePath = append(includeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+	}
+
+	if application.Namespaces.System {
+		return makeSystemLogPath()
+	}
+
+	return includeNamespacePath
+}
+
+func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
+	if application == nil || application.Namespaces.Exclude == nil && !application.Namespaces.System {
+		return makeSystemLogPath()
+	}
+
+	excludeNamespacePath := []string{}
+	if !application.Namespaces.System {
+		excludeNamespacePath = append(excludeNamespacePath, makeSystemLogPath()...)
+	}
+
+	for _, ns := range application.Namespaces.Exclude {
+		excludeNamespacePath = append(excludeNamespacePath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+	}
+
+	return excludeNamespacePath
+}
+
+func makeSystemLogPath() []string {
+	systemLogPath := []string{}
+	for _, ns := range namespaces.System() {
+		systemLogPath = append(systemLogPath, fmt.Sprintf("/var/log/pods/%s_*/*/*.log", ns))
+	}
+
+	return systemLogPath
+}
+
+func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 	keepOriginalBody := false
 
-	for _, logPipeline := range logPipelines {
-		if *logPipeline.Spec.Input.Application.KeepOriginalBody {
-			keepOriginalBody = true
-		}
+	if *logPipeline.Spec.Input.Application.KeepOriginalBody {
+		keepOriginalBody = true
 	}
 
 	operators := []Operator{
 		makeContainerParser(),
 		makeMoveToLogStream(),
+		makeDropAttributeLogTag(),
 		makeJSONParser(),
 	}
 	if keepOriginalBody {
@@ -89,6 +139,14 @@ func makeMoveToLogStream() Operator {
 		From:   "attributes.stream",
 		To:     "attributes[\"log.iostream\"]",
 		IfExpr: "attributes.stream != nil",
+	}
+}
+
+func makeDropAttributeLogTag() Operator {
+	return Operator{
+		ID:    "drop-attribute-log-tag",
+		Type:  "remove",
+		Field: "attributes[\"logtag\"]",
 	}
 }
 

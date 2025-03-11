@@ -1,3 +1,3 @@
 images:
-  - source: "fluent/fluent-bit@sha256:a185ac0516e1f35568ff0662f12c4ada0ea38c4300ed223d0fde485599dff5b5"
-    tag: "3.2.4" # used by the kyma telemetry module
+  - source: "fluent/fluent-bit@sha256:bfce64b4b2027dfb3819dce82da776ff439e2e4197359e7aa18ec5b3c478c651"
+    tag: "3.2.7" # used by the kyma telemetry module

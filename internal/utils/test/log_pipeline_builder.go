@@ -29,6 +29,28 @@ type LogPipelineBuilder struct {
 	statusConditions []metav1.Condition
 }
 
+type LogPipelineInputOptions func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector)
+
+func IncludeLogNamespaces(namespaces ...string) LogPipelineInputOptions {
+	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
+		selector.Include = namespaces
+		selector.Exclude = nil
+	}
+}
+
+func ExcludeLogNamespaces(namespaces ...string) LogPipelineInputOptions {
+	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
+		selector.Include = nil
+		selector.Exclude = namespaces
+	}
+}
+
+func SystemLogNamespaces(enable bool) LogPipelineInputOptions {
+	return func(selector *telemetryv1alpha1.LogPipelineNamespaceSelector) {
+		selector.System = enable
+	}
+}
+
 func NewLogPipelineBuilder() *LogPipelineBuilder {
 	return &LogPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
@@ -60,12 +82,20 @@ func (b *LogPipelineBuilder) WithApplicationInputDisabled() *LogPipelineBuilder 
 	return b
 }
 
-func (b *LogPipelineBuilder) WithApplicationInput(enabled bool) *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...LogPipelineInputOptions) *LogPipelineBuilder {
 	if b.input.Application == nil {
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
 	b.input.Application.Enabled = ptr.To(enabled)
+
+	if len(opts) == 0 {
+		return b
+	}
+
+	for _, opt := range opts {
+		opt(&b.input.Application.Namespaces)
+	}
 
 	return b
 }

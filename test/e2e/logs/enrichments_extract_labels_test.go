@@ -18,7 +18,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -42,15 +41,13 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(IsUpgrade()))
-
-		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(ProxyClient)
 
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
+			WithApplicationInputDisabled().
 			WithOTLPOutput(
 				testutils.OTLPEndpointFromSecret(
 					hostSecretRef.Name,
@@ -138,7 +135,7 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 					HaveResourceAttributes(HaveKeyWithValue(logLabelPrefixMatchAttributeKey2, "prefix_match2")),
 					Not(HaveResourceAttributes(HaveKeyWithValue(logLabelShouldNotMatchAttributeKey, "should_not_match"))),
 				))))
-			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
