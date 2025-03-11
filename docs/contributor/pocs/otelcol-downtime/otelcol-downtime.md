@@ -104,3 +104,13 @@ Unlike in **OTLP HTTP Testing**, retry behavior is observed, as evidenced by log
 - **OTLP gRPC with Istio**: Similar behavior to gRPC without Istio
 - **OTLP HTTP with Istio**: Unlike standard OTLP HTTP behavior, retries occur with Istio
 
+## Istio Proxies  
+
+Istio proxies can send access logs and spans to an OTLP endpoint; however, they do not appear to use the OpenTelemetry (OTel) SDK. While Envoy provides a way to configure retry policies:  
+
+- [Envoy OpenTelemetry Trace Configuration](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/trace/v3/opentelemetry.proto.html)  
+- [Envoy OpenTelemetry Access Logger Configuration](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/access_loggers/open_telemetry/v3/logs_service.proto)  
+
+These configurations are not reflected in Istio's mesh configuration by default. However, enabling them is relatively straightforward. A feature request similar to [this one](https://github.com/istio/istio/issues/52873) could be submitted to improve support for retry policies.  
+
+Additionally, tests indicate that Istio proxies currently do not implement any retry functionality. As a result, if the collector is unavailable, data is dropped.  
