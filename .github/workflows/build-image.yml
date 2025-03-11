@@ -73,7 +73,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Send slack message on failure
-        uses: slackapi/slack-github-action@aef66158a0aa6f218e8762d953e4b92ab4a9286f
+        uses: slackapi/slack-github-action@1ebd7369aaf3a6d504deead6fff697aa960eea9c
         with:
           payload-file-path: ".github/workflows/slack-message.json"
         env:
