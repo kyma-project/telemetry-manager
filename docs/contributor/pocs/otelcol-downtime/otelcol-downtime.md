@@ -15,49 +15,55 @@ For example, regarding trace exports:
 
 ## How to Test
 
-### 1. Setup Environment
+### 1. Set Up Environment
 
-Run the following commands from the root directory of the repository to provision the necessary environment:
+Run the following command from the root directory of the repository to provision the necessary environment:
 
 ```bash
 # Provision a k3d cluster with Istio
 make provision-k3d
-./hack/install-istio.sh
-
-# Deploy the telemetry manager
-make deploy
 ```
 
-### 2. Deploy Test Workloads
+### 2. OTLP gRPC Testing
 
-Deploy `telemetrygen`, a mock in-cluster trace backend, and a `TracePipeline` that connects them:
+Deploy `telemetrygen`, instrumented with the OTLP gRPC exporter, along with a service that has no backing Pods to simulate downtime and record logs:
 
 ```bash
-k apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/contributor/pocs/otelcol-downtime/telemetry_v1alpha1_tracepipeline_otlphttp.yaml
+kubectl apply -f ./telemetrygen_otlpgrpc.yaml
 ```
 
-### 3. Simulate Permanent Non-Retriable Errors
+Check the `telemetrygen` logs, where you should see the following message:
 
 ```bash
-k apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/contributor/pocs/otelcol-downtime/vs-trace-gateway-fault-404.yaml
+2025/03/11 10:36:43 traces export: context deadline exceeded: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial tcp 10.43.93.51:4317: connect: connection refused"
 ```
 
-Check the logs of the `telemetrygen` pod, where you will see it continuously logging the following errors:
+According to the [OTLP specification](https://opentelemetry.io/docs/specs/otlp/), the `Unavailable` gRPC error code is considered retryable.
+
+To clean up, delete the deployment:
 
 ```bash
-traces export: failed to send to http://telemetry-otlp-traces.kyma-system:4318/v1/traces: 404 Not Found (body: fault filter abort)
+kubectl delete -f ./telemetrygen_otlpgrpc.yaml
 ```
 
-### 4. Simulate Retriable Errors
+### 3. OTLP HTTP Testing
+
+Deploy `telemetrygen`, instrumented with the OTLP HTTP exporter, along with a service that has no backing Pods to simulate downtime and record logs:
 
 ```bash
-k apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/contributor/pocs/otelcol-downtime/vs-trace-gateway-fault-429.yaml
+kubectl apply -f ./telemetrygen_otlphttp.yaml
 ```
 
-You will observe errors appearing every 30 seconds:
+Check the `telemetrygen` logs, where you should see the following message:
 
 ```bash
-traces export: context deadline exceeded: retry-able request failure: body: fault filter abort
+2025/03/11 10:42:44 traces export: Post "http://telemetry-otlp-traces.kyma-system:4318/v1/traces": dial tcp 10.43.48.18:4318: connect: connection refused
 ```
 
-This confirms that retries are occurring as expected.
+Unlike gRPC, these messages are logged every second, indicating that no retry mechanism is in place and data is being dropped.
+
+To clean up, delete the deployment:
+
+```bash
+kubectl delete -f ./telemetrygen_otlphttp.yaml
+```
