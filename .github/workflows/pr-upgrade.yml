@@ -22,7 +22,7 @@ on:
       - "!**_test.go"
       - "test/e2e/*.go"
       - "test/integration/istio/*.go"
-      - ".github/workflows/pr-integration.yml"
+      - ".github/workflows/pr-upgrade.yml"
       - ".github/template/**"
   workflow_dispatch:
 
