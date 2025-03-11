@@ -210,7 +210,8 @@ func TestBuildConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "transform/set-observed-time-when-not-present")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[4], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Exporters, "otlp/test")
 	})
@@ -233,7 +234,8 @@ func TestBuildConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[2], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[3], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[3], "transform/set-observed-time-when-not-present")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[4], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-2"].Exporters, "otlp/test-2")
@@ -241,7 +243,9 @@ func TestBuildConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[2], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[3], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[3], "transform/set-observed-time-when-not-present")
+
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[4], "batch")
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_1")
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_2")

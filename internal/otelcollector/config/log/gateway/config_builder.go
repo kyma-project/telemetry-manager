@@ -108,6 +108,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 			"memory_limiter",
 			"k8sattributes",
 			"resource/insert-cluster-attributes",
+			"transform/set-observed-time-when-not-present",
 			"batch",
 		},
 		Exporters: exporterIDs,

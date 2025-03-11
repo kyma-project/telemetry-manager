@@ -12,6 +12,7 @@ service:
                 - memory_limiter
                 - k8sattributes
                 - resource/insert-cluster-attributes
+                - transform/set-observed-time-when-not-present
                 - batch
             exporters:
                 - otlp/test
@@ -94,6 +95,13 @@ processors:
             - action: insert
               key: cloud.provider
               value: test-cloud-provider
+    transform/set-observed-time-when-not-present:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(log.observed_time, Now())
+              conditions:
+                - log.observed_time_unix_nano == 0
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
@@ -11,8 +12,9 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:           processors.K8sAttributesProcessorConfig(opts.Enrichments),
-		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		K8sAttributes:            processors.K8sAttributesProcessorConfig(opts.Enrichments),
+		InsertClusterAttributes:  processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		SetObsTimeWhenNotPresent: makeSetObsTimeWhenNotPresentProcessorConfig(),
 	}
 }
 
@@ -31,5 +33,19 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
 		SpikeLimitPercentage: 15,
+	}
+}
+
+func makeSetObsTimeWhenNotPresentProcessorConfig() *log.TransformProcessor {
+	return &log.TransformProcessor{
+		ErrorMode: "ignore",
+		LogStatements: []config.TransformProcessorStatements{
+			{
+				Conditions: []string{
+					"log.observed_time_unix_nano == 0",
+				},
+				Statements: []string{"set(log.observed_time, Now())"},
+			},
+		},
 	}
 }
