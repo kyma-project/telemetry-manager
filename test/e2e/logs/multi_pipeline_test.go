@@ -1,6 +1,6 @@
 //go:build e2e
 
-package e2e
+package logs
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -14,18 +14,18 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 	Context("When multiple otlp logpipelines exist", Ordered, func() {
 		var (
-			mockNs            = suite.ID()
-			backend1Name      = suite.IDWithSuffix("backend-1")
-			pipeline1Name     = suite.IDWithSuffix("1")
+			mockNs            = ID()
+			backend1Name      = IDWithSuffix("backend-1")
+			pipeline1Name     = IDWithSuffix("1")
 			backend1ExportURL string
-			backend2Name      = suite.IDWithSuffix("backend-2")
-			pipeline2Name     = suite.IDWithSuffix("2")
+			backend2Name      = IDWithSuffix("backend-2")
+			pipeline2Name     = IDWithSuffix("2")
 			backend2ExportURL string
 		)
 
@@ -35,7 +35,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 			backend1 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend1Name))
 			objs = append(objs, backend1.K8sObjects()...)
-			backend1ExportURL = backend1.ExportURL(proxyClient)
+			backend1ExportURL = backend1.ExportURL(ProxyClient)
 
 			logPipeline1 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline1Name).
@@ -46,7 +46,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 			backend2 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend2Name))
 			objs = append(objs, backend2.K8sObjects()...)
-			backend2ExportURL = backend2.ExportURL(proxyClient)
+			backend2ExportURL = backend2.ExportURL(ProxyClient)
 
 			logPipeline2 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline2Name).
@@ -67,32 +67,32 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(ctx, k8sClient, pipeline1Name)
-			assert.LogPipelineHealthy(ctx, k8sClient, pipeline2Name)
+			assert.LogPipelineHealthy(Ctx, K8sClient, pipeline1Name)
+			assert.LogPipelineHealthy(Ctx, K8sClient, pipeline2Name)
 		})
 
 		It("Should have a running log gateway deployment", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(Ctx, K8sClient, kitkyma.LogGatewayName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.LogAgentName)
+			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have running backends", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should verify logs from telemetrygen are delivered", func() {
-			assert.LogsFromNamespaceDelivered(proxyClient, backend1ExportURL, mockNs)
-			assert.LogsFromNamespaceDelivered(proxyClient, backend2ExportURL, mockNs)
+			assert.LogsFromNamespaceDelivered(ProxyClient, backend1ExportURL, mockNs)
+			assert.LogsFromNamespaceDelivered(ProxyClient, backend2ExportURL, mockNs)
 		})
 	})
 })

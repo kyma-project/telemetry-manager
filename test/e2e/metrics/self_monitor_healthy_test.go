@@ -3,19 +3,16 @@
 package metrics
 
 import (
-	"net/http"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -26,7 +23,8 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelSelfMonitoringMetricsHealthy), Ordered, func() {
+// Please remove the test when the compatibility mode annotation feature removed, planed for telemetry version 1.41.0
+var _ = Describe(ID(), Label(LabelSelfMonitoringMetricsHealthyCompatibilityMode), Ordered, func() {
 	var (
 		mockNs           = ID()
 		pipelineName     = ID()
@@ -64,26 +62,24 @@ var _ = Describe(ID(), Label(LabelSelfMonitoringMetricsHealthy), Ordered, func()
 			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.SelfMonitorName)
+		It("Should have global internal metrics compatibility annotation config", func() {
+			Eventually(func(g Gomega) string {
+				var telemetry operatorv1alpha1.Telemetry
+				err := K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+
+				telemetry.Annotations = map[string]string{
+					"telemetry.kyma-project.io/internal-metrics-compatibility-mode": "true",
+				}
+
+				err = K8sClient.Update(Ctx, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+				return telemetry.Annotations["telemetry.kyma-project.io/internal-metrics-compatibility-mode"]
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal("true"))
 		})
 
-		It("Should have a network policy deployed", func() {
-			var networkPolicy networkingv1.NetworkPolicy
-			Expect(K8sClient.Get(Ctx, kitkyma.SelfMonitorNetworkPolicy, &networkPolicy)).To(Succeed())
-
-			Eventually(func(g Gomega) {
-				var podList corev1.PodList
-				g.Expect(K8sClient.List(Ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.SelfMonitorBaseName})).To(Succeed())
-				g.Expect(podList.Items).NotTo(BeEmpty())
-
-				selfMonitorPodName := podList.Items[0].Name
-				pprofEndpoint := ProxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, selfMonitorPodName, "debug/pprof/", ports.Pprof)
-
-				resp, err := ProxyClient.Get(pprofEndpoint)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		It("Should have a running self-monitor", func() {
+			assert.DeploymentReady(Ctx, K8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have service deployed", func() {
@@ -109,7 +105,6 @@ var _ = Describe(ID(), Label(LabelSelfMonitoringMetricsHealthy), Ordered, func()
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
-			// TODO: add the conditions.TypeFlowHealthy check to assert.MetricPipelineHealthy after self monitor is released
 			Eventually(func(g Gomega) {
 				var pipeline telemetryv1alpha1.MetricPipeline
 				key := types.NamespacedName{Name: pipelineName}
