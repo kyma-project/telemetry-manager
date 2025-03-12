@@ -22,6 +22,21 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
+var (
+	// custom  retry config with increased MaxElapsedTime, rest are OTel SDK defaults
+	retryConfig = struct {
+		Enabled         bool
+		InitialInterval time.Duration
+		MaxInterval     time.Duration
+		MaxElapsedTime  time.Duration
+	}{
+		Enabled:         true,
+		InitialInterval: 5 * time.Second,
+		MaxInterval:     30 * time.Second,
+		MaxElapsedTime:  5 * time.Minute,
+	}
+)
+
 func newOTelSDKLogger() (*logr.Logger, error) {
 	sdkLogLevelEnv := os.Getenv("OTEL_LOG_LEVEL")
 	if sdkLogLevelEnv == "" {
@@ -93,14 +108,14 @@ func newOTLPTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
 	protocol := resolveOTLPProtocol()
 	switch protocol {
 	case "http/protobuf":
-		exporter, err := otlptracehttp.New(ctx)
+		exporter, err := otlptracehttp.New(ctx, otlptracehttp.WithRetry(otlptracehttp.RetryConfig(retryConfig)))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
 		}
 		logger.Info("Using HTTP OTLP trace exporter")
 		return exporter, nil
 	case "grpc":
-		exporter, err := otlptracegrpc.New(ctx)
+		exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig(retryConfig)))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
 		}
@@ -155,14 +170,14 @@ func newOTLPMetricExporter(ctx context.Context) (metric.Exporter, error) {
 	protocol := resolveOTLPProtocol()
 	switch protocol {
 	case "http/protobuf":
-		exporter, err := otlpmetrichttp.New(ctx)
+		exporter, err := otlpmetrichttp.New(ctx, otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig(retryConfig)))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
 		}
 		logger.Info("Using HTTP OTLP metric exporter")
 		return exporter, nil
 	case "grpc":
-		exporter, err := otlpmetricgrpc.New(ctx)
+		exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig(retryConfig)))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
 		}
