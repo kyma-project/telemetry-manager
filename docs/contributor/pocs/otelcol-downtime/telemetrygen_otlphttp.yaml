@@ -57,8 +57,8 @@ spec:
           env:
             - name: OTEL_LOG_LEVEL
               value: "DEBUG"
-            - name: OTLP_EXPORTER_OTLP_PROTOCOL
-              value: "http/protobug"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "http/protobuf"
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               value: "http://telemetry-otlp-traces.kyma-system:4318"
             - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
