@@ -220,6 +220,13 @@ func run() error {
 		return fmt.Errorf("error initializing metrics: %w", err)
 	}
 
+	otelSDKLogger, err := newOTelSDKLogger()
+	if err != nil {
+		return fmt.Errorf("error creating OTel SDK logger: %w", err)
+	}
+
+	otel.SetLogger(*otelSDKLogger)
+
 	// Configure the HTTP server
 	http.DefaultClient.Timeout = 30 * time.Second
 

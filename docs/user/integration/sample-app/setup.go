@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/slogr"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -18,6 +21,29 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
+
+func newOTelSDKLogger() (*logr.Logger, error) {
+	sdkLogLevelEnv := os.Getenv("OTEL_LOG_LEVEL")
+	if sdkLogLevelEnv == "" {
+		sdkLogLevelEnv = "INFO"
+	}
+
+	sdkLogLevels := map[string]slog.Level{
+		"DEBUG": slog.LevelDebug,
+		"INFO":  slog.LevelInfo,
+		"WARN":  slog.LevelWarn,
+		"ERROR": slog.LevelError,
+	}
+
+	slogLogLevel, ok := sdkLogLevels[sdkLogLevelEnv]
+	if !ok {
+		return nil, fmt.Errorf("invalid log level: %s", sdkLogLevelEnv)
+	}
+
+	jsonHandler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slogLogLevel})
+	logger := slogr.NewLogr(jsonHandler)
+	return &logger, nil
+}
 
 func newOtelResource() (*resource.Resource, error) {
 	// Ensure default SDK resources and the required service name are set.
