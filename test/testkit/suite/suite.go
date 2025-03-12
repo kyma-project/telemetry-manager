@@ -28,12 +28,12 @@ const (
 )
 
 var (
-	Ctx                context.Context
-	Cancel             context.CancelFunc
-	K8sClient          client.Client
-	ProxyClient        *apiserverproxy.Client
-	TestEnv            *envtest.Environment
-	k8sObjects         []client.Object
+	Ctx         context.Context
+	Cancel      context.CancelFunc
+	K8sClient   client.Client
+	ProxyClient *apiserverproxy.Client
+	TestEnv     *envtest.Environment
+	k8sObjects  []client.Object
 )
 
 // Function to be executed before each e2e suite
@@ -115,25 +115,25 @@ func sanitizeSpecID(filePath string) string {
 }
 
 const (
-	LabelLogs                 = "logs"
-	LabelTraces               = "traces"
-	LabelMetrics              = "metrics"
-	LabelTelemetry            = "telemetry"
-	LabelExperimental         = "experimental"
-	LabelMaxPipeline          = "max-pipeline"
-	LabelSetA                 = "set_a"
-	LabelSetB                 = "set_b"
-	LabelSetC                 = "set_c"
+	LabelLogs         = "logs"
+	LabelTraces       = "traces"
+	LabelMetrics      = "metrics"
+	LabelTelemetry    = "telemetry"
+	LabelExperimental = "experimental"
+	LabelMaxPipeline  = "max-pipeline"
+	LabelSetA         = "set_a"
+	LabelSetB         = "set_b"
+	LabelSetC         = "set_c"
 
-	LabelSelfMonitoringLogsHealthy                     = "self-mon-logs-healthy"
-	LabelSelfMonitoringLogsBackpressure                = "self-mon-logs-backpressure"
-	LabelSelfMonitoringLogsOutage                      = "self-mon-logs-outage"
-	LabelSelfMonitoringTracesHealthy                   = "self-mon-traces-healthy"
-	LabelSelfMonitoringTracesBackpressure              = "self-mon-traces-backpressure"
-	LabelSelfMonitoringTracesOutage                    = "self-mon-traces-outage"
-	LabelSelfMonitoringMetricsHealthy                  = "self-mon-metrics-healthy"
-	LabelSelfMonitoringMetricsBackpressure             = "self-mon-metrics-backpressure"
-	LabelSelfMonitoringMetricsOutage                   = "self-mon-metrics-outage"
+	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
+	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"
+	LabelSelfMonitoringLogsOutage          = "self-mon-logs-outage"
+	LabelSelfMonitoringTracesHealthy       = "self-mon-traces-healthy"
+	LabelSelfMonitoringTracesBackpressure  = "self-mon-traces-backpressure"
+	LabelSelfMonitoringTracesOutage        = "self-mon-traces-outage"
+	LabelSelfMonitoringMetricsHealthy      = "self-mon-metrics-healthy"
+	LabelSelfMonitoringMetricsBackpressure = "self-mon-metrics-backpressure"
+	LabelSelfMonitoringMetricsOutage       = "self-mon-metrics-outage"
 
 	// Miscellaneous test label (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
