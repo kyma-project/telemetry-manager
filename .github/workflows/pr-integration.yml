@@ -45,7 +45,7 @@ jobs:
 
       - name: Create Telemetry CR
         run: |
-          kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml
+          kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
   e2e:
     needs: setup
