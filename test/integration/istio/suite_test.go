@@ -34,7 +34,6 @@ var (
 	k8sClient          client.Client
 	proxyClient        *apiserverproxy.Client
 	testEnv            *envtest.Environment
-	telemetryK8sObject client.Object
 	k8sObjects         []client.Object
 )
 
@@ -68,10 +67,8 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(suite.IsUpgrade()).K8sObject()
 	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
 	k8sObjects = []client.Object{
-		telemetryK8sObject,
 		denyAllNetworkPolicyK8sObject,
 	}
 
