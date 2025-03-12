@@ -1,6 +1,6 @@
 //go:build e2e
 
-package metrics
+package misc
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -24,7 +24,7 @@ import (
 )
 
 // Please remove the test when the compatibility mode annotation feature removed, planed for telemetry version 1.41.0
-var _ = Describe(ID(), Label(LabelSelfMonitoringMetricsHealthyCompatibilityMode), Ordered, func() {
+var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 	var (
 		mockNs           = ID()
 		pipelineName     = ID()

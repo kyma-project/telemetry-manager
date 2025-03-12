@@ -132,7 +132,6 @@ const (
 	LabelMetrics              = "metrics"
 	LabelTelemetry            = "telemetry"
 	LabelExperimental         = "experimental"
-	LabelTelemetryLogAnalysis = "telemetry-log-analysis"
 	LabelMaxPipeline          = "max-pipeline"
 	LabelSetA                 = "set_a"
 	LabelSetB                 = "set_b"
@@ -147,7 +146,10 @@ const (
 	LabelSelfMonitoringMetricsHealthy                  = "self-mon-metrics-healthy"
 	LabelSelfMonitoringMetricsBackpressure             = "self-mon-metrics-backpressure"
 	LabelSelfMonitoringMetricsOutage                   = "self-mon-metrics-outage"
-	LabelSelfMonitoringMetricsHealthyCompatibilityMode = "self-mon-metrics-healthy-compatibility-mode"
+
+	// Miscellaneous test label (for edge-cases and unrelated tests)
+	// [please avoid adding tests to this category if it already fits in a more specific one]
+	LabelMisc = "misc"
 
 	// Istio test label
 	LabelIntegration = "integration"

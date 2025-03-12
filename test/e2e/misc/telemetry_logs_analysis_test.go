@@ -24,7 +24,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelTelemetryLogAnalysis), Ordered, func() {
+var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 	const (
 		consistentlyTimeout         = time.Second * 120
 		traceBackendName            = "trace-backend"

@@ -49,15 +49,22 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs
-          - "metrics && set_a"
-          - "metrics && set_b"
-          - "metrics && set_c"
-          - traces
-          - telemetry
-          - max-pipeline
-          - telemetry-log-analysis
-          - self-mon-metrics-healthy-compatibility-mode
+          - filter: logs
+            path: test/e2e/logs
+          - filter: "metrics && set_a"
+            path: test/e2e/metrics
+          - filter: "metrics && set_b"
+            path: test/e2e/metrics
+          - filter: "metrics && set_c"
+            path: test/e2e/metrics
+          - filter: traces
+            path: test/e2e/traces
+          - filter: telemetry
+            path: test/e2e/misc
+          - filter: max-pipeline
+            path: test/e2e
+          - filter: misc
+            path: test/e2e/misc
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -70,7 +77,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} -r --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && !experimental" test/e2e
+        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} -r --tags e2e --label-filter="${{ matrix.ginkgo-labels.filter }} && !experimental" ${{ matrix.ginkgo-labels.path }}
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -85,9 +92,12 @@ jobs:
       fail-fast: false
       matrix:
         ginkgo-labels:
-          - logs
-          - metrics
-          - traces
+          - filter: logs
+            path: test/e2e/logs
+          - filter: metrics
+            path: test/e2e/metrics
+          - filter: traces
+            path: test/e2e/traces
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -99,7 +109,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} -r --tags e2e --label-filter="${{ matrix.ginkgo-labels }} && experimental" test/e2e
+        run: bin/ginkgo run ${{ runner.debug && '-v' || '' }} -r --tags e2e --label-filter="${{ matrix.ginkgo-labels.filter }} && experimental" ${{ matrix.ginkgo-labels.path }}
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -141,9 +151,12 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs
-          - metrics
-          - traces
+          - filter: logs
+            path: test/e2e/logs
+          - filter: metrics
+            path: test/e2e/metrics
+          - filter: traces
+            path: test/e2e/traces
         scenario:
           - healthy
           - backpressure
@@ -162,7 +175,7 @@ jobs:
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
         run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} -r --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && !experimental" test/e2e
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} -r --tags e2e --label-filter="self-mon-${{ matrix.signal-type.filter }}-${{ matrix.scenario }} && !experimental" ${{ matrix.signal-type.path }}
 
         # we need Istio for fault injection to simulate backpressure and outages
       - name: Deploy Istio Module
@@ -172,7 +185,7 @@ jobs:
       - name: Run tests with Istio
         if: ${{ matrix.scenario != 'healthy' }}
         run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }}&& !experimental" test/integration/istio
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} --tags istio --label-filter="self-mon-${{ matrix.signal-type.filter }}-${{ matrix.scenario }}&& !experimental" test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -187,9 +200,12 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs
-          - metrics
-          - traces
+          - filter: logs
+            path: test/e2e/logs
+          - filter: metrics
+            path: test/e2e/metrics
+          - filter: traces
+            path: test/e2e/traces
         scenario:
           - healthy
           - backpressure
@@ -207,7 +223,7 @@ jobs:
       - name: Run tests without Istio
         if: ${{ matrix.scenario == 'healthy' }}
         run: |
-          bin/ginkgo run ${{ runner.debug && '-v' || '' }} -r --tags e2e --label-filter="self-mon-${{ matrix.signal-type }}-${{ matrix.scenario }} && experimental" test/e2e
+          bin/ginkgo run ${{ runner.debug && '-v' || '' }} -r --tags e2e --label-filter="self-mon-${{ matrix.signal-type.filter }}-${{ matrix.scenario }} && experimental" ${{ matrix.signal-type.path }}
 
         # we need Istio for fault injection to simulate backpressure and outages
       - name: Deploy Istio Module
