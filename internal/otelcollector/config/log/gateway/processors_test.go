@@ -86,7 +86,7 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "connection", collectorConfig.Processors.K8sAttributes.PodAssociation[2].Sources[0].From)
 	})
 
-	t.Run("Set Observerd time when not present", func(t *testing.T) {
+	t.Run("Set Observed time when not present", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()}, BuildOptions{
 			ClusterName:   "test-cluster",
 			CloudProvider: "test-cloud-provider",
