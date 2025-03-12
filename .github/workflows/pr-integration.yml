@@ -51,6 +51,8 @@ jobs:
         ginkgo-labels:
           - filter: logs
             path: test/e2e/logs
+          - filter: logs
+            path: test/e2e/fluentbit
           - filter: "metrics && set_a"
             path: test/e2e/metrics
           - filter: "metrics && set_b"
@@ -94,6 +96,8 @@ jobs:
         ginkgo-labels:
           - filter: logs
             path: test/e2e/logs
+          - filter: logs
+            path: test/e2e/fluentbit
           - filter: metrics
             path: test/e2e/metrics
           - filter: traces
@@ -153,6 +157,8 @@ jobs:
         signal-type:
           - filter: logs
             path: test/e2e/logs
+          - filter: logs
+            path: test/e2e/fluentbit
           - filter: metrics
             path: test/e2e/metrics
           - filter: traces
@@ -202,6 +208,8 @@ jobs:
         signal-type:
           - filter: logs
             path: test/e2e/logs
+          - filter: logs
+            path: test/e2e/fluentbit
           - filter: metrics
             path: test/e2e/metrics
           - filter: traces
