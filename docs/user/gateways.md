@@ -21,14 +21,14 @@ The gateways are based on the [OTel Collector](https://opentelemetry.io/docs/col
 
 ## Usage
 
-For setting up a pipeline with a backend which in consequence instantiate a gateway, please have see the individual instructions for [traces](03-traces.md) and [metrics](04-metrics.md).
-To verify that you have running gateways with ready-to-use push endpoints, verify the status of the default Telemetry resource by calling:
+You can set up a pipeline with a backend that subsequently instantiates a gateway. For details, see [traces](03-traces.md) and [metrics](04-metrics.md).
+To see whether you've set up your gateways and their push endpoints successfully, check the status of the default Telemetry resource:
 
 ```sh
 kubectl -n kyma-system get telemetries.operator.kyma-project.io default -oyaml
 ```
 
-In the status of the returned resource, you will not only see if all pipelines are healthy, you also will learn about the available push endpoints:
+In the status of the returned resource, you see the pipelines health as well as the available push endpoints:
 
 ```yaml
   endpoints:
@@ -40,17 +40,17 @@ In the status of the returned resource, you will not only see if all pipelines a
       http: http://telemetry-otlp-traces.kyma-system:4318
 ```
 
-For every signal type there is a dedicated endpoint where you can push data using the [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) protocol. OTLP supports gRPC and HTTP based communication, each having it's individual port on every endpoint. Use port `4317` for gRPC and `4318` for HTTP
+For every signal type, there's a dedicated endpoint to which you can push data using the [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/. OTLP supports gRPC and HTTP-based communication, each having it's individual port on every endpoint. Use port `4317` for GRPC and `4318` for HTTP.
 
 ![Gateways-Plain](assets/gateways-plain.drawio.svg)
 
-When pushing OTLP data you are usually having an application doing it's instrumentation with the help of the [OTel SDK](https://opentelemetry.io/docs/languages/). Here, you can configure the endpoints hardcoded in the SDK setup, or you leverage standard [environment variables](https://github.com/kyma-project/kyma/issues/18770) configuring the OTel exporter:
+Applications which are supporting OTLP are usually using the [OTel SDK](https://opentelemetry.io/docs/languages/) for instrumentation of the data. You can either configure the endpoints hardcoded in the SDK setup, or you use standard [environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_endpoint) configuring the OTel exporter:
 
 For example:
 
-- Traces gRPC: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4317"`
+- Traces GRPC: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4317"`
 - Traces HTTP: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4318/v1/traces"`
-- Metrics gRPC: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4317"`
+- Metrics GRPC: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4317"`
 - Metrics HTTP: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4318/v1/metrics"`
 
 ## Data Enrichment
