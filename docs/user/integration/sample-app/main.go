@@ -184,6 +184,8 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 func run() error {
 	ctx := context.Background()
 
+	logger.Info("Setting up OTel SDK")
+
 	// Instantiate the trace and metric providers
 	res, err := newOtelResource()
 	if err != nil {

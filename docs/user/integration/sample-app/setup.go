@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/go-logr/logr/slogr"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -40,8 +39,10 @@ func newOTelSDKLogger() (*logr.Logger, error) {
 		return nil, fmt.Errorf("invalid log level: %s", sdkLogLevelEnv)
 	}
 
-	jsonHandler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slogLogLevel})
-	logger := slogr.NewLogr(jsonHandler)
+	logger.Info("Using slog logger for OpenTelemetry SDK", "level", slogLogLevel)
+
+	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slogLogLevel})
+	logger := logr.FromSlogHandler(jsonHandler)
 	return &logger, nil
 }
 
