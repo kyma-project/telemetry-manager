@@ -33,7 +33,6 @@ var (
 	K8sClient          client.Client
 	ProxyClient        *apiserverproxy.Client
 	TestEnv            *envtest.Environment
-	// TelemetryK8sObject client.Object
 	k8sObjects         []client.Object
 )
 
@@ -62,10 +61,8 @@ func BeforeSuiteFunc() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(K8sClient).NotTo(BeNil())
 
-	// TelemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(IsUpgrade()).K8sObject() // TODO: Can be manipulated where tests actually use it (do it in GHA otherwise)
-	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject() // TODO: See if it is necessary to also move to the GHA
+	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
 	k8sObjects = []client.Object{
-		// TelemetryK8sObject,
 		denyAllNetworkPolicyK8sObject,
 	}
 
@@ -78,15 +75,6 @@ func BeforeSuiteFunc() {
 // Function to be executed after each e2e suite
 func AfterSuiteFunc() {
 	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
-
-	// if !IsUpgrade() {
-	// 	Eventually(func(g Gomega) {
-	// 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	// 		g.Expect(K8sClient.Get(Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-	// 		var secret corev1.Secret
-	// 		g.Expect(K8sClient.Get(Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
-	// 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
-	// }
 
 	Cancel()
 	By("tearing down the test environment")
