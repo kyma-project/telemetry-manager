@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -41,27 +43,44 @@ func newTraceProvider(exp trace.SpanExporter, res *resource.Resource) *trace.Tra
 }
 
 func newTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
-	var exporterEnv = os.Getenv("OTEL_TRACES_EXPORTER")
-	var endpointEnv = os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+	exporterEnv := os.Getenv("OTEL_TRACES_EXPORTER")
+	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
-		exporter, err := otlptracegrpc.New(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("creating OTLP trace exporter: %w", err)
-		}
-		logger.Info("using OTLP trace exporter with endpoint: " + exporterEnv)
-		return exporter, nil
+		return newOTLPTraceExporter()
 	}
+
+	// Default to stdout exporter if no OTLP configuration is found
 	exporter, err := stdouttrace.New()
 	if err != nil {
-		return nil, fmt.Errorf("creating stdout trace exporter: %w", err)
+		return nil, fmt.Errorf("failed to create stdout trace exporter: %w", err)
 	}
-	logger.Info("using console trace exporter")
+	logger.Info("Using console trace exporter")
 	return exporter, nil
 }
 
-func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterProvider {
+func newOTLPTraceExporter() (trace.SpanExporter, error) {
+	protocol := resolveOTLPProtocol()
+	switch protocol {
+	case "http/protobuf":
+		exporter, err := otlptracehttp.New(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
+		}
+		logger.Info("Using HTTP OTLP metric exporter")
+		return exporter, nil
+	case "grpc":
+		exporter, err := otlptracegrpc.New(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
+		}
+		return exporter, nil
+	default:
+		return nil, fmt.Errorf("unsupported OTLP protocol: %s", protocol)
+	}
+}
 
+func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterProvider {
 	meterProvider := metric.NewMeterProvider(
 		metric.WithResource(res),
 		metric.WithReader(exp),
@@ -83,19 +102,49 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 	}
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
-		exporter, err := otlpmetricgrpc.New(ctx)
+		otlpExporter, err := newOTLPMetricExporter()
 		if err != nil {
-			return nil, fmt.Errorf("creating OTLP metric exporter: %w", err)
+			return nil, err
 		}
-		logger.Info("using OTLP metric exporter with endpoint: " + endpointEnv)
-		return metric.NewPeriodicReader(exporter, metric.WithInterval(10*time.Second)), nil
+
+		return metric.NewPeriodicReader(otlpExporter, metric.WithInterval(10*time.Second)), nil
 	}
+
 	exporter, err := stdoutmetric.New()
 	if err != nil {
 		return nil, fmt.Errorf("creating stdout metric exporter: %w", err)
 	}
-	logger.Info("using console metric exporter")
+	logger.Info("Using console metric exporter")
 	return metric.NewPeriodicReader(exporter,
 		// Default is 1m. Set to 10s for demonstrative purposes.
 		metric.WithInterval(5*time.Second)), nil
+}
+
+func newOTLPMetricExporter() (metric.Exporter, error) {
+	protocol := resolveOTLPProtocol()
+	switch protocol {
+	case "http/protobuf":
+		exporter, err := otlpmetrichttp.New(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
+		}
+		logger.Info("Using HTTP OTLP metric exporter")
+		return exporter, nil
+	case "grpc":
+		exporter, err := otlpmetricgrpc.New(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
+		}
+		return exporter, nil
+	default:
+		return nil, fmt.Errorf("unsupported OTLP protocol: %s", protocol)
+	}
+}
+
+func resolveOTLPProtocol() string {
+	protocolEnv := os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL")
+	if protocolEnv == "" {
+		return "grpc"
+	}
+	return protocolEnv
 }
