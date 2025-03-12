@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -25,6 +26,8 @@ func newOTelSDKLogger() (*logr.Logger, error) {
 	sdkLogLevelEnv := os.Getenv("OTEL_LOG_LEVEL")
 	if sdkLogLevelEnv == "" {
 		sdkLogLevelEnv = "INFO"
+	} else {
+		sdkLogLevelEnv = strings.ToUpper(sdkLogLevelEnv)
 	}
 
 	sdkLogLevels := map[string]slog.Level{
