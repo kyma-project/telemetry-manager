@@ -97,13 +97,14 @@ func newOTLPTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
 		}
-		logger.Info("Using HTTP OTLP metric exporter")
+		logger.Info("Using HTTP OTLP trace exporter")
 		return exporter, nil
 	case "grpc":
 		exporter, err := otlptracegrpc.New(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
 		}
+		logger.Info("Using HTTP gRPC trace exporter")
 		return exporter, nil
 	default:
 		return nil, fmt.Errorf("unsupported OTLP protocol: %s", protocol)
@@ -165,6 +166,7 @@ func newOTLPMetricExporter(ctx context.Context) (metric.Exporter, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
 		}
+		logger.Info("Using HTTP gRPC metric exporter")
 		return exporter, nil
 	default:
 		return nil, fmt.Errorf("unsupported OTLP protocol: %s", protocol)
