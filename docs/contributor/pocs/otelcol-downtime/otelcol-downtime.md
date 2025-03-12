@@ -1,6 +1,6 @@
 # OpenTelemetry Collector Downtime PoC
 
-This Proof of Concept (PoC) explores the behavior of OpenTelemetry (OTel) Collector clients—such as instrumented applications and Istio proxies—during collector downtime in a non-HA (High Availability) setup.
+This Proof of Concept (PoC) explores the behavior of OpenTelemetry (OTel) Collector clients — such as instrumented applications and Istio proxies — during collector downtime in a non-HA (High Availability) setup.
 
 ## OpenTelemetry SDK Behavior
 
@@ -18,7 +18,7 @@ For example, regarding trace exports:
 
 ### 1. Set Up Environment
 
-Run the following command from the root directory of the repository to provision the necessary environment:
+To provision the environment, run the following command from the root directory of the repository:
 
 ```bash
 # Provision a k3d cluster with Istio
@@ -27,7 +27,7 @@ make provision-k3d
 
 ### 2. OTLP gRPC Testing
 
-Deploy `telemetrygen`, instrumented with the OTLP gRPC exporter, along with a service that has no backing Pods to simulate downtime and record logs:
+To simulate downtime and record logs, deploy `telemetrygen`, instrumented with the OTLP gRPC exporter, along with a service that has no backing Pods:
 
 ```bash
 kubectl apply -f ./telemetrygen_otlpgrpc.yaml
@@ -49,7 +49,7 @@ kubectl delete -f ./telemetrygen_otlpgrpc.yaml
 
 ### 3. OTLP HTTP Testing
 
-Deploy `telemetrygen`, instrumented with the OTLP HTTP exporter, along with a service that has no backing Pods to simulate downtime and record logs:
+To simulate downtime and record logs, deploy `telemetrygen`, instrumented with the OTLP HTTP exporter, along with a service that has no backing Pods:
 
 ```bash
 kubectl apply -f ./telemetrygen_otlphttp.yaml
@@ -106,7 +106,7 @@ Unlike in **OTLP HTTP Testing**, retry behavior is observed, as evidenced by log
 
 ## Istio Proxies  
 
-Istio proxies can send access logs and spans to an OTLP endpoint; however, they do not appear to use the OpenTelemetry (OTel) SDK. While Envoy provides a way to configure retry policies:  
+Istio proxies can send access logs and spans to an OTLP endpoint, but they do not appear to use the OpenTelemetry (OTel) SDK. However, Envoy provides a way to configure retry policies:  
 
 - [Envoy OpenTelemetry Trace Configuration](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/trace/v3/opentelemetry.proto.html)  
 - [Envoy OpenTelemetry Access Logger Configuration](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/access_loggers/open_telemetry/v3/logs_service.proto)  
