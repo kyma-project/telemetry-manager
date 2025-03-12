@@ -89,8 +89,8 @@ func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterPr
 }
 
 func newMetricReader(ctx context.Context) (metric.Reader, error) {
-	var exporterEnv = os.Getenv("OTEL_METRICS_EXPORTER")
-	var endpointEnv = os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
+	exporterEnv := os.Getenv("OTEL_METRICS_EXPORTER")
+	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
 
 	if exporterEnv == "prometheus" {
 		reader, err := prometheus.New()
