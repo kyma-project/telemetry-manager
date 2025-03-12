@@ -43,7 +43,7 @@ The application consists of the following Go files:
 
 - The `init` method defines the available metrics:
   - `cpu.temperature.celsius` is a Gauge that is updated constantly using an observable.
-  - `hd.errors.total` is a Counter that is increased on every `terminate` handler call.
+  - `hd.errors` is a Counter that is increased on every `terminate` handler call.
   - `cpu.energy.watt` is a Histogram that is increased in one bucket on every `terminate` handler call.
 - The `main` method initializes and registers the MeterProvider.
 - In the `main` method, the handler functions are auto-instrumented using the [`otelhttp`](https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp) library, having request metrics auto-instrumented starting with `http.server.request`.

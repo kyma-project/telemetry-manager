@@ -12,6 +12,7 @@ on:
     # test files in the test/e2e directory
     # test files in the istio directory
     # exclude go files that end with _test.go
+    # exclude (go) files in the doc folder
     # include the workflow definition itself
     # include dependencies of the workflow definition
     paths:
@@ -20,6 +21,7 @@ on:
       - "**.go"
       - "config/**"
       - "!**_test.go"
+      - "!docs/**"
       - "test/e2e/*.go"
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-upgrade.yml"
