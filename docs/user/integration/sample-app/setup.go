@@ -47,7 +47,7 @@ func newTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
 	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
-		return newOTLPTraceExporter()
+		return newOTLPTraceExporter(ctx)
 	}
 
 	// Default to stdout exporter if no OTLP configuration is found
@@ -59,18 +59,18 @@ func newTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
 	return exporter, nil
 }
 
-func newOTLPTraceExporter() (trace.SpanExporter, error) {
+func newOTLPTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
 	protocol := resolveOTLPProtocol()
 	switch protocol {
 	case "http/protobuf":
-		exporter, err := otlptracehttp.New(context.Background())
+		exporter, err := otlptracehttp.New(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
 		}
 		logger.Info("Using HTTP OTLP metric exporter")
 		return exporter, nil
 	case "grpc":
-		exporter, err := otlptracegrpc.New(context.Background())
+		exporter, err := otlptracegrpc.New(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
 		}
@@ -102,7 +102,7 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 	}
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
-		otlpExporter, err := newOTLPMetricExporter()
+		otlpExporter, err := newOTLPMetricExporter(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -120,18 +120,18 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 		metric.WithInterval(5*time.Second)), nil
 }
 
-func newOTLPMetricExporter() (metric.Exporter, error) {
+func newOTLPMetricExporter(ctx context.Context) (metric.Exporter, error) {
 	protocol := resolveOTLPProtocol()
 	switch protocol {
 	case "http/protobuf":
-		exporter, err := otlpmetrichttp.New(context.Background())
+		exporter, err := otlpmetrichttp.New(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
 		}
 		logger.Info("Using HTTP OTLP metric exporter")
 		return exporter, nil
 	case "grpc":
-		exporter, err := otlpmetricgrpc.New(context.Background())
+		exporter, err := otlpmetricgrpc.New(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
 		}
