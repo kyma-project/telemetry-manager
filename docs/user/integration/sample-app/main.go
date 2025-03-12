@@ -47,12 +47,12 @@ func initMetrics() error {
 	var err error
 
 	hdErrorsMeter, err = meter.Int64Counter(
-		"hd.errors.total",
+		"hd.errors",
 		metric.WithDescription("Number of hard-disk errors."),
 		metric.WithUnit("{device}"),
 	)
 	if err != nil {
-		return fmt.Errorf("error creating hd.errors.total counter: %w", err)
+		return fmt.Errorf("error creating hd.errors counter: %w", err)
 	}
 
 	cpuEnergyMeter, err = meter.Float64Histogram(
