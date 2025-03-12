@@ -41,6 +41,63 @@ const (
 
 func TestMakeConfig(t *testing.T) {
 	ctx := t.Context()
+	fakeClient := fake.NewClientBuilder().Build()
+
+	sut := NewFluentBitConfigBuilder(fakeClient)
+
+	t.Run("file config", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithFile("test-file", "test-filecontent").
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+		require.NoError(t, err)
+
+		sectionsConfig, err := BuildFluentBitSectionsConfig(&pipelines[0], sut.BuilderConfig)
+		require.NoError(t, err)
+
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig:  map[string]string{"test-pipeline.conf": sectionsConfig},
+			FilesConfig:     map[string]string{"test-file": "test-filecontent"},
+			EnvConfigSecret: map[string][]byte{},
+			TLSConfigSecret: map[string][]byte{},
+		}
+
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
+
+	t.Run("log pipeline in deletion", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPBasicAuthFromSecret(basicAuthSecretName, secretNamespace, basicAuthUserKey, basicAuthPasswordKey),
+				).
+				WithDeletionTimeStamp(metav1.Time{Time: time.Now()}).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+		require.NoError(t, err)
+
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig:  map[string]string{},
+			EnvConfigSecret: map[string][]byte{},
+			FilesConfig:     map[string]string{},
+			TLSConfigSecret: map[string][]byte{},
+		}
+
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
+}
+
+func TestBuildEnvConfigSecret(t *testing.T) {
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().WithObjects(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -69,17 +126,6 @@ func TestMakeConfig(t *testing.T) {
 			Data: map[string][]byte{
 				varSecretKey: []byte(varSecretValue),
 			},
-		},
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      tlsSecretName,
-				Namespace: secretNamespace,
-			},
-			Data: map[string][]byte{
-				ca:   []byte(caValue),
-				cert: []byte(certValue),
-				key:  []byte(keyValue),
-			},
 		}).Build()
 	sut := NewFluentBitConfigBuilder(fakeClient)
 
@@ -89,7 +135,6 @@ func TestMakeConfig(t *testing.T) {
 				WithName("test-pipeline").
 				WithHTTPOutput(
 					testutils.HTTPHostFromSecret(hostSecretName, secretNamespace, hostSecretKey),
-					testutils.HTTPClientTLSFromString(caValue, certValue, keyValue),
 				).
 				WithFile("test-file", "test-filecontent").
 				WithVariable("test-var", varSecretName, secretNamespace, varSecretKey).
@@ -112,11 +157,7 @@ func TestMakeConfig(t *testing.T) {
 				envConfigSecretKey: []byte(hostSecretValue),
 				"test-var":         []byte(varSecretValue),
 			},
-			TLSConfigSecret: map[string][]byte{
-				"test-pipeline-ca.crt":   []byte(caValue),
-				"test-pipeline-cert.crt": []byte(certValue),
-				"test-pipeline-key.key":  []byte(keyValue),
-			},
+			TLSConfigSecret: map[string][]byte{},
 		}
 
 		require.Equal(t, expectedConfig, fluentBitConfig)
@@ -154,6 +195,7 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Equal(t, expectedConfig, fluentBitConfig)
 	})
+
 	t.Run("multiple log pipelines", func(t *testing.T) {
 		pipelines := []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
@@ -189,8 +231,8 @@ func TestMakeConfig(t *testing.T) {
 				"test-pipeline-2.conf": sectionsConfig2,
 			},
 			EnvConfigSecret: map[string][]byte{
-				envConfigUserSecretKey:     []byte("test-basic-auth-user-value"),
-				envConfigPasswordSecretKey: []byte("test-basic-auth-password-value"),
+				envConfigUserSecretKey:     []byte(basicAuthUserValue),
+				envConfigPasswordSecretKey: []byte(basicAuthPasswordValue),
 				envConfigHostSecretKey:     []byte(hostSecretValue),
 			},
 			FilesConfig: map[string]string{
@@ -198,6 +240,88 @@ func TestMakeConfig(t *testing.T) {
 				"test-file2": "test-filecontent2",
 			},
 			TLSConfigSecret: map[string][]byte{},
+		}
+
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
+
+	t.Run("should return error when secret reference is not found", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPHostFromSecret("test-invalid-secret", "test-invalid-secret-namespace", "test-invalid-key"),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+
+		require.ErrorContains(t, err, "unable to read secret 'test-invalid-secret' from namespace 'test-invalid-secret-namespace'")
+		require.Nil(t, fluentBitConfig)
+	})
+
+	t.Run("should return error when key is not found in a valid host secret", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPHostFromSecret(hostSecretName, secretNamespace, "test-invalid-key"),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+
+		require.ErrorContains(t, err, "unable to find key 'test-invalid-key' in secret 'test-host-secret' from namespace 'test-secret-namespace'")
+		require.Nil(t, fluentBitConfig)
+	})
+}
+
+func TestBuildTLSConfigSecret(t *testing.T) {
+	ctx := t.Context()
+	fakeClient := fake.NewClientBuilder().WithObjects(
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      tlsSecretName,
+				Namespace: secretNamespace,
+			},
+			Data: map[string][]byte{
+				ca:   []byte(caValue),
+				cert: []byte(certValue),
+				key:  []byte(keyValue),
+			},
+		}).Build()
+	sut := NewFluentBitConfigBuilder(fakeClient)
+
+	t.Run("tls from string", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPClientTLSFromString(caValue, certValue, keyValue),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+		require.NoError(t, err)
+
+		sectionsConfig, err := BuildFluentBitSectionsConfig(&pipelines[0], sut.BuilderConfig)
+		require.NoError(t, err)
+
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig:  map[string]string{"test-pipeline.conf": sectionsConfig},
+			EnvConfigSecret: map[string][]byte{},
+			FilesConfig:     map[string]string{},
+			TLSConfigSecret: map[string][]byte{
+				"test-pipeline-ca.crt":   []byte(caValue),
+				"test-pipeline-cert.crt": []byte(certValue),
+				"test-pipeline-key.key":  []byte(keyValue),
+			},
 		}
 
 		require.Equal(t, expectedConfig, fluentBitConfig)
@@ -254,64 +378,6 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, expectedConfig, fluentBitConfig)
 	})
 
-	t.Run("log pipeline in deletion", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().
-				WithName("test-pipeline").
-				WithHTTPOutput(
-					testutils.HTTPBasicAuthFromSecret(basicAuthSecretName, secretNamespace, basicAuthUserKey, basicAuthPasswordKey),
-				).
-				WithDeletionTimeStamp(metav1.Time{Time: time.Now()}).
-				Build(),
-		}
-		fluentBitConfig, err := sut.Build(
-			ctx,
-			pipelines)
-		require.NoError(t, err)
-
-		expectedConfig := &FluentBitConfig{
-			SectionsConfig:  map[string]string{},
-			EnvConfigSecret: map[string][]byte{},
-			FilesConfig:     map[string]string{},
-			TLSConfigSecret: map[string][]byte{},
-		}
-
-		require.Equal(t, expectedConfig, fluentBitConfig)
-	})
-
-	t.Run("should return error when secret reference is not found", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().
-				WithName("test-pipeline").
-				WithHTTPOutput(
-					testutils.HTTPHostFromSecret("test-invalid-secret", "test-invalid-secret-namespace", "test-invalid-key"),
-				).
-				Build(),
-		}
-		fluentBitConfig, err := sut.Build(
-			ctx,
-			pipelines)
-
-		require.ErrorContains(t, err, "unable to read secret 'test-invalid-secret' from namespace 'test-invalid-secret-namespace'")
-		require.Nil(t, fluentBitConfig)
-	})
-
-	t.Run("should return error when key is not found in a valid host secret", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().
-				WithName("test-pipeline").
-				WithHTTPOutput(
-					testutils.HTTPHostFromSecret(hostSecretName, secretNamespace, "test-invalid-key"),
-				).
-				Build(),
-		}
-		fluentBitConfig, err := sut.Build(
-			ctx,
-			pipelines)
-
-		require.ErrorContains(t, err, "unable to find key 'test-invalid-key' in secret 'test-host-secret' from namespace 'test-secret-namespace'")
-		require.Nil(t, fluentBitConfig)
-	})
 	t.Run("should return error when key is not found in a valid tls secret", func(t *testing.T) {
 		pipelines := []telemetryv1alpha1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
