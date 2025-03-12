@@ -77,10 +77,22 @@ Install Istio:
 ./hacks/deploy-istio.sh
 ```
 
+Repeat the tests:
+
+```bash
+kubectl apply -f ./telemetrygen_otlpgrpc.yaml
+```
+
 The results are similar to **OTLP gRPC Testing**, but with a different log message:
 
 ```bash
 2025/03/11 10:53:38 traces export: context deadline exceeded: rpc error: code = Unavailable desc = no healthy upstream
+```
+
+To clean up, delete the deployment:
+
+```bash
+kubectl delete -f ./telemetrygen_otlpgrpc.yaml
 ```
 
 ### 5. OTLP HTTP with Istio
@@ -91,10 +103,22 @@ Install Istio:
 ./hacks/deploy-istio.sh
 ```
 
+Repeat the tests:
+
+```bash
+kubectl apply -f ./telemetrygen_otlphttp.yaml
+```
+
 Unlike in **OTLP HTTP Testing**, retry behavior is observed, as evidenced by log messages appearing at a significantly lower rate (approximately 1–2 times per minute):
 
 ```bash
 2025/03/11 10:57:40 traces export: context deadline exceeded: retry-able request failure: body: no healthy upstream
+```
+
+To clean up, delete the deployment:
+
+```bash
+kubectl delete -f ./telemetrygen_otlphttp.yaml
 ```
 
 ## Summary
