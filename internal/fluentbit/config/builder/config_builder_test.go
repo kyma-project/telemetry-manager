@@ -1,12 +1,13 @@
 package builder
 
 import (
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
-	"time"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -17,11 +18,11 @@ const (
 	hostSecretKey   = "test-host-secret-key"
 	hostSecretValue = "test-host-secret-value"
 
-	basicAuthSecretName    = "test-basic-auth-secret"
+	basicAuthSecretName    = "test-basic-auth-secret" // #nosec G101
 	basicAuthUserKey       = "test-basic-auth-user-key"
 	basicAuthUserValue     = "test-basic-auth-user-value"
-	basicAuthPasswordKey   = "test-basic-auth-password-key"
-	basicAuthPasswordValue = "test-basic-auth-password-value"
+	basicAuthPasswordKey   = "test-basic-auth-password-key"   // #nosec G101
+	basicAuthPasswordValue = "test-basic-auth-password-value" // #nosec G101
 
 	varSecretName  = "test-var-secret"
 	varSecretKey   = "test-var-secret-key"
@@ -174,6 +175,7 @@ func TestMakeConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		sectionsConfig, err := BuildFluentBitSectionsConfig(&pipelines[0], sut.BuilderConfig)
+		require.NoError(t, err)
 		sectionsConfig2, err := BuildFluentBitSectionsConfig(&pipelines[1], sut.BuilderConfig)
 		require.NoError(t, err)
 
@@ -292,7 +294,6 @@ func TestMakeConfig(t *testing.T) {
 
 		require.ErrorContains(t, err, "unable to read secret 'test-invalid-secret' from namespace 'test-invalid-secret-namespace'")
 		require.Nil(t, fluentBitConfig)
-
 	})
 
 	t.Run("should return error when key is not found in a valid host secret", func(t *testing.T) {
@@ -310,7 +311,6 @@ func TestMakeConfig(t *testing.T) {
 
 		require.ErrorContains(t, err, "unable to find key 'test-invalid-key' in secret 'test-host-secret' from namespace 'test-secret-namespace'")
 		require.Nil(t, fluentBitConfig)
-
 	})
 	t.Run("should return error when key is not found in a valid tls secret", func(t *testing.T) {
 		pipelines := []telemetryv1alpha1.LogPipeline{
@@ -349,6 +349,5 @@ func TestMakeConfig(t *testing.T) {
 
 		require.ErrorContains(t, err, "unable to build tls secret")
 		require.Nil(t, fluentBitConfig)
-
 	})
 }
