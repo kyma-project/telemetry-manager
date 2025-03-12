@@ -42,7 +42,7 @@ func newOTelSDKLogger() (*logr.Logger, error) {
 		return nil, fmt.Errorf("invalid log level: %s", sdkLogLevelEnv)
 	}
 
-	logger.Info("Using slog logger for OpenTelemetry SDK", "level", slogLogLevel)
+	logger.Info("Using slog logger for OTel SDK", "level", slogLogLevel)
 
 	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slogLogLevel})
 	logger := logr.FromSlogHandler(jsonHandler)
