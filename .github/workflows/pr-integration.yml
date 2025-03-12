@@ -41,6 +41,10 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
+      - name: Create Telemetry CR
+        run: |
+          kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml
+
   e2e:
     needs: setup
     strategy:
