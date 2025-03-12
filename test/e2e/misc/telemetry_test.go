@@ -217,7 +217,9 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 		It("Should not delete Telemetry when LogPipeline exists", func() {
 			By("Deleting telemetry", func() {
-				Expect(kitk8s.ForceDeleteObjects(Ctx, K8sClient, TelemetryK8sObject)).Should(Succeed())
+				var telemetry operatorv1alpha1.Telemetry
+				Expect(K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				Expect(kitk8s.ForceDeleteObjects(Ctx, K8sClient, &telemetry)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {

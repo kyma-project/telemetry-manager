@@ -36,7 +36,7 @@ var (
 	K8sClient          client.Client
 	ProxyClient        *apiserverproxy.Client
 	TestEnv            *envtest.Environment
-	TelemetryK8sObject client.Object
+	// TelemetryK8sObject client.Object
 	k8sObjects         []client.Object
 )
 
@@ -68,7 +68,7 @@ func BeforeSuiteFunc() {
 	// TelemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(IsUpgrade()).K8sObject() // TODO: Can be manipulated where tests actually use it (do it in GHA otherwise)
 	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject() // TODO: See if it is necessary to also move to the GHA
 	k8sObjects = []client.Object{
-		TelemetryK8sObject,
+		// TelemetryK8sObject,
 		denyAllNetworkPolicyK8sObject,
 	}
 
