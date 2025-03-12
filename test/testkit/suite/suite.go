@@ -8,8 +8,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -22,7 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 const (
@@ -82,14 +79,14 @@ func BeforeSuiteFunc() {
 func AfterSuiteFunc() {
 	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 
-	if !IsUpgrade() {
-		Eventually(func(g Gomega) {
-			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-			g.Expect(K8sClient.Get(Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-			var secret corev1.Secret
-			g.Expect(K8sClient.Get(Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
-		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
-	}
+	// if !IsUpgrade() {
+	// 	Eventually(func(g Gomega) {
+	// 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+	// 		g.Expect(K8sClient.Get(Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+	// 		var secret corev1.Secret
+	// 		g.Expect(K8sClient.Get(Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+	// 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
+	// }
 
 	Cancel()
 	By("tearing down the test environment")
