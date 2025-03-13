@@ -791,8 +791,7 @@ hhEW5poLfUe8MIvCQoO1GrDpnNZOn7tMjg==
 	require.ErrorIs(t, err, ErrCertIsNotCA)
 }
 
-// Not a CA certificate (CA:FALSE)
-func TestECPrivateKeyAndCA(t *testing.T) {
+func TestECPrivateKeyAndCertificate(t *testing.T) {
 	certData := []byte(`-----BEGIN CERTIFICATE-----
 MIICRDCCAemgAwIBAgIUSKl8F4FByWmop14MZSzZPLWRAgYwCgYIKoZIzj0EAwIw
 dzELMAkGA1UEBhMCREUxDzANBgNVBAgMBk11bmljaDEPMA0GA1UEBwwGTXVuaWNo
