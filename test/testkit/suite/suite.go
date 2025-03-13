@@ -108,7 +108,8 @@ func IDWithSuffix(suffix string) string {
 
 func sanitizeSpecID(filePath string) string {
 	fileName := path.Base(filePath)
-	specID := strings.TrimSuffix(fileName, "_test.go")
+	folderName := path.Base(path.Dir(filePath))
+	specID := folderName + "-" + strings.TrimSuffix(fileName, "_test.go")
 	specID = strings.ReplaceAll(specID, "_", "-")
 
 	return specID
