@@ -67,6 +67,10 @@ jobs:
         run: |
           bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade || operational" -v -r test/e2e
 
+      - name: Delete Telemtry CR
+        shell: bash
+        run: kubectl delete Telemetry default -n kyma-system
+
       - name: Switch back to current revision
         uses: actions/checkout@v4
 
@@ -94,6 +98,10 @@ jobs:
       - name: Wait for manager readiness
         shell: bash
         run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
+
+      - name: Create Telemtry CR
+        shell: bash
+        run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
       - name: Run test on current version
         shell: bash
