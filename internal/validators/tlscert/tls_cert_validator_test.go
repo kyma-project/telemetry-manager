@@ -790,3 +790,42 @@ hhEW5poLfUe8MIvCQoO1GrDpnNZOn7tMjg==
 	})
 	require.ErrorIs(t, err, ErrCertIsNotCA)
 }
+
+// Not a CA certificate (CA:FALSE)
+func TestECPrivateKeyAndCA(t *testing.T) {
+	certData := []byte(`-----BEGIN CERTIFICATE-----
+MIICRDCCAemgAwIBAgIUSKl8F4FByWmop14MZSzZPLWRAgYwCgYIKoZIzj0EAwIw
+dzELMAkGA1UEBhMCREUxDzANBgNVBAgMBk11bmljaDEPMA0GA1UEBwwGTXVuaWNo
+MQwwCgYDVQQKDANTQVAxDDAKBgNVBAsMA0JUUDENMAsGA1UEAwwEa3ltYTEbMBkG
+CSqGSIb3DQEJARYMa3ltYUBzYXAuY29tMB4XDTI1MDMxMzExMDAxOVoXDTI2MDMw
+ODExMDAxOVowdzELMAkGA1UEBhMCREUxDzANBgNVBAgMBk11bmljaDEPMA0GA1UE
+BwwGTXVuaWNoMQwwCgYDVQQKDANTQVAxDDAKBgNVBAsMA0JUUDENMAsGA1UEAwwE
+a3ltYTEbMBkGCSqGSIb3DQEJARYMa3ltYUBzYXAuY29tMFkwEwYHKoZIzj0CAQYI
+KoZIzj0DAQcDQgAE+B224FGFaVlXmgFGmHY2VgcwZsDrMZ5PHDEbk/qotP7gXvnE
+RLYkin/teDa5g0ku0oO9LfLphbvaTUDhscko4qNTMFEwHQYDVR0OBBYEFHU8Ljhf
+/eN55R67e6V2kuB5nm+TMB8GA1UdIwQYMBaAFHU8Ljhf/eN55R67e6V2kuB5nm+T
+MA8GA1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwIDSQAwRgIhAKrG1bZHjZCbdRdz
+OoMLUU2Vjqaue2KTBw00LeNT/Cj3AiEAnnsJqLLhYpje+sk/5G/hCEbYcJnkotLO
+k5fBmk2DBx8=
+-----END CERTIFICATE-----`)
+
+	keyData := []byte(`-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIL9ckfwWzOlyNQg1VfKrnD62tNj+R0zjMqszlgKpv4ncoAoGCCqGSM49
+AwEHoUQDQgAE+B224FGFaVlXmgFGmHY2VgcwZsDrMZ5PHDEbk/qotP7gXvnERLYk
+in/teDa5g0ku0oO9LfLphbvaTUDhscko4g==
+-----END EC PRIVATE KEY-----
+`)
+
+	oneMonthBeforeExpiry := certExpiry.Add(-30 * 24 * time.Hour)
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := Validator{
+		client: fakeClient,
+		now:    func() time.Time { return oneMonthBeforeExpiry },
+	}
+
+	err := validator.Validate(t.Context(), TLSBundle{
+		Cert: &telemetryv1alpha1.ValueType{Value: string(certData)},
+		Key:  &telemetryv1alpha1.ValueType{Value: string(keyData)},
+	})
+	require.NoError(t, err)
+}
