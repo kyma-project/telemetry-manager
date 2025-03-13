@@ -18,10 +18,6 @@ runs:
       with:
         name: ${{ inputs.job-name }}-report
         path: junit-report*.xml
-    
-    - name: Delete Telemtry CR
-      shell: bash
-      run: kubectl delete Telemetry default -n kyma-system
 
     - name: Describe manager pod
       shell: bash
@@ -46,3 +42,11 @@ runs:
       if: ${{ inputs.failure }}
       run: |
         kubectl get all --all-namespaces
+    
+    - name: Delete all telemetry-related CRs
+      shell: bash
+      run: |
+        kubectl delete LogPipeline --all-namespaces
+        kubectl delete MetricPipeline --all-namespaces
+        kubectl delete TracePipeline --all-namespaces
+        kubectl delete Telemetry default -n kyma-system
