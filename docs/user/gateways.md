@@ -44,7 +44,7 @@ For every signal type, there's a dedicated endpoint to which you can push data u
 
 ![Gateways-Plain](assets/gateways-plain.drawio.svg)
 
-Applications which are supporting OTLP are usually using the [OTel SDK](https://opentelemetry.io/docs/languages/) for instrumentation of the data. You can either configure the endpoints hardcoded in the SDK setup, or you use standard [environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_endpoint) configuring the OTel exporter:
+Applications that support OTLP typically use the [OTel SDK](https://opentelemetry.io/docs/languages/) for instrumentation of the data. You can either configure the endpoints hardcoded in the SDK setup, or you use standard [environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_endpoint) configuring the OTel exporter:
 
 For example:
 
