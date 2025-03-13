@@ -3,11 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -16,6 +21,48 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
+
+var (
+	// custom  retry config with increased MaxElapsedTime, rest are OTel SDK defaults
+	retryConfig = struct {
+		Enabled         bool
+		InitialInterval time.Duration
+		MaxInterval     time.Duration
+		MaxElapsedTime  time.Duration
+	}{
+		Enabled:         true,
+		InitialInterval: 5 * time.Second,
+		MaxInterval:     30 * time.Second,
+		MaxElapsedTime:  5 * time.Minute,
+	}
+)
+
+func newOTelSDKLogger() (*logr.Logger, error) {
+	sdkLogLevelEnv := os.Getenv("OTEL_LOG_LEVEL")
+	if sdkLogLevelEnv == "" {
+		sdkLogLevelEnv = "INFO"
+	} else {
+		sdkLogLevelEnv = strings.ToUpper(sdkLogLevelEnv)
+	}
+
+	sdkLogLevels := map[string]slog.Level{
+		"DEBUG": slog.LevelDebug,
+		"INFO":  slog.LevelInfo,
+		"WARN":  slog.LevelWarn,
+		"ERROR": slog.LevelError,
+	}
+
+	slogLogLevel, ok := sdkLogLevels[sdkLogLevelEnv]
+	if !ok {
+		return nil, fmt.Errorf("invalid log level: %s", sdkLogLevelEnv)
+	}
+
+	logger.Info("Using slog logger for OTel SDK", "level", slogLogLevel)
+
+	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slogLogLevel})
+	logger := logr.FromSlogHandler(jsonHandler)
+	return &logger, nil
+}
 
 func newOtelResource() (*resource.Resource, error) {
 	// Ensure default SDK resources and the required service name are set.
@@ -41,27 +88,45 @@ func newTraceProvider(exp trace.SpanExporter, res *resource.Resource) *trace.Tra
 }
 
 func newTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
-	var exporterEnv = os.Getenv("OTEL_TRACES_EXPORTER")
-	var endpointEnv = os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+	exporterEnv := os.Getenv("OTEL_TRACES_EXPORTER")
+	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
-		exporter, err := otlptracegrpc.New(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("creating OTLP trace exporter: %w", err)
-		}
-		logger.Info("using OTLP trace exporter with endpoint: " + exporterEnv)
-		return exporter, nil
+		return newOTLPTraceExporter(ctx)
 	}
+
+	// Default to stdout exporter if no OTLP configuration is found
 	exporter, err := stdouttrace.New()
 	if err != nil {
-		return nil, fmt.Errorf("creating stdout trace exporter: %w", err)
+		return nil, fmt.Errorf("failed to create stdout trace exporter: %w", err)
 	}
-	logger.Info("using console trace exporter")
+	logger.Info("Using console trace exporter")
 	return exporter, nil
 }
 
-func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterProvider {
+func newOTLPTraceExporter(ctx context.Context) (trace.SpanExporter, error) {
+	protocol := resolveOTLPProtocol()
+	switch protocol {
+	case "http/protobuf":
+		exporter, err := otlptracehttp.New(ctx, otlptracehttp.WithRetry(otlptracehttp.RetryConfig(retryConfig)))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
+		}
+		logger.Info("Using HTTP OTLP trace exporter")
+		return exporter, nil
+	case "grpc":
+		exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig(retryConfig)))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
+		}
+		logger.Info("Using HTTP gRPC trace exporter")
+		return exporter, nil
+	default:
+		return nil, fmt.Errorf("unsupported OTLP protocol: %s", protocol)
+	}
+}
 
+func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterProvider {
 	meterProvider := metric.NewMeterProvider(
 		metric.WithResource(res),
 		metric.WithReader(exp),
@@ -70,8 +135,8 @@ func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterPr
 }
 
 func newMetricReader(ctx context.Context) (metric.Reader, error) {
-	var exporterEnv = os.Getenv("OTEL_METRICS_EXPORTER")
-	var endpointEnv = os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
+	exporterEnv := os.Getenv("OTEL_METRICS_EXPORTER")
+	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
 
 	if exporterEnv == "prometheus" {
 		reader, err := prometheus.New()
@@ -83,19 +148,50 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 	}
 
 	if exporterEnv == "otlp" || endpointEnv != "" {
-		exporter, err := otlpmetricgrpc.New(ctx)
+		otlpExporter, err := newOTLPMetricExporter(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("creating OTLP metric exporter: %w", err)
+			return nil, err
 		}
-		logger.Info("using OTLP metric exporter with endpoint: " + endpointEnv)
-		return metric.NewPeriodicReader(exporter, metric.WithInterval(10*time.Second)), nil
+
+		return metric.NewPeriodicReader(otlpExporter, metric.WithInterval(10*time.Second)), nil
 	}
+
 	exporter, err := stdoutmetric.New()
 	if err != nil {
 		return nil, fmt.Errorf("creating stdout metric exporter: %w", err)
 	}
-	logger.Info("using console metric exporter")
+	logger.Info("Using console metric exporter")
 	return metric.NewPeriodicReader(exporter,
 		// Default is 1m. Set to 10s for demonstrative purposes.
 		metric.WithInterval(5*time.Second)), nil
+}
+
+func newOTLPMetricExporter(ctx context.Context) (metric.Exporter, error) {
+	protocol := resolveOTLPProtocol()
+	switch protocol {
+	case "http/protobuf":
+		exporter, err := otlpmetrichttp.New(ctx, otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig(retryConfig)))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HTTP OTLP metric exporter: %w", err)
+		}
+		logger.Info("Using HTTP OTLP metric exporter")
+		return exporter, nil
+	case "grpc":
+		exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig(retryConfig)))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gRPC OTLP metric exporter: %w", err)
+		}
+		logger.Info("Using HTTP gRPC metric exporter")
+		return exporter, nil
+	default:
+		return nil, fmt.Errorf("unsupported OTLP protocol: %s", protocol)
+	}
+}
+
+func resolveOTLPProtocol() string {
+	protocolEnv := os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL")
+	if protocolEnv == "" {
+		return "grpc"
+	}
+	return protocolEnv
 }
