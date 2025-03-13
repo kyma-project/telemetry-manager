@@ -74,10 +74,6 @@ jobs:
         shell: bash
         run: hack/wait-for-namespaces.sh
 
-      - name: Delete Telemtry CR
-        shell: bash
-        run: kubectl delete Telemetry default -n kyma-system
-
       # wait for the build to complete so that the manager image is available
       - name: Wait for the Build Image workflow to complete
         run: "./hack/await_image.sh"
@@ -98,10 +94,6 @@ jobs:
       - name: Wait for manager readiness
         shell: bash
         run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
-
-      - name: Create Telemtry CR
-        shell: bash
-        run: kubectl apply -f config/samples/operator_v1alpha1_telemetry.yaml -n kyma-system
 
       - name: Run test on current version
         shell: bash
