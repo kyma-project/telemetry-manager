@@ -187,13 +187,21 @@ func parsePrivateKey(keyPEM []byte) error {
 	}
 
 	_, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		if _, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
-			return ErrKeyParseFailed
-		}
+	if err == nil {
+		return nil
 	}
 
-	return nil
+	_, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err == nil {
+		return nil
+	}
+
+	_, err = x509.ParseECPrivateKey(block.Bytes)
+	if err == nil {
+		return nil
+	}
+
+	return ErrKeyParseFailed
 }
 
 func parseCA(caPEM []byte) ([]*x509.Certificate, error) {
