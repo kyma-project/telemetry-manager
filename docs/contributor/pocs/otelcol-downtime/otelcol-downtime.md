@@ -10,123 +10,102 @@ Most clients sending data to an OTel Collector are applications instrumented wit
 - [Metrics SDK Export](https://opentelemetry.io/docs/specs/otel/metrics/sdk/#exportbatch)
 - [Logs SDK Export](https://opentelemetry.io/docs/specs/otel/logs/sdk/#export)
 
-For example, regarding trace exports:
-> Concurrent requests and retry logic are the responsibility of the exporter. The default SDK’s Span Processors SHOULD NOT implement retry logic, as the required logic is likely to depend heavily on the specific protocol and backend the spans are being sent to. For example, the OpenTelemetry Protocol (OTLP) specification defines logic for both sending concurrent requests and retrying requests.
+According to the [OTLP specification](https://opentelemetry.io/docs/specs/otlp/), the client should retry in the following situations:  
 
+1. **Retryable errors** indicated by specific gRPC or HTTP response status codes. This occurs, for example, when the server is temporarily unable to process the data.  
+2. **Connection failures**, where the client cannot establish a connection to the server. In this case, the client should retry using an exponential backoff strategy with randomized jitter between retries.  
 
-## How to Test
+However, based on our tests with the Java and Go OTel SDKs, retries currently only occur in scenario **(1)** but not in **(2)**. This is a critical limitation, as scenario **(2)** is particularly relevant when the collector experiences downtime.  
 
-### 1. Set Up Environment
+That said, since the behavior is explicitly stated in the specification, we are confident that it will be implemented in future versions of the SDKs.  
 
-To provision the environment, run the following command from the root directory of the repository:
+## How to Test  
+
+### 1. Set Up Environment  
+
+To provision the environment, run the following command from the root directory of the repository:  
 
 ```bash
 # Provision a k3d cluster with Istio
 make provision-k3d
 ```
 
-### 2. OTLP gRPC Testing
+### 2. Deploy Required Resources  
 
-To simulate downtime and record logs, deploy `telemetrygen`, instrumented with the OTLP gRPC exporter, along with a service that has no backing Pods:
-
-```bash
-kubectl apply -f ./telemetrygen_otlpgrpc.yaml
-```
-
-Check the `telemetrygen` logs, where you should see the following message:
+Apply the necessary resources:  
 
 ```bash
-2025/03/11 10:36:43 traces export: context deadline exceeded: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial tcp 10.43.93.51:4317: connect: connection refused"
+kubectl apply -f ./telemetrygen_resources.yaml
 ```
 
-According to the [OTLP specification](https://opentelemetry.io/docs/specs/otlp/), the `Unavailable` gRPC error code is considered retryable.
+### 3. Send Traces and Verify Behavior  
 
-To clean up, delete the deployment:
+#### a) Initial Trace Verification  
 
-```bash
-kubectl delete -f ./telemetrygen_otlpgrpc.yaml
-```
+1. **Port forward** into a pod labeled with `trace-gen` in the `trace-gen` namespace:  
 
-### 3. OTLP HTTP Testing
+   ```bash
+   kubectl port-forward -n trace-gen pod/$(kubectl get pod -n trace-gen -l app=trace-gen -o jsonpath="{.items[0].metadata.name}") 8080:8080
+   ```  
 
-To simulate downtime and record logs, deploy `telemetrygen`, instrumented with the OTLP HTTP exporter, along with a service that has no backing Pods:
+2. **Send a trace** by triggering a request:  
 
-```bash
-kubectl apply -f ./telemetrygen_otlphttp.yaml
-```
+   ```bash
+   curl localhost:8080/terminate
+   ```  
 
-Check the `telemetrygen` logs, where you should see the following message:
+3. **Check logs of the trace sink** to verify that traces are received:  
 
-```bash
-2025/03/11 10:42:44 traces export: Post "http://telemetry-otlp-traces.kyma-system:4318/v1/traces": dial tcp 10.43.48.18:4318: connect: connection refused
-```
+   ```bash
+   kubectl logs -n trace-sink deployment/trace-sink
+   ```
 
-Unlike gRPC, these messages are logged every second, indicating that no retry mechanism is in place and data is being dropped.
+   You should see traces successfully received.  
 
-To clean up, delete the deployment:
+#### b) Simulating Collector Downtime  
 
-```bash
-kubectl delete -f ./telemetrygen_otlphttp.yaml
-```
+1. **Scale down the trace sink to zero replicas** to simulate collector unavailability:  
 
-### 4. OTLP gRPC with Istio
+   ```bash
+   kubectl scale deployment -n trace-sink trace-sink --replicas=0
+   ```  
 
-Install Istio:
+2. **Send another trace request**:  
 
-```bash
-./hacks/deploy-istio.sh
-```
+   ```bash
+   curl localhost:8080/terminate
+   ```  
 
-Repeat the tests:
+3. **Wait 30 seconds** to allow for potential retries.  
 
-```bash
-kubectl apply -f ./telemetrygen_otlpgrpc.yaml
-```
+4. **Scale the trace sink back up**:  
 
-The results are similar to **OTLP gRPC Testing**, but with a different log message:
+   ```bash
+   kubectl scale deployment -n trace-sink trace-sink --replicas=1
+   ```  
 
-```bash
-2025/03/11 10:53:38 traces export: context deadline exceeded: rpc error: code = Unavailable desc = no healthy upstream
-```
+5. **Check the trace sink logs** again:  
 
-To clean up, delete the deployment:
+   ```bash
+   kubectl logs -n trace-sink deployment/trace-sink
+   ```  
 
-```bash
-kubectl delete -f ./telemetrygen_otlpgrpc.yaml
-```
+6. **Verify if spans were sent after recovery.**  
 
-### 5. OTLP HTTP with Istio
+   - **Expected behavior (currently not happening):** The spans should be delivered after the trace sink becomes available again.  
+   - **Current behavior:** Spans are lost when the collector is unavailable, indicating that no retries occur in this scenario.  
 
-Install Istio:
+---
 
-```bash
-./hacks/deploy-istio.sh
-```
+### 4. Compare Results  
 
-Repeat the tests:
+Compare the behavior of traces sent when the trace sink is available versus when it experiences downtime. This test confirms whether spans are retried and eventually delivered after recovery.  
 
-```bash
-kubectl apply -f ./telemetrygen_otlphttp.yaml
-```
+---
 
-Unlike in **OTLP HTTP Testing**, retry behavior is observed, as evidenced by log messages appearing at a significantly lower rate (approximately 1–2 times per minute):
+Let me know if this structure works for you! 🚀
 
-```bash
-2025/03/11 10:57:40 traces export: context deadline exceeded: retry-able request failure: body: no healthy upstream
-```
 
-To clean up, delete the deployment:
-
-```bash
-kubectl delete -f ./telemetrygen_otlphttp.yaml
-```
-
-## Summary
-
-- **OTLP gRPC without Istio**: Retries occur as expected, following the OTLP specification, when encountering an `Unavailable` error.
-- **OTLP HTTP without Istio**: No retry mechanism is observed; data loss occurs when the collector is unavailable.
-- **OTLP gRPC with Istio**: Similar behavior to gRPC without Istio
-- **OTLP HTTP with Istio**: Unlike standard OTLP HTTP behavior, retries occur with Istio
 
 ## Istio Proxies  
 
