@@ -91,16 +91,16 @@ metadata:
   name: trace-gen
   namespace: trace-gen
   labels:
-    app.kubernetes.io/name: trace-gen
+    app: trace-gen
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: trace-gen
+      app: trace-gen
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: trace-gen
+        app: trace-gen
         sidecar.istio.io/inject: "true"
     spec:
       containers:
