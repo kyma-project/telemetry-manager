@@ -26,7 +26,6 @@ That said, since the behavior is explicitly stated in the specification, we are 
 To provision the environment, run the following command from the root directory of the repository:  
 
 ```bash
-# Provision a k3d cluster with Istio
 make provision-k3d
 ```
 
