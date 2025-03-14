@@ -89,6 +89,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trace-gen
+  namespace: trace-gen
   labels:
     app.kubernetes.io/name: trace-gen
 spec:
