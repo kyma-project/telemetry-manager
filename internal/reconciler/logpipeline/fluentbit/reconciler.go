@@ -20,12 +20,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-const (
-	defaultInputTag          = "tele"
-	defaultMemoryBufferLimit = "10M"
-	defaultStorageType       = "filesystem"
-	defaultFsBufferLimit     = "1G"
-)
+type AgentConfigBuilder interface {
+	Build(ctx context.Context, reconcilablePipelines []telemetryv1alpha1.LogPipeline) (*builder.FluentBitConfig, error)
+}
 
 type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts fluentbit.AgentApplyOptions) error
@@ -41,8 +38,8 @@ var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 type Reconciler struct {
 	client.Client
 	telemetryNamespace  string
+	agentConfigBuilder  AgentConfigBuilder
 	agentApplierDeleter AgentApplierDeleter
-	config              fluentbit.Config
 
 	// Dependencies
 	agentProber        commonstatus.Prober
@@ -56,21 +53,12 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.FluentBit
 }
 
-func New(client client.Client, telemetryNamespace string, agentApplierDeleter AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
-	config := fluentbit.Config{
-		PipelineDefaults: builder.PipelineDefaults{
-			InputTag:          defaultInputTag,
-			MemoryBufferLimit: defaultMemoryBufferLimit,
-			StorageType:       defaultStorageType,
-			FsBufferLimit:     defaultFsBufferLimit,
-		},
-	}
-
+func New(client client.Client, telemetryNamespace string, agentConfigBuilder AgentConfigBuilder, agentApplierDeleter AgentApplierDeleter, prober commonstatus.Prober, healthProber logpipeline.FlowHealthProber, checker IstioStatusChecker, validator *Validator, converter commonstatus.ErrorToMessageConverter) *Reconciler {
 	return &Reconciler{
 		Client:              client,
 		telemetryNamespace:  telemetryNamespace,
+		agentConfigBuilder:  agentConfigBuilder,
 		agentApplierDeleter: agentApplierDeleter,
-		config:              config,
 		agentProber:         prober,
 		flowHealthProber:    healthProber,
 		istioStatusChecker:  checker,
@@ -126,6 +114,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return nil
 	}
 
+	config, err := r.agentConfigBuilder.Build(ctx, reconcilablePipelines)
+	if err != nil {
+		return fmt.Errorf("failed to build fluentbit config: %w", err)
+	}
+
 	allowedPorts := getFluentBitPorts()
 	if r.istioStatusChecker.IsIstioActive(ctx) {
 		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
@@ -135,11 +128,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		fluentbit.AgentApplyOptions{
-			SyncerClient:           r.Client,
-			Config:                 r.config,
-			AllowedPorts:           allowedPorts,
-			Pipeline:               pipeline,
-			DeployableLogPipelines: reconcilablePipelines,
+			FluentBitConfig: config,
+			AllowedPorts:    allowedPorts,
 		},
 	); err != nil {
 		return err
