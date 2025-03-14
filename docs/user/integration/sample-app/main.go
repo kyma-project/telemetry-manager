@@ -184,6 +184,8 @@ func terminateHandler(w http.ResponseWriter, r *http.Request) {
 func run() error {
 	ctx := context.Background()
 
+	logger.Info("Setting up OTel SDK")
+
 	// Instantiate the trace and metric providers
 	res, err := newOtelResource()
 	if err != nil {
@@ -219,6 +221,13 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("error initializing metrics: %w", err)
 	}
+
+	otelSDKLogger, err := newOTelSDKLogger()
+	if err != nil {
+		return fmt.Errorf("error creating OTel SDK logger: %w", err)
+	}
+
+	otel.SetLogger(*otelSDKLogger)
 
 	// Configure the HTTP server
 	http.DefaultClient.Timeout = 30 * time.Second
