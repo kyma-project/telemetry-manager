@@ -34,7 +34,7 @@ make provision-k3d
 Apply the necessary resources:  
 
 ```bash
-kubectl apply -f ./telemetrygen_resources.yaml
+kubectl apply -f ./go-otel-sdk-retries.yaml
 ```
 
 ### 3. Send Traces and Verify Behavior  
