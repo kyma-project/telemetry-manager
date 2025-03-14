@@ -31,7 +31,7 @@ make provision-k3d
 
 ### 2. Deploy Required Resources  
 
-Apply the necessary resources:  
+Apply the necessary resources and wait for all pods to run:  
 
 ```bash
 kubectl apply -f ./go-otel-sdk-retries.yaml
@@ -93,18 +93,6 @@ kubectl apply -f ./go-otel-sdk-retries.yaml
 
    - **Expected behavior (currently not happening):** The spans should be delivered after the trace sink becomes available again.  
    - **Current behavior:** Spans are lost when the collector is unavailable, indicating that no retries occur in this scenario.  
-
----
-
-### 4. Compare Results  
-
-Compare the behavior of traces sent when the trace sink is available versus when it experiences downtime. This test confirms whether spans are retried and eventually delivered after recovery.  
-
----
-
-Let me know if this structure works for you! 🚀
-
-
 
 ## Istio Proxies  
 
