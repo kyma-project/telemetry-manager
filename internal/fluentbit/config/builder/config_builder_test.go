@@ -159,8 +159,8 @@ func TestMergeSectionsConfig(t *testing.T) {
 					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 						System: true,
 					},
-					KeepAnnotations:  true,
-					DropLabels:       false,
+					KeepAnnotations:  ptr.To(true),
+					DropLabels:       ptr.To(false),
 					KeepOriginalBody: ptr.To(true),
 				},
 			},
@@ -249,8 +249,8 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					KeepAnnotations:  true,
-					DropLabels:       false,
+					KeepAnnotations:  ptr.To(true),
+					DropLabels:       ptr.To(false),
 					KeepOriginalBody: ptr.To(true),
 					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
 						System: true,

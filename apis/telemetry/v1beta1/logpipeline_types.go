@@ -94,10 +94,10 @@ type LogPipelineRuntimeInput struct {
 	Containers LogPipelineContainerSelector `json:"containers,omitempty"`
 	// Defines whether to keep all Kubernetes annotations. The default is `false`.
 	// +optional
-	KeepAnnotations bool `json:"keepAnnotations,omitempty"`
+	KeepAnnotations *bool `json:"keepAnnotations,omitempty"`
 	// Defines whether to drop all Kubernetes labels. The default is `false`.
 	// +optional
-	DropLabels bool `json:"dropLabels,omitempty"`
+	DropLabels *bool `json:"dropLabels,omitempty"`
 	// If the `log` attribute contains a JSON payload and it is successfully parsed, the `log` attribute will be retained if `keepOriginalBody` is set to `true`. Otherwise, the log attribute will be removed from the log record. The default is `true`.
 	// +optional
 	KeepOriginalBody *bool `json:"keepOriginalBody,omitempty"`

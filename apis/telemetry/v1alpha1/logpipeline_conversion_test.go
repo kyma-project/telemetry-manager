@@ -29,8 +29,8 @@ func TestConvertTo(t *testing.T) {
 						Include: []string{"nginx", "app"},
 						Exclude: []string{"sidecar"},
 					},
-					KeepAnnotations:  true,
-					DropLabels:       true,
+					KeepAnnotations:  ptr.To(true),
+					DropLabels:       ptr.To(true),
 					KeepOriginalBody: ptr.To(true),
 				},
 				OTLP: &OTLPInput{
@@ -175,8 +175,8 @@ func TestConvertFrom(t *testing.T) {
 						Include: []string{"nginx", "app"},
 						Exclude: []string{"sidecar"},
 					},
-					KeepAnnotations:  true,
-					DropLabels:       true,
+					KeepAnnotations:  ptr.To(true),
+					DropLabels:       ptr.To(true),
 					KeepOriginalBody: ptr.To(true),
 				},
 				OTLP: &telemetryv1beta1.OTLPInput{

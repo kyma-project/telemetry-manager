@@ -29,7 +29,7 @@ func TestCreateKubernetesFilterKeepAnnotations(t *testing.T) {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					KeepAnnotations: true,
+					KeepAnnotations: ptr.To(true),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)
@@ -55,7 +55,7 @@ func TestCreateKubernetesFilterDropLabels(t *testing.T) {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					DropLabels: true,
+					DropLabels: ptr.To(true),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)

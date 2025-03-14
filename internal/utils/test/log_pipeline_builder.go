@@ -163,7 +163,7 @@ func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder 
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
-	b.input.Application.KeepAnnotations = keep
+	b.input.Application.KeepAnnotations = &keep
 
 	return b
 }
@@ -173,7 +173,7 @@ func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
 	}
 
-	b.input.Application.DropLabels = drop
+	b.input.Application.DropLabels = &drop
 
 	return b
 }
