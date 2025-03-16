@@ -66,25 +66,44 @@ Most of the drawbacks can be solved by running the gateway logic node-local only
 
 ![arch](./../assets/otlp-gateway-new.drawio.svg)
 
-The remaining drawbacks of the agent approach are:
+### Remaining Drawbacks of the Agent Approach  
 
-- Coupling of signal types
+#### Coupling of Signal Types  
 
-  The decoupling of the signal types will be lost, potentially leading to situations where the agent drops logs caused by metrics overload. However, with the right hardening that should not be a problem.
+Decoupling of signal types will no longer be possible, which may result in scenarios where logs are dropped due to metric overload. However, with proper hardening, this should not pose a significant issue.  
 
-- Downtimes on updates
+The OTel Collector provides two key mechanisms to prevent overload:  
 
-  A rollout of the agent cannot happen in a rolling way as for deployments. So there will be a downtime always which should be compensated by the retry mechanism in the otel-sdk
+1. **Refusing Data if OTLP Exporter Queue is Full**  
+   - The BatchProcessor must not be used (the built-in OTLP Exporter batcher does not have this limitation and can still be used).
+   - If the queue is full, new data will be rejected.  
+   - Each pipeline type has its own queue, allowing different queue lengths to support varying quality-of-service (QoS) levels for different signal types.  
 
-Additional benefits not outlined yet:
+2. **Memory Limiter**  
+   - Applied globally, without pipeline-specific controls.  
+   - Its behavior is unpredictable because it depends on various factors, such as:  
+     - In-memory data held by the main collector.  It can be the OTLP exporter sending queues or various caches used by different components in the chain (e.g. Kubernetes Attributes Processor informers cache).  
+     - Garbage collection timing.  
 
-- Persistent queue everywhere
+Introducing a shared collector handling OTLP data for all three telemetry types means that only one global memory limiter is configured, instead of three separate ones when they are isolated. However, if OTLP exporter queue refusal is correctly set up, the system should never reach the point where the memory limiter starts rejecting data. The issue of the Kubernetes Attributes Processor informer cache consuming excessive memory across all clusters is not solvable by either the old or the new proposed setup.
 
-  A small persistent buffer could be used in all components based on the node file system.
+#### Downtime During Updates  
 
-- No Istio dependency
+Unlike deployments, the agent cannot be rolled out in a rolling manner, meaning updates will always result in some downtime. However, this should be mitigated by the retry mechanism in the OpenTelemetry SDK (according to our [tests](../../contributor/pocs/ it's not yet the case).
 
-  Neither the App nor the components have any Istio dependency anymore. However, the metric agent should still support the scraping of istiofied endpoints.
+### Additional Benefits  
+
+#### Persistent Queue Everywhere  
+
+A small persistent buffer can be introduced in all components using the node file system, enhancing resilience and reliability.  
+
+#### No Istio Dependency  
+
+Neither the application nor its components will depend on Istio anymore. However, the metric agent should still support scraping Istio-instrumented endpoints.  
+
+---
+
+This revision improves readability, fixes grammar, and makes technical points clearer. Let me know if you need further refinements! 🚀
 
 ## Conclusion
 
