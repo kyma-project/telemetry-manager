@@ -72,20 +72,21 @@ Most of the drawbacks can be solved by running the gateway logic node-local only
 
 Decoupling of signal types will no longer be possible, which may result in scenarios where logs are dropped due to metric overload. However, with proper hardening, this should not pose a significant issue.  
 
-The OTel Collector provides two key mechanisms to prevent overload:  
+Let's compare a **shared OTLP agent setup** with an **agent-per-signal setup** in terms of robustness. The OTel Collector offers two key mechanisms to prevent overload:
 
-1. **Refusing Data if OTLP Exporter Queue is Full**  
-   - The BatchProcessor must not be used (the built-in OTLP Exporter batcher does not have this limitation and can still be used).
-   - If the queue is full, new data will be rejected.  
+1. **Memory Limiter**  
+   - Applied globally, no way to restrict it to a specific pipeline or signal type.
+   - Performs periodic checks of memory usage and will begin refusing data and forcing GC to reduce memory consumption when defined limits have been exceeded. It influenced by:
+     - Heap allocated object held by the Collector.  It can be the OTLP exporter sending queues or various caches used by different components in the chain (e.g. Kubernetes Attributes Processor informers cache).  
+     - Heap allocated objects not being used and can be reclaimed by GC.
+   - Memory Limiter can not prevent all kinds of OOM issues. It can only prevent issues caused by ingested telemetry data by refusing it. For example, the issue of the Kubernetes Attributes Processor informer cache consuming excessive memory can not be prevented by Memory Limiter.  Basically, it is a poor man's throttling mechanism that was necessary when using the old Batch Processor. [Read more](./017-fault-tolerant-otel-logging-setup.md).
+
+2. **Refusing Data if OTLP Exporter Queue is Full**  
+   - The Batch Processor must not be used (the built-in OTLP Exporter batcher does not have this limitation and can still be used).
+   - If the queue is full, new data will be refused.  
    - Each pipeline type has its own queue, allowing different queue lengths to support varying quality-of-service (QoS) levels for different signal types.  
 
-2. **Memory Limiter**  
-   - Applied globally, without pipeline-specific controls.  
-   - Its behavior is unpredictable because it depends on various factors, such as:  
-     - In-memory data held by the main collector.  It can be the OTLP exporter sending queues or various caches used by different components in the chain (e.g. Kubernetes Attributes Processor informers cache).  
-     - Garbage collection timing.  
-
-Introducing a shared collector handling OTLP data for all three telemetry types means that only one global memory limiter is configured, instead of three separate ones when they are isolated. However, if OTLP exporter queue refusal is correctly set up, the system should never reach the point where the memory limiter starts rejecting data. The issue of the Kubernetes Attributes Processor informer cache consuming excessive memory across all clusters is not solvable by either the old or the new proposed setup.
+Introducing a shared collector handling OTLP data for all three telemetry types means that only one memory limiter is configured, instead of three separate ones when they are isolated. However, if OTLP exporter queue refusal is correctly set up, the system should never reach the point where the memory limiter starts rejecting data. across all clusters is not solvable by either the old or the new proposed setup.
 
 #### Downtime During Updates  
 
