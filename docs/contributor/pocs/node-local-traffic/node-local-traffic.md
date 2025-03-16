@@ -1,8 +1,8 @@
 # Service with local traffic policy
 
-The PoC tries to understand the behavior of the OTLP push service with local traffic policy. The gateways
-in Kyma Telemetry are exposed via OTLP service eg: `telemetry-otlp-traces`. This is the service which
-applications running in the cluster will push the telemetry data to. In the PoC we test the behaviour when this otlp 
+The PoC tries to understand the behavior of the OTLP push service with [service internal traffic policy](https://kubernetes.io/docs/concepts/services-networking/service-traffic-policy/#using-service-internal-traffic-policy). The gateways
+in Kyma Telemetry are exposed via OTLP service eg: `telemetry-otlp-traces`. the
+applications running in the cluster will push the telemetry data to this service. This PoC tests the behaviour when this OTLP 
 push service is configured with `internalTrafficPolicy: Local`. Following criteria were tested:
 - If the data is only sent to the daemonSet running on the same node
 - If the daemonSet for some reason is not running then is the data sent to a daemonSet running on a different node
@@ -18,11 +18,11 @@ For the setup we deployed following:
 Tests were performed in following way:
 ### Pre-requisites
 - Deployed the trace agent with service `internalTrafficPolicy: Local`
-- Deployed the trace generator and sink. Where sink would push logs to `telemetry-otlp-traces-local.kyma-system:4317`
+- Deployed the trace generator and sink. Where trace generator would push traces to `telemetry-otlp-traces-local.kyma-system:4317`
 
 ### Verifications
-- the traces would be pushed only to the daemonSet running on the same node as the trace generator
-- When the daemonSet is not running on the same node, the traces should not be pushed to the backend.
+- The traces are only pushed to the daemonSet running on the same node as the trace generator
+- When the daemonSet is in CrashloopBackoff or in Error state, the traces should not be pushed to the backend.
   - To simulate failure the configmap was introduced with broken config and the daemonSet was restarted.
 
 
@@ -38,4 +38,6 @@ Tests were performed in following way:
 
 ### Summary
 
+When Service is configured with `internalTrafficPolicy: Local` then the data is only sent to the daemonSet running on the same node. If the daemonSet is not running then the data is not sent to the daemonSet running on a different node. If the
+daemonSet is in CrashloopBackoff or in Error state then the data is not sent to a different daemonSet running on the different node.
 
