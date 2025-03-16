@@ -101,10 +101,6 @@ A small persistent buffer can be introduced in all components using the node fil
 
 Neither the application nor its components will depend on Istio anymore. However, the metric agent should still support scraping Istio-instrumented endpoints.  
 
----
-
-This revision improves readability, fixes grammar, and makes technical points clearer. Let me know if you need further refinements! 🚀
-
 ## Conclusion
 
 The former motivation of the gateway concept turned out to be no longer relevant. Switching to the agent approach solves many problems while introducing very soft drawbacks. The transformation should start immediately :)
