@@ -13,16 +13,16 @@ type Config struct {
 	Processors Processors `yaml:"processors"`
 	Exporters  Exporters  `yaml:"exporters"`
 }
-
-type Receivers struct {
-	FileLog *FileLog `yaml:"filelog"`
+type Receivers map[string]Receiver
+type Receiver struct {
+	FileLog *FileLog `yaml:",inline,omitempty"`
 }
 
 type FileLog struct {
 	Exclude         []string              `yaml:"exclude,omitempty"`
 	Include         []string              `yaml:"include,omitempty"`
-	IncludeFileName bool                  `yaml:"include_file_name,omitempty"`
-	IncludeFilePath bool                  `yaml:"include_file_path,omitempty"`
+	IncludeFileName *bool                 `yaml:"include_file_name,omitempty"`
+	IncludeFilePath *bool                 `yaml:"include_file_path,omitempty"`
 	StartAt         string                `yaml:"start_at,omitempty"`
 	Storage         string                `yaml:"storage,omitempty"`
 	RetryOnFailure  config.RetryOnFailure `yaml:"retry_on_failure,omitempty"`
@@ -39,15 +39,20 @@ type Operator struct {
 	IfExpr                  string `yaml:"if,omitempty"`
 	ParseFrom               string `yaml:"parse_from,omitempty"`
 	ParseTo                 string `yaml:"parse_to,omitempty"`
+	Field                   string `yaml:"field,omitempty"`
 }
 
 type Processors struct {
 	config.BaseProcessors          `yaml:",inline"`
-	SetInstrumentationScopeRuntime *log.TransformProcessor `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	SetInstrumentationScopeRuntime *log.TransformProcessor        `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	K8sAttributes                  *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	InsertClusterAttributes        *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
+	DropKymaAttributes             *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
-type Exporters struct {
-	OTLP *config.OTLPExporter `yaml:"otlp"`
+type Exporters map[string]Exporter
+type Exporter struct {
+	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
 }
 
 type Extensions struct {
