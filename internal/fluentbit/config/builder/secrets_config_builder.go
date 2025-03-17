@@ -45,7 +45,7 @@ func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelin
 		if sharedtypesutils.IsValid(tlsConfig.CA) {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 
-			caSecretData, err := getFromValueOrSecret(ctx, b.Reader, *tlsConfig.CA, targetKey)
+			caSecretData, err := getFromValueOrSecret(ctx, b.reader, *tlsConfig.CA, targetKey)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get CA secret data: %w", err)
 			}
@@ -56,14 +56,14 @@ func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelin
 		if sharedtypesutils.IsValid(tlsConfig.Cert) && sharedtypesutils.IsValid(tlsConfig.Key) {
 			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
 
-			certSecretData, err := getFromValueOrSecret(ctx, b.Reader, *tlsConfig.Cert, targetCertVariable)
+			certSecretData, err := getFromValueOrSecret(ctx, b.reader, *tlsConfig.Cert, targetCertVariable)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get cert secret data: %w", err)
 			}
 
 			targetKeyVariable := fmt.Sprintf("%s-key.key", logPipelines[i].Name)
 
-			keySecretData, err := getFromValueOrSecret(ctx, b.Reader, *tlsConfig.Key, targetKeyVariable)
+			keySecretData, err := getFromValueOrSecret(ctx, b.reader, *tlsConfig.Key, targetKeyVariable)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get key secret data: %w", err)
 			}
@@ -89,7 +89,7 @@ func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *teleme
 
 	// Extract host secret if needed
 	if shouldCopySecret(httpOutput.Host) {
-		hostSecret, err := getEnvConfigSecret(ctx, b.Reader, pipeline.Name, &httpOutput.Host)
+		hostSecret, err := getEnvConfigSecret(ctx, b.reader, pipeline.Name, &httpOutput.Host)
 		if err != nil {
 			return fmt.Errorf("failed to get host secret: %w", err)
 		}
@@ -99,7 +99,7 @@ func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *teleme
 
 	// Extract user secret if needed
 	if shouldCopySecret(httpOutput.User) {
-		userSecret, err := getEnvConfigSecret(ctx, b.Reader, pipeline.Name, &httpOutput.User)
+		userSecret, err := getEnvConfigSecret(ctx, b.reader, pipeline.Name, &httpOutput.User)
 		if err != nil {
 			return fmt.Errorf("failed to get user secret: %w", err)
 		}
@@ -109,7 +109,7 @@ func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *teleme
 
 	// Extract password secret if needed
 	if shouldCopySecret(httpOutput.Password) {
-		passwordSecret, err := getEnvConfigSecret(ctx, b.Reader, pipeline.Name, &httpOutput.Password)
+		passwordSecret, err := getEnvConfigSecret(ctx, b.reader, pipeline.Name, &httpOutput.Password)
 		if err != nil {
 			return fmt.Errorf("failed to get password secret: %w", err)
 		}
@@ -127,7 +127,7 @@ func (b *ConfigBuilder) extractVariableSecrets(ctx context.Context, pipeline *te
 			continue
 		}
 
-		variableSecret, err := getSecretData(ctx, b.Reader, *ref.ValueFrom.SecretKeyRef, ref.Name)
+		variableSecret, err := getSecretData(ctx, b.reader, *ref.ValueFrom.SecretKeyRef, ref.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get variable secret: %w", err)
 		}
