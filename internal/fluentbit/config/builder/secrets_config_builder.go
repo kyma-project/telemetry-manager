@@ -19,7 +19,6 @@ func (b *ConfigBuilder) buildEnvConfigSecret(ctx context.Context, logPipelines [
 	envConfigSecret := make(map[string][]byte)
 
 	for i := range logPipelines {
-
 		if err := b.extractHTTPSecrets(ctx, &logPipelines[i], envConfigSecret); err != nil {
 			return nil, err
 		}

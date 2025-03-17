@@ -270,12 +270,12 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		StorageType:       "filesystem",
 		FsBufferLimit:     "1G",
 	}
-	builderConfig := builderConfig{
+	config := builderConfig{
 		pipelineDefaults: defaults,
 		collectAgentLogs: true,
 	}
 
-	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig)
+	actual, err := buildFluentBitSectionsConfig(logPipeline, config)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }

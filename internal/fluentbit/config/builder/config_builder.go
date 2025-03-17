@@ -81,7 +81,6 @@ func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alp
 	}
 
 	for _, pipeline := range allPipelines {
-
 		sectionsConfigMapKey := pipeline.Name + ".conf"
 
 		sectionsConfigMapContent, err := buildFluentBitSectionsConfig(&pipeline, b.builderConfig)
