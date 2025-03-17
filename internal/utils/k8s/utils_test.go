@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -21,7 +20,7 @@ func TestGetOrCreateConfigMapError(t *testing.T) {
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 
 	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	_, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName)
+	_, err := GetOrCreateConfigMap(t.Context(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
 
 	require.Error(t, err)
 	require.Equal(t, badReqErr, err)
@@ -32,11 +31,12 @@ func TestGetOrCreateConfigMapGetSuccess(t *testing.T) {
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	cm, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName)
+	cm, err := GetOrCreateConfigMap(t.Context(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
 
 	require.NoError(t, err)
 	require.Equal(t, "some-cm", cm.Name)
 	require.Equal(t, "cm-ns", cm.Namespace)
+	require.Equal(t, "myValue", cm.Labels["myLabel"])
 }
 
 func TestGetOrCreateConfigMapCreateSuccess(t *testing.T) {
@@ -46,11 +46,12 @@ func TestGetOrCreateConfigMapCreateSuccess(t *testing.T) {
 	mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
 
 	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
-	cm, err := GetOrCreateConfigMap(context.Background(), mockClient, configMapName)
+	cm, err := GetOrCreateConfigMap(t.Context(), mockClient, configMapName, map[string]string{"myLabel": "myValue"})
 
 	require.NoError(t, err)
 	require.Equal(t, "some-cm", cm.Name)
 	require.Equal(t, "cm-ns", cm.Namespace)
+	require.Equal(t, "myValue", cm.Labels["myLabel"])
 }
 
 func TestGetOrCreateSecretError(t *testing.T) {
@@ -59,7 +60,7 @@ func TestGetOrCreateSecretError(t *testing.T) {
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 
 	secretName := types.NamespacedName{Name: "some-secret", Namespace: "secret-ns"}
-	_, err := GetOrCreateSecret(context.Background(), mockClient, secretName)
+	_, err := GetOrCreateSecret(t.Context(), mockClient, secretName, map[string]string{"myLabel": "myValue"})
 
 	require.Error(t, err)
 	require.Equal(t, badReqErr, err)
@@ -72,11 +73,12 @@ func TestGetOrCreateSecretSuccess(t *testing.T) {
 	mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
 
 	secretName := types.NamespacedName{Name: "some-secret", Namespace: "secret-ns"}
-	secret, err := GetOrCreateSecret(context.Background(), mockClient, secretName)
+	secret, err := GetOrCreateSecret(t.Context(), mockClient, secretName, map[string]string{"myLabel": "myValue"})
 
 	require.NoError(t, err)
 	require.Equal(t, "some-secret", secret.Name)
 	require.Equal(t, "secret-ns", secret.Namespace)
+	require.Equal(t, "myValue", secret.Labels["myLabel"])
 }
 
 func TestMergePodAnnotations(t *testing.T) {
@@ -109,21 +111,19 @@ func TestMergePodAnnotations(t *testing.T) {
 		{
 			name: "should preserve existing checksum annotations",
 			existing: map[string]string{
-				"checksum/1": "1",
-				"checksum/2": "2",
-				"checksum/3": "3",
-				"unrelated":  "foo",
+				"checksum/config":   "1",
+				"checksum/config-a": "2",
+				"checksum/Config":   "3",
+				"unrelated":         "foo",
 			},
 			desired: map[string]string{
-				"checksum/2": "b",
-				"checksum/3": "3",
-				"checksum/4": "4",
+				"checksum/config-a": "5",
+				"checksum/cOnfig":   "6",
 			},
 			expectedMerged: map[string]string{
-				"checksum/1": "1",
-				"checksum/2": "b",
-				"checksum/3": "3",
-				"checksum/4": "4",
+				"checksum/config":   "1",
+				"checksum/config-a": "5",
+				"checksum/cOnfig":   "6",
 			},
 		},
 		{

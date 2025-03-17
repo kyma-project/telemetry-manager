@@ -8,7 +8,7 @@ kubectl get crd telemetry.operator.kyma-project.io -o yaml
 
 ## Sample Custom Resource
 
-The following Telemetry object defines a module`:
+The following Telemetry object defines a module:
 
 ```yaml
 apiVersion: operator.kyma-project.io/v1alpha1
@@ -66,6 +66,34 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 For details, see the [Telemetry specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/operator/v1alpha1/telemetry_types.go).
 
+### Annotations
+
+Backward compatibility for internal metrics in OpenTelemetry:
+OpenTelemetry Collector 0.119.0 introduces breaking changes for internal metrics exposed through the Prometheus endpoint, such as the following:
+
+- The metric name changes. For example, the counter metrics append a `_total` suffix.
+- The metric unit is appended to the metric name. For example, a counter metric `request_duration` with unit `milliseconds` is exposed as `request_duration_milliseconds_total`.
+- The internal metric exporter creates an `otel_scope_info` metric containing the metrics instrumentation scope, and also add labels about instrumentation scope to all metric points.
+
+To maintain backward compatibility, the Telemetry Manager introduces the annotation `telemetry.kyma-project.io/internal-metrics-compatibility-mode` to control the internal metrics suffix. By default, the backward compatibility mode is disabled.
+
+> [!CAUTION]
+> If you are accessing the internal metrics endpoints directly, you must take action:
+> It is recommended to keep backward compatibility mode disabled and use the pipeline status instead. However, if you must access the OTel metrics directly, adapt your approach to match the new format.
+> The backward compatibility annotation is a temporary solution so you have time to update your approach. It is scheduled for removal in a future module update.
+
+To enable the backward compatibility mode, set the annotation `telemetry.kyma-project.io/internal-metrics-compatibility-mode: true` in the Telemetry CR.
+
+```yaml
+apiVersion: operator.kyma-project.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+  annotations:
+    telemetry.kyma-project.io/internal-metrics-compatibility-mode: "true"
+```
+
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
 <!-- The content between "TABLE-START" and "TABLE-END" will be replaced -->
@@ -118,23 +146,23 @@ The `state` attribute of the Telemetry CR is derived from the combined state of 
 
 The state of the log components is determined by the status condition of type `LogComponentsHealthy`:
 
-| Condition Status | Condition Reason            | Condition Message                                                                                                                                                                                                                                         |
-| ---------------- |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| True             | ComponentsRunning           | All log components are running                                                                                                                                                                                                                            |
-| True             | NoPipelineDeployed          | No pipelines have been deployed                                                                                                                                                                                                                           |
-| True             | TLSCertificateAboutToExpire | TLS (CA) certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                                                                 |
-| False            | AgentNotReady               | Fluent Bit agent DaemonSet is not ready                                                                                                                                                                                                                   |
-| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing: Secret 'my-secret' of Namespace 'my-namespace'                                                                                                                                                                |
-| False            | ReferencedSecretMissing     | One or more keys in a referenced Secret are missing: Key 'my-key' in Secret 'my-secret' of Namespace 'my-namespace'"                                                                                                                                      |
-| False            | ReferencedSecretMissing     | Secret reference is missing field/s: (field1, field2, ...)                                                                                                                                                                                                |
-| False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (resource-1, resource-2,...), LogParsers (resource-1, resource-2,...)                                                                        |
-| False            | TLSCertificateExpired       | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                                                                |
-| False            | TLSConfigurationInvalid     | TLS configuration invalid                                                                                                                                                                                                                                 |
-| False            | ValidationFailed            | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                                                 |
-| False            | AllDataDropped              | Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                                         |
-| False            | BufferFillingUp             | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Agent Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up)                                                       |
-| False            | NoLogsDelivered             | Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                        |
-| False            | SomeDataDropped             | Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: [No All Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend)                                 |
+| Condition Status | Condition Reason            | Condition Message                                                                                                                                                                                                                  |
+| ---------------- |-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| True             | ComponentsRunning           | All log components are running                                                                                                                                                                                                     |
+| True             | NoPipelineDeployed          | No pipelines have been deployed                                                                                                                                                                                                    |
+| True             | TLSCertificateAboutToExpire | TLS (CA) certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                                          |
+| False            | AgentNotReady               | Log agent DaemonSet is not ready                                                                                                                                                                                                   |
+| False            | ReferencedSecretMissing     | One or more referenced Secrets are missing: Secret 'my-secret' of Namespace 'my-namespace'                                                                                                                                         |
+| False            | ReferencedSecretMissing     | One or more keys in a referenced Secret are missing: Key 'my-key' in Secret 'my-secret' of Namespace 'my-namespace'"                                                                                                               |
+| False            | ReferencedSecretMissing     | Secret reference is missing field/s: (field1, field2, ...)                                                                                                                                                                         |
+| False            | ResourceBlocksDeletion      | The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (resource-1, resource-2,...), LogParsers (resource-1, resource-2,...)                                                 |
+| False            | TLSCertificateExpired       | TLS (CA) certificate expired on YYYY-MM-DD                                                                                                                                                                                         |
+| False            | TLSConfigurationInvalid     | TLS configuration invalid                                                                                                                                                                                                          |
+| False            | ValidationFailed            | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                          |
+| False            | AllDataDropped              | Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend)                  |
+| False            | BufferFillingUp             | Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: [Agent Buffer Filling Up](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=agent-buffer-filling-up)                                |
+| False            | NoLogsDelivered             | Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: [No Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=no-logs-arrive-at-the-backend) |
+| False            | SomeDataDropped             | Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: [No All Logs Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/02-logs?id=not-all-logs-arrive-at-the-backend)          |
 
 ### Trace Components State
 

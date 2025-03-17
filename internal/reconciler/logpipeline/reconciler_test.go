@@ -92,11 +92,11 @@ func TestGetPipelinesForType(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2).WithStatusSubresource(&otelPipeline, &fluentbitPipeline1, &fluentbitPipeline2).Build()
 
-	got, err := GetPipelinesForType(context.Background(), fakeClient, logpipelineutils.OTel)
+	got, err := GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.OTel)
 	require.NoError(t, err)
 	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{otelPipeline})
 
-	got, err = GetPipelinesForType(context.Background(), fakeClient, logpipelineutils.FluentBit)
+	got, err = GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.FluentBit)
 	require.NoError(t, err)
 	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{fluentbitPipeline1, fluentbitPipeline2})
 }
@@ -114,7 +114,7 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&otelPipeline, &unsupportedPipeline).WithStatusSubresource(&otelPipeline, &unsupportedPipeline).Build()
 
 	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+	overridesHandler.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
 	otelReconciler := ReconcilerStub{
 		OutputType: logpipelineutils.OTel,
@@ -123,13 +123,13 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 
 	rec := New(fakeClient, overridesHandler, &otelReconciler)
 
-	res, err := rec.Reconcile(context.Background(), ctrl.Request{
+	res, err := rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: otelPipeline.Name},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
-	res, err = rec.Reconcile(context.Background(), ctrl.Request{
+	res, err = rec.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: unsupportedPipeline.Name},
 	})
 	require.ErrorIs(t, err, ErrUnsupportedOutputType)

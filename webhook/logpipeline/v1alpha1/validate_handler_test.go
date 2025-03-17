@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -29,7 +28,7 @@ func TestHandle(t *testing.T) {
 
 		sut := newValidateHandler(fakeClient, scheme)
 
-		response := sut.Handle(context.Background(), admissionRequestFrom(t, logPipeline))
+		response := sut.Handle(t.Context(), admissionRequestFrom(t, logPipeline))
 
 		require.True(t, response.Allowed)
 		require.Contains(t, response.Warnings, "Logpipeline 'custom-output' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: https://kyma-project.io/#/telemetry-manager/user/02-logs")
@@ -99,7 +98,7 @@ func TestHandle(t *testing.T) {
 
 				sut := newValidateHandler(fakeClient, scheme)
 
-				response := sut.Handle(context.Background(), admissionRequestFrom(t, logPipeline))
+				response := sut.Handle(t.Context(), admissionRequestFrom(t, logPipeline))
 				require.Equal(t, tt.allowed, response.Allowed)
 
 				if !tt.allowed {

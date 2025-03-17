@@ -2,7 +2,7 @@ package gateway
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
 func makeProcessorsConfig(opts BuildOptions) Processors {
@@ -11,11 +11,13 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:           gatewayprocs.K8sAttributesProcessorConfig(),
-		InsertClusterAttributes: gatewayprocs.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		K8sAttributes: processors.K8sAttributesProcessorConfig(processors.Enrichments{
+			Enabled: false,
+		}),
+		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 		DropNoisySpans:          makeDropNoisySpansConfig(),
 		ResolveServiceName:      makeResolveServiceNameConfig(),
-		DropKymaAttributes:      gatewayprocs.DropKymaAttributesProcessorConfig(),
+		DropKymaAttributes:      processors.DropKymaAttributesProcessorConfig(),
 	}
 }
 
@@ -40,6 +42,6 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 func makeResolveServiceNameConfig() *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:       "ignore",
-		TraceStatements: gatewayprocs.ResolveServiceNameStatements(),
+		TraceStatements: processors.ResolveServiceNameStatements(),
 	}
 }

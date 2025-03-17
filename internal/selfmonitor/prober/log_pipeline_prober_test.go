@@ -1,7 +1,6 @@
 package prober
 
 import (
-	"context"
 	"testing"
 
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -250,7 +249,62 @@ func TestLogPipelineProber(t *testing.T) {
 
 			sut.getter = alertGetterMock
 
-			result, err := sut.Probe(context.Background(), tc.pipelineName)
+			result, err := sut.Probe(t.Context(), tc.pipelineName)
+
+			if tc.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestOTelLogPipelineProber(t *testing.T) {
+	testCases := []struct {
+		name         string
+		alerts       promv1.AlertsResult
+		alertsErr    error
+		pipelineName string
+		expected     OTelPipelineProbeResult
+		expectErr    bool
+	}{
+		{
+			name:         "alert getter fails",
+			pipelineName: "cls",
+			alertsErr:    assert.AnError,
+			expectErr:    true,
+		},
+		{
+			name:         "no alerts firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{},
+			},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sut, err := NewOtelLogPipelineProber(types.NamespacedName{Name: "test"})
+			require.NoError(t, err)
+
+			alertGetterMock := &mocks.AlertGetter{}
+			if tc.alertsErr != nil {
+				alertGetterMock.On("Alerts", mock.Anything).Return(promv1.AlertsResult{}, tc.alertsErr)
+			} else {
+				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
+			}
+
+			sut.getter = alertGetterMock
+
+			result, err := sut.Probe(t.Context(), tc.pipelineName)
 
 			if tc.expectErr {
 				require.Error(t, err)

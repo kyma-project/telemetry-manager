@@ -5,9 +5,9 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/processors"
 )
 
 func makeProcessorsConfig(opts BuildOptions) Processors {
@@ -16,10 +16,12 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:                 gatewayprocs.K8sAttributesProcessorConfig(),
-		InsertClusterAttributes:       gatewayprocs.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		K8sAttributes: processors.K8sAttributesProcessorConfig(processors.Enrichments{
+			Enabled: false,
+		}),
+		InsertClusterAttributes:       processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 		ResolveServiceName:            makeResolveServiceNameConfig(),
-		DropKymaAttributes:            gatewayprocs.DropKymaAttributesProcessorConfig(),
+		DropKymaAttributes:            processors.DropKymaAttributesProcessorConfig(),
 		DeleteSkipEnrichmentAttribute: makeDeleteSkipEnrichmentAttributeConfig(),
 	}
 }
@@ -45,7 +47,7 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 func makeResolveServiceNameConfig() *metric.TransformProcessor {
 	return &metric.TransformProcessor{
 		ErrorMode:        "ignore",
-		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
+		MetricStatements: processors.ResolveServiceNameStatements(),
 	}
 }
 
@@ -74,7 +76,7 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
-				ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
+				ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus),
 			},
 		},
 	}
@@ -240,13 +242,14 @@ func inputSourceEquals(inputSourceType metric.InputSourceType) string {
 }
 
 func otlpInputSource() string {
-	// When instrumentation scope is not set to
-	// io.kyma-project.telemetry/runtime or io.kyma-project.telemetry/prometheus or io.kyma-project.telemetry/istio
+	// When instrumentation scope is not set to any of the following values
+	// io.kyma-project.telemetry/runtime, io.kyma-project.telemetry/prometheus, io.kyma-project.telemetry/istio, and io.kyma-project.telemetry/kyma
 	// we assume the metric is being pushed directly to metrics gateway.
-	return fmt.Sprintf("not(%s or %s or %s)",
+	return fmt.Sprintf("not(%s or %s or %s or %s)",
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeRuntime),
-		ottlexpr.ScopeNameEquals(metric.InstrumentationScopePrometheus),
+		ottlexpr.ResourceAttributeEquals(metric.KymaInputNameAttribute, metric.KymaInputPrometheus),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
+		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeKyma),
 	)
 }
 

@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -20,11 +19,11 @@ func TestSetAnnotation(t *testing.T) {
 
 	sut := DaemonSetAnnotator{fakeClient}
 
-	err := sut.SetAnnotation(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"}, "foo", "bar")
+	err := sut.SetAnnotation(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"}, "foo", "bar")
 	require.NoError(t, err)
 
 	var updatedDaemonSet appsv1.DaemonSet
-	_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"}, &updatedDaemonSet)
+	_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"}, &updatedDaemonSet)
 	require.Len(t, updatedDaemonSet.Spec.Template.Annotations, 1)
 	require.Contains(t, updatedDaemonSet.Spec.Template.Annotations, "foo")
 	require.Equal(t, updatedDaemonSet.Spec.Template.Annotations["foo"], "bar")

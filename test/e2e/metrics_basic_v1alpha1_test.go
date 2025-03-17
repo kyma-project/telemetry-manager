@@ -37,7 +37,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(suite.IsOperational()))
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(suite.IsUpgrade()))
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 				hostSecretRef.Namespace,
 				hostSecretRef.Key,
 			))
-		if suite.IsOperational() {
+		if suite.IsUpgrade() {
 			metricPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
 		metricPipeline := metricPipelineBuilder.Build()
@@ -70,11 +70,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metric gateway deployment", Label(suite.LabelOperational), func() {
+		It("Should have a running metric gateway deployment", Label(suite.LabelUpgrade), func() {
 			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should reject scaling below minimum", Label(suite.LabelOperational), func() {
+		It("Should reject scaling below minimum", Label(suite.LabelUpgrade), func() {
 			var telemetry operatorv1alpha1.Telemetry
 			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 			Expect(err).NotTo(HaveOccurred())
@@ -93,7 +93,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("Should scale up metric gateway replicas", Label(suite.LabelOperational), func() {
+		It("Should scale up metric gateway replicas", Label(suite.LabelUpgrade), func() {
 			Eventually(func(g Gomega) int32 {
 				var telemetry operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
@@ -115,7 +115,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
 		})
 
-		It("Should have 4 metric gateway replicas after scaling up", Label(suite.LabelOperational), func() {
+		It("Should have 4 metric gateway replicas after scaling up", Label(suite.LabelUpgrade), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
@@ -124,7 +124,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
 		})
 
-		It("Should scale down metric gateway replicas", Label(suite.LabelOperational), func() {
+		It("Should scale down metric gateway replicas", Label(suite.LabelUpgrade), func() {
 			Eventually(func(g Gomega) int32 {
 				var telemetry operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
@@ -146,7 +146,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
-		It("Should have 2 metric gateway replicas after scaling down", Label(suite.LabelOperational), func() {
+		It("Should have 2 metric gateway replicas after scaling down", Label(suite.LabelUpgrade), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
@@ -155,25 +155,25 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), 
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
-		It("Should have a metrics backend running", Label(suite.LabelOperational), func() {
+		It("Should have a metrics backend running", Label(suite.LabelUpgrade), func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should have a running pipeline", Label(suite.LabelOperational), func() {
+		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
 			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen metrics", Label(suite.LabelOperational), func() {
+		It("Should deliver telemetrygen metrics", Label(suite.LabelUpgrade), func() {
 			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 
-		It("Should be able to get metric gateway metrics endpoint", Label(suite.LabelOperational), func() {
+		It("Should be able to get metric gateway metrics endpoint", Label(suite.LabelUpgrade), func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
 			assert.EmitsOTelCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
-		It("Should have a working network policy", Label(suite.LabelOperational), func() {
+		It("Should have a working network policy", Label(suite.LabelUpgrade), func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			Expect(k8sClient.Get(ctx, kitkyma.MetricGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
 

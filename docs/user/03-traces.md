@@ -62,9 +62,12 @@ In the following steps, you can see how to construct and deploy a typical TraceP
 
 To ship traces to a new OTLP output, create a resource of the kind `TracePipeline` and save the file (named, for example, `tracepipeline.yaml`).
 
-This configures the underlying OTel Collector with a pipeline for traces. It defines that the receiver of the pipeline is of the OTLP type and is accessible with the `telemetry-otlp-traces` service.
+This configures the underlying OTel Collector with a pipeline for traces and opens a push endpoint that is accessible with the `telemetry-otlp-traces` service. For details, see [Gateway Usage](./gateways.md#usage). The following push URLs are set up:
 
-The default protocol is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used.  Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
+- GRPC: http://telemetry-otlp-traces.kyma-system:4317
+- HTTP: http://telemetry-otlp-traces.kyma-system:4318
+
+The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
 
 - For GRPC, use:
   ```yaml
@@ -423,7 +426,11 @@ A TracePipeline runs several OTel Collector instances in your cluster. This Depl
 
 The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop traces, or cannot handle the trace load.
 
-To detect and fix such situations, check the pipeline status and check out [Troubleshooting](#troubleshooting).
+To detect and fix such situations, check the [pipeline status](./resources/04-tracepipeline.md#tracepipeline-status) and check out [Troubleshooting](#troubleshooting). If you have set up [pipeline health monitoring](./04-metrics.md#5-monitor-pipeline-health), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
+
+> [! WARNING]
+> It's not recommended to access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such.
+> Instead, use the [pipeline status](./resources/04-tracepipeline.md#tracepipeline-status).
 
 ## Limitations
 

@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,16 +14,15 @@ func TestClusterInfoGetter(t *testing.T) {
 		shootInfo := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{Name: "shoot-info", Namespace: "kube-system"},
 			Data: map[string]string{
-				"shootName": "test-cluster",
-				"provider":  "test-provider",
+				"provider": "test-provider",
 			},
 		}
 
 		fakeClient := fake.NewClientBuilder().WithObjects(shootInfo).Build()
 
-		clusterInfo := GetGardenerShootInfo(context.Background(), fakeClient)
+		clusterInfo := GetGardenerShootInfo(t.Context(), fakeClient)
 
-		require.Equal(t, clusterInfo.ClusterName, "test-cluster")
+		require.Equal(t, clusterInfo.ClusterName, "${KUBERNETES_SERVICE_HOST}")
 		require.Equal(t, clusterInfo.CloudProvider, "test-provider")
 	})
 
@@ -32,23 +30,22 @@ func TestClusterInfoGetter(t *testing.T) {
 		shootInfo := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{Name: "shoot-info", Namespace: "kube-system"},
 			Data: map[string]string{
-				"shootName": "test-cluster",
-				"provider":  "openstack",
+				"provider": "openstack",
 			},
 		}
 
 		fakeClient := fake.NewClientBuilder().WithObjects(shootInfo).Build()
 
-		clusterInfo := GetGardenerShootInfo(context.Background(), fakeClient)
+		clusterInfo := GetGardenerShootInfo(t.Context(), fakeClient)
 
-		require.Equal(t, clusterInfo.ClusterName, "test-cluster")
-		require.Equal(t, clusterInfo.CloudProvider, "sap-converged-cloud")
+		require.Equal(t, clusterInfo.ClusterName, "${KUBERNETES_SERVICE_HOST}")
+		require.Equal(t, clusterInfo.CloudProvider, "sap")
 	})
 
 	t.Run("Non Gardener cluster", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects().Build()
 
-		clusterInfo := GetGardenerShootInfo(context.Background(), fakeClient)
+		clusterInfo := GetGardenerShootInfo(t.Context(), fakeClient)
 
 		require.Equal(t, clusterInfo.ClusterName, "${KUBERNETES_SERVICE_HOST}")
 		require.Equal(t, clusterInfo.CloudProvider, "")

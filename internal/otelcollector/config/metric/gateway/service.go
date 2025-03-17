@@ -19,7 +19,7 @@ func makeInputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) 
 func makeAttributesEnrichmentPipelineServiceConfig(pipelineName string) config.Pipeline {
 	return config.Pipeline{
 		Receivers:  []string{formatRoutingConnectorID(pipelineName)},
-		Processors: []string{"k8sattributes", "transform/resolve-service-name", "resource/drop-kyma-attributes"},
+		Processors: []string{"k8sattributes", "transform/resolve-service-name"},
 		Exporters:  []string{formatForwardConnectorID(pipelineName)},
 	}
 }
@@ -29,14 +29,13 @@ func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline)
 
 	input := pipeline.Spec.Input
 
+	processors = append(processors, "transform/set-instrumentation-scope-kyma")
 	processors = append(processors, makeInputSourceFiltersIDs(input)...)
 	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
 
-	processors = append(processors, "transform/set-instrumentation-scope-kyma")
-
-	processors = append(processors, "resource/insert-cluster-attributes", "resource/delete-skip-enrichment-attribute", "batch")
+	processors = append(processors, "resource/insert-cluster-attributes", "resource/delete-skip-enrichment-attribute", "resource/drop-kyma-attributes", "batch")
 
 	return config.Pipeline{
 		Receivers:  []string{formatRoutingConnectorID(pipeline.Name), formatForwardConnectorID(pipeline.Name)},

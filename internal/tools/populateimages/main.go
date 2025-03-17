@@ -10,18 +10,18 @@ import (
 	"path/filepath"
 
 	"github.com/joho/godotenv"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type secScanConfig struct {
 	ModuleName   string       `yaml:"module-name"`
 	Kind         string       `yaml:"kind"`
-	Protecode    []string     `yaml:"protecode"`
-	WhiteSource  whiteSource  `yaml:"whitesource"`
+	BDBA         []string     `yaml:"bdba"`
+	Mend         mend         `yaml:"mend"`
 	CheckmarxOne checkmarxOne `yaml:"checkmarx-one"`
 }
 
-type whiteSource struct {
+type mend struct {
 	Language string   `yaml:"language"`
 	Exclude  []string `yaml:"exclude"`
 }
@@ -178,13 +178,14 @@ func generateSecScanConfig(data map[string]string) error {
 	defer file.Close()
 
 	enc := yaml.NewEncoder(file)
+	enc.SetIndent(2)
 
 	imgs := []string{data["ENV_IMG"], data["DEFAULT_FLUENTBIT_EXPORTER_IMAGE"], data["DEFAULT_FLUENTBIT_IMAGE"], data["DEFAULT_OTEL_COLLECTOR_IMAGE"], data["DEFAULT_SELFMONITOR_IMAGE"]}
 	secScanCfg := secScanConfig{
 		ModuleName: "telemetry",
 		Kind:       "kyma",
-		Protecode:  imgs,
-		WhiteSource: whiteSource{
+		BDBA:       imgs,
+		Mend: mend{
 			Language: "golang-mod",
 			Exclude:  []string{"**/mocks/**", "**/stubs/**", "**/test/**", "**/*_test.go"},
 		},

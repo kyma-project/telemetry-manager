@@ -1,0 +1,280 @@
+extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
+service:
+    pipelines:
+        metrics/prometheus:
+            receivers:
+                - prometheus/app-pods
+                - prometheus/app-services
+            processors:
+                - memory_limiter
+                - resource/delete-service-name
+                - transform/set-instrumentation-scope-prometheus
+                - batch
+            exporters:
+                - otlp
+        metrics/runtime:
+            receivers:
+                - kubeletstats
+                - singleton_receiver_creator/k8s_cluster
+            processors:
+                - memory_limiter
+                - filter/drop-non-pvc-volumes-metrics
+                - resource/delete-service-name
+                - transform/set-instrumentation-scope-runtime
+                - transform/insert-skip-enrichment-attribute
+                - batch
+            exporters:
+                - otlp
+    telemetry:
+        metrics:
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
+                            without_scope_info: true
+                            without_type_suffix: true
+                            without_units: true
+        logs:
+            level: info
+            encoding: json
+    extensions:
+        - health_check
+        - pprof
+receivers:
+    kubeletstats:
+        collection_interval: 30s
+        auth_type: serviceAccount
+        endpoint: https://${MY_NODE_NAME}:10250
+        insecure_skip_verify: true
+        metric_groups:
+            - container
+            - pod
+            - node
+            - volume
+        metrics:
+            container.cpu.usage:
+                enabled: true
+            container.cpu.utilization:
+                enabled: false
+            k8s.pod.cpu.usage:
+                enabled: true
+            k8s.pod.cpu.utilization:
+                enabled: false
+            k8s.node.cpu.usage:
+                enabled: true
+            k8s.node.cpu.utilization:
+                enabled: false
+            k8s.node.cpu.time:
+                enabled: false
+            k8s.node.memory.major_page_faults:
+                enabled: false
+            k8s.node.memory.page_faults:
+                enabled: false
+            k8s.node.network.io:
+                enabled: false
+            k8s.node.network.errors:
+                enabled: false
+        extra_metadata_labels:
+            - k8s.volume.type
+    singleton_receiver_creator/k8s_cluster:
+        auth_type: serviceAccount
+        leader_election:
+            lease_name: telemetry-metric-agent-k8scluster
+            lease_namespace: ""
+        receiver:
+            k8s_cluster:
+                auth_type: serviceAccount
+                collection_interval: 30s
+                node_conditions_to_report: []
+                metrics:
+                    k8s.container.storage_request:
+                        enabled: false
+                    k8s.container.storage_limit:
+                        enabled: false
+                    k8s.container.ephemeralstorage_request:
+                        enabled: false
+                    k8s.container.ephemeralstorage_limit:
+                        enabled: false
+                    k8s.container.restarts:
+                        enabled: false
+                    k8s.container.ready:
+                        enabled: false
+                    k8s.namespace.phase:
+                        enabled: false
+                    k8s.hpa.current_replicas:
+                        enabled: false
+                    k8s.hpa.desired_replicas:
+                        enabled: false
+                    k8s.hpa.min_replicas:
+                        enabled: false
+                    k8s.hpa.max_replicas:
+                        enabled: false
+                    k8s.replicaset.available:
+                        enabled: false
+                    k8s.replicaset.desired:
+                        enabled: false
+                    k8s.replication_controller.available:
+                        enabled: false
+                    k8s.replication_controller.desired:
+                        enabled: false
+                    k8s.resource_quota.hard_limit:
+                        enabled: false
+                    k8s.resource_quota.used:
+                        enabled: false
+                    k8s.cronjob.active_jobs:
+                        enabled: false
+    prometheus/app-pods:
+        config:
+            scrape_configs:
+                - job_name: app-pods
+                  sample_limit: 50000
+                  scrape_interval: 30s
+                  relabel_configs:
+                    - source_labels: [__meta_kubernetes_pod_node_name]
+                      regex: ${MY_NODE_NAME}
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                      regex: "true"
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_phase]
+                      regex: Pending|Succeeded|Failed
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_init]
+                      regex: (true)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
+                      regex: (istio)
+                      target_label: __scheme__
+                      replacement: https
+                      action: replace
+                    - source_labels: [__scheme__]
+                      regex: (https)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                      regex: (.+)
+                      target_label: __metrics_path__
+                      action: replace
+                    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                      regex: ([^:]+)(?::\d+)?;(\d+)
+                      target_label: __address__
+                      replacement: $$1:$$2
+                      action: replace
+                  kubernetes_sd_configs:
+                    - role: pod
+                      selectors:
+                        - role: pod
+                          field: spec.nodeName=${MY_NODE_NAME}
+    prometheus/app-services:
+        config:
+            scrape_configs:
+                - job_name: app-services
+                  sample_limit: 50000
+                  scrape_interval: 30s
+                  relabel_configs:
+                    - source_labels: [__meta_kubernetes_endpoint_node_name]
+                      regex: ${MY_NODE_NAME}
+                      action: keep
+                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+                      regex: "true"
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_phase]
+                      regex: Pending|Succeeded|Failed
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_init]
+                      regex: (true)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_name]
+                      regex: (istio-proxy)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
+                      regex: (istio)
+                      target_label: __scheme__
+                      replacement: https
+                      action: replace
+                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                      regex: (https?)
+                      target_label: __scheme__
+                      action: replace
+                    - source_labels: [__scheme__]
+                      regex: (https)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+                      regex: (.+)
+                      target_label: __metrics_path__
+                      action: replace
+                    - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+                      regex: ([^:]+)(?::\d+)?;(\d+)
+                      target_label: __address__
+                      replacement: $$1:$$2
+                      action: replace
+                    - source_labels: [__meta_kubernetes_service_name]
+                      target_label: service
+                      action: replace
+                  kubernetes_sd_configs:
+                    - role: endpoints
+                      selectors:
+                        - role: pod
+                          field: spec.nodeName=${MY_NODE_NAME}
+processors:
+    batch:
+        send_batch_size: 1024
+        timeout: 10s
+        send_batch_max_size: 1024
+    memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+    resource/delete-service-name:
+        attributes:
+            - action: delete
+              key: service.name
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+    transform/set-instrumentation-scope-prometheus:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "prometheus")
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/prometheus") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
+    transform/insert-skip-enrichment-attribute:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true") where metric.name != ""
+              conditions:
+                - IsMatch(metric.name, "^k8s.node.*")
+                - IsMatch(metric.name, "^k8s.statefulset.*")
+                - IsMatch(metric.name, "^k8s.daemonset.*")
+                - IsMatch(metric.name, "^k8s.deployment.*")
+                - IsMatch(metric.name, "^k8s.job.*")
+    filter/drop-non-pvc-volumes-metrics:
+        metrics:
+            metric:
+                - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
+exporters:
+    otlp:
+        endpoint: metrics.telemetry-system.svc.cluster.local:4317
+        tls:
+            insecure: true
+        sending_queue:
+            enabled: true
+            queue_size: 512
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s

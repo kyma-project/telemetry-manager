@@ -65,9 +65,12 @@ In the following steps, you can see how to construct and deploy a typical Metric
 
 To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline` and save the file (named, for example, `metricpipeline.yaml`).
 
-This configures the underlying OTel Collector of the gateway with a pipeline for metrics. It defines that the receiver of the pipeline is of the OTLP type and is accessible with the `telemetry-otlp-metrics` service.
+This configures the underlying OTel Collector with a pipeline for metrics and opens a push endpoint that is accessible with the `telemetry-otlp-metrics` service. For details, see [Gateway Usage](./gateways.md#usage). The following push URLs are set up:
 
-The default protocol is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
+- GRPC: http://telemetry-otlp-metrics.kyma-system:4317
+- HTTP: http://telemetry-otlp-metrics.kyma-system:4318
+
+The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
 
 <!-- tabs:start -->
 
@@ -315,6 +318,7 @@ The Metric agent is configured with a generic scrape configuration, which uses a
 
 For metrics ingestion to start automatically, use the annotations of the following table.
 If an Istio sidecar is present, apply them to a Service that resolves your metrics port.
+By annotating the Service, all endpoints targeted by the Service are resolved and scraped by the Metric agent bypassing the Service itself.
 Only if Istio sidecar is not present, you can alternatively apply the annotations directly to the Pod.
 
 | Annotation Key                                                   | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
@@ -691,7 +695,11 @@ A MetricPipeline runs several OTel Collector instances in your cluster. This Dep
 
 The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop metrics, or cannot handle the metric load.
 
-To detect and fix such situations, check the pipeline status and check out [Troubleshooting](#troubleshooting).
+To detect and fix such situations, check the [pipeline status](./resources/05-metricpipeline.md#metricpipeline-status) and check out [Troubleshooting](#troubleshooting).  If you have set up [pipeline health monitoring](./04-metrics.md#5-monitor-pipeline-health), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
+
+> [! WARNING]
+> It's not recommended to access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such.
+> Instead, use the [pipeline status](./resources/05-metricpipeline.md#metricpipeline-status).
 
 ## Limitations
 

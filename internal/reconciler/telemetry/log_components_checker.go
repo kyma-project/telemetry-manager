@@ -52,7 +52,7 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 		Type:    conditions.TypeLogComponentsHealthy,
 		Status:  metav1.ConditionTrue,
 		Reason:  conditions.ReasonComponentsRunning,
-		Message: conditions.MessageForLogPipeline(conditions.ReasonComponentsRunning),
+		Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonComponentsRunning),
 	}, nil
 }
 
@@ -104,7 +104,7 @@ func (l *logComponentsChecker) checkForNoPipelineDeployedCondition(pipelines []t
 			Type:    conditions.TypeLogComponentsHealthy,
 			Status:  metav1.ConditionTrue,
 			Reason:  conditions.ReasonNoPipelineDeployed,
-			Message: conditions.MessageForLogPipeline(conditions.ReasonNoPipelineDeployed),
+			Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonNoPipelineDeployed),
 		}
 	}
 

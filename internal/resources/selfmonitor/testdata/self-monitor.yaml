@@ -6,7 +6,11 @@ kind: ConfigMap
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 ---
@@ -15,7 +19,11 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 spec:
@@ -35,7 +43,11 @@ kind: ServiceAccount
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 ---
@@ -44,7 +56,11 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 spec:
@@ -56,10 +72,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/Config: 8cdf17444d9a798679152bba8d099a9609ab7bd266ddfbdcc70a091204ff1dd7
+        checksum/config: 8cdf17444d9a798679152bba8d099a9609ab7bd266ddfbdcc70a091204ff1dd7
       creationTimestamp: null
       labels:
+        app.kubernetes.io/component: my-monitor
+        app.kubernetes.io/managed-by: telemetry-manager
         app.kubernetes.io/name: my-self-monitor
+        app.kubernetes.io/part-of: telemetry
+        kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "false"
     spec:
       containers:
@@ -136,7 +156,11 @@ kind: NetworkPolicy
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 spec:
@@ -167,7 +191,11 @@ kind: Role
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 rules:
@@ -187,7 +215,11 @@ kind: RoleBinding
 metadata:
   creationTimestamp: null
   labels:
+    app.kubernetes.io/component: my-monitor
+    app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: my-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: my-self-monitor
   namespace: my-namespace
 roleRef:

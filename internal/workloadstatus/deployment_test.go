@@ -1,7 +1,6 @@
 package workloadstatus
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -54,7 +53,7 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList, podList).Build()
 			sut := DeploymentProber{fakeClient}
 
-			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+			err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			if test.expectedError != nil {
 				require.EqualError(t, err, test.expectedError.Error())
 			} else {
@@ -163,7 +162,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList, podList).Build()
 			sut := DeploymentProber{fakeClient}
-			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+			err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 
 			require.True(t, test.expectedError(err))
 		})
@@ -173,7 +172,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 func TestDeploymentNotCreated(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := DeploymentProber{fakeClient}
-	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.Equal(t, ErrDeploymentNotFound, err)
 }
 
@@ -239,7 +238,7 @@ func TestDeploymentSetRollout(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList, podList).Build()
 	sut := DeploymentProber{fakeClient}
-	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.True(t, IsRolloutInProgressError(err))
 }
 
@@ -248,6 +247,6 @@ func TestReplicaSetNotFound(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithObjects(deployment).Build()
 	sut := DeploymentProber{fakeClient}
-	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.Equal(t, err, ErrFailedToGetLatestReplicaSet)
 }

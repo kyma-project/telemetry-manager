@@ -49,7 +49,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsOutage), Orde
 	}
 
 	Context("Before deploying a metricpipeline", func() {
-		It("Should set scaling for metrics", Label(suite.LabelOperational), func() {
+		It("Should set scaling for metrics", Label(suite.LabelUpgrade), func() {
 			// retry until the Telemetry CR is updated correctly
 			Eventually(func() error {
 				var telemetry operatorv1alpha1.Telemetry

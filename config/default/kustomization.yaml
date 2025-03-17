@@ -13,12 +13,12 @@ namePrefix: telemetry-
 labels:
 - includeSelectors: false
   pairs:
-    control-plane: telemetry-manager
-    app.kubernetes.io/component: telemetry
-    app.kubernetes.io/part-of: kyma
+    kyma-project.io/module: telemetry
+    app.kubernetes.io/part-of: telemetry
     app.kubernetes.io/name: telemetry-manager
-    app.kubernetes.io/instance: telemetry-manager
-    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/managed-by: kyma
+
 resources:
 - ../crd
 - ../rbac

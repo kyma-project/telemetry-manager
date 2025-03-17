@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -96,7 +95,7 @@ func TestLogComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeAgentHealthy,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonAgentNotReady,
-						Message: conditions.MessageForLogPipeline(conditions.ReasonAgentNotReady),
+						Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonAgentNotReady),
 					}).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
@@ -106,7 +105,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentNotReady",
-				Message: "Fluent Bit agent DaemonSet is not ready",
+				Message: "Log agent DaemonSet is not ready",
 			},
 		},
 		{
@@ -238,7 +237,7 @@ func TestLogComponentsCheck(t *testing.T) {
 						Type:    conditions.TypeFlowHealthy,
 						Status:  metav1.ConditionFalse,
 						Reason:  conditions.ReasonSelfMonNoLogsDelivered,
-						Message: conditions.MessageForLogPipeline(conditions.ReasonSelfMonNoLogsDelivered),
+						Message: conditions.MessageForFluentBitLogPipeline(conditions.ReasonSelfMonNoLogsDelivered),
 					}).
 					Build(),
 			},
@@ -353,7 +352,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				client: fakeClient,
 			}
 
-			condition, err := m.Check(context.Background(), test.telemetryInDeletion)
+			condition, err := m.Check(t.Context(), test.telemetryInDeletion)
 			require.NoError(t, err)
 			require.Equal(t, test.expectedCondition, condition)
 		})

@@ -59,7 +59,7 @@ func TestProvideServerCert(t *testing.T) {
 			generator:     &mockServerCertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
-		certPEM, keyPEM, err := sut.provideCert(context.Background(), serverCertConfig{})
+		certPEM, keyPEM, err := sut.provideCert(t.Context(), serverCertConfig{})
 		require.NoError(t, err)
 		require.Equal(t, certPEM, fakeCertPEM)
 		require.Equal(t, keyPEM, fakeKeyPEM)
@@ -74,7 +74,7 @@ func TestProvideServerCert(t *testing.T) {
 			generator:     &mockServerCertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
-		certPEM, keyPEM, err := sut.provideCert(context.Background(), serverCertConfig{})
+		certPEM, keyPEM, err := sut.provideCert(t.Context(), serverCertConfig{})
 		require.NoError(t, err)
 		require.Equal(t, mockStorage.certPEM, certPEM)
 		require.Equal(t, mockStorage.keyPEM, keyPEM)
@@ -93,7 +93,7 @@ func TestProvideServerCert(t *testing.T) {
 			generator:     &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
-		_, _, err := sut.provideCert(context.Background(), serverCertConfig{})
+		_, _, err := sut.provideCert(t.Context(), serverCertConfig{})
 		require.NoError(t, err)
 		require.Equal(t, fakeNewCertPEM, mockStorage.certPEM)
 		require.Equal(t, fakeNewKeyPEM, mockStorage.keyPEM)
@@ -112,7 +112,7 @@ func TestProvideServerCert(t *testing.T) {
 			generator:     &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
-		_, _, err := sut.provideCert(context.Background(), serverCertConfig{})
+		_, _, err := sut.provideCert(t.Context(), serverCertConfig{})
 		require.NoError(t, err)
 		require.Equal(t, mockStorage.certPEM, fakeNewCertPEM)
 		require.Equal(t, mockStorage.keyPEM, fakeNewKeyPEM)
@@ -133,7 +133,7 @@ func TestProvideServerCert(t *testing.T) {
 			generator:     &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
-		_, _, err := sut.provideCert(context.Background(), serverCertConfig{caCertPEM: fakeCACertPEM, caKeyPEM: fakeCAKeyPEM})
+		_, _, err := sut.provideCert(t.Context(), serverCertConfig{caCertPEM: fakeCACertPEM, caKeyPEM: fakeCAKeyPEM})
 		require.NoError(t, err)
 		require.Equal(t, mockStorage.certPEM, fakeNewCertPEM)
 		require.Equal(t, mockStorage.keyPEM, fakeNewKeyPEM)
@@ -154,7 +154,7 @@ func TestProvideServerCert(t *testing.T) {
 			generator:     &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
-		_, _, err := sut.provideCert(context.Background(), serverCertConfig{caCertPEM: fakeCACertPEM, caKeyPEM: fakeCAKeyPEM})
+		_, _, err := sut.provideCert(t.Context(), serverCertConfig{caCertPEM: fakeCACertPEM, caKeyPEM: fakeCAKeyPEM})
 		require.NoError(t, err)
 		require.Equal(t, mockStorage.certPEM, fakeNewCertPEM)
 		require.Equal(t, mockStorage.keyPEM, fakeNewKeyPEM)
@@ -172,7 +172,7 @@ func TestProvideServerCert(t *testing.T) {
 			chainChecker:  &mockCertChainChecker{certValid: true},
 		}
 
-		_, _, err := sut.provideCert(context.Background(), serverCertConfig{})
+		_, _, err := sut.provideCert(t.Context(), serverCertConfig{})
 		require.NoError(t, err)
 		require.Equal(t, mockStorage.certPEM, fakeCertPEM)
 		require.Equal(t, mockStorage.keyPEM, fakeKeyPEM)

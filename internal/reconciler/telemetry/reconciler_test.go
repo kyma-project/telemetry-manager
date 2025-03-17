@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -38,7 +37,7 @@ func TestReconcile(t *testing.T) {
 		Build()
 
 	overridesHandlerStub := &mocks.OverridesHandler{}
-	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
 	sut := Reconciler{
 		Client:           fakeClient,
@@ -47,7 +46,7 @@ func TestReconcile(t *testing.T) {
 		overridesHandler: overridesHandlerStub,
 	}
 
-	_, err := sut.Reconcile(context.Background(), ctrl.Request{
+	_, err := sut.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{
 			Name: "test",
 		},

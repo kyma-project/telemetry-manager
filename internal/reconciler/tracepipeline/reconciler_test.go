@@ -1,7 +1,6 @@
 package tracepipeline
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -41,7 +40,7 @@ func TestReconcile(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	overridesHandlerStub := &mocks.OverridesHandler{}
-	overridesHandlerStub.On("LoadOverrides", context.Background()).Return(&overrides.Config{}, nil)
+	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
@@ -87,11 +86,11 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 		require.NoError(t, err)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -144,11 +143,11 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 		require.NoError(t, err)
 
 		requireHasStatusCondition(t, updatedPipeline,
@@ -201,11 +200,11 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeGatewayHealthy,
@@ -257,11 +256,11 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
@@ -331,11 +330,11 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
@@ -384,11 +383,11 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.Error(t, err)
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
@@ -541,11 +540,11 @@ func TestReconcile(t *testing.T) {
 					pipelineLockStub,
 					pipelineValidatorWithStubs,
 					errToMsg)
-				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.TracePipeline
-				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				requireHasStatusCondition(t, updatedPipeline,
 					conditions.TypeFlowHealthy,
@@ -676,11 +675,11 @@ func TestReconcile(t *testing.T) {
 					pipelineLockStub,
 					pipelineValidatorWithStubs,
 					errToMsg)
-				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.TracePipeline
-				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				requireHasStatusCondition(t, updatedPipeline,
 					conditions.TypeConfigurationGenerated,
@@ -759,11 +758,11 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.True(t, errors.Is(err, serverErr))
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
@@ -824,11 +823,11 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.True(t, errors.Is(err, serverErr))
 
 		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		requireHasStatusCondition(t, updatedPipeline,
 			conditions.TypeConfigurationGenerated,
@@ -887,7 +886,7 @@ func TestReconcile(t *testing.T) {
 			pipelineLockStub,
 			pipelineValidatorWithStubs,
 			errToMsg)
-		_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		require.NoError(t, err)
 
 		gatewayApplierDeleterMock.AssertExpectations(t)
@@ -979,11 +978,11 @@ func TestReconcile(t *testing.T) {
 					pipelineValidatorWithStubs,
 					errToMsg)
 
-				_, err := sut.Reconcile(context.Background(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+				_, err := sut.Reconcile(t.Context(), ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.TracePipeline
-				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
 				require.Equal(t, tt.expectedStatus, cond.Status)

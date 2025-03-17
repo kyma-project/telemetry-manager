@@ -64,12 +64,11 @@ func TestProcessors(t *testing.T) {
 			ErrorMode: "ignore",
 			MetricStatements: []config.TransformProcessorStatements{
 				{
-					Context: "scope",
 					Statements: []string{
-						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
-						"set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
-						"set(name, \"io.kyma-project.telemetry/runtime\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+						"set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(scope.name, \"io.kyma-project.telemetry/runtime\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver\"",
+						"set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
+						"set(scope.name, \"io.kyma-project.telemetry/runtime\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver\"",
 					},
 				},
 			},
@@ -87,11 +86,12 @@ func TestProcessors(t *testing.T) {
 		})
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopePrometheus)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopePrometheus.ErrorMode)
-		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements, 1)
-		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Context)
-		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[0])
-		require.Equal(t, "set(name, \"io.kyma-project.telemetry/prometheus\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[1])
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements, 2)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements, 1)
+		require.Len(t, collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[1].Statements, 2)
+		require.Equal(t, "set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[1].Statements[0])
+		require.Equal(t, "set(scope.name, \"io.kyma-project.telemetry/prometheus\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[1].Statements[1])
+		require.Equal(t, "set(resource.attributes[\"kyma.input.name\"], \"prometheus\")", collectorConfig.Processors.SetInstrumentationScopePrometheus.MetricStatements[0].Statements[0])
 	})
 
 	t.Run("set instrumentation scope istio", func(t *testing.T) {
@@ -103,10 +103,9 @@ func TestProcessors(t *testing.T) {
 		require.NotNil(t, collectorConfig.Processors.SetInstrumentationScopeIstio)
 		require.Equal(t, "ignore", collectorConfig.Processors.SetInstrumentationScopeIstio.ErrorMode)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements, 1)
-		require.Equal(t, "scope", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Context)
 		require.Len(t, collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements, 2)
-		require.Equal(t, "set(version, \"main\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[0])
-		require.Equal(t, "set(name, \"io.kyma-project.telemetry/istio\") where name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[1])
+		require.Equal(t, "set(scope.version, \"main\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[0])
+		require.Equal(t, "set(scope.name, \"io.kyma-project.telemetry/istio\") where scope.name == \"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver\"", collectorConfig.Processors.SetInstrumentationScopeIstio.MetricStatements[0].Statements[1])
 	})
 
 	t.Run("insert skip enrichment attribute processor", func(t *testing.T) {
@@ -118,14 +117,13 @@ func TestProcessors(t *testing.T) {
 			ErrorMode: "ignore",
 			MetricStatements: []config.TransformProcessorStatements{
 				{
-					Context:    "metric",
-					Statements: []string{"set(resource.attributes[\"io.kyma-project.telemetry.skip_enrichment\"], \"true\")"},
+					Statements: []string{"set(resource.attributes[\"io.kyma-project.telemetry.skip_enrichment\"], \"true\") where metric.name != \"\""},
 					Conditions: []string{
-						"IsMatch(name, \"^k8s.node.*\")",
-						"IsMatch(name, \"^k8s.statefulset.*\")",
-						"IsMatch(name, \"^k8s.daemonset.*\")",
-						"IsMatch(name, \"^k8s.deployment.*\")",
-						"IsMatch(name, \"^k8s.job.*\")"},
+						"IsMatch(metric.name, \"^k8s.node.*\")",
+						"IsMatch(metric.name, \"^k8s.statefulset.*\")",
+						"IsMatch(metric.name, \"^k8s.daemonset.*\")",
+						"IsMatch(metric.name, \"^k8s.deployment.*\")",
+						"IsMatch(metric.name, \"^k8s.job.*\")"},
 				},
 			},
 		}

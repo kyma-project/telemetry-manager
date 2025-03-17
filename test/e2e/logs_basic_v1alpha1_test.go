@@ -28,7 +28,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(suite.IsOperational()))
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(suite.IsUpgrade()))
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
@@ -45,7 +45,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 				),
 				testutils.HTTPPort(backend.Port()),
 			)
-		if suite.IsOperational() {
+		if suite.IsUpgrade() {
 			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
 		logPipeline := pipelineBuilder.Build()
@@ -63,7 +63,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", Label(suite.LabelOperational), func() {
+		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
 			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
 		})
 
@@ -75,15 +75,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			assert.LogPipelineUnsupportedMode(ctx, k8sClient, pipelineName, false)
 		})
 
-		It("Should have a log backend running", Label(suite.LabelOperational), func() {
+		It("Should have a log backend running", Label(suite.LabelUpgrade), func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have a log producer running", Label(suite.LabelOperational), func() {
+		It("Should have a log producer running", Label(suite.LabelUpgrade), func() {
 			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should have produced logs in the backend", Label(suite.LabelOperational), func() {
+		It("Should have produced logs in the backend", Label(suite.LabelUpgrade), func() {
 			assert.LogsDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})

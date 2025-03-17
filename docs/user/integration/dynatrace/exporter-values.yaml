@@ -6,7 +6,7 @@ mode: "deployment"
 
 image:
   repository: "otel/opentelemetry-collector-contrib"
-  tag: "0.107.0"
+  tag: "0.119.0"
 
 config:
   exporters:
@@ -36,7 +36,7 @@ config:
 
           # Get sum from the histogram. The new metric name will be <histogram_name>_sum
           - extract_sum_metric(true) where type == METRIC_DATA_TYPE_HISTOGRAM
-      - context: datapoint
+      - context: metric
         statements:
           # convert the <histogram_name>_sum metrics to gauges.
           - convert_sum_to_gauge() where IsMatch(metric.name, ".*_sum")

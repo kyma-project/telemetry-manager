@@ -1,7 +1,6 @@
 package workloadstatus
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -92,7 +91,7 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 
 			sut := DaemonSetProber{fakeClient}
 
-			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+			err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			if tc.expectedError != nil {
 				require.Equal(t, tc.expectedError, err)
 			} else {
@@ -217,7 +216,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
 
 			sut := DaemonSetProber{fakeClient}
-			err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+			err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 			require.True(t, tc.expectedError(err))
 		})
 	}
@@ -225,7 +224,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 func TestDaemonSetNotCreated(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := DaemonSetProber{fakeClient}
-	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 
 	require.True(t, errors.Is(err, ErrDaemonSetNotFound))
 }
@@ -262,6 +261,6 @@ func TestDaemonSetRollout(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).WithLists(podList).Build()
 	sut := DaemonSetProber{fakeClient}
-	err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	err := sut.IsReady(t.Context(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.True(t, IsRolloutInProgressError(err))
 }

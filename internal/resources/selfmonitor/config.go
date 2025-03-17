@@ -1,8 +1,9 @@
 package selfmonitor
 
 type Config struct {
-	BaseName  string
-	Namespace string
+	BaseName      string
+	Namespace     string
+	ComponentType string
 
 	Deployment DeploymentConfig
 }

@@ -18,11 +18,11 @@ limitations under the License.
 
 import (
 	"context"
+	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -31,11 +31,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/log/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -49,24 +53,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
-)
-
-const (
-	fbBaseName                = "telemetry-fluent-bit"
-	fbSectionsConfigMapName   = fbBaseName + "-sections"
-	fbFilesConfigMapName      = fbBaseName + "-files"
-	fbLuaConfigMapName        = fbBaseName + "-luascripts"
-	fbParsersConfigMapName    = fbBaseName + "-parsers"
-	fbEnvConfigSecretName     = fbBaseName + "-env"
-	fbTLSFileConfigSecretName = fbBaseName + "-output-tls-config"
-	fbDaemonSetName           = fbBaseName
-)
-
-var (
-	// FluentBit
-	fbMemoryLimit   = resource.MustParse("1Gi")
-	fbCPURequest    = resource.MustParse("100m")
-	fbMemoryRequest = resource.MustParse("50Mi")
 )
 
 // LogPipelineController reconciles a LogPipeline object
@@ -83,13 +69,20 @@ type LogPipelineControllerConfig struct {
 	OTelCollectorImage          string
 	FluentBitPriorityClassName  string
 	LogGatewayPriorityClassName string
+	LogAgentPriorityClassName   string
 	RestConfig                  *rest.Config
 	SelfMonitorName             string
 	TelemetryNamespace          string
+	ModuleVersion               string
 }
 
 func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
 	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	if err != nil {
+		return nil, err
+	}
+
+	otelFlowHealthProber, err := prober.NewOtelLogPipelineProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +92,7 @@ func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan 
 		return nil, err
 	}
 
-	otelReconciler, err := configureOtelReconciler(client, config, flowHealthProber)
+	otelReconciler, err := configureOtelReconciler(client, config, otelFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
@@ -151,33 +144,41 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		)
 	}
 
-	return b.Complete(r)
+	return b.Watches(
+		&operatorv1alpha1.Telemetry{},
+		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+	).Complete(r)
+}
+
+func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	_, ok := object.(*operatorv1alpha1.Telemetry)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
 }
 
 func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.LogPipelineProber) (*logpipelinefluentbit.Reconciler, error) {
-	fbConfig := logpipelinefluentbit.Config{
-		SectionsConfigMap:   types.NamespacedName{Name: fbSectionsConfigMapName, Namespace: config.TelemetryNamespace},
-		FilesConfigMap:      types.NamespacedName{Name: fbFilesConfigMapName, Namespace: config.TelemetryNamespace},
-		LuaConfigMap:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: config.TelemetryNamespace},
-		ParsersConfigMap:    types.NamespacedName{Name: fbParsersConfigMapName, Namespace: config.TelemetryNamespace},
-		EnvConfigSecret:     types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: config.TelemetryNamespace},
-		TLSFileConfigSecret: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: config.TelemetryNamespace},
-		DaemonSet:           types.NamespacedName{Name: fbDaemonSetName, Namespace: config.TelemetryNamespace},
-		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			FluentBitImage:    config.FluentBitImage,
-			ExporterImage:     config.ExporterImage,
-			PriorityClassName: config.FluentBitPriorityClassName,
-			MemoryLimit:       fbMemoryLimit,
-			CPURequest:        fbCPURequest,
-			MemoryRequest:     fbMemoryRequest,
-		},
-	}
-
 	pipelineValidator := &logpipelinefluentbit.Validator{
 		EndpointValidator:  &endpoint.Validator{Client: client},
 		TLSCertValidator:   tlscert.New(client),
 		SecretRefValidator: &secretref.Validator{Client: client},
 	}
+
+	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
+		config.TelemetryNamespace,
+		config.FluentBitImage,
+		config.ExporterImage,
+		config.FluentBitPriorityClassName,
+	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
@@ -186,7 +187,8 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 
 	fbReconciler := logpipelinefluentbit.New(
 		client,
-		fbConfig,
+		config.TelemetryNamespace,
+		fluentBitApplierDeleter,
 		&workloadstatus.DaemonSetProber{Client: client},
 		flowHealthProber,
 		istiostatus.NewChecker(discoveryClient),
@@ -197,7 +199,7 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, _ *prober.LogPipelineProber) (*logpipelineotel.Reconciler, error) {
+func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.OTelPipelineProber) (*logpipelineotel.Reconciler, error) {
 	pipelineValidator := &logpipelineotel.Validator{
 		// TODO: Add validators
 	}
@@ -207,9 +209,21 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		return nil, err
 	}
 
+	agentConfigBuilder := &agent.Builder{
+		Reader: client,
+		Config: agent.BuilderConfig{
+			GatewayOTLPServiceName: types.NamespacedName{Namespace: config.TelemetryNamespace, Name: otelcollector.LogOTLPServiceName},
+		},
+	}
+
 	otelReconciler := logpipelineotel.New(
 		client,
 		config.TelemetryNamespace,
+		config.ModuleVersion,
+		flowHealthProber,
+		agentConfigBuilder,
+		otelcollector.NewLogAgentApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogAgentPriorityClassName),
+		&workloadstatus.DaemonSetProber{Client: client},
 		otelcollector.NewLogGatewayApplierDeleter(config.OTelCollectorImage, config.TelemetryNamespace, config.LogGatewayPriorityClassName),
 		&gateway.Builder{Reader: client},
 		&workloadstatus.DeploymentProber{Client: client},
@@ -218,4 +232,22 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		&conditions.ErrorToMessageConverter{})
 
 	return otelReconciler, nil
+}
+
+func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
+	var pipelines telemetryv1alpha1.LogPipelineList
+
+	var requests []reconcile.Request
+
+	err := r.List(ctx, &pipelines)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list LogPipelines: %w", err)
+	}
+
+	for i := range pipelines.Items {
+		var pipeline = pipelines.Items[i]
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+	}
+
+	return requests, nil
 }
