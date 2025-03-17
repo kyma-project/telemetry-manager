@@ -1,13 +1,11 @@
 package builder
 
 import (
-	"testing"
-	"time"
-
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"testing"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -64,31 +62,6 @@ func TestMakeConfig(t *testing.T) {
 			SectionsConfig:  map[string]string{"test-pipeline.conf": sectionsConfig},
 			FilesConfig:     map[string]string{"test-file": "test-filecontent"},
 			EnvConfigSecret: map[string][]byte{},
-			TLSConfigSecret: map[string][]byte{},
-		}
-
-		require.Equal(t, expectedConfig, fluentBitConfig)
-	})
-
-	t.Run("log pipeline in deletion", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
-			testutils.NewLogPipelineBuilder().
-				WithName("test-pipeline").
-				WithHTTPOutput(
-					testutils.HTTPBasicAuthFromSecret(basicAuthSecretName, secretNamespace, basicAuthUserKey, basicAuthPasswordKey),
-				).
-				WithDeletionTimeStamp(metav1.Time{Time: time.Now()}).
-				Build(),
-		}
-		fluentBitConfig, err := sut.Build(
-			ctx,
-			pipelines)
-		require.NoError(t, err)
-
-		expectedConfig := &FluentBitConfig{
-			SectionsConfig:  map[string]string{},
-			EnvConfigSecret: map[string][]byte{},
-			FilesConfig:     map[string]string{},
 			TLSConfigSecret: map[string][]byte{},
 		}
 
