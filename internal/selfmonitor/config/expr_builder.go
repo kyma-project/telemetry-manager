@@ -89,7 +89,11 @@ func (eb *exprBuilder) equal(value float64) *exprBuilder {
 }
 
 func (eb *exprBuilder) build() string {
-	expr, _ := parser.ParseExpr(eb.expr)
+	expr, err := parser.ParseExpr(eb.expr)
+	if err != nil {
+		return ""
+	}
+
 	return expr.Pretty(0)
 }
 
