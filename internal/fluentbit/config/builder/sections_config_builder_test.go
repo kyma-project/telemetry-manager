@@ -189,14 +189,14 @@ func TestMergeSectionsConfig(t *testing.T) {
 		},
 	}
 	logPipeline.Name = "foo"
-	defaults := PipelineDefaults{
+	defaults := pipelineDefaults{
 		InputTag:          "kube",
 		MemoryBufferLimit: "10M",
 		StorageType:       "filesystem",
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := BuildFluentBitSectionsConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
+	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig{pipelineDefaults: defaults})
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -264,18 +264,18 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		},
 	}
 	logPipeline.Name = "foo"
-	defaults := PipelineDefaults{
+	defaults := pipelineDefaults{
 		InputTag:          "kube",
 		MemoryBufferLimit: "10M",
 		StorageType:       "filesystem",
 		FsBufferLimit:     "1G",
 	}
-	builderConfig := BuilderConfig{
-		PipelineDefaults: defaults,
-		CollectAgentLogs: true,
+	builderConfig := builderConfig{
+		pipelineDefaults: defaults,
+		collectAgentLogs: true,
 	}
 
-	actual, err := BuildFluentBitSectionsConfig(logPipeline, builderConfig)
+	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -283,14 +283,14 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 func TestMergeSectionsConfigWithMissingOutput(t *testing.T) {
 	logPipeline := &telemetryv1alpha1.LogPipeline{}
 	logPipeline.Name = "foo"
-	defaults := PipelineDefaults{
+	defaults := pipelineDefaults{
 		InputTag:          "kube",
 		MemoryBufferLimit: "10M",
 		StorageType:       "filesystem",
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := BuildFluentBitSectionsConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
+	actual, err := buildFluentBitSectionsConfig(logPipeline, builderConfig{pipelineDefaults: defaults})
 	require.Error(t, err)
 	require.Empty(t, actual)
 }
@@ -298,7 +298,7 @@ func TestMergeSectionsConfigWithMissingOutput(t *testing.T) {
 func TestBuildFluentBitConfig_Validation(t *testing.T) {
 	type args struct {
 		pipeline *telemetryv1alpha1.LogPipeline
-		config   BuilderConfig
+		config   builderConfig
 	}
 
 	tests := []struct {
@@ -316,7 +316,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 				}(),
 			},
 			want:    "",
-			wantErr: ErrInvalidPipelineDefinition,
+			wantErr: errInvalidPipelineDefinition,
 		},
 		{
 			name: "Should return error when input OTLP is defined",
@@ -327,7 +327,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 				}(),
 			},
 			want:    "",
-			wantErr: ErrInvalidPipelineDefinition,
+			wantErr: errInvalidPipelineDefinition,
 		},
 		{
 			name: "Should return error when output plugin is not defined",
@@ -339,12 +339,12 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 				}(),
 			},
 			want:    "",
-			wantErr: ErrInvalidPipelineDefinition,
+			wantErr: errInvalidPipelineDefinition,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := BuildFluentBitSectionsConfig(tt.args.pipeline, tt.args.config)
+			got, err := buildFluentBitSectionsConfig(tt.args.pipeline, tt.args.config)
 			if tt.wantErr == nil {
 				assert.NoError(t, err)
 			}
@@ -354,7 +354,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 			}
 
 			if got != tt.want {
-				t.Errorf("BuildFluentBitSectionsConfig() got = %v, want %v", got, tt.want)
+				t.Errorf("buildFluentBitSectionsConfig() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

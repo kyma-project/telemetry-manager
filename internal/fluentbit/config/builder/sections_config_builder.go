@@ -11,27 +11,14 @@ import (
 )
 
 var (
-	ErrInvalidPipelineDefinition = errors.New("invalid pipeline definition")
+	errInvalidPipelineDefinition = errors.New("invalid pipeline definition")
 )
 
-type PipelineDefaults struct {
-	InputTag          string
-	MemoryBufferLimit string
-	StorageType       string
-	FsBufferLimit     string
-}
-
-// FluentBit builder configuration
-type BuilderConfig struct {
-	PipelineDefaults
-	CollectAgentLogs bool
-}
-
-// BuildFluentBitSectionsConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
-func BuildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
+// buildFluentBitSectionsConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
+func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, config builderConfig) (string, error) {
 	pm := logpipelineutils.PipelineMode(pipeline)
 	if pm != logpipelineutils.FluentBit {
-		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", ErrInvalidPipelineDefinition, pm.String())
+		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", errInvalidPipelineDefinition, pm.String())
 	}
 
 	err := validateOutput(pipeline)
@@ -50,7 +37,7 @@ func BuildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	}
 
 	includePath := createIncludePath(pipeline)
-	excludePath := createExcludePath(pipeline, config.CollectAgentLogs)
+	excludePath := createExcludePath(pipeline, config.collectAgentLogs)
 
 	var sb strings.Builder
 
@@ -62,7 +49,7 @@ func BuildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	sb.WriteString(createKubernetesFilter(pipeline))
 	sb.WriteString(createCustomFilters(pipeline, nonMultilineFilter))
 	sb.WriteString(createLuaDedotFilter(pipeline))
-	sb.WriteString(createOutputSection(pipeline, config.PipelineDefaults))
+	sb.WriteString(createOutputSection(pipeline, config.pipelineDefaults))
 
 	return sb.String(), nil
 }
@@ -110,7 +97,7 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 
 func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
 	if !logpipelineutils.IsAnyDefined(&pipeline.Spec.Output) {
-		return fmt.Errorf("%w: No output plugin defined", ErrInvalidPipelineDefinition)
+		return fmt.Errorf("%w: No output plugin defined", errInvalidPipelineDefinition)
 	}
 
 	return nil
@@ -118,7 +105,7 @@ func validateOutput(pipeline *telemetryv1alpha1.LogPipeline) error {
 
 func validateInput(pipeline *telemetryv1alpha1.LogPipeline) error {
 	if pipeline.Spec.Input.OTLP != nil {
-		return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", ErrInvalidPipelineDefinition)
+		return fmt.Errorf("%w: cannot use OTLP input for pipeline in FluentBit mode", errInvalidPipelineDefinition)
 	}
 
 	if pipeline.Spec.Input.Application == nil {

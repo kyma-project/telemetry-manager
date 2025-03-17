@@ -27,7 +27,7 @@ func TestCreateOutputSectionWithCustomOutput(t *testing.T) {
 		},
 	}
 	logPipeline.Name = "foo"
-	pipelineConfig := PipelineDefaults{FsBufferLimit: "1G"}
+	pipelineConfig := pipelineDefaults{FsBufferLimit: "1G"}
 
 	actual := createOutputSection(logPipeline, pipelineConfig)
 	require.NotEmpty(t, actual)
@@ -68,7 +68,7 @@ func TestCreateOutputSectionWithHTTPOutput(t *testing.T) {
 		},
 	}
 	logPipeline.Name = "foo"
-	pipelineConfig := PipelineDefaults{FsBufferLimit: "1G"}
+	pipelineConfig := pipelineDefaults{FsBufferLimit: "1G"}
 
 	actual := createOutputSection(logPipeline, pipelineConfig)
 	require.NotEmpty(t, actual)
@@ -115,7 +115,7 @@ func TestCreateOutputSectionWithHTTPOutputWithSecretReference(t *testing.T) {
 		},
 	}
 	logPipeline.Name = "foo"
-	pipelineConfig := PipelineDefaults{FsBufferLimit: "1G"}
+	pipelineConfig := pipelineDefaults{FsBufferLimit: "1G"}
 
 	actual := createOutputSection(logPipeline, pipelineConfig)
 	require.NotEmpty(t, actual)
@@ -160,7 +160,7 @@ func TestCreateOutputSectionWithHTTPOutputWithTLS(t *testing.T) {
 			},
 		},
 	}
-	pipelineConfig := PipelineDefaults{FsBufferLimit: "1G"}
+	pipelineConfig := pipelineDefaults{FsBufferLimit: "1G"}
 
 	actual := createOutputSection(logPipeline, pipelineConfig)
 	require.NotEmpty(t, actual)

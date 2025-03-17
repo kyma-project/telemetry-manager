@@ -17,6 +17,19 @@ const (
 	defaultFsBufferLimit     = "1G"
 )
 
+type pipelineDefaults struct {
+	InputTag          string
+	MemoryBufferLimit string
+	StorageType       string
+	FsBufferLimit     string
+}
+
+// FluentBit builder configuration
+type builderConfig struct {
+	pipelineDefaults
+	collectAgentLogs bool
+}
+
 type FluentBitConfig struct {
 	SectionsConfig  map[string]string
 	FilesConfig     map[string]string
@@ -43,8 +56,8 @@ func (f *FluentBitConfig) addTLSConfigSecret(tlsConfigSecret map[string][]byte) 
 func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
 	return &ConfigBuilder{
 		Reader: client,
-		BuilderConfig: BuilderConfig{
-			PipelineDefaults: PipelineDefaults{
+		builderConfig: builderConfig{
+			pipelineDefaults: pipelineDefaults{
 				InputTag:          defaultInputTag,
 				MemoryBufferLimit: defaultMemoryBufferLimit,
 				StorageType:       defaultStorageType,
@@ -56,7 +69,7 @@ func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
 
 type ConfigBuilder struct {
 	client.Reader
-	BuilderConfig
+	builderConfig
 }
 
 func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
@@ -68,25 +81,22 @@ func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alp
 	}
 
 	for _, pipeline := range allPipelines {
-		if !isLogPipelineReconcilable(allPipelines, &pipeline) || !pipeline.DeletionTimestamp.IsZero() {
-			continue
-		}
 
 		sectionsConfigMapKey := pipeline.Name + ".conf"
 
-		sectionsConfigMapContent, err := BuildFluentBitSectionsConfig(&pipeline, b.BuilderConfig)
+		sectionsConfigMapContent, err := buildFluentBitSectionsConfig(&pipeline, b.builderConfig)
 		if err != nil {
 			return nil, fmt.Errorf("unable to build section: %w", err)
 		}
 
-		filesConfig := BuildFluentBitFilesConfig(&pipeline)
+		filesConfig := buildFluentBitFilesConfig(&pipeline)
 
-		envConfigSecret, err := b.BuildEnvConfigSecret(ctx, allPipelines)
+		envConfigSecret, err := b.buildEnvConfigSecret(ctx, allPipelines)
 		if err != nil {
 			return nil, fmt.Errorf("unable to build env config: %w", err)
 		}
 
-		tlsConfigSecret, err := b.BuildTLSFileConfigSecret(ctx, allPipelines)
+		tlsConfigSecret, err := b.buildTLSFileConfigSecret(ctx, allPipelines)
 		if err != nil {
 			return nil, fmt.Errorf("unable to build tls secret: %w", err)
 		}
@@ -98,16 +108,4 @@ func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alp
 	}
 
 	return &config, nil
-}
-
-// isLogPipelineReconcilable checks if logpipeline is ready to be rendered into the fluentbit configuration.
-// A pipeline is reconcilable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func isLogPipelineReconcilable(allPipelines []telemetryv1alpha1.LogPipeline, logPipeline *telemetryv1alpha1.LogPipeline) bool {
-	for i := range allPipelines {
-		if allPipelines[i].Name == logPipeline.Name {
-			return true
-		}
-	}
-
-	return false
 }

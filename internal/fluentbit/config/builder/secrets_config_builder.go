@@ -15,13 +15,10 @@ import (
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
-func (b *ConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
+func (b *ConfigBuilder) buildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
 	envConfigSecret := make(map[string][]byte)
 
 	for i := range logPipelines {
-		if !logPipelines[i].DeletionTimestamp.IsZero() {
-			continue
-		}
 
 		if err := b.extractHTTPSecrets(ctx, &logPipelines[i], envConfigSecret); err != nil {
 			return nil, err
@@ -36,7 +33,7 @@ func (b *ConfigBuilder) BuildEnvConfigSecret(ctx context.Context, logPipelines [
 	return envConfigSecret, nil
 }
 
-func (b *ConfigBuilder) BuildTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
+func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
 	tlsSecretConfig := make(map[string][]byte)
 
 	for i := range logPipelines {
@@ -149,7 +146,7 @@ func (b *ConfigBuilder) extractVariableSecrets(ctx context.Context, pipeline *te
 func getEnvConfigSecret(ctx context.Context, client client.Reader, prefix string, value *telemetryv1alpha1.ValueType) (map[string][]byte, error) {
 	var ref = value.ValueFrom.SecretKeyRef
 
-	targetKey := FormatEnvVarName(prefix, ref.Namespace, ref.Name, ref.Key)
+	targetKey := formatEnvVarName(prefix, ref.Namespace, ref.Name, ref.Key)
 
 	secretData, err := getSecretData(ctx, client, *ref, targetKey)
 	if err != nil {

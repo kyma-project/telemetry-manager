@@ -22,7 +22,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
@@ -44,11 +43,6 @@ var (
 	fbCPURequest    = resource.MustParse("100m")
 	fbMemoryRequest = resource.MustParse("50Mi")
 )
-
-type Config struct {
-	PipelineDefaults builder.PipelineDefaults
-	Overrides        overrides.Config
-}
 
 // AgentApplyOptions expects a syncerClient which is a client with no ownerReference setter since it handles its
 // own resource deletion with finalizers and will be removed once the ConfigBuilder implementation is done.
