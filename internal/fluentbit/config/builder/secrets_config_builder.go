@@ -36,10 +36,6 @@ func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelin
 	tlsSecretConfig := make(map[string][]byte)
 
 	for i := range logPipelines {
-		if !logPipelines[i].DeletionTimestamp.IsZero() {
-			continue
-		}
-
 		output := logPipelines[i].Spec.Output
 		if !logpipelineutils.IsHTTPDefined(&output) {
 			continue

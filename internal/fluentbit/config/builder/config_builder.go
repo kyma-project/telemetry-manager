@@ -68,8 +68,8 @@ func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
 }
 
 type ConfigBuilder struct {
-	client.Reader
-	builderConfig
+	reader client.Reader
+	cfg    builderConfig
 }
 
 func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
