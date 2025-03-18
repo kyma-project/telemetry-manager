@@ -113,7 +113,11 @@ jobs:
             test
           # ensures the subject doesn't start with an uppercase character
           subjectPattern: ^(?![A-Z]).+$
-          requireScope: true
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.
+          requireScope: false
 
   pr-prevent-kustomization:
     runs-on: ubuntu-latest
