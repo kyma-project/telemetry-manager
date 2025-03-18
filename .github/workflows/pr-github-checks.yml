@@ -111,7 +111,9 @@ jobs:
             feat
             fix
             test
-          requireScope: false
+          # ensures the subject doesn't start with an uppercase character
+          subjectPattern: ^(?![A-Z]).+$
+          requireScope: true
 
   pr-prevent-kustomization:
     runs-on: ubuntu-latest
