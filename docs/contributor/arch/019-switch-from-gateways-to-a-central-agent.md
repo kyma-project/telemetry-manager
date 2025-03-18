@@ -62,7 +62,7 @@ The current architecture defines a set of central gateways to enrich the data an
 
 ## Proposal
 
-Most of the drawbacks can be solved by running the gateway logic node-local only. Every instance always processes only data of the local node. With that a natural scalability is given and can be extended by vertical scaling capabilities. The "old" gateways will be running in agent mode but still called "OTLP Gateway". Additionally, there will be a new uniform service `telemetry-otlp` forwarding to the node-local entity using the [internalTrafficPolicy: local](https://kubernetes.io/docs/reference/networking/virtual-ips/#internal-traffic-policy) setting. Existing services can stay compatible using the same approach.
+Most of the drawbacks can be solved by running the gateway logic node-locally only. Every instance always processes only data of the local node. With that, a natural scalability is given and can be extended by vertical scaling capabilities. The "old" gateways will be running in agent mode but still called "OTLP Gateway". Additionally, there will be a new uniform service `telemetry-otlp` forwarding to the node-local entity using the [internalTrafficPolicy: local](https://kubernetes.io/docs/reference/networking/virtual-ips/#internal-traffic-policy) setting. Existing services can stay compatible using the same approach.
 
 ![arch](./../assets/otlp-gateway-new.drawio.svg)
 
