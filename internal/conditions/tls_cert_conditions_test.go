@@ -48,13 +48,6 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 			expectedMessage: fmt.Sprintf(MessageForFluentBitLogPipeline(ReasonTLSConfigurationInvalid), tlscert.ErrKeyDecodeFailed),
 		},
 		{
-			name:            "private key parse failed",
-			given:           tlscert.ErrKeyParseFailed,
-			expectedStatus:  metav1.ConditionFalse,
-			expectedReason:  ReasonTLSConfigurationInvalid,
-			expectedMessage: fmt.Sprintf(MessageForFluentBitLogPipeline(ReasonTLSConfigurationInvalid), tlscert.ErrKeyParseFailed),
-		},
-		{
 			name:            "ca decode failed",
 			given:           tlscert.ErrCADecodeFailed,
 			expectedStatus:  metav1.ConditionFalse,

@@ -23,7 +23,6 @@ var (
 	ErrCertParseFailed  = errors.New("failed to parse certificate")
 
 	ErrKeyDecodeFailed = errors.New("failed to decode PEM block containing private key")
-	ErrKeyParseFailed  = errors.New("failed to parse private key")
 
 	ErrCADecodeFailed = errors.New("failed to decode PEM block containing CA certificate")
 	ErrCAParseFailed  = errors.New("failed to parse CA certificate")
@@ -184,13 +183,6 @@ func parsePrivateKey(keyPEM []byte) error {
 	block, _ := pem.Decode(keyPEM)
 	if block == nil {
 		return ErrKeyDecodeFailed
-	}
-
-	_, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		if _, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
-			return ErrKeyParseFailed
-		}
 	}
 
 	return nil
