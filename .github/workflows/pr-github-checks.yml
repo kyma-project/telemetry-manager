@@ -113,7 +113,7 @@ jobs:
             test
           # ensures the subject doesn't start with an uppercase character
           subjectPattern: ^(?![A-Z]).+$
-          requireScope: true
+          requireScope: false
 
   pr-prevent-kustomization:
     runs-on: ubuntu-latest
