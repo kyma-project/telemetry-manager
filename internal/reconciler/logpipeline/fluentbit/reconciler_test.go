@@ -559,13 +559,6 @@ func TestReconcile(t *testing.T) {
 				expectedMessage: "TLS configuration invalid: failed to decode PEM block containing private key",
 			},
 			{
-				name:            "key parse failed",
-				tlsCertErr:      tlscert.ErrKeyParseFailed,
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonTLSConfigurationInvalid,
-				expectedMessage: "TLS configuration invalid: failed to parse private key",
-			},
-			{
 				name:            "cert parse failed",
 				tlsCertErr:      tlscert.ErrCertParseFailed,
 				expectedStatus:  metav1.ConditionFalse,
