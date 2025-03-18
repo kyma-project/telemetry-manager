@@ -4,7 +4,7 @@ Date: 2025-02-17
 
 ## Status
 
-Proposed
+Postponed
 
 ## Context
 
@@ -105,3 +105,6 @@ Neither the application nor its components will depend on Istio anymore. However
 ## Conclusion
 
 The former motivation of the gateway concept turned out to be no longer relevant. Switching to the agent approach solves many problems while introducing very soft drawbacks. The transformation should start immediately :)
+
+## Decision
+The implementation of the proposal has been postponed due to the unimplemented feature found in the OTEL SDK as mentioned here 
