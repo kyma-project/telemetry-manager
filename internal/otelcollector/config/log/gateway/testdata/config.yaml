@@ -10,9 +10,9 @@ service:
                 - otlp
             processors:
                 - memory_limiter
+                - transform/set-observed-time-if-zero
                 - k8sattributes
                 - resource/insert-cluster-attributes
-                - transform/set-observed-time-when-not-present
                 - batch
             exporters:
                 - otlp/test
@@ -46,6 +46,13 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
+    transform/set-observed-time-if-zero:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(log.observed_time, Now())
+              conditions:
+                - log.observed_time_unix_nano == 0
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -95,13 +102,6 @@ processors:
             - action: insert
               key: cloud.provider
               value: test-cloud-provider
-    transform/set-observed-time-when-not-present:
-        error_mode: ignore
-        log_statements:
-            - statements:
-                - set(log.observed_time, Now())
-              conditions:
-                - log.observed_time_unix_nano == 0
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

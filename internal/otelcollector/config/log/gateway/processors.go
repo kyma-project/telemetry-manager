@@ -12,9 +12,9 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:            processors.K8sAttributesProcessorConfig(opts.Enrichments),
-		InsertClusterAttributes:  processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
-		SetObsTimeWhenNotPresent: makeSetObsTimeWhenNotPresentProcessorConfig(),
+		SetObsTimeIfZero:        makeSetObsTimeIfZeroProcessorConfig(),
+		K8sAttributes:           processors.K8sAttributesProcessorConfig(opts.Enrichments),
+		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 	}
 }
 
@@ -36,7 +36,7 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	}
 }
 
-func makeSetObsTimeWhenNotPresentProcessorConfig() *log.TransformProcessor {
+func makeSetObsTimeIfZeroProcessorConfig() *log.TransformProcessor {
 	return &log.TransformProcessor{
 		ErrorMode: "ignore",
 		LogStatements: []config.TransformProcessorStatements{
