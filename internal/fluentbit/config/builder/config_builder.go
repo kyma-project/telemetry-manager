@@ -55,8 +55,8 @@ func (f *FluentBitConfig) addTLSConfigSecret(tlsConfigSecret map[string][]byte) 
 
 func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
 	return &ConfigBuilder{
-		Reader: client,
-		builderConfig: builderConfig{
+		reader: client,
+		cfg: builderConfig{
 			pipelineDefaults: pipelineDefaults{
 				InputTag:          defaultInputTag,
 				MemoryBufferLimit: defaultMemoryBufferLimit,
@@ -83,7 +83,7 @@ func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alp
 	for _, pipeline := range allPipelines {
 		sectionsConfigMapKey := pipeline.Name + ".conf"
 
-		sectionsConfigMapContent, err := buildFluentBitSectionsConfig(&pipeline, b.builderConfig)
+		sectionsConfigMapContent, err := buildFluentBitSectionsConfig(&pipeline, b.cfg)
 		if err != nil {
 			return nil, fmt.Errorf("unable to build section: %w", err)
 		}

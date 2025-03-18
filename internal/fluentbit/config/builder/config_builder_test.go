@@ -56,7 +56,7 @@ func TestMakeConfig(t *testing.T) {
 			pipelines)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.builderConfig)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
 		require.NoError(t, err)
 
 		expectedConfig := &FluentBitConfig{
@@ -119,7 +119,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 			pipelines)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.builderConfig)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
 		require.NoError(t, err)
 
 		envConfigSecretKey := formatEnvVarName("test-pipeline", secretNamespace, hostSecretName, hostSecretKey)
@@ -151,7 +151,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 			pipelines)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.builderConfig)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
 		require.NoError(t, err)
 
 		envConfigUserSecretKey := formatEnvVarName("test-pipeline", secretNamespace, basicAuthSecretName, basicAuthUserKey)
@@ -190,9 +190,9 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 			pipelines)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.builderConfig)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
 		require.NoError(t, err)
-		sectionsConfig2, err := buildFluentBitSectionsConfig(&pipelines[1], sut.builderConfig)
+		sectionsConfig2, err := buildFluentBitSectionsConfig(&pipelines[1], sut.cfg)
 		require.NoError(t, err)
 
 		envConfigUserSecretKey := formatEnvVarName("test-pipeline", secretNamespace, basicAuthSecretName, basicAuthUserKey)
@@ -284,7 +284,7 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 			pipelines)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.builderConfig)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
 		require.NoError(t, err)
 
 		expectedConfig := &FluentBitConfig{
@@ -335,7 +335,7 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 		fluentBitConfig, err := sut.Build(ctx, pipelines)
 		require.NoError(t, err)
 
-		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.builderConfig)
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
 		require.NoError(t, err)
 
 		expectedConfig := &FluentBitConfig{
