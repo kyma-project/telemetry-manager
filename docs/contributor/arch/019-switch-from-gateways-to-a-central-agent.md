@@ -84,7 +84,7 @@ Let's compare a **shared OTLP agent setup** with an **agent-per-signal setup** i
 2. **Refusing Data if OTLP Exporter Queue is Full**  
    - The Batch Processor must not be used (the built-in OTLP Exporter batcher does not have this limitation and can still be used).
    - If the queue is full, new data will be refused.  
-   - Each pipeline type has its own queue, allowing different queue lengths to support varying quality-of-service (QoS) levels for different signal types.  
+   - Each pipeline type has its own queue, allowing different queue lengths to support varying quality-of-service (QoS) levels for different signal types.
 
 Introducing a shared collector handling OTLP data for all three telemetry types means that only one memory limiter is configured, instead of three separate ones when they are isolated. However, if OTLP exporter queue refusal is correctly set up, the system should never reach the point where the memory limiter starts rejecting data. across all clusters is not solvable by either the old or the new proposed setup.
 
@@ -104,4 +104,4 @@ Neither the application nor its components will depend on Istio anymore. However
 
 ## Conclusion
 
-The former motivation of the gateway concept turned out to be no longer relevant. Switching to the agent approach solves many problems while introducing very soft drawbacks. The transformation should start immediately :)
+The original motivation for the gateway concept is no longer relevant. Transitioning to the agent approach resolves many issues while introducing only minor drawbacks. However, inadequate retry handling by OTel SDKs and Istio proxies remains a challenge. Before proceeding, we must ensure this issue is addressed, considering its alignment with the OTLP specification.
