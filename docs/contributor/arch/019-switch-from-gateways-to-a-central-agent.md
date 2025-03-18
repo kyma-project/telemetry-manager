@@ -8,7 +8,7 @@ Postponed
 
 ## Context
 
-The current architecture defines a set of central Gateways to enrich the data and dispatch it to the backend. That approach had good reasons in the past, but now the drawbacks outweigh the benefits.
+The current architecture defines a set of central gateways to enrich the data and dispatch it to the backend. That approach had good reasons in the past, but now the drawbacks outweigh the benefits.
 
 ![arch](./../assets/otlp-gateway-old.drawio.svg)
 
@@ -16,7 +16,7 @@ The current architecture defines a set of central Gateways to enrich the data an
 
 - Persistent buffering via PV
 
-  The experience showed that persistent buffering on the node filesystem has drawbacks like increased IO and limited space. We always envisioned a configurable persistent size per pipeline which is only possible in a central StatefulSet having PVs attached. However, experience now shows that operating StatefulSets with PVs is not trivial, and especially on Azure, re-attaching disks can be a very long procedure resulting in long downtimes. Also, persistent buffering might be even a pre-mature optimization with limited gains, see also [ADR-017](./017-fault-tolerant-otel-logging-setup.md).
+  The experience showed that persistent buffering on the node filesystem has drawbacks like increased IO and limited space. We always envisioned a configurable persistent size per pipeline, which is only possible in a central StatefulSet having PVs attached. However, experience now shows that operating StatefulSets with PVs is not trivial, and especially on Azure, re-attaching disks can be a very long procedure resulting in long downtimes. Also, persistent buffering might be even a pre-mature optimization with limited gains, see also [ADR-017](./017-fault-tolerant-otel-logging-setup.md).
 
 - Separation of concerns
   
@@ -24,7 +24,7 @@ The current architecture defines a set of central Gateways to enrich the data an
 
 - Decoupling of signal types
 
-  Processing the signal types in separate processes keeps the processing tolerant to failures. An overload of metrics keeps the log delivery stable.
+  Processing the signal types in separate processes keeps the processing tolerant to failures. Even when there's an overload of metrics, the log delivery remains stable.
 
 - Tail-based sampling
 
@@ -38,7 +38,7 @@ The current architecture defines a set of central Gateways to enrich the data an
 
 - Autoscaling is tricky
 
-  The gateway should provide autoscaling capabilities which are tricky to realize. It must be detected very fast if a scale-out is needed and situations where the backend is overloaded must be excluded from the scale-out.
+  The gateway should provide autoscaling capabilities, which are tricky to realize. It must be detected very fast if a scale-out is needed, and situations where the backend is overloaded must be excluded from the scale-out.
 
 - Every instance caches the whole cluster state
 
@@ -50,15 +50,15 @@ The current architecture defines a set of central Gateways to enrich the data an
 
 - Istio is mandatory for mTLS
 
-  App to Gateway communication is across nodes and with that should use mTLS, so Istio needs to be used which sometimes is not possible. Also, Istio causes additional overhead like noise filtering and collecting observability data about the service mesh should not rely on the service mesh.
+  App-to-gateway communication is across nodes and with that, it should use mTLS; so Istio must be used - which sometimes is impossible. Also, Istio causes additional overhead like noise filtering. Furthermore, collecting observability data about the service mesh should not rely on the service mesh.
 
-- Cumulativetodelta transformation not supported
+- Cumulative to Delta transformation not supported
 
-  This transformation is mandatory for Dynatrace support and requires that data from a Pod gets processed always by the same instance.
+  Cumulativetodelta transformation is mandatory for Dynatrace support and requires that data from a Pod is always processed by the same instance.
 
 - General misconception
 
-  Gateways are usually running outside the cluster as a first entry point. The cluster should get rid of the data as fast as possible as persistence cannot be provided here (things like Kafka would again run outside). Try to compensate for short-lived hiccups. Otherwise, point back the backpressure to the client and do not try to solve the big picture.
+  Gateways usually run outside the cluster as a first entry point. The cluster should get rid of the data as fast as possible, because persistence cannot be provided here (things like Kafka would run outside again). Try to compensate for short-lived hiccups. Otherwise, point back the backpressure to the client and do not try to solve the big picture.
 
 ## Proposal
 
@@ -76,10 +76,10 @@ Let's compare a **shared OTLP agent setup** with an **agent-per-signal setup** i
 
 1. **Memory Limiter**  
    - Applied globally, no way to restrict it to a specific pipeline or signal type.
-   - Performs periodic checks of memory usage and will begin refusing data and forcing GC to reduce memory consumption when defined limits have been exceeded. It influenced by:
-     - Heap allocated object held by the Collector.  It can be the OTLP exporter sending queues or various caches used by different components in the chain (e.g. Kubernetes Attributes Processor informers cache).  
-     - Heap allocated objects not being used and can be reclaimed by GC.
-   - Memory Limiter can not prevent all kinds of OOM issues. It can only prevent issues caused by ingested telemetry data by refusing it. For example, the issue of the Kubernetes Attributes Processor informer cache consuming excessive memory can not be prevented by Memory Limiter.  Basically, it is a poor man's throttling mechanism that was necessary when using the old Batch Processor. [Read more](./017-fault-tolerant-otel-logging-setup.md).
+   - Performs periodic checks of memory usage. When defined limits have been exceeded, it begins refusing data and forcing GC to reduce memory consumption. It is influenced by:
+     - Heap-allocated object held by the OTel Collector.  It can be the OTLP exporter sending queues, or various caches used by different components in the chain (like the Kubernetes Attributes Processor informers cache).  
+     - Heap-allocated objects that aren't being used, which can be reclaimed by GC.
+   - Memory Limiter can not prevent all kinds of OOM issues. It can only prevent issues caused by ingested telemetry data by refusing it. For example, Memory Limiter cannot prevent the issue of the Kubernetes Attributes Processor informer cache consuming excessive memory. Basically, it is a poor man's throttling mechanism that was necessary when using the old Batch Processor. See [ADR-017](./017-fault-tolerant-otel-logging-setup.md).
 
 2. **Refusing Data if OTLP Exporter Queue is Full**  
    - The Batch Processor must not be used (the built-in OTLP Exporter batcher does not have this limitation and can still be used).
@@ -90,7 +90,7 @@ Introducing a shared collector handling OTLP data for all three telemetry types 
 
 #### Downtime During Updates  
 
-Unlike deployments, the agent cannot be rolled out in a rolling manner, meaning updates will always result in some downtime. However, this should be mitigated by the retry mechanism in the OpenTelemetry SDK (according to our [tests](../../contributor/pocs/otelcol-downtime/otelcol-downtime.md) it's not yet the case).
+Unlike deployments, the agent cannot be rolled out in a rolling manner, meaning updates will always result in some downtime. However, this should be mitigated by the retry mechanism in the OpenTelemetry SDK (according to our [tests](../../contributor/pocs/otelcol-downtime/otelcol-downtime.md), it's not yet the case).
 
 ### Additional Benefits  
 
