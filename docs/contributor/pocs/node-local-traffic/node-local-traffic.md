@@ -38,6 +38,6 @@ Tests were performed in the following way:
 
 ### Summary
 
-If [WHICH?] Service is configured with `internalTrafficPolicy: Local`, then the data is only sent to the DaemonSet running on the same node. If the DaemonSet is not running, then the data is not sent to the DaemonSet running on a different node.
-daemonSet is in CrashloopBackoff or in Error state then the data is not sent to a different daemonSet running on the different node.
+When OTLP Service is configured with `internalTrafficPolicy: Local`, then the data is only sent to the DaemonSet running on the same node. If the DaemonSet is not running, then the data is not sent to the DaemonSet running on a different node.
+
 
