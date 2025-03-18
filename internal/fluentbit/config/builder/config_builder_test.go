@@ -1,361 +1,393 @@
 package builder
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-func TestCreateRecordModifierFilter(t *testing.T) {
-	expected := `[FILTER]
-    name   record_modifier
-    match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+const (
+	hostSecretName  = "test-host-secret"
+	hostSecretKey   = "test-host-secret-key"
+	hostSecretValue = "test-host-secret-value"
 
-`
-	logPipeline := &telemetryv1alpha1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	basicAuthSecretName    = "test-basic-auth-secret" // #nosec G101
+	basicAuthUserKey       = "test-basic-auth-user-key"
+	basicAuthUserValue     = "test-basic-auth-user-value"
+	basicAuthPasswordKey   = "test-basic-auth-password-key"   // #nosec G101
+	basicAuthPasswordValue = "test-basic-auth-password-value" // #nosec G101
 
-	actual := createRecordModifierFilter(logPipeline)
-	require.Equal(t, expected, actual, "Fluent Bit Permanent parser config is invalid")
+	varSecretName  = "test-var-secret"
+	varSecretKey   = "test-var-secret-key"
+	varSecretValue = "test-var-secret-value"
+
+	tlsSecretName = "test-tls-secret"
+	ca            = "test-ca"
+	cert          = "test-cert"
+	key           = "test-key"
+	caValue       = "test-ca-value"
+	certValue     = "test-cert-value"
+	keyValue      = "test-key-value"
+
+	secretNamespace = "test-secret-namespace"
+)
+
+func TestMakeConfig(t *testing.T) {
+	ctx := t.Context()
+	fakeClient := fake.NewClientBuilder().Build()
+
+	sut := NewFluentBitConfigBuilder(fakeClient)
+
+	t.Run("file config", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithFile("test-file", "test-filecontent").
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+		require.NoError(t, err)
+
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		require.NoError(t, err)
+
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig:  map[string]string{"test-pipeline.conf": sectionsConfig},
+			FilesConfig:     map[string]string{"test-file": "test-filecontent"},
+			EnvConfigSecret: map[string][]byte{},
+			TLSConfigSecret: map[string][]byte{},
+		}
+
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
 }
 
-func TestCreateLuaDedotFilterWithDefinedHostAndDedotSet(t *testing.T) {
-	expected := `[FILTER]
-    name   lua
-    match  foo.*
-    call   kubernetes_map_keys
-    script /fluent-bit/scripts/filter-script.lua
-
-`
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-					Dedot: true,
-					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
-				},
+func TestBuildEnvConfigSecret(t *testing.T) {
+	ctx := t.Context()
+	fakeClient := fake.NewClientBuilder().WithObjects(
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      hostSecretName,
+				Namespace: secretNamespace,
+			},
+			Data: map[string][]byte{
+				hostSecretKey: []byte(hostSecretValue),
 			},
 		},
-	}
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      basicAuthSecretName,
+				Namespace: secretNamespace,
+			},
+			Data: map[string][]byte{
+				basicAuthUserKey:     []byte(basicAuthUserValue),
+				basicAuthPasswordKey: []byte(basicAuthPasswordValue),
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      varSecretName,
+				Namespace: secretNamespace,
+			},
+			Data: map[string][]byte{
+				varSecretKey: []byte(varSecretValue),
+			},
+		}).Build()
+	sut := NewFluentBitConfigBuilder(fakeClient)
 
-	actual := createLuaDedotFilter(logPipeline)
-	require.Equal(t, expected, actual)
+	t.Run("host from secret", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPHostFromSecret(hostSecretName, secretNamespace, hostSecretKey),
+				).
+				WithFile("test-file", "test-filecontent").
+				WithVariable("test-var", varSecretName, secretNamespace, varSecretKey).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+		require.NoError(t, err)
+
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		require.NoError(t, err)
+
+		envConfigSecretKey := formatEnvVarName("test-pipeline", secretNamespace, hostSecretName, hostSecretKey)
+
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig: map[string]string{"test-pipeline.conf": sectionsConfig},
+			FilesConfig:    map[string]string{"test-file": "test-filecontent"},
+			EnvConfigSecret: map[string][]byte{
+				envConfigSecretKey: []byte(hostSecretValue),
+				"test-var":         []byte(varSecretValue),
+			},
+			TLSConfigSecret: map[string][]byte{},
+		}
+
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
+
+	t.Run("basic auth from secret", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPBasicAuthFromSecret(basicAuthSecretName, secretNamespace, basicAuthUserKey, basicAuthPasswordKey),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+		require.NoError(t, err)
+
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		require.NoError(t, err)
+
+		envConfigUserSecretKey := formatEnvVarName("test-pipeline", secretNamespace, basicAuthSecretName, basicAuthUserKey)
+		envConfigPasswordSecretKey := formatEnvVarName("test-pipeline", secretNamespace, basicAuthSecretName, basicAuthPasswordKey)
+
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig: map[string]string{"test-pipeline.conf": sectionsConfig},
+			EnvConfigSecret: map[string][]byte{
+				envConfigUserSecretKey:     []byte(basicAuthUserValue),
+				envConfigPasswordSecretKey: []byte(basicAuthPasswordValue),
+			},
+			FilesConfig:     map[string]string{},
+			TLSConfigSecret: map[string][]byte{},
+		}
+
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
+
+	t.Run("multiple log pipelines", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithFile("test-file", "test-filecontent").
+				WithHTTPOutput(
+					testutils.HTTPBasicAuthFromSecret(basicAuthSecretName, secretNamespace, basicAuthUserKey, basicAuthPasswordKey),
+				).Build(),
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline-2").
+				WithFile("test-file2", "test-filecontent2").
+				WithHTTPOutput(
+					testutils.HTTPHostFromSecret(hostSecretName, secretNamespace, hostSecretKey),
+				).Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+		require.NoError(t, err)
+
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		require.NoError(t, err)
+		sectionsConfig2, err := buildFluentBitSectionsConfig(&pipelines[1], sut.cfg)
+		require.NoError(t, err)
+
+		envConfigUserSecretKey := formatEnvVarName("test-pipeline", secretNamespace, basicAuthSecretName, basicAuthUserKey)
+		envConfigPasswordSecretKey := formatEnvVarName("test-pipeline", secretNamespace, basicAuthSecretName, basicAuthPasswordKey)
+		envConfigHostSecretKey := formatEnvVarName("test-pipeline-2", secretNamespace, hostSecretName, hostSecretKey)
+
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig: map[string]string{
+				"test-pipeline.conf":   sectionsConfig,
+				"test-pipeline-2.conf": sectionsConfig2,
+			},
+			EnvConfigSecret: map[string][]byte{
+				envConfigUserSecretKey:     []byte(basicAuthUserValue),
+				envConfigPasswordSecretKey: []byte(basicAuthPasswordValue),
+				envConfigHostSecretKey:     []byte(hostSecretValue),
+			},
+			FilesConfig: map[string]string{
+				"test-file":  "test-filecontent",
+				"test-file2": "test-filecontent2",
+			},
+			TLSConfigSecret: map[string][]byte{},
+		}
+
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
+
+	t.Run("should return error when secret reference is not found", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPHostFromSecret("test-invalid-secret", "test-invalid-secret-namespace", "test-invalid-key"),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+
+		require.ErrorContains(t, err, "unable to read secret 'test-invalid-secret' from namespace 'test-invalid-secret-namespace'")
+		require.Nil(t, fluentBitConfig)
+	})
+
+	t.Run("should return error when key is not found in a valid host secret", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPHostFromSecret(hostSecretName, secretNamespace, "test-invalid-key"),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+
+		require.ErrorContains(t, err, "unable to find key 'test-invalid-key' in secret 'test-host-secret' from namespace 'test-secret-namespace'")
+		require.Nil(t, fluentBitConfig)
+	})
 }
 
-func TestCreateLuaDedotFilterWithUndefinedHost(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{Dedot: true},
+func TestBuildTLSConfigSecret(t *testing.T) {
+	ctx := t.Context()
+	fakeClient := fake.NewClientBuilder().WithObjects(
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      tlsSecretName,
+				Namespace: secretNamespace,
 			},
-		},
-	}
-
-	actual := createLuaDedotFilter(logPipeline)
-	require.Equal(t, "", actual)
-}
-
-func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-					Dedot: false,
-					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
-				},
+			Data: map[string][]byte{
+				ca:   []byte(caValue),
+				cert: []byte(certValue),
+				key:  []byte(keyValue),
 			},
-		},
-	}
+		}).Build()
+	sut := NewFluentBitConfigBuilder(fakeClient)
 
-	actual := createLuaDedotFilter(logPipeline)
-	require.Equal(t, "", actual)
-}
+	t.Run("tls from string", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPClientTLSFromString(caValue, certValue, keyValue),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
+		require.NoError(t, err)
 
-func TestMergeSectionsConfig(t *testing.T) {
-	excludePath := strings.Join([]string{
-		"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
-		"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
-		"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
-		"/var/log/containers/*_*_container1-*.log",
-		"/var/log/containers/*_*_container2-*.log",
-	}, ",")
-	expected := fmt.Sprintf(`[INPUT]
-    name             tail
-    alias            foo
-    db               /data/flb_foo.db
-    exclude_path     %s
-    mem_buf_limit    5MB
-    multiline.parser cri
-    path             /var/log/containers/*_*_*-*.log
-    read_from_head   true
-    skip_long_lines  on
-    storage.type     filesystem
-    tag              foo.*
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		require.NoError(t, err)
 
-[FILTER]
-    name             multiline
-    match            foo.*
-    multiline.parser java
-
-[FILTER]
-    name   record_modifier
-    match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
-
-[FILTER]
-    name                kubernetes
-    match               foo.*
-    annotations         on
-    buffer_size         1MB
-    k8s-logging.exclude off
-    k8s-logging.parser  on
-    keep_log            on
-    kube_tag_prefix     foo.var.log.containers.
-    labels              on
-    merge_log           on
-
-[FILTER]
-    name  grep
-    match foo.*
-    regex log aa
-
-[FILTER]
-    name   lua
-    match  foo.*
-    call   kubernetes_map_keys
-    script /fluent-bit/scripts/filter-script.lua
-
-[OUTPUT]
-    name                     http
-    match                    foo.*
-    alias                    foo
-    allow_duplicated_headers true
-    format                   json
-    host                     localhost
-    port                     443
-    retry_limit              300
-    storage.total_limit_size 1G
-    tls                      on
-    tls.verify               on
-
-`, excludePath)
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					Containers: telemetryv1alpha1.LogPipelineContainerSelector{
-						Exclude: []string{"container1", "container2"},
-					},
-					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
-						System: true,
-					},
-					KeepAnnotations:  true,
-					DropLabels:       false,
-					KeepOriginalBody: ptr.To(true),
-				},
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig:  map[string]string{"test-pipeline.conf": sectionsConfig},
+			EnvConfigSecret: map[string][]byte{},
+			FilesConfig:     map[string]string{},
+			TLSConfigSecret: map[string][]byte{
+				"test-pipeline-ca.crt":   []byte(caValue),
+				"test-pipeline-cert.crt": []byte(certValue),
+				"test-pipeline-key.key":  []byte(keyValue),
 			},
-			Filters: []telemetryv1alpha1.LogPipelineFilter{
-				{
-					Custom: `
-						name grep
-						regex log aa
-					`,
-				},
-				{
-					Custom: `
-						name multiline
-						multiline.parser java
-					`,
-				},
+		}
+
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
+
+	t.Run("tls from secret ref", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
+						CA: &telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Key:       ca,
+									Name:      tlsSecretName,
+									Namespace: secretNamespace},
+							}},
+						Cert: &telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Key:       cert,
+									Name:      tlsSecretName,
+									Namespace: secretNamespace},
+							}},
+						Key: &telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Key:       key,
+									Name:      tlsSecretName,
+									Namespace: secretNamespace},
+							}},
+					}),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(ctx, pipelines)
+		require.NoError(t, err)
+
+		sectionsConfig, err := buildFluentBitSectionsConfig(&pipelines[0], sut.cfg)
+		require.NoError(t, err)
+
+		expectedConfig := &FluentBitConfig{
+			SectionsConfig:  map[string]string{"test-pipeline.conf": sectionsConfig},
+			EnvConfigSecret: map[string][]byte{},
+			FilesConfig:     map[string]string{},
+			TLSConfigSecret: map[string][]byte{
+				"test-pipeline-ca.crt":   []byte(caValue),
+				"test-pipeline-cert.crt": []byte(certValue),
+				"test-pipeline-key.key":  []byte(keyValue),
 			},
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
-					Dedot: true,
-					Host: telemetryv1alpha1.ValueType{
-						Value: "localhost",
-					},
-				},
-			},
-		},
-	}
-	logPipeline.Name = "foo"
-	defaults := PipelineDefaults{
-		InputTag:          "kube",
-		MemoryBufferLimit: "10M",
-		StorageType:       "filesystem",
-		FsBufferLimit:     "1G",
-	}
+		}
 
-	actual, err := BuildFluentBitConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
-	require.NoError(t, err)
-	require.Equal(t, expected, actual)
-}
+		require.Equal(t, expectedConfig, fluentBitConfig)
+	})
 
-func TestMergeSectionsConfigCustomOutput(t *testing.T) {
-	excludePath := strings.Join([]string{
-		"/var/log/containers/*system-logs-agent*_kyma-system_collector-*.log",
-		"/var/log/containers/*system-logs-collector*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent_kyma-system_collector-*.log",
-	}, ",")
-	expected := fmt.Sprintf(`[INPUT]
-    name             tail
-    alias            foo
-    db               /data/flb_foo.db
-    exclude_path     %s
-    mem_buf_limit    5MB
-    multiline.parser cri
-    path             /var/log/containers/*_*_*-*.log
-    read_from_head   true
-    skip_long_lines  on
-    storage.type     filesystem
-    tag              foo.*
+	t.Run("should return error when key is not found in a valid tls secret", func(t *testing.T) {
+		pipelines := []telemetryv1alpha1.LogPipeline{
+			testutils.NewLogPipelineBuilder().
+				WithName("test-pipeline").
+				WithHTTPOutput(
+					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
+						CA: &telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Key:       "test-invalid-ca-value",
+									Name:      tlsSecretName,
+									Namespace: secretNamespace},
+							}},
+						Cert: &telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Key:       cert,
+									Name:      tlsSecretName,
+									Namespace: secretNamespace},
+							}},
+						Key: &telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Key:       key,
+									Name:      tlsSecretName,
+									Namespace: secretNamespace},
+							}},
+					}),
+				).
+				Build(),
+		}
+		fluentBitConfig, err := sut.Build(
+			ctx,
+			pipelines)
 
-[FILTER]
-    name   record_modifier
-    match  foo.*
-    record cluster_identifier ${KUBERNETES_SERVICE_HOST}
-
-[FILTER]
-    name                kubernetes
-    match               foo.*
-    annotations         on
-    buffer_size         1MB
-    k8s-logging.exclude off
-    k8s-logging.parser  on
-    keep_log            on
-    kube_tag_prefix     foo.var.log.containers.
-    labels              on
-    merge_log           on
-
-[OUTPUT]
-    name                     stdout
-    match                    foo.*
-    alias                    foo
-    retry_limit              300
-    storage.total_limit_size 1G
-
-`, excludePath)
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					KeepAnnotations:  true,
-					DropLabels:       false,
-					KeepOriginalBody: ptr.To(true),
-					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
-						System: true,
-					},
-				},
-			},
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				Custom: `
-    name stdout`,
-			},
-		},
-	}
-	logPipeline.Name = "foo"
-	defaults := PipelineDefaults{
-		InputTag:          "kube",
-		MemoryBufferLimit: "10M",
-		StorageType:       "filesystem",
-		FsBufferLimit:     "1G",
-	}
-	builderConfig := BuilderConfig{
-		PipelineDefaults: defaults,
-		CollectAgentLogs: true,
-	}
-
-	actual, err := BuildFluentBitConfig(logPipeline, builderConfig)
-	require.NoError(t, err)
-	require.Equal(t, expected, actual)
-}
-
-func TestMergeSectionsConfigWithMissingOutput(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{}
-	logPipeline.Name = "foo"
-	defaults := PipelineDefaults{
-		InputTag:          "kube",
-		MemoryBufferLimit: "10M",
-		StorageType:       "filesystem",
-		FsBufferLimit:     "1G",
-	}
-
-	actual, err := BuildFluentBitConfig(logPipeline, BuilderConfig{PipelineDefaults: defaults})
-	require.Error(t, err)
-	require.Empty(t, actual)
-}
-
-func TestBuildFluentBitConfig_Validation(t *testing.T) {
-	type args struct {
-		pipeline *telemetryv1alpha1.LogPipeline
-		config   BuilderConfig
-	}
-
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr error
-	}{
-		{
-			name: "Should return error when pipeline mode is not FluentBit",
-			args: args{
-				pipeline: func() *telemetryv1alpha1.LogPipeline {
-					lp := testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()
-					return &lp
-				}(),
-			},
-			want:    "",
-			wantErr: ErrInvalidPipelineDefinition,
-		},
-		{
-			name: "Should return error when input OTLP is defined",
-			args: args{
-				pipeline: func() *telemetryv1alpha1.LogPipeline {
-					lp := testutils.NewLogPipelineBuilder().WithHTTPOutput().WithOTLPInput().Build()
-					return &lp
-				}(),
-			},
-			want:    "",
-			wantErr: ErrInvalidPipelineDefinition,
-		},
-		{
-			name: "Should return error when output plugin is not defined",
-			args: args{
-				pipeline: func() *telemetryv1alpha1.LogPipeline {
-					lp := testutils.NewLogPipelineBuilder().Build()
-					lp.Spec.Output = telemetryv1alpha1.LogPipelineOutput{}
-					return &lp
-				}(),
-			},
-			want:    "",
-			wantErr: ErrInvalidPipelineDefinition,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := BuildFluentBitConfig(tt.args.pipeline, tt.args.config)
-			if tt.wantErr == nil {
-				assert.NoError(t, err)
-			}
-
-			if tt.wantErr != nil {
-				assert.ErrorIs(t, err, tt.wantErr)
-			}
-
-			if got != tt.want {
-				t.Errorf("BuildFluentBitConfig() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
+		require.ErrorContains(t, err, "unable to build tls secret")
+		require.Nil(t, fluentBitConfig)
+	})
 }

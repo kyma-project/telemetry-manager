@@ -20,6 +20,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
@@ -47,6 +48,9 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").WithCustomFilter("Name grep").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -64,7 +68,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -82,6 +86,9 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -99,7 +106,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -117,6 +124,9 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithApplicationInputDisabled().Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -134,7 +144,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -146,6 +156,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("log agent is not ready", func(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -165,7 +178,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -188,6 +201,9 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -205,7 +221,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -228,6 +244,9 @@ func TestReconcile(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -245,7 +264,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -270,6 +289,9 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -288,7 +310,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -329,6 +351,9 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -347,7 +372,7 @@ func TestReconcile(t *testing.T) {
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -466,6 +491,9 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -484,7 +512,7 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -581,6 +609,9 @@ func TestReconcile(t *testing.T) {
 					Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -599,7 +630,7 @@ func TestReconcile(t *testing.T) {
 				errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
-				sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -671,6 +702,9 @@ func TestReconcile(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+				agentConfigBuilder := &mocks.AgentConfigBuilder{}
+				agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -688,7 +722,7 @@ func TestReconcile(t *testing.T) {
 
 				errToMsgStub := &conditions.ErrorToMessageConverter{}
 
-				sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 				var pl1 telemetryv1alpha1.LogPipeline
 
@@ -713,6 +747,9 @@ func TestReconcile(t *testing.T) {
 			Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
+		agentConfigBuilder := &mocks.AgentConfigBuilder{}
+		agentConfigBuilder.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline}), mock.Anything).Return(&builder.FluentBitConfig{}, nil).Times(1)
+
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -731,7 +768,7 @@ func TestReconcile(t *testing.T) {
 
 		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
 
-		sut := New(fakeClient, telemetryNamespace, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
+		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
 		var pl1 telemetryv1alpha1.LogPipeline
 
@@ -766,4 +803,25 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipel
 	require.Equal(t, message, cond.Message)
 	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
 	require.NotEmpty(t, cond.LastTransitionTime)
+}
+
+func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
+		if len(pipelines) != len(pp) {
+			return false
+		}
+
+		pipelineMap := make(map[string]bool)
+		for _, p := range pipelines {
+			pipelineMap[p.Name] = true
+		}
+
+		for _, p := range pp {
+			if !pipelineMap[p.Name] {
+				return false
+			}
+		}
+
+		return true
+	})
 }
