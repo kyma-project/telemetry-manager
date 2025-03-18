@@ -15,6 +15,7 @@ import (
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
+// Copies HTTP-specific attributes and user-provided variables to a secret that is later used for providing environment variables to the Fluent Bit configuration.
 func (b *ConfigBuilder) buildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
 	envConfigSecret := make(map[string][]byte)
 
@@ -32,6 +33,8 @@ func (b *ConfigBuilder) buildEnvConfigSecret(ctx context.Context, logPipelines [
 	return envConfigSecret, nil
 }
 
+// Copies TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
+// (since PEM-encoded strings exceed the maximum allowed length of environment variables on some Linux machines).
 func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
 	tlsSecretConfig := make(map[string][]byte)
 
