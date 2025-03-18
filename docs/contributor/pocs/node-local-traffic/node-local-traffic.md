@@ -28,12 +28,12 @@ Tests were performed in the following way:
 
 ### Results
 
-|       | Trace Generator | Trace Sink | Comments                                                                                                                        |
-|-------|-----------------|------------|---------------------------------------------------------------------------------------------------------------------------------|
-| Istio | disabled        | enabled    | - Peer authentication is required <br> - Data is sent [ADD PREPOSITION] pod on same node <br> - When pod is not running, then data is not received |
-| Istio | enabled         | enabled    | - Data is sent [ADD PREPOSITION] pod on same node <br> - When pod is not running, then data is not received                                        |
-| Istio | disabled        | disabled   | - Data is sent [ADD PREPOSITION] pod on same node <br> - When pod is not running, then data is not received                                        |
-| Istio | enabled         | disabled   | - Data is sent [ADD PREPOSITION] pod on same node <br> - When pod is not running, then data is not received                                        |
+|       | Trace Generator | Trace Sink | Comments                                                                                                                                |
+|-------|-----------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Istio | disabled        | enabled    | - Peer authentication is required <br> - Data is sent to the pod on same node <br> - When pod is not running, then data is not received |
+| Istio | enabled         | enabled    | - Data is sent to the pod on same node <br> - When pod is not running, then data is not received                                        |
+| Istio | disabled        | disabled   | - Data is sent to the  pod on same node <br> - When pod is not running, then data is not received                                       |
+| Istio | enabled         | disabled   | - Data is sent to the pod on same node <br> - When pod is not running, then data is not received                                        |
 
 
 ### Summary
