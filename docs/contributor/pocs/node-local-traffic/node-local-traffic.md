@@ -21,7 +21,7 @@ Tests were performed in the following way:
 - Deployed the trace generator and sink, with the trace generator pushing traces to `telemetry-otlp-traces-local.kyma-system:4317`
 
 ### Verifications
-- The traces are only pushed to the daemonSet running on the same node as the trace generator
+- The traces are only pushed to the DaemonSet running on the same node as the trace generator.
 - When the DaemonSet is in CrashloopBackoff or in Error state, the traces should not be pushed to the backend.
   - To simulate failure, the configmap was introduced with broken config and the DaemonSet was restarted.
 
