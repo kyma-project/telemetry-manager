@@ -14,7 +14,7 @@ The current architecture defines a set of central gateways to enrich the data an
 
 ### Gateways Benefits
 
-- Persistent buffering via PV
+- Persistent buffering via PersistentVolumes (PV)
 
   The experience showed that persistent buffering on the node filesystem has drawbacks like increased IO and limited space. We always envisioned a configurable persistent size per pipeline, which is only possible in a central StatefulSet having PVs attached. However, experience now shows that operating StatefulSets with PVs is not trivial, and especially on Azure, re-attaching disks can be a very long procedure resulting in long downtimes. Also, persistent buffering might be even a pre-mature optimization with limited gains, see also [ADR-017](./017-fault-tolerant-otel-logging-setup.md).
 
@@ -54,7 +54,7 @@ The current architecture defines a set of central gateways to enrich the data an
 
 - Cumulative to Delta transformation not supported
 
-  Cumulativetodelta transformation is mandatory for Dynatrace support and requires that data from a Pod is always processed by the same instance.
+  The usage of the `cumulativetodelta` processor is mandatory for Dynatrace support and requires that data from a Pod is always processed by the same instance.
 
 - General misconception
 
@@ -72,7 +72,7 @@ Most of the drawbacks can be solved by running the gateway logic node-locally on
 
 Decoupling of signal types will no longer be possible, which may result in scenarios where logs are dropped due to metric overload. However, with proper hardening, this should not pose a significant issue.  
 
-Let's compare a **shared OTLP agent setup** with an **agent-per-signal setup** in terms of robustness. The OTel Collector offers two key mechanisms to prevent overload:
+To mitigate the coupling problem, an agent per signal type could be used instead of one shared agent. Let's compare a **shared OTLP agent setup** with an **agent-per-signal setup** in terms of robustness. The OTel Collector offers two key mechanisms to prevent overload:
 
 1. **Memory Limiter**  
    - Applied globally, no way to restrict it to a specific pipeline or signal type.
