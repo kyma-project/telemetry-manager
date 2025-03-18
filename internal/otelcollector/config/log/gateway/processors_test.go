@@ -85,4 +85,18 @@ func TestProcessors(t *testing.T) {
 
 		require.Equal(t, "connection", collectorConfig.Processors.K8sAttributes.PodAssociation[2].Sources[0].From)
 	})
+
+	t.Run("Set Observed time when not present", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.LogPipeline{testutils.NewLogPipelineBuilder().WithOTLPOutput().Build()}, BuildOptions{
+			ClusterName:   "test-cluster",
+			CloudProvider: "test-cloud-provider",
+		})
+		require.NoError(t, err)
+
+		require.Len(t, collectorConfig.Processors.SetObsTimeIfZero.LogStatements[0].Conditions, 1)
+		require.Equal(t, "log.observed_time_unix_nano == 0", collectorConfig.Processors.SetObsTimeIfZero.LogStatements[0].Conditions[0])
+
+		require.Len(t, collectorConfig.Processors.SetObsTimeIfZero.LogStatements[0].Statements, 1)
+		require.Equal(t, "set(log.observed_time, Now())", collectorConfig.Processors.SetObsTimeIfZero.LogStatements[0].Statements[0])
+	})
 }
