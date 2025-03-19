@@ -58,7 +58,8 @@ The current architecture defines a set of central gateways to enrich the data an
 
 - General misconception
 
-  Gateways usually run outside the cluster as a first entry point. The cluster should get rid of the data as fast as possible, because persistence cannot be provided here (things like Kafka would run outside again). Try to compensate for short-lived hiccups. Otherwise, point back the backpressure to the client and do not try to solve the big picture.
+  Using simple Kubernetes primitives, it's unrealistic to create a dispatching solution inside a cluster, with a configurable persistent buffer and well-defined guarantees. A queueing system like Kafka will be required and usually will run as a managed solution outside of the cluster. The elements inside the cluster should focus on processing node-local data as fast as possible and delivering the data to the next service, which can provide guarantees.
+  Here, we should focus only on the agent scenario: By enriching data node-locally and using the natural scaling done by node instances. In backpressure scenarios, it should not be tried to buffer in a persistent way for a longer time, but instead, propagate the backpressure back to the application so that it can react to it.
 
 ## Proposal
 
