@@ -34,16 +34,16 @@ const (
 var (
 	MetricCPUTemperature = Metric{
 		Type: pmetric.MetricTypeGauge,
-		Name: "cpu_temperature_celsius",
+		Name: "cpu.temperature.celsius",
 	}
 	MetricHardDiskErrorsTotal = Metric{
 		Type:   pmetric.MetricTypeSum,
-		Name:   "hd_errors_total_total",
+		Name:   "hd.errors_total",
 		Labels: []string{"device"},
 	}
 	MetricCPUEnergyHistogram = Metric{
 		Type:   pmetric.MetricTypeHistogram,
-		Name:   "cpu_energy_watt",
+		Name:   "cpu.energy.watt",
 		Labels: []string{"core"},
 	}
 	MetricNames = []string{
