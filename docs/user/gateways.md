@@ -40,7 +40,7 @@ In the status of the returned resource, you see the pipelines health as well as 
       http: http://telemetry-otlp-traces.kyma-system:4318
 ```
 
-For every signal type, there's a dedicated endpoint to which you can push data using the [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/. OTLP supports gRPC and HTTP-based communication, each having it's individual port on every endpoint. Use port `4317` for GRPC and `4318` for HTTP.
+For every signal type, there's a dedicated endpoint to which you can push data using [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/). OTLP supports GRPC and HTTP-based communication, each having its individual port on every endpoint. Use port `4317` for GRPC and `4318` for HTTP.
 
 ![Gateways-Plain](assets/gateways-plain.drawio.svg)
 
