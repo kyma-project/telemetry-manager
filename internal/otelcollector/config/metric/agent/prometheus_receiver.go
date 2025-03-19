@@ -93,6 +93,7 @@ func makePrometheusPodsRelabelConfigs() []RelabelConfig {
 		dropIfSchemeHTTPS(),
 		inferMetricsPathFromAnnotation(AnnotatedPod),
 		inferAddressFromAnnotation(AnnotatedPod),
+		inferURLParamFromAnnotation(AnnotatedPod),
 	}
 }
 
@@ -111,6 +112,7 @@ func makePrometheusEndpointsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
 		dropIfIstioProxy(),
 		inferSchemeFromIstioInjectedLabel(),
 		inferSchemeFromAnnotation(AnnotatedService),
+		inferURLParamFromAnnotation(AnnotatedService),
 	}
 
 	if requireHTTPS {
@@ -290,6 +292,16 @@ func dropIfSchemeHTTPS() RelabelConfig {
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
 		Regex:        "(https)",
+	}
+}
+
+// inferURLParamFromAnnotation extracts and configures the URL parameter
+// for scraping based on annotations of the form prometheus.io/param_{name}: {value}.
+func inferURLParamFromAnnotation(annotated AnnotatedResource) RelabelConfig {
+	return RelabelConfig{
+		Regex:       fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_param_(.+)", annotated),
+		Action:      LabelMap,
+		Replacement: "__param_$1",
 	}
 }
 
