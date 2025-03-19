@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:v20250313-27827878"
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
 )
 
 type Metric struct {
