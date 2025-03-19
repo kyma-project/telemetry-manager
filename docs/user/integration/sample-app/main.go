@@ -271,6 +271,8 @@ func run() error {
 	return nil
 }
 
+// newURLParamCounterMiddleware is a middleware that counts the number of URL parameters passed to the /metrics request.
+// It is used to test prometheus.io/param_{name}={value} annotation.
 func newURLParamCounterMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		urlParams := r.URL.Query()
