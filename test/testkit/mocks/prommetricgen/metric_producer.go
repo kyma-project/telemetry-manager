@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:v20250214-f68343ee"
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:v20250313-27827878"
 )
 
 type Metric struct {
@@ -38,7 +38,7 @@ var (
 	}
 	MetricHardDiskErrorsTotal = Metric{
 		Type:   pmetric.MetricTypeSum,
-		Name:   "hd_errors_total",
+		Name:   "hd_errors_total_total",
 		Labels: []string{"device"},
 	}
 	MetricCPUEnergyHistogram = Metric{
