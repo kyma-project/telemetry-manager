@@ -211,6 +211,16 @@ func (in *LogPipelineApplicationInput) DeepCopyInto(out *LogPipelineApplicationI
 	}
 	in.Namespaces.DeepCopyInto(&out.Namespaces)
 	in.Containers.DeepCopyInto(&out.Containers)
+	if in.KeepAnnotations != nil {
+		in, out := &in.KeepAnnotations, &out.KeepAnnotations
+		*out = new(bool)
+		**out = **in
+	}
+	if in.DropLabels != nil {
+		in, out := &in.DropLabels, &out.DropLabels
+		*out = new(bool)
+		**out = **in
+	}
 	if in.KeepOriginalBody != nil {
 		in, out := &in.KeepOriginalBody, &out.KeepOriginalBody
 		*out = new(bool)
