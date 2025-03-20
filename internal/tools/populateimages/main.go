@@ -187,11 +187,11 @@ func generateSecScanConfig(data map[string]string) error {
 		BDBA:       imgs,
 		Mend: mend{
 			Language: "golang-mod",
-			Exclude:  []string{"**/mocks/**", "**/stubs/**", "**/test/**", "**/*_test.go"},
+			Exclude:  []string{"**/mocks/**", "**/stubs/**", "**/test/**", "**/*_test.go", "docs/**"},
 		},
 		CheckmarxOne: checkmarxOne{
 			Preset:  "go-default",
-			Exclude: []string{"**/mocks/**", "**/stubs/**", "**/test/**", "**/*_test.go"},
+			Exclude: []string{"**/mocks/**", "**/stubs/**", "**/test/**", "**/*_test.go", "docs/**"},
 		},
 	}
 
