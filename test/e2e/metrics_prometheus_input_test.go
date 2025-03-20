@@ -39,8 +39,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		metricProducer := prommetricgen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, []client.Object{
-			metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-			metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			metricProducer.Pod().
+				WithPrometheusAnnotations(prommetricgen.SchemeHTTP).
+				K8sObject(),
+			metricProducer.Service().
+				WithPrometheusAnnotations(prommetricgen.SchemeHTTP).
+				K8sObject(),
 		}...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
@@ -92,20 +96,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
-					HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
-				))))
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
-					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
-				))))
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
-					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
-				))))
+				for _, metric := range prommetricgen.CustomMetrics() {
+					g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+						HaveName(Equal(metric.Name)),
+						HaveType(Equal(metric.Type)),
+					))))
+				}
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -118,23 +114,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
-					HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
-					HaveMetricAttributes(HaveKey("service")),
-				))))
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
-					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
-					HaveMetricAttributes(HaveKey("service")),
-				))))
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
-					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
-					HaveMetricAttributes(HaveKey("service")),
-				))))
+				for _, metric := range prommetricgen.CustomMetrics() {
+					g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+						HaveName(Equal(metric.Name)),
+						HaveType(Equal(metric.Type)),
+						HaveMetricAttributes(HaveKey("service")),
+					))))
+				}
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
