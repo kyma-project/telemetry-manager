@@ -82,11 +82,11 @@ func initMetrics() error {
 
 	requestURLParamsMeter, err = meter.Int64Counter(
 		"promhttp.metric.handler.requests.url_params",
-		metric.WithDescription("Number of URL parameters passed to the /metrics request."),
-		metric.WithUnit("{utl_params}"),
+		metric.WithDescription("Total number of requests to the /metrics endpoint with URL parameters."),
+		metric.WithUnit("{requests}"),
 	)
 	if err != nil {
-		return fmt.Errorf("error creating request.url_params counter: %w", err)
+		return fmt.Errorf("error creating promhttp.metric.handler.requests.url_params counter: %w", err)
 	}
 
 	return nil
