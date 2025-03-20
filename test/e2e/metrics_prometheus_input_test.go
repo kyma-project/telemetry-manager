@@ -39,12 +39,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		metricProducer := prommetricgen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, []client.Object{
-			metricProducer.Pod().
-				WithPrometheusAnnotations(prommetricgen.SchemeHTTP).
-				K8sObject(),
-			metricProducer.Service().
-				WithPrometheusAnnotations(prommetricgen.SchemeHTTP).
-				K8sObject(),
+			metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
@@ -99,7 +95,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				for _, metric := range prommetricgen.CustomMetrics() {
 					g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 						HaveName(Equal(metric.Name)),
-						HaveType(Equal(metric.Type)),
+						HaveType(Equal(metric.Type.String())),
 					))))
 				}
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -117,7 +113,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 				for _, metric := range prommetricgen.CustomMetrics() {
 					g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
 						HaveName(Equal(metric.Name)),
-						HaveType(Equal(metric.Type)),
+						HaveType(Equal(metric.Type.String())),
 						HaveMetricAttributes(HaveKey("service")),
 					))))
 				}
@@ -135,7 +131,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
+		It("Ensures no kubeletstats metrics from system namespaces are sent to backend", func() {
 			assert.MetricsWithScopeAndNamespaceNotDelivered(proxyClient, backendExportURL, metric.InstrumentationScopePrometheus, kitkyma.SystemNamespaceName)
 		})
 
