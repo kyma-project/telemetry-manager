@@ -162,6 +162,9 @@ receivers:
                       target_label: __address__
                       replacement: $$1:$$2
                       action: replace
+                    - regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+                      replacement: __param_$1
+                      action: labelmap
                   kubernetes_sd_configs:
                     - role: pod
                       selectors:
@@ -198,6 +201,9 @@ receivers:
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
+                    - regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
+                      replacement: __param_$1
+                      action: labelmap
                     - source_labels: [__scheme__]
                       regex: (https)
                       action: drop
