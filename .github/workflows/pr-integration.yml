@@ -1,8 +1,9 @@
 name: PR Integration
 
 env:
-  # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
+  # add the tag PR-<number> to the images if it is a PR, if the trigger is merge_group, then add the sha as the tag
   IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}
+  TEST_SAMPLE_APP_IMG: europe-docker.pkg.dev/kyma-project/dev/sample-app:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}
 
 on:
   merge_group:
