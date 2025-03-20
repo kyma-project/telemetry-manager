@@ -13,7 +13,7 @@ mend:
     - '**/stubs/**'
     - '**/test/**'
     - '**/*_test.go'
-    - 'docs/**'
+    - docs/**
 checkmarx-one:
   preset: go-default
   exclude:
@@ -21,4 +21,4 @@ checkmarx-one:
     - '**/stubs/**'
     - '**/test/**'
     - '**/*_test.go'
-    - 'docs/**'
+    - docs/**
