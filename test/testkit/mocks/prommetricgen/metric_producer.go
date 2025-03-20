@@ -2,7 +2,6 @@ package prommetricgen
 
 import (
 	"maps"
-	"os"
 	"strconv"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -11,8 +10,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
+)
+
+const (
+	// A sample app instrumented with OpenTelemetry to generate metrics in the Prometheus exposition format
+	// https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
 )
 
 type Metric struct {
@@ -182,11 +186,6 @@ func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
 }
 
 func (p *Pod) K8sObject() *corev1.Pod {
-	image := os.Getenv("TEST_SAMPLE_APP_IMG")
-	if image == "" {
-		image = testkit.DefaultSampleAppImage
-	}
-
 	labels := p.labels
 	maps.Copy(labels, selectorLabels)
 
@@ -201,7 +200,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "metric-producer",
-					Image: image,
+					Image: metricProducerImage,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
