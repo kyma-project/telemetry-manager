@@ -28,8 +28,9 @@ const (
 var (
 	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	hdErrorsMeter  metric.Int64Counter
-	cpuEnergyMeter metric.Float64Histogram
+	hdErrorsMeter         metric.Int64Counter
+	cpuEnergyMeter        metric.Float64Histogram
+	requestURLParamsMeter metric.Int64Counter
 
 	hdErrorsAttributeSda = attribute.String("device", "/dev/sda")
 	hdErrorsAttributeSdb = attribute.String("device", "/dev/sdb")
@@ -78,6 +79,16 @@ func initMetrics() error {
 	); err != nil {
 		return fmt.Errorf("error creating cpu.temperature.celsius gauge: %w", err)
 	}
+
+	requestURLParamsMeter, err = meter.Int64Counter(
+		"promhttp.metric.handler.requests.url_params",
+		metric.WithDescription("Total number of requests to the /metrics endpoint with URL parameters."),
+		metric.WithUnit("{requests}"),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating promhttp.metric.handler.requests.url_params counter: %w", err)
+	}
+
 	return nil
 }
 
@@ -245,7 +256,11 @@ func run() error {
 	http.Handle("/", wrappedForwardHandler)
 
 	// Register metrics endpoint in case a prometheus exporter is used
-	http.Handle("/metrics", otelhttp.NewHandler(promhttp.Handler(), "metrics"))
+	http.Handle("/metrics", otelhttp.NewHandler(
+		newURLParamCounterMiddleware(
+			promhttp.Handler(),
+		),
+		"metrics"))
 
 	//Start the HTTP server
 	logger.Info("Starting server on port " + strconv.Itoa(serverPort))
@@ -254,6 +269,22 @@ func run() error {
 		return fmt.Errorf("error starting server: %w", err)
 	}
 	return nil
+}
+
+// newURLParamCounterMiddleware is a middleware that counts the number of URL parameters passed to the /metrics request.
+// It is used to test prometheus.io/param_{name}={value} annotation.
+func newURLParamCounterMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		urlParams := r.URL.Query()
+		for name := range urlParams {
+			requestURLParamsMeter.Add(r.Context(), 1,
+				metric.WithAttributes(
+					attribute.String("name", name),
+				),
+			)
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
