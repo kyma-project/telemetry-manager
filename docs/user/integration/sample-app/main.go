@@ -280,6 +280,7 @@ func newURLParamCounterMiddleware(next http.Handler) http.Handler {
 			requestURLParamsMeter.Add(r.Context(), 1,
 				metric.WithAttributes(
 					attribute.String("name", name),
+					attribute.String("value", urlParams.Get(name)),
 				),
 			)
 		}
