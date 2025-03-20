@@ -14,6 +14,8 @@ import (
 )
 
 const (
+	// A sample app instrumented with OpenTelemetry to generate metrics in the Prometheus exposition format
+	// https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app
 	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
 )
 
@@ -54,6 +56,13 @@ var (
 		Name:   "promhttp.metric.handler.requests.url_params_total",
 		Labels: []string{"name", "value"},
 	}
+	MetricPromhttpMetricHandlerRequestsTotalLabelKey = "name"
+	MetricPromhttpMetricHandlerRequestsTotalLabelVal = "value"
+
+	// For each configured URL parameter, the MetricPromhttpMetricHandlerRequestsTotal metric
+	// will include a label with the parameter name and a corresponding label with its value.
+	ScrapingURLParamName = "format"
+	ScrapingURLParamVal  = "prometheus"
 
 	metricsPort     int32 = 8080
 	metricsPortName       = "http-metrics"
@@ -164,10 +173,10 @@ func (p *Pod) WithLabel(key, value string) *Pod {
 
 func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
 	annotations := map[string]string{
-		"prometheus.io/scrape":       "true",
-		"prometheus.io/path":         metricsEndpoint,
-		"prometheus.io/port":         strconv.Itoa(int(metricsPort)),
-		"prometheus.io/param_format": "prometheus",
+		"prometheus.io/scrape":                        "true",
+		"prometheus.io/path":                          metricsEndpoint,
+		"prometheus.io/port":                          strconv.Itoa(int(metricsPort)),
+		"prometheus.io/param_" + ScrapingURLParamName: ScrapingURLParamVal,
 	}
 	if scheme != SchemeNone {
 		annotations["prometheus.io/scheme"] = string(scheme)

@@ -98,6 +98,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 						HaveType(Equal(metric.Type.String())),
 					))))
 				}
+
+				// Verify that the URL parameter counter labels match the ones defined
+				// in the prometheus.io/param_<name>:<value> annotations.
+				// This ensures that the parameters were correctly processed and handled.
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricPromhttpMetricHandlerRequestsTotal.Name)),
+					HaveMetricAttributes(HaveKeyWithValue(
+						prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelKey,
+						prommetricgen.ScrapingURLParamName)),
+					HaveMetricAttributes(HaveKeyWithValue(
+						prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
+						prommetricgen.ScrapingURLParamVal)),
+				))))
+
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -117,6 +131,20 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 						HaveMetricAttributes(HaveKey("service")),
 					))))
 				}
+
+				// Verify that the URL parameter counter labels match the ones defined
+				// in the prometheus.io/param_<name>:<value> annotations.
+				// This ensures that the parameters were correctly processed and handled.
+				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+					HaveName(Equal(prommetricgen.MetricPromhttpMetricHandlerRequestsTotal.Name)),
+					HaveMetricAttributes(HaveKeyWithValue(
+						prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelKey,
+						prommetricgen.ScrapingURLParamName)),
+					HaveMetricAttributes(HaveKeyWithValue(
+						prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
+						prommetricgen.ScrapingURLParamVal)),
+				))))
+
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
