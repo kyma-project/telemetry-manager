@@ -84,8 +84,8 @@ func CustomMetrics() []Metric {
 func CustomMetricNames() []string {
 	metrics := CustomMetrics()
 	names := make([]string, len(metrics))
-	for _, metric := range metrics {
-		names = append(names, metric.Name)
+	for i, metric := range metrics {
+		names[i] = metric.Name
 	}
 
 	return names
