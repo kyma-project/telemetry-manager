@@ -24,6 +24,7 @@ type inputSources struct {
 	runtimeResources runtimeResourcesEnabled
 	prometheus       bool
 	istio            bool
+	envoy            bool
 }
 
 type runtimeResourcesEnabled struct {
@@ -51,6 +52,7 @@ func (b *Builder) Build(pipelines []telemetryv1alpha1.MetricPipeline, opts Build
 		runtimeResources: enableRuntimeResourcesMetricsScraping(pipelines),
 		prometheus:       enablePrometheusMetricsScraping(pipelines),
 		istio:            enableIstioMetricsScraping(pipelines),
+		envoy:            enableEnvoyMetricsScraping(pipelines),
 	}
 
 	return &Config{
@@ -191,6 +193,17 @@ func enableIstioMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bo
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if metricpipelineutils.IsIstioInputEnabled(input) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func enableEnvoyMetricsScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if metricpipelineutils.IsIstioInputEnabled(input) && metricpipelineutils.IsEnvoyMetricsEnabled(input) {
 			return true
 		}
 	}

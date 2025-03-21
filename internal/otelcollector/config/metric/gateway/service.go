@@ -69,6 +69,10 @@ func makeInputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []st
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
 
+	if !metricpipelineutils.IsIstioInputEnabled(input) || !metricpipelineutils.IsEnvoyMetricsEnabled(input) {
+		processors = append(processors, "filter/drop-envoy-metrics-if-disabled")
+	}
+
 	if !metricpipelineutils.IsOTLPInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}

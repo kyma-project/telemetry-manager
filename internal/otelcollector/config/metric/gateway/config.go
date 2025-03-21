@@ -55,6 +55,7 @@ type Processors struct {
 	DropIfInputSourceRuntime                     *FilterProcessor               `yaml:"filter/drop-if-input-source-runtime,omitempty"`
 	DropIfInputSourcePrometheus                  *FilterProcessor               `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
 	DropIfInputSourceIstio                       *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
+	DropIfEnvoyMetricsDisabled                   *FilterProcessor               `yaml:"filter/drop-envoy-metrics-if-disabled,omitempty"`
 	DropIfInputSourceOTLP                        *FilterProcessor               `yaml:"filter/drop-if-input-source-otlp,omitempty"`
 	DropRuntimePodMetrics                        *FilterProcessor               `yaml:"filter/drop-runtime-pod-metrics,omitempty"`
 	DropRuntimeContainerMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-container-metrics,omitempty"`
