@@ -138,7 +138,7 @@ func podMetricsShouldNotBeDelivered(proxyURL, podName string) {
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(
 			Not(ContainElement(SatisfyAll(
-				HaveName(BeElementOf(prommetricgen.MetricNames)),
+				HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
 				Not(HaveMetricAttributes(HaveKey("service"))),
 				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
 			))),
@@ -158,7 +158,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(
 			ContainElement(SatisfyAll(
-				HaveName(BeElementOf(prommetricgen.MetricNames)),
+				HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
 				Not(HaveMetricAttributes(HaveKey("service"))),
 				HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", podName)),
 				HaveScopeName(Equal(InstrumentationScopePrometheus)),
@@ -183,7 +183,7 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 
 		g.Expect(bodyContent).To(HaveFlatMetrics(
 			ContainElement(SatisfyAll(
-				HaveName(BeElementOf(prommetricgen.MetricNames)),
+				HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
 				HaveMetricAttributes(HaveKeyWithValue("service", serviceName)),
 				HaveScopeName(Equal(InstrumentationScopePrometheus)),
 				HaveScopeVersion(SatisfyAny(

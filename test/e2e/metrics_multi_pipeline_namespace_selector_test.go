@@ -107,7 +107,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 		})
 
 		It("Should deliver Prometheus metrics from app1Ns to backend1", func() {
-			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, prommetricgen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend1ExportURL, app1Ns, prommetricgen.CustomMetricNames())
 		})
 
 		It("Should deliver OTLP metrics from app1Ns to backend1", func() {
@@ -124,7 +124,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), 
 		})
 
 		It("Should deliver Prometheus metrics from app2Ns to backend2", func() {
-			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, prommetricgen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(proxyClient, backend2ExportURL, app2Ns, prommetricgen.CustomMetricNames())
 		})
 
 		It("Should deliver OTLP metrics from app2Ns to backend2", func() {
