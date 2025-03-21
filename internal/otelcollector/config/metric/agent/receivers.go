@@ -21,7 +21,7 @@ func makeReceiversConfig(inputs inputSources, opts BuildOptions) Receivers {
 	}
 
 	if inputs.istio {
-		receiversConfig.PrometheusIstio = makePrometheusIstioConfig()
+		receiversConfig.PrometheusIstio = makePrometheusIstioConfig(inputs.envoy)
 	}
 
 	return receiversConfig

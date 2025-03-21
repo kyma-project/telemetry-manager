@@ -278,6 +278,20 @@ func TestReceivers(t *testing.T) {
 		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs, 1)
 		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].KubernetesDiscoveryConfigs, 1)
 	})
+
+	t.Run("istio input envoy metrics enabled", func(t *testing.T) {
+		collectorConfig := sut.Build([]telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
+		}, BuildOptions{
+			IstioEnabled: true,
+		})
+
+		require.Nil(t, collectorConfig.Receivers.KubeletStats)
+		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
+		require.NotNil(t, collectorConfig.Receivers.PrometheusIstio)
+		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].MetricRelabelConfigs, 1)
+		require.Equal(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].MetricRelabelConfigs[0].Regex, "envoy_.*|istio_.*")
+	})
 }
 
 func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K8sClusterMetricsToDrop {
