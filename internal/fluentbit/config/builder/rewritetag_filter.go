@@ -27,7 +27,7 @@ func getEmitterPostfixByOutput(output *telemetryv1alpha1.LogPipelineOutput) stri
 	return postfix.Value
 }
 
-func createRewriteTagFilter(logPipeline *telemetryv1alpha1.LogPipeline, defaults PipelineDefaults) string {
+func createRewriteTagFilter(logPipeline *telemetryv1alpha1.LogPipeline, defaults pipelineDefaults) string {
 	emitterName := logPipeline.Name
 	output := &logPipeline.Spec.Output
 	emitterPostfix := getEmitterPostfixByOutput(output)

@@ -106,6 +106,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 		Receivers: []string{"otlp"},
 		Processors: []string{
 			"memory_limiter",
+			"transform/set-observed-time-if-zero",
 			"k8sattributes",
 			"resource/insert-cluster-attributes",
 			"batch",

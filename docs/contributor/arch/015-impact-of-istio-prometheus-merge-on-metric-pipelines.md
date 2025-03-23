@@ -1,10 +1,10 @@
-# 11. Impact of Istio Prometheus Merge Feature on MetricPipelines
+# 15. Impact of Istio Prometheus Merge Feature on MetricPipelines
 
 Date: 2024-10-21
 
 ## Status
 
-Approved
+Accepted
 
 ## Context
 

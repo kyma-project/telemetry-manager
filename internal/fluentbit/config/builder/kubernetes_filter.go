@@ -12,8 +12,15 @@ func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 		appInput = pipeline.Spec.Input.Application
 	}
 
-	keepAnnotations := appInput.KeepAnnotations
-	keepLabels := !appInput.DropLabels
+	keepAnnotations := false
+	if appInput.KeepAnnotations != nil {
+		keepAnnotations = *appInput.KeepAnnotations
+	}
+
+	keepLabels := true
+	if appInput.DropLabels != nil {
+		keepLabels = !*appInput.DropLabels
+	}
 
 	keepOriginalBody := true
 	if appInput.KeepOriginalBody != nil {

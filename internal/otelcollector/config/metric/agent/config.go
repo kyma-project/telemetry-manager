@@ -216,9 +216,10 @@ type RelabelConfig struct {
 type RelabelAction string
 
 const (
-	Replace RelabelAction = "replace"
-	Keep    RelabelAction = "keep"
-	Drop    RelabelAction = "drop"
+	Replace  RelabelAction = "replace"
+	Keep     RelabelAction = "keep"
+	Drop     RelabelAction = "drop"
+	LabelMap RelabelAction = "labelmap"
 )
 
 type Processors struct {

@@ -4,7 +4,7 @@ Date: 2024-28-02
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context: Cluttered Makefile Targets
 
