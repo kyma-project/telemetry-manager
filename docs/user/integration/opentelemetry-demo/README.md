@@ -16,7 +16,6 @@ Learn how to install the OpenTelemetry [demo application](https://github.com/ope
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Advanced](#advanced)
 - [Clean Up](#clean-up)
 
 ## Prerequisites
