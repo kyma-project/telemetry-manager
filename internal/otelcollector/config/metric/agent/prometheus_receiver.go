@@ -146,6 +146,7 @@ func makePrometheusIstioConfig(envoyMetricsEnabled bool) *PrometheusReceiver {
 	if envoyMetricsEnabled {
 		metricNames = strings.Join([]string{"envoy_.*", metricNames}, "|")
 	}
+
 	return &PrometheusReceiver{
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
