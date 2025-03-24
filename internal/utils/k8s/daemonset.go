@@ -20,13 +20,13 @@ func (dsa *DaemonSetAnnotator) SetAnnotation(ctx context.Context, name types.Nam
 	}
 
 	patchedDS := *ds.DeepCopy()
-	if patchedDS.Spec.Template.ObjectMeta.Annotations == nil {
-		patchedDS.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
-	} else if patchedDS.Spec.Template.ObjectMeta.Annotations[key] == value {
+	if patchedDS.Spec.Template.Annotations == nil {
+		patchedDS.Spec.Template.Annotations = make(map[string]string)
+	} else if patchedDS.Spec.Template.Annotations[key] == value {
 		return nil
 	}
 
-	patchedDS.Spec.Template.ObjectMeta.Annotations[key] = value
+	patchedDS.Spec.Template.Annotations[key] = value
 
 	if err := dsa.Patch(ctx, &patchedDS, client.MergeFrom(&ds)); err != nil {
 		return fmt.Errorf("failed to patch %s/%s DaemonSet: %w", name.Namespace, name.Name, err)
