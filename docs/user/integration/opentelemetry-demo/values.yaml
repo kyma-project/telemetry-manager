@@ -233,7 +233,7 @@ components:
       requests:
         memory: 50Mi
       limits:
-        memory: 1500Mi
+        memory: 2500Mi
     podAnnotations:
       sidecar.istio.io/inject: "false"
 
