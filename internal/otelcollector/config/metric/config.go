@@ -7,6 +7,10 @@ type TransformProcessor struct {
 	MetricStatements []config.TransformProcessorStatements `yaml:"metric_statements"`
 }
 
+type ServiceEnrichmentProcessor struct {
+	CustomLabels []string `yaml:"custom_labels"`
+}
+
 type LeaderElection struct {
 	LeaseName      string `yaml:"lease_name"`
 	LeaseNamespace string `yaml:"lease_namespace"`

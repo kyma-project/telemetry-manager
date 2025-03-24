@@ -44,10 +44,15 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	}
 }
 
-func makeResolveServiceNameConfig() *metric.TransformProcessor {
-	return &metric.TransformProcessor{
-		ErrorMode:        "ignore",
-		MetricStatements: processors.ResolveServiceNameStatements(),
+func makeResolveServiceNameConfig() *metric.ServiceEnrichmentProcessor {
+	//return &metric.TransformProcessor{
+	//	ErrorMode:        "ignore",
+	//	MetricStatements: processors.ResolveServiceNameStatements(),
+	//}
+	return &metric.ServiceEnrichmentProcessor{
+		CustomLabels: []string{
+			"kyma.kubernetes_io_app_name",
+			"kyma.app_name"},
 	}
 }
 
