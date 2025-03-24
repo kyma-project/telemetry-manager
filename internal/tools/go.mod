@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/bombsimon/wsl/v4 v4.6.0
-	github.com/golangci/golangci-lint/v2 v2.0.0
+	github.com/golangci/golangci-lint/v2 v2.0.1
 	github.com/google/yamlfmt v0.16.0
 	github.com/joho/godotenv v1.5.1
 	github.com/k3d-io/k3d/v5 v5.8.3
