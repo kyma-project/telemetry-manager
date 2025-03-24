@@ -670,7 +670,37 @@ If you want to use them for debugging and diagnostic purposes, you can activate 
 > [!NOTE]
 > Diagnostic metrics are only available for inputs `prometheus` and `istio`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
-### 11. Deploy the Pipeline
+### 11. Activate Envoy Metrics
+
+If you are using the istio input, you can also collect Envoy metrics. Envoy metrics provide insights into the performance and behavior of the Envoy proxy, such as request rates, latencies, and error counts. These metrics are useful for observability and troubleshooting service mesh traffic.
+
+By default, Envoy metrics collection is disabled.
+
+To activate Envoy metrics, you must enable the `envoyMetrics` section in the MetricPipeline specification under the `istio` input.
+
+- The following example collects envoy metrics **only** for input `istio`:
+
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: MetricPipeline
+  metadata:
+    name: envoy-metrics
+  spec:
+    input:
+      istio:
+        enabled: true
+        envoyMetrics:
+          enabled: true
+    output:
+      otlp:
+        endpoint:
+          value: https://backend.example.com:4317
+  ```
+
+> [!NOTE] 
+> Envoy metrics are only available for the istio input. Ensure that Istio sidecars are correctly injected into your workloads for Envoy metrics to be available.
+
+### 12. Deploy the Pipeline
 
 To activate the MetricPipeline, apply the `metricpipeline.yaml` resource file in your cluster:
 
