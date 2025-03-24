@@ -58,6 +58,8 @@ The log agent is based on a [Fluent Bit](https://fluentbit.io/) installation run
 
 For more information, see [Logs](02-logs.md).
 
+FOr information on the **experimental** feature supporting OTLP based on an OTel-Collector, see [Logs (experimental)](logs.md).
+
 ### Trace Gateway
 
 The trace gateway is based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). The gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the trace signals. According to a TracePipeline configuration, the gateway processes and ships the trace data to a target system.
@@ -75,6 +77,7 @@ For more information, see [Metrics](04-metrics.md) and [Telemetry Gateways](gate
 To learn about integration with SAP Cloud Logging, read [SAP Cloud Logging](./integration/sap-cloud-logging/README.md). <!--- replace with Help Portal link once published? --->
 
 For integration with other backends, such as Dynatrace, see:
+
 - [Dynatrace](./integration/dynatrace/README.md)
 - [Prometheus](./integration/prometheus/README.md)
 - [Loki](./integration/loki/README.md)
@@ -84,7 +87,7 @@ For integration with other backends, such as Dynatrace, see:
 To learn how to collect data from applications based on the OpenTelemetry SDK, see:
 
 - [OpenTelemetry Demo App](./integration/opentelemetry-demo/README.md)
-- [Sample App](./integration/sample-app/) 
+- [Sample App](./integration/sample-app/)
 
 ## API / Custom Resource Definitions
 
