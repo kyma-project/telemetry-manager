@@ -129,13 +129,5 @@ jobs:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Check kustomization.yaml changes
-        uses: tj-actions/changed-files@v46.0.3
-        id: changed-kustomization
-        with:
-          files: "config/manager/kustomization.yaml"
-      - name: Prevent kustomization.yaml changes
         run: |
-          if ${{ steps.changed-kustomization.outputs.any_changed }}; then
-            echo "kustomization.yaml file changed!"
-            exit 1
-          fi
+          git diff origin/main --exit-code -- config/manager/kustomization.yaml || (echo "config/manager/kustomization.yaml has changes compared to main branch. Please, revert them" && exit 1)
