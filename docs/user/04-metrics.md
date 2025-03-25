@@ -672,11 +672,12 @@ If you want to use them for debugging and diagnostic purposes, you can activate 
 
 ### 11. Activate Envoy Metrics
 
-If you are using the istio input, you can also collect Envoy metrics. Envoy metrics provide insights into the performance and behavior of the Envoy proxy, such as request rates, latencies, and error counts. These metrics are useful for observability and troubleshooting service mesh traffic.
+If you are using the istio input, you can also collect Envoy metrics. Envoy metrics provide insights into the performance and behavior of the Envoy proxy, such as request rates, latencies, and error counts. These metrics are useful for observability and troubleshooting service mesh traffic. 
+The complete list of available Envoy metrics can be found [here](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats) and the server metrics [here](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics).
 
 By default, Envoy metrics collection is disabled.
 
-To activate Envoy metrics, you must enable the `envoyMetrics` section in the MetricPipeline specification under the `istio` input.
+To activate Envoy metrics, you must enable the `envoyMetrics` section in the MetricPipeline specification under the `istio` input. 
 
 - The following example collects envoy metrics **only** for input `istio`:
 
