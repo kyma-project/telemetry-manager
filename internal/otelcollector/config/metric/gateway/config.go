@@ -64,7 +64,7 @@ type Processors struct {
 	DropRuntimeStatefulSetMetrics                *FilterProcessor                   `yaml:"filter/drop-runtime-statefulset-metrics,omitempty"`
 	DropRuntimeDaemonSetMetrics                  *FilterProcessor                   `yaml:"filter/drop-runtime-daemonset-metrics,omitempty"`
 	DropRuntimeJobMetrics                        *FilterProcessor                   `yaml:"filter/drop-runtime-job-metrics,omitempty"`
-	ResolveServiceName                           *metric.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
+	ResolveServiceName                           *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
 	DropKymaAttributes                           *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
 	SetInstrumentationScopeKyma                  *metric.TransformProcessor         `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
 	DeleteSkipEnrichmentAttribute                *config.ResourceProcessor          `yaml:"resource/delete-skip-enrichment-attribute,omitempty"`

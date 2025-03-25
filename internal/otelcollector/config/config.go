@@ -110,3 +110,7 @@ func DefaultExtensions() Extensions {
 		},
 	}
 }
+
+type ServiceEnrichmentProcessor struct {
+	CustomLabels []string `yaml:"custom_labels"`
+}
