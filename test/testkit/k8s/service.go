@@ -24,7 +24,7 @@ func NewService(name, namespace string) *Service {
 }
 
 func (s *Service) WithPort(name string, port int32) *Service {
-	s.PortRegistry.AddPort(name, port)
+	s.AddPort(name, port)
 	return s
 }
 
@@ -32,7 +32,7 @@ func (s *Service) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
 	labels := ProcessLabelOptions(labelOpts...)
 
 	ports := make([]corev1.ServicePort, 0)
-	for name, port := range s.PortRegistry.Ports {
+	for name, port := range s.Ports {
 		ports = append(ports, corev1.ServicePort{
 			Name:       name,
 			Protocol:   corev1.ProtocolTCP,

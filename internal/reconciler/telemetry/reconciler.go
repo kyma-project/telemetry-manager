@@ -115,8 +115,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	var telemetry operatorv1alpha1.Telemetry
-	if err := r.Client.Get(ctx, req.NamespacedName, &telemetry); err != nil {
-		logf.FromContext(ctx).Info(req.NamespacedName.String() + " got deleted!")
+	if err := r.Get(ctx, req.NamespacedName, &telemetry); err != nil {
+		logf.FromContext(ctx).Info(req.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -165,7 +165,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 	}
 
 	prometheusConfig := config.MakeConfig(config.BuilderConfig{
-		ScrapeNamespace:   r.config.SelfMonitor.Config.Namespace,
+		ScrapeNamespace:   r.config.SelfMonitor.Namespace,
 		WebhookURL:        r.config.SelfMonitor.WebhookURL,
 		WebhookScheme:     r.config.SelfMonitor.WebhookScheme,
 		ConfigPath:        selfMonitorConfigPath,
@@ -233,7 +233,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 }
 
 func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	if telemetry.ObjectMeta.DeletionTimestamp.IsZero() {
+	if telemetry.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(telemetry, finalizer) {
 			controllerutil.AddFinalizer(telemetry, finalizer)
 
