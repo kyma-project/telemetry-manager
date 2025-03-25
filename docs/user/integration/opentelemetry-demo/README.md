@@ -22,7 +22,7 @@ Learn how to install the OpenTelemetry [demo application](https://github.com/ope
 
 - Kyma as the target deployment environment
 - The [Telemetry module](../../README.md) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
-- The [Telemetry module](../../README.md) is configured with pipelines for traces and metrics, for example by following the [SAP CLoud Logging guide](./../sap-cloud-logging/) or [Prometheus](./../prometheus/) and [Loki](./../loki/)
+- The [Telemetry module](../../README.md) is configured with pipelines for traces and metrics, for example, by following the [SAP CLoud Logging guide](./../sap-cloud-logging/) or [Prometheus](./../prometheus/) and [Loki](./../loki/)
 - [Istio Tracing](../../03-traces.md#2-enable-istio-tracing) is enabled
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - Helm 3.x
