@@ -43,3 +43,11 @@ func DropKymaAttributesProcessorConfig() *config.ResourceProcessor {
 		},
 	}
 }
+
+func MakeResolveServiceNameConfig() *config.ServiceEnrichmentProcessor {
+	return &config.ServiceEnrichmentProcessor{
+		CustomLabels: []string{
+			"kyma.kubernetes_io_app_name",
+			"kyma.app_name"},
+	}
+}

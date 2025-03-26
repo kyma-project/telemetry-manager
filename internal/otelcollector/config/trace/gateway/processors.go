@@ -16,7 +16,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 		}),
 		InsertClusterAttributes: processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
 		DropNoisySpans:          makeDropNoisySpansConfig(),
-		ResolveServiceName:      makeResolveServiceNameConfig(),
+		ResolveServiceName:      processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:      processors.DropKymaAttributesProcessorConfig(),
 	}
 }
@@ -36,13 +36,5 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
 		SpikeLimitPercentage: 15,
-	}
-}
-
-func makeResolveServiceNameConfig() *config.ServiceEnrichmentProcessor {
-	return &config.ServiceEnrichmentProcessor{
-		CustomLabels: []string{
-			"kyma.kubernetes_io_app_name",
-			"kyma.app_name"},
 	}
 }
