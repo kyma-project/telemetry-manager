@@ -47,7 +47,7 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 	someDropped := p.isFiring(alerts, config.RuleNameLogAgentSomeDataDropped, pipelineName)
 	bufferFillingUp := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
 	noLogs := p.isFiring(alerts, config.RuleNameLogAgentNoLogsDelivered, pipelineName)
-	healthy := !(allDropped || someDropped || bufferFillingUp || noLogs)
+	healthy := !allDropped && !someDropped && !bufferFillingUp && !noLogs
 
 	return LogPipelineProbeResult{
 		PipelineProbeResult: PipelineProbeResult{

@@ -96,11 +96,7 @@ func makeSystemLogPath() []string {
 }
 
 func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
-	keepOriginalBody := false
-
-	if *logPipeline.Spec.Input.Application.KeepOriginalBody {
-		keepOriginalBody = true
-	}
+	keepOriginalBody := *logPipeline.Spec.Input.Application.KeepOriginalBody
 
 	operators := []Operator{
 		makeContainerParser(),
