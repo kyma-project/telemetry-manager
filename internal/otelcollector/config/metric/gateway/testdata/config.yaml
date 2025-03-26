@@ -153,7 +153,7 @@ processors:
     filter/drop-envoy-metrics-if-disabled:
         metrics:
             metric:
-                - IsMatch(name, "^envoy_.*")
+                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:

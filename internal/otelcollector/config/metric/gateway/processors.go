@@ -96,7 +96,7 @@ func makeDropIfEnvoyMetricsDisabledConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: []string{
-				ottlexpr.IsMatch("name", "^envoy_.*"),
+				ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "^envoy_.*"), ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio)),
 			},
 		},
 	}
