@@ -16,7 +16,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogs), Ordered, func() {
+var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 	var pipelineName = ID()
 
 	Context("When a LogPipeline with missing secret reference exists", Ordered, func() {

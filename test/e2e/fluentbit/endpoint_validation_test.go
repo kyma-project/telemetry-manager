@@ -16,7 +16,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogs), func() {
+var _ = Describe(ID(), Label(LabelLogsFluentBit), func() {
 	const (
 		invalidEndpoint = "'http://example.com'"
 	)

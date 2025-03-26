@@ -15,7 +15,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
+var _ = Describe(ID(), Label(LabelLogsFluentBit, LabelExperimental), Ordered, func() {
 	var (
 		v1Alpha1PipelineName = IDWithSuffix("v1alpha1")
 		v1Beta1PipelineName  = IDWithSuffix("v1beta1")

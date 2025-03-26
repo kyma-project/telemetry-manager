@@ -17,7 +17,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogs), Ordered, func() {
+var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 	Context("When a broken logpipeline exists", Ordered, func() {
 		var (
 			mockNs              = ID()

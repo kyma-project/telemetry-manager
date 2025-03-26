@@ -21,7 +21,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogs), Ordered, func() {
+var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 	Context("When multiple log pipelines with namespace filter exist", Ordered, func() {
 		var (
 			mock1Ns                          = IDWithSuffix("1")
