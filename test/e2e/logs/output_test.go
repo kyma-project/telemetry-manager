@@ -3,6 +3,7 @@
 package logs
 
 import (
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -18,8 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -37,14 +38,14 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(IsUpgrade()))
-		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, logProducer.K8sObject())
 		backendExportURL = backend.ExportURL(ProxyClient)
 
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
+			WithApplicationInput(false).
+			WithKeepOriginalBody(false).
 			WithOTLPOutput(
 				testutils.OTLPEndpointFromSecret(
 					hostSecretRef.Name,
@@ -97,6 +98,22 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 
 		It("Should deliver telemetrygen logs", func() {
 			assert.LogsFromNamespaceDelivered(ProxyClient, backendExportURL, mockNs)
+		})
+
+		It("Should have Observed timestamp in the logs", func() {
+			Consistently(func(g Gomega) {
+				resp, err := ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveOtelTimestamp(Not(BeEmpty())),
+					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC")))))))
+			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should be able to get log gateway metrics endpoint", func() {

@@ -10,7 +10,7 @@ import (
 )
 
 func TestCreateRewriteTagFilterIncludeContainers(t *testing.T) {
-	pipelineConfig := PipelineDefaults{
+	pipelineConfig := pipelineDefaults{
 		InputTag:          "kube",
 		MemoryBufferLimit: "10M",
 		StorageType:       "filesystem",
@@ -39,7 +39,7 @@ func TestCreateRewriteTagFilterIncludeContainers(t *testing.T) {
 }
 
 func TestCreateRewriteTagFilterExcludeContainers(t *testing.T) {
-	pipelineConfig := PipelineDefaults{
+	pipelineConfig := pipelineDefaults{
 		InputTag:          "kube",
 		MemoryBufferLimit: "10M",
 		StorageType:       "filesystem",
@@ -68,7 +68,7 @@ func TestCreateRewriteTagFilterExcludeContainers(t *testing.T) {
 }
 
 func TestCreateRewriteTagFilterWithCustomOutput(t *testing.T) {
-	pipelineConfig := PipelineDefaults{
+	pipelineConfig := pipelineDefaults{
 		InputTag:          "kube",
 		MemoryBufferLimit: "10M",
 		StorageType:       "filesystem",

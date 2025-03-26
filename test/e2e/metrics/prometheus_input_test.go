@@ -92,20 +92,26 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetA), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
+				for _, metric := range prommetricgen.CustomMetrics() {
+					g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+						HaveName(Equal(metric.Name)),
+						HaveType(Equal(metric.Type.String())),
+					))))
+				}
+
+				// Verify that the URL parameter counter labels match the ones defined
+				// in the prometheus.io/param_<name>:<value> annotations.
+				// This ensures that the parameters were correctly processed and handled.
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
-					HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
+					HaveName(Equal(prommetricgen.MetricPromhttpMetricHandlerRequestsTotal.Name)),
+					HaveMetricAttributes(HaveKeyWithValue(
+						prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelKey,
+						prommetricgen.ScrapingURLParamName)),
+					HaveMetricAttributes(HaveKeyWithValue(
+						prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
+						prommetricgen.ScrapingURLParamVal)),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
-					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
-				))))
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
-					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
-				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -118,23 +124,27 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetA), Ordered, func() {
 				defer resp.Body.Close()
 				g.Expect(err).NotTo(HaveOccurred())
 
+				for _, metric := range prommetricgen.CustomMetrics() {
+					g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
+						HaveName(Equal(metric.Name)),
+						HaveType(Equal(metric.Type.String())),
+						HaveMetricAttributes(HaveKey("service")),
+					))))
+				}
+
+				// Verify that the URL parameter counter labels match the ones defined
+				// in the prometheus.io/param_<name>:<value> annotations.
+				// This ensures that the parameters were correctly processed and handled.
 				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricCPUTemperature.Name)),
-					HaveType(Equal(prommetricgen.MetricCPUTemperature.Type.String())),
-					HaveMetricAttributes(HaveKey("service")),
+					HaveName(Equal(prommetricgen.MetricPromhttpMetricHandlerRequestsTotal.Name)),
+					HaveMetricAttributes(HaveKeyWithValue(
+						prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelKey,
+						prommetricgen.ScrapingURLParamName)),
+					HaveMetricAttributes(HaveKeyWithValue(
+						prommetricgen.MetricPromhttpMetricHandlerRequestsTotalLabelVal,
+						prommetricgen.ScrapingURLParamVal)),
 				))))
 
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
-					HaveType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type.String())),
-					HaveMetricAttributes(HaveKey("service")),
-				))))
-
-				g.Expect(bodyContent).To(HaveFlatMetrics(ContainElement(SatisfyAll(
-					HaveName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
-					HaveType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type.String())),
-					HaveMetricAttributes(HaveKey("service")),
-				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -149,7 +159,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetA), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
+		It("Ensures no kubeletstats metrics from system namespaces are sent to backend", func() {
 			assert.MetricsWithScopeAndNamespaceNotDelivered(ProxyClient, backendExportURL, metric.InstrumentationScopePrometheus, kitkyma.SystemNamespaceName)
 		})
 

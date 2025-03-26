@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate title
-        uses: amannn/action-semantic-pull-request@40166f00814508ec3201fc8595b393d451c8cd80
+        uses: amannn/action-semantic-pull-request@04501d43b574e4c1d23c629ffe4dcec27acfdeff
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -111,6 +111,12 @@ jobs:
             feat
             fix
             test
+          # ensures the subject doesn't start with an uppercase character
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.
           requireScope: false
 
   pr-prevent-kustomization:
@@ -123,13 +129,5 @@ jobs:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Check kustomization.yaml changes
-        uses: tj-actions/changed-files@v46.0.1
-        id: changed-kustomization
-        with:
-          files: "config/manager/kustomization.yaml"
-      - name: Prevent kustomization.yaml changes
         run: |
-          if ${{ steps.changed-kustomization.outputs.any_changed }}; then
-            echo "kustomization.yaml file changed!"
-            exit 1
-          fi
+          git diff origin/main --exit-code -- config/manager/kustomization.yaml || (echo "config/manager/kustomization.yaml has changes compared to main branch. Please, revert them" && exit 1)

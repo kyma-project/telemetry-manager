@@ -48,6 +48,7 @@ metadata:
     app.kubernetes.io/name: sample-app-prom
   annotations:
     prometheus.io/scrape: "true"
+    prometheus.io/param_format: "prometheus"
 spec:
   selector:
     app.kubernetes.io/name: sample-app-prom

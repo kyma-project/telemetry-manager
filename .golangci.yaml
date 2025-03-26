@@ -1,17 +1,15 @@
+version: "2"
 run:
-  modules-download-mode: readonly
-  timeout: 10m
   build-tags:
     - e2e
     - tools
+  modules-download-mode: readonly
 linters:
-  enable-all: true
+  default: all
   disable:
-    # Deprecated linters
-    - tenv
-    # Linters to be enabled after fixing the issues
     - cyclop
     - depguard
+    - err113
     - exhaustruct
     - forcetypeassert
     - funlen
@@ -20,13 +18,12 @@ linters:
     - goconst
     - godot
     - godox
-    - err113
-    - gofumpt
     - ireturn
     - lll
     - maintidx
     - mirror
     - nestif
+    - nlreturn
     - nonamedreturns
     - paralleltest
     - perfsprint
@@ -39,230 +36,239 @@ linters:
     - tparallel
     - varnamelen
     - wrapcheck
-    - nlreturn
-
-linters-settings:
-  dupl:
-    threshold: 100 # Tokens count to trigger error.
-  importas:
-    no-unaliased: true
-    no-extra-aliases: true
-    alias:
-      - pkg: crypto/rand
-        alias: crand
-      - pkg: github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1
-        alias: operatorv1alpha1
-      - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
-        alias: telemetryv1alpha1
-      - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1
-        alias: telemetryv1beta1
-      - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
-        alias: telemetrycontrollers
-      - pkg: github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook
-        alias: selfmonitorwebhook
-      - pkg: github.com/kyma-project/telemetry-manager/internal/resources/common
-        alias: commonresources
-      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/k8s
-        alias: kitk8s
-      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma
-        alias: kitkyma
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1
-        alias: logparserwebhookv1alpha1
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1
-        alias: logpipelinewebhookv1alpha1
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1
-        alias: logpipelinewebhookv1beta1
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1alpha1
-        alias: metricpipelinewebhookv1alpha1
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1beta1
-        alias: metricpipelinewebhookv1beta1
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1alpha1
-        alias: tracepipelinewebhookv1alpha1
-      - pkg: github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1beta1
-        alias: tracepipelinewebhookv1beta1
-      - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit
-        alias: logpipelinefluentbit
-      - pkg: github.com/prometheus/client_golang/api/prometheus/v1
-        alias: promv1
-      - pkg: github.com/prometheus/client_model/go
-        alias: prommodel
-      - pkg: go.opentelemetry.io/otel/sdk/trace
-        alias: tracesdk
-      - pkg: istio.io/api/networking/v1
-        alias: istionetworkingv1
-      - pkg: istio.io/client-go/pkg/apis/networking/v1
-        alias: istionetworkingclientv1
-      - pkg: istio.io/api/security/v1
-        alias: istiosecurityv1
-      - pkg: istio.io/client-go/pkg/apis/security/v1
-        alias: istiosecurityclientv1
-      - pkg: istio.io/api/type/v1beta1
-        alias: istiotypev1beta1
-      - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
-        alias: $1$2
-      - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
-        alias: apiextensionsv1
-      - pkg: k8s.io/apimachinery/pkg/api/equality
-        alias: apiequality
-      - pkg: k8s.io/apimachinery/pkg/api/errors
-        alias: apierrors
-      - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
-        alias: metav1
-      - pkg: k8s.io/apimachinery/pkg/util/runtime
-        alias: utilruntime
-      - pkg: k8s.io/client-go/kubernetes/scheme
-        alias: clientgoscheme
-      - pkg: sigs.k8s.io/controller-runtime
-        alias: ctrl
-      - pkg: sigs.k8s.io/controller-runtime/pkg/builder
-        alias: ctrlbuilder
-      - pkg: sigs.k8s.io/controller-runtime/pkg/log
-        alias: logf
-      - pkg: sigs.k8s.io/controller-runtime/pkg/log/zap
-        alias: logzap
-      - pkg: sigs.k8s.io/controller-runtime/pkg/metrics/server
-        alias: metricsserver
-      - pkg: sigs.k8s.io/controller-runtime/pkg/predicate
-        alias: ctrlpredicate
-      - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs
-        alias: commonStatusStubs
-      - pkg: k8s.io/client-go/testing
-        alias: clienttesting
-      - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel
-        alias: logpipelineotel
-      - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks
-        alias: logpipelinemocks
-      # Utils aliases
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/k8s
-        alias: k8sutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logger
-        alias: loggerutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logpipeline
-        alias: logpipelineutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/predicate
-        alias: predicateutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes
-        alias: sharedtypesutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/slices
-        alias: slicesutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/test
-        alias: testutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline
-        alias: metricpipelineutils
-      - pkg: github.com/kyma-project/telemetry-manager/internal/utils/telemetry
-        alias: telemetryutils
-
-  errcheck:
-    check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
-    check-blank: true # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
-    exclude-functions: # List of functions to exclude from checking.
-      - io/ioutil.ReadFile
-      - io.Copy(*bytes.Buffer)
-      - io.Copy(os.Stdout)
-      - gopkg.in/yaml.v3.Marshal
-
-  errchkjson:
-    check-error-free-encoding: true
-    report-no-exported: true
-
-  gci:
-    sections:
-      - standard # Standard packages.
-      - default # Imports that could not be matched to another section type.
-      - prefix(github.com/kyma-project/telemetry-manager) # Imports with the specified Prefix.
-      - blank # Blank imports
-    custom-order: true
-
-  goimports:
-    local-prefixes: github.com/kyma-project/telemetry-manager
-
-  govet:
-    enable:
-      - shadow
-
-  loggercheck:
-    klog: true # Allows checking for the k8s.io/klog/v2.
-    zap: true # Allows checking for the go.uber.org/zap.
-    kitlog: false # Prohibits checking for the github.com/go-kit/log.
-    logr: false # Prohibits checking for the github.com/go-logr/logr.
-    require-string-key: true # Require all logging keys to be inlined constant strings.
-    no-printf-like: true
-
-  misspell:
-    locale: US
-
-  stylecheck:
-    dot-import-whitelist:
-      # Allows using dot imports for Ginkgo and Gomega (out-of-the-box and custom matchers)
-      - github.com/onsi/ginkgo/v2
-      - github.com/onsi/gomega
-      - github.com/kyma-project/telemetry-manager/test/testkit/matchers/log
-      - github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric
-      - github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace
-      - github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus
-
-  nolintlint:
-    allow-unused: true
-    require-explanation: true
-    require-specific: true
-
-  revive:
+  settings:
+    dupl:
+      threshold: 100
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      exclude-functions:
+        - io/ioutil.ReadFile
+        - io.Copy(*bytes.Buffer)
+        - io.Copy(os.Stdout)
+        - gopkg.in/yaml.v3.Marshal
+    errchkjson:
+      check-error-free-encoding: true
+      report-no-exported: true
+    gocyclo:
+      min-complexity: 17
+    govet:
+      enable:
+        - shadow
+    importas:
+      alias:
+        - pkg: crypto/rand
+          alias: crand
+        - pkg: github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1
+          alias: operatorv1alpha1
+        - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
+          alias: telemetryv1alpha1
+        - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1
+          alias: telemetryv1beta1
+        - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
+          alias: telemetrycontrollers
+        - pkg: github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook
+          alias: selfmonitorwebhook
+        - pkg: github.com/kyma-project/telemetry-manager/internal/resources/common
+          alias: commonresources
+        - pkg: github.com/kyma-project/telemetry-manager/test/testkit/k8s
+          alias: kitk8s
+        - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma
+          alias: kitkyma
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1
+          alias: logparserwebhookv1alpha1
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1
+          alias: logpipelinewebhookv1alpha1
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1
+          alias: logpipelinewebhookv1beta1
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1alpha1
+          alias: metricpipelinewebhookv1alpha1
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/metricpipeline/v1beta1
+          alias: metricpipelinewebhookv1beta1
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1alpha1
+          alias: tracepipelinewebhookv1alpha1
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/tracepipeline/v1beta1
+          alias: tracepipelinewebhookv1beta1
+        - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit
+          alias: logpipelinefluentbit
+        - pkg: github.com/prometheus/client_golang/api/prometheus/v1
+          alias: promv1
+        - pkg: github.com/prometheus/client_model/go
+          alias: prommodel
+        - pkg: go.opentelemetry.io/otel/sdk/trace
+          alias: tracesdk
+        - pkg: istio.io/api/networking/v1
+          alias: istionetworkingv1
+        - pkg: istio.io/client-go/pkg/apis/networking/v1
+          alias: istionetworkingclientv1
+        - pkg: istio.io/api/security/v1
+          alias: istiosecurityv1
+        - pkg: istio.io/client-go/pkg/apis/security/v1
+          alias: istiosecurityclientv1
+        - pkg: istio.io/api/type/v1beta1
+          alias: istiotypev1beta1
+        - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
+          alias: $1$2
+        - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+          alias: apiextensionsv1
+        - pkg: k8s.io/apimachinery/pkg/api/equality
+          alias: apiequality
+        - pkg: k8s.io/apimachinery/pkg/api/errors
+          alias: apierrors
+        - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+          alias: metav1
+        - pkg: k8s.io/apimachinery/pkg/util/runtime
+          alias: utilruntime
+        - pkg: k8s.io/client-go/kubernetes/scheme
+          alias: clientgoscheme
+        - pkg: sigs.k8s.io/controller-runtime
+          alias: ctrl
+        - pkg: sigs.k8s.io/controller-runtime/pkg/builder
+          alias: ctrlbuilder
+        - pkg: sigs.k8s.io/controller-runtime/pkg/log
+          alias: logf
+        - pkg: sigs.k8s.io/controller-runtime/pkg/log/zap
+          alias: logzap
+        - pkg: sigs.k8s.io/controller-runtime/pkg/metrics/server
+          alias: metricsserver
+        - pkg: sigs.k8s.io/controller-runtime/pkg/predicate
+          alias: ctrlpredicate
+        - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs
+          alias: commonStatusStubs
+        - pkg: k8s.io/client-go/testing
+          alias: clienttesting
+        - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel
+          alias: logpipelineotel
+        - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks
+          alias: logpipelinemocks
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/k8s
+          alias: k8sutils
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logger
+          alias: loggerutils
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/logpipeline
+          alias: logpipelineutils
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/predicate
+          alias: predicateutils
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes
+          alias: sharedtypesutils
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/slices
+          alias: slicesutils
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/test
+          alias: testutils
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline
+          alias: metricpipelineutils
+        - pkg: github.com/kyma-project/telemetry-manager/internal/utils/telemetry
+          alias: telemetryutils
+      no-unaliased: true
+      no-extra-aliases: true
+    loggercheck:
+      kitlog: false
+      klog: true
+      logr: false
+      zap: true
+      require-string-key: true
+      no-printf-like: true
+    misspell:
+      locale: US
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: true
+    revive:
+      rules:
+        - name: dot-imports
+          disabled: true
+        - name: unexported-return
+    staticcheck:
+      dot-import-whitelist:
+        - github.com/onsi/ginkgo/v2
+        - github.com/onsi/gomega
+        - github.com/kyma-project/telemetry-manager/test/testkit/matchers/log
+        - github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric
+        - github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace
+        - github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus
+    wsl:
+      allow-trailing-comment: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: dot-imports
-        disabled: true
-      - name: unexported-return
-
-  gocyclo:
-    # Minimal code complexity to report.
-    # Default: 30
-    # The max complexity while enabling this linter is 17. Please check if this can be reduced. Increase the threshold only if it is absolutely necessary.
-    min-complexity: 17
-
-  wsl:
-    allow-trailing-comment: true
-
-issues:
-  exclude:
-    # Check this issue for more info: https://github.com/kyoh86/scopelint/issues/4
-    - Using the variable on range scope `tc` in function literal
-    - Using the variable on range scope `tt` in function literal
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-        - dupl
-        - err113
-    - path: ^internal/utils/test
-      linters:
-        - mnd
-        - err113
-    - path: ^test/testkit
-      linters:
-        - mnd
-        - err113
-    - path: _test\.go
-      text: "shadow: declaration of \"ctx\" shadows declaration at line ([\\d]+)"
-      linters:
-        - govet
-    - path: .go
-      text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
-      linters:
-        - govet
-    - linters: [dupl]
-      path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
-    - linters: [dupl]
-      path: internal/utils/k8s/utils.go
-    # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
-    - linters: [dupl]
-      path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go
-    - linters: [dupl]
-      path: test/testkit/matchers/(log|metric|trace)_matchers.go
-    - linters: [errcheck]
-      path: test/testkit/otel/traces/traces.go
-    - linters: [dupl]
-      path: test/testkit/assert/(deployment|daemon_set|metrics|traces|stateful_set|jobs).go
-    - linters: [dupl]
-      path: main.go
-    - linters:
-        - importas
-      text: has alias "" which is not part of config # Ignore false positives that emerged due to https://github.com/julz/importas/issues/15.
+      - linters:
+          - dupl
+          - err113
+          - errcheck
+        path: _test\.go
+      - linters:
+          - err113
+          - mnd
+        path: ^internal/utils/test
+      - linters:
+          - err113
+          - mnd
+        path: ^test/testkit
+      - linters:
+          - govet
+        path: _test\.go
+        text: 'shadow: declaration of "ctx" shadows declaration at line ([\d]+)'
+      - linters:
+          - govet
+        path: .go
+        text: 'shadow: declaration of "err" shadows declaration at line ([\d]+)'
+      - linters:
+          - dupl
+        path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
+      - linters:
+          - dupl
+        path: internal/utils/k8s/utils.go
+      - linters:
+          - dupl
+        path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go
+      - linters:
+          - dupl
+        path: test/testkit/matchers/(log|metric|trace)_matchers.go
+      - linters:
+          - errcheck
+        path: test/testkit/otel/traces/traces.go
+      - linters:
+          - dupl
+        path: test/testkit/assert/(deployment|daemon_set|metrics|traces|stateful_set|jobs).go
+      - linters:
+          - dupl
+        path: main.go
+      - linters:
+          - importas
+        text: has alias "" which is not part of config
+      - path: (.+)\.go$
+        text: Using the variable on range scope `tc` in function literal
+      - path: (.+)\.go$
+        text: Using the variable on range scope `tt` in function literal
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/kyma-project/telemetry-manager)
+        - blank
+      custom-order: true
+    goimports:
+      local-prefixes:
+        - github.com/kyma-project/telemetry-manager
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

@@ -14,7 +14,9 @@ import (
 )
 
 const (
-	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:v20250214-f68343ee"
+	// A sample app instrumented with OpenTelemetry to generate metrics in the Prometheus exposition format
+	// https://github.com/kyma-project/telemetry-manager/tree/main/docs/user/integration/sample-app
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest"
 )
 
 type Metric struct {
@@ -34,23 +36,33 @@ const (
 var (
 	MetricCPUTemperature = Metric{
 		Type: pmetric.MetricTypeGauge,
-		Name: "cpu_temperature_celsius",
+		Name: "cpu.temperature.celsius",
 	}
+
 	MetricHardDiskErrorsTotal = Metric{
 		Type:   pmetric.MetricTypeSum,
-		Name:   "hd_errors_total",
+		Name:   "hd.errors_total",
 		Labels: []string{"device"},
 	}
+
 	MetricCPUEnergyHistogram = Metric{
 		Type:   pmetric.MetricTypeHistogram,
-		Name:   "cpu_energy_watt",
+		Name:   "cpu.energy.watt",
 		Labels: []string{"core"},
 	}
-	MetricNames = []string{
-		MetricCPUTemperature.Name,
-		MetricHardDiskErrorsTotal.Name,
-		MetricCPUEnergyHistogram.Name,
+
+	MetricPromhttpMetricHandlerRequestsTotal = Metric{
+		Type:   pmetric.MetricTypeSum,
+		Name:   "promhttp.metric.handler.requests.url_params_total",
+		Labels: []string{"name", "value"},
 	}
+	MetricPromhttpMetricHandlerRequestsTotalLabelKey = "name"
+	MetricPromhttpMetricHandlerRequestsTotalLabelVal = "value"
+
+	// For each configured URL parameter, the MetricPromhttpMetricHandlerRequestsTotal metric
+	// will include a label with the parameter name and a corresponding label with its value.
+	ScrapingURLParamName = "format"
+	ScrapingURLParamVal  = "prometheus"
 
 	metricsPort     int32 = 8080
 	metricsPortName       = "http-metrics"
@@ -58,10 +70,27 @@ var (
 	selectorLabels        = map[string]string{
 		"app.kubernetes.io/name": "metric-producer",
 	}
-
-	// DefaultMetricsNames is an alias for MetricNames.
-	DefaultMetricsNames = MetricNames
 )
+
+func CustomMetrics() []Metric {
+	return []Metric{
+		MetricCPUTemperature,
+		MetricHardDiskErrorsTotal,
+		MetricCPUEnergyHistogram,
+		MetricPromhttpMetricHandlerRequestsTotal,
+	}
+}
+
+func CustomMetricNames() []string {
+	metrics := CustomMetrics()
+	names := make([]string, len(metrics))
+
+	for i, metric := range metrics {
+		names[i] = metric.Name
+	}
+
+	return names
+}
 
 // MetricProducer represents a workload that exposes dummy metrics in the Prometheus exposition format
 type MetricProducer struct {
@@ -145,9 +174,10 @@ func (p *Pod) WithLabel(key, value string) *Pod {
 
 func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
 	annotations := map[string]string{
-		"prometheus.io/scrape": "true",
-		"prometheus.io/path":   metricsEndpoint,
-		"prometheus.io/port":   strconv.Itoa(int(metricsPort)),
+		"prometheus.io/scrape":                        "true",
+		"prometheus.io/path":                          metricsEndpoint,
+		"prometheus.io/port":                          strconv.Itoa(int(metricsPort)),
+		"prometheus.io/param_" + ScrapingURLParamName: ScrapingURLParamVal,
 	}
 	if scheme != SchemeNone {
 		annotations["prometheus.io/scheme"] = string(scheme)

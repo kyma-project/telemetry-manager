@@ -62,13 +62,13 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 		var configMap corev1.ConfigMap
 		Expect(K8sClient.Get(Ctx, configMapNamespacedName, &configMap)).To(Succeed())
 
-		delete(configMap.ObjectMeta.Labels, labelKey)
+		delete(configMap.Labels, labelKey)
 		Expect(K8sClient.Update(Ctx, &configMap)).To(Succeed())
 
 		// The deleted label should not be restored, since the reconciliation is disabled by the overrides configmap
 		Consistently(func(g Gomega) {
 			g.Expect(K8sClient.Get(Ctx, configMapNamespacedName, &configMap)).To(Succeed())
-			g.Expect(configMap.ObjectMeta.Labels[labelKey]).To(BeZero())
+			g.Expect(configMap.Labels[labelKey]).To(BeZero())
 		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 	}
 
@@ -151,10 +151,10 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 			err := K8sClient.Get(Ctx, lookupKey, &logPipeline)
 			Expect(err).ToNot(HaveOccurred())
 
-			if logPipeline.ObjectMeta.Annotations == nil {
-				logPipeline.ObjectMeta.Annotations = map[string]string{}
+			if logPipeline.Annotations == nil {
+				logPipeline.Annotations = map[string]string{}
 			}
-			logPipeline.ObjectMeta.Annotations["test-annotation"] = "test-value"
+			logPipeline.Annotations["test-annotation"] = "test-value"
 
 			// Update the logPipeline to trigger the reconciliation loop, so that new DEBUG logs are generated
 			err = K8sClient.Update(Ctx, &logPipeline)

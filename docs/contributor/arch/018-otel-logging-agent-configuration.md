@@ -3,7 +3,8 @@
 Date: 2025-02-18
 
 ## Status
-Proposed
+
+Accepted
 
 ## Context
 This document builds upon the previous ADR [17. Fault Tolerant OTel Logging Setup](./017-fault-tolerant-otel-logging-setup.md).
