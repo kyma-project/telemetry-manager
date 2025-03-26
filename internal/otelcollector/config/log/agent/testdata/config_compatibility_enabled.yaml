@@ -154,6 +154,10 @@ processors:
             - action: insert
               key: cloud.provider
               value: azure
+    service_enrichment:
+        custom_labels:
+            - kyma.kubernetes_io_app_name
+            - kyma.app_name
     resource/drop-kyma-attributes:
         attributes:
             - action: delete

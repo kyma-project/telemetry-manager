@@ -13,6 +13,8 @@ service:
                 - transform/set-observed-time-if-zero
                 - k8sattributes
                 - resource/insert-cluster-attributes
+                - service_enrichment
+                - resource/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/test
@@ -105,6 +107,14 @@ processors:
             - action: insert
               key: cloud.provider
               value: test-cloud-provider
+    service_enrichment:
+        custom_labels:
+            - kyma.kubernetes_io_app_name
+            - kyma.app_name
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
