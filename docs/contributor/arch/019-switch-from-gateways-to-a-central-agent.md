@@ -103,6 +103,13 @@ A small persistent buffer can be introduced in all components using the node fil
 
 Neither the application nor its components will depend on Istio anymore. However, the metric agent should still support scraping Istio-instrumented endpoints.  
 
+
+## PoCs
+
+To better understand the behaviour following PoCs were conducted:
+- [OTel Collector Downtime](../../contributor/pocs/otelcol-downtime/otelcol-downtime.md) explores if OTeL SDK performs retries during downtime.
+- [Node local traffic](../../contributor/pocs/node-local-traffic/node-local-traffic.md) explores if the node-local traffic is possible with and without Istio.
+
 ## Conclusion
 
 The original motivation for the gateway concept is no longer relevant. Transitioning to the agent approach resolves many issues while introducing only minor drawbacks. However, inadequate retry handling by OTel SDKs and Istio proxies remains a challenge. Before proceeding, we must ensure this issue is addressed, considering its alignment with the OTLP specification.
