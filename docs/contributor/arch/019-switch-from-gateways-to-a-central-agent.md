@@ -106,7 +106,7 @@ Neither the application nor its components will depend on Istio anymore. However
 
 ## PoCs
 
-To better understand the behaviour following PoCs were conducted:
+We conducted the following PoCs:
 - [OTel Collector Downtime](../../contributor/pocs/otelcol-downtime/otelcol-downtime.md) explores if OTeL SDK performs retries during downtime.
 - [Node local traffic](../../contributor/pocs/node-local-traffic/node-local-traffic.md) explores if the node-local traffic is possible with and without Istio.
 

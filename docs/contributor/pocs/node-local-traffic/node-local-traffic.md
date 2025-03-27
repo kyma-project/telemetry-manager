@@ -1,8 +1,8 @@
 # Service with local traffic policy
 
-The PoC tries to understand the behavior of the OTLP push service with [service internal traffic policy](https://kubernetes.io/docs/concepts/services-networking/service-traffic-policy/#using-service-internal-traffic-policy).
+The PoC investigates the behavior of the OTLP push service with the [service-internal traffic policy](https://kubernetes.io/docs/concepts/services-networking/service-traffic-policy/#using-service-internal-traffic-policy).
 The gateways in Kyma Telemetry are exposed using an OTLP service such as `telemetry-otlp-traces`.
-The applications running in the cluster will push the telemetry data to this service. This PoC tests the behaviour when this OTLP push service is configured with `internalTrafficPolicy: Local`.
+The applications running in the cluster push the telemetry data to this service. This PoC tests the behaviour when the OTLP push service is configured with `internalTrafficPolicy: Local`.
 The following criteria were tested:
 - If the data is only sent to the DaemonSet running on the same node
 - If the DaemonSet is not running, then is the data sent to a DaemonSet running on a different node
@@ -23,7 +23,7 @@ Tests were performed in the following way:
 ### Verifications
 - The traces are only pushed to the DaemonSet running on the same node as the trace generator.
 - When the DaemonSet is in CrashloopBackoff or in Error state, the traces should not be pushed to the backend.
-  - To simulate failure, the configmap was introduced with broken config and the DaemonSet was restarted.
+  - To simulate failure, the ConfigMap was introduced with broken config and the DaemonSet was restarted.
 
 
 ### Results
@@ -47,6 +47,6 @@ Based on these investigation results, the potential risk of a data breach is low
 
 ### Summary
 
-When OTLP Service is configured with `internalTrafficPolicy: Local`, then the data is only sent to the DaemonSet running on the same node. If the DaemonSet is not running, then the data is not sent to the DaemonSet running on a different node.
+When the OTLP Service is configured with `internalTrafficPolicy: Local`, then the data is only sent to the DaemonSet running on the same node. If the DaemonSet is not running, then the data is not sent to the DaemonSet running on a different node.
 
 
