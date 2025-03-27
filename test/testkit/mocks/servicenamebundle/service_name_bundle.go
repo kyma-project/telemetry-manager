@@ -3,6 +3,7 @@
 package servicenamebundle
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -38,39 +39,66 @@ const (
 
 // K8sObjects generates and returns a list of Kubernetes objects
 // that are set up for testing service name enrichment.
-func K8sObjects(namespace string, signalType telemetrygen.SignalType) []client.Object {
-	podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
-		telemetrygen.WithServiceName(""))
-	podSpecWithUnknownService := telemetrygen.PodSpec(signalType,
-		telemetrygen.WithServiceName("unknown_service"))
-	podSpecWithUnknownServicePattern := telemetrygen.PodSpec(signalType,
-		telemetrygen.WithServiceName("unknown_service:bash"))
-	podSpecWithInvalidStartForUnknownServicePattern := telemetrygen.PodSpec(signalType,
-		telemetrygen.WithServiceName(AttrWithInvalidStartForUnknownServicePattern))
-	podSpecWithInvalidEndForUnknownServicePattern := telemetrygen.PodSpec(signalType,
-		telemetrygen.WithServiceName(AttrWithInvalidEndForUnknownServicePattern))
-	podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(signalType,
-		telemetrygen.WithServiceName(AttrWithMissingProcessForUnknownServicePattern))
+func K8sObjects(namespace string, signalType telemetrygen.SignalType, stdoutLogs bool) []client.Object {
 
-	return []client.Object{
-		kitk8s.NewPod(PodWithBothLabelsName, namespace).
-			WithLabel("app.kubernetes.io/name", KubeAppLabelValue).
-			WithLabel("app", AppLabelValue).
-			WithPodSpec(podSpecWithUndefinedService).
-			K8sObject(),
-		kitk8s.NewPod(PodWithAppLabelName, namespace).
-			WithLabel("app", AppLabelValue).
-			WithPodSpec(podSpecWithUndefinedService).
-			K8sObject(),
-		kitk8s.NewDeployment(DeploymentName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-		kitk8s.NewStatefulSet(StatefulSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-		kitk8s.NewDaemonSet(DaemonSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-		kitk8s.NewJob(JobName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-		kitk8s.NewPod(PodWithNoLabelsName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-		kitk8s.NewPod(PodWithUnknownServicePatternName, namespace).WithPodSpec(podSpecWithUnknownServicePattern).K8sObject(),
-		kitk8s.NewPod(PodWithUnknownServiceName, namespace).WithPodSpec(podSpecWithUnknownService).K8sObject(),
-		kitk8s.NewPod(PodWithInvalidStartForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithInvalidStartForUnknownServicePattern).K8sObject(),
-		kitk8s.NewPod(PodWithInvalidEndForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithInvalidEndForUnknownServicePattern).K8sObject(),
-		kitk8s.NewPod(PodWithMissingProcessForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithMissingProcessForUnknownServicePattern).K8sObject(),
+	if stdoutLogs {
+		logs := loggen.New(namespace)
+		return []client.Object{
+
+			kitk8s.NewPod(PodWithBothLabelsName, namespace).
+				WithLabel("app.kubernetes.io/name", KubeAppLabelValue).
+				WithLabel("app", AppLabelValue).
+				WithPodSpec(logs.PodSpec()).
+				K8sObject(),
+			kitk8s.NewJob(JobName, namespace).WithPodSpec(logs.PodSpec()).K8sObject(),
+			kitk8s.NewPod(PodWithNoLabelsName, namespace).WithPodSpec(logs.PodSpec()).K8sObject(),
+		}
 	}
+	if signalType == telemetrygen.SignalTypeLogs {
+		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(""))
+		return []client.Object{
+			kitk8s.NewPod(PodWithAppLabelName, namespace).
+				WithLabel("app", AppLabelValue).
+				WithPodSpec(podSpecWithUndefinedService).
+				K8sObject(),
+			kitk8s.NewDeployment(DeploymentName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewStatefulSet(StatefulSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+		}
+	}
+
+	if signalType == telemetrygen.SignalTypeMetrics {
+		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(""))
+		podSpecWithInvalidStartForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(AttrWithInvalidStartForUnknownServicePattern))
+		podSpecWithInvalidEndForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(AttrWithInvalidEndForUnknownServicePattern))
+		podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(AttrWithMissingProcessForUnknownServicePattern))
+		return []client.Object{
+			kitk8s.NewDaemonSet(DaemonSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewJob(JobName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewPod(PodWithInvalidStartForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithInvalidStartForUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(PodWithInvalidEndForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithInvalidEndForUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(PodWithMissingProcessForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithMissingProcessForUnknownServicePattern).K8sObject(),
+		}
+	}
+
+	if signalType == telemetrygen.SignalTypeTraces {
+		podSpecWithUnknownServicePattern := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName("unknown_service:bash"))
+		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(""))
+		podSpecWithUnknownService := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName("unknown_service"))
+
+		return []client.Object{
+			kitk8s.NewPod(PodWithNoLabelsName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewPod(PodWithUnknownServicePatternName, namespace).WithPodSpec(podSpecWithUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(PodWithUnknownServiceName, namespace).WithPodSpec(podSpecWithUnknownService).K8sObject(),
+		}
+	}
+
+	return []client.Object{}
 }

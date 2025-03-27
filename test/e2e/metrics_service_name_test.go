@@ -99,22 +99,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), fmt.Sprintf("could not find metrics matching service.name: %s, k8s.pod.name: %s.*", expectedServiceName, givenPodPrefix))
 		}
 
-		It("Should set undefined service.name attribute to app.kubernetes.io/name label value", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithBothLabelsName, servicenamebundle.KubeAppLabelValue)
-		})
-
-		It("Should set undefined service.name attribute to app label value", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithAppLabelName, servicenamebundle.AppLabelValue)
-		})
-
-		It("Should set undefined service.name attribute to Deployment name", func() {
-			verifyServiceNameAttr(servicenamebundle.DeploymentName, servicenamebundle.DeploymentName)
-		})
-
-		It("Should set undefined service.name attribute to StatefulSet name", func() {
-			verifyServiceNameAttr(servicenamebundle.StatefulSetName, servicenamebundle.StatefulSetName)
-		})
-
 		It("Should set undefined service.name attribute to DaemonSet name", func() {
 			verifyServiceNameAttr(servicenamebundle.DaemonSetName, servicenamebundle.DaemonSetName)
 		})
@@ -122,19 +106,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		It("Should set undefined service.name attribute to Job name", func() {
 			verifyServiceNameAttr(servicenamebundle.JobName, servicenamebundle.JobName)
 		})
-
-		It("Should set undefined service.name attribute to Pod name", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
-		})
-
-		It("Should enrich service.name attribute when its value is unknown_service", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
-		})
-
-		It("Should enrich service.name attribute when its value is following the unknown_service:<process.executable.name> pattern", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServicePatternName, servicenamebundle.PodWithUnknownServicePatternName)
-		})
-
+		
 		It("Should NOT enrich service.name attribute when its value is not following the unknown_service:<process.executable.name> pattern", func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithInvalidStartForUnknownServicePatternName, servicenamebundle.AttrWithInvalidStartForUnknownServicePattern)
 			verifyServiceNameAttr(servicenamebundle.PodWithInvalidEndForUnknownServicePatternName, servicenamebundle.AttrWithInvalidEndForUnknownServicePattern)
