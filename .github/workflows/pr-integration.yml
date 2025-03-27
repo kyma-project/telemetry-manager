@@ -190,7 +190,6 @@ jobs:
       matrix:
         signal-type:
           - logs
-          - logs
           - metrics
           - traces
         scenario:
