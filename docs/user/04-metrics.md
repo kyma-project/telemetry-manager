@@ -546,7 +546,7 @@ With this, the agent starts collecting all Istio metrics from Istio sidecars.
 #### Activate Envoy Metrics
 
 If you are using the istio input, you can also collect Envoy metrics. Envoy metrics provide insights into the performance and behavior of the Envoy proxy, such as request rates, latencies, and error counts. These metrics are useful for observability and troubleshooting service mesh traffic.
-The complete list of available Envoy metrics can be found [here](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats) and the server metrics [here](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics).
+For details, see the list of available [Envoy metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats) [server metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics).
 
 By default, Envoy metrics collection is disabled.
 
@@ -570,7 +570,7 @@ To activate Envoy metrics, you must enable the `envoyMetrics` section in the Met
   ```
 
 > [!NOTE]
-> Envoy metrics are only available for the istio input. Ensure that Istio sidecars are correctly injected into your workloads for Envoy metrics to be available.
+> Envoy metrics are only available for the Istio input. Ensure that Istio sidecars are correctly injected into your workloads for Envoy metrics to be available.
 
 ### 8. Deactivate OTLP Metrics
 
