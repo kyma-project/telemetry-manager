@@ -23,7 +23,7 @@ Tests were performed in the following way:
 ### Verifications
 - The traces are only pushed to the DaemonSet running on the same node as the trace generator.
 - When the DaemonSet is in CrashloopBackoff or in Error state, the traces should not be pushed to the backend.
-  - To simulate failure, the ConfigMap was introduced with broken config and the DaemonSet was restarted.
+- To simulate failure, the ConfigMap was introduced with broken config and the DaemonSet was restarted.
 
 
 ### Results
