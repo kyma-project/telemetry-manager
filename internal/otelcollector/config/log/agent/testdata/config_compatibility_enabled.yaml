@@ -8,6 +8,7 @@ service:
                 - transform/set-instrumentation-scope-runtime
                 - k8sattributes
                 - resource/insert-cluster-attributes
+                - service_enrichment
                 - resource/drop-kyma-attributes
             exporters:
                 - otlp/test
