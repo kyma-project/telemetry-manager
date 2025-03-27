@@ -1,4 +1,4 @@
-# Service with local traffic policy
+# Service with Local Traffic Policy
 
 The PoC investigates the behavior of the OTLP push service with the [service-internal traffic policy](https://kubernetes.io/docs/concepts/services-networking/service-traffic-policy/#using-service-internal-traffic-policy).
 The gateways in Kyma Telemetry are exposed using an OTLP service such as `telemetry-otlp-traces`.
