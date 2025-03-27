@@ -27,7 +27,7 @@ Optionally, the Telemetry module provides a DaemonSet of an OTel Collector actin
 
 ![Architecture](./assets/logs-arch.drawio.svg)
 
-1. Application containers print JSON logs to `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories. Istio is configured to write access logs to `stdout` as well.
+1. Application containers print JSON logs to `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related Node. Istio is configured to write access logs to `stdout` as well.
 2. An OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails and parses them.
 3. An application (exposing logs in OTLP) sends logs to the central log gateway service. Istio is configured to push access logs via OTLP as well.
 4. The gateway and agent discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
@@ -332,13 +332,125 @@ spec:
       ...
 ```
 
-#### Log Attributes
+When tailing the log files from the container runtime, the logs will be transformed into a OTLP entry. Learn more about the flow of the log record through the steps and the available log attributes in the following stages:
 
-#### Timestamps
+- [Log tailing](#log-tailing)
+- [JSON parsing](#json-parsing)
+- [Severity parsing](#severity-parsing)
+- [Trace Parsing](#trace-parsing)
+- [Log body determination](#log-body-determination)
 
-#### Severity
+The following example assumes that there’s a container `myContainer` of Pod `myPod`, running in namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
 
-#### Body
+```json
+{
+  "level": "warn",
+  "message": "This is the actual message",
+  "tenant": "myTenant",
+  "traceID": "123"
+}
+```
+
+#### Log Tailing
+
+The agent reads the log message from a log file managed by the container runtime. The file name contains Namespace, Pod and Container information that will be available later as log attributes. The raw log record looks similar to the following example:
+
+```json
+{
+  "time": "2022-05-23T15:04:52.193317532Z",
+  "stream": "stdout",
+  "_p": "F",
+  "log": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"trace_id\": \"123\"}"
+}
+```
+
+After the tailing, the created OTLP record will look like:
+
+```json
+{
+  "time": "2022-05-23T15:04:52.100000000Z",
+  "observedTime": "2022-05-23T15:04:52.200000000",
+  "attributes": {
+   "log.file.path": "/var/log/pods/myNamespace_myPod-<containerID>/myContainer/<containerRestarts>.log",
+   "log.iostream": "stdout"
+  },
+  "resourceAttributes": {
+    "k8s.container.name": "myContainer",
+    "k8s.container.restart_count": "<containerRestarts>",
+    "k8s.pod.name": "myPod",
+    "k8s.namespace.name": "myNamespace"
+  },
+  "body": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"trace_id\": \"123\"}"
+}
+```
+
+Hereby, all information identifying the actual source of the log like the Container, Pod and Namespace name are getting enriched as resource attributes following the [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). Further metadata like the original file name and channel are enriched as log attributes following the [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The `time` value provided in the container runtime log entry is used as `time` attribute in the new OTEL record, as it is very close to the actual time when the log happened. Additionally, the `observedTime` is set with the time when the agent actual read the log record as recommended by the [OTEL log specification](https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-observedtimestamp). The actual log payload gets moved into the OTLP `body` field.
+
+#### JSON Parsing
+
+If the value of the `body` is a JSON document, the value gets parsed and all JSON root attributes will get enriched as additional log attributes. The orginial body gets moved into the `log.original` attribute (managed via LogPipeline `input.application.keepOriginalBody: true` attribute).
+
+The resulting OTLP record will look like this:
+
+```json
+{
+  "time": "2022-05-23T15:04:52.100000000Z",
+  "observedTime": "2022-05-23T15:04:52.200000000",
+  "attributes": {
+   "log.file.path": "/var/log/pods/myNamespace_myPod-<containerID>/myContainer/<containerRestarts>.log",
+   "log.iostream": "stdout",
+   "log.original": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"trace_id\": \"123\"}",
+   "level": "warn",
+   "tenant": "myTenant",
+   "trace_id": "123",
+   "message": "This is the actual message"
+  },
+  "resourceAttributes": {
+    "k8s.container.name": "myContainer",
+    "k8s.container.restart_count": "<containerRestarts>",
+    "k8s.pod.name": "myPod",
+    "k8s.namespace.name": "myNamespace"
+  },
+  "body": ""
+}
+```
+
+#### Severity Parsing
+
+As typicaly a log message has a log level written to a field `level`, the agent will try to parse the log attribute `level` with a [severity parser](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/severity_parser.md). If that is successful, the log attribute gets transformed into the OTEL `severityText`and `severityNumber` attributes.
+
+#### Trace Parsing
+
+OTLP natively supports attaching trace context to log records. Hereby, the ganet will try to parse it from log attributes with name `trace_id`, `span_id` and `trace_flags`.
+
+#### Log Body Determination
+
+As the actual log message should be located in the `body` attribute, the agent will move a log attribute with name `message` or `msg` into the `body`.
+
+The resulting overal log record before further gateway typical enrichement logic will look like:
+
+```json
+{
+  "time": "2022-05-23T15:04:52.100000000Z",
+  "observedTime": "2022-05-23T15:04:52.200000000",
+  "attributes": {
+   "log.file.path": "/var/log/pods/myNamespace_myPod-<containerID>/myContainer/<containerRestarts>.log",
+   "log.iostream": "stdout",
+   "log.original": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"trace_id\": \"123\"}",
+   "tenant": "myTenant",
+  },
+  "resourceAttributes": {
+    "k8s.container.name": "myContainer",
+    "k8s.container.restart_count": "<containerRestarts>",
+    "k8s.pod.name": "myPod",
+    "k8s.namespace.name": "myNamespace"
+  },
+  "body": "This is the actual message",
+  "severityNumber": 13,
+  "severityTex": "warn",
+  "trace_id": 123
+}
+```
 
 ### 5. Deactivate OTLP Logs
 

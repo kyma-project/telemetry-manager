@@ -23,7 +23,7 @@ In the Kyma cluster, the Telemetry module provides a DaemonSet of [Fluent Bit](h
 
 ![Architecture](./assets/logs-fluentbit-arch.drawio.svg)
 
-1. Containers print JSON logs to  logs are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories.
+1. Application containers print logs to `stdout/stderr` and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories on the related Node.
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
 3. Fluent Bit discovers additional Pod metadata, such as Pod annotations and labels.
 4. Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
