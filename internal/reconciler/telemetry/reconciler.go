@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,6 +30,11 @@ const (
 	selfMonitorConfigFileName    = "prometheus.yml"
 	selfMonitorAlertRuleFileName = "alerting_rules.yml"
 )
+
+var compatibilityModeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	Name: "telemetry_module_otelcol_metrics_compatibility_mode",
+	Help: "Indicates if the OpenTelemetry internal metrics compatibility mode is enabled (1) or disabled (0)",
+})
 
 type Config struct {
 	Traces      TracesConfig
@@ -128,6 +134,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			err = fmt.Errorf("failed to update status: %w", statusErr)
 		}
 	}
+
+	updateCompatibilityModeMetric(ctx, r.Client, telemetry.Namespace)
 
 	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
 
@@ -295,4 +303,13 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	return nil
+}
+
+func updateCompatibilityModeMetric(ctx context.Context, c client.Client, namespace string) {
+	compatibilityMode := telemetryutils.GetCompatibilityModeFromTelemetry(ctx, c, namespace)
+	if compatibilityMode {
+		compatibilityModeGauge.Set(1)
+	} else {
+		compatibilityModeGauge.Set(0)
+	}
 }
