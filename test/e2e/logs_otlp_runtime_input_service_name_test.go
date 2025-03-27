@@ -3,25 +3,25 @@
 package e2e
 
 import (
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
-
 	"fmt"
+	"io"
+	"net/http"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"io"
-	"k8s.io/apimachinery/pkg/types"
-
-	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
@@ -38,7 +38,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
 
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeLogs)...)
+		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeLogs, true)...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
 		hostSecretRef := backend.HostSecretRefV1Alpha1()

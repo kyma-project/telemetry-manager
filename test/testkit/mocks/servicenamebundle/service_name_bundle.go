@@ -3,10 +3,10 @@
 package servicenamebundle
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 )
 
@@ -40,9 +40,9 @@ const (
 // K8sObjects generates and returns a list of Kubernetes objects
 // that are set up for testing service name enrichment.
 func K8sObjects(namespace string, signalType telemetrygen.SignalType, stdoutLogs bool) []client.Object {
-
 	if stdoutLogs {
 		logs := loggen.New(namespace)
+
 		return []client.Object{
 
 			kitk8s.NewPod(PodWithBothLabelsName, namespace).
@@ -54,9 +54,11 @@ func K8sObjects(namespace string, signalType telemetrygen.SignalType, stdoutLogs
 			kitk8s.NewPod(PodWithNoLabelsName, namespace).WithPodSpec(logs.PodSpec()).K8sObject(),
 		}
 	}
+
 	if signalType == telemetrygen.SignalTypeLogs {
 		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
 			telemetrygen.WithServiceName(""))
+
 		return []client.Object{
 			kitk8s.NewPod(PodWithAppLabelName, namespace).
 				WithLabel("app", AppLabelValue).
@@ -76,6 +78,7 @@ func K8sObjects(namespace string, signalType telemetrygen.SignalType, stdoutLogs
 			telemetrygen.WithServiceName(AttrWithInvalidEndForUnknownServicePattern))
 		podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(signalType,
 			telemetrygen.WithServiceName(AttrWithMissingProcessForUnknownServicePattern))
+
 		return []client.Object{
 			kitk8s.NewDaemonSet(DaemonSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
 			kitk8s.NewJob(JobName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
