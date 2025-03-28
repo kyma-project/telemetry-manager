@@ -68,8 +68,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 		objs = append(objs,
 			kitk8s.NewPod(podWithBothLabelsName, mockNs).
-				WithLabel("app.kubernetes.io/name", KubeAppLabelValue).
-				WithLabel("app", AppLabelValue).
+				WithLabel("app.kubernetes.io/name", kubeAppLabelValue).
+				WithLabel("app", appLabelValue).
 				WithPodSpec(logs.PodSpec()).
 				K8sObject(),
 			kitk8s.NewJob(jobName, mockNs).WithPodSpec(logs.PodSpec()).K8sObject(),
