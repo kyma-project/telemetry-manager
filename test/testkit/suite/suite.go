@@ -125,12 +125,12 @@ const (
 	LabelMaxPipeline   = "max-pipeline"
 
 	// Test "sub-suites" labels
-	LabelExperimental   = "experimental"
-	LabelSetA           = "set_a"
-	LabelSetB           = "set_b"
-	LabelSetC           = "set_c"
-	LabelSignalPush     = "signal-push"
-	LabelSignalPull     = "signal-pull"
+	LabelExperimental = "experimental"
+	LabelSetA         = "set_a"
+	LabelSetB         = "set_b"
+	LabelSetC         = "set_c"
+	LabelSignalPush   = "signal-push"
+	LabelSignalPull   = "signal-pull"
 
 	// Self-monitoring test labels
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
