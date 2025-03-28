@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
@@ -140,7 +141,12 @@ func makeTLSConfig(istioCertPath string) *TLSConfig {
 	}
 }
 
-func makePrometheusIstioConfig() *PrometheusReceiver {
+func makePrometheusIstioConfig(envoyMetricsEnabled bool) *PrometheusReceiver {
+	metricNames := "istio_.*"
+	if envoyMetricsEnabled {
+		metricNames = strings.Join([]string{"envoy_.*", metricNames}, "|")
+	}
+
 	return &PrometheusReceiver{
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
@@ -159,7 +165,7 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 					MetricRelabelConfigs: []RelabelConfig{
 						{
 							SourceLabels: []string{"__name__"},
-							Regex:        "istio_.*",
+							Regex:        metricNames,
 							Action:       Keep,
 						},
 					},
