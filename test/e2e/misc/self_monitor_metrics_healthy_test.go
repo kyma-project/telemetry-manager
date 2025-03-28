@@ -24,7 +24,7 @@ import (
 )
 
 // Please remove the test when the compatibility mode annotation feature removed, planed for telemetry version 1.41.0
-var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringMetricsHealthy), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()

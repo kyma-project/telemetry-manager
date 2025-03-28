@@ -142,8 +142,7 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs-fluentbit
-          - logs-otel
+          - logs
           - metrics
           - traces
         scenario:
@@ -189,8 +188,7 @@ jobs:
       fail-fast: false
       matrix:
         signal-type:
-          - logs-fluentbit
-          - logs-otel
+          - logs
           - metrics
           - traces
         scenario:

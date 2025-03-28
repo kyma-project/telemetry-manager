@@ -1,6 +1,6 @@
 //go:build e2e
 
-package traces
+package misc
 
 import (
 	"net/http"
