@@ -61,10 +61,10 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 		objs = append(objs, &logPipeline)
 
-		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+		podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs,
 			telemetrygen.WithServiceName(""))
 
-		obj = append(objs,
+		objs = append(objs,
 			kitk8s.NewPod(podWithAppLabelName, mockNs).
 				WithLabel("app", appLabelValue).
 				WithPodSpec(podSpecWithUndefinedService).

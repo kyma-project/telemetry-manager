@@ -55,13 +55,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			Build()
 		objs = append(objs, &metricPipeline)
 
-		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+		podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
 			telemetrygen.WithServiceName(""))
-		podSpecWithInvalidStartForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+		podSpecWithInvalidStartForUnknownServicePattern := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
 			telemetrygen.WithServiceName(attrWithInvalidStartForUnknownServicePattern))
-		podSpecWithInvalidEndForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+		podSpecWithInvalidEndForUnknownServicePattern := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
 			telemetrygen.WithServiceName(attrWithInvalidEndForUnknownServicePattern))
-		podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+		podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
 			telemetrygen.WithServiceName(attrWithMissingProcessForUnknownServicePattern))
 
 		objs = append(objs,

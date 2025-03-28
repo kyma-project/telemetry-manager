@@ -46,11 +46,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			Build()
 		objs = append(objs, &tracePipeline)
 
-		podSpecWithUnknownServicePattern := telemetrygen.PodSpec(signalType,
+		podSpecWithUnknownServicePattern := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
 			telemetrygen.WithServiceName("unknown_service:bash"))
-		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+		podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
 			telemetrygen.WithServiceName(""))
-		podSpecWithUnknownService := telemetrygen.PodSpec(signalType,
+		podSpecWithUnknownService := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
 			telemetrygen.WithServiceName("unknown_service"))
 
 		objs = append(objs,

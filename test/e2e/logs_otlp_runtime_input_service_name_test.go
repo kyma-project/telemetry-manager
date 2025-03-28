@@ -31,6 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		jobName               = "job"
 		podWithNoLabelsName   = "pod-with-no-labels"
 		kubeAppLabelValue     = "kube-workload"
+		appLabelValue         = "workload"
 		podWithBothLabelsName = "pod-with-both-app-labels" // #nosec G101 -- This is a false positive
 
 	)
@@ -58,11 +59,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		if suite.IsUpgrade() {
 			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
-		logPipeline := pipelineBuilder.Build()
 
-		objs = append(objs,
-			&logPipeline,
-		)
+		logPipeline := pipelineBuilder.Build()
+		objs = append(objs, &logPipeline)
 
 		logs := loggen.New(mockNs)
 
