@@ -22,6 +22,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 		SetInstrumentationScopeRuntime: makeInstrumentationScopeRuntime(opts.InstrumentationScopeVersion),
 		K8sAttributes:                  processors.K8sAttributesProcessorConfig(opts.Enrichments),
 		InsertClusterAttributes:        processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
+		ResolveServiceName:             processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:             processors.DropKymaAttributesProcessorConfig(),
 	}
 }

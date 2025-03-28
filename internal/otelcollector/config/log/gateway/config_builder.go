@@ -109,6 +109,8 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 			"transform/set-observed-time-if-zero",
 			"k8sattributes",
 			"resource/insert-cluster-attributes",
+			"service_enrichment",
+			"resource/drop-kyma-attributes",
 			"batch",
 		},
 		Exporters: exporterIDs,

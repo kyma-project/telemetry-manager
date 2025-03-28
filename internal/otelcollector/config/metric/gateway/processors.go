@@ -20,7 +20,7 @@ func makeProcessorsConfig(opts BuildOptions) Processors {
 			Enabled: false,
 		}),
 		InsertClusterAttributes:       processors.InsertClusterAttributesProcessorConfig(opts.ClusterName, opts.CloudProvider),
-		ResolveServiceName:            makeResolveServiceNameConfig(),
+		ResolveServiceName:            processors.MakeResolveServiceNameConfig(),
 		DropKymaAttributes:            processors.DropKymaAttributesProcessorConfig(),
 		DeleteSkipEnrichmentAttribute: makeDeleteSkipEnrichmentAttributeConfig(),
 	}
@@ -41,13 +41,6 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
 		SpikeLimitPercentage: 15,
-	}
-}
-
-func makeResolveServiceNameConfig() *metric.TransformProcessor {
-	return &metric.TransformProcessor{
-		ErrorMode:        "ignore",
-		MetricStatements: processors.ResolveServiceNameStatements(),
 	}
 }
 

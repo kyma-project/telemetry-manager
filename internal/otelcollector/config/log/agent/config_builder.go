@@ -101,6 +101,7 @@ func makePipelineConfig(receiverIDs, exporterIDs string) config.Pipeline {
 			"transform/set-instrumentation-scope-runtime",
 			"k8sattributes",
 			"resource/insert-cluster-attributes",
+			"service_enrichment",
 			"resource/drop-kyma-attributes",
 		},
 		Exporters: []string{exporterIDs},

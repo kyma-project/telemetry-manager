@@ -20,10 +20,11 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	SetObsTimeIfZero        *log.TransformProcessor        `yaml:"transform/set-observed-time-if-zero,omitempty"`
-	K8sAttributes           *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	InsertClusterAttributes *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
-	DropKymaAttributes      *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
+	SetObsTimeIfZero        *log.TransformProcessor            `yaml:"transform/set-observed-time-if-zero,omitempty"`
+	K8sAttributes           *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
+	InsertClusterAttributes *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
+	ResolveServiceName      *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
+	DropKymaAttributes      *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
 type Exporters map[string]Exporter
