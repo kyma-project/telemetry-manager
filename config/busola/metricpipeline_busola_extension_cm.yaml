@@ -82,6 +82,9 @@ data:
               - name: Diagnostic Metrics
                 visibility: $exists(spec.input.istio.diagnosticMetrics.enabled)
                 source: spec.input.istio.diagnosticMetrics.enabled
+              - name: Envoy Metrics
+                visibility: $exists(spec.input.istio.envoyMetrics.enabled)
+                source: spec.input.istio.envoyMetrics.enabled
           - name: Runtime
             widget: Panel
             visibility: $exists(spec.input.runtime)
@@ -324,6 +327,9 @@ data:
                 - path: '[]'
             - name: Enable Diagnostic Metrics
               path: diagnosticMetrics.enabled
+              simple: true
+            - name: Enable Envoy Metrics
+              path: envoyMetrics.enabled
               simple: true
         - name: Runtime
           path: runtime
