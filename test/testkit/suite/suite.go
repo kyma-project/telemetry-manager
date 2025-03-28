@@ -116,17 +116,24 @@ func sanitizeSpecID(filePath string) string {
 }
 
 const (
+	// Test suites labels
 	LabelLogsOtel      = "logs-otel"
 	LabelLogsFluentBit = "logs-fluentbit"
 	LabelTraces        = "traces"
 	LabelMetrics       = "metrics"
 	LabelTelemetry     = "telemetry"
-	LabelExperimental  = "experimental"
 	LabelMaxPipeline   = "max-pipeline"
-	LabelSetA          = "set_a"
-	LabelSetB          = "set_b"
-	LabelSetC          = "set_c"
 
+	// Test "sub-suites" labels
+	LabelExperimental   = "experimental"
+	LabelSetA           = "set_a"
+	LabelSetB           = "set_b"
+	LabelSetC           = "set_c"
+	LabelSignalPush     = "signal-push"
+	LabelSignalPull     = "signal-pull"
+	LabelSignalPushPull = "signal-push-pull"
+
+	// Self-monitoring test labels
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
 	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"
 	LabelSelfMonitoringLogsOutage          = "self-mon-logs-outage"

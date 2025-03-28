@@ -17,7 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, suite.LabelExperimental), Ordered, func() {
 	Context("When multiple otlp logpipelines exist", Ordered, func() {
 		var (
 			mockNs            = suite.ID()
@@ -90,7 +90,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
-		It("Should verify logs from telemetrygen are delivered", func() {
+		It("Should verify logs from loggen are delivered", func() {
 			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, mockNs)
 			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, mockNs)
 		})

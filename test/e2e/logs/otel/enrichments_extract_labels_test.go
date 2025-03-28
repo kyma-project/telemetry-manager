@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPush, suite.LabelExperimental), Ordered, func() {
 	const (
 		logLabelExactMatchAttributeKey     = "k8s.pod.label.log.test.exact.should.match"
 		logLabelPrefixMatchAttributeKey1   = "k8s.pod.label.log.test.prefix.should.match1"
