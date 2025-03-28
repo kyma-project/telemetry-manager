@@ -131,7 +131,6 @@ const (
 	LabelSetC           = "set_c"
 	LabelSignalPush     = "signal-push"
 	LabelSignalPull     = "signal-pull"
-	LabelSignalPushPull = "signal-push-pull"
 
 	// Self-monitoring test labels
 	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"

@@ -1,6 +1,6 @@
 //go:build e2e
 
-package misc
+package selfmonitor
 
 import (
 	. "github.com/onsi/ginkgo/v2"

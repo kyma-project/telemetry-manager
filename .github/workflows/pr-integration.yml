@@ -50,9 +50,7 @@ jobs:
       matrix:
         ginkgo-labels:
           - logs-fluentbit
-          - "logs-otel && signal-push"
-          - "logs-otel && signal-pull"
-          - "logs-otel && signal-push-pull"
+          - logs-otel
           - "metrics && set_a"
           - "metrics && set_b"
           - "metrics && set_c"

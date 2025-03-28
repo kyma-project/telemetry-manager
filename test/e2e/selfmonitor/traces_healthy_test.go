@@ -1,6 +1,6 @@
 //go:build e2e
 
-package misc
+package selfmonitor
 
 import (
 	"net/http"
