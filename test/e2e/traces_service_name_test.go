@@ -54,9 +54,9 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			telemetrygen.WithServiceName("unknown_service"))
 
 		objs = append(objs,
-			kitk8s.NewPod(podWithNoLabelsName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-			kitk8s.NewPod(podWithUnknownServicePatternName, namespace).WithPodSpec(podSpecWithUnknownServicePattern).K8sObject(),
-			kitk8s.NewPod(podWithUnknownServiceName, namespace).WithPodSpec(podSpecWithUnknownService).K8sObject(),
+			kitk8s.NewPod(podWithNoLabelsName, mockNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewPod(podWithUnknownServicePatternName, mockNs).WithPodSpec(podSpecWithUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(podWithUnknownServiceName, mockNs).WithPodSpec(podSpecWithUnknownService).K8sObject(),
 		)
 
 		return objs

@@ -65,11 +65,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			telemetrygen.WithServiceName(attrWithMissingProcessForUnknownServicePattern))
 
 		objs = append(objs,
-			kitk8s.NewDaemonSet(daemonSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-			kitk8s.NewJob(jobName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-			kitk8s.NewPod(podWithInvalidStartForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithInvalidStartForUnknownServicePattern).K8sObject(),
-			kitk8s.NewPod(podWithInvalidEndForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithInvalidEndForUnknownServicePattern).K8sObject(),
-			kitk8s.NewPod(podWithMissingProcessForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithMissingProcessForUnknownServicePattern).K8sObject(),
+			kitk8s.NewDaemonSet(daemonSetName, mockNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewJob(jobName, mockNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewPod(podWithInvalidStartForUnknownServicePatternName, mockNs).WithPodSpec(podSpecWithInvalidStartForUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(podWithInvalidEndForUnknownServicePatternName, mockNs).WithPodSpec(podSpecWithInvalidEndForUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(podWithMissingProcessForUnknownServicePatternName, mockNs).WithPodSpec(podSpecWithMissingProcessForUnknownServicePattern).K8sObject(),
 		)
 
 		return objs

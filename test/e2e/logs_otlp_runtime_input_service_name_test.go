@@ -64,16 +64,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			&logPipeline,
 		)
 
-		logs := loggen.New(namespace)
+		logs := loggen.New(mockNs)
 
 		objs = append(objs,
-			kitk8s.NewPod(podWithBothLabelsName, namespace).
+			kitk8s.NewPod(podWithBothLabelsName, mockNs).
 				WithLabel("app.kubernetes.io/name", KubeAppLabelValue).
 				WithLabel("app", AppLabelValue).
 				WithPodSpec(logs.PodSpec()).
 				K8sObject(),
-			kitk8s.NewJob(jobName, namespace).WithPodSpec(logs.PodSpec()).K8sObject(),
-			kitk8s.NewPod(podWithNoLabelsName, namespace).WithPodSpec(logs.PodSpec()).K8sObject(),
+			kitk8s.NewJob(jobName, mockNs).WithPodSpec(logs.PodSpec()).K8sObject(),
+			kitk8s.NewPod(podWithNoLabelsName, mockNs).WithPodSpec(logs.PodSpec()).K8sObject(),
 		)
 
 		return objs

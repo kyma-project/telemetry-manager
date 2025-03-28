@@ -65,12 +65,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			telemetrygen.WithServiceName(""))
 
 		obj = append(objs,
-			kitk8s.NewPod(podWithAppLabelName, namespace).
+			kitk8s.NewPod(podWithAppLabelName, mockNs).
 				WithLabel("app", appLabelValue).
 				WithPodSpec(podSpecWithUndefinedService).
 				K8sObject(),
-			kitk8s.NewDeployment(deploymentName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-			kitk8s.NewStatefulSet(statefulSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewDeployment(deploymentName, mockNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewStatefulSet(statefulSetName, mockNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
 		)
 
 		return objs
