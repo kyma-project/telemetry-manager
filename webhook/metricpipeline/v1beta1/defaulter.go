@@ -67,6 +67,24 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}
+
+	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.EnvoyMetrics == nil {
+		pipeline.Spec.Input.Istio.EnvoyMetrics = &telemetryv1beta1.EnvoyMetrics{
+			Enabled: false,
+		}
+	}
+
+	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.DiagnosticMetrics == nil {
+		pipeline.Spec.Input.Istio.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
+			Enabled: false,
+		}
+	}
+
+	if prometheusInputEnabled(pipeline) && pipeline.Spec.Input.Prometheus.DiagnosticMetrics == nil {
+		pipeline.Spec.Input.Prometheus.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
+			Enabled: false,
+		}
+	}
 }
 
 func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
