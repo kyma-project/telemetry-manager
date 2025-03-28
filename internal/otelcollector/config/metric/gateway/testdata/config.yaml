@@ -150,14 +150,15 @@ processors:
         metrics:
             metric:
                 - instrumentation_scope.name == "io.kyma-project.telemetry/istio"
-    service_enrichment:
-        custom_labels:
-            - kyma.kubernetes_io_app_name
-            - kyma.app_name
     filter/drop-envoy-metrics-if-disabled:
         metrics:
             metric:
                 - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
+    service_enrichment:
+        custom_labels:
+            - kyma.kubernetes_io_app_name
+            - kyma.app_name
+    resource/drop-kyma-attributes:
         attributes:
             - action: delete
               pattern: kyma.*
