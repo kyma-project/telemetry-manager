@@ -105,7 +105,7 @@ processors:
               key: cloud.provider
               value: test-cloud-provider
     service_enrichment:
-        custom_labels:
+        resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
     resource/drop-kyma-attributes:

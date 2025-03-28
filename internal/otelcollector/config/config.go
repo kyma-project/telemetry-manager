@@ -112,5 +112,5 @@ func DefaultExtensions() Extensions {
 }
 
 type ServiceEnrichmentProcessor struct {
-	CustomLabels []string `yaml:"custom_labels"`
+	ResourceAttributes []string `yaml:"resource_attributes"`
 }

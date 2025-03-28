@@ -160,7 +160,7 @@ processors:
             metric:
                 - not(instrumentation_scope.name == "io.kyma-project.telemetry/runtime" or resource.attributes["kyma.input.name"] == "prometheus" or instrumentation_scope.name == "io.kyma-project.telemetry/istio" or instrumentation_scope.name == "io.kyma-project.telemetry/kyma")
     service_enrichment:
-        custom_labels:
+        resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
     resource/drop-kyma-attributes:

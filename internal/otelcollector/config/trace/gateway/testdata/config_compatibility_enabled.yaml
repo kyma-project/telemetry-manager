@@ -113,7 +113,7 @@ processors:
                 - attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["upstream_cluster.name"], "inbound|.+") == true and IsMatch(attributes["user_agent"], "vm_promscrape") == true
                 - attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["upstream_cluster.name"], "inbound|.+") == true and IsMatch(attributes["user_agent"], "kyma-otelcol\\/.*") == true
     service_enrichment:
-        custom_labels:
+        resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
     resource/drop-kyma-attributes:
