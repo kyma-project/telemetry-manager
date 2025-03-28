@@ -340,7 +340,7 @@ The following example configures all Istio proxies with the `kyma-traces` extens
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: tracing-default
+  name: mesh-default
   namespace: istio-system
 spec:
   tracing:
@@ -362,7 +362,7 @@ To configure an "always-on" sampling, set the sampling rate to 100%:
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: tracing-default
+  name: mesh-default
   namespace: istio-system
 spec:
   tracing:
@@ -379,7 +379,7 @@ If you need specific settings for individual namespaces or workloads, place addi
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: tracing-default
+  name: tracing
   namespace: my-namespace
 spec:
   selector:
@@ -399,7 +399,7 @@ To enable the propagation of the [W3C Trace Context](https://www.w3.org/TR/trace
   apiVersion: telemetry.istio.io/v1
   kind: Telemetry
   metadata:
-    name: tracing-default
+    name: mesh-default
     namespace: istio-system
   spec:
     tracing:

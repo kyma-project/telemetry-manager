@@ -4,6 +4,7 @@
 - [Telemetry Manager](/telemetry-manager/user/01-manager.md)
 - [Gateways](/telemetry-manager/user/gateways.md)
 - [Application Logs](/telemetry-manager/user/02-logs.md)
+- [Application Logs (Experimental)](/telemetry-manager/user/logs.md)
 - [Traces](/telemetry-manager/user/03-traces.md)
 - [Metrics](/telemetry-manager/user/04-metrics.md)
 - [Integration Guides](/telemetry-manager/user/integration/README.md)

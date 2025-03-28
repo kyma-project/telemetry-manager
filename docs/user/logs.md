@@ -1,0 +1,597 @@
+# Application Logs (Experimental)
+
+> Note: This feature is experimental and not available in the regular release. With that, the API is subject to change and might not meet productive criterias.
+
+The goal of the Telemetry module is to support you in collecting all relevant logs of a workload in a Kyma cluster and ship them to a backend for further analysis. Hereby, especially application logs printed to the stdout/stderr channel are in scope as well as logs emmitted via OTLP. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) contribute access logs instantly, and the Telemetry module enriches the data. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
+
+## Overview
+
+The Telemetry module provides a log gateway for push-based collection of logs and, optionally, an agent for the collection of logs of any container running in the Kyma runtime.
+
+You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline.
+The Log feature is optional. If you don't want to use it, simply don't set up a LogPipeline.
+
+## Prerequisites
+
+- Before you can collect logs from a component, it must emit (or instrument) the logs. Typically, it uses a logger framework for the used language runtime (like Node.js) and prints them to the `stdout` or `stderr` channel, see also the [Kubernetes recommendation](https://kubernetes.io/docs/concepts/cluster-administration/logging/#how-nodes-handle-container-logs). Alternatively, you can use the [OTel SDK](https://opentelemetry.io/docs/languages/) to use the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
+
+- If you want to emit the logs to `stdout/stderr` channel, it is recommended to use structured logs in a JSON format. Having that, the log agent will be able to parse your log and enrich all JSON attributes as log attributes and abackend can make use of that. For logging in a structured format, you usally use a logger library like log4J.
+
+- For the push-based alternative via OTLP, you typically still use a logger library like log4J. However, you additionally would instrument that logger and bridge it to the OTel SDK as outlined [here](https://opentelemetry.io/docs/specs/otel/logs/#new-first-party-application-logs).
+
+## Architecture
+
+In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-logs` service, to which users’ applications send the logs data.
+
+Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can tail logs of a container from the underlying container runtime.
+
+![Architecture](./assets/logs-arch.drawio.svg)
+
+1. Application containers print JSON logs to `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related Node. Istio is configured to write access logs to `stdout` as well.
+2. An OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails and parses them.
+3. An application (exposing logs in OTLP) sends logs to the central log gateway service. Istio is configured to push access logs via OTLP as well.
+4. The gateway and agent discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
+5. Telemetry Manager configures the agent and gateway according to the `LogPipeline` resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
+8. The log agent and gateway sends the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
+9. You can analyze the logs data with your preferred backend system.
+
+### Telemetry Manager
+
+The LogPipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the OTel Collector configuration.
+
+![Manager resources](./assets/logs-resources.drawio.svg)
+
+1. Telemetry Manager watches all LogPipeline resources and related Secrets.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the gateway Deployment and the agent DaemonSet. Only if you defined a LogPipeline, the gateway and agent are deployed.
+3. Whenever the user configuration changes, Telemetry Manager validates it and generates a single configuration for the gateway and agent.
+4. Referenced Secrets are copied into one Secret that is mounted to the gateway as well.
+
+### Log Gateway
+
+In a Kyma cluster, the log gateway is the central component to which all components can send their individual logs. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Telemetry Gateways](./gateways.md).
+
+### Log Agent
+
+If a LogPipeline configures a feature in the `input` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of logs from the conteainer runtime. Hereby, the workload container just prints the structured log to the `stdout/stderr` channel. The agent will pick them up, parses, enriches and sends all data in OTLP to the configured backend.
+
+## Setting up a LogPipeline
+
+In the following steps, you can see how to construct and deploy a typical LogPipeline. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
+
+### 1. Create a LogPipeline
+
+To ship logs to a new OTLP output, create a resource of the kind `Logipeline` and save the file (named, for example, `logpipeline.yaml`).
+
+This configures the underlying OTel Collector with a pipeline for logs and opens a push endpoint that is accessible with the `telemetry-otlp-logs` service. For details, see [Gateway Usage](./gateways.md#usage). The following push URLs are set up:
+
+- GRPC: http://telemetry-otlp-logs.kyma-system:4317
+- HTTP: http://telemetry-otlp-logs.kyma-system:4318
+
+The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
+
+<!-- tabs:start -->
+
+#### **GRPC**
+
+For GRPC, use:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+#### **HTTP**
+
+For HTTP, use the `protocol` attribute:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      protocol: http
+      endpoint:
+        value: https://backend.example.com:4318
+```
+
+<!-- tabs:end -->
+
+### 2a. Add Authentication Details From Plain Text
+
+To integrate with external systems, you must configure authentication details. You can use mutual TLS (mTLS), Basic Authentication, or custom headers:
+
+<!-- tabs:start -->
+
+#### **mTLS**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      tls:
+        cert:
+          value: |
+            -----BEGIN CERTIFICATE-----
+            ...
+        key:
+          value: |
+            -----BEGIN RSA PRIVATE KEY-----
+            ...
+```
+
+#### **Basic Authentication**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      authentication:
+        basic:
+          user:
+            value: myUser
+          password:
+            value: myPwd
+```
+
+#### **Token-based authentication with custom headers**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      headers:
+        - name: Authorization
+          prefix: Bearer
+          value: "myToken"
+```
+
+<!-- tabs:end -->
+### 2b. Add Authentication Details From Secrets
+
+Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, LogPipeline supports the reference of Secrets.
+
+Using the **valueFrom** attribute, you can map Secret keys for mutual TLS (mTLS), Basic Authentication, or with custom headers.
+
+You can store the value of the token in the referenced Secret without any prefix or scheme, and you can configure it in the headers section of the LogPipeline. In this example, the token has the prefix “Bearer”.
+
+<!-- tabs:start -->
+
+#### **mTLS**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      tls:
+        cert:
+          valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: cert
+        key:
+          valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: key
+```
+
+#### **Basic Authentication**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: endpoint
+      authentication:
+        basic:
+          user:
+            valueFrom:
+              secretKeyRef:
+                name: backend
+                namespace: default
+                key: user
+          password:
+            valueFrom:
+              secretKeyRef:
+                name: backend
+                namespace: default
+                key: password
+```
+
+#### **Token-based authentication with custom headers**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+      headers:
+        - name: Authorization
+          prefix: Bearer
+          valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: token
+```
+
+<!-- tabs:end -->
+
+The related Secret must have the referenced name, be located in the referenced namespace, and contain the mapped key. See the following example:
+
+```yaml
+kind: Secret
+apiVersion: v1
+metadata:
+  name: backend
+  namespace: default
+stringData:
+  endpoint: https://backend.example.com:4317
+  user: myUser
+  password: XXX
+  token: YYY
+```
+
+### 3. Rotate the Secret
+
+Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
+
+> [!TIP]
+> If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
+
+### 4. Activate application input
+
+To enable collection of logs printed by containers to the `stdout/stderr` channel, define a LogPipeline that has the `application` section enabled as input:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    application:
+      enabled: true
+  output:
+    otlp:
+      ...
+```
+
+By default, input is collected from all namespaces, except the system namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default.
+
+To filter your application logs by namespace or container, use an input spec to restrict or specify which resources you want to include. For example, you can define the namespaces to include in the input collection, exclude namespaces from the input collection, or choose that only system namespaces are included. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
+
+The following example collects input from all namespaces excluding `kyma-system` and only from the `istio-proxy` containers:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    application:
+      enabled: true
+      namespaces:
+        exclude:
+          - myNamespace
+      containers:
+        exclude:
+          - myContainer
+    otlp:
+      ...
+```
+
+When tailing the log files from the container runtime, the logs will be transformed into a OTLP entry. Learn more about the flow of the log record through the steps and the available log attributes in the following stages:
+
+- [Log tailing](#log-tailing)
+- [JSON parsing](#json-parsing)
+- [Severity parsing](#severity-parsing)
+- [Trace Parsing](#trace-parsing)
+- [Log body determination](#log-body-determination)
+
+The following example assumes that there’s a container `myContainer` of Pod `myPod`, running in namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
+
+```json
+{
+  "level": "warn",
+  "message": "This is the actual message",
+  "tenant": "myTenant",
+  "traceID": "123"
+}
+```
+
+#### Log Tailing
+
+The agent reads the log message from a log file managed by the container runtime. The file name contains Namespace, Pod and Container information that will be available later as log attributes. The raw log record looks similar to the following example:
+
+```json
+{
+  "time": "2022-05-23T15:04:52.193317532Z",
+  "stream": "stdout",
+  "_p": "F",
+  "log": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"trace_id\": \"123\"}"
+}
+```
+
+After the tailing, the created OTLP record will look like:
+
+```json
+{
+  "time": "2022-05-23T15:04:52.100000000Z",
+  "observedTime": "2022-05-23T15:04:52.200000000",
+  "attributes": {
+   "log.file.path": "/var/log/pods/myNamespace_myPod-<containerID>/myContainer/<containerRestarts>.log",
+   "log.iostream": "stdout"
+  },
+  "resourceAttributes": {
+    "k8s.container.name": "myContainer",
+    "k8s.container.restart_count": "<containerRestarts>",
+    "k8s.pod.name": "myPod",
+    "k8s.namespace.name": "myNamespace"
+  },
+  "body": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"trace_id\": \"123\"}"
+}
+```
+
+Hereby, all information identifying the actual source of the log like the Container, Pod and Namespace name are getting enriched as resource attributes following the [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). Further metadata like the original file name and channel are enriched as log attributes following the [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The `time` value provided in the container runtime log entry is used as `time` attribute in the new OTEL record, as it is very close to the actual time when the log happened. Additionally, the `observedTime` is set with the time when the agent actual read the log record as recommended by the [OTEL log specification](https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-observedtimestamp). The actual log payload gets moved into the OTLP `body` field.
+
+#### JSON Parsing
+
+If the value of the `body` is a JSON document, the value gets parsed and all JSON root attributes will get enriched as additional log attributes. The orginial body gets moved into the `log.original` attribute (managed via LogPipeline `input.application.keepOriginalBody: true` attribute).
+
+The resulting OTLP record will look like this:
+
+```json
+{
+  "time": "2022-05-23T15:04:52.100000000Z",
+  "observedTime": "2022-05-23T15:04:52.200000000",
+  "attributes": {
+   "log.file.path": "/var/log/pods/myNamespace_myPod-<containerID>/myContainer/<containerRestarts>.log",
+   "log.iostream": "stdout",
+   "log.original": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"trace_id\": \"123\"}",
+   "level": "warn",
+   "tenant": "myTenant",
+   "trace_id": "123",
+   "message": "This is the actual message"
+  },
+  "resourceAttributes": {
+    "k8s.container.name": "myContainer",
+    "k8s.container.restart_count": "<containerRestarts>",
+    "k8s.pod.name": "myPod",
+    "k8s.namespace.name": "myNamespace"
+  },
+  "body": ""
+}
+```
+
+#### Severity Parsing
+
+As typicaly a log message has a log level written to a field `level`, the agent will try to parse the log attribute `level` with a [severity parser](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/severity_parser.md). If that is successful, the log attribute gets transformed into the OTEL `severityText`and `severityNumber` attributes.
+
+#### Trace Parsing
+
+OTLP natively supports attaching trace context to log records. Hereby, the ganet will try to parse it from log attributes with name `trace_id`, `span_id` and `trace_flags`.
+
+#### Log Body Determination
+
+As the actual log message should be located in the `body` attribute, the agent will move a log attribute with name `message` or `msg` into the `body`.
+
+The resulting overal log record before further gateway typical enrichement logic will look like:
+
+```json
+{
+  "time": "2022-05-23T15:04:52.100000000Z",
+  "observedTime": "2022-05-23T15:04:52.200000000",
+  "attributes": {
+   "log.file.path": "/var/log/pods/myNamespace_myPod-<containerID>/myContainer/<containerRestarts>.log",
+   "log.iostream": "stdout",
+   "log.original": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"trace_id\": \"123\"}",
+   "tenant": "myTenant",
+  },
+  "resourceAttributes": {
+    "k8s.container.name": "myContainer",
+    "k8s.container.restart_count": "<containerRestarts>",
+    "k8s.pod.name": "myPod",
+    "k8s.namespace.name": "myNamespace"
+  },
+  "body": "This is the actual message",
+  "severityNumber": 13,
+  "severityTex": "warn",
+  "trace_id": 123
+}
+```
+
+### 5. Deactivate OTLP Logs
+
+By default, `otlp` input is enabled.
+
+To drop the push-based OTLP logs that are received by the Log gateway, define a LogPipeline that has the `otlp` section disabled as an input:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    application:
+      enabled: true
+    otlp:
+      disabled: true
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+With this, the agent starts collecting all container logs, and the push-based OTLP logs are dropped by the gateway.
+
+### 6. Deploy the Pipeline
+
+To activate the LogPipeline, apply the `logpipeline.yaml` resource file in your cluster:
+
+```bash
+kubectl apply -f logpipeline.yaml
+```
+
+### Result
+
+You activated a LogPipeline and logs start streaming to your backend.
+
+To check that the pipeline is running, wait until the status conditions of the LogPipeline in your cluster have status `True`:
+
+```bash
+kubectl get logpipeline
+NAME      CONFIGURATION GENERATED   GATEWAY HEALTHY   AGENT HEALTHY   FLOW HEALTHY
+backend   True                      True              True            True        
+```
+
+## Kyma Modules With Logging Capabilities
+
+Kyma bundles several modules that can be involved in user flows. Here, all logs can be collected optionally by enabling the `application` input for the `kyma-system` namespace. On top of this, the following modules have some dedicated integration options:
+
+### Istio
+
+The Istio module is crucial as it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy. Using the Istio telemetry API you can enable access logs for the ingress agteway and the proxies individually.
+
+The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-logs`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry), place a resource to the `istio-system` namespace. The following code samples help setting up the Istio logging feature:
+
+The following example configures all Istio proxies with the `kyma-logs` extension provider, which, by default, reports access logsto the log gateway of the Telemetry module.
+
+```yaml
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: istio-system
+spec:
+  tracing:
+  - providers:
+    - name: "kyma-logs"
+```
+
+## Operations
+
+A LogPipeline runs several OTel Collector instances in your cluster. This Deployment serves OTLP endpoints and ships received data to the configured backend.
+
+The Telemetry module ensures that the OTel Collector instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop logs, or cannot handle the log load.
+
+To detect and fix such situations, check the [pipeline status](./resources/02-logpipeline.md#logpipeline-status) and check out [Troubleshooting](#troubleshooting). If you have set up [pipeline health monitoring](./04-metrics.md#5-monitor-pipeline-health), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
+
+> [! WARNING]
+> It's not recommended to access the metrics endpoint of the used OTel Collector instances directly, because the exposed metrics are no official API of the Kyma Telemetry module. Breaking changes can happen if the underlying OTel Collector version introduces such.
+> Instead, use the [pipeline status](./resources/05-metricpipeline.md#metricpipeline-status).
+
+## Limitations
+
+- **Throughput**: N/A
+- **Load Balancing With Istio**: To ensure availability, the log gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances.
+  By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
+- **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
+- **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, logs data can be lost.
+- **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 3.
+
+## Troubleshooting
+
+### No Logs Arrive at the Backend
+
+**Symptom**:
+
+- No logs arrive at the backend.
+- In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **AllDataDropped**.
+
+**Cause**: Incorrect backend endpoint configuration (such as using the wrong authentication credentials) or the backend is unreachable.
+
+**Solution**:
+
+1. Check the `telemetry-log-gateway` and `telemetry-log-agent` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+2. Check if the backend is up and reachable.
+3. Fix the errors.
+
+### Not All Logs Arrive at the Backend
+
+**Symptom**:
+
+- The backend is reachable and the connection is properly configured, but some logs are refused.
+- In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **SomeDataDropped**.
+
+**Cause**: It can happen due to a variety of reasons - for example, the backend is limiting the ingestion rate.
+
+**Solution**:
+
+1. Check the `telemetry-log-gateway` and `telemetry-log-agent` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
+2. If backend is limiting the rate by refusing logs, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+3. Otherwise, take the actions appropriate to the cause indicated in the logs.
+
+### Gateway Buffer Filling Up
+
+**Symptom**: In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **BufferFillingUp**.
+
+**Cause**: The backend export rate is too low compared to the gateway ingestion rate.
+
+**Solution**:
+
+- Option 1: Increase maximum backend ingestion rate. For example, by scaling out the SAP Cloud Logging instances.
+
+- Option 2: Reduce emitted logs by re-configuring the LogPipeline (for example, by disabling certain inputs or applying namespace filters).
+
+- Option 3: Reduce emitted logs in your applications.
+
+### Gateway Throttling
+
+**Symptom**: In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **GatewayThrottling**.
+
+**Cause**: Gateway cannot receive logs at the given rate.
+
+**Solution**: Manually scale out the gateway by increasing the number of replicas for the Log gateway. See [Module Configuration and Status](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
