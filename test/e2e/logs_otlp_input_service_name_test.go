@@ -19,7 +19,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -27,9 +26,13 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs              = suite.ID()
+		pipelineName        = suite.ID()
+		backendExportURL    string
+		podWithAppLabelName = "pod-with-app-label"
+		statefulSetName     = "stateful-set"
+		appLabelValue       = "workload"
+		deploymentName      = "deployment"
 	)
 
 	makeResources := func() []client.Object {
@@ -57,7 +60,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		logPipeline := pipelineBuilder.Build()
 
 		objs = append(objs, &logPipeline)
-		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeLogs, false)...)
+
+		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(""))
+
+		obj = append(objs,
+			kitk8s.NewPod(podWithAppLabelName, namespace).
+				WithLabel("app", appLabelValue).
+				WithPodSpec(podSpecWithUndefinedService).
+				K8sObject(),
+			kitk8s.NewDeployment(deploymentName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewStatefulSet(statefulSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+		)
 
 		return objs
 
@@ -119,15 +133,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		}
 
 		It("Should set undefined service.name attribute to app label value", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithAppLabelName, servicenamebundle.AppLabelValue)
+			verifyServiceNameAttr(podWithAppLabelName, appLabelValue)
 		})
 
 		It("Should set undefined service.name attribute to Deployment name", func() {
-			verifyServiceNameAttr(servicenamebundle.DeploymentName, servicenamebundle.DeploymentName)
+			verifyServiceNameAttr(deploymentName, deploymentName)
 		})
 
 		It("Should set undefined service.name attribute to StatefulSet name", func() {
-			verifyServiceNameAttr(servicenamebundle.StatefulSetName, servicenamebundle.StatefulSetName)
+			verifyServiceNameAttr(statefulSetName, statefulSetName)
 		})
 
 		It("Should have no kyma resource attributes", func() {

@@ -18,17 +18,21 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs                = suite.ID()
+		pipelineName          = suite.ID()
+		backendExportURL      string
+		jobName               = "job"
+		podWithNoLabelsName   = "pod-with-no-labels"
+		kubeAppLabelValue     = "kube-workload"
+		podWithBothLabelsName = "pod-with-both-app-labels" // #nosec G101 -- This is a false positive
+
 	)
 
 	makeResources := func() []client.Object {
@@ -38,7 +42,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
 
 		objs = append(objs, backend.K8sObjects()...)
-		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeLogs, true)...)
 		backendExportURL = backend.ExportURL(proxyClient)
 
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
@@ -60,6 +63,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		objs = append(objs,
 			&logPipeline,
 		)
+
+		logs := loggen.New(namespace)
+
+		objs = append(objs,
+			kitk8s.NewPod(podWithBothLabelsName, namespace).
+				WithLabel("app.kubernetes.io/name", KubeAppLabelValue).
+				WithLabel("app", AppLabelValue).
+				WithPodSpec(logs.PodSpec()).
+				K8sObject(),
+			kitk8s.NewJob(jobName, namespace).WithPodSpec(logs.PodSpec()).K8sObject(),
+			kitk8s.NewPod(podWithNoLabelsName, namespace).WithPodSpec(logs.PodSpec()).K8sObject(),
+		)
+
 		return objs
 	}
 
@@ -112,15 +128,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 		}
 		It("Should set undefined service.name attribute to app.kubernetes.io/name label value", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithBothLabelsName, servicenamebundle.KubeAppLabelValue)
+			verifyServiceNameAttr(podWithNoLabelsName, kubeAppLabelValue)
 		})
 
 		It("Should set undefined service.name attribute to Job name", func() {
-			verifyServiceNameAttr(servicenamebundle.JobName, servicenamebundle.JobName)
+			verifyServiceNameAttr(jobName, jobName)
 		})
 
 		It("Should set undefined service.name attribute to Pod name", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
+			verifyServiceNameAttr(podWithNoLabelsName, podWithNoLabelsName)
 		})
 		It("Should have no kyma resource attributes", func() {
 			Eventually(func(g Gomega) {

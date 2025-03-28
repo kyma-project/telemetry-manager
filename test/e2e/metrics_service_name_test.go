@@ -18,7 +18,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -26,9 +25,17 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), Ordered, func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs                                            = suite.ID()
+		pipelineName                                      = suite.ID()
+		backendExportURL                                  string
+		daemonSetName                                     = "daemon-set"
+		jobName                                           = "job"
+		podWithInvalidStartForUnknownServicePatternName   = "pod-with-invalid-start-for-unknown-service-pattern"
+		podWithInvalidEndForUnknownServicePatternName     = "pod-with-invalid-end-for-unknown-service-pattern"
+		podWithMissingProcessForUnknownServicePatternName = "pod-with-missing-process-for-unknown-service-pattern"
+		attrWithInvalidStartForUnknownServicePattern      = "test_unknown_service"
+		attrWithInvalidEndForUnknownServicePattern        = "unknown_service_test"
+		attrWithMissingProcessForUnknownServicePattern    = "unknown_service:"
 	)
 
 	makeResources := func() []client.Object {
@@ -48,7 +55,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 			Build()
 		objs = append(objs, &metricPipeline)
 
-		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeMetrics, false)...)
+		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(""))
+		podSpecWithInvalidStartForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(attrWithInvalidStartForUnknownServicePattern))
+		podSpecWithInvalidEndForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(attrWithInvalidEndForUnknownServicePattern))
+		podSpecWithMissingProcessForUnknownServicePattern := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(attrWithMissingProcessForUnknownServicePattern))
+
+		objs = append(objs,
+			kitk8s.NewDaemonSet(daemonSetName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewJob(jobName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewPod(podWithInvalidStartForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithInvalidStartForUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(podWithInvalidEndForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithInvalidEndForUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(podWithMissingProcessForUnknownServicePatternName, namespace).WithPodSpec(podSpecWithMissingProcessForUnknownServicePattern).K8sObject(),
+		)
 
 		return objs
 	}
@@ -100,17 +122,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetA), 
 		}
 
 		It("Should set undefined service.name attribute to DaemonSet name", func() {
-			verifyServiceNameAttr(servicenamebundle.DaemonSetName, servicenamebundle.DaemonSetName)
+			verifyServiceNameAttr(daemonSetName, daemonSetName)
 		})
 
 		It("Should set undefined service.name attribute to Job name", func() {
-			verifyServiceNameAttr(servicenamebundle.JobName, servicenamebundle.JobName)
+			verifyServiceNameAttr(jobName, jobName)
 		})
 
 		It("Should NOT enrich service.name attribute when its value is not following the unknown_service:<process.executable.name> pattern", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithInvalidStartForUnknownServicePatternName, servicenamebundle.AttrWithInvalidStartForUnknownServicePattern)
-			verifyServiceNameAttr(servicenamebundle.PodWithInvalidEndForUnknownServicePatternName, servicenamebundle.AttrWithInvalidEndForUnknownServicePattern)
-			verifyServiceNameAttr(servicenamebundle.PodWithMissingProcessForUnknownServicePatternName, servicenamebundle.AttrWithMissingProcessForUnknownServicePattern)
+			verifyServiceNameAttr(podWithInvalidStartForUnknownServicePatternName, attrWithInvalidStartForUnknownServicePattern)
+			verifyServiceNameAttr(podWithInvalidEndForUnknownServicePatternName, attrWithInvalidEndForUnknownServicePattern)
+			verifyServiceNameAttr(podWithMissingProcessForUnknownServicePatternName, attrWithMissingProcessForUnknownServicePattern)
 		})
 
 		It("Should have metrics with service.name set to telemetry-metric-gateway", func() {

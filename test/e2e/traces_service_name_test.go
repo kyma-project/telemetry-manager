@@ -16,7 +16,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -24,9 +23,12 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs                           = suite.ID()
+		pipelineName                     = suite.ID()
+		backendExportURL                 string
+		podWithNoLabelsName              = "pod-with-no-labels"
+		podWithUnknownServiceName        = "pod-with-unknown-service"
+		podWithUnknownServicePatternName = "pod-with-unknown-service-pattern"
 	)
 
 	makeResources := func() []client.Object {
@@ -44,7 +46,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			Build()
 		objs = append(objs, &tracePipeline)
 
-		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeTraces, false)...)
+		podSpecWithUnknownServicePattern := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName("unknown_service:bash"))
+		podSpecWithUndefinedService := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName(""))
+		podSpecWithUnknownService := telemetrygen.PodSpec(signalType,
+			telemetrygen.WithServiceName("unknown_service"))
+
+		objs = append(objs,
+			kitk8s.NewPod(podWithNoLabelsName, namespace).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewPod(podWithUnknownServicePatternName, namespace).WithPodSpec(podSpecWithUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(podWithUnknownServiceName, namespace).WithPodSpec(podSpecWithUnknownService).K8sObject(),
+		)
+
 		return objs
 	}
 
@@ -86,15 +100,15 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 		}
 
 		It("Should set undefined service.name attribute to Pod name", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
+			verifyServiceNameAttr(podWithNoLabelsName, podWithNoLabelsName)
 		})
 
 		It("Should enrich service.name attribute when its value is unknown_service", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
+			verifyServiceNameAttr(podWithUnknownServiceName, podWithUnknownServiceName)
 		})
 
 		It("Should enrich service.name attribute when its value is following the unknown_service:<process.executable.name> pattern", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServicePatternName, servicenamebundle.PodWithUnknownServicePatternName)
+			verifyServiceNameAttr(podWithUnknownServicePatternName, podWithUnknownServicePatternName)
 		})
 
 		It("Should have no kyma resource attributes", func() {
