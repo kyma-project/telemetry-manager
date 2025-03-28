@@ -78,6 +78,7 @@ type Reconciler struct {
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter
+	metricsEmitter            telemetryMetricsEmitter
 }
 
 func New(
@@ -98,6 +99,7 @@ func New(
 		},
 		overridesHandler:          overridesHandler,
 		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
+		metricsEmitter:            NewTelemetryMetricsEmitter(),
 	}
 }
 
@@ -129,7 +131,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	updateCompatibilityModeMetric(telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, telemetry.Namespace))
+	r.metricsEmitter.UpdateCompatibilityModeMetric(telemetryutils.GetCompatibilityModeFromTelemetry(ctx, r.Client, telemetry.Namespace))
 
 	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
 
