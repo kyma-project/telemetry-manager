@@ -70,7 +70,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | ---- | ----------- | ---- |
 | **input**  | object | Configures different inputs to send additional metrics to the metric gateway. |
 | **input.&#x200b;istio**  | object | Configures istio-proxy metrics scraping. |
-| **input.&#x200b;istio.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping |
+| **input.&#x200b;istio.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are scraped. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;enabled**  | boolean | If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;envoyMetrics**  | object | EnvoyMetrics defines the configuration for scraping Envoy metrics. If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`. |
@@ -84,7 +84,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude signals from the specified Namespace names only. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include signals from the specified Namespace names only. |
 | **input.&#x200b;prometheus**  | object | Configures Prometheus scraping. |
-| **input.&#x200b;prometheus.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping |
+| **input.&#x200b;prometheus.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping. The default is `false`. |
 | **input.&#x200b;prometheus.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are scraped. The default is `false`. |
 | **input.&#x200b;prometheus.&#x200b;enabled**  | boolean | If enabled, Services and Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`. |
 | **input.&#x200b;prometheus.&#x200b;namespaces**  | object | Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default. |

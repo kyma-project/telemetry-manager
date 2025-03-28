@@ -89,6 +89,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
 						},
 					},
 				},
@@ -113,6 +114,8 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: false},
 						},
 					},
 				},
@@ -297,6 +300,137 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 							Enabled: ptr.To(false),
+						},
+					},
+				},
+			},
+		},
+
+		{
+			name: "should set default Istio diagnostic metrics if not set",
+			input: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
+							Enabled: ptr.To(true),
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
+							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: false},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should set default Istio Envoy metrics if not set",
+			input: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
+							Enabled: ptr.To(true),
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
+							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: false},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should not set default Istio Envoy metrics if set",
+			input: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
+							Enabled:      ptr.To(true),
+							EnvoyMetrics: &telemetryv1alpha1.EnvoyMetrics{Enabled: true},
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
+							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: true},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should set default Prometheus diagnostic metrics if not set",
+			input: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
+							Enabled: ptr.To(true),
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
+							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should not set default Prometheus diagnostic metrics if  set",
+			input: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
+							Enabled:           ptr.To(true),
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: true},
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
+							Enabled: ptr.To(true),
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{
+								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
+							},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: true},
 						},
 					},
 				},

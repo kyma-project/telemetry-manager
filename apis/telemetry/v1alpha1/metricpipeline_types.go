@@ -86,8 +86,7 @@ type MetricPipelinePrometheusInput struct {
 	// Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
-	// Configures diagnostic metrics scraping
-	// +optional
+	// Configures diagnostic metrics scraping. The default is `false`.
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
@@ -145,12 +144,10 @@ type MetricPipelineIstioInput struct {
 	// Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
 	// +optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
-	// Configures diagnostic metrics scraping
-	// +optional
+	// Configures diagnostic metrics scraping. The default is `false`.
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 	// EnvoyMetrics defines the configuration for scraping Envoy metrics.
 	// If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
-	// +optional
 	EnvoyMetrics *EnvoyMetrics `json:"envoyMetrics,omitempty"`
 }
 

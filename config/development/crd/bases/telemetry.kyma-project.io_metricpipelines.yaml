@@ -65,7 +65,7 @@ spec:
                     description: Configures istio-proxy metrics scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The default is `false`.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.
@@ -129,7 +129,7 @@ spec:
                     description: Configures Prometheus scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The default is `false`.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.
@@ -610,7 +610,7 @@ spec:
                     description: Configures istio-proxy metrics scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The default is `false`.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.
@@ -674,7 +674,7 @@ spec:
                     description: Configures Prometheus scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The default is `false`.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.
