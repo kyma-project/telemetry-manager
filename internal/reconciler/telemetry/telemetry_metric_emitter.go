@@ -6,7 +6,7 @@ import (
 )
 
 var compatibilityModeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
-	Name: "telemetry_module_otelcol_metrics_compatibility_mode",
+	Name: "telemetry_otelcol_metrics_compatibility_mode",
 	Help: "Indicates if the OpenTelemetry internal metrics compatibility mode is enabled (1) or disabled (0)",
 })
 
@@ -16,7 +16,7 @@ func NewTelemetryMetricsEmitter() telemetryMetricsEmitter {
 	metrics.Registry.MustRegister(compatibilityModeGauge)
 	return telemetryMetricsEmitter{}
 }
-func (e telemetryMetricsEmitter) UpdateCompatibilityModeMetric(compatibilityMode bool) {
+func (e telemetryMetricsEmitter) updateCompatibilityModeMetric(compatibilityMode bool) {
 	if compatibilityMode {
 		compatibilityModeGauge.Set(1)
 	} else {
