@@ -21,10 +21,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 	const (
 		consistentlyTimeout         = time.Second * 120
 		traceBackendName            = "trace-backend"
@@ -42,7 +42,7 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 		otelCollectorLogBackendURL string
 		fluentBitLogBackendURL     string
 		selfMonitorLogBackendURL   string
-		namespace                  = ID()
+		namespace                  = suite.ID()
 		gomegaMaxLength            = format.MaxLength
 		logLevelsRegexp            = "ERROR|error|WARNING|warning|WARN|warn"
 	)
@@ -52,7 +52,7 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 
 		// backend
 		traceBackend := backend.New(namespace, backend.SignalTypeTraces, backend.WithName(backendName))
-		traceBackendURL = traceBackend.ExportURL(ProxyClient)
+		traceBackendURL = traceBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		// pipeline
@@ -72,7 +72,7 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 
 		// backend
 		metricBackend := backend.New(namespace, backend.SignalTypeMetrics, backend.WithName(backendName))
-		metricBackendURL = metricBackend.ExportURL(ProxyClient)
+		metricBackendURL = metricBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
 
 		// pipeline
@@ -97,7 +97,7 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 
 		// backend
 		logBackend := backend.New(namespace, backend.SignalTypeLogs, backend.WithName(backendName))
-		logBackendURL = logBackend.ExportURL(ProxyClient)
+		logBackendURL = logBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, logBackend.K8sObjects()...)
 
 		// log pipeline
@@ -116,7 +116,7 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 
 		// backends
 		logBackend := backend.New(namespace, backend.SignalTypeLogs, backend.WithName(backendName))
-		backendURL := logBackend.ExportURL(ProxyClient)
+		backendURL := logBackend.ExportURL(suite.ProxyClient)
 		objs = append(objs, logBackend.K8sObjects()...)
 
 		// log pipeline
@@ -148,68 +148,68 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 			K8sObjects = append(K8sObjects, objs...)
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, K8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, K8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, K8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running metric and trace gateways", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.MetricGatewayName)
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have running backends", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: namespace, Name: logBackendName})
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: namespace, Name: metricBackendName})
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: namespace, Name: traceBackendName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: logBackendName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: metricBackendName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: traceBackendName})
 
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: otelCollectorLogBackendName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: fluentBitLogBackendName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: namespace, Name: selfMonitorLogBackendName})
 		})
 
 		It("Should have running agents", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.MetricAgentName)
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(Ctx, K8sClient, logBackendName)
-			assert.MetricPipelineHealthy(Ctx, K8sClient, metricBackendName)
-			assert.TracePipelineHealthy(Ctx, K8sClient, traceBackendName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, logBackendName)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, metricBackendName)
+			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, traceBackendName)
 
-			assert.LogPipelineHealthy(Ctx, K8sClient, otelCollectorLogBackendName)
-			assert.LogPipelineHealthy(Ctx, K8sClient, fluentBitLogBackendName)
-			assert.LogPipelineHealthy(Ctx, K8sClient, selfMonitorLogBackendName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, otelCollectorLogBackendName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, fluentBitLogBackendName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, selfMonitorLogBackendName)
 		})
 
 		It("Should push metrics successfully", func() {
-			assert.MetricsFromNamespaceDelivered(ProxyClient, metricBackendURL, namespace, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, metricBackendURL, namespace, telemetrygen.MetricNames)
 		})
 
 		It("Should push traces successfully", func() {
-			assert.TracesFromNamespaceDelivered(ProxyClient, traceBackendURL, namespace)
+			assert.TracesFromNamespaceDelivered(suite.ProxyClient, traceBackendURL, namespace)
 		})
 
 		It("Should collect logs successfully", func() {
-			assert.LogsDelivered(ProxyClient, "", logBackendURL)
+			assert.LogsDelivered(suite.ProxyClient, "", logBackendURL)
 		})
 
 		It("Should collect otel collector component logs successfully", func() {
-			assert.LogsDelivered(ProxyClient, "telemetry-", otelCollectorLogBackendURL)
+			assert.LogsDelivered(suite.ProxyClient, "telemetry-", otelCollectorLogBackendURL)
 		})
 
 		It("Should collect fluent-bit component logs successfully", func() {
-			assert.LogsDelivered(ProxyClient, "telemetry-", fluentBitLogBackendURL)
+			assert.LogsDelivered(suite.ProxyClient, "telemetry-", fluentBitLogBackendURL)
 		})
 
 		It("Should collect self-monitor component logs successfully", func() {
-			assert.LogsDelivered(ProxyClient, "telemetry-", selfMonitorLogBackendURL)
+			assert.LogsDelivered(suite.ProxyClient, "telemetry-", selfMonitorLogBackendURL)
 		})
 
 		It("Should not have any error/warn logs in the otel collector component containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := ProxyClient.Get(otelCollectorLogBackendURL)
+				resp, err := suite.ProxyClient.Get(otelCollectorLogBackendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -230,7 +230,7 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 
 		It("Should not have any error/warn logs in the FluentBit containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := ProxyClient.Get(fluentBitLogBackendURL)
+				resp, err := suite.ProxyClient.Get(fluentBitLogBackendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -244,7 +244,7 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 
 		It("Should not have any error/warn logs in the self-monitor containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := ProxyClient.Get(selfMonitorLogBackendURL)
+				resp, err := suite.ProxyClient.Get(selfMonitorLogBackendURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

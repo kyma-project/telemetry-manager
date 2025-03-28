@@ -15,13 +15,13 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
 	var (
-		mockNs       = ID()
-		pipelineName = ID()
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
@@ -61,13 +61,13 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipeline", func() {
-			assert.MetricPipelineHasCondition(Ctx, K8sClient, pipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSConfigurationInvalid,
@@ -75,7 +75,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 		})
 
 		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
-			assert.MetricPipelineHasCondition(Ctx, K8sClient, pipelineName, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -83,8 +83,8 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 		})
 
 		It("Should set MetricComponentsHealthy condition to False in Telemetry", func() {
-			assert.TelemetryHasState(Ctx, K8sClient, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(Ctx, K8sClient, metav1.Condition{
+			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonTLSConfigurationInvalid,

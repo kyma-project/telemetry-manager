@@ -12,13 +12,13 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogsFluentBit, LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit, suite.LabelExperimental), Ordered, func() {
 	var (
-		v1Alpha1PipelineName = IDWithSuffix("v1alpha1")
-		v1Beta1PipelineName  = IDWithSuffix("v1beta1")
+		v1Alpha1PipelineName = suite.IDWithSuffix("v1alpha1")
+		v1Beta1PipelineName  = suite.IDWithSuffix("v1beta1")
 	)
 
 	makeResources := func() []client.Object {
@@ -69,14 +69,14 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit, LabelExperimental), Ordered, fu
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should convert v1alpha1 logpipeline to v1beta1 logpipeline", func() {
 			var v1Alpha1AsV1Beta1 telemetryv1beta1.LogPipeline
-			err := K8sClient.Get(Ctx, types.NamespacedName{Name: v1Alpha1PipelineName}, &v1Alpha1AsV1Beta1)
+			err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: v1Alpha1PipelineName}, &v1Alpha1AsV1Beta1)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(v1Alpha1AsV1Beta1.Name).To(Equal(v1Alpha1PipelineName))
@@ -84,7 +84,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit, LabelExperimental), Ordered, fu
 
 		It("Should convert v1beta1 logpipeline to v1alpha1 logpipeline", func() {
 			var v1Beta1AsV1Alpha1 telemetryv1alpha1.LogPipeline
-			err := K8sClient.Get(Ctx, types.NamespacedName{Name: v1Beta1PipelineName}, &v1Beta1AsV1Alpha1)
+			err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: v1Beta1PipelineName}, &v1Beta1AsV1Alpha1)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(v1Beta1AsV1Alpha1.Name).To(Equal(v1Beta1PipelineName))

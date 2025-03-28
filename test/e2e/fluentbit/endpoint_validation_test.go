@@ -13,18 +13,18 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogsFluentBit), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), func() {
 	const (
 		invalidEndpoint = "'http://example.com'"
 	)
 
 	var (
-		mockNs                = ID()
-		pipelineNameValue     = IDWithSuffix("value")
-		pipelineNameValueFrom = IDWithSuffix("value-from")
+		mockNs                = suite.ID()
+		pipelineNameValue     = suite.IDWithSuffix("value")
+		pipelineNameValueFrom = suite.IDWithSuffix("value-from")
 	)
 
 	makeResources := func() ([]client.Object, []client.Object) {
@@ -62,14 +62,14 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), func() {
 			k8sObjectsSuccess, k8sObjectsFailure := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjectsSuccess...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjectsSuccess...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjectsSuccess...)).Should(Succeed())
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjectsFailure...)).Should(MatchError(ContainSubstring("invalid hostname")))
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjectsSuccess...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjectsFailure...)).Should(MatchError(ContainSubstring("invalid hostname")))
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.LogPipelineHasCondition(Ctx, K8sClient, pipelineNameValueFrom, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameValueFrom, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,

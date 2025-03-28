@@ -16,13 +16,13 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 	var (
-		mockNs       = ID()
-		pipelineName = ID()
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
@@ -47,13 +47,13 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Pipeline should have unhealthy agent condition", func() {
-			assert.LogPipelineHasCondition(Ctx, K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeAgentHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonAgentNotReady,
@@ -63,7 +63,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		It("Fluent Bit should not be deployed", func() {
 			Consistently(func(g Gomega) {
 				var daemonSet appsv1.DaemonSet
-				err := K8sClient.Get(Ctx, kitkyma.FluentBitDaemonSetName, &daemonSet)
+				err := suite.K8sClient.Get(suite.Ctx, kitkyma.FluentBitDaemonSetName, &daemonSet)
 				g.Expect(apierrors.IsNotFound(err)).To(BeTrue())
 			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})

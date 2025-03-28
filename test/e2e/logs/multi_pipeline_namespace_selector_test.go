@@ -14,12 +14,12 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
 	var (
-		mockNs            = ID()
+		mockNs            = suite.ID()
 		app1Ns            = "app-1"
 		app2Ns            = "app-2"
 		backend1Name      = "backend-1"
@@ -35,7 +35,7 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 			kitk8s.NewNamespace(app2Ns).K8sObject())
 
 		backend1 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend1Name))
-		backend1ExportURL = backend1.ExportURL(ProxyClient)
+		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
 		pipelineIncludeApp1Ns := testutils.NewLogPipelineBuilder().
@@ -46,7 +46,7 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 		objs = append(objs, &pipelineIncludeApp1Ns)
 
 		backend2 := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithName(backend2Name))
-		backend2ExportURL = backend2.ExportURL(ProxyClient)
+		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
 		pipelineExcludeApp1Ns := testutils.NewLogPipelineBuilder().
@@ -72,43 +72,43 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
 
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running log gateway deployment", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.LogAgentName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have a logs backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		// verify logs from apps1Ns delivered to backend1
 		It("Should deliver Runtime logs from app1Ns to backend1", func() {
-			assert.LogsFromNamespaceDelivered(ProxyClient, backend1ExportURL, app1Ns)
+			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend1ExportURL, app1Ns)
 		})
 
 		It("Should not deliver logs from app2Ns to backend1", func() {
-			assert.LogsFromNamespaceNotDelivered(ProxyClient, backend1ExportURL, app2Ns)
+			assert.LogsFromNamespaceNotDelivered(suite.ProxyClient, backend1ExportURL, app2Ns)
 		})
 
 		// verify logs from apps2Ns delivered to backend2
 		It("Should deliver Runtime logs from app2Ns to backend2", func() {
-			assert.LogsFromNamespaceDelivered(ProxyClient, backend2ExportURL, app2Ns)
+			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, app2Ns)
 		})
 
 		It("Should not deliver logs from app1Ns to backend2", func() {
-			assert.LogsFromNamespaceNotDelivered(ProxyClient, backend2ExportURL, app1Ns)
+			assert.LogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, app1Ns)
 		})
 	})
 })

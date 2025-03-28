@@ -18,14 +18,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 	var (
-		mockNs            = ID()
-		pipeline1Name     = IDWithSuffix("1")
-		pipeline2Name     = IDWithSuffix("2")
+		mockNs            = suite.ID()
+		pipeline1Name     = suite.IDWithSuffix("1")
+		pipeline2Name     = suite.IDWithSuffix("2")
 		backend1Name      = "backend-1"
 		backend1ExportURL string
 		backend2Name      = "backend-2"
@@ -41,7 +41,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 
 		// logPipeline1 ships logs without original body to backend1
 		backend1 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend1Name))
-		backend1ExportURL = backend1.ExportURL(ProxyClient)
+		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 		logPipeline1 := testutils.NewLogPipelineBuilder().
 			WithName(pipeline1Name).
@@ -54,7 +54,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 
 		// logPipeline2 ships logs with original body to backend2 (default behavior)
 		backend2 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend2Name))
-		backend2ExportURL = backend2.ExportURL(ProxyClient)
+		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 		logPipeline2 := testutils.NewLogPipelineBuilder().
 			WithName(pipeline2Name).
@@ -71,33 +71,33 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running logpipelines", func() {
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipeline1Name)
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipeline2Name)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
 		})
 
 		It("Should have running log agent", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have log backends running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend1Name})
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend2Name})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend1Name})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend2Name})
 		})
 
 		It("Should have a log producer running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should ship logs without original body to backend1", func() {
 			// Log generator produces JSON logs and logPipeline1 drops the original body if JSON keys were successfully extracted
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backend1ExportURL)
+				resp, err := suite.ProxyClient.Get(backend1ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(HaveEach(
@@ -109,7 +109,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		It("Should ship logs with original body to backend2", func() {
 			// Log generator produces JSON logs and logPipeline1 keeps the original body if JSON keys were successfully extracted
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backend2ExportURL)
+				resp, err := suite.ProxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(HaveFlatFluentBitLogs(HaveEach(

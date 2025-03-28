@@ -20,14 +20,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 // Please remove the test when the compatibility mode annotation feature removed, planed for telemetry version 1.41.0
-var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMisc), Ordered, func() {
 	var (
-		mockNs           = ID()
-		pipelineName     = ID()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 
@@ -38,7 +38,7 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 
 		backend := backend.New(mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(ProxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		pipeline := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
@@ -57,58 +57,58 @@ var _ = Describe(ID(), Label(LabelMisc), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have global internal metrics compatibility annotation config", func() {
 			Eventually(func(g Gomega) string {
 				var telemetry operatorv1alpha1.Telemetry
-				err := K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)
+				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
 				telemetry.Annotations = map[string]string{
 					"telemetry.kyma-project.io/internal-metrics-compatibility-mode": "true",
 				}
 
-				err = K8sClient.Update(Ctx, &telemetry)
+				err = suite.K8sClient.Update(suite.Ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 				return telemetry.Annotations["telemetry.kyma-project.io/internal-metrics-compatibility-mode"]
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal("true"))
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have service deployed", func() {
 			var service corev1.Service
-			Expect(K8sClient.Get(Ctx, kitkyma.SelfMonitorName, &service)).To(Succeed())
+			Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.SelfMonitorName, &service)).To(Succeed())
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.MetricPipelineHealthy(Ctx, K8sClient, pipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			assert.MetricsFromNamespaceDelivered(ProxyClient, backendExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
 			Eventually(func(g Gomega) {
 				var pipeline telemetryv1alpha1.MetricPipeline
 				key := types.NamespacedName{Name: pipelineName}
-				g.Expect(K8sClient.Get(Ctx, key, &pipeline)).To(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, key, &pipeline)).To(Succeed())
 				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})

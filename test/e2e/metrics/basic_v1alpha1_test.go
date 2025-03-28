@@ -22,13 +22,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
 	var (
-		mockNs           = ID()
-		pipelineName     = ID()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 
@@ -37,9 +37,9 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(IsUpgrade()))
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(suite.IsUpgrade()))
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(ProxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		metricPipelineBuilder := testutils.NewMetricPipelineBuilder().
@@ -49,7 +49,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 				hostSecretRef.Namespace,
 				hostSecretRef.Key,
 			))
-		if IsUpgrade() {
+		if suite.IsUpgrade() {
 			metricPipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
 		metricPipeline := metricPipelineBuilder.Build()
@@ -65,18 +65,18 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metric gateway deployment", Label(LabelUpgrade), func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.MetricGatewayName)
+		It("Should have a running metric gateway deployment", Label(suite.LabelUpgrade), func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should reject scaling below minimum", Label(LabelUpgrade), func() {
+		It("Should reject scaling below minimum", Label(suite.LabelUpgrade), func() {
 			var telemetry operatorv1alpha1.Telemetry
-			err := K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)
+			err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
 			Expect(err).NotTo(HaveOccurred())
 
 			telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
@@ -89,14 +89,14 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 					},
 				},
 			}
-			err = K8sClient.Update(Ctx, &telemetry)
+			err = suite.K8sClient.Update(suite.Ctx, &telemetry)
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("Should scale up metric gateway replicas", Label(LabelUpgrade), func() {
+		It("Should scale up metric gateway replicas", Label(suite.LabelUpgrade), func() {
 			Eventually(func(g Gomega) int32 {
 				var telemetry operatorv1alpha1.Telemetry
-				err := K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)
+				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
 				telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
@@ -109,25 +109,25 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 						},
 					},
 				}
-				err = K8sClient.Update(Ctx, &telemetry)
+				err = suite.K8sClient.Update(suite.Ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 				return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
 		})
 
-		It("Should have 4 metric gateway replicas after scaling up", Label(LabelUpgrade), func() {
+		It("Should have 4 metric gateway replicas after scaling up", Label(suite.LabelUpgrade), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
-				err := K8sClient.Get(Ctx, kitkyma.MetricGatewayName, &deployment)
+				err := suite.K8sClient.Get(suite.Ctx, kitkyma.MetricGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
 		})
 
-		It("Should scale down metric gateway replicas", Label(LabelUpgrade), func() {
+		It("Should scale down metric gateway replicas", Label(suite.LabelUpgrade), func() {
 			Eventually(func(g Gomega) int32 {
 				var telemetry operatorv1alpha1.Telemetry
-				err := K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)
+				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
 				telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
@@ -140,52 +140,52 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 						},
 					},
 				}
-				err = K8sClient.Update(Ctx, &telemetry)
+				err = suite.K8sClient.Update(suite.Ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 				return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
-		It("Should have 2 metric gateway replicas after scaling down", Label(LabelUpgrade), func() {
+		It("Should have 2 metric gateway replicas after scaling down", Label(suite.LabelUpgrade), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
-				err := K8sClient.Get(Ctx, kitkyma.MetricGatewayName, &deployment)
+				err := suite.K8sClient.Get(suite.Ctx, kitkyma.MetricGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
-		It("Should have a metrics backend running", Label(LabelUpgrade), func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+		It("Should have a metrics backend running", Label(suite.LabelUpgrade), func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
-		It("Should have a running pipeline", Label(LabelUpgrade), func() {
-			assert.MetricPipelineHealthy(Ctx, K8sClient, pipelineName)
+		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen metrics", Label(LabelUpgrade), func() {
-			assert.MetricsFromNamespaceDelivered(ProxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
+		It("Should deliver telemetrygen metrics", Label(suite.LabelUpgrade), func() {
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 
-		It("Should be able to get metric gateway metrics endpoint", Label(LabelUpgrade), func() {
-			gatewayMetricsURL := ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
-			assert.EmitsOTelCollectorMetrics(ProxyClient, gatewayMetricsURL)
+		It("Should be able to get metric gateway metrics endpoint", Label(suite.LabelUpgrade), func() {
+			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
+			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, gatewayMetricsURL)
 		})
 
-		It("Should have a working network policy", Label(LabelUpgrade), func() {
+		It("Should have a working network policy", Label(suite.LabelUpgrade), func() {
 			var networkPolicy networkingv1.NetworkPolicy
-			Expect(K8sClient.Get(Ctx, kitkyma.MetricGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
+			Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.MetricGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				var podList corev1.PodList
-				g.Expect(K8sClient.List(Ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.MetricGatewayBaseName})).To(Succeed())
+				g.Expect(suite.K8sClient.List(suite.Ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.MetricGatewayBaseName})).To(Succeed())
 				g.Expect(podList.Items).NotTo(BeEmpty())
 
 				metricGatewayPodName := podList.Items[0].Name
-				pprofEndpoint := ProxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, metricGatewayPodName, "debug/pprof/", ports.Pprof)
+				pprofEndpoint := suite.ProxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, metricGatewayPodName, "debug/pprof/", ports.Pprof)
 
-				resp, err := ProxyClient.Get(pprofEndpoint)
+				resp, err := suite.ProxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())

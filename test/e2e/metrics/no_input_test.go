@@ -16,14 +16,14 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics, LabelSetA), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics, suite.LabelSetA), Ordered, func() {
 	var (
-		mockNs                = ID()
-		pipelineNameNoInput   = ID() + "-no-input"
-		pipelineNameWithInput = ID() + "-with-input"
+		mockNs                = suite.ID()
+		pipelineNameNoInput   = suite.ID() + "-no-input"
+		pipelineNameWithInput = suite.ID() + "-with-input"
 	)
 
 	var metricPipelineWithInput telemetryv1alpha1.MetricPipeline
@@ -59,29 +59,29 @@ var _ = Describe(ID(), Label(LabelMetrics, LabelSetA), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
 
 			k8sObjectsToCreate := append(k8sObjects, &metricPipelineWithInput)
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjectsToCreate...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjectsToCreate...)).Should(Succeed())
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have running pipelines", func() {
-			assert.MetricPipelineHealthy(Ctx, K8sClient, pipelineNameNoInput)
-			assert.MetricPipelineHealthy(Ctx, K8sClient, pipelineNameWithInput)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameNoInput)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameWithInput)
 		})
 
 		It("Pipeline with no input should have AgentNotRequired condition", func() {
-			assert.MetricPipelineHasCondition(Ctx, K8sClient, pipelineNameNoInput, metav1.Condition{
+			assert.MetricPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameNoInput, metav1.Condition{
 				Type:   conditions.TypeAgentHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonMetricAgentNotRequired,
@@ -89,15 +89,15 @@ var _ = Describe(ID(), Label(LabelMetrics, LabelSetA), Ordered, func() {
 		})
 
 		It("Ensures the metric agent DaemonSet is running", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Should delete the pipeline with input", func() {
-			Expect(kitk8s.DeleteObjects(Ctx, K8sClient, &metricPipelineWithInput)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithInput)).Should(Succeed())
 		})
 
 		It("Ensures the metric agent DaemonSet is no longer running", func() {
-			assert.DaemonSetNotFound(Ctx, K8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetNotFound(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
 		})
 	})
 })

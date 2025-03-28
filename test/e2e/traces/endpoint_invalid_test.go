@@ -13,20 +13,20 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelTraces), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	const (
 		invalidEndpoint     = "'http://example.com'"
 		invalidEndpointHTTP = "example.com"
 	)
 
 	var (
-		mockNs                = ID()
-		pipelineNameValue     = IDWithSuffix("value")
-		pipelineNameValueFrom = IDWithSuffix("value-from")
-		pipelineNameHTTP      = IDWithSuffix("invalid-http")
+		mockNs                = suite.ID()
+		pipelineNameValue     = suite.IDWithSuffix("value")
+		pipelineNameValueFrom = suite.IDWithSuffix("value-from")
+		pipelineNameHTTP      = suite.IDWithSuffix("invalid-http")
 	)
 
 	makeResources := func() []client.Object {
@@ -70,25 +70,25 @@ var _ = Describe(ID(), Label(LabelTraces), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.TracePipelineHasCondition(Ctx, K8sClient, pipelineNameValue, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameValue, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.TracePipelineHasCondition(Ctx, K8sClient, pipelineNameValueFrom, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameValueFrom, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.TracePipelineHasCondition(Ctx, K8sClient, pipelineNameHTTP, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,

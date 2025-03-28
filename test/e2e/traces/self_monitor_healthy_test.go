@@ -23,13 +23,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelSelfMonitoringTracesHealthy), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringTracesHealthy), Ordered, func() {
 	var (
-		mockNs           = ID()
-		pipelineName     = ID()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 
@@ -40,7 +40,7 @@ var _ = Describe(ID(), Label(LabelSelfMonitoringTracesHealthy), Ordered, func() 
 
 		backend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(ProxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		tracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipelineName).
@@ -59,28 +59,28 @@ var _ = Describe(ID(), Label(LabelSelfMonitoringTracesHealthy), Ordered, func() 
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a network policy deployed", func() {
 			var networkPolicy networkingv1.NetworkPolicy
-			Expect(K8sClient.Get(Ctx, kitkyma.SelfMonitorNetworkPolicy, &networkPolicy)).To(Succeed())
+			Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.SelfMonitorNetworkPolicy, &networkPolicy)).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				var podList corev1.PodList
-				g.Expect(K8sClient.List(Ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.SelfMonitorBaseName})).To(Succeed())
+				g.Expect(suite.K8sClient.List(suite.Ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.SelfMonitorBaseName})).To(Succeed())
 				g.Expect(podList.Items).NotTo(BeEmpty())
 
 				selfMonitorPodName := podList.Items[0].Name
-				pprofEndpoint := ProxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, selfMonitorPodName, "debug/pprof/", ports.Pprof)
+				pprofEndpoint := suite.ProxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, selfMonitorPodName, "debug/pprof/", ports.Pprof)
 
-				resp, err := ProxyClient.Get(pprofEndpoint)
+				resp, err := suite.ProxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -88,19 +88,19 @@ var _ = Describe(ID(), Label(LabelSelfMonitoringTracesHealthy), Ordered, func() 
 
 		It("Should have service deployed", func() {
 			var service corev1.Service
-			Expect(K8sClient.Get(Ctx, kitkyma.SelfMonitorName, &service)).To(Succeed())
+			Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.SelfMonitorName, &service)).To(Succeed())
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.TracePipelineHealthy(Ctx, K8sClient, pipelineName)
+			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			assert.TracesFromNamespaceDelivered(ProxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
+			assert.TracesFromNamespaceDelivered(suite.ProxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {
@@ -108,7 +108,7 @@ var _ = Describe(ID(), Label(LabelSelfMonitoringTracesHealthy), Ordered, func() 
 			Eventually(func(g Gomega) {
 				var pipeline telemetryv1alpha1.TracePipeline
 				key := types.NamespacedName{Name: pipelineName}
-				g.Expect(K8sClient.Get(Ctx, key, &pipeline)).To(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, key, &pipeline)).To(Succeed())
 				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})

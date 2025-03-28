@@ -16,14 +16,14 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
 	var (
-		mockNs                = ID()
-		pipelineNameNoInput   = ID() + "-no-input"
-		pipelineNameWithInput = ID() + "-with-input"
+		mockNs                = suite.ID()
+		pipelineNameNoInput   = suite.ID() + "-no-input"
+		pipelineNameWithInput = suite.ID() + "-with-input"
 	)
 
 	var logPipelineWithInput telemetryv1alpha1.LogPipeline
@@ -55,29 +55,29 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
 
 			k8sObjectsToCreate := append(k8sObjects, &logPipelineWithInput)
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjectsToCreate...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjectsToCreate...)).Should(Succeed())
 		})
 
 		It("Ensures the log gateway deployment is ready", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
 		})
 
 		It("Should have a logs backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipelineNameNoInput)
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipelineNameWithInput)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameNoInput)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineNameWithInput)
 		})
 
 		It("Pipeline with no input should have AgentNotRequired condition", func() {
-			assert.LogPipelineHasCondition(Ctx, K8sClient, pipelineNameNoInput, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameNoInput, metav1.Condition{
 				Type:   conditions.TypeAgentHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonLogAgentNotRequired,
@@ -85,15 +85,15 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 		})
 
 		It("Ensures the log agent DaemonSet is running", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.LogAgentName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should delete the pipeline with input", func() {
-			Expect(kitk8s.DeleteObjects(Ctx, K8sClient, &logPipelineWithInput)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &logPipelineWithInput)).Should(Succeed())
 		})
 
 		It("Ensures the log agent DaemonSet is no longer running", func() {
-			assert.DaemonSetNotFound(Ctx, K8sClient, kitkyma.LogAgentName)
+			assert.DaemonSetNotFound(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 	})
 })

@@ -12,20 +12,20 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelTraces), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	const (
 		invalidPortEndpoint = "http://example.com:9abc8"
 		missingPortEndpoint = "http://example.com:/"
 	)
 
 	var (
-		mockNs                  = ID()
-		pipelineNameInvalid     = IDWithSuffix("invalid")
-		pipelineNameMissingGRPC = IDWithSuffix("missing-grpc")
-		pipelineNameMissingHTTP = IDWithSuffix("missing-http")
+		mockNs                  = suite.ID()
+		pipelineNameInvalid     = suite.IDWithSuffix("invalid")
+		pipelineNameMissingGRPC = suite.IDWithSuffix("missing-grpc")
+		pipelineNameMissingHTTP = suite.IDWithSuffix("missing-http")
 	)
 
 	makeResources := func() []client.Object {
@@ -68,19 +68,19 @@ var _ = Describe(ID(), Label(LabelTraces), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipelines", func() {
-			assert.TracePipelineHasCondition(Ctx, K8sClient, pipelineNameInvalid, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameInvalid, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
 			})
 
-			assert.TracePipelineHasCondition(Ctx, K8sClient, pipelineNameMissingGRPC, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameMissingGRPC, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonEndpointInvalid,
@@ -88,7 +88,7 @@ var _ = Describe(ID(), Label(LabelTraces), func() {
 		})
 
 		It("Should set ConfigurationGenerated condition to True in pipelines with missing port and HTTP protocol", func() {
-			assert.TracePipelineHasCondition(Ctx, K8sClient, pipelineNameMissingHTTP, metav1.Condition{
+			assert.TracePipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineNameMissingHTTP, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonGatewayConfigured,

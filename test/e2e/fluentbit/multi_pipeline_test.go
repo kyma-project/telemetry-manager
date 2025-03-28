@@ -14,18 +14,18 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 	Context("When multiple logpipelines exist", Ordered, func() {
 		var (
-			mockNs            = ID()
-			backend1Name      = IDWithSuffix("backend-1")
-			pipeline1Name     = IDWithSuffix("1")
+			mockNs            = suite.ID()
+			backend1Name      = suite.IDWithSuffix("backend-1")
+			pipeline1Name     = suite.IDWithSuffix("1")
 			backend1ExportURL string
-			backend2Name      = IDWithSuffix("backend-2")
-			pipeline2Name     = IDWithSuffix("2")
+			backend2Name      = suite.IDWithSuffix("backend-2")
+			pipeline2Name     = suite.IDWithSuffix("2")
 			backend2ExportURL string
 		)
 
@@ -35,7 +35,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 
 			backend1 := backend.New(mockNs, backend.SignalTypeLogs, backend.WithName(backend1Name))
 			objs = append(objs, backend1.K8sObjects()...)
-			backend1ExportURL = backend1.ExportURL(ProxyClient)
+			backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 
 			logPipeline1 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline1Name).
@@ -47,7 +47,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 			logProducer := loggen.New(mockNs)
 			objs = append(objs, backend2.K8sObjects()...)
 			objs = append(objs, logProducer.K8sObject())
-			backend2ExportURL = backend2.ExportURL(ProxyClient)
+			backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 
 			logPipeline2 := testutils.NewLogPipelineBuilder().
 				WithName(pipeline2Name).
@@ -62,28 +62,28 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipeline1Name)
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipeline2Name)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
 		})
 
 		It("Should have running log agent", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should have produced logs in the backend", func() {
-			assert.LogsDelivered(ProxyClient, loggen.DefaultName, backend1ExportURL)
-			assert.LogsDelivered(ProxyClient, loggen.DefaultName, backend2ExportURL)
+			assert.LogsDelivered(suite.ProxyClient, loggen.DefaultName, backend1ExportURL)
+			assert.LogsDelivered(suite.ProxyClient, loggen.DefaultName, backend2ExportURL)
 		})
 	})
 

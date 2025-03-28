@@ -21,18 +21,18 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), Ordered, func() {
 	Context("When multiple metric pipelines with instrumentation scope exist", Ordered, func() {
 		var (
-			mockNs                     = ID()
-			backendRuntimeName         = IDWithSuffix("backend-runtime")
-			pipelineRuntimeName        = IDWithSuffix("runtime")
+			mockNs                     = suite.ID()
+			backendRuntimeName         = suite.IDWithSuffix("backend-runtime")
+			pipelineRuntimeName        = suite.IDWithSuffix("runtime")
 			backendRuntimeExportURL    string
-			backendPrometheusName      = IDWithSuffix("backend-prometheus")
-			pipelinePrometheusName     = IDWithSuffix("prometheus")
+			backendPrometheusName      = suite.IDWithSuffix("backend-prometheus")
+			pipelinePrometheusName     = suite.IDWithSuffix("prometheus")
 			backendPrometheusExportURL string
 		)
 
@@ -42,7 +42,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 
 			backendRuntime := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendRuntimeName))
 			objs = append(objs, backendRuntime.K8sObjects()...)
-			backendRuntimeExportURL = backendRuntime.ExportURL(ProxyClient)
+			backendRuntimeExportURL = backendRuntime.ExportURL(suite.ProxyClient)
 
 			// Enable only container metrics to simplify the test setup and avoid deploying too many workloads
 			// Other metric resources are tested in metrics_runtime_input_test.go, here the focus is on testing multiple pipelines withe different inputs (runtime and prometheus)
@@ -63,7 +63,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 
 			backendPrometheus := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendPrometheusName))
 			objs = append(objs, backendPrometheus.K8sObjects()...)
-			backendPrometheusExportURL = backendPrometheus.ExportURL(ProxyClient)
+			backendPrometheusExportURL = backendPrometheus.ExportURL(suite.ProxyClient)
 
 			metricPipelinePrometheus := testutils.NewMetricPipelineBuilder().
 				WithName(pipelinePrometheusName).
@@ -85,31 +85,31 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			assert.MetricPipelineHealthy(Ctx, K8sClient, pipelineRuntimeName)
-			assert.MetricPipelineHealthy(Ctx, K8sClient, pipelinePrometheusName)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineRuntimeName)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelinePrometheusName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.MetricGatewayName)
-			assert.ServiceReady(Ctx, K8sClient, kitkyma.MetricGatewayMetricsService)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayMetricsService)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendRuntimeName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendPrometheusName, Namespace: mockNs})
 		})
 
 		It("Ensures runtime metrics are sent to runtime backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendRuntimeExportURL)
+				resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				bodyContent, err := io.ReadAll(resp.Body)
@@ -122,7 +122,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 
 		It("Ensures runtime metrics are not sent to prometheus backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendPrometheusExportURL)
+				resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				bodyContent, err := io.ReadAll(resp.Body)
@@ -147,7 +147,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 
 		It("Ensures prometheus metrics are sent to prometheus backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendPrometheusExportURL)
+				resp, err := suite.ProxyClient.Get(backendPrometheusExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				bodyContent, err := io.ReadAll(resp.Body)
@@ -163,7 +163,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 
 		It("Ensures prometheus metrics are not sent to runtime backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendRuntimeExportURL)
+				resp, err := suite.ProxyClient.Get(backendRuntimeExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				bodyContent, err := io.ReadAll(resp.Body)

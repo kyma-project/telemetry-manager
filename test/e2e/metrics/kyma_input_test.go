@@ -19,15 +19,15 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
 	var (
-		mockNs = ID()
+		mockNs = suite.ID()
 
-		pipelineWithAnnotationName   = IDWithSuffix("with-annotation")
-		backendForKymaInputName      = IDWithSuffix("for-kyma-input")
+		pipelineWithAnnotationName   = suite.IDWithSuffix("with-annotation")
+		backendForKymaInputName      = suite.IDWithSuffix("for-kyma-input")
 		backendForKymaInputExportURL string
 	)
 
@@ -37,7 +37,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 
 		backendForKymaInput := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendForKymaInputName))
 		objs = append(objs, backendForKymaInput.K8sObjects()...)
-		backendForKymaInputExportURL = backendForKymaInput.ExportURL(ProxyClient)
+		backendForKymaInputExportURL = backendForKymaInput.ExportURL(suite.ProxyClient)
 
 		metricPipelineWithAnnotation := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineWithAnnotationName).
@@ -52,29 +52,29 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 		k8sObjects := makeResources()
 
 		DeferCleanup(func() {
-			Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+		Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 	})
 
 	Context("When a metricpipeline with kyma input annotation exists", Ordered, func() {
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Ensures the metrics backends are ready", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backendForKymaInputName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendForKymaInputName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric pipelines are healthy", func() {
-			assert.MetricPipelineHealthy(Ctx, K8sClient, pipelineWithAnnotationName)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineWithAnnotationName)
 		})
 
 		It("Ensures Telemetry module status metrics are sent to the backend which is receiving metrics from the pipeline with annotation", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendForKymaInputExportURL)
+				resp, err := suite.ProxyClient.Get(backendForKymaInputExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				bodyContent, err := io.ReadAll(resp.Body)
@@ -98,7 +98,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 
 		It("Ensures metric pipeline condition metrics from both pipelines are sent to the backend which is receiving metrics from the pipeline with annotation", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendForKymaInputExportURL)
+				resp, err := suite.ProxyClient.Get(backendForKymaInputExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				bodyContent, err := io.ReadAll(resp.Body)

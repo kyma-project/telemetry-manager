@@ -20,13 +20,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
 	var (
-		mockNs           = ID()
-		pipelineName     = ID()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 
@@ -34,11 +34,11 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(IsUpgrade()))
+		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
-		backendExportURL = backend.ExportURL(ProxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
@@ -51,7 +51,7 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 					hostSecretRef.Key,
 				),
 			)
-		if IsUpgrade() {
+		if suite.IsUpgrade() {
 			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
 		logPipeline := pipelineBuilder.Build()
@@ -67,34 +67,34 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running log gateway deployment", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.LogAgentName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.LogPipelineOtelHealthy(Ctx, K8sClient, pipelineName)
+			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should deliver loggen logs", func() {
-			assert.LogsFromNamespaceDelivered(ProxyClient, backendExportURL, mockNs)
+			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		It("Ensures logs have expected scope name and scope version", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -112,7 +112,7 @@ var _ = Describe(ID(), Label(LabelLogs, LabelExperimental), Ordered, func() {
 
 		It("Should have Observed timestamp in the logs", func() {
 			Consistently(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 

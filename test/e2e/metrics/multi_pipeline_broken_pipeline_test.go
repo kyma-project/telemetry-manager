@@ -14,15 +14,15 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), Ordered, func() {
 	Context("When a broken metricpipeline exists", Ordered, func() {
 		var (
-			mockNs              = ID()
-			healthyPipelineName = IDWithSuffix("healthy")
-			brokenPipelineName  = IDWithSuffix("broken")
+			mockNs              = suite.ID()
+			healthyPipelineName = suite.IDWithSuffix("healthy")
+			brokenPipelineName  = suite.IDWithSuffix("broken")
 			backendExportURL    string
 		)
 
@@ -32,7 +32,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 
 			backend := backend.New(mockNs, backend.SignalTypeMetrics)
 			objs = append(objs, backend.K8sObjects()...)
-			backendExportURL = backend.ExportURL(ProxyClient)
+			backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 			healthyPipeline := testutils.NewMetricPipelineBuilder().
 				WithName(healthyPipelineName).
@@ -59,27 +59,27 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			assert.MetricPipelineHealthy(Ctx, K8sClient, healthyPipelineName)
-			assert.MetricPipelineHealthy(Ctx, K8sClient, brokenPipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, healthyPipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, brokenPipelineName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			assert.MetricsFromNamespaceDelivered(ProxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 	})
 })

@@ -16,22 +16,22 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 	const (
 		tlsCrdValidationError = "Can define either both 'cert' and 'key', or neither"
 		notFoundError         = "not found"
 	)
 
 	var (
-		mockNs                      = ID()
-		missingCaPipelineName       = IDWithSuffix("-missing-ca")
-		missingCertPipelineName     = IDWithSuffix("-missing-cert")
-		missingKeyPipelineName      = IDWithSuffix("-missing-key")
-		missingAllPipelineName      = IDWithSuffix("-missing-all")
-		missingAllButCaPipelineName = IDWithSuffix("-missing-all-but-ca")
+		mockNs                      = suite.ID()
+		missingCaPipelineName       = suite.IDWithSuffix("-missing-ca")
+		missingCertPipelineName     = suite.IDWithSuffix("-missing-cert")
+		missingKeyPipelineName      = suite.IDWithSuffix("-missing-key")
+		missingAllPipelineName      = suite.IDWithSuffix("-missing-all")
+		missingAllButCaPipelineName = suite.IDWithSuffix("-missing-all-but-ca")
 	)
 
 	makeResources := func() ([]client.Object, []client.Object) {
@@ -123,30 +123,30 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 			k8sSucceedingObjects, k8sFailingObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sSucceedingObjects...)).Should(Succeed())
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sFailingObjects...)).
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sSucceedingObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sFailingObjects...)).
 					Should(MatchError(ContainSubstring(notFoundError)))
 
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sSucceedingObjects...)).Should(Succeed())
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sFailingObjects...)).
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sSucceedingObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sFailingObjects...)).
 				Should(MatchError(ContainSubstring(tlsCrdValidationError)))
 		})
 
 		It("Should set ConfigurationGenerated condition to True in pipelines", func() {
-			assert.LogPipelineHasCondition(Ctx, K8sClient, missingCaPipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonAgentConfigured,
 			})
 
-			assert.LogPipelineHasCondition(Ctx, K8sClient, missingAllButCaPipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllButCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonAgentConfigured,
 			})
 
-			assert.LogPipelineHasCondition(Ctx, K8sClient, missingAllPipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllPipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonAgentConfigured,
@@ -154,19 +154,19 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should set TelemetryFlowHealthy condition to True in pipelines", func() {
-			assert.LogPipelineHasCondition(Ctx, K8sClient, missingCaPipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, missingCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 
-			assert.LogPipelineHasCondition(Ctx, K8sClient, missingAllButCaPipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllButCaPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
 			})
 
-			assert.LogPipelineHasCondition(Ctx, K8sClient, missingAllPipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, missingAllPipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonSelfMonFlowHealthy,
@@ -174,8 +174,8 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should set LogComponentsHealthy condition to True in Telemetry", func() {
-			assert.TelemetryHasState(Ctx, K8sClient, operatorv1alpha1.StateReady)
-			assert.TelemetryHasCondition(Ctx, K8sClient, metav1.Condition{
+			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateReady)
+			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionTrue,
 				Reason: conditions.ReasonComponentsRunning,

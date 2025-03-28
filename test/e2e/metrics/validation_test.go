@@ -12,15 +12,15 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a validating webhook exists", Ordered, func() {
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-				g.Expect(K8sClient.Get(Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
@@ -31,7 +31,7 @@ var _ = Describe(ID(), Label(LabelMetrics), Ordered, func() {
 				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "")).
 				Build()
 			Consistently(func(g Gomega) {
-				g.Expect(kitk8s.CreateObjects(Ctx, K8sClient, &metricPipeline)).ShouldNot(Succeed())
+				g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipeline)).ShouldNot(Succeed())
 			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})

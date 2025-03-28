@@ -21,14 +21,14 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 
 	Context("When a TracePipeline exists", Ordered, func() {
 		var (
-			tracePipelineName = IDWithSuffix("traces-endpoints")
+			tracePipelineName = suite.IDWithSuffix("traces-endpoints")
 			traceGRPCEndpoint = "http://telemetry-otlp-traces.kyma-system:4317"
 			traceHTTPEndpoint = "http://telemetry-otlp-traces.kyma-system:4318"
 		)
@@ -37,15 +37,15 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 			tracePipeline := testutils.NewTracePipelineBuilder().WithName(tracePipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, &tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &tracePipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with TracePipeline endpoints", func() {
 			Eventually(func(g Gomega) {
 				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.GatewayEndpoints.Traces).ShouldNot(BeNil())
 				g.Expect(telemetry.Status.GatewayEndpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
 				g.Expect(telemetry.Status.GatewayEndpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
@@ -55,7 +55,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 	Context("When a MetricPipeline exists", Ordered, func() {
 		var (
-			metricPipelineName = IDWithSuffix("metrics-endpoints")
+			metricPipelineName = suite.IDWithSuffix("metrics-endpoints")
 			metricGRPCEndpoint = "http://telemetry-otlp-metrics.kyma-system:4317"
 			metricHTTPEndpoint = "http://telemetry-otlp-metrics.kyma-system:4318"
 		)
@@ -64,15 +64,15 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 			metricPipeline := testutils.NewMetricPipelineBuilder().WithName(metricPipelineName).Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, &metricPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &metricPipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &metricPipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with MetricPipeline endpoints", func() {
 			Eventually(func(g Gomega) {
 				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.GatewayEndpoints.Metrics).ShouldNot(BeNil())
 				g.Expect(telemetry.Status.GatewayEndpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
 				g.Expect(telemetry.Status.GatewayEndpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
@@ -82,7 +82,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 	Context("When a misconfigured TracePipeline exists", Ordered, func() {
 		var (
-			tracePipelineName = IDWithSuffix("missing-secret")
+			tracePipelineName = suite.IDWithSuffix("missing-secret")
 		)
 
 		BeforeAll(func() {
@@ -92,14 +92,14 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 				Build()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, &tracePipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &tracePipeline)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &tracePipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with warning state", func() {
-			assert.TelemetryHasState(Ctx, K8sClient, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(Ctx, K8sClient, metav1.Condition{
+			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeTraceComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
@@ -111,7 +111,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-				g.Expect(K8sClient.Get(Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 
@@ -144,7 +144,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 		It("Should have secret with webhook CA bundle", func() {
 			Eventually(func(g Gomega) {
 				var secret corev1.Secret
-				g.Expect(K8sClient.Get(Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
 				g.Expect(secret.OwnerReferences).Should(HaveLen(1))
 				g.Expect(secret.OwnerReferences[0].Name).Should(Equal("default"))
 				g.Expect(secret.OwnerReferences[0].Kind).Should(Equal("Telemetry"))
@@ -157,14 +157,14 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 			var oldUID types.UID
 			By("Deleting secret", func() {
 				var secret corev1.Secret
-				Expect(K8sClient.Get(Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+				Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
 				oldUID = secret.UID
-				Expect(K8sClient.Delete(Ctx, &secret)).Should(Succeed())
+				Expect(suite.K8sClient.Delete(suite.Ctx, &secret)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
 				var secret corev1.Secret
-				g.Expect(K8sClient.Get(Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
 				g.Expect(secret.OwnerReferences).Should(HaveLen(1))
 				g.Expect(secret.UID).ShouldNot(Equal(oldUID))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -173,7 +173,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 	Context("Deleting Telemetry resources", Ordered, func() {
 		var (
-			logPipelineName = IDWithSuffix("orphaned")
+			logPipelineName = suite.IDWithSuffix("orphaned")
 			logPipeline     = testutils.NewLogPipelineBuilder().
 					WithName(logPipelineName).
 					WithCustomOutput("Name stdout").
@@ -182,7 +182,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
-				g.Expect(kitk8s.CreateObjects(Ctx, K8sClient, &logPipeline)).Should(Succeed())
+				g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &logPipeline)).Should(Succeed())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
@@ -190,12 +190,12 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 			// Recreate Telemetry for remaining tests
 			Eventually(func(g Gomega) {
 				newTelemetry := []client.Object{kitk8s.NewTelemetry("default", "kyma-system").K8sObject()}
-				g.Expect(kitk8s.CreateObjects(Ctx, K8sClient, newTelemetry...)).Should(Succeed())
+				g.Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, newTelemetry...)).Should(Succeed())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
 				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateReady))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
@@ -210,7 +210,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 		It("Should have Telemetry resource", func() {
 			Eventually(func(g Gomega) {
 				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateReady))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
@@ -218,13 +218,13 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 		It("Should not delete Telemetry when LogPipeline exists", func() {
 			By("Deleting telemetry", func() {
 				var telemetry operatorv1alpha1.Telemetry
-				Expect(K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
-				Expect(kitk8s.ForceDeleteObjects(Ctx, K8sClient, &telemetry)).Should(Succeed())
+				Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				Expect(kitk8s.ForceDeleteObjects(suite.Ctx, suite.K8sClient, &telemetry)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
 				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
 				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
@@ -259,19 +259,19 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 		It("Should delete Telemetry", func() {
 			By("Deleting the orphaned LogPipeline", func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, &logPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &logPipeline)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
 				var telemetry operatorv1alpha1.Telemetry
-				g.Expect(K8sClient.Get(Ctx, kitkyma.TelemetryName, &telemetry)).ShouldNot(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).ShouldNot(Succeed())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should not have CA bundle secret", func() {
 			Eventually(func(g Gomega) {
 				var secret corev1.Secret
-				g.Expect(K8sClient.Get(Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.WebhookCertSecret, &secret)).Should(Succeed())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 		})
 	})

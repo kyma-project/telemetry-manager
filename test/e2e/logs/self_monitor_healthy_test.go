@@ -18,13 +18,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelExperimental, LabelSelfMonitoringLogsHealthy), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonitoringLogsHealthy), Ordered, func() {
 	var (
-		mockNs           = ID()
-		pipelineName     = ID()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 
@@ -36,7 +36,7 @@ var _ = Describe(ID(), Label(LabelExperimental, LabelSelfMonitoringLogsHealthy),
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
-		backendExportURL = backend.ExportURL(ProxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
@@ -52,40 +52,40 @@ var _ = Describe(ID(), Label(LabelExperimental, LabelSelfMonitoringLogsHealthy),
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipelineName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.LogAgentName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should deliver loggen logs", func() {
-			assert.LogsFromNamespaceDelivered(ProxyClient, backendExportURL, mockNs)
+			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
 			Eventually(func(g Gomega) {
 				var pipeline telemetryv1alpha1.LogPipeline
 				key := types.NamespacedName{Name: pipelineName}
-				g.Expect(K8sClient.Get(Ctx, key, &pipeline)).To(Succeed())
+				g.Expect(suite.K8sClient.Get(suite.Ctx, key, &pipeline)).To(Succeed())
 				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})

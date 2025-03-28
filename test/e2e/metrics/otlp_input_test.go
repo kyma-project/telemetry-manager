@@ -14,12 +14,12 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetB), Ordered, func() {
 	var (
-		mockNs           = ID()
+		mockNs           = suite.ID()
 		appNs            = "app"
 		backendExportURL string
 	)
@@ -29,11 +29,11 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(), kitk8s.NewNamespace(appNs).K8sObject())
 
 		backend := backend.New(mockNs, backend.SignalTypeMetrics)
-		backendExportURL = backend.ExportURL(ProxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend.K8sObjects()...)
 
 		pipelineWithoutOTLP := testutils.NewMetricPipelineBuilder().
-			WithName(ID()).
+			WithName(suite.ID()).
 			WithOTLPInput(false).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 			Build()
@@ -48,23 +48,23 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetB), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
 
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(Ctx, K8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
-			assert.ServiceReady(Ctx, K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should not deliver OTLP metrics", func() {
-			assert.MetricsFromNamespaceNotDelivered(ProxyClient, backendExportURL, appNs)
+			assert.MetricsFromNamespaceNotDelivered(suite.ProxyClient, backendExportURL, appNs)
 		})
 	})
 })

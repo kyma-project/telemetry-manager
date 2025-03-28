@@ -13,11 +13,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
-	var pipelineName = ID()
+var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
+	var pipelineName = suite.ID()
 
 	Context("When a LogPipeline with missing secret reference exists", Ordered, func() {
 
@@ -33,15 +33,15 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 			Build()
 
 		BeforeAll(func() {
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &logPipeline)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &logPipeline)).Should(Succeed())
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, &logPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, &logPipeline)).Should(Succeed())
 			})
 		})
 
 		It("Should set ConfigurationGenerated condition to False in pipeline", func() {
-			assert.LogPipelineHasCondition(Ctx, K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeConfigurationGenerated,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
@@ -49,7 +49,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should set TelemetryFlowHealthy condition to False in pipeline", func() {
-			assert.LogPipelineHasCondition(Ctx, K8sClient, pipelineName, metav1.Condition{
+			assert.LogPipelineHasCondition(suite.Ctx, suite.K8sClient, pipelineName, metav1.Condition{
 				Type:   conditions.TypeFlowHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -57,8 +57,8 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		})
 
 		It("Should set LogComponentsHealthy condition to False in Telemetry", func() {
-			assert.TelemetryHasState(Ctx, K8sClient, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(Ctx, K8sClient, metav1.Condition{
+			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonReferencedSecretMissing,
@@ -67,10 +67,10 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 
 		It("Should have a healthy pipeline", func() {
 			By("Creating missing secret", func() {
-				Expect(kitk8s.CreateObjects(Ctx, K8sClient, secret.K8sObject())).Should(Succeed())
+				Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, secret.K8sObject())).Should(Succeed())
 			})
 
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipelineName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 	})
 })

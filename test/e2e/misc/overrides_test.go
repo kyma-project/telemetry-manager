@@ -22,17 +22,17 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 	const (
 		appNameLabelKey = "app.kubernetes.io/name"
 	)
 
 	var (
-		mockNs           = ID()
-		pipelineName     = ID()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 		overrides        *corev1.ConfigMap
 		now              time.Time
@@ -44,7 +44,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 		backend := backend.New(mockNs, backend.SignalTypeLogs)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(ProxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
@@ -58,33 +58,33 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 		return objs
 	}
 
-	assertPipelineReconciliationDisabled := func(Ctx context.Context, K8sClient client.Client, configMapNamespacedName types.NamespacedName, labelKey string) {
+	assertPipelineReconciliationDisabled := func(ctx context.Context, k8sClient client.Client, configMapNamespacedName types.NamespacedName, labelKey string) {
 		var configMap corev1.ConfigMap
-		Expect(K8sClient.Get(Ctx, configMapNamespacedName, &configMap)).To(Succeed())
+		Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
 
 		delete(configMap.Labels, labelKey)
-		Expect(K8sClient.Update(Ctx, &configMap)).To(Succeed())
+		Expect(k8sClient.Update(ctx, &configMap)).To(Succeed())
 
 		// The deleted label should not be restored, since the reconciliation is disabled by the overrides configmap
 		Consistently(func(g Gomega) {
-			g.Expect(K8sClient.Get(Ctx, configMapNamespacedName, &configMap)).To(Succeed())
+			g.Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
 			g.Expect(configMap.Labels[labelKey]).To(BeZero())
 		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 	}
 
-	assertTelemetryReconciliationDisabled := func(Ctx context.Context, K8sClient client.Client, webhookName string) {
+	assertTelemetryReconciliationDisabled := func(ctx context.Context, k8sClient client.Client, webhookName string) {
 		key := types.NamespacedName{
 			Name: webhookName,
 		}
 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-		Expect(K8sClient.Get(Ctx, key, &validatingWebhookConfiguration)).To(Succeed())
+		Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
 
 		validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle = []byte{}
-		Expect(K8sClient.Update(Ctx, &validatingWebhookConfiguration)).To(Succeed())
+		Expect(k8sClient.Update(ctx, &validatingWebhookConfiguration)).To(Succeed())
 
 		// The deleted CA bundle should not be restored, since the reconciliation is disabled by the overrides configmap
 		Consistently(func(g Gomega) {
-			g.Expect(K8sClient.Get(Ctx, key, &validatingWebhookConfiguration)).To(Succeed())
+			g.Expect(k8sClient.Get(ctx, key, &validatingWebhookConfiguration)).To(Succeed())
 			g.Expect(validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle).To(BeEmpty())
 		}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 	}
@@ -97,23 +97,23 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 				k8sObjects = append(k8sObjects, overrides)
 			}
 
-			Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
-		Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+		Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 	})
 
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		It("Should have a running logpipeline", func() {
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipelineName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have INFO level logs in the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -127,7 +127,7 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 		It("Should not have any DEBUG level logs in the backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -142,13 +142,13 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 		It("Should add the overrides configmap and modify the log pipeline", func() {
 			overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, overrides)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, overrides)).Should(Succeed())
 
 			lookupKey := types.NamespacedName{
 				Name: pipelineName,
 			}
 			var logPipeline telemetryv1alpha1.LogPipeline
-			err := K8sClient.Get(Ctx, lookupKey, &logPipeline)
+			err := suite.K8sClient.Get(suite.Ctx, lookupKey, &logPipeline)
 			Expect(err).ToNot(HaveOccurred())
 
 			if logPipeline.Annotations == nil {
@@ -157,13 +157,13 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 			logPipeline.Annotations["test-annotation"] = "test-value"
 
 			// Update the logPipeline to trigger the reconciliation loop, so that new DEBUG logs are generated
-			err = K8sClient.Update(Ctx, &logPipeline)
+			err = suite.K8sClient.Update(suite.Ctx, &logPipeline)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Should have DEBUG level logs in the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := ProxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -179,19 +179,19 @@ var _ = Describe(ID(), Label(LabelTelemetry), Ordered, func() {
 
 	Context("When an overrides configmap exists", Ordered, func() {
 		It("Should disable the reconciliation of the logpipeline", func() {
-			assertPipelineReconciliationDisabled(Ctx, K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
+			assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
 		})
 
 		It("Should disable the reconciliation of the metricpipeline", func() {
-			assertPipelineReconciliationDisabled(Ctx, K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
+			assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
 		})
 
 		It("Should disable the reconciliation of the tracepipeline", func() {
-			assertPipelineReconciliationDisabled(Ctx, K8sClient, kitkyma.TraceGatewayConfigMap, appNameLabelKey)
+			assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayConfigMap, appNameLabelKey)
 		})
 
 		It("Should disable the reconciliation of the telemetry CR", func() {
-			assertTelemetryReconciliationDisabled(Ctx, K8sClient, kitkyma.ValidatingWebhookName)
+			assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.ValidatingWebhookName)
 		})
 	})
 })

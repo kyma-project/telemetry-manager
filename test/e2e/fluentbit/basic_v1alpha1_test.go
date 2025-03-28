@@ -14,13 +14,13 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 	var (
-		mockNs           = ID()
-		pipelineName     = ID()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 
@@ -28,11 +28,11 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(IsUpgrade()))
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(suite.IsUpgrade()))
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
-		backendExportURL = backend.ExportURL(ProxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
@@ -45,7 +45,7 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 				),
 				testutils.HTTPPort(backend.Port()),
 			)
-		if IsUpgrade() {
+		if suite.IsUpgrade() {
 			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
 		logPipeline := pipelineBuilder.Build()
@@ -58,33 +58,33 @@ var _ = Describe(ID(), Label(LabelLogsFluentBit), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", Label(LabelUpgrade), func() {
-			assert.LogPipelineHealthy(Ctx, K8sClient, pipelineName)
+		It("Should have a running pipeline", Label(suite.LabelUpgrade), func() {
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should have running log agent", func() {
-			assert.DaemonSetReady(Ctx, K8sClient, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have unsupportedMode set to false", func() {
-			assert.LogPipelineUnsupportedMode(Ctx, K8sClient, pipelineName, false)
+			assert.LogPipelineUnsupportedMode(suite.Ctx, suite.K8sClient, pipelineName, false)
 		})
 
-		It("Should have a log backend running", Label(LabelUpgrade), func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+		It("Should have a log backend running", Label(suite.LabelUpgrade), func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have a log producer running", Label(LabelUpgrade), func() {
-			assert.DeploymentReady(Ctx, K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+		It("Should have a log producer running", Label(suite.LabelUpgrade), func() {
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should have produced logs in the backend", Label(LabelUpgrade), func() {
-			assert.LogsDelivered(ProxyClient, loggen.DefaultName, backendExportURL)
+		It("Should have produced logs in the backend", Label(suite.LabelUpgrade), func() {
+			assert.LogsDelivered(suite.ProxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })

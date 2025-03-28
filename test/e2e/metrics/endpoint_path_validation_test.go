@@ -8,10 +8,10 @@ import (
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Label(suite.LabelSetC), Ordered, func() {
 	metricPipelineDefaultGRPCWithPath := testutils.NewMetricPipelineBuilder().
 		WithName("metricpipeline-default-reject-with-path").
 		WithOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPEndpointPath("/v1/mock/metrics")).
@@ -41,29 +41,29 @@ var _ = Describe(ID(), Label(LabelMetrics), Label(LabelSetC), Ordered, func() {
 
 		BeforeAll(func() {
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(Ctx, K8sClient,
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient,
 					&metricPipelineWithGRPCAndWithoutPath, &metricPipelineWithHTTPAndPath, &metricPipelineWithHTTPAndWithoutPath)).Should(Succeed())
 			})
 		})
 
 		It("Should reject a MetricPipeline with path and default protocol", func() {
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &metricPipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
 		})
 
 		It("Should reject a MetricPipeline with path and gRPC protocol", func() {
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &metricPipelineWithGRPCAndPath)).ShouldNot(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithGRPCAndPath)).ShouldNot(Succeed())
 		})
 
 		It("Should accept a MetricPipeline with no path and gRPC protocol", func() {
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &metricPipelineWithGRPCAndWithoutPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithGRPCAndWithoutPath)).Should(Succeed())
 		})
 
 		It("Should accept a MetricPipeline with no path and HTTP protocol", func() {
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &metricPipelineWithHTTPAndWithoutPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithHTTPAndWithoutPath)).Should(Succeed())
 		})
 
 		It("Should accept a MetricPipeline with path and HTTP protocol", func() {
-			Expect(kitk8s.CreateObjects(Ctx, K8sClient, &metricPipelineWithHTTPAndPath)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, &metricPipelineWithHTTPAndPath)).Should(Succeed())
 		})
 	})
 })
