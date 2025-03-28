@@ -1,6 +1,6 @@
 //go:build e2e
 
-package logs
+package otel
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -17,7 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental), Ordered, func() {
 	Context("When multiple otlp logpipelines exist", Ordered, func() {
 		var (
 			mockNs            = suite.ID()

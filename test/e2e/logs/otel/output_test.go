@@ -1,6 +1,6 @@
 //go:build e2e
 
-package logs
+package otel
 
 import (
 	"io"
@@ -8,10 +8,13 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -23,19 +26,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
-	const (
-		logLabelExactMatchAttributeKey     = "k8s.pod.label.log.test.exact.should.match"
-		logLabelPrefixMatchAttributeKey1   = "k8s.pod.label.log.test.prefix.should.match1"
-		logLabelPrefixMatchAttributeKey2   = "k8s.pod.label.log.test.prefix.should.match2"
-		logLabelShouldNotMatchAttributeKey = "k8s.pod.label.log.test.label.should.not.match"
-	)
-
+var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()
 		backendExportURL string
 	)
+
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
@@ -47,7 +44,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithApplicationInputDisabled().
+			WithApplicationInput(false).
+			WithKeepOriginalBody(false).
 			WithOTLPOutput(
 				testutils.OTLPEndpointFromSecret(
 					hostSecretRef.Name,
@@ -59,13 +57,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
 		}
 		logPipeline := pipelineBuilder.Build()
-		otlpLogGen := telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeLogs).
-			WithLabel("log.test.exact.should.match", "exact_match").
-			WithLabel("log.test.prefix.should.match1", "prefix_match1").
-			WithLabel("log.test.prefix.should.match2", "prefix_match2").
-			WithLabel("log.test.label.should.not.match", "should_not_match").
-			K8sObject()
-		objs = append(objs, otlpLogGen, &logPipeline)
+
+		objs = append(objs,
+			telemetrygen.NewPod(mockNs, telemetrygen.SignalTypeLogs).K8sObject(),
+			&logPipeline,
+		)
 		return objs
 	}
 
@@ -78,33 +74,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			})
 			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
-		It("Should have global log label config", func() {
-			Eventually(func(g Gomega) int {
-				var telemetry operatorv1alpha1.Telemetry
-				err := suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)
-				g.Expect(err).NotTo(HaveOccurred())
-
-				telemetry.Spec.Log = &operatorv1alpha1.LogSpec{
-					Enrichments: &operatorv1alpha1.EnrichmentSpec{
-						Enabled: true,
-						ExtractPodLabels: []operatorv1alpha1.PodLabel{
-							{
-								Key: "log.test.exact.should.match",
-							},
-							{
-								KeyPrefix: "log.test.prefix",
-							},
-						},
-					},
-				}
-				err = suite.K8sClient.Update(suite.Ctx, &telemetry)
-				g.Expect(err).NotTo(HaveOccurred())
-				return len(telemetry.Spec.Log.Enrichments.ExtractPodLabels)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(2))
-		})
 
 		It("Should have a running log gateway deployment", func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
+		})
+
+		It("Should have 2 log gateway replicas", func() {
+			Eventually(func(g Gomega) int32 {
+				var deployment appsv1.Deployment
+				err := suite.K8sClient.Get(suite.Ctx, kitkyma.LogGatewayName, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				return *deployment.Spec.Replicas
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
 		It("Should have a log backend running", func() {
@@ -119,7 +100,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
-		It("Should have a right labels attached to the logs", func() {
+		It("Should have Observed timestamp in the logs", func() {
 			Consistently(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -130,12 +111,32 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 				g.Expect(err).NotTo(HaveOccurred())
 
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
-					HaveResourceAttributes(HaveKeyWithValue(logLabelExactMatchAttributeKey, "exact_match")),
-					HaveResourceAttributes(HaveKeyWithValue(logLabelPrefixMatchAttributeKey1, "prefix_match1")),
-					HaveResourceAttributes(HaveKeyWithValue(logLabelPrefixMatchAttributeKey2, "prefix_match2")),
-					Not(HaveResourceAttributes(HaveKeyWithValue(logLabelShouldNotMatchAttributeKey, "should_not_match"))),
-				))))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+					HaveOtelTimestamp(Not(BeEmpty())),
+					HaveObservedTimestamp(Not(Equal("1970-01-01 00:00:00 +0000 UTC")))))))
+			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should be able to get log gateway metrics endpoint", func() {
+			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogGatewayMetricsService.Namespace, kitkyma.LogGatewayMetricsService.Name, "metrics", ports.Metrics)
+			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, gatewayMetricsURL)
+		})
+
+		It("Should have a working network policy", func() {
+			var networkPolicy networkingv1.NetworkPolicy
+			Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.LogGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
+
+			Eventually(func(g Gomega) {
+				var podList corev1.PodList
+				g.Expect(suite.K8sClient.List(suite.Ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.LogGatewayBaseName})).To(Succeed())
+				g.Expect(podList.Items).NotTo(BeEmpty())
+
+				logGatewayPodName := podList.Items[0].Name
+				pprofEndpoint := suite.ProxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, logGatewayPodName, "debug/pprof/", ports.Pprof)
+
+				resp, err := suite.ProxyClient.Get(pprofEndpoint)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })

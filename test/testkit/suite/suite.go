@@ -116,7 +116,7 @@ func sanitizeSpecID(filePath string) string {
 }
 
 const (
-	LabelLogs          = "logs"
+	LabelLogsOtel      = "logs-otel"
 	LabelLogsFluentBit = "logs-fluentbit"
 	LabelTraces        = "traces"
 	LabelMetrics       = "metrics"

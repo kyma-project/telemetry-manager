@@ -1,6 +1,6 @@
 //go:build e2e
 
-package logs
+package otel
 
 import (
 	"testing"
