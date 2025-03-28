@@ -30,8 +30,10 @@ service:
                 - filter/drop-if-input-source-runtime
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
+                - filter/drop-envoy-metrics-if-disabled
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
+                - service_enrichment
                 - resource/drop-kyma-attributes
                 - batch
             exporters:
@@ -156,6 +158,10 @@ processors:
         custom_labels:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    filter/drop-envoy-metrics-if-disabled:
+        metrics:
+            metric:
+                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     resource/drop-kyma-attributes:
         attributes:
             - action: delete

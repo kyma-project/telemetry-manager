@@ -6,6 +6,10 @@ func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
 }
 
+func IsEnvoyMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Istio.EnvoyMetrics != nil && input.Istio.EnvoyMetrics.Enabled
+}
+
 func IsPrometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Prometheus != nil && input.Prometheus.Enabled != nil && *input.Prometheus.Enabled
 }

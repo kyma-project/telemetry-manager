@@ -63,7 +63,7 @@ jobs:
         path: junit-report*.xml
 
     - name: Send slack message on failure
-      uses: slackapi/slack-github-action@286095372d28a1eccb0ed10d7248e0a6b6bbc728
+      uses: slackapi/slack-github-action@e7edf37c48bfa3d4fa8267a7e432dc349c083ae9
       if: failure()
       with:
         payload-file-path: ".github/workflows/slack-message.json"

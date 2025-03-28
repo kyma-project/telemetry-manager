@@ -74,6 +74,15 @@ spec:
                       enabled:
                         description: If enabled, istio-proxy metrics are scraped from Pods that have the istio-proxy sidecar injected. The default is `false`.
                         type: boolean
+                      envoyMetrics:
+                        description: |-
+                          EnvoyMetrics defines the configuration for scraping Envoy metrics.
+                          If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
+                        properties:
+                          enabled:
+                            description: If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
+                            type: boolean
+                        type: object
                       namespaces:
                         description: Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
                         properties:

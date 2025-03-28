@@ -124,14 +124,16 @@ A typical test result output looks like the following example:
 |            0.116.0 |            19693            |            19540            |          0          |       165, 126       |    1.1, 1     |            11388             |            33717            |          0          |       196, 137       |   1.5, 1.4    |                   11215                    |             324             |         510         |      1658, 1738      |   0.5, 0.5    |                   17974                    |             886             |         509         |      1671, 1683      |   0.9, 0.9    |
 |            0.118.0 |            19299            |            19148            |          0          |        88, 97        |    1.1, 1     |            11369             |            33659            |          0          |       137, 159       |   1.4, 1.5    |                   10066                    |             296             |         512         |      1551, 1652      |   0.4, 0.4    |                   18852                    |             945             |         510         |      1701, 1688      |   0.9, 0.9    |
 |            0.120.0 |            18733            |            18586            |          4          |        99, 91        |    1.1, 1     |            10527             |            31168            |          6          |       144, 144       |   1.3, 1.5    |                   11491                    |             286             |         512         |      1536, 1533      |   0.4, 0.4    |                   19400                    |             873             |         509         |      1523, 1520      |   0.9, 0.9    |
+|            0.122.1 |            19279            |            19130            |          1          |       146, 249       |    1.1, 1     |            11747             |            34772            |          8          |       329, 190       |   1.4, 1.4    |                    8550                    |             280             |         506         |      1707, 1648      |   0.3, 0.3    |                   18869                    |             938             |         510         |      1511, 1504      |   0.9, 0.9    |
 
 </div>
 
 The expected throughput for the TracePipeline receiver on the receiver side is ~20K spans/sec for the single-pipeline scenario and ~13K spans/sec for the multi pipeline scenario. Exported data should be 3 times the received spans. The backpressure scenarios should return the exporter queue size as ~512, for both single- and multi-pipeline scenarios; and the TracePipeline instances should not crash.
 On average, memory usage for TracePipeline instances is ~150MB for a single Pod, and CPU usage is ~1.0 for non-backpressure scenarios.
-In backpressure scenarios, the behaviour is different: The expected CPU usage should be less than in non-backpressure scenarios, because less data is processed and exported compared to non-backpressure scenarios. The expected memory usage is significantly higher than in non-backpressure scenarios. 
+In backpressure scenarios, the behaviour is different: The expected CPU usage should be less than in non-backpressure scenarios, because less data is processed and exported compared to non-backpressure scenarios. The expected memory usage is significantly higher than in non-backpressure scenarios.
 > **NOTE:** The figures above are the minimum acceptable values. You should always compare your measured results with the previous execution from the table to check for performance degradations, typically indicated by higher CPU or memory usage, lower throughput, or higher queue size.
 > The test execution is automated. If the test results aren't as expected, you should re-execute the test to confirm the results.
+
 ## Metrics Test
 
 The metrics test consists of two main test scenarios. The first scenario tests the Metric Gateway KPIs, and the second
@@ -249,6 +251,7 @@ are printed out.
 |                   0.116.0 |             4374             |             4374             |          0          |       100, 109       |   1.5, 1.5    |             3500              |            10500             |          0          |       171, 171       |    1.8, 2     |                     710                     |             641              |         383         |       857, 870       |   0.5, 0.5    |                    3183                     |             1780             |         509         |      1760, 1848      |    2, 2.1     |
 |                   0.118.0 |             4357             |             4357             |          0          |       120, 115       |   1.5, 1.5    |             3520              |            10566             |          0          |       151, 179       |    2, 1.8     |                     813                     |             522              |         443         |      880, 1752       |   0.6, 0.6    |                    3264                     |             1925             |         510         |      1837, 1855      |    2, 2.1     |
 |                   0.120.0 |             4175             |             4177             |          1          |       137, 110       |   1.5, 1.5    |             3424              |            10275             |          5          |       171, 175       |    2, 1.9     |                     698                     |             696              |         314         |       824, 831       |   0.5, 0.5    |                    2962                     |             1729             |         509         |      1639, 1787      |     2, 2      |
+|                   0.122.1 |             4314             |             4315             |          2          |       139, 133       |   1.5, 1.4    |             3471              |            10418             |          5          |       206, 173       |    2, 1.8     |                     749                     |             699              |         342         |       865, 867       |   0.6, 0.5    |                    3029                     |             1988             |         507         |      1869, 1863      |    2, 2.1     |
 
 </div>
 
@@ -256,6 +259,7 @@ The expected throughput for the MetricPipeline receiver on the receiver side is 
 On average, memory usage for MetricPipeline instances is ~150MB for a single Pod, and CPU usage is ~1.5 for non-backpressure scenarios (slightly higher for multi-pipeline scenarios). In backpressure scenarios, the behaviour is different: The expected CPU usage should be less than in non-backpressure scenarios, because less data is processed and exported compared to non-backpressure scenarios. The expected memory usage is significantly higher than in non-backpressure scenarios.
 > **NOTE:** The figures above are the minimum acceptable values. You should always compare the measured results with the previous execution from the table to check for performance degradations, typically indicated by higher CPU or memory usage, lower throughput, or higher queue size.
 > The test execution is automated. If the test results aren't as expected, you should re-execute the test to confirm the results.
+
 #### Metric Agent
 
 1. To test the average throughput end-to-end, run:
@@ -300,12 +304,14 @@ On average, memory usage for MetricPipeline instances is ~150MB for a single Pod
 |            0.116.0 |             20058              |            20057             |          0          |       690, 682       |   0.3, 0.3    |                     19998                     |            19999             |          0          |       713, 692       |   0.2, 0.3    |
 |            0.118.0 |             19859              |            19859             |          0          |       694, 672       |   0.2, 0.2    |                     20057                     |            20057             |          0          |       661, 664       |   0.2, 0.2    |
 |            0.120.0 |             20018              |            20017             |          0          |       733, 720       |   0.2, 0.2    |                     19803                     |            19803             |          0          |       698, 661       |   0.3, 0.2    |
+|            0.122.1 |             19977              |            19978             |          0          |       703, 665       |   0.2, 0.2    |                     19845                     |            19845             |          0          |       673, 701       |   0.2, 0.2    |
 
 </div>
 
 The expected throughput for the MetricPipeline agent receiver is ~20K metrics/sec. Expected memory usage is on average ~700MB, and CPU usage is ~0.2 for each instance.
 > **NOTE:** The figures above are the minimum acceptable values. You should always compare the measured results with the previous execution from the table to check for performance degradations, typically indicated by higher CPU or memory usage, lower throughput, or higher queue size.
 > The test execution is automated. If the test results aren't as expected, you should re-execute the test to confirm the results.
+
 ## Log Test (Fluent-Bit)
 
 ### Assumptions
@@ -372,8 +378,8 @@ test results are printed out.
 
 <div class="table-wrapper" markdown="block">
 
-|        Version/Test |        Single Pipeline (ci-logs)        |                                          |                                 |                      |               |       Multi Pipeline (ci-logs-m)        |                                          |                                 |                      |               | Single Pipeline Backpressure (ci-logs-b) |                                          |                                 |                      |               | Multi Pipeline Backpressure (ci-logs-mb) |                                          |                                 |                      |               |
-|--------------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:----------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:----------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|
+| Version/Test | Single Pipeline (ci-logs) |||||| Multi Pipeline (ci-logs-m) ||||||| Single Pipeline Backpressure (ci-logs-b) ||||||| Multi Pipeline Backpressure (ci-logs-mb) ||||||||
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |                     | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Input Log Records Processing Rate/sec | Output Log Records Processing Rate/sec | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Input Log Records Processing Rate/sec | Output Log Records Processing Rate/sec | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Input Log Records Processing Rate/sec | Output Log Records Processing Rate/sec | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Input Log Records Processing Rate/sec | Output Log Records Processing Rate/sec | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage |
 | 2.2.1                   | 5165  |  8541 |   n/a |   n/a | 68518 | 172,190, | 1.0,1.0, | 2009 |  2195 |   n/a |  n/a |  102932 | 332,320, | 0.9,0.9, | 5914 | 1498 |   n/a   | n/a  |   79247 | 184,176, | 0.9,1.0, |  1979 |  489 |  n/a | n/a |   83442 | 310,322, | 0.9,0.9, |
 | 2.2.2                   | 5159  |  7811 |   n/a |   n/a | 75545 | 171,170, | 1.0,1.0, | 1910 |  2516 |   n/a |  n/a |  103780 | 324,324, | 0.9,0.9, | 5857 | 1513 |   n/a   | n/a  |   72494 | 189,200, | 1.0,1.0, |  1860 |  421 |  n/a | n/a |   90852 | 314,322, | 0.9,0.9, |
@@ -393,11 +399,12 @@ test results are printed out.
 | 3.2.4                   |  9699 | 32563 | 27301 | 27300 | 16423 | 98,93,   | 0.9,0.9, | 3750 | 6939  | 10530 | 5811 | 3110520 | 512,507, | 0.3,0.3, | 3842 | 6499 | 10819   | 5451 | 1962471 | 740,675, | 0.4,0.5, | 2823 | 1098 | 7945 | 921 | 5139943 | 693,678, | 0.2,0.2, |
 | 3.2.7                   | 10288 | 34554 | 28970 | 28976 | 27199 | 94,102,  | 0.9,0.9, | 3902 | 7713  | 10955 | 6460 | 2840544 | 609,597, | 0.3,0.3, | 3685 | 5141 | 10036   | 4313 | 1977628 | 652,614, | 0.4,0.4, | 2785 | 1232 | 7839 | 1033| 5090739 | 696,665, | 0.2,0.2, |
 | 3.2.8                   | 9890  | 33198 | 27837 | 27826 | 28189 | 99,105,  | 0.9,0.9, | 3761 | 7085  | 10561 | 5931 | 3026930 | 565,723, | 0.3,0.3, | 3795 | 6047 | 10686   | 5072 | 1952438 | 675,755, | 0.4,0.5, | 2778 | 1119 | 7552 | 939 | 5180190 | 678,674, | 0.2,0.2, |
+| 3.2.10                  | 10180 | 34174 | 28655 | 28655 | 22008 | 99,102,  | 0.9,0.9, | 3681 |  6777 | 10336 | 5675 | 2836100 | 711,503, | 0.3,0.3, | 3695 | 5961 | 10405   | 5000 | 1945309 | 691,681, | 0.4,0.4, | 2617 |  974 | 7366 | 817 | 5307447 | 655,729, | 0.2,0.2, |
 
 </div>
 
 > **NOTE:** The test results can vary up to 1000KByte/sec in the input, and up to 3000KByte/sec in the output processing rate with single pipeline tests. The multi pipeline test results can be lower than the single pipeline test results, because the test setup is shared between multiple pipelines and this may create pressure on the shared resources.
-> 
+
 ## Self Monitor
 
 ### Assumptions
@@ -463,4 +470,5 @@ of the self-monitor Pods.
 |        3.0.1 |            21             |         333          |         138210         |                0                 |          43          |       0       |
 |        3.1.0 |            21             |         336          |         133158         |                0                 |          39          |       0       |
 |        3.2.0 |            21             |         332          |         131506         |                0                 |          38          |       0       |
+
 </div>
