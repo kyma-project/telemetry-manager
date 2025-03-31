@@ -490,4 +490,19 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "set(scope.version, \"main\") where scope.name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[0])
 		require.Equal(t, "set(scope.name, \"io.kyma-project.telemetry/kyma\") where scope.name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
 	})
+
+	t.Run("drop envoy filter processor", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		require.NotNil(t, collectorConfig.Processors.DropIfEnvoyMetricsDisabled)
+		require.Equal(t, 1, len(collectorConfig.Processors.DropIfEnvoyMetricsDisabled.Metrics.Metric))
+		require.Equal(t, "IsMatch(name, \"^envoy_.*\") and instrumentation_scope.name == \"io.kyma-project.telemetry/istio\"", collectorConfig.Processors.DropIfEnvoyMetricsDisabled.Metrics.Metric[0])
+	})
 }
