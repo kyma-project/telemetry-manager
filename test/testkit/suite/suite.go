@@ -45,7 +45,7 @@ func BeforeSuiteFunc() func() {
 	}
 }
 
-// Function to be executed before each Ginkgo test suite (for Istio-enabled tests)
+// Function to be executed before each Ginkgo test suite (for Istio integration tests)
 func BeforeSuiteIstioFunc() func() {
 	return func() {
 		beforeSuiteFunc(true)
