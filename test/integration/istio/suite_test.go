@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -36,13 +36,14 @@ var (
 func TestIstioIntegration(t *testing.T) {
 	format.MaxDepth = 20
 	format.MaxLength = 16000
+
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Istio Integration Suite")
 }
 
 var _ = BeforeSuite(func() {
 	var err error
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	logf.SetLogger(logzap.New(logzap.WriteTo(GinkgoWriter), logzap.UseDevMode(true)))
 	useExistingCluster := true
 	testEnv = &envtest.Environment{
 		UseExistingCluster: &useExistingCluster,
@@ -50,7 +51,7 @@ var _ = BeforeSuite(func() {
 
 	_, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
-	ctx, cancel = context.WithCancel(context.Background())
+	ctx, cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
 
 	By("bootstrapping test environment")
 

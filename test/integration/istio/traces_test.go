@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -19,8 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -128,6 +127,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 					resp, err := proxyClient.Get(metricServiceURL)
 					g.Expect(err).NotTo(HaveOccurred())
 					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+					defer resp.Body.Close()
 				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 			})
 		})
@@ -135,11 +135,12 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		It("Should invoke istiofied and non-istiofied apps", func() {
 			By("Sending http requests", func() {
 				for _, podURLs := range []string{appURL, istiofiedAppURL} {
-					for i := 0; i < 100; i++ {
+					for range 100 {
 						Eventually(func(g Gomega) {
 							resp, err := proxyClient.Get(podURLs)
 							g.Expect(err).NotTo(HaveOccurred())
 							g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+							defer resp.Body.Close()
 						}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 					}
 				}
@@ -159,8 +160,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			verifyCustomAppSpans(istiofiedBackendExportURL, appName, appNs)
 		})
 		It("Should have no noisy spans of communication to telemetry-otlp-traces endpoint", func() {
-			verifyNoIstioNoiseSpans(backendExportURL, istiofiedAppNs)
-			verifyNoIstioNoiseSpans(istiofiedBackendExportURL, istiofiedAppNs)
+			verifyNoIstioNoiseSpans(backendExportURL)
+			verifyNoIstioNoiseSpans(istiofiedBackendExportURL)
 		})
 	})
 })
@@ -192,6 +193,7 @@ func verifyIstioSpans(backendURL, namespace string) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		defer resp.Body.Close()
 
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
@@ -201,11 +203,12 @@ func verifyIstioSpans(backendURL, namespace string) {
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func verifyNoIstioNoiseSpans(backendURL, namespace string) {
+func verifyNoIstioNoiseSpans(backendURL string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		defer resp.Body.Close()
 
 		g.Expect(resp).NotTo(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
@@ -227,5 +230,6 @@ func verifyCustomAppSpans(backendURL, name, namespace string) {
 			HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", name)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		)))))
+		defer resp.Body.Close()
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

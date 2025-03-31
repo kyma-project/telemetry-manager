@@ -3,6 +3,7 @@
 package istio
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -10,8 +11,6 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"fmt"
 
 	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
