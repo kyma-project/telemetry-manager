@@ -93,7 +93,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 		It("Should have 2 log gateway replicas", func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
-				err := suite.K8sClient.Get(ctx, kitkyma.LogGatewayName, &deployment)
+				err := suite.K8sClient.Get(suite.Ctx, kitkyma.LogGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
