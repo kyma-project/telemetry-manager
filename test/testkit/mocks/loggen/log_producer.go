@@ -87,13 +87,13 @@ func (lp *LogProducer) K8sObject() *appsv1.Deployment {
 					Labels:      labels,
 					Annotations: lp.annotations,
 				},
-				Spec: lp.podSpec(),
+				Spec: lp.PodSpec(),
 			},
 		},
 	}
 }
 
-func (lp *LogProducer) podSpec() corev1.PodSpec {
+func (lp *LogProducer) PodSpec() corev1.PodSpec {
 	if lp.load == LoadLow {
 		return lp.alpineSpec()
 	}

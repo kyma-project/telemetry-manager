@@ -211,7 +211,9 @@ func TestBuildConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[1], "transform/set-observed-time-if-zero")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[2], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[3], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[4], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test"].Processors[6], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Exporters, "otlp/test")
 	})
@@ -235,7 +237,9 @@ func TestBuildConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[1], "transform/set-observed-time-if-zero")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[2], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[3], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[4], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[6], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "logs/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["logs/test-2"].Exporters, "otlp/test-2")
@@ -244,7 +248,9 @@ func TestBuildConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[1], "transform/set-observed-time-if-zero")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[2], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[3], "resource/insert-cluster-attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[4], "service_enrichment")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-1"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["logs/test-2"].Processors[6], "batch")
 
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_1")
 		require.Contains(t, envVars, "OTLP_ENDPOINT_TEST_2")

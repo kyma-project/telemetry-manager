@@ -4,10 +4,12 @@ allInOne:
   enabled: true
   args: ["--memory.max-traces", "10000", "--query.base-path", "/jaeger/ui"]
   resources:
+    requests:
+      memory: 20Mi
     limits:
-      memory: 275Mi
+      memory: 1Gi
   podLabels:
-    sidecar.istio.io/inject: "false"
+    sidecar.istio.io/inject: "true"
 storage:
   type: memory
 agent:

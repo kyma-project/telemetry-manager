@@ -4,11 +4,12 @@ package istio
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"io"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -120,20 +121,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Label(suite.LabelMet
 		})
 	})
 })
-
-// Check for `ContainElements` for metrics present in the backend
-func backendContainsMetricsDeliveredForResource(proxyClient *apiserverproxy.Client, backendExportURL string, resourceMetrics []string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		defer resp.Body.Close()
-
-		g.Expect(resp).To(HaveHTTPBody(
-			HaveFlatMetrics(HaveUniqueNamesForRuntimeScope(ContainElements(resourceMetrics))),
-		))
-	}, 2*periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed(), "Failed to find metrics using ContainElements %v", resourceMetrics)
-}
 
 func backendContainsDesiredCloudResourceAttributes(proxyClient *apiserverproxy.Client, backendExportURL, attribute string) {
 	Eventually(func(g Gomega) {
