@@ -1,6 +1,6 @@
-//go:build istio
+//go:build e2e
 
-package istio
+package fluentbit
 
 import (
 	"testing"
@@ -12,12 +12,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TestIstioIntegration(t *testing.T) {
+func TestSuite(t *testing.T) {
 	format.MaxDepth = suite.GomegaMaxDepth
 	format.MaxLength = suite.GomegaMaxLenght
 
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Integration Suite - Istio")
+	RunSpecs(t, "E2E Suite - FluentBit Logs")
 }
 
 var _ = BeforeSuite(suite.BeforeSuiteFunc)

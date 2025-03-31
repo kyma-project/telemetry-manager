@@ -52,11 +52,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 
 		backend1 := backend.New(backendNs, backend.SignalTypeTraces)
 		objs = append(objs, backend1.K8sObjects()...)
-		backendExportURL = backend1.ExportURL(proxyClient)
+		backendExportURL = backend1.ExportURL(suite.ProxyClient)
 
 		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeTraces)
 		objs = append(objs, backend2.K8sObjects()...)
-		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
+		istiofiedBackendExportURL = backend2.ExportURL(suite.ProxyClient)
 
 		istioTracePipeline := testutils.NewTracePipelineBuilder().
 			WithName(pipeline2Name).
@@ -73,17 +73,17 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
 			WithPort("http-metrics", ports.Metrics)
-		metricServiceURL = proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics)
+		metricServiceURL = suite.ProxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics)
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")))
 
 		// Abusing metrics provider for istio traces
 		istiofiedApp := prommetricgen.New(istiofiedAppNs, prommetricgen.WithName(istiofiedAppName))
 		objs = append(objs, istiofiedApp.Pod().K8sObject())
-		istiofiedAppURL = istiofiedApp.PodURL(proxyClient)
+		istiofiedAppURL = istiofiedApp.PodURL(suite.ProxyClient)
 
 		app := prommetricgen.New(appNs, prommetricgen.WithName(appName))
 		objs = append(objs, app.Pod().K8sObject())
-		appURL = app.PodURL(proxyClient)
+		appURL = app.PodURL(suite.ProxyClient)
 
 		return objs
 	}
@@ -93,14 +93,14 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a trace backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
@@ -113,18 +113,18 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		})
 
 		It("Should have a running trace gateway deployment", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.TraceGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have the trace pipelines running", func() {
-			assert.TracePipelineHealthy(ctx, k8sClient, pipeline1Name)
-			assert.TracePipelineHealthy(ctx, k8sClient, pipeline2Name)
+			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline1Name)
+			assert.TracePipelineHealthy(suite.Ctx, suite.K8sClient, pipeline2Name)
 		})
 
 		It("Trace gateway with should answer requests", func() {
 			By("Calling metrics service", func() {
 				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(metricServiceURL)
+					resp, err := suite.ProxyClient.Get(metricServiceURL)
 					g.Expect(err).NotTo(HaveOccurred())
 					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 					defer resp.Body.Close()
@@ -137,7 +137,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 				for _, podURLs := range []string{appURL, istiofiedAppURL} {
 					for range 100 {
 						Eventually(func(g Gomega) {
-							resp, err := proxyClient.Get(podURLs)
+							resp, err := suite.ProxyClient.Get(podURLs)
 							g.Expect(err).NotTo(HaveOccurred())
 							g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 							defer resp.Body.Close()
@@ -173,7 +173,7 @@ func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 			Namespace:     namespace,
 		}
 
-		hasIstioSidecar, err := assert.HasContainer(ctx, k8sClient, listOptions, "istio-proxy")
+		hasIstioSidecar, err := assert.HasContainer(suite.Ctx, suite.K8sClient, listOptions, "istio-proxy")
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(hasIstioSidecar).To(BeTrueBecause("Istio sidecar not present"))
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
@@ -185,12 +185,12 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 		Namespace:     namespace,
 	}
 
-	assert.PodsReady(ctx, k8sClient, listOptions)
+	assert.PodsReady(suite.Ctx, suite.K8sClient, listOptions)
 }
 
 func verifyIstioSpans(backendURL, namespace string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendURL)
+		resp, err := suite.ProxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		defer resp.Body.Close()
@@ -205,7 +205,7 @@ func verifyIstioSpans(backendURL, namespace string) {
 
 func verifyNoIstioNoiseSpans(backendURL string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendURL)
+		resp, err := suite.ProxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		defer resp.Body.Close()
@@ -221,7 +221,7 @@ func verifyNoIstioNoiseSpans(backendURL string) {
 
 func verifyCustomAppSpans(backendURL, name, namespace string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(backendURL)
+		resp, err := suite.ProxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(HaveFlatTraces(ContainElement(SatisfyAll(
