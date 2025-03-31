@@ -44,10 +44,11 @@ type Operator struct {
 
 type Processors struct {
 	config.BaseProcessors          `yaml:",inline"`
-	SetInstrumentationScopeRuntime *log.TransformProcessor        `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
-	K8sAttributes                  *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	InsertClusterAttributes        *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
-	DropKymaAttributes             *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
+	SetInstrumentationScopeRuntime *log.TransformProcessor            `yaml:"transform/set-instrumentation-scope-runtime,omitempty"`
+	K8sAttributes                  *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
+	InsertClusterAttributes        *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
+	ResolveServiceName             *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
+	DropKymaAttributes             *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
 type Exporters map[string]Exporter
