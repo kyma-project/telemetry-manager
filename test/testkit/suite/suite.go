@@ -8,6 +8,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -20,8 +22,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
-	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 )
 
 const (
@@ -38,14 +38,14 @@ var (
 	k8sObjects  []client.Object
 )
 
-// Function to be executed before each e2e suite
+// Function to be executed before each Ginkgo test suite
 func BeforeSuiteFunc() func() {
 	return func() {
 		beforeSuiteFunc(false)
 	}
 }
 
-// Function to be executed before each Istio e2e suite
+// Function to be executed before each Ginkgo test suite (for Istio-enabled tests)
 func BeforeSuiteIstioFunc() func() {
 	return func() {
 		beforeSuiteFunc(true)
@@ -71,12 +71,14 @@ func beforeSuiteFunc(istioMode bool) {
 	scheme := clientgoscheme.Scheme
 	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(operatorv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
+
 	if istioMode {
 		Expect(istiosecurityclientv1.AddToScheme(scheme)).NotTo(HaveOccurred())
 		Expect(istionetworkingclientv1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	} else {
 		Expect(telemetryv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	}
+
 	K8sClient, err = client.New(TestEnv.Config, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(K8sClient).NotTo(BeNil())
@@ -92,7 +94,7 @@ func beforeSuiteFunc(istioMode bool) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-// Function to be executed after each e2e suite
+// Function to be executed after each Ginkgo test suite
 func AfterSuiteFunc() func() {
 	return func() {
 		Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
