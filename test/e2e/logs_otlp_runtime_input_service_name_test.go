@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsOtel, backend.WithPersistentHostSecret(suite.IsUpgrade()))
+		backend := backend.New(mockNs, backend.SignalTypeLogsOtel)
 
 		objs = append(objs, backend.K8sObjects()...)
 		backendExportURL = backend.ExportURL(proxyClient)
@@ -56,9 +56,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 					hostSecretRef.Key,
 				),
 			)
-		if suite.IsUpgrade() {
-			pipelineBuilder.WithLabels(kitk8s.PersistentLabel)
-		}
 
 		logPipeline := pipelineBuilder.Build()
 		objs = append(objs, &logPipeline)
