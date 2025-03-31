@@ -20,5 +20,5 @@ func TestSuite(t *testing.T) {
 	RunSpecs(t, "E2E Suite - Metrics")
 }
 
-var _ = BeforeSuite(suite.BeforeSuiteFunc())
-var _ = AfterSuite(suite.AfterSuiteFunc())
+var _ = BeforeSuite(suite.BeforeSuiteFunc)
+var _ = AfterSuite(suite.AfterSuiteFunc)
