@@ -127,7 +127,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 		}
 		It("Should set undefined service.name attribute to app.kubernetes.io/name label value", func() {
-			verifyServiceNameAttr(podWithNoLabelsName, kubeAppLabelValue)
+			verifyServiceNameAttr(podWithBothLabelsName, kubeAppLabelValue)
 		})
 
 		It("Should set undefined service.name attribute to Job name", func() {
