@@ -54,7 +54,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 					hostSecretRef.Key,
 				),
 			)
-		
+
 		logPipeline := pipelineBuilder.Build()
 
 		objs = append(objs, &logPipeline)
