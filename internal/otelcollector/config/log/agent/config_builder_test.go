@@ -153,7 +153,7 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines, "logs/test")
 
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test"].Receivers, "filelog/test")
-			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test"].Processors)
+			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "service_enrichment", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test"].Processors)
 			require.Equal(t, []string{"otlp/test"}, collectorConfig.Service.Pipelines["logs/test"].Exporters)
 		})
 	})
@@ -178,8 +178,8 @@ func TestBuildAgentConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test1"].Receivers, "filelog/test1")
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test2"].Receivers, "filelog/test2")
 
-			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test1"].Processors)
-			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test2"].Processors)
+			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "service_enrichment", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test1"].Processors)
+			require.Equal(t, []string{"memory_limiter", "transform/set-instrumentation-scope-runtime", "k8sattributes", "resource/insert-cluster-attributes", "service_enrichment", "resource/drop-kyma-attributes"}, collectorConfig.Service.Pipelines["logs/test2"].Processors)
 
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test1"].Exporters, "otlp/test1")
 			require.Contains(t, collectorConfig.Service.Pipelines["logs/test2"].Exporters, "otlp/test2")

@@ -48,27 +48,27 @@ type ModuleGVR struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	K8sAttributes                                *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	InsertClusterAttributes                      *config.ResourceProcessor      `yaml:"resource/insert-cluster-attributes,omitempty"`
-	DropDiagnosticMetricsIfInputSourcePrometheus *FilterProcessor               `yaml:"filter/drop-diagnostic-metrics-if-input-source-prometheus,omitempty"`
-	DropDiagnosticMetricsIfInputSourceIstio      *FilterProcessor               `yaml:"filter/drop-diagnostic-metrics-if-input-source-istio,omitempty"`
-	DropIfInputSourceRuntime                     *FilterProcessor               `yaml:"filter/drop-if-input-source-runtime,omitempty"`
-	DropIfInputSourcePrometheus                  *FilterProcessor               `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
-	DropIfInputSourceIstio                       *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
-	DropIfEnvoyMetricsDisabled                   *FilterProcessor               `yaml:"filter/drop-envoy-metrics-if-disabled,omitempty"`
-	DropIfInputSourceOTLP                        *FilterProcessor               `yaml:"filter/drop-if-input-source-otlp,omitempty"`
-	DropRuntimePodMetrics                        *FilterProcessor               `yaml:"filter/drop-runtime-pod-metrics,omitempty"`
-	DropRuntimeContainerMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-container-metrics,omitempty"`
-	DropRuntimeNodeMetrics                       *FilterProcessor               `yaml:"filter/drop-runtime-node-metrics,omitempty"`
-	DropRuntimeVolumeMetrics                     *FilterProcessor               `yaml:"filter/drop-runtime-volume-metrics,omitempty"`
-	DropRuntimeDeploymentMetrics                 *FilterProcessor               `yaml:"filter/drop-runtime-deployment-metrics,omitempty"`
-	DropRuntimeStatefulSetMetrics                *FilterProcessor               `yaml:"filter/drop-runtime-statefulset-metrics,omitempty"`
-	DropRuntimeDaemonSetMetrics                  *FilterProcessor               `yaml:"filter/drop-runtime-daemonset-metrics,omitempty"`
-	DropRuntimeJobMetrics                        *FilterProcessor               `yaml:"filter/drop-runtime-job-metrics,omitempty"`
-	ResolveServiceName                           *metric.TransformProcessor     `yaml:"transform/resolve-service-name,omitempty"`
-	DropKymaAttributes                           *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
-	SetInstrumentationScopeKyma                  *metric.TransformProcessor     `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
-	DeleteSkipEnrichmentAttribute                *config.ResourceProcessor      `yaml:"resource/delete-skip-enrichment-attribute,omitempty"`
+	K8sAttributes                                *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
+	InsertClusterAttributes                      *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
+	DropDiagnosticMetricsIfInputSourcePrometheus *FilterProcessor                   `yaml:"filter/drop-diagnostic-metrics-if-input-source-prometheus,omitempty"`
+	DropDiagnosticMetricsIfInputSourceIstio      *FilterProcessor                   `yaml:"filter/drop-diagnostic-metrics-if-input-source-istio,omitempty"`
+	DropIfInputSourceRuntime                     *FilterProcessor                   `yaml:"filter/drop-if-input-source-runtime,omitempty"`
+	DropIfInputSourcePrometheus                  *FilterProcessor                   `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
+	DropIfInputSourceIstio                       *FilterProcessor                   `yaml:"filter/drop-if-input-source-istio,omitempty"`
+	DropIfEnvoyMetricsDisabled                   *FilterProcessor                   `yaml:"filter/drop-envoy-metrics-if-disabled,omitempty"`
+	DropIfInputSourceOTLP                        *FilterProcessor                   `yaml:"filter/drop-if-input-source-otlp,omitempty"`
+	DropRuntimePodMetrics                        *FilterProcessor                   `yaml:"filter/drop-runtime-pod-metrics,omitempty"`
+	DropRuntimeContainerMetrics                  *FilterProcessor                   `yaml:"filter/drop-runtime-container-metrics,omitempty"`
+	DropRuntimeNodeMetrics                       *FilterProcessor                   `yaml:"filter/drop-runtime-node-metrics,omitempty"`
+	DropRuntimeVolumeMetrics                     *FilterProcessor                   `yaml:"filter/drop-runtime-volume-metrics,omitempty"`
+	DropRuntimeDeploymentMetrics                 *FilterProcessor                   `yaml:"filter/drop-runtime-deployment-metrics,omitempty"`
+	DropRuntimeStatefulSetMetrics                *FilterProcessor                   `yaml:"filter/drop-runtime-statefulset-metrics,omitempty"`
+	DropRuntimeDaemonSetMetrics                  *FilterProcessor                   `yaml:"filter/drop-runtime-daemonset-metrics,omitempty"`
+	DropRuntimeJobMetrics                        *FilterProcessor                   `yaml:"filter/drop-runtime-job-metrics,omitempty"`
+	ResolveServiceName                           *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
+	DropKymaAttributes                           *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
+	SetInstrumentationScopeKyma                  *metric.TransformProcessor         `yaml:"transform/set-instrumentation-scope-kyma,omitempty"`
+	DeleteSkipEnrichmentAttribute                *config.ResourceProcessor          `yaml:"resource/delete-skip-enrichment-attribute,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
