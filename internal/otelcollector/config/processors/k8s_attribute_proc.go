@@ -6,6 +6,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
+const (
+	kymaK8sIOAppName = "kyma.kubernetes_io_app_name"
+	kymaAppName      = "kyma.app_name"
+)
+
 type Enrichments struct {
 	Enabled   bool
 	PodLabels []PodLabel
@@ -56,12 +61,12 @@ func extractLabels() []config.ExtractLabel {
 		{
 			From:    "pod",
 			Key:     "app.kubernetes.io/name",
-			TagName: "kyma.kubernetes_io_app_name",
+			TagName: kymaK8sIOAppName,
 		},
 		{
 			From:    "pod",
 			Key:     "app",
-			TagName: "kyma.app_name",
+			TagName: kymaAppName,
 		},
 		{
 			From:    "node",

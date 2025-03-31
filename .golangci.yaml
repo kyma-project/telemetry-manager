@@ -2,6 +2,7 @@ version: "2"
 run:
   build-tags:
     - e2e
+    - istio
     - tools
   modules-download-mode: readonly
 linters:

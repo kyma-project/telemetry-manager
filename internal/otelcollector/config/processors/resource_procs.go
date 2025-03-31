@@ -43,3 +43,12 @@ func DropKymaAttributesProcessorConfig() *config.ResourceProcessor {
 		},
 	}
 }
+
+func MakeResolveServiceNameConfig() *config.ServiceEnrichmentProcessor {
+	return &config.ServiceEnrichmentProcessor{
+		ResourceAttributes: []string{
+			kymaK8sIOAppName,
+			kymaAppName,
+		},
+	}
+}

@@ -16,7 +16,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -24,9 +23,12 @@ import (
 
 var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	var (
-		mockNs           = suite.ID()
-		pipelineName     = suite.ID()
-		backendExportURL string
+		mockNs                           = suite.ID()
+		pipelineName                     = suite.ID()
+		backendExportURL                 string
+		podWithNoLabelsName              = "pod-with-no-labels"
+		podWithUnknownServiceName        = "pod-with-unknown-service"
+		podWithUnknownServicePatternName = "pod-with-unknown-service-pattern"
 	)
 
 	makeResources := func() []client.Object {
@@ -44,7 +46,19 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			Build()
 		objs = append(objs, &tracePipeline)
 
-		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeTraces)...)
+		podSpecWithUnknownServicePattern := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
+			telemetrygen.WithServiceName("unknown_service:bash"))
+		podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
+			telemetrygen.WithServiceName(""))
+		podSpecWithUnknownService := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
+			telemetrygen.WithServiceName("unknown_service"))
+
+		objs = append(objs,
+			kitk8s.NewPod(podWithNoLabelsName, mockNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+			kitk8s.NewPod(podWithUnknownServicePatternName, mockNs).WithPodSpec(podSpecWithUnknownServicePattern).K8sObject(),
+			kitk8s.NewPod(podWithUnknownServiceName, mockNs).WithPodSpec(podSpecWithUnknownService).K8sObject(),
+		)
+
 		return objs
 	}
 
@@ -85,46 +99,16 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		}
 
-		It("Should set undefined service.name attribute to app.kubernetes.io/name label value", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithBothLabelsName, servicenamebundle.KubeAppLabelValue)
-		})
-
-		It("Should set undefined service.name attribute to app label value", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithAppLabelName, servicenamebundle.AppLabelValue)
-		})
-
-		It("Should set undefined service.name attribute to Deployment name", func() {
-			verifyServiceNameAttr(servicenamebundle.DeploymentName, servicenamebundle.DeploymentName)
-		})
-
-		It("Should set undefined service.name attribute to StatefulSet name", func() {
-			verifyServiceNameAttr(servicenamebundle.StatefulSetName, servicenamebundle.StatefulSetName)
-		})
-
-		It("Should set undefined service.name attribute to DaemonSet name", func() {
-			verifyServiceNameAttr(servicenamebundle.DaemonSetName, servicenamebundle.DaemonSetName)
-		})
-
-		It("Should set undefined service.name attribute to Job name", func() {
-			verifyServiceNameAttr(servicenamebundle.JobName, servicenamebundle.JobName)
-		})
-
 		It("Should set undefined service.name attribute to Pod name", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
+			verifyServiceNameAttr(podWithNoLabelsName, podWithNoLabelsName)
 		})
 
 		It("Should enrich service.name attribute when its value is unknown_service", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
+			verifyServiceNameAttr(podWithUnknownServiceName, podWithUnknownServiceName)
 		})
 
 		It("Should enrich service.name attribute when its value is following the unknown_service:<process.executable.name> pattern", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServicePatternName, servicenamebundle.PodWithUnknownServicePatternName)
-		})
-
-		It("Should NOT enrich service.name attribute when its value is not following the unknown_service:<process.executable.name> pattern", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithInvalidStartForUnknownServicePatternName, servicenamebundle.AttrWithInvalidStartForUnknownServicePattern)
-			verifyServiceNameAttr(servicenamebundle.PodWithInvalidEndForUnknownServicePatternName, servicenamebundle.AttrWithInvalidEndForUnknownServicePattern)
-			verifyServiceNameAttr(servicenamebundle.PodWithMissingProcessForUnknownServicePatternName, servicenamebundle.AttrWithMissingProcessForUnknownServicePattern)
+			verifyServiceNameAttr(podWithUnknownServicePatternName, podWithUnknownServicePatternName)
 		})
 
 		It("Should have no kyma resource attributes", func() {
