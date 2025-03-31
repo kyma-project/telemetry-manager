@@ -20,5 +20,5 @@ func TestIstioIntegration(t *testing.T) {
 	RunSpecs(t, "Integration Suite - Istio")
 }
 
-var _ = BeforeSuite(suite.BeforeSuiteIstioFunc)
-var _ = AfterSuite(suite.AfterSuiteFunc)
+var _ = BeforeSuite(suite.BeforeSuiteIstioFunc())
+var _ = AfterSuite(suite.AfterSuiteFunc())

@@ -39,6 +39,19 @@ var (
 )
 
 // Function to be executed before each e2e suite
+func BeforeSuiteFunc() func() {
+	return func() {
+		beforeSuiteFunc(false)
+	}
+}
+
+// Function to be executed before each Istio e2e suite
+func BeforeSuiteIstioFunc() func() {
+	return func() {
+		beforeSuiteFunc(true)
+	}
+}
+
 func beforeSuiteFunc(istioMode bool) {
 	var err error
 
@@ -79,27 +92,17 @@ func beforeSuiteFunc(istioMode bool) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func BeforeSuiteFunc() func() {
-	return func() {
-		beforeSuiteFunc(false)
-	}
-}
-
-func BeforeSuiteIstioFunc() func() {
-	return func() {
-		beforeSuiteFunc(true)
-	}
-}
-
 // Function to be executed after each e2e suite
-func AfterSuiteFunc() {
-	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+func AfterSuiteFunc() func() {
+	return func() {
+		Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 
-	Cancel()
-	By("tearing down the test environment")
+		Cancel()
+		By("tearing down the test environment")
 
-	err := TestEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+		err := TestEnv.Stop()
+		Expect(err).NotTo(HaveOccurred())
+	}
 }
 
 // ID returns the current test suite ID.
