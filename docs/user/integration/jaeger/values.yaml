@@ -9,7 +9,7 @@ allInOne:
     limits:
       memory: 1Gi
   podLabels:
-    sidecar.istio.io/inject: "false"
+    sidecar.istio.io/inject: "true"
 storage:
   type: memory
 agent:
