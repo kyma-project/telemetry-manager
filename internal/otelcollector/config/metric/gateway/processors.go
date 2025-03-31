@@ -92,6 +92,16 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	}
 }
 
+func makeDropIfEnvoyMetricsDisabledConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "^envoy_.*"), ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio)),
+			},
+		},
+	}
+}
+
 func makeDropIfInputSourceOTLPConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{

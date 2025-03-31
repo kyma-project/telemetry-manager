@@ -129,6 +129,10 @@ func declareInputSourceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *
 	if !metricpipelineutils.IsOTLPInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceOTLP = makeDropIfInputSourceOTLPConfig()
 	}
+
+	if !metricpipelineutils.IsIstioInputEnabled(input) || !metricpipelineutils.IsEnvoyMetricsEnabled(input) {
+		cfg.Processors.DropIfEnvoyMetricsDisabled = makeDropIfEnvoyMetricsDisabledConfig()
+	}
 }
 
 func declareRuntimeResourcesFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {

@@ -148,6 +148,10 @@ type MetricPipelineIstioInput struct {
 	// Configures diagnostic metrics scraping
 	// +optional
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
+	// EnvoyMetrics defines the configuration for scraping Envoy metrics.
+	// If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
+	// +optional
+	EnvoyMetrics *EnvoyMetrics `json:"envoyMetrics,omitempty"`
 }
 
 // MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
@@ -166,4 +170,11 @@ type MetricPipelineOutput struct {
 type MetricPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+// EnvoyMetrics defines the configuration for scraping Envoy metrics.
+type EnvoyMetrics struct {
+	// If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
 }
