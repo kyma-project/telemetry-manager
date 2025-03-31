@@ -67,8 +67,8 @@ To ship metrics to a new OTLP output, create a resource of the kind `MetricPipel
 
 This configures the underlying OTel Collector with a pipeline for metrics and opens a push endpoint that is accessible with the `telemetry-otlp-metrics` service. For details, see [Gateway Usage](./gateways.md#usage). The following push URLs are set up:
 
-- GRPC: http://telemetry-otlp-metrics.kyma-system:4317
-- HTTP: http://telemetry-otlp-metrics.kyma-system:4318
+- GRPC: `http://telemetry-otlp-metrics.kyma-system:4317`
+- HTTP: `http://telemetry-otlp-metrics.kyma-system:4318`
 
 The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
 
