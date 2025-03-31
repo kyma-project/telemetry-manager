@@ -20,6 +20,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 )
 
 const (
@@ -37,7 +39,7 @@ var (
 )
 
 // Function to be executed before each e2e suite
-func BeforeSuiteFunc() {
+func beforeSuiteFunc(istioMode bool) {
 	var err error
 
 	logf.SetLogger(logzap.New(logzap.WriteTo(GinkgoWriter), logzap.UseDevMode(true)))
@@ -55,8 +57,13 @@ func BeforeSuiteFunc() {
 
 	scheme := clientgoscheme.Scheme
 	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(telemetryv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(operatorv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	if istioMode {
+		Expect(istiosecurityclientv1.AddToScheme(scheme)).NotTo(HaveOccurred())
+		Expect(istionetworkingclientv1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	} else {
+		Expect(telemetryv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	}
 	K8sClient, err = client.New(TestEnv.Config, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(K8sClient).NotTo(BeNil())
@@ -70,6 +77,18 @@ func BeforeSuiteFunc() {
 
 	ProxyClient, err = apiserverproxy.NewClient(TestEnv.Config)
 	Expect(err).NotTo(HaveOccurred())
+}
+
+func BeforeSuiteFunc() func() {
+	return func() {
+		beforeSuiteFunc(false)
+	}
+}
+
+func BeforeSuiteIstioFunc() func() {
+	return func() {
+		beforeSuiteFunc(true)
+	}
 }
 
 // Function to be executed after each e2e suite
