@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs              = suite.ID()
 		pipelineName        = suite.ID()
@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 		backend := backend.New(mockNs, backend.SignalTypeLogsOtel)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
@@ -81,39 +81,39 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running log gateway deployment", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.LogGatewayName)
 		})
 
 		It("Should have 2 log gateway replicas", func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
-				err := k8sClient.Get(ctx, kitkyma.LogGatewayName, &deployment)
+				err := suite.K8sClient.Get(ctx, kitkyma.LogGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			assert.LogPipelineOtelHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen logs", func() {
-			assert.LogsFromNamespaceDelivered(proxyClient, backendExportURL, mockNs)
+			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -144,7 +144,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs, suite.LabelExperimental), Or
 
 		It("Should have no kyma resource attributes", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backendExportURL)
+				resp, err := suite.ProxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(HaveFlatOtelLogs(
