@@ -1,3 +1,0 @@
-{
-    "text": "'${{ github.workflow }}' workflow failed, see https://github.com/kyma-project/telemetry-manager/actions"
-}
