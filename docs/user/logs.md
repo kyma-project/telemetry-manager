@@ -15,7 +15,7 @@ The Log feature is optional. If you don't want to use it, simply don't set up a 
 
 - Before you can collect logs from a component, it must emit (or instrument) the logs. Typically, it uses a logger framework for the used language runtime (like Node.js) and prints them to the `stdout` or `stderr` channel ([Kubernetes: How nodes handle container logs](https://kubernetes.io/docs/concepts/cluster-administration/logging/#how-nodes-handle-container-logs)). Alternatively, you can use the [OTel SDK](https://opentelemetry.io/docs/languages/) to use the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
 
-- If you want to emit the logs to `stdout/stderr` channel, it is recommended to use structured logs in a JSON format. Having that, the log agent will be able to parse your log and enrich all JSON attributes as log attributes and abackend can make use of that. For logging in a structured format, you usally use a logger library like log4J.
+- If you want to emit the logs to the `stdout/stderr` channel, use structured logs in a JSON format with a logger library like log4J. With that, the log agent can parse your log and enrich all JSON attributes as log attributes, and a backend can make use of that.
 
 - For the push-based alternative via OTLP, you typically still use a logger library like log4J. However, you additionally would instrument that logger and bridge it to the OTel SDK as outlined [here](https://opentelemetry.io/docs/specs/otel/logs/#new-first-party-application-logs).
 
