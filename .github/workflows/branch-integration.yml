@@ -63,9 +63,19 @@ jobs:
         path: junit-report*.xml
 
     - name: Send slack message on failure
-      uses: slackapi/slack-github-action@e7edf37c48bfa3d4fa8267a7e432dc349c083ae9
+      uses: slackapi/slack-github-action@v2.0.0
       if: failure()
       with:
-        payload-file-path: ".github/workflows/slack-message.json"
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+        webhook-type: incoming-webhook
+        payload: |
+          text: ""
+          blocks:
+            - type: "section"
+              text:
+                type: "mrkdwn"
+                text: "Workflow <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|*${{ github.workflow }}*> has status *${{ job.status }}*"
+            - type: "section"
+              text:
+                type: "mrkdwn"
+                text: "See related <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|commit>"
