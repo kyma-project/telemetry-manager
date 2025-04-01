@@ -89,7 +89,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
 						},
 					},
 				},
@@ -114,8 +114,8 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
-							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: false},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(false)},
 						},
 					},
 				},
@@ -325,8 +325,8 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
-							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: false},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(false)},
 						},
 					},
 				},
@@ -351,8 +351,8 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
-							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: false},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(false)},
 						},
 					},
 				},
@@ -365,7 +365,7 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
 							Enabled:      ptr.To(true),
-							EnvoyMetrics: &telemetryv1alpha1.EnvoyMetrics{Enabled: true},
+							EnvoyMetrics: &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(true)},
 						},
 					},
 				},
@@ -378,8 +378,8 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
-							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: true},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(true)},
 						},
 					},
 				},
@@ -404,7 +404,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: false},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
 						},
 					},
 				},
@@ -417,7 +417,7 @@ func TestDefault(t *testing.T) {
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
 							Enabled:           ptr.To(true),
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: true},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(true)},
 						},
 					},
 				},
@@ -430,7 +430,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: []string{"kyma-system", "kube-system", "istio-system", "compass-system"},
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: true},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(true)},
 						},
 					},
 				},

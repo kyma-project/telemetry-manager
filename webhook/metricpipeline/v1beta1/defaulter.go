@@ -17,6 +17,8 @@ type defaulter struct {
 	ExcludeNamespaces         []string
 	RuntimeInputResources     runtimeInputResourceDefaults
 	DefaultOTLPOutputProtocol telemetryv1beta1.OTLPProtocol
+	DiagnosticMetricsEnabled  bool
+	EnvoyMetricsEnabled       bool
 }
 
 type runtimeInputResourceDefaults struct {
@@ -70,19 +72,19 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 
 	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.EnvoyMetrics == nil {
 		pipeline.Spec.Input.Istio.EnvoyMetrics = &telemetryv1beta1.EnvoyMetrics{
-			Enabled: false,
+			Enabled: &md.EnvoyMetricsEnabled,
 		}
 	}
 
 	if istioInputEnabled(pipeline) && pipeline.Spec.Input.Istio.DiagnosticMetrics == nil {
 		pipeline.Spec.Input.Istio.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
-			Enabled: false,
+			Enabled: &md.DiagnosticMetricsEnabled,
 		}
 	}
 
 	if prometheusInputEnabled(pipeline) && pipeline.Spec.Input.Prometheus.DiagnosticMetrics == nil {
 		pipeline.Spec.Input.Prometheus.DiagnosticMetrics = &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
-			Enabled: false,
+			Enabled: &md.DiagnosticMetricsEnabled,
 		}
 	}
 }

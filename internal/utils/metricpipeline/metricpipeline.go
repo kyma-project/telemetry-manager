@@ -7,7 +7,7 @@ func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 }
 
 func IsEnvoyMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Istio.EnvoyMetrics != nil && input.Istio.EnvoyMetrics.Enabled
+	return input.Istio.EnvoyMetrics != nil && input.Istio.EnvoyMetrics.Enabled != nil && *input.Istio.EnvoyMetrics.Enabled
 }
 
 func IsPrometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
@@ -23,11 +23,11 @@ func IsOTLPInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 }
 
 func IsPrometheusDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Prometheus.DiagnosticMetrics != nil && input.Prometheus.DiagnosticMetrics.Enabled
+	return input.Prometheus.DiagnosticMetrics != nil && input.Prometheus.DiagnosticMetrics.Enabled != nil && *input.Prometheus.DiagnosticMetrics.Enabled
 }
 
 func IsIstioDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Istio.DiagnosticMetrics != nil && input.Istio.DiagnosticMetrics.Enabled
+	return input.Istio.DiagnosticMetrics != nil && input.Istio.DiagnosticMetrics.Enabled != nil && *input.Istio.DiagnosticMetrics.Enabled
 }
 
 func IsRuntimePodInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
