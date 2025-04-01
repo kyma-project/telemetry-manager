@@ -21,7 +21,7 @@ The Log feature is optional. If you don't want to use it, simply don't set up a 
 
 ## Architecture
 
-In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-logs` service, to which users’ applications send the logs data.
+In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-logs` service, to which your applications send the logs data.
 
 Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can tail logs of a container from the underlying container runtime.
 
