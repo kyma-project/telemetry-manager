@@ -21,6 +21,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 				Job:         true,
 			},
 			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
+			DiagnosticMetricsEnabled:  false,
+			EnvoyMetricsEnabled:       false,
 		}).
 		Complete()
 }
