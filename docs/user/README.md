@@ -58,7 +58,7 @@ The log agent is based on a [Fluent Bit](https://fluentbit.io/) installation run
 
 For more information, see [Logs](02-logs.md).
 
-For information on the **experimental** feature supporting OTLP based on an OTel-Collector, see [Logs (experimental)](logs.md).
+For information on the **experimental** feature supporting OTLP based on an [OTel Collector](https://opentelemetry.io/docs/collector/), see [Logs (experimental)](logs.md).
 
 ### Trace Gateway
 

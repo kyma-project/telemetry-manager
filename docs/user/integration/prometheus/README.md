@@ -55,13 +55,17 @@ First, you first deploy the `kube-prometheus-stack`. Then, you configure the Tel
     ```bash
     export K8S_PROM_NAMESPACE="{namespace}"
     ```
+
 1. If you haven't created the namespace yet, now is the time to do so:
+
     ```bash
     kubectl create namespace $K8S_PROM_NAMESPACE
     ```
+
    >**Note**: This namespace must have **no** Istio sidecar injection enabled; that is, there must be no `istio-injection` label present on the namespace. The Helm chart applies Kubernetes Jobs that fail when Istio sidecar injection is enabled.
 
 1. Export the Helm release name that you want to use. It can be any name, but be aware that all resources in the cluster will be prefixed with that name. Run the following command:
+
     ```bash
     export HELM_PROM_RELEASE="prometheus"
     ```
@@ -74,12 +78,14 @@ First, you first deploy the `kube-prometheus-stack`. Then, you configure the Tel
     ```
 
 1. Run the Helm upgrade command, which installs the chart if it's not present yet. At the end of the command, change the Grafana admin password to some value of your choice.
+
     ```bash
     helm upgrade --install -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/prometheus/values.yaml --set grafana.adminPassword=myPwd
     ```
 
 1. You can use the [values.yaml](./values.yaml) provided with this guide, which contains customized settings deviating from the default settings, or create your own one.
 The provided `values.yaml` covers the following adjustments:
+
 - Basic Istio setup to secure communication between Prometheus, Grafana, and Alertmanager
 - Native OTLP receiver enabled for Prometheus
 - Basic configuration of data persistence with retention
@@ -89,10 +95,13 @@ The provided `values.yaml` covers the following adjustments:
 
 1. If the stack was provided successfully, you see several Pods coming up in the Namespace, especially Prometheus, Grafana, and Alertmanager. Assure that all Pods have the "Running" state.
 2. Browse the Prometheus dashboard and verify that all "Status->Targets" are healthy. To see the dashboard on `http://localhost:9090`, run:
+
    ```bash
    kubectl -n ${K8S_PROM_NAMESPACE} port-forward $(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -oname) 9090
    ```
+
 3. Browse the Grafana dashboard and verify that the dashboards are showing data. The user `admin` is preconfigured in the Helm chart; the password was provided in your `helm install` command. To see the dashboard on `http://localhost:3000`, run:
+
    ```bash
    kubectl -n ${K8S_PROM_NAMESPACE} port-forward svc/${HELM_PROM_RELEASE}-grafana 3000:80
    ```
@@ -100,6 +109,7 @@ The provided `values.yaml` covers the following adjustments:
 ### Activate a MetricPipeline
 
 1. Apply a MetricPipeline resource that has the output configured with the local Prometheus URL and has the inputs enabled for collecting Istio metrics and collecting application metrics whose workloads are annotated with Prometheus annotations.
+
     ```yaml
     SERVICE=$(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -ojsonpath='{.items[*].metadata.name}')
     kubectl apply -f - <<EOF
@@ -125,6 +135,7 @@ The provided `values.yaml` covers the following adjustments:
     ```
 
 1. Verify the MetricPipeline health by verifying that all attributes are "true":
+
     ```sh
     kubectl get metricpipeline prometheus
     ```
@@ -138,6 +149,7 @@ The provided `values.yaml` covers the following adjustments:
     ```
 
 1. Verify that the Deployment of the sample app is healthy:
+
     ```sh
     kubectl rollout status deployment sample-app
     ```
@@ -155,16 +167,19 @@ The provided `values.yaml` covers the following adjustments:
 ### Cleanup
 
 1. To remove the installation from the cluster, call Helm:
+
     ```bash
     helm delete -n ${K8S_PROM_NAMESPACE} ${HELM_PROM_RELEASE}
     ```
 
 1. To remove the MetricPipeline, call kubectl:
+
     ```bash
     helm delete MetricPipeline prometheus
     ```
 
 1. To remove the example app and all its resources from the cluster, run the following command:
+
     ```bash
     kubectl delete all -l app.kubernetes.io/name=sample-app -n $K8S_PROM_NAMESPACE
     ```

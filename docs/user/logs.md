@@ -64,8 +64,8 @@ To ship logs to a new OTLP output, create a resource of the kind `Logipeline` an
 
 This configures the underlying OTel Collector with a pipeline for logs and opens a push endpoint that is accessible with the `telemetry-otlp-logs` service. For details, see [Gateway Usage](./gateways.md#usage). The following push URLs are set up:
 
-- GRPC: http://telemetry-otlp-logs.kyma-system:4317
-- HTTP: http://telemetry-otlp-logs.kyma-system:4318
+- GRPC: `http://telemetry-otlp-logs.kyma-system:4317`
+- HTTP: `http://telemetry-otlp-logs.kyma-system:4318`
 
 The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
 
@@ -503,7 +503,7 @@ Kyma bundles several modules that can be involved in user flows. Here, all logs 
 
 ### Istio
 
-The Istio module is crucial as it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy. Using the Istio telemetry API you can enable access logs for the ingress agteway and the proxies individually.
+The Istio module is crucial as it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy. Using the Istio telemetry API you can enable access logs for the Ingress Gateway and the proxies individually.
 
 The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-logs`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry), place a resource to the `istio-system` namespace. The following code samples help setting up the Istio logging feature:
 

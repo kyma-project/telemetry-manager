@@ -167,13 +167,14 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 There are several approaches to ingest custom metrics to Dynatrace, each with different benefits and limitations:
 
 - Use a MetricPipeline to push metrics directly.
-   
+
   > [!NOTE]
-  > The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/shortlink/opentelemetry-metrics-limitations#limitations) the full OTLP specification and needs custom transformation. A MetricPipeline does not support these transformation features, so that only metrics can be ingested that don't hit the limitations. At the moment, metrics of type "Histogram" and "Summary" are not supported. Furthermore, "Sum"s must use "delta" aggregation temporality. 
+  > The Dynatrace OTLP API does [not support](https://docs.dynatrace.com/docs/shortlink/opentelemetry-metrics-limitations#limitations) the full OTLP specification and needs custom transformation. A MetricPipeline does not support these transformation features, so that only metrics can be ingested that don't hit the limitations. At the moment, metrics of type "Histogram" and "Summary" are not supported. Furthermore, "Sum"s must use "delta" aggregation temporality.
 
   Use this setup when your application pushes metrics to the telemetry metric service natively with OTLP, and if you have explicitly enabled "delta" aggregation temporality. You cannot enable additional inputs for the MetricPipeline.
 
   1. Deploy the MetricPipeline:
+
         ```bash
         cat <<EOF | kubectl apply -f -
         apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -211,6 +212,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
   This approach adds the required transformation by running an additional custom OTel Collector. The Telemetry Metric gateway is configured to ship the metrics to the custom collector, and the collector transforms them before shipping the data to the Dynatrace endpoint. This approach enables support for all metric types and inputs for the MetricPipeline. However, you must operate the additional OTel Collector in a custom way.
 
   1. Deploy the custom OTel Collector using Helm:
+
         ```bash
         helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
         helm repo update
@@ -219,6 +221,7 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
         ```
 
   1. Deploy the MetricPipeline that ships to the custom OTel Collector:
+
         ```bash
         cat <<EOF | kubectl apply -f -
         apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -240,10 +243,10 @@ There are several approaches to ingest custom metrics to Dynatrace, each with di
 
 - Use the Dynatrace metric ingestion with Prometheus exporters.
 
-  Use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/observe/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), where the Dynatrace ActiveGate component running in your cluster scrapes workloads that are annotated with Dynatrace-specific annotations. 
-   
+  Use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/observe/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), where the Dynatrace ActiveGate component running in your cluster scrapes workloads that are annotated with Dynatrace-specific annotations.
+
   This approach works well with workloads that expose metrics in the typical Prometheus format when not running with Istio.
-  If you use Istio, you must disable Istio interception for the relevant metric port with the [traffic.istio.io/excludeInboundPorts](https://istio.io/latest/docs/reference/config/annotations/#TrafficExcludeInboundPorts) annotation. To collect Istio metrics from the envoys themselves, you need additional Dynatrace annotations for every workload. 
+  If you use Istio, you must disable Istio interception for the relevant metric port with the [traffic.istio.io/excludeInboundPorts](https://istio.io/latest/docs/reference/config/annotations/#TrafficExcludeInboundPorts) annotation. To collect Istio metrics from the envoys themselves, you need additional Dynatrace annotations for every workload.
 
 ## Set Up Kyma Dashboard Integration
 
