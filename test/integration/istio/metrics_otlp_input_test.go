@@ -44,11 +44,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		// Mocks namespace objects
 		backend1 := backend.New(backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, backend1.K8sObjects()...)
-		backendExportURL = backend1.ExportURL(proxyClient)
+		backendExportURL = backend1.ExportURL(suite.ProxyClient)
 
 		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeMetrics)
 		objs = append(objs, backend2.K8sObjects()...)
-		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
+		istiofiedBackendExportURL = backend2.ExportURL(suite.ProxyClient)
 
 		metricPipeline := testutils.NewMetricPipelineBuilder().
 			WithName(pipeline1Name).
@@ -82,34 +82,34 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 				for _, resource := range k8sObjects {
 					Eventually(func(g Gomega) {
 						key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
-						err := k8sClient.Get(ctx, key, resource)
+						err := suite.K8sClient.Get(suite.Ctx, key, resource)
 						g.Expect(apierrors.IsNotFound(err)).To(BeTrueBecause("Resource %s still exists", key))
 					}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 				}
 			})
 
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should push metrics successfully", func() {
-			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
-			assert.MetricsFromNamespaceDelivered(proxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
-			assert.MetricsFromNamespaceDelivered(proxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
-			assert.MetricsFromNamespaceDelivered(proxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
+			assert.MetricsFromNamespaceDelivered(suite.ProxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
 		})
 	})

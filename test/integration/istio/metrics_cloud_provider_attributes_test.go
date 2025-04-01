@@ -45,7 +45,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Label(suite.LabelMet
 
 			backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendName))
 			objs = append(objs, backend.K8sObjects()...)
-			backendURL = backend.ExportURL(proxyClient)
+			backendURL = backend.ExportURL(suite.ProxyClient)
 
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
@@ -82,41 +82,41 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Label(suite.LabelMet
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have healthy pipelines", func() {
-			assert.MetricPipelineHealthy(ctx, k8sClient, pipelineName)
+			assert.MetricPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Ensures the metric gateway deployment is ready", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have metrics backends running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backendName, Namespace: mockNs})
-			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backendName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backendName, Namespace: mockNs})
 		})
 
 		It("should have workloads created properly", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: DeploymentName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: DeploymentName, Namespace: mockNs})
 		})
 
 		It("Ensures accessibility of metric agent metrics endpoint", func() {
-			agentMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
-			assert.EmitsOTelCollectorMetrics(proxyClient, agentMetricsURL)
+			agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
+			assert.EmitsOTelCollectorMetrics(suite.ProxyClient, agentMetricsURL)
 		})
 
 		Context("Pipeline A should deliver pod metrics", Ordered, func() {
 			It("Should deliver pod metrics with expected cloud resource attributes", func() {
-				backendContainsDesiredCloudResourceAttributes(proxyClient, backendURL, "cloud.region")
-				backendContainsDesiredCloudResourceAttributes(proxyClient, backendURL, "cloud.availability_zone")
-				backendContainsDesiredCloudResourceAttributes(proxyClient, backendURL, "host.type")
-				backendContainsDesiredCloudResourceAttributes(proxyClient, backendURL, "host.arch")
-				backendContainsDesiredCloudResourceAttributes(proxyClient, backendURL, "k8s.cluster.name")
-				backendContainsDesiredCloudResourceAttributes(proxyClient, backendURL, "cloud.provider")
+				backendContainsDesiredCloudResourceAttributes(suite.ProxyClient, backendURL, "cloud.region")
+				backendContainsDesiredCloudResourceAttributes(suite.ProxyClient, backendURL, "cloud.availability_zone")
+				backendContainsDesiredCloudResourceAttributes(suite.ProxyClient, backendURL, "host.type")
+				backendContainsDesiredCloudResourceAttributes(suite.ProxyClient, backendURL, "host.arch")
+				backendContainsDesiredCloudResourceAttributes(suite.ProxyClient, backendURL, "k8s.cluster.name")
+				backendContainsDesiredCloudResourceAttributes(suite.ProxyClient, backendURL, "cloud.provider")
 			})
 		})
 	})

@@ -8,15 +8,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -36,7 +32,7 @@ var (
 	k8sObjects  []client.Object
 )
 
-// Function to be executed before each e2e suite
+// Function to be executed before each Ginkgo test suite
 func BeforeSuiteFunc() {
 	var err error
 
@@ -53,10 +49,6 @@ func BeforeSuiteFunc() {
 
 	By("bootstrapping test environment")
 
-	scheme := clientgoscheme.Scheme
-	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(telemetryv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(operatorv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	K8sClient, err = client.New(TestEnv.Config, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(K8sClient).NotTo(BeNil())
@@ -72,7 +64,7 @@ func BeforeSuiteFunc() {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-// Function to be executed after each e2e suite
+// Function to be executed after each Ginkgo test suite
 func AfterSuiteFunc() {
 	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
 
