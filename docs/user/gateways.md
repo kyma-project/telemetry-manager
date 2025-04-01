@@ -21,14 +21,14 @@ The gateways are based on the [OTel Collector](https://opentelemetry.io/docs/col
 
 ## Usage
 
-You can set up a pipeline with a backend that subsequently instantiates a gateway. For details, see [traces](03-traces.md) and [metrics](04-metrics.md).
+You can set up a pipeline with a backend that subsequently instantiates a gateway. For details, see [Traces](03-traces.md) and [Metrics](04-metrics.md).
 To see whether you've set up your gateways and their push endpoints successfully, check the status of the default Telemetry resource:
 
 ```sh
 kubectl -n kyma-system get telemetries.operator.kyma-project.io default -oyaml
 ```
 
-In the status of the returned resource, you see the pipelines health as well as the available push endpoints:
+In the status of the returned resource, you see the pipeline health as well as the available push endpoints:
 
 ```yaml
   endpoints:
@@ -44,9 +44,7 @@ For every signal type, there's a dedicated endpoint to which you can push data u
 
 ![Gateways-Plain](assets/gateways-plain.drawio.svg)
 
-Applications that support OTLP typically use the [OTel SDK](https://opentelemetry.io/docs/languages/) for instrumentation of the data. You can either configure the endpoints hardcoded in the SDK setup, or you use standard [environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_endpoint) configuring the OTel exporter:
-
-For example:
+Applications that support OTLP typically use the [OTel SDK](https://opentelemetry.io/docs/languages/) for instrumentation of the data. You can either configure the endpoints hardcoded in the SDK setup, or you use standard [environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_endpoint) configuring the OTel exporter, for example:
 
 - Traces GRPC: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4317"`
 - Traces HTTP: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4318/v1/traces"`
@@ -59,12 +57,12 @@ The Telemetry gateways automatically enrich your data by adding the following at
 
 - `service.name`: The logical name of the service that emits the telemetry data. The gateway ensures that this attribute always has a valid value.
   If not provided by the user, or if its value follows the pattern `unknown_service:<process.executable.name>` as described in the [specification](https://opentelemetry.io/docs/specs/semconv/resource/#service), then it is generated from Kubernetes metadata. The gateway determines the service name based on the following hierarchy of labels and names:
-  1. `app.kubernetes.io/name` Pod label value
-  2. `app` Pod label value
+  1. `app.kubernetes.io/name`: Pod label value
+  2. `app`: Pod label value
   3. Deployment/DaemonSet/StatefulSet/Job name
   4. Pod name
   5. If none of the above is available, the value is `unknown_service`
-- `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including but not limited to:
+- `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including, but not limited to:
   - Pod name
   - Deployment/DaemonSet/StatefulSet/Job name
   - Namespace
