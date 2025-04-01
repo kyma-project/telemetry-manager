@@ -41,7 +41,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		// Mocks namespace objects
 		backend := backend.New(mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(suite.ProxyClient)
 
 		httpsAnnotatedMetricProducer := prommetricgen.New(mockNs, prommetricgen.WithName(httpsAnnotatedMetricProducerName))
 		httpAnnotatedMetricProducer := prommetricgen.New(mockNs, prommetricgen.WithName(httpAnnotatedMetricProducerName))
@@ -72,22 +72,22 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
 
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		Context("Verify metric scraping works with annotating pods and services", Ordered, func() {
@@ -128,7 +128,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 
 func podMetricsShouldNotBeDelivered(proxyURL, podName string) {
 	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
+		resp, err := suite.ProxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -148,7 +148,7 @@ func podMetricsShouldNotBeDelivered(proxyURL, podName string) {
 
 func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
+		resp, err := suite.ProxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -173,7 +173,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 
 func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
+		resp, err := suite.ProxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 

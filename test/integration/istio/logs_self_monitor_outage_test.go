@@ -51,40 +51,40 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.LogPipelineHealthy(ctx, k8sClient, pipelineName)
+			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should have a running self-monitor", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.SelfMonitorName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.SelfMonitorName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.FluentBitDaemonSetName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have a log backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should wait for the log flow to gradually become unhealthy", func() {
-			assert.LogPipelineConditionReasonsTransition(ctx, k8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+			assert.LogPipelineConditionReasonsTransition(suite.Ctx, suite.K8sClient, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 				{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 				{Reason: conditions.ReasonSelfMonNoLogsDelivered, Status: metav1.ConditionFalse},
 				{Reason: conditions.ReasonSelfMonAllDataDropped, Status: metav1.ConditionFalse},
 			})
 
-			assert.TelemetryHasState(ctx, k8sClient, operatorv1alpha1.StateWarning)
-			assert.TelemetryHasCondition(ctx, k8sClient, metav1.Condition{
+			assert.TelemetryHasState(suite.Ctx, suite.K8sClient, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasCondition(suite.Ctx, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
 				Reason: conditions.ReasonSelfMonAllDataDropped,
@@ -95,7 +95,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 			It("Ensures that controller_runtime_webhook_requests_total is increased", func() {
 				// Pushing metrics to the metric gateway triggers an alert.
 				// It makes the self-monitor call the webhook, which in turn increases the counter.
-				assert.ManagerEmitsMetric(proxyClient,
+				assert.ManagerEmitsMetric(suite.ProxyClient,
 					HaveName(Equal("controller_runtime_webhook_requests_total")),
 					SatisfyAll(
 						HaveLabels(HaveKeyWithValue("webhook", "/api/v2/alerts")),
@@ -105,7 +105,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsOutage), Ordered
 
 			It("Ensures that telemetry_self_monitor_prober_requests_total is emitted", func() {
 				assert.ManagerEmitsMetric(
-					proxyClient,
+					suite.ProxyClient,
 					HaveName(Equal("telemetry_self_monitor_prober_requests_total")),
 					HaveMetricValue(BeNumerically(">", 0)),
 				)
