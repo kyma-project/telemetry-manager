@@ -1,12 +1,79 @@
 package suite
 
 import (
+	"context"
 	"path"
 	"runtime"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
+
+const (
+	GomegaMaxDepth  = 20
+	GomegaMaxLenght = 16_000
+)
+
+var (
+	Ctx         context.Context
+	Cancel      context.CancelFunc
+	K8sClient   client.Client
+	ProxyClient *apiserverproxy.Client
+	TestEnv     *envtest.Environment
+	k8sObjects  []client.Object
+)
+
+// Function to be executed before each Ginkgo test suite
+func BeforeSuiteFunc() {
+	var err error
+
+	logf.SetLogger(logzap.New(logzap.WriteTo(GinkgoWriter), logzap.UseDevMode(true)))
+	useExistingCluster := true
+	TestEnv = &envtest.Environment{
+		UseExistingCluster: &useExistingCluster,
+	}
+
+	_, err = TestEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+
+	Ctx, Cancel = context.WithCancel(context.Background()) //nolint:fatcontext // context is used in tests
+
+	By("bootstrapping test environment")
+
+	K8sClient, err = client.New(TestEnv.Config, client.Options{Scheme: scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(K8sClient).NotTo(BeNil())
+
+	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
+	k8sObjects = []client.Object{
+		denyAllNetworkPolicyK8sObject,
+	}
+
+	Expect(kitk8s.CreateObjects(Ctx, K8sClient, k8sObjects...)).To(Succeed())
+
+	ProxyClient, err = apiserverproxy.NewClient(TestEnv.Config)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+// Function to be executed after each Ginkgo test suite
+func AfterSuiteFunc() {
+	Expect(kitk8s.DeleteObjects(Ctx, K8sClient, k8sObjects...)).Should(Succeed())
+
+	Cancel()
+	By("tearing down the test environment")
+
+	err := TestEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+}
 
 // ID returns the current test suite ID.
 // It is based on the file name of the test suite.
@@ -33,34 +100,44 @@ func IDWithSuffix(suffix string) string {
 
 func sanitizeSpecID(filePath string) string {
 	fileName := path.Base(filePath)
-	specID := strings.TrimSuffix(fileName, "_test.go")
+	folderName := path.Base(path.Dir(filePath))
+	specID := folderName + "-" + strings.TrimSuffix(fileName, "_test.go")
 	specID = strings.ReplaceAll(specID, "_", "-")
 
 	return specID
 }
 
 const (
-	LabelLogs                 = "logs"
-	LabelTraces               = "traces"
-	LabelMetrics              = "metrics"
-	LabelTelemetry            = "telemetry"
-	LabelExperimental         = "experimental"
-	LabelTelemetryLogAnalysis = "telemetry-log-analysis"
-	LabelMaxPipeline          = "max-pipeline"
-	LabelSetA                 = "set_a"
-	LabelSetB                 = "set_b"
-	LabelSetC                 = "set_c"
+	// Test suites labels
+	LabelLogsOtel      = "logs-otel"
+	LabelLogsFluentBit = "logs-fluentbit"
+	LabelTraces        = "traces"
+	LabelMetrics       = "metrics"
+	LabelTelemetry     = "telemetry"
+	LabelMaxPipeline   = "max-pipeline"
 
-	LabelSelfMonitoringLogsHealthy                     = "self-mon-logs-healthy"
-	LabelSelfMonitoringLogsBackpressure                = "self-mon-logs-backpressure"
-	LabelSelfMonitoringLogsOutage                      = "self-mon-logs-outage"
-	LabelSelfMonitoringTracesHealthy                   = "self-mon-traces-healthy"
-	LabelSelfMonitoringTracesBackpressure              = "self-mon-traces-backpressure"
-	LabelSelfMonitoringTracesOutage                    = "self-mon-traces-outage"
-	LabelSelfMonitoringMetricsHealthy                  = "self-mon-metrics-healthy"
-	LabelSelfMonitoringMetricsBackpressure             = "self-mon-metrics-backpressure"
-	LabelSelfMonitoringMetricsOutage                   = "self-mon-metrics-outage"
-	LabelSelfMonitoringMetricsHealthyCompatibilityMode = "self-mon-metrics-healthy-compatibility-mode"
+	// Test "sub-suites" labels
+	LabelExperimental = "experimental"
+	LabelSetA         = "set_a"
+	LabelSetB         = "set_b"
+	LabelSetC         = "set_c"
+	LabelSignalPush   = "signal-push"
+	LabelSignalPull   = "signal-pull"
+
+	// Self-monitoring test labels
+	LabelSelfMonitoringLogsHealthy         = "self-mon-logs-healthy"
+	LabelSelfMonitoringLogsBackpressure    = "self-mon-logs-backpressure"
+	LabelSelfMonitoringLogsOutage          = "self-mon-logs-outage"
+	LabelSelfMonitoringTracesHealthy       = "self-mon-traces-healthy"
+	LabelSelfMonitoringTracesBackpressure  = "self-mon-traces-backpressure"
+	LabelSelfMonitoringTracesOutage        = "self-mon-traces-outage"
+	LabelSelfMonitoringMetricsHealthy      = "self-mon-metrics-healthy"
+	LabelSelfMonitoringMetricsBackpressure = "self-mon-metrics-backpressure"
+	LabelSelfMonitoringMetricsOutage       = "self-mon-metrics-outage"
+
+	// Miscellaneous test label (for edge-cases and unrelated tests)
+	// [please avoid adding tests to this category if it already fits in a more specific one]
+	LabelMisc = "misc"
 
 	// Istio test label
 	LabelIntegration = "integration"

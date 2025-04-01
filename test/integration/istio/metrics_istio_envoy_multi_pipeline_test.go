@@ -46,7 +46,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject())
 
 		backend1 := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backend1Name))
-		backend1ExportURL = backend1.ExportURL(proxyClient)
+		backend1ExportURL = backend1.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
 		pipelineIncludeApp1Ns := testutils.NewMetricPipelineBuilder().
@@ -58,7 +58,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 		objs = append(objs, &pipelineIncludeApp1Ns)
 
 		backend2 := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backend2Name))
-		backend2ExportURL = backend2.ExportURL(proxyClient)
+		backend2ExportURL = backend2.ExportURL(suite.ProxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
 		pipelineExcludeApp1Ns := testutils.NewMetricPipelineBuilder().
@@ -80,30 +80,30 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 			})
 
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(suite.Ctx, suite.K8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			assert.DeploymentReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			assert.DaemonSetReady(ctx, k8sClient, kitkyma.MetricAgentName)
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.DeploymentReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
-			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
-			assert.ServiceReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend1Name, Namespace: mockNs})
+			assert.ServiceReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Name: backend2Name, Namespace: mockNs})
 		})
 
 		It("Should verify envoy metric reach backend-1", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backend1ExportURL)
+				resp, err := suite.ProxyClient.Get(backend1ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
@@ -119,7 +119,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelIntegration), Ordered, func() {
 
 		It("Should verify envoy metric not reach to backend-2", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(backend2ExportURL)
+				resp, err := suite.ProxyClient.Get(backend2ExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 

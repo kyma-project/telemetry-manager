@@ -110,3 +110,7 @@ func DefaultExtensions() Extensions {
 		},
 	}
 }
+
+type ServiceEnrichmentProcessor struct {
+	ResourceAttributes []string `yaml:"resource_attributes"`
+}
