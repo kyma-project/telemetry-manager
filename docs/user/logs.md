@@ -52,7 +52,7 @@ In a Kyma cluster, the log gateway is the central component to which all compone
 
 ### Log Agent
 
-If a LogPipeline configures a feature in the `input` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of logs from the conteainer runtime. Hereby, the workload container just prints the structured log to the `stdout/stderr` channel. The agent will pick them up, parses, enriches and sends all data in OTLP to the configured backend.
+If you configure a feature in the `input` section of your LogPipeline, an additional DaemonSet is deployed acting as an agent. The agent is based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of logs from the container runtime. Hereby, the workload container just prints the structured log to the `stdout/stderr` channel. The agent picks them up, parses and enriches them, and sends all data in OTLP to the configured backend.
 
 ## Setting up a LogPipeline
 
@@ -475,7 +475,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-With this, the agent starts collecting all container logs, and the push-based OTLP logs are dropped by the gateway.
+With this, the agent starts collecting all container logs, while the push-based OTLP logs are dropped by the gateway.
 
 ### 6. Deploy the Pipeline
 
@@ -499,7 +499,7 @@ backend   True                      True              True            True
 
 ## Kyma Modules With Logging Capabilities
 
-Kyma bundles several modules that can be involved in user flows. Here, all logs can be collected optionally by enabling the `application` input for the `kyma-system` namespace. On top of this, the following modules have some dedicated integration options:
+Kyma bundles modules that can be involved in user flows. If you want to collect all logs of all modules, enable the `application` input for the `kyma-system` namespace.
 
 ### Istio
 
