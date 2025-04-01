@@ -17,7 +17,7 @@ The Log feature is optional. If you don't want to use it, simply don't set up a 
 
 - If you want to emit the logs to the `stdout/stderr` channel, use structured logs in a JSON format with a logger library like log4J. With that, the log agent can parse your log and enrich all JSON attributes as log attributes, and a backend can make use of that.
 
-- For the push-based alternative via OTLP, you typically still use a logger library like log4J. However, you additionally would instrument that logger and bridge it to the OTel SDK as outlined [here](https://opentelemetry.io/docs/specs/otel/logs/#new-first-party-application-logs).
+- If you prefer the push-based alternative with OTLP, also use a logger library like log4J. However, you additionally instrument that logger and bridge it to the OTel SDK. For details, see [OpenTelemetry: New First-Party Application Logs](https://opentelemetry.io/docs/specs/otel/logs/#new-first-party-application-logs).
 
 ## Architecture
 
