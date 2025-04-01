@@ -1,6 +1,6 @@
 # Application Logs (Experimental)
 
-> Note: This feature is experimental and not available in the regular release. With that, the API is subject to change and might not meet productive criterias.
+> Note: This feature is experimental and not available in the regular release. The API is subject to change and might not meet productive criteria.
 
 The goal of the Telemetry module is to support you in collecting all relevant logs of a workload in a Kyma cluster and ship them to a backend for further analysis. Hereby, especially application logs printed to the stdout/stderr channel are in scope as well as logs emmitted via OTLP. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) contribute access logs instantly, and the Telemetry module enriches the data. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
 
