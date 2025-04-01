@@ -32,7 +32,7 @@ Optionally, the Telemetry module provides a DaemonSet of an OTel Collector actin
 3. An application (exposing logs in OTLP) sends logs to the central log gateway service. Istio is configured to push access logs via OTLP as well.
 4. The gateway and agent discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
 5. Telemetry Manager configures the agent and gateway according to the `LogPipeline` resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
-8. The log agent and gateway sends the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
+8. The log agent and gateway send the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
 9. You can analyze the logs data with your preferred backend system.
 
 ### Telemetry Manager
