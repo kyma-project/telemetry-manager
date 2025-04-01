@@ -134,22 +134,6 @@ processors:
             - action: insert
               key: cloud.provider
               value: test-cloud-provider
-    filter/drop-if-input-source-runtime:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/runtime"
-    filter/drop-if-input-source-prometheus:
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "prometheus"
-    filter/drop-if-input-source-istio:
-        metrics:
-            metric:
-                - instrumentation_scope.name == "io.kyma-project.telemetry/istio"
-    filter/drop-envoy-metrics-if-disabled:
-        metrics:
-            metric:
-                - IsMatch(name, "^envoy_.*") and instrumentation_scope.name == "io.kyma-project.telemetry/istio"
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:

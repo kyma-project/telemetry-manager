@@ -116,39 +116,6 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "io.kyma-project.telemetry.skip_enrichment", collectorConfig.Processors.DeleteSkipEnrichmentAttribute.Attributes[0].Key)
 	})
 
-	t.Run("drop by input source filter", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(
-			ctx,
-			[]telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithOTLPInput(false).Build(),
-			},
-			BuildOptions{},
-		)
-		require.NoError(t, err)
-
-		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceRuntime)
-		require.Len(t, collectorConfig.Processors.DropIfInputSourceRuntime.Metrics.Metric, 1)
-		require.Equal(t, "instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\"", collectorConfig.Processors.DropIfInputSourceRuntime.Metrics.Metric[0])
-
-		require.NotNil(t, collectorConfig.Processors.DropIfInputSourcePrometheus)
-		require.Len(t, collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric, 1)
-		require.Equal(t, "resource.attributes[\"kyma.input.name\"] == \"prometheus\"", collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric[0])
-
-		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceIstio)
-		require.Len(t, collectorConfig.Processors.DropIfInputSourceIstio.Metrics.Metric, 1)
-		require.Equal(t, "instrumentation_scope.name == \"io.kyma-project.telemetry/istio\"", collectorConfig.Processors.DropIfInputSourceIstio.Metrics.Metric[0])
-
-		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceOTLP)
-		require.Len(t, collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric, 1)
-		require.Equal(t,
-			"not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or "+
-				"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or "+
-				"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or "+
-				"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\")",
-			collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric[0],
-		)
-	})
-
 	t.Run("namespace filter processor using include", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
@@ -491,18 +458,131 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "set(scope.name, \"io.kyma-project.telemetry/kyma\") where scope.name == \"github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver\"", collectorConfig.Processors.SetInstrumentationScopeKyma.MetricStatements[0].Statements[1])
 	})
 
-	t.Run("drop envoy filter processor", func(t *testing.T) {
+	t.Run("multi pipeline drop envoy filter processor", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(
 			ctx,
 			[]telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test1").Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test2").WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test1-output"].Processors, []string{
+			"transform/set-instrumentation-scope-kyma",
+			"filter/drop-if-input-source-istio",
+			"filter/drop-envoy-metrics-if-disabled",
+			"resource/insert-cluster-attributes",
+			"resource/delete-skip-enrichment-attribute",
+			"resource/drop-kyma-attributes",
+			"batch"})
+
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test2-output"].Processors, []string{
+			"transform/set-instrumentation-scope-kyma",
+			"filter/drop-diagnostic-metrics-if-input-source-istio",
+			"resource/insert-cluster-attributes",
+			"resource/delete-skip-enrichment-attribute",
+			"resource/drop-kyma-attributes",
+			"batch"})
+
+		require.NotNil(t, collectorConfig.Processors.DropIfEnvoyMetricsDisabled)
+		require.Equal(t, 1, len(collectorConfig.Processors.DropIfEnvoyMetricsDisabled.Metrics.Metric))
+		require.Equal(t, "IsMatch(name, \"^envoy_.*\") and instrumentation_scope.name == \"io.kyma-project.telemetry/istio\"", collectorConfig.Processors.DropIfEnvoyMetricsDisabled.Metrics.Metric[0])
+	})
+
+	t.Run("multi pipeline drop by input source filter with OTLP input disabled", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test1").WithOTLPInput(false).Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test2").WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
 			},
 			BuildOptions{},
 		)
 		require.NoError(t, err)
 
-		require.NotNil(t, collectorConfig.Processors.DropIfEnvoyMetricsDisabled)
-		require.Equal(t, 1, len(collectorConfig.Processors.DropIfEnvoyMetricsDisabled.Metrics.Metric))
-		require.Equal(t, "IsMatch(name, \"^envoy_.*\") and instrumentation_scope.name == \"io.kyma-project.telemetry/istio\"", collectorConfig.Processors.DropIfEnvoyMetricsDisabled.Metrics.Metric[0])
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceOTLP)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric, 1)
+		require.Equal(t,
+			"not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or "+
+				"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or "+
+				"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or "+
+				"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\")",
+			collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric[0],
+		)
+
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test1-output"].Processors, []string{
+			"transform/set-instrumentation-scope-kyma",
+			"filter/drop-if-input-source-istio",
+			"filter/drop-envoy-metrics-if-disabled",
+			"filter/drop-if-input-source-otlp",
+			"resource/insert-cluster-attributes",
+			"resource/delete-skip-enrichment-attribute",
+			"resource/drop-kyma-attributes",
+			"batch"})
+	})
+
+	t.Run("multi pipeline drop by input source filter with OTLP input disabled/enabled", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test1").WithOTLPInput(false).Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test2").Build(),
+			},
+			BuildOptions{},
+		)
+		require.NoError(t, err)
+
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceOTLP)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric, 1)
+		require.Equal(t,
+			"not(instrumentation_scope.name == \"io.kyma-project.telemetry/runtime\" or "+
+				"resource.attributes[\"kyma.input.name\"] == \"prometheus\" or "+
+				"instrumentation_scope.name == \"io.kyma-project.telemetry/istio\" or "+
+				"instrumentation_scope.name == \"io.kyma-project.telemetry/kyma\")",
+			collectorConfig.Processors.DropIfInputSourceOTLP.Metrics.Metric[0],
+		)
+
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test1-output"].Processors, []string{
+			"transform/set-instrumentation-scope-kyma",
+			"filter/drop-if-input-source-otlp",
+			"resource/insert-cluster-attributes",
+			"resource/delete-skip-enrichment-attribute",
+			"resource/drop-kyma-attributes",
+			"batch"})
+
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test2-output"].Processors, []string{
+			"transform/set-instrumentation-scope-kyma",
+			"resource/insert-cluster-attributes",
+			"resource/delete-skip-enrichment-attribute",
+			"resource/drop-kyma-attributes",
+			"batch"})
+	})
+
+	t.Run("multi pipeline drop processor declaration", func(t *testing.T) {
+		collectorConfig, _, err := sut.Build(
+			ctx,
+			[]telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test1").WithPrometheusInput(true).Build(),
+				testutils.NewMetricPipelineBuilder().WithName("test2").WithIstioInput(true).Build(),
+			},
+			BuildOptions{},
+		)
+
+		require.NoError(t, err)
+		require.Nil(t, collectorConfig.Processors.DropIfInputSourceRuntime)
+		require.Nil(t, collectorConfig.Processors.DropIfInputSourceOTLP)
+
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceIstio)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourceIstio.Metrics.Metric, 1)
+		require.Equal(t, "instrumentation_scope.name == \"io.kyma-project.telemetry/istio\"",
+			collectorConfig.Processors.DropIfInputSourceIstio.Metrics.Metric[0],
+		)
+
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourcePrometheus)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric, 1)
+		require.Equal(t, "resource.attributes[\"kyma.input.name\"] == \"prometheus\"",
+			collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.Metric[0],
+		)
 	})
 }
