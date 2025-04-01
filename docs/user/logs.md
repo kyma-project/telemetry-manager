@@ -1,19 +1,19 @@
 # Application Logs (Experimental)
 
-> Note: This feature is experimental and not available in the regular release. The API is subject to change and might not meet productive criteria.
-
-The goal of the Telemetry module is to support you in collecting all relevant logs of a workload in a Kyma cluster and ship them to a backend for further analysis. Hereby, especially application logs printed to the stdout/stderr channel are in scope as well as logs emmitted via OTLP. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) contribute access logs instantly, and the Telemetry module enriches the data. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
+The Telemetry module collects logs of workloads in your Kyma cluster and ship them to a backend for further analysis.
 
 ## Overview
 
-The Telemetry module provides a log gateway for push-based collection of logs and, optionally, an agent for the collection of logs of any container running in the Kyma runtime.
+> Note: This feature is experimental and not available in the regular release. The API is subject to change and might not meet productive criteria.
+
+The Telemetry module provides a log gateway for push-based collection of logs via OTLP and, optionally, an agent for the collection of logs of any container printing logs to the `stdout/stderr` channel running in the Kyma runtime. Kyma modules like [Istio](https://kyma-project.io/#/istio/user/README) access logs. The Telemetry module enriches the data and and ships them to your chosen backend (see [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/)).
 
 You can configure the log gateway and agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named LogPipeline.
 The Log feature is optional. If you don't want to use it, simply don't set up a LogPipeline.
 
 ## Prerequisites
 
-- Before you can collect logs from a component, it must emit (or instrument) the logs. Typically, it uses a logger framework for the used language runtime (like Node.js) and prints them to the `stdout` or `stderr` channel ([Kubernetes: How nodes handle container logs](https://kubernetes.io/docs/concepts/cluster-administration/logging/#how-nodes-handle-container-logs)). Alternatively, you can use the [OTel SDK](https://opentelemetry.io/docs/languages/) to use the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
+- Before you can collect logs from a component, it must emit the logs. Typically, it uses a logger framework for the used language runtime (like Node.js) and prints them to the `stdout` or `stderr` channel ([Kubernetes: How nodes handle container logs](https://kubernetes.io/docs/concepts/cluster-administration/logging/#how-nodes-handle-container-logs)). Alternatively, you can use the [OTel SDK](https://opentelemetry.io/docs/languages/) to use the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
 
 - If you want to emit the logs to the `stdout/stderr` channel, use structured logs in a JSON format with a logger library like log4J. With that, the log agent can parse your log and enrich all JSON attributes as log attributes, and a backend can make use of that.
 
@@ -23,14 +23,14 @@ The Log feature is optional. If you don't want to use it, simply don't set up a 
 
 In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-logs` service, to which your applications send the logs data.
 
-Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can tail logs of a container from the underlying container runtime.
+You can choose whether you also want an agent, based on a DaemonSet of an OTel Collector. This agent can tail logs of a container from the underlying container runtime.
 
 ![Architecture](./assets/logs-arch.drawio.svg)
 
 1. Application containers print JSON logs to `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related Node. Istio is configured to write access logs to `stdout` as well.
 2. An OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails and parses them.
-3. An application (exposing logs in OTLP) sends logs to the central log gateway service. Istio is configured to push access logs via OTLP as well.
-4. The gateway and agent discovers the metadata and enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
+3. An application (exposing logs in OTLP) sends logs to the central log gateway service. Istio is configured to push access logs with OTLP as well.
+4. The gateway and agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
 5. Telemetry Manager configures the agent and gateway according to the `LogPipeline` resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
 8. The log agent and gateway send the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend.
 9. You can analyze the logs data with your preferred backend system.
