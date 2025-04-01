@@ -27,11 +27,6 @@ service:
                 - forward/test
             processors:
                 - transform/set-instrumentation-scope-kyma
-                - filter/drop-if-input-source-runtime
-                - filter/drop-if-input-source-prometheus
-                - filter/drop-if-input-source-istio
-                - filter/drop-envoy-metrics-if-disabled
-                - filter/drop-if-input-source-otlp
                 - resource/insert-cluster-attributes
                 - resource/delete-skip-enrichment-attribute
                 - resource/drop-kyma-attributes

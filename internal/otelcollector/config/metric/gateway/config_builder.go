@@ -47,6 +47,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 
 	queueSize := maxQueueSize / len(pipelines)
 
+	inputDropFilterConfigs := getPipelineDropFilterConfigs(pipelines)
+
 	for i := range pipelines {
 		pipeline := pipelines[i]
 		if pipeline.DeletionTimestamp != nil {
@@ -69,7 +71,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Metri
 		outputPipelineID := formatOutputPipelineID(pipeline.Name)
 		cfg.Service.Pipelines[inputPipelineID] = makeInputPipelineServiceConfig(&pipeline)
 		cfg.Service.Pipelines[attributesEnrichmentPipelineID] = makeAttributesEnrichmentPipelineServiceConfig(pipeline.Name)
-		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline)
+		cfg.Service.Pipelines[outputPipelineID] = makeOutputPipelineServiceConfig(&pipeline, inputDropFilterConfigs[pipeline.Name])
 	}
 
 	return cfg, envVars, nil
