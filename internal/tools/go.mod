@@ -13,7 +13,7 @@ require (
 	github.com/mikefarah/yq/v4 v4.45.1
 	github.com/onsi/ginkgo/v2 v2.23.3
 	github.com/vektra/mockery/v2 v2.53.3
-	github.com/vladopajic/go-test-coverage/v2 v2.12.0
+	github.com/vladopajic/go-test-coverage/v2 v2.13.1
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.31.0
 	gopkg.in/yaml.v3 v3.0.1
