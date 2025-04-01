@@ -67,8 +67,8 @@ To ship metrics to a new OTLP output, create a resource of the kind `MetricPipel
 
 This configures the underlying OTel Collector with a pipeline for metrics and opens a push endpoint that is accessible with the `telemetry-otlp-metrics` service. For details, see [Gateway Usage](./gateways.md#usage). The following push URLs are set up:
 
-- GRPC: http://telemetry-otlp-metrics.kyma-system:4317
-- HTTP: http://telemetry-otlp-metrics.kyma-system:4318
+- GRPC: `http://telemetry-otlp-metrics.kyma-system:4317`
+- HTTP: `http://telemetry-otlp-metrics.kyma-system:4318`
 
 The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
 
@@ -543,14 +543,16 @@ spec:
 
 With this, the agent starts collecting all Istio metrics from Istio sidecars.
 
-#### Activate Envoy Metrics
+If you are using the `istio` input, you can also collect Envoy metrics. Envoy metrics provide insights into the performance and behavior of the Envoy proxy, such as request rates, latencies, and error counts. These metrics are useful for observability and troubleshooting service mesh traffic.
 
-If you are using the istio input, you can also collect Envoy metrics. Envoy metrics provide insights into the performance and behavior of the Envoy proxy, such as request rates, latencies, and error counts. These metrics are useful for observability and troubleshooting service mesh traffic.
 For details, see the list of available [Envoy metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats) and [server metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics).
+
+> [!NOTE]
+> Envoy metrics are only available for the `istio` input. Ensure that Istio sidecars are correctly injected into your workloads for Envoy metrics to be available.
 
 By default, Envoy metrics collection is disabled.
 
-To activate Envoy metrics, you must enable the `envoyMetrics` section in the MetricPipeline specification under the `istio` input.
+To activate Envoy metrics, enable the `envoyMetrics` section in the MetricPipeline specification under the `istio` input.
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -568,9 +570,6 @@ To activate Envoy metrics, you must enable the `envoyMetrics` section in the Met
         endpoint:
           value: https://backend.example.com:4317
   ```
-
-> [!NOTE]
-> Envoy metrics are only available for the Istio input. Ensure that Istio sidecars are correctly injected into your workloads for Envoy metrics to be available.
 
 ### 8. Deactivate OTLP Metrics
 
