@@ -18,6 +18,8 @@ type defaulter struct {
 	ExcludeNamespaces         []string
 	RuntimeInputResources     runtimeInputResourceDefaults
 	DefaultOTLPOutputProtocol string
+	DiagnosticMetricsEnabled  bool
+	EnvoyMetricsEnabled       bool
 }
 
 type runtimeInputResourceDefaults struct {
@@ -67,6 +69,24 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
+	}
+
+	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Istio.DiagnosticMetrics == nil {
+		pipeline.Spec.Input.Istio.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{
+			Enabled: &md.DiagnosticMetricsEnabled,
+		}
+	}
+
+	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Istio.EnvoyMetrics == nil {
+		pipeline.Spec.Input.Istio.EnvoyMetrics = &telemetryv1alpha1.EnvoyMetrics{
+			Enabled: &md.EnvoyMetricsEnabled,
+		}
+	}
+
+	if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) && pipeline.Spec.Input.Prometheus.DiagnosticMetrics == nil {
+		pipeline.Spec.Input.Prometheus.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{
+			Enabled: &md.DiagnosticMetricsEnabled,
+		}
 	}
 }
 
