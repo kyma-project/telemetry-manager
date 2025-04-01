@@ -1,6 +1,6 @@
 //go:build e2e
 
-package fluentbit
+package selfmonitor
 
 import (
 	"testing"
@@ -12,12 +12,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func TestMisc(t *testing.T) {
+func TestSuite(t *testing.T) {
 	format.MaxDepth = suite.GomegaMaxDepth
 	format.MaxLength = suite.GomegaMaxLenght
 
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "E2E Suite - FluentBit")
+	RunSpecs(t, "E2E Suite - Self Monitor")
 }
 
 var _ = BeforeSuite(suite.BeforeSuiteFunc)
