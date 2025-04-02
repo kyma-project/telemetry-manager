@@ -65,7 +65,7 @@ spec:
                     description: Configures istio-proxy metrics scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.
@@ -77,7 +77,7 @@ spec:
                       envoyMetrics:
                         description: |-
                           EnvoyMetrics defines the configuration for scraping Envoy metrics.
-                          If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
+                          If enabled, Envoy metrics with prefix `envoy_` are scraped. The envoy metrics are disabled by default.
                         properties:
                           enabled:
                             description: If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
@@ -129,7 +129,7 @@ spec:
                     description: Configures Prometheus scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.
@@ -610,7 +610,7 @@ spec:
                     description: Configures istio-proxy metrics scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.
@@ -622,7 +622,7 @@ spec:
                       envoyMetrics:
                         description: |-
                           EnvoyMetrics defines the configuration for scraping Envoy metrics.
-                          If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
+                          If enabled, Envoy metrics with prefix `envoy_` are scraped. The envoy metrics are disabled by default.
                         properties:
                           enabled:
                             description: If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
@@ -674,7 +674,7 @@ spec:
                     description: Configures Prometheus scraping.
                     properties:
                       diagnosticMetrics:
-                        description: Configures diagnostic metrics scraping
+                        description: Configures diagnostic metrics scraping. The diagnostic metrics are Disabled by default.
                         properties:
                           enabled:
                             description: If enabled, diagnostic metrics are scraped. The default is `false`.

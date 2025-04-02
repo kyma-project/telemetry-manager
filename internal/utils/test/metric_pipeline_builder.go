@@ -164,7 +164,7 @@ func (b *MetricPipelineBuilder) WithPrometheusInputDiagnosticMetrics(enable bool
 		b.inPrometheus.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{}
 	}
 
-	b.inPrometheus.DiagnosticMetrics.Enabled = enable
+	b.inPrometheus.DiagnosticMetrics.Enabled = &enable
 
 	return b
 }
@@ -178,7 +178,7 @@ func (b *MetricPipelineBuilder) WithIstioInputDiagnosticMetrics(enable bool) *Me
 		b.inIstio.DiagnosticMetrics = &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{}
 	}
 
-	b.inIstio.DiagnosticMetrics.Enabled = enable
+	b.inIstio.DiagnosticMetrics.Enabled = &enable
 
 	return b
 }
@@ -342,7 +342,7 @@ func (b *MetricPipelineBuilder) WithIstioInputEnvoyMetrics(enable bool) *MetricP
 		b.inIstio.EnvoyMetrics = &telemetryv1alpha1.EnvoyMetrics{}
 	}
 
-	b.inIstio.EnvoyMetrics.Enabled = enable
+	b.inIstio.EnvoyMetrics.Enabled = &enable
 
 	return b
 }
