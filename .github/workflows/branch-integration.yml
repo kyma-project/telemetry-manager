@@ -63,7 +63,7 @@ jobs:
         path: junit-report*.xml
 
     - name: Send slack message on failure
-      uses: slackapi/slack-github-action@v2.0.0
+      uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
       if: failure()
       with:
         webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
