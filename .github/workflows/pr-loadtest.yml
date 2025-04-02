@@ -34,7 +34,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
@@ -57,7 +57,7 @@ jobs:
         run: echo "input = ${{ github.event.inputs.image }}, matrix = ${{ matrix.image }}"
 
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
@@ -100,7 +100,7 @@ jobs:
         run: hack/load-tests/run-load-test.sh -n ${{ matrix.name }} -t ${{ matrix.type }} -m ${{ matrix.multi }} -b ${{ matrix.backpressure }} -d ${{ github.event.inputs.duration }} -o "${{ matrix.overlay }}"
 
       - name: Upload Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: Results-${{ matrix.name }}
@@ -119,12 +119,12 @@ jobs:
     if: always()
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
       - name: Download Results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
       - name: Print Results
         run: |
           ls -la

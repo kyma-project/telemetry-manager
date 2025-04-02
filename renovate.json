@@ -4,7 +4,8 @@
     "config:recommended",
     ":semanticCommits",
     ":semanticCommitTypeAll(chore)",
-    ":semanticCommitScopeDisabled"
+    ":semanticCommitScopeDisabled",
+    "helpers:pinGitHubActionDigests"
   ],
   "labels": [
     "area/dependency",
