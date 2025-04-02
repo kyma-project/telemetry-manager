@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
@@ -56,7 +56,7 @@ jobs:
         GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
 
     - name: Upload Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       if: success() || failure()
       with:
         name: ${{ github.job }}-${{ matrix.k8s_version }}-report

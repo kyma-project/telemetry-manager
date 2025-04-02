@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Add kind label based on PR title prefix
         if: always()
@@ -124,7 +124,7 @@ jobs:
     if: ${{ github.event.pull_request.base.ref == 'main' }}
     steps:
       - name: Check-out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name }}

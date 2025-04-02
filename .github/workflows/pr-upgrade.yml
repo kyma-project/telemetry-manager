@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
@@ -68,7 +68,7 @@ jobs:
           bin/ginkgo run --junit-report=junit-report-latest-version.xml --tags e2e --flake-attempts=5 --label-filter="upgrade || operational" -v -r test/e2e
 
       - name: Switch back to current revision
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Wait for cleanup of test run
         shell: bash
