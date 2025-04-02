@@ -86,8 +86,7 @@ type MetricPipelinePrometheusInput struct {
 	// Describes whether Prometheus metrics from specific namespaces are selected. System namespaces are disabled by default.
 	// +optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
-	// Configures diagnostic metrics scraping
-	// +optional
+	// Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
@@ -145,19 +144,17 @@ type MetricPipelineIstioInput struct {
 	// Describes whether istio-proxy metrics from specific namespaces are selected. System namespaces are enabled by default.
 	// +optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
-	// Configures diagnostic metrics scraping
-	// +optional
+	// Configures diagnostic metrics scraping. The diagnostic metrics are disabled by default.
 	DiagnosticMetrics *MetricPipelineIstioInputDiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 	// EnvoyMetrics defines the configuration for scraping Envoy metrics.
-	// If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
-	// +optional
+	// If enabled, Envoy metrics with prefix `envoy_` are scraped. The envoy metrics are disabled by default.
 	EnvoyMetrics *EnvoyMetrics `json:"envoyMetrics,omitempty"`
 }
 
 // MetricPipelineIstioInputDiagnosticMetrics defines the diagnostic metrics configuration section
 type MetricPipelineIstioInputDiagnosticMetrics struct {
 	// If enabled, diagnostic metrics are scraped. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.
@@ -175,5 +172,5 @@ type MetricPipelineStatus struct {
 // EnvoyMetrics defines the configuration for scraping Envoy metrics.
 type EnvoyMetrics struct {
 	// If enabled, Envoy metrics with prefix `envoy_` are scraped. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
