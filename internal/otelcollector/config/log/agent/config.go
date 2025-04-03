@@ -45,12 +45,20 @@ type Operator struct {
 	TraceFlags              OperatorAttribute `yaml:"trace_flags,omitempty"`
 	Regex                   string            `yaml:"regex,omitempty"`
 	Trace                   TraceAttribute    `yaml:"trace,omitempty"`
+	Routes                  []Router          `yaml:"routes,omitempty"`
+	Default                 string            `yaml:"default,omitempty"`
+	Output                  string            `yaml:"output,omitempty"`
 }
 
 type TraceAttribute struct {
 	TraceID    OperatorAttribute `yaml:"trace_id,omitempty"`
 	SpanID     OperatorAttribute `yaml:"span_id,omitempty"`
 	TraceFlags OperatorAttribute `yaml:"trace_flags,omitempty"`
+}
+
+type Router struct {
+	Expression string `yaml:"expr,omitempty"`
+	Output     string `yaml:"output,omitempty"`
 }
 type OperatorAttribute struct {
 	ParseFrom string `yaml:"parse_from,omitempty"`

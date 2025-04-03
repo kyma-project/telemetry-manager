@@ -32,7 +32,7 @@ func TestReceiverCreator(t *testing.T) {
 		{
 			name:     "should create receiver with keepOriginalBody true",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build(),
-			expectedOperators: append([]Operator{
+			expectedOperators: append(append([]Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
@@ -41,14 +41,16 @@ func TestReceiverCreator(t *testing.T) {
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
+				makeTraceRouter(),
 				makeTraceParentParser(),
 				makeTraceParser(),
 			}, makeRemoveTraceAttributes()...),
+				makeNoop()),
 		},
 		{
 			name:     "should create receiver with keepOriginalBody false",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
-			expectedOperators: append([]Operator{
+			expectedOperators: append(append([]Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
@@ -56,9 +58,11 @@ func TestReceiverCreator(t *testing.T) {
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
+				makeTraceRouter(),
 				makeTraceParentParser(),
 				makeTraceParser(),
 			}, makeRemoveTraceAttributes()...),
+				makeNoop()),
 		},
 	}
 
@@ -246,8 +250,9 @@ func TestIncludePath(t *testing.T) {
 func TestMakeTraceParser(t *testing.T) {
 	sp := makeTraceParser()
 	expectedSP := Operator{
-		ID:   "trace-parser",
-		Type: "trace_parser",
+		ID:     "trace-parser",
+		Type:   "trace_parser",
+		Output: "remove-trace-id",
 		TraceID: OperatorAttribute{
 			ParseFrom: "attributes.trace_id",
 		},
@@ -266,9 +271,9 @@ func TestMakeTraceParentParser(t *testing.T) {
 	expectedSP := Operator{
 		ID:        "trace-parent-parser",
 		Type:      "regex_parser",
-		IfExpr:    "attributes.trace_id == nil",
 		Regex:     traceParentExpression,
 		ParseFrom: "attributes.traceparent",
+		Output:    "remove-trace-parent",
 		Trace: TraceAttribute{
 			TraceID: OperatorAttribute{
 				ParseFrom: "attributes.trace_id",
@@ -288,14 +293,16 @@ func TestMakeRemoveTraceAttributes(t *testing.T) {
 	sp := makeRemoveTraceAttributes()
 	expectedSP := []Operator{
 		{
-			ID:    "remove-trace-id",
-			Type:  "remove",
-			Field: "attributes.trace_id",
+			ID:     "remove-trace-id",
+			Type:   "remove",
+			Field:  "attributes.trace_id",
+			Output: "remove-span-id",
 		},
 		{
-			ID:    "remove-span-id",
-			Type:  "remove",
-			Field: "attributes.span_id",
+			ID:     "remove-span-id",
+			Type:   "remove",
+			Field:  "attributes.span_id",
+			Output: "remove-trace-flags",
 		},
 		{
 			ID:    "remove-trace-flags",
@@ -303,9 +310,10 @@ func TestMakeRemoveTraceAttributes(t *testing.T) {
 			Field: "attributes.trace_flags",
 		},
 		{
-			ID:    "remove-traceparent",
-			Type:  "remove",
-			Field: "attributes.traceparent",
+			ID:     "remove-traceparent",
+			Type:   "remove",
+			Field:  "attributes.traceparent",
+			Output: "remove-trace-id",
 		},
 	}
 	assert.Equal(t, expectedSP, sp)
