@@ -505,9 +505,9 @@ Kyma bundles modules that can be involved in user flows. If you want to collect 
 
 The Istio module is crucial as it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy. Using the Istio telemetry API, you can enable access logs for the Ingress Gateway and the proxies individually.
 
-The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-logs`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry), place a resource to the `istio-system` namespace. The following code samples help setting up the Istio logging feature:
+The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-logs`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry), place a resource to the `istio-system` namespace.
 
-The following example configures all Istio proxies with the `kyma-logs` extension provider, which, by default, reports access logsto the log gateway of the Telemetry module.
+The following example configures all Istio proxies with the `kyma-logs` extension provider, which, by default, reports access logs to the log gateway of the Telemetry module.
 
 ```yaml
 apiVersion: telemetry.istio.io/v1
