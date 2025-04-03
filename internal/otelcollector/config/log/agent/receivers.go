@@ -112,6 +112,8 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 		makeMoveMessageToBody(),
 		makeMoveMsgToBody(),
 		makeSeverityParser(),
+		makeTraceParentParser(),
+		makeTraceParser(),
 	)
 
 	return operators
@@ -198,5 +200,43 @@ func makeSeverityParser() Operator {
 		Type:      "severity_parser",
 		ParseFrom: "attributes.level",
 		IfExpr:    "attributes.level != nil",
+	}
+}
+
+// set the severity level
+func makeTraceParser() Operator {
+	return Operator{
+		ID:   "trace-parser",
+		Type: "trace_parser",
+		TraceID: OperatorAttribute{
+			ParseFrom: "attributes.trace_id",
+		},
+		SpanID: OperatorAttribute{
+			ParseFrom: "attributes.span_id",
+		},
+		TraceFlags: OperatorAttribute{
+			ParseFrom: "attributes.trace_flags",
+		},
+	}
+}
+
+func makeTraceParentParser() Operator {
+	return Operator{
+		ID:        "trace-parent-parser",
+		Type:      "regex_parser",
+		IfExpr:    "attributes.trace_id == nil",
+		Regex:     "^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$",
+		ParseFrom: "attributes.traceparent",
+		Trace: TraceAttribute{
+			TraceID: OperatorAttribute{
+				ParseFrom: "attributes.trace_id",
+			},
+			SpanID: OperatorAttribute{
+				ParseFrom: "attributes.span_id",
+			},
+			TraceFlags: OperatorAttribute{
+				ParseFrom: "attributes.trace_flags",
+			},
+		},
 	}
 }

@@ -95,6 +95,26 @@ receivers:
               type: severity_parser
               if: attributes.level != nil
               parse_from: attributes.level
+            - id: trace-parent-parser
+              type: regex_parser
+              if: attributes.trace_id == nil
+              parse_from: attributes.traceparent
+              regex: ^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$
+              trace:
+                trace_id:
+                    parse_from: attributes.trace_id
+                span_id:
+                    parse_from: attributes.span_id
+                trace_flags:
+                    parse_from: attributes.trace_flags
+            - id: trace-parser
+              type: trace_parser
+              trace_id:
+                parse_from: attributes.trace_id
+              span_id:
+                parse_from: attributes.span_id
+              trace_flags:
+                parse_from: attributes.trace_flags
 processors:
     memory_limiter:
         check_interval: 5s

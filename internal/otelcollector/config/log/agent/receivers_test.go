@@ -40,6 +40,8 @@ func TestReceiverCreator(t *testing.T) {
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
+				makeTraceParentParser(),
+				makeTraceParser(),
 			},
 		},
 		{
@@ -53,6 +55,8 @@ func TestReceiverCreator(t *testing.T) {
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
+				makeTraceParentParser(),
+				makeTraceParser(),
 			},
 		},
 	}

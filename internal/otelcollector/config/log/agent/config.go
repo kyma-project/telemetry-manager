@@ -30,16 +30,30 @@ type FileLog struct {
 }
 
 type Operator struct {
-	ID                      string `yaml:"id,omitempty"`
-	Type                    string `yaml:"type,omitempty"`
-	AddMetadataFromFilePath *bool  `yaml:"add_metadata_from_file_path,omitempty"`
-	Format                  string `yaml:"format,omitempty"`
-	From                    string `yaml:"from,omitempty"`
-	To                      string `yaml:"to,omitempty"`
-	IfExpr                  string `yaml:"if,omitempty"`
-	ParseFrom               string `yaml:"parse_from,omitempty"`
-	ParseTo                 string `yaml:"parse_to,omitempty"`
-	Field                   string `yaml:"field,omitempty"`
+	ID                      string            `yaml:"id,omitempty"`
+	Type                    string            `yaml:"type,omitempty"`
+	AddMetadataFromFilePath *bool             `yaml:"add_metadata_from_file_path,omitempty"`
+	Format                  string            `yaml:"format,omitempty"`
+	From                    string            `yaml:"from,omitempty"`
+	To                      string            `yaml:"to,omitempty"`
+	IfExpr                  string            `yaml:"if,omitempty"`
+	ParseFrom               string            `yaml:"parse_from,omitempty"`
+	ParseTo                 string            `yaml:"parse_to,omitempty"`
+	Field                   string            `yaml:"field,omitempty"`
+	TraceID                 OperatorAttribute `yaml:"trace_id,omitempty"`
+	SpanID                  OperatorAttribute `yaml:"span_id,omitempty"`
+	TraceFlags              OperatorAttribute `yaml:"trace_flags,omitempty"`
+	Regex                   string            `yaml:"regex,omitempty"`
+	Trace                   TraceAttribute    `yaml:"trace,omitempty"`
+}
+
+type TraceAttribute struct {
+	TraceID    OperatorAttribute `yaml:"trace_id,omitempty"`
+	SpanID     OperatorAttribute `yaml:"span_id,omitempty"`
+	TraceFlags OperatorAttribute `yaml:"trace_flags,omitempty"`
+}
+type OperatorAttribute struct {
+	ParseFrom string `yaml:"parse_from,omitempty"`
 }
 
 type Processors struct {
