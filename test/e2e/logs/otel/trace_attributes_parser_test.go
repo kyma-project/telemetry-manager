@@ -106,5 +106,27 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				))))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
+
+		It("Should remove trace_id, span_id, trace_flags, and traceparent attributes", func() {
+			Consistently(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveOtelTimestamp(Not(BeEmpty())),
+					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveLogRecordBody(Not(BeEmpty())),
+					HaveAttributes(Not(HaveKey("trace_id"))),
+					HaveAttributes(Not(HaveKey("span_id"))),
+					HaveAttributes(Not(HaveKey("trace_flags"))),
+					HaveAttributes(Not(HaveKey("traceparent"))),
+				))))
+			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
 	})
 })
