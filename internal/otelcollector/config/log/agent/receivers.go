@@ -17,7 +17,8 @@ const (
 	initialInterval = "5s"
 	maxInterval     = "30s"
 	// Time after which logs will not be discarded. Retrying never stops if value is 0.
-	maxElapsedTime = "300s"
+	maxElapsedTime        = "300s"
+	traceParentExpression = "^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$"
 )
 
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOptions) *FileLog {
@@ -116,7 +117,7 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 		makeTraceParser(),
 	)
 
-	return operators
+	return append(operators, makeRemoveTraceAttributes()...)
 }
 
 // parse the log with containerd parser
@@ -225,7 +226,7 @@ func makeTraceParentParser() Operator {
 		ID:        "trace-parent-parser",
 		Type:      "regex_parser",
 		IfExpr:    "attributes.trace_id == nil",
-		Regex:     "^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$",
+		Regex:     traceParentExpression,
 		ParseFrom: "attributes.traceparent",
 		Trace: TraceAttribute{
 			TraceID: OperatorAttribute{
@@ -237,6 +238,31 @@ func makeTraceParentParser() Operator {
 			TraceFlags: OperatorAttribute{
 				ParseFrom: "attributes.trace_flags",
 			},
+		},
+	}
+}
+
+func makeRemoveTraceAttributes() []Operator {
+	return []Operator{
+		{
+			ID:    "remove-trace-id",
+			Type:  "remove",
+			Field: "attributes.trace_id",
+		},
+		{
+			ID:    "remove-span-id",
+			Type:  "remove",
+			Field: "attributes.span_id",
+		},
+		{
+			ID:    "remove-trace-flags",
+			Type:  "remove",
+			Field: "attributes.trace_flags",
+		},
+		{
+			ID:    "remove-traceparent",
+			Type:  "remove",
+			Field: "attributes.traceparent",
 		},
 	}
 }

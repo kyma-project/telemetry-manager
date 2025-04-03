@@ -115,6 +115,18 @@ receivers:
                 parse_from: attributes.span_id
               trace_flags:
                 parse_from: attributes.trace_flags
+            - id: remove-trace-id
+              type: remove
+              field: attributes.trace_id
+            - id: remove-span-id
+              type: remove
+              field: attributes.span_id
+            - id: remove-trace-flags
+              type: remove
+              field: attributes.trace_flags
+            - id: remove-traceparent
+              type: remove
+              field: attributes.traceparent
 processors:
     memory_limiter:
         check_interval: 5s
