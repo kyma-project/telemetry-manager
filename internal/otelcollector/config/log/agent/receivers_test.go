@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -314,6 +315,35 @@ func TestMakeRemoveTraceAttributes(t *testing.T) {
 			Type:   "remove",
 			Field:  "attributes.traceparent",
 			Output: "remove-trace-id",
+		},
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeNoop(t *testing.T) {
+	sp := makeNoop()
+	expectedSP := Operator{
+		ID:   "noop",
+		Type: "noop",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeTraceRouter(t *testing.T) {
+	sp := makeTraceRouter()
+	expectedSP := Operator{
+		ID:      "trace-router",
+		Type:    "router",
+		Default: "noop",
+		Routes: []Router{
+			{
+				Expression: "attributes.trace_id != nil",
+				Output:     "trace-parser",
+			},
+			{
+				Expression: fmt.Sprintf("attributes.trace_id == nil and attributes.traceparent != nil and attributes.traceparent matches '%s'", traceParentExpression),
+				Output:     "trace-parent-parser",
+			},
 		},
 	}
 	assert.Equal(t, expectedSP, sp)
