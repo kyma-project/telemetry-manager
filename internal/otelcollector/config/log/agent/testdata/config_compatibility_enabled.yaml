@@ -77,10 +77,10 @@ receivers:
               if: body matches '^{.*}$'
               parse_from: body
               parse_to: attributes
-            - id: copy-body-to-attributes-original
-              type: copy
+            - id: move-body-to-attributes-log-original
+              type: move
               from: body
-              to: attributes.original
+              to: attributes.log.original
             - id: move-message-to-body
               type: move
               from: attributes.message
