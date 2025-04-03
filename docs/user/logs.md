@@ -27,8 +27,8 @@ You can choose whether you also want an agent, based on a DaemonSet of an OTel C
 
 ![Architecture](./assets/logs-arch.drawio.svg)
 
-1. Application containers print JSON logs to `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related Node. Istio is configured to write access logs to `stdout` as well.
-2. An OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails and parses them.
+1. Application containers print JSON logs to the `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related Node. Istio is configured to write access logs to `stdout` as well.
+2. If you choose to use the agent, an OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails and parses them.
 3. An application (exposing logs in OTLP) sends logs to the central log gateway service. Istio is configured to push access logs with OTLP as well.
 4. The gateway and agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
 5. Telemetry Manager configures the agent and gateway according to the `LogPipeline` resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
@@ -289,7 +289,7 @@ Telemetry Manager continuously watches the Secret referenced with the **secretKe
 > [!TIP]
 > If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### 4. Activate application input
+### 4. Activate Application Input
 
 To enable collection of logs printed by containers to the `stdout/stderr` channel, define a LogPipeline that has the `application` section enabled as input:
 
@@ -332,13 +332,13 @@ spec:
       ...
 ```
 
-When tailing the log files from the container runtime, the logs will be transformed into a OTLP entry. Learn more about the flow of the log record through the steps and the available log attributes in the following stages:
+After tailing the log files from the container runtime, the payload of the log lines are transformed into a OTLP entry. Learn more about the flow of the log record through the steps and the available log attributes in the following stages:
 
-- [Log tailing](#log-tailing)
-- [JSON parsing](#json-parsing)
-- [Severity parsing](#severity-parsing)
+- [Log Tailing](#log-tailing)
+- [JSON Parsing](#json-parsing)
+- [Severity Parsing](#severity-parsing)
 - [Trace Parsing](#trace-parsing)
-- [Log body determination](#log-body-determination)
+- [Log Body Determination](#log-body-determination)
 
 The following example assumes that there’s a container `myContainer` of Pod `myPod`, running in namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
 
@@ -364,7 +364,7 @@ The agent reads the log message from a log file managed by the container runtime
 }
 ```
 
-After the tailing, the created OTLP record will look like:
+After the tailing, the created OTLP record looks like the following example:
 
 ```json
 {
@@ -384,13 +384,13 @@ After the tailing, the created OTLP record will look like:
 }
 ```
 
-Hereby, all information identifying the actual source of the log like the Container, Pod and Namespace name are getting enriched as resource attributes following the [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). Further metadata like the original file name and channel are enriched as log attributes following the [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The `time` value provided in the container runtime log entry is used as `time` attribute in the new OTEL record, as it is very close to the actual time when the log happened. Additionally, the `observedTime` is set with the time when the agent actual read the log record as recommended by the [OTEL log specification](https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-observedtimestamp). The actual log payload gets moved into the OTLP `body` field.
+All information identifying the source of the log (like the Container, Pod and Namespace name) are enriched as resource attributes following the [Kubernetes conventions](https://opentelemetry.io/docs/specs/semconv/resource/k8s/). Further metadata like the original file name and channel are enriched as log attributes following the [log attribute conventions](https://opentelemetry.io/docs/specs/semconv/general/logs/). The `time` value provided in the container runtime log entry is used as `time` attribute in the new OTel record, as it is very close to the actual time when the log happened. Additionally, the `observedTime` is set with the time when the agent actual read the log record as recommended by the [OTel log specification](https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-observedtimestamp). The log payload is moved to the OTLP `body` field.
 
 #### JSON Parsing
 
-If the value of the `body` is a JSON document, the value gets parsed and all JSON root attributes will get enriched as additional log attributes. The orginial body gets moved into the `log.original` attribute (managed via LogPipeline `input.application.keepOriginalBody: true` attribute).
+If the value of the `body` is a JSON document, the value is parsed and all JSON root attributes are enriched as additional log attributes. The original body is moved into the `log.original` attribute (managed via LogPipeline `input.application.keepOriginalBody: true` attribute).
 
-The resulting OTLP record will look like this:
+The resulting OTLP record looks like the following example:
 
 ```json
 {
@@ -417,17 +417,17 @@ The resulting OTLP record will look like this:
 
 #### Severity Parsing
 
-As typicaly a log message has a log level written to a field `level`, the agent will try to parse the log attribute `level` with a [severity parser](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/severity_parser.md). If that is successful, the log attribute gets transformed into the OTEL `severityText`and `severityNumber` attributes.
+Typically, a log message has a log level written to a field `level`. Based on that, the agent tries to parse the log attribute `level` with a [severity parser](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/severity_parser.md). If that is successful, the log attribute is transformed into the OTel `severityText`and `severityNumber` attributes.
 
 #### Trace Parsing
 
-OTLP natively supports attaching trace context to log records. Hereby, the ganet will try to parse it from log attributes with name `trace_id`, `span_id` and `trace_flags`.
+OTLP natively supports attaching trace context to log records. The log agent tries to parse it from the log attributes called `trace_id`, `span_id`, and `trace_flags`. Also, a log attribute with name "traceparent" will try to get parsed following the [W3C-Tracecontext specification](https://www.w3.org/TR/trace-context/#traceparent-header).
 
 #### Log Body Determination
 
-As the actual log message should be located in the `body` attribute, the agent will move a log attribute with name `message` or `msg` into the `body`.
+Because the actual log message is typically located in the `body` attribute, the agent moves a log attribute called `message` (or `msg`) into the `body`.
 
-The resulting overal log record before further gateway typical enrichement logic will look like:
+At this point, before further enrichment, the resulting overall log record looks like the following example:
 
 ```json
 {
@@ -503,7 +503,7 @@ Kyma bundles modules that can be involved in user flows. If you want to collect 
 
 ### Istio
 
-The Istio module is crucial as it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy. Using the Istio telemetry API you can enable access logs for the Ingress Gateway and the proxies individually.
+The Istio module is crucial as it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy. Using the Istio telemetry API, you can enable access logs for the Ingress Gateway and the proxies individually.
 
 The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-logs`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry), place a resource to the `istio-system` namespace. The following code samples help setting up the Istio logging feature:
 
