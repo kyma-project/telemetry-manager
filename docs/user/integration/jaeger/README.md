@@ -153,8 +153,7 @@ Jaeger can be provided as a data source integrated into Grafana. For example, it
 
 ### Authentication
 
-By itself, Jaeger does not provide authentication mechanisms. To secure Jaeger, follow the instructions provided in the [Jaeger documentation
-](https://www.jaegertracing.io/docs/2.0/faq/#how-do-i-configure-authentication-for-jaeger-ui).
+By itself, Jaeger does not provide authentication mechanisms. To secure Jaeger, follow the instructions provided in the [Jaeger documentation](https://www.jaegertracing.io/docs/2.0/faq/#how-do-i-configure-authentication-for-jaeger-ui).
 
 ### Expose Jaeger
 
