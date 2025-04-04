@@ -111,7 +111,7 @@ done`
 		logCmd = `while true
 do
 	echo '{"name": "John Doe", "age": 30, "city": "Munich", "trace_id": "255c2212dd02c02ac59a923ff07aec74", "span_id": "c5c735f175ad06a6", "trace_flags": "01"}'
-	sleep 5
+	sleep 1
 done`
 	}
 
