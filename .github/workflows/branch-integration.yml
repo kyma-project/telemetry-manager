@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
@@ -56,16 +56,26 @@ jobs:
         GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
 
     - name: Upload Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       if: success() || failure()
       with:
         name: ${{ github.job }}-${{ matrix.k8s_version }}-report
         path: junit-report*.xml
 
     - name: Send slack message on failure
-      uses: slackapi/slack-github-action@e7edf37c48bfa3d4fa8267a7e432dc349c083ae9
+      uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
       if: failure()
       with:
-        payload-file-path: ".github/workflows/slack-message.json"
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+        webhook-type: incoming-webhook
+        payload: |
+          text: ""
+          blocks:
+            - type: "section"
+              text:
+                type: "mrkdwn"
+                text: "Workflow <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|*${{ github.workflow }}*> has status *${{ job.status }}*"
+            - type: "section"
+              text:
+                type: "mrkdwn"
+                text: "See related <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|commit>"

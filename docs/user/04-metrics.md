@@ -16,7 +16,7 @@ The Metric feature is optional. If you don't want to use it, simply don't set up
 
 - Before you can collect metrics data from a component, it must expose (or instrument) the metrics. Typically, it instruments specific metrics for the used language runtime (like Node.js) and custom metrics specific to the business logic. Also, the exposure can be in different formats, like the pull-based Prometheus format or the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
 
-- If you want to use Prometheus-based metrics, you must have instrumented your application using a library like the [Prometheus client librar](https://prometheus.io/docs/instrumenting/clientlibs/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
+- If you want to use Prometheus-based metrics, you must have instrumented your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
 
 - For the instrumentation, you typically use an SDK, namely the [Prometheus client libraries](https://prometheus.io/docs/instrumenting/clientlibs/) or the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/). Both libraries provide extensions to activate language-specific auto-instrumentation like for Node.js, and an API to implement custom instrumentation.
 
@@ -24,7 +24,7 @@ The Metric feature is optional. If you don't want to use it, simply don't set up
 
 In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OpenTelemetry Protocol (OTLP)](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma modules and users’ applications send the metrics data.
 
-Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can retrieve metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
+Optionally, the Telemetry module provides a DaemonSet of an OTel Collector acting as an agent. This agent can pull metrics of a workload and the Istio sidecar in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime-specific metrics for the workload.
 
 ![Architecture](./assets/metrics-arch.drawio.svg)
 
@@ -65,7 +65,9 @@ In the following steps, you can see how to construct and deploy a typical Metric
 
 To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline` and save the file (named, for example, `metricpipeline.yaml`).
 
-This configures the underlying OTel Collector with a pipeline for metrics and opens a push endpoint that is accessible with the `telemetry-otlp-metrics` service. For details, see [Gateway Usage](./gateways.md#usage). The following push URLs are set up:
+This configures the underlying OTel Collector with a pipeline for metrics and opens a push endpoint that is accessible with the `telemetry-otlp-metrics` service. For details, see [Gateway Usage](./gateways.md#usage).
+
+The following push URLs are set up:
 
 - GRPC: `http://telemetry-otlp-metrics.kyma-system:4317`
 - HTTP: `http://telemetry-otlp-metrics.kyma-system:4318`
@@ -327,7 +329,7 @@ Only if Istio sidecar is not present, you can alternatively apply the annotation
 | `prometheus.io/port` (mandatory)                                 | `8080`, `9100` | none | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
 | `prometheus.io/path`                                             | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus Receiver can find metrics data.                                                                                                                                                                                                                                                                               |
 | `prometheus.io/scheme` (only relevant when annotating a Service) | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
-| `prometheus.io/param_<name>: <value>`                            | `prometheus.io/param_format: prometheus` | none | Instructs Prometheus Receiver to pass name-value pairs as URL parameters when calling the metrics endpoint |
+| `prometheus.io/param_<name>: <value>`                            | `prometheus.io/param_format: prometheus` | none | Instructs Prometheus Receiver to pass name-value pairs as URL parameters when calling the metrics endpoint. |
 
 If you're running the Pod targeted by a Service with Istio, Istio must be able to derive the [appProtocol](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol) from the Service port definition; otherwise the communication for scraping the metric endpoint cannot be established. You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the `appProtocol` attribute.
 
@@ -354,7 +356,7 @@ spec:
 ```
 
 > [!NOTE]
-> The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
+> The Metric agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the annotation `prometheus.io/scheme=http`. For related troubleshooting, see [Log Entry: Failed to Scrape Prometheus Endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
 
 ### 5. Monitor Pipeline Health
 
@@ -364,7 +366,7 @@ Metrics for Pipelines and the Telemetry Module:
 
 | Metric                          | Description                                                                                                                                              | Availability                                                |
 |---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
-| kyma.resource.status.conditions | Value represents status of different conditions reported by the resource.  Possible values are 1 ("True"), 0 ("False"), and -1 (other status values) | Available for both, the pipeline and the Telemetry resource |
+| kyma.resource.status.conditions | Value represents status of different conditions reported by the resource.  Possible values are 1 ("True"), 0 ("False"), and -1 (other status values) | Available for both, the pipelines and the Telemetry resource |
 | kyma.resource.status.state      | Value represents the state of the resource (if present)                                                                                                  | Available for the Telemetry resource                        |
 
 Metric Attributes for Monitoring:
@@ -400,10 +402,10 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-By default, metrics for all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet and Job) are collected.
+By default, metrics for all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet, and Job) are collected.
 To enable or disable the collection of metrics for a specific resource, use the `resources` section in the `runtime` input.
 
-The following example collects only DaemonSet, Deployment, StatefulSet and Job metrics:
+The following example collects only DaemonSet, Deployment, StatefulSet, and Job metrics:
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -558,7 +560,7 @@ For details, see the list of available [Envoy metrics](https://www.envoyproxy.io
 
 By default, Envoy metrics collection is disabled.
 
-To activate Envoy metrics, enable the `envoyMetrics` section in the MetricPipeline specification under the `istio` input.
+To activate Envoy metrics, enable the `envoyMetrics` section in the MetricPipeline specification under the `istio` input:
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -775,7 +777,7 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 **Solution**:
 
 1. Check the `telemetry-metric-gateway` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`. Also, check your observability backend to investigate potential causes.
-2. If backend is limiting the rate by refusing metrics, try the options desribed in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
+2. If backend is limiting the rate by refusing metrics, try the options described in [Gateway Buffer Filling Up](#gateway-buffer-filling-up).
 3. Otherwise, take the actions appropriate to the cause indicated in the logs.
 
 ### Only Istio Metrics Arrive at the Backend
@@ -792,20 +794,20 @@ To detect and fix such situations, check the [pipeline status](./resources/05-me
 
 ### Log Entry: Failed to Scrape Prometheus Endpoint
 
-**Symptom**: Custom metrics don't arrive at the destination and the OTel Collector produces log entries saying "Failed to scrape Prometheus endpoint", such as the following example:
+**Symptom**: Custom metrics don't arrive at the destination. The OTel Collector produces log entries saying "Failed to scrape Prometheus endpoint", such as the following example:
 
 ```bash
 2023-08-29T09:53:07.123Z warn internal/transaction.go:111 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
 ```
 <!-- markdown-link-check-disable-next-line -->
-**Cause 1**: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
+**Cause 1**: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-Based Metrics](#_4-activate-prometheus-based-metrics).
 
 **Solution 1**: You can either set up 'STRICT' mTLS mode or HTTP scraping:
 
 - Configure the workload using “STRICT” mTLS mode (for example, by applying a corresponding PeerAuthentication).
 - Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 <!-- markdown-link-check-disable-next-line -->
-**Cause 2**: The Service definition enabling the scrape with Prometheus annotations does not reveal the application protocol to use in the port definition. For details, see [Activate Prometheus-based metrics](#_4-activate-prometheus-based-metrics).
+**Cause 2**: The Service definition enabling the scrape with Prometheus annotations does not reveal the application protocol to use in the port definition. For details, see [Activate Prometheus-Based Metrics](#_4-activate-prometheus-based-metrics).
 
 **Solution 2**: Define the application protocol in the Service port definition by either prefixing the port name with the protocol, like in `http-metrics` or define the `appProtocol` attribute.
 

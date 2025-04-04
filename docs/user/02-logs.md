@@ -117,7 +117,7 @@ spec:
 
 ### 2. Filter Your Input
 
-By default, input is collected from all namespaces, except the system namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default.
+By default, input is collected from all namespaces, except the system namespaces (`kube-system`, `istio-system`, `kyma-system`), which are excluded by default.
 
 To filter your application logs by namespace or container, use an input spec to restrict or specify which resources you want to include. For example, you can define the namespaces to include in the input collection, exclude namespaces from the input collection, or choose that only system namespaces are included. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
@@ -326,7 +326,7 @@ Telemetry Manager continuously watches the Secret referenced with the **secretKe
 
 ### 5. Deploy the Pipeline
 
-To activate the constructed LogPipeline, apply the  `logpipeline.yaml` resource file in your cluster:
+To activate the LogPipeline, apply the  `logpipeline.yaml` resource file in your cluster:
 
 ```bash
 kubectl apply -f logpipeline.yaml
