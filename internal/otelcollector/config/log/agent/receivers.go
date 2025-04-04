@@ -17,7 +17,8 @@ const (
 	initialInterval = "5s"
 	maxInterval     = "30s"
 	// Time after which logs will not be discarded. Retrying never stops if value is 0.
-	maxElapsedTime = "300s"
+	maxElapsedTime        = "300s"
+	traceParentExpression = "^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$"
 )
 
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOptions) *FileLog {
@@ -112,9 +113,13 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 		makeMoveMessageToBody(),
 		makeMoveMsgToBody(),
 		makeSeverityParser(),
+		makeTraceRouter(),
+		makeTraceParentParser(),
+		makeTraceParser(),
 	)
+	operators = append(operators, makeRemoveTraceAttributes()...)
 
-	return operators
+	return append(operators, makeNoop())
 }
 
 // parse the log with containerd parser
@@ -198,5 +203,97 @@ func makeSeverityParser() Operator {
 		Type:      "severity_parser",
 		ParseFrom: "attributes.level",
 		IfExpr:    "attributes.level != nil",
+	}
+}
+
+func makeTraceRouter() Operator {
+	return Operator{
+		ID:      "trace-router",
+		Type:    "router",
+		Default: "noop",
+		Routes: []Router{
+			{
+				Expression: "attributes.trace_id != nil",
+				Output:     "trace-parser",
+			},
+			{
+				Expression: fmt.Sprintf("attributes.trace_id == nil and attributes.traceparent != nil and attributes.traceparent matches '%s'", traceParentExpression),
+				Output:     "trace-parent-parser",
+			},
+		},
+	}
+}
+
+// set the severity level
+func makeTraceParser() Operator {
+	return Operator{
+		ID:     "trace-parser",
+		Type:   "trace_parser",
+		Output: "remove-trace-id",
+		TraceID: OperatorAttribute{
+			ParseFrom: "attributes.trace_id",
+		},
+		SpanID: OperatorAttribute{
+			ParseFrom: "attributes.span_id",
+		},
+		TraceFlags: OperatorAttribute{
+			ParseFrom: "attributes.trace_flags",
+		},
+	}
+}
+
+func makeTraceParentParser() Operator {
+	return Operator{
+		ID:        "trace-parent-parser",
+		Type:      "regex_parser",
+		Regex:     traceParentExpression,
+		ParseFrom: "attributes.traceparent",
+		Output:    "remove-trace-parent",
+		Trace: TraceAttribute{
+			TraceID: OperatorAttribute{
+				ParseFrom: "attributes.trace_id",
+			},
+			SpanID: OperatorAttribute{
+				ParseFrom: "attributes.span_id",
+			},
+			TraceFlags: OperatorAttribute{
+				ParseFrom: "attributes.trace_flags",
+			},
+		},
+	}
+}
+
+func makeRemoveTraceAttributes() []Operator {
+	return []Operator{
+		{
+			ID:     "remove-trace-parent",
+			Type:   "remove",
+			Field:  "attributes.traceparent",
+			Output: "remove-trace-id",
+		},
+		{
+			ID:     "remove-trace-id",
+			Type:   "remove",
+			Field:  "attributes.trace_id",
+			Output: "remove-span-id",
+		},
+		{
+			ID:     "remove-span-id",
+			Type:   "remove",
+			Field:  "attributes.span_id",
+			Output: "remove-trace-flags",
+		},
+		{
+			ID:    "remove-trace-flags",
+			Type:  "remove",
+			Field: "attributes.trace_flags",
+		},
+	}
+}
+
+func makeNoop() Operator {
+	return Operator{
+		ID:   "noop",
+		Type: "noop",
 	}
 }

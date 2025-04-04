@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,7 @@ func TestReceiverCreator(t *testing.T) {
 		"/var/log/pods/kyma-system_*system-logs-agent*/*/*.log",
 	}
 	expectedIncludePaths := []string{"/var/log/pods/*/*/*.log"}
+
 	tt := []struct {
 		name              string
 		pipeline          telemetryv1alpha1.LogPipeline
@@ -31,7 +33,7 @@ func TestReceiverCreator(t *testing.T) {
 		{
 			name:     "should create receiver with keepOriginalBody true",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build(),
-			expectedOperators: []Operator{
+			expectedOperators: append(append([]Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
@@ -40,12 +42,16 @@ func TestReceiverCreator(t *testing.T) {
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
-			},
+				makeTraceRouter(),
+				makeTraceParentParser(),
+				makeTraceParser(),
+			}, makeRemoveTraceAttributes()...),
+				makeNoop()),
 		},
 		{
 			name:     "should create receiver with keepOriginalBody false",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
-			expectedOperators: []Operator{
+			expectedOperators: append(append([]Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
@@ -53,7 +59,11 @@ func TestReceiverCreator(t *testing.T) {
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
-			},
+				makeTraceRouter(),
+				makeTraceParentParser(),
+				makeTraceParser(),
+			}, makeRemoveTraceAttributes()...),
+				makeNoop()),
 		},
 	}
 
@@ -236,4 +246,105 @@ func TestIncludePath(t *testing.T) {
 			require.Equal(t, tc.expected, includePaths)
 		})
 	}
+}
+
+func TestMakeTraceParser(t *testing.T) {
+	sp := makeTraceParser()
+	expectedSP := Operator{
+		ID:     "trace-parser",
+		Type:   "trace_parser",
+		Output: "remove-trace-id",
+		TraceID: OperatorAttribute{
+			ParseFrom: "attributes.trace_id",
+		},
+		SpanID: OperatorAttribute{
+			ParseFrom: "attributes.span_id",
+		},
+		TraceFlags: OperatorAttribute{
+			ParseFrom: "attributes.trace_flags",
+		},
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeTraceParentParser(t *testing.T) {
+	sp := makeTraceParentParser()
+	expectedSP := Operator{
+		ID:        "trace-parent-parser",
+		Type:      "regex_parser",
+		Regex:     traceParentExpression,
+		ParseFrom: "attributes.traceparent",
+		Output:    "remove-trace-parent",
+		Trace: TraceAttribute{
+			TraceID: OperatorAttribute{
+				ParseFrom: "attributes.trace_id",
+			},
+			SpanID: OperatorAttribute{
+				ParseFrom: "attributes.span_id",
+			},
+			TraceFlags: OperatorAttribute{
+				ParseFrom: "attributes.trace_flags",
+			},
+		},
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeRemoveTraceAttributes(t *testing.T) {
+	sp := makeRemoveTraceAttributes()
+	expectedSP := []Operator{
+		{
+			ID:     "remove-trace-parent",
+			Type:   "remove",
+			Field:  "attributes.traceparent",
+			Output: "remove-trace-id",
+		},
+		{
+			ID:     "remove-trace-id",
+			Type:   "remove",
+			Field:  "attributes.trace_id",
+			Output: "remove-span-id",
+		},
+		{
+			ID:     "remove-span-id",
+			Type:   "remove",
+			Field:  "attributes.span_id",
+			Output: "remove-trace-flags",
+		},
+		{
+			ID:    "remove-trace-flags",
+			Type:  "remove",
+			Field: "attributes.trace_flags",
+		},
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeNoop(t *testing.T) {
+	sp := makeNoop()
+	expectedSP := Operator{
+		ID:   "noop",
+		Type: "noop",
+	}
+	assert.Equal(t, expectedSP, sp)
+}
+
+func TestMakeTraceRouter(t *testing.T) {
+	sp := makeTraceRouter()
+	expectedSP := Operator{
+		ID:      "trace-router",
+		Type:    "router",
+		Default: "noop",
+		Routes: []Router{
+			{
+				Expression: "attributes.trace_id != nil",
+				Output:     "trace-parser",
+			},
+			{
+				Expression: fmt.Sprintf("attributes.trace_id == nil and attributes.traceparent != nil and attributes.traceparent matches '%s'", traceParentExpression),
+				Output:     "trace-parent-parser",
+			},
+		},
+	}
+	assert.Equal(t, expectedSP, sp)
 }
