@@ -311,7 +311,7 @@ func TestMakeRemoveTraceAttributes(t *testing.T) {
 			Field: "attributes.trace_flags",
 		},
 		{
-			ID:     "remove-traceparent",
+			ID:     "remove-trace-parent",
 			Type:   "remove",
 			Field:  "attributes.traceparent",
 			Output: "remove-trace-id",

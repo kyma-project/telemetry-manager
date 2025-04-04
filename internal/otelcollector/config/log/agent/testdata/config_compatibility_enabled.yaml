@@ -135,7 +135,7 @@ receivers:
             - id: remove-trace-flags
               type: remove
               field: attributes.trace_flags
-            - id: remove-traceparent
+            - id: remove-trace-parent
               type: remove
               field: attributes.traceparent
               output: remove-trace-id
