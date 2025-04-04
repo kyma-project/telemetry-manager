@@ -36,7 +36,7 @@ func TestReceiverCreator(t *testing.T) {
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
 				makeJSONParser(),
-				makeCopyBodyToOriginal(),
+				makeMoveBodyToLogOriginal(),
 				makeMoveMessageToBody(),
 				makeMoveMsgToBody(),
 				makeSeverityParser(),
@@ -104,15 +104,15 @@ func TestExpectedMakeJSONParser(t *testing.T) {
 	assert.Equal(t, expectedJP, jp)
 }
 
-func TestMakeCopyBodyToOriginal(t *testing.T) {
-	cbto := makeCopyBodyToOriginal()
+func TestMakeMoveBodyToLogOriginal(t *testing.T) {
+	mbto := makeMoveBodyToLogOriginal()
 	expectedCBTO := Operator{
-		ID:   "copy-body-to-attributes-original",
-		Type: "copy",
+		ID:   "move-body-to-attributes-log-original",
+		Type: "move",
 		From: "body",
-		To:   "attributes.original",
+		To:   "attributes[\"log.original\"]",
 	}
-	assert.Equal(t, expectedCBTO, cbto)
+	assert.Equal(t, expectedCBTO, mbto)
 }
 
 func TestMakeDropAttributeLogTag(t *testing.T) {

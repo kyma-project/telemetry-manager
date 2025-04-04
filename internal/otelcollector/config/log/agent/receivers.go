@@ -105,7 +105,7 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 		makeJSONParser(),
 	}
 	if keepOriginalBody {
-		operators = append(operators, makeCopyBodyToOriginal())
+		operators = append(operators, makeMoveBodyToLogOriginal())
 	}
 
 	operators = append(operators,
@@ -159,13 +159,13 @@ func makeJSONParser() Operator {
 	}
 }
 
-// copy logs present in body to attributes.original
-func makeCopyBodyToOriginal() Operator {
+// move logs present in body to attributes.log.original
+func makeMoveBodyToLogOriginal() Operator {
 	return Operator{
-		ID:   "copy-body-to-attributes-original",
-		Type: "copy",
+		ID:   "move-body-to-attributes-log-original",
+		Type: "move",
 		From: "body",
-		To:   "attributes.original",
+		To:   "attributes[\"log.original\"]",
 	}
 }
 
