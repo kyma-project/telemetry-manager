@@ -294,6 +294,12 @@ func TestMakeRemoveTraceAttributes(t *testing.T) {
 	sp := makeRemoveTraceAttributes()
 	expectedSP := []Operator{
 		{
+			ID:     "remove-trace-parent",
+			Type:   "remove",
+			Field:  "attributes.traceparent",
+			Output: "remove-trace-id",
+		},
+		{
 			ID:     "remove-trace-id",
 			Type:   "remove",
 			Field:  "attributes.trace_id",
@@ -309,12 +315,6 @@ func TestMakeRemoveTraceAttributes(t *testing.T) {
 			ID:    "remove-trace-flags",
 			Type:  "remove",
 			Field: "attributes.trace_flags",
-		},
-		{
-			ID:     "remove-trace-parent",
-			Type:   "remove",
-			Field:  "attributes.traceparent",
-			Output: "remove-trace-id",
 		},
 	}
 	assert.Equal(t, expectedSP, sp)

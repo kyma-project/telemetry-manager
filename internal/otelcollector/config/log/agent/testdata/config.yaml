@@ -121,6 +121,10 @@ receivers:
               trace_flags:
                 parse_from: attributes.trace_flags
               output: remove-trace-id
+            - id: remove-trace-parent
+              type: remove
+              field: attributes.traceparent
+              output: remove-trace-id
             - id: remove-trace-id
               type: remove
               field: attributes.trace_id
@@ -132,10 +136,6 @@ receivers:
             - id: remove-trace-flags
               type: remove
               field: attributes.trace_flags
-            - id: remove-trace-parent
-              type: remove
-              field: attributes.traceparent
-              output: remove-trace-id
             - id: noop
               type: noop
 processors:
