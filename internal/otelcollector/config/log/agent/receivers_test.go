@@ -110,7 +110,7 @@ func TestMakeMoveBodyToLogOriginal(t *testing.T) {
 		ID:   "move-body-to-attributes-log-original",
 		Type: "move",
 		From: "body",
-		To:   "attributes.log.original",
+		To:   "attributes[\"log.original\"]",
 	}
 	assert.Equal(t, expectedCBTO, mbto)
 }

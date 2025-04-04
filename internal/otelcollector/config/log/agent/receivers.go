@@ -165,7 +165,7 @@ func makeMoveBodyToLogOriginal() Operator {
 		ID:   "move-body-to-attributes-log-original",
 		Type: "move",
 		From: "body",
-		To:   "attributes.log.original",
+		To:   "attributes[\"log.original\"]",
 	}
 }
 

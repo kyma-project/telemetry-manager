@@ -77,7 +77,7 @@ receivers:
             - id: move-body-to-attributes-log-original
               type: move
               from: body
-              to: attributes.log.original
+              to: attributes["log.original"]
             - id: move-message-to-body
               type: move
               from: attributes.message
