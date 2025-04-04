@@ -1,6 +1,6 @@
 # Application Logs (OTLP)
 
-The Telemetry module collects logs of workloads in your Kyma cluster and ship them to a backend for further analysis.
+With application logs, you can debug an application and derive the internal state of an application. The Telemetry module supports observing your applications with logs of the correct severity level and context.
 
 ## Overview
 
@@ -453,6 +453,8 @@ At this point, before further enrichment, the resulting overall log record looks
 ```
 
 ### 5. Deactivate OTLP Logs
+
+If you have more than one backend, you can specify from which `input` logs are pushed to each backend. For example, if OTLP logs should go to one backend and only logs from the tail input to the other backend, then disable the OTLP input for the second backend.
 
 By default, `otlp` input is enabled.
 
