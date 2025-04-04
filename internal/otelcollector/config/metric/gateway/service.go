@@ -24,13 +24,13 @@ func makeAttributesEnrichmentPipelineServiceConfig(pipelineName string) config.P
 	}
 }
 
-func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline) config.Pipeline {
+func makeOutputPipelineServiceConfig(pipeline *telemetryv1alpha1.MetricPipeline, filterConf pipelineDropFilterConfig) config.Pipeline {
 	var processors []string
 
 	input := pipeline.Spec.Input
 
 	processors = append(processors, "transform/set-instrumentation-scope-kyma")
-	processors = append(processors, makeInputSourceFiltersIDs(input)...)
+	processors = append(processors, makeInputSourceFiltersIDs(filterConf)...)
 	processors = append(processors, makeNamespaceFiltersIDs(input, pipeline)...)
 	processors = append(processors, makeRuntimeResourcesFiltersIDs(input)...)
 	processors = append(processors, makeDiagnosticMetricFiltersIDs(input)...)
@@ -54,26 +54,26 @@ func makeReceiversIDs() []string {
 	return receivers
 }
 
-func makeInputSourceFiltersIDs(input telemetryv1alpha1.MetricPipelineInput) []string {
+func makeInputSourceFiltersIDs(filterConf pipelineDropFilterConfig) []string {
 	var processors []string
 
-	if !metricpipelineutils.IsRuntimeInputEnabled(input) {
+	if filterConf.requireRuntimeInputFilter {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
 
-	if !metricpipelineutils.IsPrometheusInputEnabled(input) {
+	if filterConf.requirePrometheusInputFilter {
 		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
 
-	if !metricpipelineutils.IsIstioInputEnabled(input) {
+	if filterConf.requireIstioInputFilter {
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
 
-	if !metricpipelineutils.IsIstioInputEnabled(input) || !metricpipelineutils.IsEnvoyMetricsEnabled(input) {
+	if filterConf.requireEnvoyMetricsFilter {
 		processors = append(processors, "filter/drop-envoy-metrics-if-disabled")
 	}
 
-	if !metricpipelineutils.IsOTLPInputEnabled(input) {
+	if filterConf.requireOTLPInputFilter {
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}
 
