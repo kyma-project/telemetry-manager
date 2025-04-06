@@ -11,7 +11,7 @@ require (
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335
 	github.com/mikefarah/yq/v4 v4.45.1
-	github.com/onsi/ginkgo/v2 v2.23.3
+	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/vektra/mockery/v2 v2.53.3
 	github.com/vladopajic/go-test-coverage/v2 v2.12.0
 	github.com/yeya24/promlinter v0.3.0
@@ -203,7 +203,7 @@ require (
 	github.com/google/go-github/v56 v56.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20241210010833-40e02aabc2ad // indirect
+	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -422,7 +422,7 @@ require (
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
