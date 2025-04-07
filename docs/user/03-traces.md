@@ -64,12 +64,13 @@ To ship traces to a new OTLP output, create a resource of the kind `TracePipelin
 
 This configures the underlying OTel Collector with a pipeline for traces and opens a push endpoint that is accessible with the `telemetry-otlp-traces` service. For details, see [Gateway Usage](./gateways.md#usage). The following push URLs are set up:
 
-- GRPC: http://telemetry-otlp-traces.kyma-system:4317
-- HTTP: http://telemetry-otlp-traces.kyma-system:4318
+- GRPC: 'http://telemetry-otlp-traces.kyma-system:4317'
+- HTTP: 'http://telemetry-otlp-traces.kyma-system:4318'
 
 The default protocol for shipping the data to a backend is GRPC, but you can choose HTTP instead. Depending on the configured protocol, an `otlp` or an `otlphttp` exporter is used. Ensure that the correct port is configured as part of the endpoint.
 
 - For GRPC, use:
+
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
@@ -326,7 +327,7 @@ Kyma bundles several modules that can be involved in user flows. Applications in
 
 ### Istio
 
-The Istio module is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope and are enriched with trace context if it hasn’t happened earlier. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data. If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
+The Istio module is crucial in distributed tracing because it provides the [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Typically, this is where external requests enter the cluster scope and are enriched with trace context if it hasn’t happened earlier. Furthermore, every component that’s part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data. If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
 
 The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` namespace. The following code samples help setting up the Istio tracing feature:
 
@@ -340,7 +341,7 @@ The following example configures all Istio proxies with the `kyma-traces` extens
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: tracing-default
+  name: mesh-default
   namespace: istio-system
 spec:
   tracing:
@@ -362,7 +363,7 @@ To configure an "always-on" sampling, set the sampling rate to 100%:
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: tracing-default
+  name: mesh-default
   namespace: istio-system
 spec:
   tracing:
@@ -379,7 +380,7 @@ If you need specific settings for individual namespaces or workloads, place addi
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: tracing-default
+  name: tracing
   namespace: my-namespace
 spec:
   selector:
@@ -399,7 +400,7 @@ To enable the propagation of the [W3C Trace Context](https://www.w3.org/TR/trace
   apiVersion: telemetry.istio.io/v1
   kind: Telemetry
   metadata:
-    name: tracing-default
+    name: mesh-default
     namespace: istio-system
   spec:
     tracing:
