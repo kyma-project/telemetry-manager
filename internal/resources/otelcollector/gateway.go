@@ -75,7 +75,7 @@ type GatewayApplierDeleter struct {
 	baseMemoryRequest    resource.Quantity
 	dynamicMemoryRequest resource.Quantity
 
-	podSpecOptions []podSpecOption
+	podSpecOptions []commonresources.PodSpecOption
 }
 
 type GatewayApplyOptions struct {
@@ -113,13 +113,13 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 		dynamicCPURequest:    logGatewayDynamicCPURequest,
 		baseMemoryRequest:    logGatewayBaseMemoryRequest,
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
-		podSpecOptions: []podSpecOption{
+		podSpecOptions: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			withAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
-			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-			withSecurityContext(makeLogGatewaySecurityContext()),
-			withPodSecurityContext(makeLogGatewayPodSecurityContext()),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithSecurityContext(makeLogGatewaySecurityContext()),
+			commonresources.WithPodSecurityContext(makeLogGatewayPodSecurityContext()),
 		},
 	}
 }
@@ -145,13 +145,13 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 		dynamicCPURequest:    metricGatewayDynamicCPURequest,
 		baseMemoryRequest:    metricGatewayBaseMemoryRequest,
 		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
-		podSpecOptions: []podSpecOption{
+		podSpecOptions: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			withAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(MetricGatewayName))),
-			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-			withSecurityContext(makeMetricGatewaySecurityContext()),
-			withPodSecurityContext(makeMetricGatewayPodSecurityContext()),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(MetricGatewayName))),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithSecurityContext(makeMetricGatewaySecurityContext()),
+			commonresources.WithPodSecurityContext(makeMetricGatewayPodSecurityContext()),
 		},
 	}
 }
@@ -178,13 +178,13 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 		baseMemoryRequest:    traceGatewayBaseMemoryRequest,
 		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
 
-		podSpecOptions: []podSpecOption{
+		podSpecOptions: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			withAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(TraceGatewayName))),
-			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
-			withSecurityContext(makeTraceGatewaySecurityContext()),
-			withPodSecurityContext(makeTraceGatewayPodSecurityContext()),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(TraceGatewayName))),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithSecurityContext(makeTraceGatewaySecurityContext()),
+			commonresources.WithPodSecurityContext(makeTraceGatewayPodSecurityContext()),
 		},
 	}
 }

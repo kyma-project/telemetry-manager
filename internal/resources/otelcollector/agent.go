@@ -52,7 +52,7 @@ type AgentApplierDeleter struct {
 	namespace     string
 	rbac          rbac
 
-	podSpecOptions []podSpecOption
+	podSpecOptions []commonresources.PodSpecOption
 }
 
 type AgentApplyOptions struct {
@@ -84,15 +84,15 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 		namespace:     namespace,
 		rbac:          makeLogAgentRBAC(namespace),
 
-		podSpecOptions: []podSpecOption{
+		podSpecOptions: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithResources(makeAgentResourceRequirements(logAgentMemoryLimit, logAgentMemoryRequest, logAgentCPURequest)),
-			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			withVolumes(volumes),
-			withVolumeMounts(volumeMounts),
-			withSecurityContext(makeLogAgentSecurityContext()),
-			withPodSecurityContext(makeLogAgentPodSecurityContext()),
+			commonresources.WithVolumes(volumes),
+			commonresources.WithVolumeMounts(volumeMounts),
+			commonresources.WithSecurityContext(makeLogAgentSecurityContext()),
+			commonresources.WithPodSecurityContext(makeLogAgentPodSecurityContext()),
 		},
 	}
 }
@@ -110,16 +110,16 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 		namespace:     namespace,
 		rbac:          makeMetricAgentRBAC(namespace),
 
-		podSpecOptions: []podSpecOption{
+		podSpecOptions: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithResources(makeAgentResourceRequirements(metricAgentMemoryLimit, metricAgentMemoryRequest, metricAgentCPURequest)),
-			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			withVolumes([]corev1.Volume{makeIstioCertVolume()}),
-			withVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
-			withSecurityContext(makeMetricAgentSecurityContext()),
-			withPodSecurityContext(makeMetricAgentPodSecurityContext()),
+			commonresources.WithVolumes([]corev1.Volume{makeIstioCertVolume()}),
+			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
+			commonresources.WithSecurityContext(makeMetricAgentSecurityContext()),
+			commonresources.WithPodSecurityContext(makeMetricAgentPodSecurityContext()),
 		},
 	}
 }
