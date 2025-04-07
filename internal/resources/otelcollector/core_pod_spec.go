@@ -19,7 +19,12 @@ const (
 	fieldPathNodeName = "spec.nodeName"
 )
 
-func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) corev1.PodSpec {
+func makePodSpec(
+	baseName,
+	image string,
+	podOpts []commonresources.PodSpecOption,
+	containerOpts []commonresources.ContainerOption,
+) corev1.PodSpec {
 	volumes := []corev1.Volume{
 		{
 			Name: "config",
@@ -42,18 +47,21 @@ func makePodSpec(baseName, image string, opts ...commonresources.PodSpecOption) 
 		},
 	}
 
-	// commonOpts are shared options for all collectors
-	commonOpts := []commonresources.PodSpecOption{
-		commonresources.WithContainerName(collectorContainerName),
+	defaultContainerOpts := []commonresources.ContainerOption{
 		commonresources.WithArgs([]string{"--config=/conf/" + collectorConfigFileName}),
 		commonresources.WithEnvVarsFromSecret(baseName),
 		commonresources.WithProbes(healthProbe, healthProbe),
 		commonresources.WithRunAsUser(collectorUser),
-		commonresources.WithVolumes(volumes),
 		commonresources.WithVolumeMounts(volumeMounts),
 	}
+	containerOpts = append(defaultContainerOpts, containerOpts...)
 
-	opts = append(commonOpts, opts...)
+	defaultPodOpts := []commonresources.PodSpecOption{
+		commonresources.WithContainer(collectorContainerName, image, containerOpts...),
+		commonresources.WithPodRunAsUser(collectorUser),
+		commonresources.WithVolumes(volumes),
+	}
+	podOpts = append(defaultPodOpts, podOpts...)
 
-	return commonresources.MakePodSpec(baseName, image, opts...)
+	return commonresources.MakePodSpec(baseName, podOpts...)
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"slices"
 	"strings"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -75,7 +76,8 @@ type GatewayApplierDeleter struct {
 	baseMemoryRequest    resource.Quantity
 	dynamicMemoryRequest resource.Quantity
 
-	podSpecOptions []commonresources.PodSpecOption
+	podOpts       []commonresources.PodSpecOption
+	containerOpts []commonresources.ContainerOption
 }
 
 type GatewayApplyOptions struct {
@@ -113,13 +115,13 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string) *Ga
 		dynamicCPURequest:    logGatewayDynamicCPURequest,
 		baseMemoryRequest:    logGatewayBaseMemoryRequest,
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
-		podSpecOptions: []commonresources.PodSpecOption{
+		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
+		},
+		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithSecurityContext(makeLogGatewaySecurityContext()),
-			commonresources.WithPodSecurityContext(makeLogGatewayPodSecurityContext()),
 		},
 	}
 }
@@ -145,13 +147,13 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string) 
 		dynamicCPURequest:    metricGatewayDynamicCPURequest,
 		baseMemoryRequest:    metricGatewayBaseMemoryRequest,
 		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
-		podSpecOptions: []commonresources.PodSpecOption{
+		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(MetricGatewayName))),
+		},
+		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithSecurityContext(makeMetricGatewaySecurityContext()),
-			commonresources.WithPodSecurityContext(makeMetricGatewayPodSecurityContext()),
 		},
 	}
 }
@@ -177,14 +179,13 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string) *
 		dynamicCPURequest:    traceGatewayDynamicCPURequest,
 		baseMemoryRequest:    traceGatewayBaseMemoryRequest,
 		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
-
-		podSpecOptions: []commonresources.PodSpecOption{
+		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(TraceGatewayName))),
+		},
+		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithSecurityContext(makeTraceGatewaySecurityContext()),
-			commonresources.WithPodSecurityContext(makeTraceGatewayPodSecurityContext()),
 		},
 	}
 }
@@ -279,9 +280,8 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 
 	resources := gad.makeGatewayResourceRequirements(opts)
 
-	podSpecs := gad.podSpecOptions
-	podSpecs = append(podSpecs,
-		commonresources.WithResources(resources),
+	containerOpts := slices.Clone(gad.containerOpts)
+	containerOpts = append(containerOpts,
 		commonresources.WithResources(resources),
 		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
@@ -289,7 +289,8 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	podSpec := makePodSpec(
 		gad.baseName,
 		gad.image,
-		podSpecs...,
+		gad.podOpts,
+		containerOpts,
 	)
 
 	return &appsv1.Deployment{
@@ -430,82 +431,4 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	}
 
 	return annotations
-}
-
-func makeMetricGatewaySecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(collectorUser),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{"ALL"},
-		},
-	}
-}
-
-func makeMetricGatewayPodSecurityContext() *corev1.PodSecurityContext {
-	return &corev1.PodSecurityContext{
-		RunAsUser:    ptr.To(collectorUser),
-		RunAsNonRoot: ptr.To(true),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-	}
-}
-
-func makeLogGatewaySecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(collectorUser),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{"ALL"},
-		},
-	}
-}
-
-func makeLogGatewayPodSecurityContext() *corev1.PodSecurityContext {
-	return &corev1.PodSecurityContext{
-		RunAsNonRoot: ptr.To(true),
-		RunAsUser:    ptr.To(collectorUser),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-	}
-}
-
-func makeTraceGatewaySecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(collectorUser),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{"ALL"},
-		},
-	}
-}
-
-func makeTraceGatewayPodSecurityContext() *corev1.PodSecurityContext {
-	return &corev1.PodSecurityContext{
-		RunAsUser:    ptr.To(collectorUser),
-		RunAsNonRoot: ptr.To(true),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-	}
 }

@@ -256,12 +256,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	podLabels[commonresources.LabelKeyIstioInject] = "false"
 
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
-	resources := makeResourceRequirements()
-	podSpec := makePodSpec(ad.Config.BaseName, ad.Config.Deployment.Image, configPath, configFile,
-		commonresources.WithPriorityClass(ad.Config.Deployment.PriorityClassName),
-		commonresources.WithResources(resources),
-		commonresources.WithGoMemLimitEnvVar(memoryLimit),
-	)
+	podSpec := ad.makePodSpec(ad.Config.BaseName, ad.Config.Deployment.Image, configPath, configFile)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -285,7 +280,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	}
 }
 
-func makePodSpec(baseName, image, configPath, configFile string, opts ...commonresources.PodSpecOption) corev1.PodSpec {
+func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile string) corev1.PodSpec {
 	var defaultMode int32 = 420
 
 	var prometheusUser int64 = 10001
@@ -325,20 +320,6 @@ func makePodSpec(baseName, image, configPath, configFile string, opts ...commonr
 		{Name: storageMountName, MountPath: storagePath},
 	}
 
-	securityContext := &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(prometheusUser),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{"ALL"},
-		},
-	}
-
 	liveness := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
@@ -365,27 +346,26 @@ func makePodSpec(baseName, image, configPath, configFile string, opts ...commonr
 		SuccessThreshold: 1, //nolint:mnd // 5 failures
 	}
 
-	defaultOpts := []commonresources.PodSpecOption{
-		commonresources.WithArgs(args),
-		commonresources.WithContainerName("self-monitor"),
-		commonresources.WithContainerPort("http-web", ports.PrometheusPort),
-		commonresources.WithVolumeMounts(volumeMounts),
+	resources := makeResourceRequirements()
+
+	opts := []commonresources.PodSpecOption{
 		commonresources.WithVolumes(volumes),
-		commonresources.WithSecurityContext(securityContext),
-		commonresources.WithProbes(liveness, readiness),
+		commonresources.WithPodRunAsUser(prometheusUser),
+		commonresources.WithPriorityClass(ad.Config.Deployment.PriorityClassName),
 		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
-		commonresources.WithPodSecurityContext(&corev1.PodSecurityContext{
-			RunAsUser:    ptr.To(prometheusUser),
-			RunAsNonRoot: ptr.To(true),
-			SeccompProfile: &corev1.SeccompProfile{
-				Type: corev1.SeccompProfileTypeRuntimeDefault,
-			},
-		}),
+
+		commonresources.WithContainer("self-monitor", image,
+			commonresources.WithArgs(args),
+			commonresources.WithPort("http-web", ports.PrometheusPort),
+			commonresources.WithVolumeMounts(volumeMounts),
+			commonresources.WithProbes(liveness, readiness),
+			commonresources.WithResources(resources),
+			commonresources.WithRunAsUser(prometheusUser),
+			commonresources.WithGoMemLimitEnvVar(memoryLimit),
+		),
 	}
 
-	opts = append(defaultOpts, opts...)
-
-	return commonresources.MakePodSpec(baseName, image, opts...)
+	return commonresources.MakePodSpec(baseName, opts...)
 }
 
 func makeResourceRequirements() corev1.ResourceRequirements {
