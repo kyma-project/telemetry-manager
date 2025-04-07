@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -272,6 +273,13 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 }
 
 func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string) *appsv1.DaemonSet {
+	annotations := make(map[string]string)
+	annotations[commonresources.AnnotationKeyChecksumConfig] = checksum
+	annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
+
+	podLabels := Labels()
+	maps.Copy(podLabels, aad.extraPodLabels)
+
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -285,17 +293,16 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						commonresources.AnnotationKeyChecksumConfig:           checksum,
-						commonresources.AnnotationKeyIstioExcludeInboundPorts: fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics),
-					},
-					Labels: Labels(),
+					Annotations: annotations,
+					Labels:      podLabels,
 				},
 				Spec: commonresources.MakePodSpec(LogAgentName,
 					commonresources.WithPriorityClass(aad.priorityClassName),
 					commonresources.WithVolumes(aad.fluentBitVolumes()),
 					commonresources.WithContainer("fluent-bit", aad.fluentBitImage,
+						commonresources.WithCapabilities("FOWNER"),
 						commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", LogAgentName)),
+						commonresources.WithRunAsRoot(),
 						commonresources.WithPort("http", ports.HTTP),
 						commonresources.WithProbes(aad.fluentBitLivenessProbe(), aad.fluentBitReadinessProbe()),
 						commonresources.WithResources(aad.fluentBitResources()),
@@ -332,12 +339,12 @@ func (aad *AgentApplierDeleter) fluentBitResources() corev1.ResourceRequirements
 
 func (aad *AgentApplierDeleter) exporterResources() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: aad.memoryLimit,
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    resource.MustParse("1m"),
+			corev1.ResourceMemory: resource.MustParse("5Mi"),
 		},
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    aad.cpuRequest,
-			corev1.ResourceMemory: aad.memoryRequest,
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: resource.MustParse("50Mi"),
 		},
 	}
 }
