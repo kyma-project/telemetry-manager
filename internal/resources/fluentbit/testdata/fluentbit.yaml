@@ -1,5 +1,43 @@
 apiVersion: v1
 data:
+  custom_parsers.conf: |2
+
+    [PARSER]
+        Name docker_no_time
+        Format json
+        Time_Keep Off
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+  fluent-bit.conf: |2
+
+    [SERVICE]
+        Daemon Off
+        Flush 1
+        Log_Level warn
+        Parsers_File custom_parsers.conf
+        Parsers_File dynamic-parsers/parsers.conf
+        HTTP_Server On
+        HTTP_Listen 0.0.0.0
+        HTTP_Port 2020
+        storage.path /data/flb-storage/
+        storage.metrics on
+
+    @INCLUDE dynamic/*.conf
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit
+  namespace: kyma-system
+---
+apiVersion: v1
+data:
   file1: dummy-file-content
 kind: ConfigMap
 metadata:
@@ -57,6 +95,22 @@ metadata:
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
   name: telemetry-fluent-bit-luascripts
+  namespace: kyma-system
+---
+apiVersion: v1
+data:
+  parsers.conf: ""
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit-parsers
   namespace: kyma-system
 ---
 apiVersion: v1
@@ -170,6 +224,176 @@ spec:
 status:
   loadBalancer: {}
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: telemetry-fluent-bit
+  namespace: kyma-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit
+  namespace: kyma-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: telemetry
+      app.kubernetes.io/name: fluent-bit
+  template:
+    metadata:
+      annotations:
+        checksum/config: f63cb2ee03d10a92328014e8994d8a8c2258801a5a0777a07bb08add7cdb9329
+        traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: agent
+        app.kubernetes.io/instance: telemetry
+        app.kubernetes.io/managed-by: telemetry-manager
+        app.kubernetes.io/name: fluent-bit
+        app.kubernetes.io/part-of: telemetry
+        kyma-project.io/module: telemetry
+        sidecar.istio.io/inject: "true"
+        telemetry.kyma-project.io/log-export: "true"
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: telemetry-fluent-bit-env
+            optional: true
+        image: foo-fluentbit
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        name: fluent-bit
+        ports:
+        - containerPort: 2020
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: http
+        resources:
+          limits:
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 50Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - FOWNER
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /fluent-bit/etc
+          name: shared-fluent-bit-config
+        - mountPath: /fluent-bit/etc/fluent-bit.conf
+          name: config
+          subPath: fluent-bit.conf
+        - mountPath: /fluent-bit/etc/dynamic/
+          name: dynamic-config
+        - mountPath: /fluent-bit/etc/dynamic-parsers/
+          name: dynamic-parsers-config
+        - mountPath: /fluent-bit/etc/custom_parsers.conf
+          name: config
+          subPath: custom_parsers.conf
+        - mountPath: /fluent-bit/scripts/filter-script.lua
+          name: luascripts
+          subPath: filter-script.lua
+        - mountPath: /var/log
+          name: varlog
+          readOnly: true
+        - mountPath: /data
+          name: varfluentbit
+        - mountPath: /files
+          name: dynamic-files
+        - mountPath: /fluent-bit/etc/output-tls-config/
+          name: output-tls-config
+          readOnly: true
+      - args:
+        - --storage-path=/data/flb-storage/
+        - --metric-name=telemetry_fsbuffer_usage_bytes
+        image: foo-exporter
+        name: exporter
+        ports:
+        - containerPort: 2021
+          name: http-metrics
+          protocol: TCP
+        resources:
+          limits:
+            memory: 50Mi
+          requests:
+            cpu: 1m
+            memory: 5Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /data
+          name: varfluentbit
+      priorityClassName: foo-prio-class
+      securityContext:
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: telemetry-fluent-bit
+      volumes:
+      - configMap:
+          name: telemetry-fluent-bit
+        name: config
+      - configMap:
+          name: telemetry-fluent-bit-luascripts
+        name: luascripts
+      - hostPath:
+          path: /var/log
+        name: varlog
+      - emptyDir: {}
+        name: shared-fluent-bit-config
+      - configMap:
+          name: telemetry-fluent-bit-sections
+          optional: true
+        name: dynamic-config
+      - configMap:
+          name: telemetry-fluent-bit-parsers
+          optional: true
+        name: dynamic-parsers-config
+      - configMap:
+          name: telemetry-fluent-bit-files
+          optional: true
+        name: dynamic-files
+      - hostPath:
+          path: /var/telemetry-fluent-bit
+        name: varfluentbit
+      - name: output-tls-config
+        secret:
+          secretName: telemetry-fluent-bit-output-tls-config
+  updateStrategy: {}
+status:
+  currentNumberScheduled: 0
+  desiredNumberScheduled: 0
+  numberMisscheduled: 0
+  numberReady: 0
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -208,4 +432,43 @@ spec:
   policyTypes:
   - Ingress
   - Egress
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit
+  namespace: kyma-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: null
+  name: telemetry-fluent-bit
+  namespace: kyma-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: telemetry-fluent-bit
+subjects:
+- kind: ServiceAccount
+  name: telemetry-fluent-bit
+  namespace: kyma-system
 ---
