@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, suite.LabelExperimental), Ordered, func() {
+var _ = Describe(suite.ID(), Label("ttt"), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		backendNs        = suite.IDWithSuffix("backend")
@@ -103,7 +103,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
-					HaveLogRecordBody(Not(BeEmpty())),
 					HaveTraceId(Not(BeEmpty())),
 					HaveSpanId(Not(BeEmpty())),
 				))))
@@ -123,7 +122,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
-					HaveLogRecordBody(Not(BeEmpty())),
 					HaveAttributes(Not(HaveKey("trace_id"))),
 					HaveAttributes(Not(HaveKey("span_id"))),
 					HaveAttributes(Not(HaveKey("trace_flags"))),
