@@ -290,96 +290,102 @@ func makePodSpec(baseName, image, configPath, configFile string, opts ...commonr
 
 	var prometheusUser int64 = 10001
 
-	var containerName = "self-monitor"
-	pod := corev1.PodSpec{
-		Containers: []corev1.Container{
-			{
-				Name:  containerName,
-				Image: image,
-				Args: []string{
-					"--storage.tsdb.retention.time=" + retentionTime,
-					"--storage.tsdb.retention.size=" + retentionSize,
-					"--config.file=" + configPath + configFile,
-					"--storage.tsdb.path=" + storagePath,
-					"--log.format=" + logFormat,
-				},
-				SecurityContext: &corev1.SecurityContext{
-					Privileged:               ptr.To(false),
-					RunAsUser:                ptr.To(prometheusUser),
-					RunAsNonRoot:             ptr.To(true),
-					ReadOnlyRootFilesystem:   ptr.To(true),
-					AllowPrivilegeEscalation: ptr.To(false),
-					SeccompProfile: &corev1.SeccompProfile{
-						Type: corev1.SeccompProfileTypeRuntimeDefault,
+	args := []string{
+		"--storage.tsdb.retention.time=" + retentionTime,
+		"--storage.tsdb.retention.size=" + retentionSize,
+		"--config.file=" + configPath + configFile,
+		"--storage.tsdb.path=" + storagePath,
+		"--log.format=" + logFormat,
+	}
+
+	volumes := []corev1.Volume{
+		{
+			Name: configFileMountName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					DefaultMode: &defaultMode,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: baseName,
 					},
-					Capabilities: &corev1.Capabilities{
-						Drop: []corev1.Capability{"ALL"},
-					},
-				},
-				VolumeMounts: []corev1.VolumeMount{{Name: configFileMountName, MountPath: configPath}, {Name: storageMountName, MountPath: storagePath}},
-				Ports: []corev1.ContainerPort{
-					{
-						Name:          "http-web",
-						ContainerPort: ports.PrometheusPort,
-					},
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{Path: "/-/healthy", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
-					},
-					FailureThreshold: 5, //nolint:mnd // 5 failures
-					PeriodSeconds:    5, //nolint:mnd // 5 seconds
-					TimeoutSeconds:   3, //nolint:mnd // 3 seconds
-					SuccessThreshold: 1, //nolint:mnd // 1 success
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
-					},
-					FailureThreshold: 3, //nolint:mnd // 3 failures
-					PeriodSeconds:    5, //nolint:mnd // 5 seconds
-					TimeoutSeconds:   3, //nolint:mnd // 3 seconds
-					SuccessThreshold: 1, //nolint:mnd // 1 success
 				},
 			},
 		},
-		ServiceAccountName:            baseName,
-		TerminationGracePeriodSeconds: ptr.To(int64(300)), //nolint:mnd // 300 seconds
-		SecurityContext: &corev1.PodSecurityContext{
+		{
+			Name: storageMountName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: &storageVolumeSize,
+				},
+			},
+		},
+	}
+
+	volumeMounts := []corev1.VolumeMount{
+		{Name: configFileMountName, MountPath: configPath},
+		{Name: storageMountName, MountPath: storagePath},
+	}
+
+	securityContext := &corev1.SecurityContext{
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To(prometheusUser),
+		RunAsNonRoot:             ptr.To(true),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		},
+	}
+
+	liveness := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/-/healthy",
+				Port: intstr.IntOrString{IntVal: ports.PrometheusPort},
+			},
+		},
+		FailureThreshold: 5, //nolint:mnd // 5 failures
+		PeriodSeconds:    5, //nolint:mnd // 5 failures
+		TimeoutSeconds:   3, //nolint:mnd // 5 failures
+		SuccessThreshold: 1, //nolint:mnd // 5 failures
+	}
+
+	readiness := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/-/ready",
+				Port: intstr.IntOrString{IntVal: ports.PrometheusPort},
+			},
+		},
+		FailureThreshold: 3, //nolint:mnd // 5 failures
+		PeriodSeconds:    5, //nolint:mnd // 5 failures
+		TimeoutSeconds:   3, //nolint:mnd // 5 failures
+		SuccessThreshold: 1, //nolint:mnd // 5 failures
+	}
+
+	defaultOpts := []commonresources.PodSpecOption{
+		commonresources.WithArgs(args),
+		commonresources.WithContainerName("self-monitor"),
+		commonresources.WithContainerPort("http-web", ports.PrometheusPort),
+		commonresources.WithVolumeMounts(volumeMounts),
+		commonresources.WithVolumes(volumes),
+		commonresources.WithSecurityContext(securityContext),
+		commonresources.WithProbes(liveness, readiness),
+		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
+		commonresources.WithPodSecurityContext(&corev1.PodSecurityContext{
 			RunAsUser:    ptr.To(prometheusUser),
 			RunAsNonRoot: ptr.To(true),
 			SeccompProfile: &corev1.SeccompProfile{
 				Type: corev1.SeccompProfileTypeRuntimeDefault,
 			},
-		},
-		Volumes: []corev1.Volume{
-			{
-				Name: configFileMountName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						DefaultMode: &defaultMode,
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: baseName,
-						},
-					},
-				},
-			},
-			{
-				Name: storageMountName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: &storageVolumeSize,
-					},
-				},
-			},
-		},
+		}),
 	}
 
-	for _, opt := range opts {
-		opt(&pod)
-	}
+	opts = append(defaultOpts, opts...)
 
-	return pod
+	return commonresources.MakePodSpec(baseName, image, opts...)
 }
 
 func makeResourceRequirements() corev1.ResourceRequirements {

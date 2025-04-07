@@ -30,6 +30,15 @@ func WithContainerName(name string) PodSpecOption {
 	}
 }
 
+func WithContainerPort(name string, port int32) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.Containers[0].Ports = append(pod.Containers[0].Ports, corev1.ContainerPort{
+			Name:          name,
+			ContainerPort: port,
+		})
+	}
+}
+
 func WithEnvVarFromField(envVarName, fieldPath string) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
@@ -109,6 +118,12 @@ func WithRunAsUser(userID int64) PodSpecOption {
 func WithSecurityContext(securityContext *corev1.SecurityContext) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Containers[0].SecurityContext = securityContext
+	}
+}
+
+func WithTerminationGracePeriodSeconds(seconds int64) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.TerminationGracePeriodSeconds = &seconds
 	}
 }
 
