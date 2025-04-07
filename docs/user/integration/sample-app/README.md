@@ -32,12 +32,12 @@ The application is located in the [`telemetry-manager`](https://github.com/kyma-
 The application consists of the following Go files:
 
 - `main.go`
-    - the main method with the handler routines
-    - the initialization of the tracer and meter provider including the metric definitions
-    - auto-instrumentation of the handler routines using the OTel SDK
+  - the main method with the handler routines
+  - the initialization of the tracer and meter provider including the metric definitions
+  - auto-instrumentation of the handler routines using the OTel SDK
 - `setup.go`
-    - the setup of the tracer and meter providers using the OTel SDK
-    - configuration for either the OTLP GRPC exporters or a console exporter
+  - the setup of the tracer and meter providers using the OTel SDK
+  - configuration for either the OTLP GRPC exporters or a console exporter
 
 ### Metrics
 
@@ -66,6 +66,7 @@ By default, the exporters are configured to print to stdout, so that you can run
 1. Checkout the `telemetry-manager` repo and go to the folder `docs/user/integration/sample-app`.
 
 1. Build and start the application:
+
     ```sh
     make run
     ```
@@ -73,6 +74,7 @@ By default, the exporters are configured to print to stdout, so that you can run
 ## Deploying the Sample App
 
 ### Activate Kyma Telemetry with a backend
+
 1. Provide a tracing backend and activate it.
    Install [Jaeger in-cluster](../jaeger/README.md) or provide a custom backend supporting the OTLP protocol (like [SAP Cloud Logging](./../sap-cloud-logging/)).
 1. Provide a metric backend and activate it.
@@ -83,26 +85,32 @@ By default, the exporters are configured to print to stdout, so that you can run
 ### Deploy the sample application
 
 1. Export your namespace as a variable. Replace the `{namespace}` placeholder in the following command and run it:
+
     ```bash
     export K8S_SAMPLE_NAMESPACE="{namespace}"
     ```
 
 1. To have a secure communication enabled by default, ensure that your namespace has Istio sidecar injection enabled:
+
    ```bash
    kubectl label namespace ${K8S_SAMPLE_NAMESPACE} istio-injection=enabled
    ```
 
 1. Deploy the service using the prepared Deployment manifest and image:
+
     ```bash
     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/docs/user/integration/sample-app/deployment/deployment.yaml -n $K8S_SAMPLE_NAMESPACE
     ```
 
 1. Verify the application:
    Port-forward to the service:
+
    ```sh
    kubectl -n $K8S_SAMPLE_NAMESPACE port-forward svc/sample-app 8080
    ```
+
    and call the forward endpoint:
+
    ```sh
    curl http://localhost:8080/forward
    ```
