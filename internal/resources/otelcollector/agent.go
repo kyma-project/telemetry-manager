@@ -87,8 +87,6 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 		namespace:     namespace,
 		rbac:          makeLogAgentRBAC(namespace),
 		podOpts: []commonresources.PodSpecOption{
-			commonresources.WithPodRunAsRoot(),
-			commonresources.WithPodRunAsUser(0),
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes(volumes),
 		},

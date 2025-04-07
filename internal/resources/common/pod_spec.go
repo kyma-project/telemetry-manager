@@ -64,18 +64,6 @@ func WithVolumes(volumes []corev1.Volume) PodSpecOption {
 	}
 }
 
-func WithPodRunAsUser(userID int64) PodSpecOption {
-	return func(pod *corev1.PodSpec) {
-		pod.SecurityContext.RunAsUser = ptr.To(userID)
-	}
-}
-
-func WithPodRunAsRoot() PodSpecOption {
-	return func(pod *corev1.PodSpec) {
-		pod.SecurityContext.RunAsNonRoot = ptr.To(false)
-	}
-}
-
 func WithPriorityClass(priorityClassName string) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.PriorityClassName = priorityClassName

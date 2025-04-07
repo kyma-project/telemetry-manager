@@ -136,7 +136,6 @@ spec:
           name: prometheus-storage-volume
       securityContext:
         runAsNonRoot: true
-        runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: my-self-monitor

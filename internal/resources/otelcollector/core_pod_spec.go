@@ -58,7 +58,6 @@ func makePodSpec(
 
 	defaultPodOpts := []commonresources.PodSpecOption{
 		commonresources.WithContainer(collectorContainerName, image, containerOpts...),
-		commonresources.WithPodRunAsUser(collectorUser),
 		commonresources.WithVolumes(volumes),
 	}
 	podOpts = append(defaultPodOpts, podOpts...)
