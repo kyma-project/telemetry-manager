@@ -157,10 +157,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to reconcile fluent bit tls config secret: %w", err)
 	}
 
-	checksum, err := aad.calculateChecksum(ctx, c)
-	if err != nil {
-		return fmt.Errorf("failed to calculate config checksum: %w", err)
-	}
+	checksum := configchecksum.Calculate([]corev1.ConfigMap{*cm, *luaCm, *sectionsCm, *filesCm, *parsersCm}, []corev1.Secret{*envConfigSecret, *tlsFileConfigSecret})
 
 	daemonSet := aad.makeDaemonSet(aad.daemonSetName.Namespace, checksum)
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
@@ -490,45 +487,6 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 			},
 		},
 	}
-}
-
-func (aad *AgentApplierDeleter) calculateChecksum(ctx context.Context, c client.Client) (string, error) {
-	var baseCm corev1.ConfigMap
-	if err := c.Get(ctx, aad.daemonSetName, &baseCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", aad.daemonSetName.Namespace, aad.daemonSetName.Name, err)
-	}
-
-	var parsersCm corev1.ConfigMap
-	if err := c.Get(ctx, aad.parsersConfigMapName, &parsersCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", aad.parsersConfigMapName.Namespace, aad.parsersConfigMapName.Name, err)
-	}
-
-	var luaCm corev1.ConfigMap
-	if err := c.Get(ctx, aad.luaConfigMapName, &luaCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", aad.luaConfigMapName.Namespace, aad.luaConfigMapName.Name, err)
-	}
-
-	var sectionsCm corev1.ConfigMap
-	if err := c.Get(ctx, aad.sectionsConfigMapName, &sectionsCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", aad.sectionsConfigMapName.Namespace, aad.sectionsConfigMapName.Name, err)
-	}
-
-	var filesCm corev1.ConfigMap
-	if err := c.Get(ctx, aad.filesConfigMapName, &filesCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", aad.filesConfigMapName.Namespace, aad.filesConfigMapName.Name, err)
-	}
-
-	var envSecret corev1.Secret
-	if err := c.Get(ctx, aad.envConfigSecretName, &envSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %w", aad.envConfigSecretName.Namespace, aad.envConfigSecretName.Name, err)
-	}
-
-	var tlsSecret corev1.Secret
-	if err := c.Get(ctx, aad.tlsFileConfigSecretName, &tlsSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %w", aad.tlsFileConfigSecretName.Namespace, aad.tlsFileConfigSecretName.Name, err)
-	}
-
-	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil
 }
 
 func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
