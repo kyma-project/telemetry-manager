@@ -298,6 +298,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 				},
 				Spec: commonresources.MakePodSpec(LogAgentName,
 					commonresources.WithPriorityClass(aad.priorityClassName),
+					commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations),
 					commonresources.WithVolumes(aad.fluentBitVolumes()),
 					commonresources.WithContainer("fluent-bit", aad.fluentBitImage,
 						commonresources.WithCapabilities("FOWNER"),

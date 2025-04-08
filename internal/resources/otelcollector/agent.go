@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"slices"
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -119,10 +120,10 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 			commonresources.WithVolumes([]corev1.Volume{makeIstioCertVolume()}),
 		},
 		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithResources(makeAgentResourceRequirements(metricAgentMemoryLimit, metricAgentMemoryRequest, metricAgentCPURequest)),
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
+			commonresources.WithResources(makeAgentResourceRequirements(metricAgentMemoryLimit, metricAgentMemoryRequest, metricAgentCPURequest)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
 	}
@@ -186,7 +187,11 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
 
-	podSpec := makePodSpec(aad.baseName, aad.image, aad.podOpts, aad.containerOpts)
+	// Add pod options shared between all agents
+	podOpts := slices.Clone(aad.podOpts)
+	podOpts = append(podOpts, commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations))
+
+	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, aad.containerOpts)
 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
 	labels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)

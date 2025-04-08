@@ -32,6 +32,21 @@ var (
 	}
 )
 
+var (
+	// CriticalDaemonSetTolerations is to be used for critical DaemonSets (e.g. log or metric collectors) that must run on all nodes,
+	// even on nodes with NoSchedule or NoExecute taints.
+	CriticalDaemonSetTolerations = []corev1.Toleration{
+		{
+			Effect:   corev1.TaintEffectNoExecute,
+			Operator: corev1.TolerationOpExists,
+		},
+		{
+			Effect:   corev1.TaintEffectNoSchedule,
+			Operator: corev1.TolerationOpExists,
+		},
+	}
+)
+
 type PodSpecOption func(*corev1.PodSpec)
 
 type ContainerOption func(*corev1.Container)
@@ -79,6 +94,12 @@ func WithPriorityClass(priorityClassName string) PodSpecOption {
 func WithTerminationGracePeriodSeconds(seconds int64) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.TerminationGracePeriodSeconds = &seconds
+	}
+}
+
+func WithTolerations(tolerations []corev1.Toleration) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.Tolerations = append(pod.Tolerations, tolerations...)
 	}
 }
 
