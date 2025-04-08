@@ -52,7 +52,8 @@ type AgentApplierDeleter struct {
 	namespace     string
 	rbac          rbac
 
-	podSpecOptions []podSpecOption
+	podOpts       []commonresources.PodSpecOption
+	containerOpts []commonresources.ContainerOption
 }
 
 type AgentApplyOptions struct {
@@ -65,12 +66,14 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 	extraLabels := map[string]string{
 		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar for SDS certificates and agent-to-gateway communication
 	}
+
 	volumes := []corev1.Volume{
 		makeIstioCertVolume(),
 		makePodLogsVolume(),
 		// HostPath Should be unique for each application using it
 		makeFileLogCheckpointVolume(),
 	}
+
 	volumeMounts := []corev1.VolumeMount{
 		makeIstioCertVolumeMount(),
 		makePodLogsVolumeMount(),
@@ -83,16 +86,18 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 		image:         image,
 		namespace:     namespace,
 		rbac:          makeLogAgentRBAC(namespace),
-
-		podSpecOptions: []podSpecOption{
+		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
+			commonresources.WithVolumes(volumes),
+		},
+		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(makeAgentResourceRequirements(logAgentMemoryLimit, logAgentMemoryRequest, logAgentCPURequest)),
-			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			withVolumes(volumes),
-			withVolumeMounts(volumeMounts),
-			withSecurityContext(makeLogAgentSecurityContext()),
-			withPodSecurityContext(makeLogAgentPodSecurityContext()),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
+			commonresources.WithVolumeMounts(volumeMounts),
+			commonresources.WithRunAsUser(userRoot),
+			commonresources.WithRunAsRoot(),
+			commonresources.WithCapabilities("FOWNER"),
 		},
 	}
 }
@@ -109,17 +114,16 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string) *A
 		image:         image,
 		namespace:     namespace,
 		rbac:          makeMetricAgentRBAC(namespace),
-
-		podSpecOptions: []podSpecOption{
+		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
+			commonresources.WithVolumes([]corev1.Volume{makeIstioCertVolume()}),
+		},
+		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(makeAgentResourceRequirements(metricAgentMemoryLimit, metricAgentMemoryRequest, metricAgentCPURequest)),
-			withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
-			withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(config.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			withVolumes([]corev1.Volume{makeIstioCertVolume()}),
-			withVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
-			withSecurityContext(makeMetricAgentSecurityContext()),
-			withPodSecurityContext(makeMetricAgentPodSecurityContext()),
+			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
 	}
 }
@@ -182,7 +186,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string) *appsv
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 	maps.Copy(annotations, makeIstioAnnotations(IstioCertPath))
 
-	podSpec := makePodSpec(aad.baseName, aad.image, aad.podSpecOptions...)
+	podSpec := makePodSpec(aad.baseName, aad.image, aad.podOpts, aad.containerOpts)
 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
 	labels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)
@@ -291,57 +295,5 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      checkpointVolumeName,
 		MountPath: CheckpointVolumePath,
-	}
-}
-
-func makeMetricAgentSecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(collectorUser),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{"ALL"},
-		},
-	}
-}
-
-func makeLogAgentSecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(int64(0)),
-		RunAsNonRoot:             ptr.To(false),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-		Capabilities: &corev1.Capabilities{
-			Add:  []corev1.Capability{"FOWNER"},
-			Drop: []corev1.Capability{"ALL"},
-		},
-	}
-}
-
-func makeMetricAgentPodSecurityContext() *corev1.PodSecurityContext {
-	return &corev1.PodSecurityContext{
-		RunAsUser:    ptr.To(collectorUser),
-		RunAsNonRoot: ptr.To(true),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-	}
-}
-
-func makeLogAgentPodSecurityContext() *corev1.PodSecurityContext {
-	return &corev1.PodSecurityContext{
-		RunAsNonRoot: ptr.To(false),
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
 	}
 }
