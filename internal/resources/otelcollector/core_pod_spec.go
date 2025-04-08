@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	collectorConfigFileName       = "relay.conf"
-	collectorUser           int64 = 10001
-	collectorContainerName        = "collector"
+	configFileName       = "relay.conf"
+	containerName        = "collector"
+	userDefault    int64 = 10001
+	userRoot       int64 = 0
 )
 
 const (
@@ -33,7 +34,7 @@ func makePodSpec(
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: baseName,
 					},
-					Items: []corev1.KeyToPath{{Key: collectorConfigFileName, Path: collectorConfigFileName}},
+					Items: []corev1.KeyToPath{{Key: configFileName, Path: configFileName}},
 				},
 			},
 		},
@@ -48,16 +49,17 @@ func makePodSpec(
 	}
 
 	defaultContainerOpts := []commonresources.ContainerOption{
-		commonresources.WithArgs([]string{"--config=/conf/" + collectorConfigFileName}),
+		commonresources.WithArgs([]string{"--config=/conf/" + configFileName}),
 		commonresources.WithEnvVarsFromSecret(baseName),
 		commonresources.WithProbes(healthProbe, healthProbe),
-		commonresources.WithRunAsUser(collectorUser),
+		commonresources.WithRunAsUser(userDefault),
 		commonresources.WithVolumeMounts(volumeMounts),
 	}
 	containerOpts = append(defaultContainerOpts, containerOpts...)
 
 	defaultPodOpts := []commonresources.PodSpecOption{
-		commonresources.WithContainer(collectorContainerName, image, containerOpts...),
+		commonresources.WithContainer(containerName, image, containerOpts...),
+		commonresources.WithPodRunAsUser(userDefault),
 		commonresources.WithVolumes(volumes),
 	}
 	podOpts = append(defaultPodOpts, podOpts...)

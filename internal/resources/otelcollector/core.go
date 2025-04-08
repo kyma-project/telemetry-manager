@@ -137,7 +137,7 @@ func makeConfigMap(name types.NamespacedName, componentType string, collectorCon
 			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
 		},
 		Data: map[string]string{
-			collectorConfigFileName: collectorConfigYAML,
+			configFileName: collectorConfigYAML,
 		},
 	}
 }

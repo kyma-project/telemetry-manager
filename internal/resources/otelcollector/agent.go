@@ -95,7 +95,7 @@ func NewLogAgentApplierDeleter(image, namespace, priorityClassName string) *Agen
 			commonresources.WithEnvVarFromField(config.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
 			commonresources.WithVolumeMounts(volumeMounts),
-			commonresources.WithRunAsUser(0),
+			commonresources.WithRunAsUser(userRoot),
 			commonresources.WithRunAsRoot(),
 			commonresources.WithCapabilities("FOWNER"),
 		},

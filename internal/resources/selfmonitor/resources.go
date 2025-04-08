@@ -350,6 +350,7 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 
 	opts := []commonresources.PodSpecOption{
 		commonresources.WithVolumes(volumes),
+		commonresources.WithPodRunAsUser(prometheusUser),
 		commonresources.WithPriorityClass(ad.Config.Deployment.PriorityClassName),
 		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
 

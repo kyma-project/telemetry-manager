@@ -199,6 +199,7 @@ spec:
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
+        runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: telemetry-metric-gateway
