@@ -85,18 +85,19 @@ func makeReceiversConfig() Receivers {
 
 // addComponentsForLogPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.LogPipeline.
 func addComponentsForLogPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.LogPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	addNamespaceFilters(pipeline, cfg)
+	addNamespaceFilter(pipeline, cfg)
 	return addOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
 
-func addNamespaceFilters(pipeline *telemetryv1alpha1.LogPipeline, cfg *Config) {
-	if cfg.Processors.NamespaceFilters == nil {
-		cfg.Processors.NamespaceFilters = make(NamespaceFilters)
-	}
-
+func addNamespaceFilter(pipeline *telemetryv1alpha1.LogPipeline, cfg *Config) {
 	otlpInput := pipeline.Spec.Input.OTLP
 	if otlpInput == nil || otlpInput.Disabled {
+		// no namespace filter needed
 		return
+	}
+
+	if cfg.Processors.NamespaceFilters == nil {
+		cfg.Processors.NamespaceFilters = make(NamespaceFilters)
 	}
 
 	if shouldFilterByNamespace(otlpInput.Namespaces) {
@@ -113,7 +114,7 @@ func addOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.Conf
 
 	maps.Copy(envVars, otlpExporterEnvVars)
 
-	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+	otlpExporterID := formatOTLPExporterID(pipeline)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
