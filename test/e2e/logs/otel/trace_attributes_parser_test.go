@@ -123,6 +123,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
 					HaveOtelTimestamp(Not(BeEmpty())),
 					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveSpanId(Not(BeEmpty())),
 					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 				))))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
