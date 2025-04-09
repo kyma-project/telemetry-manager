@@ -72,16 +72,6 @@ func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder
 	return b
 }
 
-func (b *LogPipelineBuilder) WithApplicationInputDisabled() *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
-	}
-
-	b.input.Application.Enabled = ptr.To(false)
-
-	return b
-}
-
 func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...LogPipelineInputOptions) *LogPipelineBuilder {
 	if b.input.Application == nil {
 		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
