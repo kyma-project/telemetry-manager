@@ -213,13 +213,13 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceS
 	var filterExpressions []string
 
 	if len(namespaceSelector.Exclude) > 0 {
-		namespacesConditions := createNamespacesConditions(namespaceSelector.Exclude)
+		namespacesConditions := makeNamespacesConditions(namespaceSelector.Exclude)
 		excludeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
 	}
 
 	if len(namespaceSelector.Include) > 0 {
-		namespacesConditions := createNamespacesConditions(namespaceSelector.Include)
+		namespacesConditions := makeNamespacesConditions(namespaceSelector.Include)
 		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName), not(ottlexpr.JoinWithOr(namespacesConditions...)))
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
@@ -231,7 +231,7 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceS
 	}
 }
 
-func createNamespacesConditions(namespaces []string) []string {
+func makeNamespacesConditions(namespaces []string) []string {
 	var namespacesConditions []string
 	for _, ns := range namespaces {
 		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
