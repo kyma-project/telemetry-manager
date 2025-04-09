@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label("ttt"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		backendNs        = suite.IDWithSuffix("backend")
@@ -105,6 +105,25 @@ var _ = Describe(suite.ID(), Label("ttt"), Ordered, func() {
 					HaveObservedTimestamp(Not(BeEmpty())),
 					HaveTraceId(Not(BeEmpty())),
 					HaveSpanId(Not(BeEmpty())),
+					HaveTraceId(Equal("255c2212dd02c02ac59a923ff07aec74")),
+				))))
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should parse traceparent", func() {
+			Eventually(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveOtelTimestamp(Not(BeEmpty())),
+					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveTraceId(Equal("80e1afed08e019fc1110464cfa66635c")),
 				))))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -126,6 +145,26 @@ var _ = Describe(suite.ID(), Label("ttt"), Ordered, func() {
 					HaveAttributes(Not(HaveKey("span_id"))),
 					HaveAttributes(Not(HaveKey("trace_flags"))),
 					HaveAttributes(Not(HaveKey("traceparent"))),
+				))))
+			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should have span_id log attribute but no trace data, not parsable", func() {
+			Consistently(func(g Gomega) {
+				resp, err := suite.ProxyClient.Get(backendExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
+				bodyContent, err := io.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(bodyContent).To(HaveFlatOtelLogs(ContainElement(SatisfyAll(
+					HaveOtelTimestamp(Not(BeEmpty())),
+					HaveObservedTimestamp(Not(BeEmpty())),
+					HaveTraceId(BeEmpty()),
+					HaveSpanId(BeEmpty()),
+					HaveAttributes(HaveKey("span_id")),
 				))))
 			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

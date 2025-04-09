@@ -291,6 +291,7 @@ func makeRemoveTraceAttributes() []Operator {
 	}
 }
 
+// The noop operator is required because of router operator, an entry that does not match any of the routes is dropped and not processed further, to avoid that we add a noop operator as default route
 func makeNoop() Operator {
 	return Operator{
 		ID:   "noop",
