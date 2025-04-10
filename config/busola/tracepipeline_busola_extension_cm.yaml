@@ -168,6 +168,10 @@ data:
                 children:
                   - name: Protocol
                     source: spec.output.otlp.protocol
+    resourceGraph:
+      colorVariant: 2
+      dataSources:
+        - source: relatedSecrets
   form: |
     - path: spec.output
       widget: FormGroup
@@ -383,3 +387,16 @@ data:
               - 'True'
             critical:
               - 'False'
+  dataSources: |-
+    relatedSecrets:
+      resource:
+        kind: Secret
+        version: v1
+      filter: |-
+          $item.metadata.name =  $root.spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.name or 
+          $item.metadata.name =  $root.spec.output.otlp.authentication.basic.password.valueFrom.secretKeyRef.name or 
+          $item.metadata.name = $root.spec.output.otlp.endpoint.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.headers.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.ca.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.cert.valueFrom.secretKeyRef.name or
+          $item.metadata.name = $root.spec.output.otlp.tls.key.valueFrom.secretKeyRef.name
