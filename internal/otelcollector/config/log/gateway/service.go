@@ -11,7 +11,7 @@ import (
 func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipeline {
 	processorIDs := []string{"memory_limiter"}
 
-	if shouldFilterByNamespace(pipeline.Spec.Input.OTLP.Namespaces) {
+	if pipeline.Spec.Input.OTLP != nil && shouldFilterByNamespace(pipeline.Spec.Input.OTLP.Namespaces) {
 		processorIDs = append(processorIDs, formatNamespaceFilterID(pipeline.Name))
 	}
 

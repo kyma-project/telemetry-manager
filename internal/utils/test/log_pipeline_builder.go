@@ -90,9 +90,19 @@ func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...LogPipel
 	return b
 }
 
-func (b *LogPipelineBuilder) WithOTLPInput() *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...InputOptions) *LogPipelineBuilder {
 	if b.input.OTLP == nil {
 		b.input.OTLP = &telemetryv1alpha1.OTLPInput{}
+	}
+
+	b.input.OTLP.Disabled = !enabled
+
+	if len(opts) == 0 {
+		return b
+	}
+
+	for _, opt := range opts {
+		opt(b.input.OTLP.Namespaces)
 	}
 
 	return b
