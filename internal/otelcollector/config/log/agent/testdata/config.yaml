@@ -92,6 +92,52 @@ receivers:
               type: severity_parser
               if: attributes.level != nil
               parse_from: attributes.level
+            - id: trace-router
+              type: router
+              routes:
+                - expr: attributes.trace_id != nil
+                  output: trace-parser
+                - expr: attributes.trace_id == nil and attributes.traceparent != nil and attributes.traceparent matches '^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
+                  output: trace-parent-parser
+              default: noop
+            - id: trace-parent-parser
+              type: regex_parser
+              parse_from: attributes.traceparent
+              regex: ^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$
+              trace:
+                trace_id:
+                    parse_from: attributes.trace_id
+                span_id:
+                    parse_from: attributes.span_id
+                trace_flags:
+                    parse_from: attributes.trace_flags
+              output: remove-trace-parent
+            - id: trace-parser
+              type: trace_parser
+              trace_id:
+                parse_from: attributes.trace_id
+              span_id:
+                parse_from: attributes.span_id
+              trace_flags:
+                parse_from: attributes.trace_flags
+              output: remove-trace-id
+            - id: remove-trace-parent
+              type: remove
+              field: attributes.traceparent
+              output: remove-trace-id
+            - id: remove-trace-id
+              type: remove
+              field: attributes.trace_id
+              output: remove-span-id
+            - id: remove-span-id
+              type: remove
+              field: attributes.span_id
+              output: remove-trace-flags
+            - id: remove-trace-flags
+              type: remove
+              field: attributes.trace_flags
+            - id: noop
+              type: noop
 processors:
     memory_limiter:
         check_interval: 5s
