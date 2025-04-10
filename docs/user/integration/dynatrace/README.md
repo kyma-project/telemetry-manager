@@ -264,13 +264,12 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 You can view logs, traces, and metrics in Dynatrace dashboards:
 
-- To view the status of the Dynatrace integration with the Kyma Telemetry module, manually import the file [Telemetry Module Status](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/dynatrace/telemetry-resource-metrics.json).
-
-> [!WARNING]
-> Kyma Telemetry resources contain the following custom OpenTelemetry resource attributes:
-> - `k8s.resource.name`
-> - `k8s.resource.group`
-> - `k8s.resource.kind`
-> - `k8s.resource.version`
-> 
-> For the dashboard to function properly, these metrics must be added to the allow list of OpenTelemetry metrics. To make these configuration changes, go to Settings > Metrics > OpenTelemetry metrics.
+- To view the status of the Dynatrace integration with the Kyma Telemetry module, manually import the file [Telemetry Module Status](./telemetry-resource-metrics.json).
+    > [!WARNING]
+    > Kyma Telemetry resources contain the following custom OpenTelemetry resource attributes:
+    > - `k8s.resource.name`
+    > - `k8s.resource.group`
+    > - `k8s.resource.kind`
+    > - `k8s.resource.version`
+    > 
+    > For the dashboard to function properly, these attributes must be added to the allow list of OpenTelemetry metrics resource attributes. To make these configuration changes, go to Settings > Metrics > OpenTelemetry metrics > Allow list: resource and scope attributes.
