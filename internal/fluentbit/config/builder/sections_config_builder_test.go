@@ -125,6 +125,11 @@ func TestMergeSectionsConfig(t *testing.T) {
     merge_log           on
 
 [FILTER]
+    name  modify
+    match foo.*
+    copy  time @timestamp
+
+[FILTER]
     name  grep
     match foo.*
     regex log aa
@@ -142,6 +147,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     allow_duplicated_headers true
     format                   json
     host                     localhost
+    json_date_format         iso8601
     port                     443
     retry_limit              300
     storage.total_limit_size 1G
