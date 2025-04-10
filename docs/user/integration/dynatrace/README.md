@@ -259,3 +259,18 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
     ```
 
 2. If your Secret has a different name or namespace, then download the file first and adjust the namespace and name accordingly in the 'dataSources' section of the file.
+
+## Use Dynatrace Dashboards
+
+You can view logs, traces, and metrics in Dynatrace dashboards:
+
+- To view the status of the Dynatrace integration with the Kyma Telemetry module, manually import the file [Telemetry Module Status](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/dynatrace/telemetry-resource-metrics.json).
+
+> [!WARNING]
+> Kyma Telemetry resources contain the following custom OpenTelemetry resource attributes:
+> - `k8s.resource.name`
+> - `k8s.resource.group`
+> - `k8s.resource.kind`
+> - `k8s.resource.version`
+> 
+> For the dashboard to function properly, these metrics must be added to the allow list of OpenTelemetry metrics. To make these configuration changes, go to Settings > Metrics > OpenTelemetry metrics.
