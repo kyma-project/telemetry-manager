@@ -15,6 +15,15 @@ func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.P
 		processorIDs = append(processorIDs, formatNamespaceFilterID(pipeline.Name))
 	}
 
+	processorIDs = append(processorIDs,
+		"transform/set-observed-time-if-zero",
+		"k8sattributes",
+		"resource/insert-cluster-attributes",
+		"service_enrichment",
+		"resource/drop-kyma-attributes",
+		"batch",
+	)
+
 	return config.Pipeline{
 		Receivers:  []string{"otlp"},
 		Processors: processorIDs,

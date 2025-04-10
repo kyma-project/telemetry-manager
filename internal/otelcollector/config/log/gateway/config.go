@@ -20,11 +20,11 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	DropKymaAttributes      *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
-	InsertClusterAttributes *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
-	K8sAttributes           *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
-	ResolveServiceName      *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
 	SetObsTimeIfZero        *log.TransformProcessor            `yaml:"transform/set-observed-time-if-zero,omitempty"`
+	K8sAttributes           *config.K8sAttributesProcessor     `yaml:"k8sattributes,omitempty"`
+	InsertClusterAttributes *config.ResourceProcessor          `yaml:"resource/insert-cluster-attributes,omitempty"`
+	ResolveServiceName      *config.ServiceEnrichmentProcessor `yaml:"service_enrichment,omitempty"`
+	DropKymaAttributes      *config.ResourceProcessor          `yaml:"resource/drop-kyma-attributes,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`

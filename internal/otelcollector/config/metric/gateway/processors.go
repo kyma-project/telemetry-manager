@@ -220,7 +220,12 @@ func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.NamespaceS
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := makeNamespacesConditions(namespaceSelector.Include)
-		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName), not(ottlexpr.JoinWithOr(namespacesConditions...)))
+
+		// metrics are dropped if the statement is true, so you need to negate the expression
+		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition,
+			ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName),
+			ottlexpr.Not(ottlexpr.JoinWithOr(namespacesConditions...)),
+		)
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
@@ -254,8 +259,4 @@ func otlpInputSource() string {
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeIstio),
 		ottlexpr.ScopeNameEquals(metric.InstrumentationScopeKyma),
 	)
-}
-
-func not(expression string) string {
-	return fmt.Sprintf("not(%s)", expression)
 }

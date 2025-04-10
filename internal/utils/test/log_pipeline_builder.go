@@ -101,6 +101,10 @@ func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...InputOptions) *
 		return b
 	}
 
+	if b.input.OTLP.Namespaces == nil {
+		b.input.OTLP.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
+	}
+
 	for _, opt := range opts {
 		opt(b.input.OTLP.Namespaces)
 	}
