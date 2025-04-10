@@ -47,9 +47,7 @@ func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	sb.WriteString(createCustomFilters(pipeline, multilineFilter))
 	sb.WriteString(createRecordModifierFilter(pipeline))
 	sb.WriteString(createKubernetesFilter(pipeline))
-	if logpipelineutils.IsHTTPDefined(&pipeline.Spec.Output) {
-		sb.WriteString(createTimestampModifyFilter(pipeline))
-	}
+	sb.WriteString(createTimestampModifyFilter(pipeline))
 	sb.WriteString(createCustomFilters(pipeline, nonMultilineFilter))
 	sb.WriteString(createLuaDedotFilter(pipeline))
 	sb.WriteString(createOutputSection(pipeline, config.pipelineDefaults))
@@ -119,6 +117,11 @@ func validateInput(pipeline *telemetryv1alpha1.LogPipeline) error {
 }
 
 func createTimestampModifyFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
+	output := pipeline.Spec.Output
+	if !logpipelineutils.IsHTTPDefined(&output) {
+		return ""
+	}
+
 	return NewFilterSectionBuilder().
 		AddConfigParam("name", "modify").
 		AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name)).
