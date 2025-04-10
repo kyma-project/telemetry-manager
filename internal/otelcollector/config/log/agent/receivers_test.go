@@ -33,7 +33,7 @@ func TestReceiverCreator(t *testing.T) {
 		{
 			name:     "should create receiver with keepOriginalBody true",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build(),
-			expectedOperators: append([]Operator{
+			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
@@ -50,12 +50,12 @@ func TestReceiverCreator(t *testing.T) {
 				makeRemoveSpanID(),
 				makeRemoveTraceFlags(),
 				makeNoop(),
-			}),
+			},
 		},
 		{
 			name:     "should create receiver with keepOriginalBody false",
 			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
-			expectedOperators: append([]Operator{
+			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
 				makeDropAttributeLogTag(),
@@ -71,7 +71,7 @@ func TestReceiverCreator(t *testing.T) {
 				makeRemoveSpanID(),
 				makeRemoveTraceFlags(),
 				makeNoop(),
-			}),
+			},
 		},
 	}
 
