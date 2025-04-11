@@ -59,14 +59,23 @@ func makeNamespaceFilterConfig(namespaceSelector *telemetryv1alpha1.NamespaceSel
 
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := makeNamespacesConditions(namespaceSelector.Exclude)
+
+		// Drop logs if the excluded namespaces are matched
 		excludeNamespacesExpr := ottlexpr.JoinWithOr(namespacesConditions...)
 		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
 	}
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := makeNamespacesConditions(namespaceSelector.Include)
-		// logs are dropped if the statement is true, so you need to negate the expression
-		includeNamespacesExpr := ottlexpr.Not(ottlexpr.JoinWithOr(namespacesConditions...))
+		includeNamespacesExpr := ottlexpr.JoinWithAnd(
+			// Ensure the k8s.namespace.name resource attribute is not nil,
+			// so we don't drop logs without a namespace label
+			ottlexpr.ResourceAttributeNotNil(ottlexpr.K8sNamespaceName),
+
+			// Logs are dropped if the filter expression evaluates to true,
+			// so we negate the match against included namespaces to keep only those
+			ottlexpr.Not(ottlexpr.JoinWithOr(namespacesConditions...)),
+		)
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 

@@ -9,15 +9,20 @@ import (
 )
 
 func makePipelineServiceConfig(pipeline *telemetryv1alpha1.LogPipeline) config.Pipeline {
-	processorIDs := []string{"memory_limiter"}
+	processorIDs := []string{
+		"memory_limiter",
+		// Record observed time at the beginning of the pipeline
+		"transform/set-observed-time-if-zero",
+		"k8sattributes",
+	}
 
+	// Add namespace filters after k8sattributes processor because they depend on the
+	// k8s.namespace.name resource attribute
 	if pipeline.Spec.Input.OTLP != nil && shouldFilterByNamespace(pipeline.Spec.Input.OTLP.Namespaces) {
 		processorIDs = append(processorIDs, formatNamespaceFilterID(pipeline.Name))
 	}
 
 	processorIDs = append(processorIDs,
-		"transform/set-observed-time-if-zero",
-		"k8sattributes",
 		"resource/insert-cluster-attributes",
 		"service_enrichment",
 		"resource/drop-kyma-attributes",

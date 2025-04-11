@@ -119,7 +119,7 @@ func TestProcessors(t *testing.T) {
 		actualStatements := namespaceFilters[expectedFilterID].Logs.Log
 		require.Len(t, actualStatements, 1)
 
-		expectedStatement := `not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "default")`
+		expectedStatement := `resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "kyma-system" or resource.attributes["k8s.namespace.name"] == "default")`
 		require.Equal(t, expectedStatement, actualStatements[0])
 	})
 
