@@ -33,8 +33,7 @@ export GARDENER_MACHINE_TYPE ?= $(ENV_GARDENER_MACHINE_TYPE)
 export GARDENER_MIN_NODES ?= $(ENV_GARDENER_MIN_NODES)
 export GARDENER_MAX_NODES ?= $(ENV_GARDENER_MAX_NODES)
 
-kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o jsonpath='{.spec.kubernetes.versions}' > /tmp/versions.json
-export GARDENER_K8S_VERSION_FULL=$(shell $(JQ) -r '(map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "supported")) | .[0].version) // (map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "preview")) | .[0].version)' /tmp/versions.json)
+export GARDENER_K8S_VERSION_FULL=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o jsonpath='{.spec.kubernetes.versions}' | $(JQ) -r '(map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "supported")) | .[0].version) // (map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "preview")) | .[0].version)')
 
 .PHONY: provision-gardener
 provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
