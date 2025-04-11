@@ -271,7 +271,6 @@ spec:
             name: telemetry-fluent-bit-env
             optional: true
         image: foo-fluentbit
-        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /
@@ -280,7 +279,6 @@ spec:
         ports:
         - containerPort: 2020
           name: http
-          protocol: TCP
         readinessProbe:
           httpGet:
             path: /api/v1/health
@@ -300,6 +298,9 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /fluent-bit/etc
           name: shared-fluent-bit-config
@@ -334,7 +335,6 @@ spec:
         ports:
         - containerPort: 2021
           name: http-metrics
-          protocol: TCP
         resources:
           limits:
             memory: 50Mi
@@ -348,15 +348,23 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /data
           name: varfluentbit
       priorityClassName: foo-prio-class
       securityContext:
-        runAsNonRoot: false
+        runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: telemetry-fluent-bit
+      tolerations:
+      - effect: NoExecute
+        operator: Exists
+      - effect: NoSchedule
+        operator: Exists
       volumes:
       - configMap:
           name: telemetry-fluent-bit

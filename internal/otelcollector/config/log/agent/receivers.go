@@ -17,7 +17,12 @@ const (
 	initialInterval = "5s"
 	maxInterval     = "30s"
 	// Time after which logs will not be discarded. Retrying never stops if value is 0.
-	maxElapsedTime = "300s"
+	maxElapsedTime        = "300s"
+	traceParentExpression = "^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$"
+	attributeTraceID      = "attributes.trace_id"
+	attributeSpanID       = "attributes.span_id"
+	attributeTraceFlags   = "attributes.trace_flags"
+	attributeTraceParent  = "attributes.traceparent"
 )
 
 func makeFileLogReceiver(logpipeline telemetryv1alpha1.LogPipeline, opts BuildOptions) *FileLog {
@@ -112,6 +117,14 @@ func makeOperators(logPipeline telemetryv1alpha1.LogPipeline) []Operator {
 		makeMoveMessageToBody(),
 		makeMoveMsgToBody(),
 		makeSeverityParser(),
+		makeTraceRouter(),
+		makeTraceParentParser(),
+		makeTraceParser(),
+		makeRemoveTraceParent(),
+		makeRemoveTraceID(),
+		makeRemoveSpanID(),
+		makeRemoveTraceFlags(),
+		makeNoop(),
 	)
 
 	return operators
@@ -198,5 +211,105 @@ func makeSeverityParser() Operator {
 		Type:      "severity_parser",
 		ParseFrom: "attributes.level",
 		IfExpr:    "attributes.level != nil",
+	}
+}
+
+func makeTraceRouter() Operator {
+	return Operator{
+		ID:      "trace-router",
+		Type:    "router",
+		Default: "noop",
+		Routes: []Router{
+			{
+				Expression: fmt.Sprintf("%s != nil", attributeTraceID),
+				Output:     "trace-parser",
+			},
+			{
+				Expression: fmt.Sprintf("%s == nil and %s != nil and attributes.traceparent matches '%s'", attributeTraceID, attributeTraceParent, traceParentExpression),
+				Output:     "trace-parent-parser",
+			},
+		},
+	}
+}
+
+// set the severity level
+func makeTraceParser() Operator {
+	return Operator{
+		ID:     "trace-parser",
+		Type:   "trace_parser",
+		Output: "remove-trace-id",
+		TraceID: OperatorAttribute{
+			ParseFrom: attributeTraceID,
+		},
+		SpanID: OperatorAttribute{
+			ParseFrom: attributeSpanID,
+		},
+		TraceFlags: OperatorAttribute{
+			ParseFrom: attributeTraceFlags,
+		},
+	}
+}
+
+func makeTraceParentParser() Operator {
+	return Operator{
+		ID:        "trace-parent-parser",
+		Type:      "regex_parser",
+		Regex:     traceParentExpression,
+		ParseFrom: attributeTraceParent,
+		Output:    "remove-trace-parent",
+		Trace: TraceAttribute{
+			TraceID: OperatorAttribute{
+				ParseFrom: attributeTraceID,
+			},
+			SpanID: OperatorAttribute{
+				ParseFrom: attributeSpanID,
+			},
+			TraceFlags: OperatorAttribute{
+				ParseFrom: attributeTraceFlags,
+			},
+		},
+	}
+}
+
+func makeRemoveTraceParent() Operator {
+	return Operator{
+		ID:     "remove-trace-parent",
+		Type:   "remove",
+		Field:  attributeTraceParent,
+		Output: "remove-trace-id",
+	}
+}
+
+func makeRemoveTraceID() Operator {
+	return Operator{
+		ID:     "remove-trace-id",
+		Type:   "remove",
+		Field:  attributeTraceID,
+		Output: "remove-span-id",
+	}
+}
+
+func makeRemoveSpanID() Operator {
+	return Operator{
+		ID:     "remove-span-id",
+		Type:   "remove",
+		Field:  attributeSpanID,
+		Output: "remove-trace-flags",
+	}
+}
+
+func makeRemoveTraceFlags() Operator {
+	return Operator{
+		ID:    "remove-trace-flags",
+		Type:  "remove",
+		Field: attributeTraceFlags,
+	}
+}
+
+// The noop operator is required because of router operator, an entry that does not match any of the routes is dropped and not processed further, to avoid that we add a noop operator as default route
+func makeNoop() Operator {
+	return Operator{
+		ID:   "noop",
+		Type: "noop",
 	}
 }

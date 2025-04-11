@@ -59,3 +59,11 @@ func HaveObservedTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 func HaveOtelTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.Timestamp }, matcher)
 }
+
+func HaveTraceId(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.TraceId }, matcher)
+}
+
+func HaveSpanId(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(fl FlatLogOtel) string { return fl.SpanId }, matcher)
+}

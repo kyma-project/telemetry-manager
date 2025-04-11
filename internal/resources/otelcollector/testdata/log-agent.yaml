@@ -149,10 +149,16 @@ spec:
           name: varlibfilelogreceiver
       priorityClassName: normal
       securityContext:
-        runAsNonRoot: false
+        runAsNonRoot: true
+        runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: telemetry-log-agent
+      tolerations:
+      - effect: NoExecute
+        operator: Exists
+      - effect: NoSchedule
+        operator: Exists
       volumes:
       - configMap:
           items:
