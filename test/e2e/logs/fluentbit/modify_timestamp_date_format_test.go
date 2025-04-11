@@ -75,7 +75,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should ship logs with modified date field and @timestamp to backend", func() {
+		It("Should ship logs with modified @timestamp and date field with iso8601 format to backend", func() {
 			// Log generator produces logs and fluent-bit produce date field with ISO8601 format and copy time field to @timestamp
 			Eventually(func(g Gomega) {
 				resp, err := suite.ProxyClient.Get(backendExportURL)
