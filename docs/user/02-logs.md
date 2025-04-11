@@ -448,7 +448,7 @@ The SAP Cloud Logging Service (CLS) uses a dedicated attribute called @timestamp
 
 As part of the log enrichment and processing steps described above, FluentBit's HTTP output plugin adds a new date field. This field represents the time the log was observed by FluentBit, formatted in ISO8601 with millisecond precision. Note that this value may differ slightly from the original log time. While the original log timestamp may have nanosecond precision, the FluentBit date field is limited to millisecond precision.
 
-To improve log time precision, an additional filter is configured in the FluentBit HTTP output to copy the original `time` attribute to the `@timestamp` field.
+To improve log time precision, an additional filter is configured for the FluentBit HTTP output to copy the original `time` attribute to the `@timestamp` field.
 
 ## Operations
 
