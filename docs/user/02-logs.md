@@ -442,6 +442,13 @@ The record **after** applying the JSON parser:
   "traceID": "123"
 }
 ```
+### Log Time Fields
+
+The SAP Cloud Logging Service (CLS) uses a dedicated attribute called @timestamp to represent the time of a log record. When processing a log, CLS first checks whether the record contains a date field with a valid value—either in Unix time (integer format) or in ISO8601 format. If the date field is missing or contains an invalid value, CLS will generate the @timestamp attribute based on the time the log record was received. This generated timestamp is usually later than the original log time and is often not useful in most scenarios.
+
+As part of the log enrichment and processing steps described above, FluentBit's HTTP output plugin adds a new date field. This field represents the time the log was observed by FluentBit, formatted in ISO8601 with millisecond precision. Note that this value may differ slightly from the original log time. While the original log timestamp may have nanosecond precision, the FluentBit date field is limited to millisecond precision.
+
+To improve log time precision, an additional filter is configured in the FluentBit HTTP output to copy the original `time` attribute to the `@timestamp` field.
 
 ## Operations
 
