@@ -50,7 +50,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 		return objs
 	}
 
-	Context("When a logpipeline that modify date, and @timestamp field exist", Ordered, func() {
+	Context("When a logpipeline exist with http output", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
