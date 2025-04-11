@@ -37,7 +37,7 @@ export GARDENER_MAX_NODES ?= $(ENV_GARDENER_MAX_NODES)
 provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
     
 	kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o jsonpath='{.spec.kubernetes.versions}' > /tmp/versions.json
-	export GARDENER_K8S_VERSION_FULL=$$($(JQ) -r '(map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "supported")) | .[0].version) // (map(select(.version | startswith("{GARDENER_K8S_VERSION}")) | select(.classification == "preview")) | .[0].version)' /tmp/versions.json)
+	export GARDENER_K8S_VERSION_FULL=$$($(JQ) -r '(map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "supported")) | .[0].version) // (map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "preview")) | .[0].version)' /tmp/versions.json)
 	echo "Using k8s version ${GARDENER_K8S_VERSION_FULL} for shoot ${GARDENER_CLUSTER_NAME}"
 
 	env
