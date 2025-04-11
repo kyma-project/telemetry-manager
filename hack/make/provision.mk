@@ -34,14 +34,14 @@ export GARDENER_MIN_NODES ?= $(ENV_GARDENER_MIN_NODES)
 export GARDENER_MAX_NODES ?= $(ENV_GARDENER_MAX_NODES)
 
 ifneq (,$(GARDENER_SA_PATH))
-export GARDENER_K8S_VERSION_FULL=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o go-template='{{range .spec.kubernetes.versions}}{{if and (eq .classification "supported") (lt .version "${GARDENER_K8S_VERSION}.a") (gt .version "${GARDENER_K8S_VERSION}")}}{{.version}}{{break}}{{end}}{{end}}')
+export GARDENER_K8S_VERSION_FULL=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o jsonpath='{.spec.kubernetes.versions}' | $(JQ) -r '(map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "supported")) | .[0].version) // (map(select(.version | startswith("${GARDENER_K8S_VERSION}")) | select(.classification == "preview")) | .[0].version)')
 endif
 
 .PHONY: provision-gardener
-provision-gardener: ## Provision gardener cluster with latest k8s version
-	env
+provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
+	echo "Using k8s version '${GARDENER_K8S_VERSION_FULL}' and hibernation hour '${HIBERNATION_HOUR}' for shoot '${GARDENER_CLUSTER_NAME}'"
+
 	envsubst < hack/shoot_gcp.yaml > /tmp/shoot.yaml 
-	cat /tmp/shoot.yaml
 	cat /tmp/shoot.yaml | kubectl --kubeconfig "${GARDENER_SA_PATH}" apply -f -
 
 	echo "waiting fo cluster to be ready..."
