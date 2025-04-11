@@ -112,8 +112,8 @@ metadata:
   name: sample-otel
 spec:
   input:
-     otlp:
-       disabled: true
+    otlp:
+      disabled: true
   output:
     otlp:
       endpoint:
