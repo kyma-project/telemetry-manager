@@ -136,6 +136,8 @@ linters:
           alias: ctrlpredicate
         - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs
           alias: commonStatusStubs
+        - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/mocks
+          alias: commonStatusMocks
         - pkg: k8s.io/client-go/testing
           alias: clienttesting
         - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel

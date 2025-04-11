@@ -1,36 +1,29 @@
-with-expecter: false
-disable-version-string: true
-log-level: "warn"
-outpkg: "mocks"
-dir: "{{.InterfaceDir}}/mocks/"
-mockname: "{{.InterfaceName | firstUpper}}"
-filename: "{{.InterfaceName | snakecase}}.go"
-issue-845-fix: True
+dir: '{{.InterfaceDir}}/mocks/'
+log-level: warn
+filename: '{{.InterfaceName | snakecase}}.go'
+structname: '{{.InterfaceName | firstUpper}}'
+pkgname: mocks
+template: testify
+force-file-write: true
 packages:
+  github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus:
+    interfaces:
+      ErrorToMessageConverter:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline:
     interfaces:
-      OverridesHandler:
-      ErrorToMessageConverter:
       FlowHealthProber:
+      OverridesHandler:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit:
     interfaces:
       AgentApplierDeleter:
       AgentConfigBuilder:
   github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel:
     interfaces:
-      FlowHealthProber:
-      GatewayApplierDeleter:
-      GatewayConfigBuilder:
       AgentApplierDeleter:
       AgentConfigBuilder:
-  github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline:
-    interfaces:
       FlowHealthProber:
       GatewayApplierDeleter:
       GatewayConfigBuilder:
-      OverridesHandler:
-      PipelineLock:
-      ErrorToMessageConverter:
   github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline:
     interfaces:
       AgentApplierDeleter:
@@ -40,12 +33,18 @@ packages:
       GatewayConfigBuilder:
       OverridesHandler:
       PipelineLock:
-      ErrorToMessageConverter:
   github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry:
     interfaces:
       ComponentHealthChecker:
       OverridesHandler:
       SelfMonitorApplierDeleter:
+  github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline:
+    interfaces:
+      FlowHealthProber:
+      GatewayApplierDeleter:
+      GatewayConfigBuilder:
+      OverridesHandler:
+      PipelineLock:
   github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober:
     interfaces:
       alertGetter:
