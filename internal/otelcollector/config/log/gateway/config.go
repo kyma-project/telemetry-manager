@@ -37,7 +37,7 @@ type FilterProcessor struct {
 }
 
 type FilterProcessorLogs struct {
-	Log []string `yaml:"log,omitempty"`
+	Log []string `yaml:"log_record,omitempty"`
 }
 
 type Exporters map[string]Exporter
