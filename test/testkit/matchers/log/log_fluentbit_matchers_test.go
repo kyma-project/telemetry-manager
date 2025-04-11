@@ -142,6 +142,51 @@ var _ = Describe("HaveLogBody", func() {
 	})
 })
 
+var _ = Describe("HaveDateISO8601Format", func() {
+	It("should return true for valid ISO8601 date format", func() {
+		fl := FlatLogFluentBit{
+			LogRecordAttributes: map[string]string{
+				"date": "2023-12-07T09:36:38.123Z",
+			},
+		}
+		Expect(fl).Should(HaveDateISO8601Format(BeTrue()))
+	})
+
+	It("should return false for invalid ISO8601 date format", func() {
+		fl := FlatLogFluentBit{
+			LogRecordAttributes: map[string]string{
+				"date": "07-12-2023 09:36:38",
+			},
+		}
+		Expect(fl).Should(HaveDateISO8601Format(BeFalse()))
+	})
+
+	It("should return false when date attribute is missing", func() {
+		fl := FlatLogFluentBit{
+			LogRecordAttributes: map[string]string{},
+		}
+		Expect(fl).Should(HaveDateISO8601Format(BeFalse()))
+	})
+
+	It("should return false for unix timestamp date format", func() {
+		fl := FlatLogFluentBit{
+			LogRecordAttributes: map[string]string{
+				"date": "1744288742.123",
+			},
+		}
+		Expect(fl).Should(HaveDateISO8601Format(BeFalse()))
+	})
+
+	It("should return false when date attribute is empty", func() {
+		fl := FlatLogFluentBit{
+			LogRecordAttributes: map[string]string{
+				"date": "",
+			},
+		}
+		Expect(fl).Should(HaveDateISO8601Format(BeFalse()))
+	})
+})
+
 func mustMarshalFluentBitLogs(ld plog.Logs) []byte {
 	var marshaler plog.JSONMarshaler
 
