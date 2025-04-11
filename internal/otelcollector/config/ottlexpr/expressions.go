@@ -53,3 +53,15 @@ func HasAttrOnDatapoint(key, value string) string {
 func ScopeNameEquals(name string) string {
 	return fmt.Sprintf("instrumentation_scope.name == \"%s\"", name)
 }
+
+func Not(expression string) string {
+	if isWrappedInParentheses(expression) {
+		return fmt.Sprintf("not%s", expression)
+	}
+
+	return fmt.Sprintf("not(%s)", expression)
+}
+
+func isWrappedInParentheses(expression string) bool {
+	return strings.HasPrefix(expression, "(") && strings.HasSuffix(expression, ")")
+}

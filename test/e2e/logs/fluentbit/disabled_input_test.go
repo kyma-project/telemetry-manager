@@ -31,7 +31,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsFluentBit), Ordered, func() {
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithApplicationInputDisabled().
+			WithApplicationInput(false).
 			WithHTTPOutput(
 				testutils.HTTPHost("localhost"),
 				testutils.HTTPPort(443),

@@ -264,12 +264,12 @@ func TestBuildConfig(t *testing.T) {
 			compatibilityMode bool
 		}{
 			{
-				name:              "Compatibility mode disabled",
+				name:              "compatibility mode disabled",
 				goldenFileName:    "config.yaml",
 				compatibilityMode: false,
 			},
 			{
-				name:              "Compatibility mode enabled",
+				name:              "compatibility mode enabled",
 				goldenFileName:    "config_compatibility_enabled.yaml",
 				compatibilityMode: true,
 			},

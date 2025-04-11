@@ -17,7 +17,7 @@ func TestSuite(t *testing.T) {
 	format.MaxLength = suite.GomegaMaxLenght
 
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "E2E Suite - OTel Logs")
+	RunSpecs(t, "E2E Suite - OTel Logs (OTLP)")
 }
 
 var _ = BeforeSuite(suite.BeforeSuiteFunc)

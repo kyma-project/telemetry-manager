@@ -48,6 +48,7 @@ var _ = Describe(suite.ID(), Label(
 			objs = append(objs, &logPipelineNoInput)
 			logPipelineWithInput = testutils.NewLogPipelineBuilder().
 				WithName(pipelineNameWithInput).
+				WithOTLPInput(false).
 				WithApplicationInput(true).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
 				Build()

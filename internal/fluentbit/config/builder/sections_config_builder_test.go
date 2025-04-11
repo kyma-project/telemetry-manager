@@ -322,7 +322,7 @@ func TestBuildFluentBitConfig_Validation(t *testing.T) {
 			name: "Should return error when input OTLP is defined",
 			args: args{
 				pipeline: func() *telemetryv1alpha1.LogPipeline {
-					lp := testutils.NewLogPipelineBuilder().WithHTTPOutput().WithOTLPInput().Build()
+					lp := testutils.NewLogPipelineBuilder().WithHTTPOutput().WithOTLPInput(true).Build()
 					return &lp
 				}(),
 			},
