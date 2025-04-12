@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonStatusMocks "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/mocks"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
@@ -66,7 +67,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
@@ -104,7 +105,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
@@ -142,7 +143,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
@@ -175,7 +176,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("DaemonSet is not yet created")
 
 		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
@@ -219,7 +220,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
@@ -307,7 +308,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound)),
 		}
 
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
 		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
@@ -369,7 +370,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(nil),
 		}
 
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 		errToMsgStub.On("Convert", mock.Anything).Return("")
 
 		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
@@ -509,7 +510,7 @@ func TestReconcile(t *testing.T) {
 					SecretRefValidator: stubs.NewSecretRefValidator(nil),
 				}
 
-				errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+				errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
 				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
@@ -627,7 +628,7 @@ func TestReconcile(t *testing.T) {
 					SecretRefValidator: stubs.NewSecretRefValidator(tt.tlsCertErr),
 				}
 
-				errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+				errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 				errToMsgStub.On("Convert", mock.Anything).Return("")
 
 				sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
@@ -766,7 +767,7 @@ func TestReconcile(t *testing.T) {
 			SecretRefValidator: stubs.NewSecretRefValidator(&errortypes.APIRequestFailedError{Err: serverErr}),
 		}
 
-		errToMsgStub := &logpipelinemocks.ErrorToMessageConverter{}
+		errToMsgStub := &commonStatusMocks.ErrorToMessageConverter{}
 
 		sut := New(fakeClient, telemetryNamespace, agentConfigBuilder, agentApplierDeleterMock, proberStub, flowHealthProberStub, istioStatusCheckerStub, pipelineValidatorWithStubs, errToMsgStub)
 
