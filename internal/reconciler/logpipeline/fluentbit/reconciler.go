@@ -83,6 +83,39 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1alpha1.
 	return err
 }
 
+func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
+	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return false, nil
+	}
+
+	var appInputEnabled *bool
+
+	// Treat the pipeline as non-reconcilable if the application input is explicitly disabled
+	if pipeline.Spec.Input.Application != nil {
+		appInputEnabled = pipeline.Spec.Input.Application.Enabled
+	}
+
+	if appInputEnabled != nil && !*appInputEnabled {
+		return false, nil
+	}
+
+	err := r.pipelineValidator.validate(ctx, pipeline)
+
+	// Pipeline with a certificate that is about to expire is still considered reconcilable
+	if err == nil || tlscert.IsCertAboutToExpireError(err) {
+		return true, nil
+	}
+
+	// Remaining errors imply that the pipeline is not reconcilable
+	// In case that one of the requests to the Kubernetes API server failed, then the pipeline is also considered non-reconcilable and the error is returned to trigger a requeue
+	var APIRequestFailed *errortypes.APIRequestFailedError
+	if errors.As(err, &APIRequestFailed) {
+		return false, APIRequestFailed.Err
+	}
+
+	return false, nil
+}
+
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	allPipelines, err := logpipeline.GetPipelinesForType(ctx, r.Client, r.SupportedOutput())
 	if err != nil {
@@ -159,39 +192,6 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	}
 
 	return reconcilableLogPipelines, nil
-}
-
-func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
-	if !pipeline.GetDeletionTimestamp().IsZero() {
-		return false, nil
-	}
-
-	var appInputEnabled *bool
-
-	// Treat the pipeline as non-reconcilable if the application input is explicitly disabled
-	if pipeline.Spec.Input.Application != nil {
-		appInputEnabled = pipeline.Spec.Input.Application.Enabled
-	}
-
-	if appInputEnabled != nil && !*appInputEnabled {
-		return false, nil
-	}
-
-	err := r.pipelineValidator.validate(ctx, pipeline)
-
-	// Pipeline with a certificate that is about to expire is still considered reconcilable
-	if err == nil || tlscert.IsCertAboutToExpireError(err) {
-		return true, nil
-	}
-
-	// Remaining errors imply that the pipeline is not reconcilable
-	// In case that one of the requests to the Kubernetes API server failed, then the pipeline is also considered non-reconcilable and the error is returned to trigger a requeue
-	var APIRequestFailed *errortypes.APIRequestFailedError
-	if errors.As(err, &APIRequestFailed) {
-		return false, APIRequestFailed.Err
-	}
-
-	return false, nil
 }
 
 func getFluentBitPorts() []int32 {

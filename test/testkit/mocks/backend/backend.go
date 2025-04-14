@@ -121,35 +121,6 @@ func WithFaultDelayInjection(faultPercentage float64, delaySeconds int) Option {
 	}
 }
 
-func (b *Backend) buildResources() {
-	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
-
-	b.otelCollectorConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
-	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(int(httpExportPort))})
-	b.otlpService = kitk8s.NewService(b.name, b.namespace).
-		WithPort(otlpGRPCPortName, otlpGRPCPort).
-		WithPort(otlpHTTPPortName, otlpHTTPPort).
-		WithPort(httpExportPortName, httpExportPort)
-	// TODO: LogPipelines requires the host and the port to be separated.
-	// TracePipeline/MetricPipeline requires an endpoint in the format of scheme://host:port.
-	// The referencable secret is called host in both cases, but the value is different. It has to be refactored.
-	host := b.Endpoint()
-
-	if b.signalType == SignalTypeLogs {
-		b.fluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
-		b.otelCollectorDeployment.WithFluentdConfigName(b.fluentDConfigMap.Name())
-		b.otlpService = b.otlpService.WithPort(httpLogsPortName, httpLogsPort)
-		host = b.Host()
-	}
-
-	b.hostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
-		kitk8s.WithStringData("host", host)).Persistent(b.persistentHostSecret)
-
-	if b.abortFaultPercentage > 0 || b.faultDelayPercentage > 0 {
-		b.virtualService = kitk8s.NewVirtualService("fault-injection", b.namespace, b.name).WithFaultAbortPercentage(b.abortFaultPercentage).WithFaultDelay(b.faultDelayPercentage, time.Duration(b.faultDelayFixedDelaySeconds)*time.Second)
-	}
-}
-
 func (b *Backend) Name() string {
 	return b.name
 }
@@ -199,4 +170,33 @@ func (b *Backend) K8sObjects() []client.Object {
 	objects = append(objects, b.hostSecret.K8sObject())
 
 	return objects
+}
+
+func (b *Backend) buildResources() {
+	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
+
+	b.otelCollectorConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
+	b.otelCollectorDeployment = NewDeployment(b.name, b.namespace, b.otelCollectorConfigMap.Name(), filepath.Dir(exportedFilePath), b.replicas, b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(int(httpExportPort))})
+	b.otlpService = kitk8s.NewService(b.name, b.namespace).
+		WithPort(otlpGRPCPortName, otlpGRPCPort).
+		WithPort(otlpHTTPPortName, otlpHTTPPort).
+		WithPort(httpExportPortName, httpExportPort)
+	// TODO: LogPipelines requires the host and the port to be separated.
+	// TracePipeline/MetricPipeline requires an endpoint in the format of scheme://host:port.
+	// The referencable secret is called host in both cases, but the value is different. It has to be refactored.
+	host := b.Endpoint()
+
+	if b.signalType == SignalTypeLogs {
+		b.fluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
+		b.otelCollectorDeployment.WithFluentdConfigName(b.fluentDConfigMap.Name())
+		b.otlpService = b.otlpService.WithPort(httpLogsPortName, httpLogsPort)
+		host = b.Host()
+	}
+
+	b.hostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
+		kitk8s.WithStringData("host", host)).Persistent(b.persistentHostSecret)
+
+	if b.abortFaultPercentage > 0 || b.faultDelayPercentage > 0 {
+		b.virtualService = kitk8s.NewVirtualService("fault-injection", b.namespace, b.name).WithFaultAbortPercentage(b.abortFaultPercentage).WithFaultDelay(b.faultDelayPercentage, time.Duration(b.faultDelayFixedDelaySeconds)*time.Second)
+	}
 }
