@@ -14,6 +14,21 @@ type SectionBuilder struct {
 	builder strings.Builder
 }
 
+func NewInputSectionBuilder() *SectionBuilder {
+	sb := SectionBuilder{}
+	return sb.createInputSection()
+}
+
+func NewFilterSectionBuilder() *SectionBuilder {
+	sb := SectionBuilder{}
+	return sb.createFilterSection()
+}
+
+func NewOutputSectionBuilder() *SectionBuilder {
+	sb := SectionBuilder{}
+	return sb.createOutputSection()
+}
+
 func (sb *SectionBuilder) Build() string {
 	sort.Slice(sb.params, func(i, j int) bool {
 		if sb.params[i].Key != sb.params[j].Key {
@@ -52,21 +67,6 @@ func (sb *SectionBuilder) Build() string {
 	sb.builder.WriteByte('\n')
 
 	return sb.builder.String()
-}
-
-func NewInputSectionBuilder() *SectionBuilder {
-	sb := SectionBuilder{}
-	return sb.createInputSection()
-}
-
-func NewFilterSectionBuilder() *SectionBuilder {
-	sb := SectionBuilder{}
-	return sb.createFilterSection()
-}
-
-func NewOutputSectionBuilder() *SectionBuilder {
-	sb := SectionBuilder{}
-	return sb.createOutputSection()
 }
 
 func (sb *SectionBuilder) createInputSection() *SectionBuilder {
