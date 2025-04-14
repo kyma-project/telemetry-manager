@@ -51,22 +51,6 @@ func (b *MetricPipelineBuilder) WithAnnotations(annotations map[string]string) *
 	return b
 }
 
-type InputOptions func(selector *telemetryv1alpha1.NamespaceSelector)
-
-func IncludeNamespaces(namespaces ...string) InputOptions {
-	return func(selector *telemetryv1alpha1.NamespaceSelector) {
-		selector.Include = namespaces
-		selector.Exclude = nil
-	}
-}
-
-func ExcludeNamespaces(namespaces ...string) InputOptions {
-	return func(selector *telemetryv1alpha1.NamespaceSelector) {
-		selector.Include = nil
-		selector.Exclude = namespaces
-	}
-}
-
 func (b *MetricPipelineBuilder) WithRuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	if b.inRuntime == nil {
 		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
