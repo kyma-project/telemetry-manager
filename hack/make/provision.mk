@@ -1,7 +1,7 @@
 ##@ k3d
 .PHONY: provision-k3d
 provision-k3d: $(K3D)
-	$(K3D) cluster create --image rancher/k3s:v$(strip $(K3S_K8S_VERSION))-k3s1 --config .k3d-kyma.yaml
+	$(K3D) cluster create --image rancher/k3s:v$(strip $(K3S_K8S_VERSION))-k3s1 --k3s-arg "--disable=traefik@server:0" --config .k3d-kyma.yaml
 	kubectl create ns kyma-system
 
 .PHONY: provision-k3d-istio
