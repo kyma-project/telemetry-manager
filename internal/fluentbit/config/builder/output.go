@@ -59,6 +59,7 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.LogPipelineHTTPOutput, fsB
 	sb.AddIfNotEmpty("compress", httpOutput.Compress)
 	sb.AddIfNotEmptyOrDefault("port", httpOutput.Port, "443")
 	sb.AddIfNotEmptyOrDefault("format", httpOutput.Format, "json")
+	sb.AddConfigParam("json_date_format", "iso8601")
 
 	if sharedtypesutils.IsValid(&httpOutput.Host) {
 		value := resolveValue(httpOutput.Host, name)

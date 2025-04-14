@@ -44,6 +44,7 @@ func TestCreateOutputSectionWithHTTPOutput(t *testing.T) {
     host                     localhost
     http_passwd              password
     http_user                user
+    json_date_format         iso8601
     port                     1234
     retry_limit              300
     storage.total_limit_size 1G
@@ -85,6 +86,7 @@ func TestCreateOutputSectionWithHTTPOutputWithSecretReference(t *testing.T) {
     host                     localhost
     http_passwd              ${FOO_MY_NAMESPACE_SECRET_KEY}
     http_user                user
+    json_date_format         iso8601
     port                     443
     retry_limit              300
     storage.total_limit_size 1G
@@ -130,6 +132,7 @@ func TestCreateOutputSectionWithHTTPOutputWithTLS(t *testing.T) {
     allow_duplicated_headers true
     format                   json
     host                     localhost
+    json_date_format         iso8601
     port                     443
     retry_limit              300
     storage.total_limit_size 1G
