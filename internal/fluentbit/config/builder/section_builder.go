@@ -14,6 +14,46 @@ type SectionBuilder struct {
 	builder strings.Builder
 }
 
+func (sb *SectionBuilder) Build() string {
+	sort.Slice(sb.params, func(i, j int) bool {
+		if sb.params[i].Key != sb.params[j].Key {
+			if sb.params[i].Key == "name" {
+				return true
+			}
+
+			if sb.params[j].Key == "name" {
+				return false
+			}
+
+			if sb.params[i].Key == "match" {
+				return true
+			}
+
+			if sb.params[j].Key == "match" {
+				return false
+			}
+
+			return sb.params[i].Key < sb.params[j].Key
+		}
+
+		return sb.params[i].Value < sb.params[j].Value
+	})
+
+	indentation := strings.Repeat(" ", 4) //nolint:mnd // 4 spaces per indentation level
+	for _, p := range sb.params {
+		sb.builder.WriteString(fmt.Sprintf("%s%s%s%s",
+			indentation,
+			p.Key,
+			strings.Repeat(" ", sb.keyLen-len(p.Key)+1),
+			p.Value))
+		sb.builder.WriteByte('\n')
+	}
+
+	sb.builder.WriteByte('\n')
+
+	return sb.builder.String()
+}
+
 func NewInputSectionBuilder() *SectionBuilder {
 	sb := SectionBuilder{}
 	return sb.createInputSection()
@@ -76,46 +116,6 @@ func (sb *SectionBuilder) AddIfNotEmptyOrDefault(key string, value string, defau
 	}
 
 	return sb
-}
-
-func (sb *SectionBuilder) Build() string {
-	sort.Slice(sb.params, func(i, j int) bool {
-		if sb.params[i].Key != sb.params[j].Key {
-			if sb.params[i].Key == "name" {
-				return true
-			}
-
-			if sb.params[j].Key == "name" {
-				return false
-			}
-
-			if sb.params[i].Key == "match" {
-				return true
-			}
-
-			if sb.params[j].Key == "match" {
-				return false
-			}
-
-			return sb.params[i].Key < sb.params[j].Key
-		}
-
-		return sb.params[i].Value < sb.params[j].Value
-	})
-
-	indentation := strings.Repeat(" ", 4) //nolint:mnd // 4 spaces per indentation level
-	for _, p := range sb.params {
-		sb.builder.WriteString(fmt.Sprintf("%s%s%s%s",
-			indentation,
-			p.Key,
-			strings.Repeat(" ", sb.keyLen-len(p.Key)+1),
-			p.Value))
-		sb.builder.WriteByte('\n')
-	}
-
-	sb.builder.WriteByte('\n')
-
-	return sb.builder.String()
 }
 
 func parseMultiline(section string) config.ParameterList {

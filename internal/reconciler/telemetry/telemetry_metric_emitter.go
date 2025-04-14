@@ -12,7 +12,7 @@ var compatibilityModeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 
 type telemetryMetricsEmitter struct{}
 
-func NewTelemetryMetricsEmitter() telemetryMetricsEmitter {
+func newTelemetryMetricsEmitter() telemetryMetricsEmitter {
 	metrics.Registry.MustRegister(compatibilityModeGauge)
 	return telemetryMetricsEmitter{}
 }
