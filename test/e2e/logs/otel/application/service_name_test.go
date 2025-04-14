@@ -48,6 +48,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelExperimental)
 		hostSecretRef := backend.HostSecretRefV1Alpha1()
 		pipelineBuilder := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
+			WithOTLPInput(false).
 			WithApplicationInput(true).
 			WithOTLPOutput(
 				testutils.OTLPEndpointFromSecret(
