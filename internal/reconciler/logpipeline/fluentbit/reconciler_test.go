@@ -122,7 +122,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("no resources generated if app input disabled", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithApplicationInputDisabled().Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithApplicationInput(false).Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		agentConfigBuilder := &mocks.AgentConfigBuilder{}
