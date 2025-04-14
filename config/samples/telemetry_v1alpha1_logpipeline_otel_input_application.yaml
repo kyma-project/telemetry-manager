@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: long-sink-otel
+  name: log-sink-otel
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: log-sink-config
-  namespace: long-sink-otel
+  namespace: log-sink-otel
 data:
   config.yaml: |
     receivers:
@@ -33,7 +33,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: log-sink
-  namespace: long-sink-otel
+  namespace: log-sink-otel
 spec:
   replicas: 1
   selector:
@@ -64,7 +64,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: log-sink
-  namespace: long-sink-otel
+  namespace: log-sink-otel
 spec:
   ports:
   - name: grpc-otlp
@@ -117,6 +117,6 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://log-sink.long-sink-otel:4317
+        value: http://log-sink.log-sink-otel:4317
       protocol: grpc
 
