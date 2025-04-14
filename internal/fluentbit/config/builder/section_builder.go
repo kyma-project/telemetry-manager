@@ -69,27 +69,6 @@ func (sb *SectionBuilder) Build() string {
 	return sb.builder.String()
 }
 
-func (sb *SectionBuilder) createInputSection() *SectionBuilder {
-	sb.builder.WriteString("[INPUT]")
-	sb.builder.WriteByte('\n')
-
-	return sb
-}
-
-func (sb *SectionBuilder) createFilterSection() *SectionBuilder {
-	sb.builder.WriteString("[FILTER]")
-	sb.builder.WriteByte('\n')
-
-	return sb
-}
-
-func (sb *SectionBuilder) createOutputSection() *SectionBuilder {
-	sb.builder.WriteString("[OUTPUT]")
-	sb.builder.WriteByte('\n')
-
-	return sb
-}
-
 func (sb *SectionBuilder) AddConfigParam(key string, value string) *SectionBuilder {
 	if sb.keyLen < len(key) {
 		sb.keyLen = len(key)
@@ -114,6 +93,27 @@ func (sb *SectionBuilder) AddIfNotEmptyOrDefault(key string, value string, defau
 	} else {
 		sb.AddConfigParam(key, value)
 	}
+
+	return sb
+}
+
+func (sb *SectionBuilder) createInputSection() *SectionBuilder {
+	sb.builder.WriteString("[INPUT]")
+	sb.builder.WriteByte('\n')
+
+	return sb
+}
+
+func (sb *SectionBuilder) createFilterSection() *SectionBuilder {
+	sb.builder.WriteString("[FILTER]")
+	sb.builder.WriteByte('\n')
+
+	return sb
+}
+
+func (sb *SectionBuilder) createOutputSection() *SectionBuilder {
+	sb.builder.WriteString("[OUTPUT]")
+	sb.builder.WriteByte('\n')
 
 	return sb
 }
