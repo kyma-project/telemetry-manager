@@ -307,16 +307,6 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	return pipeline
 }
 
-func (b *MetricPipelineBuilder) initializeRuntimeInputResources() {
-	if b.inRuntime == nil {
-		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
-	}
-
-	if b.inRuntime.Resources == nil {
-		b.inRuntime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
-	}
-}
-
 func (b *MetricPipelineBuilder) WithIstioInputEnvoyMetrics(enable bool) *MetricPipelineBuilder {
 	if b.inIstio == nil {
 		b.inIstio = &telemetryv1alpha1.MetricPipelineIstioInput{}
@@ -329,4 +319,14 @@ func (b *MetricPipelineBuilder) WithIstioInputEnvoyMetrics(enable bool) *MetricP
 	b.inIstio.EnvoyMetrics.Enabled = &enable
 
 	return b
+}
+
+func (b *MetricPipelineBuilder) initializeRuntimeInputResources() {
+	if b.inRuntime == nil {
+		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
+	}
+
+	if b.inRuntime.Resources == nil {
+		b.inRuntime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
+	}
 }

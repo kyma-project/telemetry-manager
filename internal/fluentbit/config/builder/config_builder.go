@@ -53,6 +53,11 @@ func (f *FluentBitConfig) addTLSConfigSecret(tlsConfigSecret map[string][]byte) 
 	maps.Copy(f.TLSConfigSecret, tlsConfigSecret)
 }
 
+type ConfigBuilder struct {
+	reader client.Reader
+	cfg    builderConfig
+}
+
 func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
 	return &ConfigBuilder{
 		reader: client,
@@ -65,11 +70,6 @@ func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
 			},
 		},
 	}
-}
-
-type ConfigBuilder struct {
-	reader client.Reader
-	cfg    builderConfig
 }
 
 func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) (*FluentBitConfig, error) {
