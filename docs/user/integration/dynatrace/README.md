@@ -272,15 +272,15 @@ You can view logs, traces, and metrics in Dynatrace dashboards:
     > - `k8s.resource.kind`
     > - `k8s.resource.version`
     > 
-    > For the dashboard to function properly, these attributes must be added to the allow list of OpenTelemetry metrics resource attributes. To make these configuration changes, go to Settings > Metrics > OpenTelemetry metrics > Allow list: resource and scope attributes.
+    > For the dashboard to function properly, you must add these attributes to the allow list of OpenTelemetry metrics resource attributes. To make these configuration changes, go to Settings > Metrics > OpenTelemetry metrics > Allow list: resource and scope attributes.
 
 ## Use Dynatrace Alerts
 
 You can create Dynatrace Alerts based on certain metric events to send alerts to your system of choice. 
 
 1. [Create a problem alerting profile](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#create-an-alerting-profile).
-2. Set up alert integration with your system of choice. For more information on how to set up alert integration with your system, go to the official [Dynatrace documentation](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
-3. Create a [metric event](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events) by going to Settings > Anomaly Detection > Metric events > Add metric event. Define your metric event with a metric selector or a metric key.
+2. Set up alert integration with your system of choice. For details, see [Problem notifications](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
+3. Create a [metric event](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events) and define it with a metric selector or a metric key.
 4. Add a custom event filter to your alerting profile in your problem alerting profile tab by clicking on the **Add event filter** button. Here you can select a custom filter based on the Metric event title, description, or property.
 5. Verify that your alerts are working in your system.
 
