@@ -264,7 +264,7 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 You can view logs, traces, and metrics in Dynatrace dashboards:
 
-- To view the status of the Dynatrace integration with the Kyma Telemetry module, go to Dashboards > Import Dashboard, and manually import the file [Telemetry Module Status](./telemetry-resource-metrics.json).
+- To view the status of the Dynatrace integration with the Kyma Telemetry module, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details on how to import a dashboard, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
     > [!WARNING]
     > Kyma Telemetry resources contain the following custom OpenTelemetry resource attributes:
     > - `k8s.resource.name`
@@ -272,7 +272,7 @@ You can view logs, traces, and metrics in Dynatrace dashboards:
     > - `k8s.resource.kind`
     > - `k8s.resource.version`
     > 
-    > For the dashboard to function properly, you must add these attributes to the allow list of OpenTelemetry metrics resource attributes. To make these configuration changes, go to Settings > Metrics > OpenTelemetry metrics > Allow list: resource and scope attributes.
+    > For the dashboard to function properly, you must [add these attributes to the allow list of OpenTelemetry metrics resource attributes](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/configuration#allow-list).
 
 ## Use Dynatrace Alerts
 
@@ -281,7 +281,6 @@ You can create Dynatrace Alerts based on certain metric events to send alerts to
 1. [Create a problem alerting profile](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#create-an-alerting-profile).
 2. Set up alert integration with your system of choice. For details, see [Problem notifications](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
 3. Create a [metric event](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events) and define it with a metric selector or a metric key.
-4. Add a custom event filter to your alerting profile in your problem alerting profile tab by clicking on the **Add event filter** button. Here you can select a custom filter based on the Metric event title, description, or property.
-5. Verify that your alerts are working in your system.
-
+4. Add a custom [event filter](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#event-filters) to your alerting profile. Filter for your metric event defined in the previous step.
+5. Verify that your alerts are working in your system by triggering the metric event. The alerts should show up in your configured system.
 
