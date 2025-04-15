@@ -275,13 +275,6 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
    - `k8s.resource.version`
 
    For details about adding attributes to the allow list, see [Configure resource and scope attributes to be added as dimensions](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/configuration#allow-list).
-> Kyma Telemetry resources contain the following custom OpenTelemetry resource attributes:
-> - `k8s.resource.name`
-> - `k8s.resource.group`
-> - `k8s.resource.kind`
-> - `k8s.resource.version`
-> 
-> For the dashboard to function properly, you must [add these attributes to the allow list of OpenTelemetry metrics resource attributes](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/configuration#allow-list).
 
 ## Use Dynatrace Alerts
 
