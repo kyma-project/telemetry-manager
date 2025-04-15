@@ -43,6 +43,9 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
+      - name: Setup Docker
+        uses: ./.github/template/setup-docker
+
   e2e:
     needs: setup
     strategy:
