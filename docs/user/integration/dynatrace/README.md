@@ -265,10 +265,16 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 ## Use Dynatrace Dashboards
 
-You can view metrics in Dynatrace dashboards:
+1. To view metrics in Dynatrace dashboards, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
 
 - To view the status of the Dynatrace integration with the Kyma Telemetry module, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details on how to import a dashboard, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
-> [!WARNING]
+2. Add the following attributes to the allow list of OpenTelemetry metrics resource attributes:
+   - `k8s.resource.name`
+   - `k8s.resource.group`
+   - `k8s.resource.kind`
+   - `k8s.resource.version`
+
+   For details about adding attributes to the allow list, see [Configure resource and scope attributes to be added as dimensions](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/getting-started/metrics/configuration#allow-list).
 > Kyma Telemetry resources contain the following custom OpenTelemetry resource attributes:
 > - `k8s.resource.name`
 > - `k8s.resource.group`
@@ -279,20 +285,20 @@ You can view metrics in Dynatrace dashboards:
 
 ## Use Dynatrace Alerts
 
-You can create Dynatrace Alerts based on certain metric events to send alerts about the Kyma Telemetry module status to your system of choice. 
+To send alerts about the Kyma Telemetry module status to your preferred backend system, create Dynatrace Alerts based on certain metric events:
 
-1. **Create a problem alerting profile**  
-   Define how and when alerts should trigger. Follow the [Dynatrace guide](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#create-an-alerting-profile).
-2. **Set up alert integration with your system of choice**  
+1. Create a problem alerting profile. 
+   Define how and when alerts should trigger. For details, see [Create an alerting profile](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#create-an-alerting-profile).
+2. Set up alert integration with your backend system.
    Configure Dynatrace to send problem notifications to your system. For details, see [Problem notifications](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
-3. **Create a [metric event](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events)**  
-   Define a metric event with a metric selector or a metric key which reflects the event you want to monitor.  
- **Example:** Trigger an alert when the Kyma Telemetry module enters a non-ready state:
+3. Create a metric event.
+   Define a metric event with a metric selector or a metric key that reflects the event you want to monitor. For details, see [Metric events](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events).
+ For example, trigger an alert when the Kyma Telemetry module enters a non-ready state:
    ```text
    kyma.resource.status.state:filter(not(eq("state","Ready")))
    ```
-4. **Filter for the event in your alerting profile**  
-   Add a custom [event filter](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#event-filters) to target the metric event you just created.
-5. **Test the integration**  
+4. Filter for the event in your alerting profile.
+   To target the metric event you just created, add a custom event filter. For details, see [event filters](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#event-filters).
+5. Test the integration.
    Trigger the metric event and confirm that the target system receives the alert.
 
