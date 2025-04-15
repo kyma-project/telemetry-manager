@@ -51,22 +51,6 @@ func (b *MetricPipelineBuilder) WithAnnotations(annotations map[string]string) *
 	return b
 }
 
-type InputOptions func(selector *telemetryv1alpha1.NamespaceSelector)
-
-func IncludeNamespaces(namespaces ...string) InputOptions {
-	return func(selector *telemetryv1alpha1.NamespaceSelector) {
-		selector.Include = namespaces
-		selector.Exclude = nil
-	}
-}
-
-func ExcludeNamespaces(namespaces ...string) InputOptions {
-	return func(selector *telemetryv1alpha1.NamespaceSelector) {
-		selector.Include = nil
-		selector.Exclude = namespaces
-	}
-}
-
 func (b *MetricPipelineBuilder) WithRuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	if b.inRuntime == nil {
 		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
@@ -323,16 +307,6 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	return pipeline
 }
 
-func (b *MetricPipelineBuilder) initializeRuntimeInputResources() {
-	if b.inRuntime == nil {
-		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
-	}
-
-	if b.inRuntime.Resources == nil {
-		b.inRuntime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
-	}
-}
-
 func (b *MetricPipelineBuilder) WithIstioInputEnvoyMetrics(enable bool) *MetricPipelineBuilder {
 	if b.inIstio == nil {
 		b.inIstio = &telemetryv1alpha1.MetricPipelineIstioInput{}
@@ -345,4 +319,14 @@ func (b *MetricPipelineBuilder) WithIstioInputEnvoyMetrics(enable bool) *MetricP
 	b.inIstio.EnvoyMetrics.Enabled = &enable
 
 	return b
+}
+
+func (b *MetricPipelineBuilder) initializeRuntimeInputResources() {
+	if b.inRuntime == nil {
+		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
+	}
+
+	if b.inRuntime.Resources == nil {
+		b.inRuntime.Resources = &telemetryv1alpha1.MetricPipelineRuntimeInputResources{}
+	}
 }

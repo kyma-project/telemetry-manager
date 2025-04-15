@@ -20,8 +20,8 @@ import (
 var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, suite.LabelExperimental), Ordered, func() {
 	var (
 		mockNs            = suite.ID()
-		app1Ns            = "app-1"
-		app2Ns            = "app-2"
+		app1Ns            = suite.IDWithSuffix("app-1")
+		app2Ns            = suite.IDWithSuffix("app-2")
 		backend1Name      = "backend-1"
 		backend1ExportURL string
 		backend2Name      = "backend-2"
@@ -40,6 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		pipelineIncludeApp1Ns := testutils.NewLogPipelineBuilder().
 			WithName("include-"+app1Ns).
+			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.IncludeLogNamespaces(app1Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
 			Build()
@@ -51,6 +52,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 
 		pipelineExcludeApp1Ns := testutils.NewLogPipelineBuilder().
 			WithName("exclude-"+app1Ns).
+			WithOTLPInput(false).
 			WithApplicationInput(true, testutils.ExcludeLogNamespaces(app1Ns)).
 			WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
 			Build()

@@ -14,6 +14,10 @@ registries:
 
 options:
   k3s:
+    extraArgs:
+      - arg: "--disable=traefik"
+        nodeFilters:
+          - server:*
     nodeLabels:
       - label: topology.kubernetes.io/region=kyma-local
         nodeFilters:

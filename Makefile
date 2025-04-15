@@ -50,6 +50,7 @@ KUSTOMIZE        := $(TOOLS_BIN_DIR)/kustomize
 MOCKERY          := $(TOOLS_BIN_DIR)/mockery
 TABLE_GEN        := $(TOOLS_BIN_DIR)/table-gen
 YQ               := $(TOOLS_BIN_DIR)/yq
+JQ               := $(TOOLS_BIN_DIR)/gojq
 YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
 WSL		 := $(TOOLS_BIN_DIR)/wsl

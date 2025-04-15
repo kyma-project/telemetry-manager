@@ -118,6 +118,9 @@ kind: LogPipeline
 metadata:
   name: sample-otel
 spec:
+  input:
+    application:
+      enabled: false
   output:
     otlp:
       endpoint:
