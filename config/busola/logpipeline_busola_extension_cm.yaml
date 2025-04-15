@@ -31,6 +31,12 @@ data:
         - name: Condition details
           widget: ConditionList
           source: status.conditions
+          customContent:
+            - value:
+                widget: Badge
+                source: $filter(status.conditions, function($c){$c.type = 'AgentHealthy'}).reason
+                header: Reason
+                type: AgentHealthy
     body:
       - source: status.conditions
         widget: Table
