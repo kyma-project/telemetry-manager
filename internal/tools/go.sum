@@ -792,8 +792,8 @@ github.com/kunwardeep/paralleltest v1.0.14 h1:wAkMoMeGX/kGfhQBPODT/BL8XhK23ol/nu
 github.com/kunwardeep/paralleltest v1.0.14/go.mod h1:di4moFqtfz3ToSKxhNjhOZL+696QtJGCFe132CbBLGk=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
-github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335 h1:4KYcSLGiybns98BXLYCNp81+1W4osQfg5POeW9nLra0=
-github.com/kyma-project/kyma/hack/table-gen v0.0.0-20240626075036-d374ec55c335/go.mod h1:K8S0gyD+o//m/AGKEXB5MbKcp0Q87B9K6ecYYBJWvYU=
+github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b h1:GAv3XmcJ+ycpGycZvBTLFOSIA1aTWHm08PbBxiBIrys=
+github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b/go.mod h1:K8S0gyD+o//m/AGKEXB5MbKcp0Q87B9K6ecYYBJWvYU=
 github.com/lasiar/canonicalheader v1.1.2 h1:vZ5uqwvDbyJCnMhmFYimgMZnJMjwljN5VGY0VKbMXb4=
 github.com/lasiar/canonicalheader v1.1.2/go.mod h1:qJCeLFS0G/QlLQ506T+Fk/fWMa2VmBUiEI2cuMK4djI=
 github.com/ldez/exptostd v0.4.2 h1:l5pOzHBz8mFOlbcifTxzfyYbgEmoUqjxLFHZkjlbHXs=
