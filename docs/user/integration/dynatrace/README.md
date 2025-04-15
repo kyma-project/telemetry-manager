@@ -265,7 +265,7 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 ## Use Dynatrace Dashboards
 
-You can view logs, traces, and metrics in Dynatrace dashboards:
+You can view metrics in Dynatrace dashboards:
 
 - To view the status of the Dynatrace integration with the Kyma Telemetry module, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details on how to import a dashboard, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
 > [!WARNING]
@@ -287,9 +287,9 @@ You can create Dynatrace Alerts based on certain metric events to send alerts ab
    Configure Dynatrace to send problem notifications to your system. For details, see [Problem notifications](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications).
 3. **Create a [metric event](https://docs.dynatrace.com/docs/discover-dynatrace/platform/davis-ai/anomaly-detection/set-up-a-customized-anomaly-detector/how-to-set-up/metric-events)**  
    Define a metric event with a metric selector or a metric key which reflects the event you want to monitor.  
- **Example:** Trigger an alert when the Kyma Telemetry module enters a warning state:
+ **Example:** Trigger an alert when the Kyma Telemetry module enters a non-ready state:
    ```text
-   kyma.resource.status.state:filter(eq("state","Warning"))
+   kyma.resource.status.state:filter(not(eq("state","Ready")))
    ```
 4. **Filter for the event in your alerting profile**  
    Add a custom [event filter](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/alerting-profiles#event-filters) to target the metric event you just created.
