@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonitoringLogsHealthy), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelSelfMonitoringLogsHealthy), Ordered, func() {
 	var (
 		mockNs           = suite.ID()
 		pipelineName     = suite.ID()
@@ -32,7 +32,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeLogsOtel)
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
 		logProducer := loggen.New(mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject())
@@ -40,7 +40,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 
 		logPipeline := testutils.NewLogPipelineBuilder().
 			WithName(pipelineName).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 			WithApplicationInput(true).
 			Build()
 		objs = append(objs, &logPipeline)
@@ -48,7 +48,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 		return objs
 	}
 
-	Context("When a logpipeline with otel exists", Ordered, func() {
+	Context("When a logpipeline with HTTP exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -61,8 +61,8 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
-		It("Should have a running log agent daemonset", func() {
-			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.LogAgentName)
+		It("Should have a running fluent bit daemonset", func() {
+			assert.DaemonSetReady(suite.Ctx, suite.K8sClient, kitkyma.FluentBitDaemonSetName)
 		})
 
 		It("Should have a running self-monitor", func() {
@@ -77,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should deliver loggen logs", func() {
+		It("Should deliver logs printed by loggen to stdout", func() {
 			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 

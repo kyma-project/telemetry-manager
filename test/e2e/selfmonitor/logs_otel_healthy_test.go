@@ -77,7 +77,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 			assert.DeploymentReady(suite.Ctx, suite.K8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should deliver loggen logs", func() {
+		It("Should deliver logs printed by loggen to stdout", func() {
 			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
