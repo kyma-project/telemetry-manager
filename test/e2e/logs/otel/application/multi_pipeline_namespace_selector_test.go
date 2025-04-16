@@ -110,7 +110,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogsOtel, suite.LabelSignalPull, s
 		})
 
 		It("Should not deliver logs from app1Ns to backend2", func() {
-			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend2ExportURL, app1Ns)
+			assert.OtelLogsFromNamespaceNotDelivered(suite.ProxyClient, backend2ExportURL, app1Ns)
 		})
 	})
 })
