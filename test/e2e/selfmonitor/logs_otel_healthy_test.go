@@ -58,7 +58,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 		})
 
 		It("Should have a running logpipeline", func() {
-			assert.LogPipelineHealthy(suite.Ctx, suite.K8sClient, pipelineName)
+			assert.LogPipelineOtelHealthy(suite.Ctx, suite.K8sClient, pipelineName)
 		})
 
 		It("Should have a running log agent daemonset", func() {
@@ -78,7 +78,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelExperimental, suite.LabelSelfMonit
 		})
 
 		It("Should deliver logs printed by loggen to stdout", func() {
-			assert.LogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
+			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backendExportURL, mockNs)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {
